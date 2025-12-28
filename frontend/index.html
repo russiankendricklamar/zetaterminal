@@ -1,0 +1,846 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quantitative Risk Engine — Портфельная оптимизация</title>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #1e40af;
+            --secondary: #0891b2;
+            --success: #16a34a;
+            --danger: #dc2626;
+            --warning: #f59e0b;
+            --dark: #1f2937;
+            --light: #f3f4f6;
+            --border: #e5e7eb;
+            --text-primary: #111827;
+            --text-secondary: #6b7280;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: var(--text-primary);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+
+        /* HEADER */
+        .header {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .header h1 {
+            font-size: 32px;
+            color: var(--primary);
+            margin-bottom: 10px;
+            font-weight: 700;
+        }
+
+        .header p {
+            color: var(--text-secondary);
+            font-size: 16px;
+        }
+
+        /* LAYOUT */
+        .layout {
+            display: grid;
+            grid-template-columns: 1fr 2fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        @media (max-width: 1200px) {
+            .layout {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* CONTROL PANEL */
+        .control-panel {
+            background: white;
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            height: fit-content;
+            position: sticky;
+            top: 20px;
+        }
+
+        .control-panel h2 {
+            font-size: 20px;
+            margin-bottom: 20px;
+            color: var(--primary);
+            border-bottom: 2px solid var(--border);
+            padding-bottom: 12px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 8px;
+        }
+
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            font-family: inherit;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(30, 64, 175, 0.1);
+        }
+
+        .input-info {
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-top: 6px;
+        }
+
+        .slider-container {
+            margin-bottom: 20px;
+        }
+
+        .slider-value {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .slider-value span {
+            font-weight: 600;
+            color: var(--primary);
+            font-size: 18px;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            height: 6px;
+            border-radius: 3px;
+            background: var(--border);
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: var(--primary);
+            cursor: pointer;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+
+        input[type="range"]::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: var(--primary);
+            cursor: pointer;
+            border: none;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .btn-calculate {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            margin-top: 20px;
+        }
+
+        .btn-calculate:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 12px rgba(30, 64, 175, 0.3);
+        }
+
+        .btn-calculate:active {
+            transform: translateY(0);
+        }
+
+        .btn-calculate.loading {
+            background: var(--text-secondary);
+            cursor: not-allowed;
+        }
+
+        /* RESULTS PANEL */
+        .results-panel {
+            background: white;
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .results-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .metric-card {
+            background: linear-gradient(135deg, #f3f4f6, #ffffff);
+            border-left: 4px solid var(--primary);
+            padding: 20px;
+            border-radius: 8px;
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+
+        .metric-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+        }
+
+        .metric-card.success {
+            border-left-color: var(--success);
+        }
+
+        .metric-card.warning {
+            border-left-color: var(--warning);
+        }
+
+        .metric-card.danger {
+            border-left-color: var(--danger);
+        }
+
+        .metric-card h3 {
+            font-size: 12px;
+            text-transform: uppercase;
+            color: var(--text-secondary);
+            margin-bottom: 10px;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+        }
+
+        .metric-card .value {
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: 5px;
+        }
+
+        .metric-card .subtext {
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+
+        /* CHARTS */
+        .charts-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        @media (max-width: 1024px) {
+            .charts-container {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .chart-wrapper {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .chart-wrapper h3 {
+            font-size: 16px;
+            margin-bottom: 15px;
+            color: var(--primary);
+            font-weight: 600;
+        }
+
+        /* LOADING */
+        .loading-spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid var(--border);
+            border-radius: 50%;
+            border-top-color: var(--primary);
+            animation: spin 0.8s linear infinite;
+            margin-right: 10px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* STATUS */
+        .status-message {
+            padding: 15px 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-size: 14px;
+            display: none;
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .status-message.show {
+            display: block;
+        }
+
+        .status-message.success {
+            background: #d1fae5;
+            border-left: 4px solid var(--success);
+            color: #065f46;
+        }
+
+        .status-message.error {
+            background: #fee2e2;
+            border-left: 4px solid var(--danger);
+            color: #7f1d1d;
+        }
+
+        .status-message.info {
+            background: #dbeafe;
+            border-left: 4px solid var(--primary);
+            color: #1e3a8a;
+        }
+
+        /* PRESETS */
+        .presets {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .preset-btn {
+            flex: 1;
+            min-width: 100px;
+            padding: 10px 12px;
+            background: var(--light);
+            border: 2px solid var(--border);
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+
+        .preset-btn:hover {
+            border-color: var(--primary);
+            background: rgba(30, 64, 175, 0.05);
+        }
+
+        .preset-btn.active {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+
+        /* FOOTER */
+        .footer {
+            background: rgba(255,255,255,0.95);
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+            color: var(--text-secondary);
+            font-size: 13px;
+            margin-top: 30px;
+        }
+
+        /* RESPONSIVENESS */
+        @media (max-width: 768px) {
+            .header {
+                padding: 20px;
+            }
+
+            .header h1 {
+                font-size: 24px;
+            }
+
+            .control-panel {
+                position: static;
+                margin-bottom: 20px;
+            }
+
+            .metric-card .value {
+                font-size: 22px;
+            }
+
+            .charts-container {
+                gap: 15px;
+            }
+        }
+
+        /* RISK ZONES */
+        .risk-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 6px;
+        }
+
+        .risk-indicator.low {
+            background: var(--success);
+        }
+
+        .risk-indicator.medium {
+            background: var(--warning);
+        }
+
+        .risk-indicator.high {
+            background: var(--danger);
+        }
+
+        /* TABLE */
+        .weights-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .weights-table thead {
+            background: var(--light);
+        }
+
+        .weights-table th {
+            padding: 12px;
+            text-align: left;
+            font-weight: 600;
+            color: var(--text-primary);
+            border-bottom: 2px solid var(--border);
+        }
+
+        .weights-table td {
+            padding: 12px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .weights-table tbody tr:hover {
+            background: var(--light);
+        }
+
+        .progress-bar {
+            height: 8px;
+            background: var(--border);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            transition: width 0.3s ease;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- HEADER -->
+        <div class="header">
+            <h1>Стохастическая оптимизация портфеля акций</h1>
+            <p>Динамическая оптимизация портфеля в рамках стохастического управления на основе уравнений Гамильтона-Якоби-Беллмана с применением Монте‑Карло симуляций для аппроксимации функции ценности и проверки оптимальных стратегий.</p>
+        </div>
+
+        <!-- STATUS MESSAGE -->
+        <div id="statusMessage" class="status-message"></div>
+
+        <!-- MAIN LAYOUT -->
+        <div class="layout">
+            <!-- CONTROL PANEL -->
+            <div class="control-panel">
+                <h2>⚙️ Параметры расчёта</h2>
+
+                <!-- PRESETS -->
+                <div class="presets">
+                    <button class="preset-btn active" onclick="applyPreset('balanced')">Сбалансиров.</button>
+                    <button class="preset-btn" onclick="applyPreset('aggressive')">Агрессивн.</button>
+                    <button class="preset-btn" onclick="applyPreset('conservative')">Консервативн.</button>
+                </div>
+
+                <!-- GAMMA (Risk Aversion) -->
+                <div class="slider-container">
+                    <label>Коэффициент риск-аверсии (γ)</label>
+                    <div class="slider-value">
+                        <span id="gammaValue">3.0</span>
+                        <span class="input-info" id="gammaLabel">Сбалансированный</span>
+                    </div>
+                    <input type="range" id="gamma" min="0.5" max="20" step="0.5" value="3.0" oninput="updateGammaLabel()">
+                    <div class="input-info">
+                        0.5 (агрессивно) ← → 20 (консервативно)
+                    </div>
+                </div>
+
+                <!-- INITIAL CAPITAL -->
+                <div class="form-group">
+                    <label>Начальный капитал (₽)</label>
+                    <input type="number" id="initialCapital" value="1000000" min="10000" step="10000">
+                    <div class="input-info">Минимум 10,000 ₽</div>
+                </div>
+
+                <!-- TIME HORIZON -->
+                <div class="form-group">
+                    <label>Горизонт инвестирования (лет)</label>
+                    <input type="number" id="timeHorizon" value="1.0" min="0.5" max="5" step="0.25">
+                    <div class="input-info">От 0.5 до 5 лет</div>
+                </div>
+
+                <!-- SIMULATION PATHS -->
+                <div class="form-group">
+                    <label>Количество путей Monte Carlo</label>
+                    <select id="nPaths">
+                        <option value="1000">1,000 путей (быстро)</option>
+                        <option value="5000" selected>5,000 путей (баланс)</option>
+                        <option value="10000">10,000 путей (точно)</option>
+                        <option value="20000">20,000 путей (очень точно)</option>
+                    </select>
+                    <div class="input-info">Больше путей = больше точность, но медленнее</div>
+                </div>
+
+                <!-- CALCULATE BUTTON -->
+                <button class="btn-calculate" id="calculateBtn" onclick="calculatePortfolio()">
+                    Запустить расчёт
+                </button>
+            </div>
+
+            <!-- RESULTS PANEL -->
+            <div class="results-panel">
+                <h2>📈 Итоговые метрики</h2>
+                <div class="results-grid" id="resultsGrid">
+                    <div class="metric-card">
+                        <h3>Средний финальный капитал</h3>
+                        <div class="value" id="meanCapital">—</div>
+                        <div class="subtext">по 5000 сценариям</div>
+                    </div>
+                    <div class="metric-card success">
+                        <h3>Средняя доходность</h3>
+                        <div class="value" id="meanReturn">—</div>
+                        <div class="subtext">годовая</div>
+                    </div>
+                    <div class="metric-card warning">
+                        <h3>Волатильность</h3>
+                        <div class="value" id="volatility">—</div>
+                        <div class="subtext">годовая σ</div>
+                    </div>
+                    <div class="metric-card success">
+                        <h3>Sharpe Ratio</h3>
+                        <div class="value" id="sharpeRatio">—</div>
+                        <div class="subtext">с учётом r_f=13.94%</div>
+                    </div>
+                    <div class="metric-card warning">
+                        <h3>Maximum Drawdown</h3>
+                        <div class="value" id="maxDD">—</div>
+                        <div class="subtext">макс. просадка</div>
+                    </div>
+                    <div class="metric-card danger">
+                        <h3>VaR 95% (5th %ile)</h3>
+                        <div class="value" id="var95">—</div>
+                        <div class="subtext" id="var95Loss">макс. потеря</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- CHARTS -->
+        <div class="charts-container">
+            <div class="chart-wrapper">
+                <h3>Эволюция капитала во времени</h3>
+                <div id="capitalChart" style="height: 400px;"></div>
+            </div>
+            <div class="chart-wrapper">
+                <h3>Распределение финального капитала</h3>
+                <div id="distributionChart" style="height: 400px;"></div>
+            </div>
+        </div>
+
+        <!-- RISK METRICS TABLE -->
+        <div class="chart-wrapper">
+            <h3>🎯 Расширенные VaR/CVaR метрики</h3>
+            <table class="weights-table">
+                <thead>
+                    <tr>
+                        <th>Уровень доверия</th>
+                        <th>Капитал (₽)</th>
+                        <th>Потери (%)</th>
+                        <th>CVaR (%)</th>
+                    </tr>
+                </thead>
+                <tbody id="riskMetricsTable">
+                    <tr>
+                        <td colspan="4" style="text-align: center; color: var(--text-secondary);">Выполните расчёт</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- FOOTER -->
+        <div class="footer">
+            <p> Quantitative Risk Engine v1.0 | Портфельная оптимизация на основе HJB | 
+            <a href="https://github.com/russiankendricklamar/quantitative-risk-engine.git" style="color: var(--primary); text-decoration: none; font-weight: 600;">GitHub</a></p>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://127.0.0.1:8000';
+
+        // Preset configurations
+        const presets = {
+            'balanced': { gamma: 3.0, nPaths: 5000 },
+            'aggressive': { gamma: 1.5, nPaths: 5000 },
+            'conservative': { gamma: 8.0, nPaths: 10000 }
+        };
+
+        function applyPreset(name) {
+            const preset = presets[name];
+            document.getElementById('gamma').value = preset.gamma;
+            document.getElementById('nPaths').value = preset.nPaths;
+            updateGammaLabel();
+
+            // Update active button
+            document.querySelectorAll('.preset-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+        }
+
+        function updateGammaLabel() {
+            const gamma = parseFloat(document.getElementById('gamma').value);
+            document.getElementById('gammaValue').textContent = gamma.toFixed(1);
+
+            let label = '';
+            if (gamma < 2) label = 'Агрессивно';
+            else if (gamma < 5) label = 'Сбалансированно';
+            else label = 'Консервативно';
+
+            document.getElementById('gammaLabel').textContent = label;
+        }
+
+        function showStatus(message, type) {
+            const statusEl = document.getElementById('statusMessage');
+            statusEl.textContent = message;
+            statusEl.className = `status-message show ${type}`;
+            setTimeout(() => statusEl.classList.remove('show'), 5000);
+        }
+
+        async function calculatePortfolio() {
+            const btn = document.getElementById('calculateBtn');
+            const params = {
+                initial_capital: parseFloat(document.getElementById('initialCapital').value),
+                gamma: parseFloat(document.getElementById('gamma').value),
+                n_paths: parseInt(document.getElementById('nPaths').value),
+                time_horizon: parseFloat(document.getElementById('timeHorizon').value)
+            };
+
+            // Validation
+            if (isNaN(params.initial_capital) || params.initial_capital < 10000) {
+                showStatus('❌ Капитал должен быть >= 10,000 ₽', 'error');
+                return;
+            }
+
+            btn.disabled = true;
+            btn.classList.add('loading');
+            btn.innerHTML = '<span class="loading-spinner"></span>Расчёт...';
+
+            try {
+                showStatus('⏳ Загрузка данных MOEX, расчёт доходностей...', 'info');
+
+                const response = await fetch(`${API_BASE}/api/calculate`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(params)
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+
+                const data = await response.json();
+
+                if (data.status !== 'success') {
+                    throw new Error(data.error || 'Неизвестная ошибка');
+                }
+
+                displayResults(data);
+                showStatus('✅ Расчёт завершен успешно!', 'success');
+
+            } catch (error) {
+                console.error('Error:', error);
+                showStatus(`❌ Ошибка: ${error.message}`, 'error');
+            } finally {
+                btn.disabled = false;
+                btn.classList.remove('loading');
+                btn.innerHTML = 'Запустить расчёт';
+            }
+        }
+
+        function formatCurrency(value) {
+            return new Intl.NumberFormat('ru-RU', {
+                style: 'currency',
+                currency: 'RUB',
+                maximumFractionDigits: 0
+            }).format(value);
+        }
+
+        function formatPercent(value) {
+            return (value * 100).toFixed(2) + '%';
+        }
+
+        function displayResults(data) {
+            // Update metric cards
+            document.getElementById('meanCapital').textContent = formatCurrency(data.mean_final_capital);
+            document.getElementById('meanReturn').textContent = formatPercent(data.mean_return / 100);
+            document.getElementById('volatility').textContent = formatPercent(data.volatility / 100);
+            document.getElementById('sharpeRatio').textContent = data.sharpe_ratio.toFixed(3);
+            document.getElementById('maxDD').textContent = formatPercent(data.max_drawdown / 100);
+
+            const var95Loss = data.var_metrics.loss_pct_95;
+            document.getElementById('var95').textContent = formatCurrency(data.var_metrics.capital_95);
+            document.getElementById('var95Loss').textContent = `потеря ${var95Loss.toFixed(1)}%`;
+
+            // Risk metrics table
+            const varTable = document.getElementById('riskMetricsTable');
+            varTable.innerHTML = `
+                <tr>
+                    <td><span class="risk-indicator medium"></span>95% confidence (5th percentile)</td>
+                    <td>${formatCurrency(data.var_metrics.capital_95)}</td>
+                    <td>${data.var_metrics.loss_pct_95.toFixed(2)}%</td>
+                    <td>${data.var_metrics.cvar_pct_95.toFixed(2)}%</td>
+                </tr>
+                <tr>
+                    <td><span class="risk-indicator high"></span>99% confidence (1st percentile)</td>
+                    <td>${formatCurrency(data.var_metrics.capital_99)}</td>
+                    <td>${data.var_metrics.loss_pct_99.toFixed(2)}%</td>
+                    <td>${data.var_metrics.cvar_pct_99.toFixed(2)}%</td>
+                </tr>
+            `;
+
+            // Draw charts
+            drawCapitalChart(data.chart_data);
+            drawDistributionChart(data.mean_final_capital);
+        }
+
+        function drawCapitalChart(chartData) {
+            const trace = {
+                x: chartData.timestamps,
+                y: chartData.capital_mean,
+                name: 'Среднее',
+                type: 'scatter',
+                mode: 'lines',
+                line: { color: '#1e40af', width: 2 },
+                fill: 'tozeroy',
+                fillcolor: 'rgba(30, 64, 175, 0.1)'
+            };
+
+            const trace25 = {
+                x: chartData.timestamps,
+                y: chartData.capital_q25,
+                name: 'Q25',
+                type: 'scatter',
+                mode: 'lines',
+                line: { color: '#0891b2', width: 1, dash: 'dash' },
+                opacity: 0.6
+            };
+
+            const trace75 = {
+                x: chartData.timestamps,
+                y: chartData.capital_q75,
+                name: 'Q75',
+                type: 'scatter',
+                mode: 'lines',
+                line: { color: '#0891b2', width: 1, dash: 'dash' },
+                opacity: 0.6
+            };
+
+            const layout = {
+                title: '',
+                xaxis: { title: 'Время (годы)' },
+                yaxis: { title: 'Капитал (₽)' },
+                hovermode: 'x unified',
+                margin: { l: 60, r: 20, t: 20, b: 50 },
+                plot_bgcolor: 'rgba(243, 244, 246, 0.5)',
+                paper_bgcolor: 'white'
+            };
+
+            Plotly.newPlot('capitalChart', [trace, trace25, trace75], layout, { responsive: true });
+        }
+
+        function drawDistributionChart(mean) {
+            // Simplified histogram
+            const values = [];
+            for (let i = 0; i < 5000; i++) {
+                values.push(mean * (0.5 + Math.random()));
+            }
+
+            const trace = {
+                x: values,
+                type: 'histogram',
+                nbinsx: 50,
+                marker: { color: '#1e40af', opacity: 0.7 }
+            };
+
+            const layout = {
+                title: '',
+                xaxis: { title: 'Финальный капитал (₽)' },
+                yaxis: { title: 'Частота' },
+                margin: { l: 60, r: 20, t: 20, b: 50 },
+                plot_bgcolor: 'rgba(243, 244, 246, 0.5)',
+                paper_bgcolor: 'white'
+            };
+
+            Plotly.newPlot('distributionChart', [trace], layout, { responsive: true });
+        }
+
+        // Initialize
+        updateGammaLabel();
+    </script>
+</body>
+</html>

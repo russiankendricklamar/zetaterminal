@@ -1,0 +1,11 @@
+fastapi
+uvicorn
+pandas
+numpy
+scipy
+requests
+arch
+scikit-learn
+matplotlib
+seaborn
+python-multipart
