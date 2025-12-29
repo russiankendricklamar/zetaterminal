@@ -25,7 +25,7 @@ def calculate_returns(priced_df: pd.DataFrame) -> Tuple[pd.DataFrame, pd.DataFra
             returns.loc[extreme_days, ticker] = np.nan
 
     # Заполняем пустоты после удаления сплитов и удаляем строки с NaN
-    returns = returns.ffill().dropna()
+    returns = returns.dropna(axis=0, how='any')
 
     # 3. Настройка параметров аннуализации
     TRADING_DAYS = 252
