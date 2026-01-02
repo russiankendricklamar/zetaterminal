@@ -139,4 +139,3 @@ const toggleDetails = () => {
   100% { transform: scale(1) translateY(0); opacity: 1; }
 }
 </style>
-
