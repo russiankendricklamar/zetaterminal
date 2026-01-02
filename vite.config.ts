@@ -4,7 +4,7 @@ import vue from '@vitejs/plugin-vue'
 
 export default defineConfig({
   base: '/stochastic-dashbord-v1/',
-  plugins: [vue()],            // ← оставляем только vue()
+  plugins: [vue()],  // ← только одна строка plugins, только vue()
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url))
