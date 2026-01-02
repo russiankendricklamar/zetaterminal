@@ -3,6 +3,8 @@ import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
 
 export default defineConfig({
+  base: '/stochastic-dashbord-v1/',
+  plugins: [react()], 
   plugins: [vue()],
   resolve: {
     alias: {
