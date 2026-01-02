@@ -54,3 +54,4 @@ export const useTaskStore = defineStore('tasks', () => {
 
   return { tasks, addTask, updateProgress, failTask }
 })
+

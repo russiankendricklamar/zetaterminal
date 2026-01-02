@@ -211,3 +211,4 @@ const generateReport = () => {
 .footer-line { height: 1px; background: rgba(255,255,255,0.1); margin-bottom: 8px; }
 .footer-info { display: flex; justify-content: space-between; font-size: 9px; color: rgba(255,255,255,0.2); }
 </style>
+

@@ -99,3 +99,5 @@ export const usePortfolioStore = defineStore('portfolio', () => {
     // ... экспортируйте методы fetch ...
   }
 })
+
+

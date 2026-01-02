@@ -448,3 +448,4 @@ const runAllStressTests = async () => {
   .scenarios-grid, .dashboard-grid, .impact-metrics-grid, .stats-grid-row { grid-template-columns: 1fr; }
 }
 </style>
+

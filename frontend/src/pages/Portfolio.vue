@@ -583,3 +583,4 @@ const getMockHistogram = (symbol: string) => {
   .col-side { position: static; max-height: none; overflow: visible; }
 }
 </style>
+

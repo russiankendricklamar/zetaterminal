@@ -396,3 +396,5 @@ const alerts = ref([
     .hero-section { flex-direction: column; align-items: flex-start; gap: 12px; }
 }
 </style>
+
+
