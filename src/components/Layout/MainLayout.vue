@@ -120,7 +120,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
-import Sidebar from '@/components/layout/Sidebar.vue'
+import Sidebar from '@/components/Layout/Sidebar.vue'
 import TaskWidget from '@/components/common/TaskWidget.vue' // <-- Импорт виджета задач
 
 const route = useRoute()
