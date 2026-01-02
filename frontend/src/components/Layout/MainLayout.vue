@@ -296,4 +296,3 @@ onMounted(() => {
   .actions-group { justify-content: flex-end; }
 }
 </style>
-
