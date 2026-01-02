@@ -448,3 +448,42 @@ async def batch_monte_carlo_endpoint(request: BatchMonteCarloRequest):
             status_code=400
         )
 
+
+# ============================================================================
+# STRESS TEST ENDPOINT
+# ============================================================================
+
+class StressTestRequest(BaseModel):
+    mu: List[float]
+    sigma: List[List[float]]
+    weights: List[float]
+    X_0: float
+    T: float
+    n_paths: int = 5000
+
+@app.post("/api/stress-test")
+async def stress_test_endpoint(request: StressTestRequest):
+    """Stress test scenarios"""
+    try:
+        from quantitative_engine.block_7_stress_tests import stress_test_scenarios
+        
+        mu = np.array(request.mu)
+        sigma = np.array(request.sigma)
+        weights = np.array(request.weights)
+        
+        logger.info(f"Stress tests for {len(request.mu)} assets")
+        
+        results = stress_test_scenarios(mu, sigma, weights, request.X_0, request.T, request.n_paths)
+        
+        return JSONResponse(content={
+            "status": "success",
+            "results": results
+        })
+        
+    except Exception as e:
+        logger.error(f"Stress test error: {str(e)}", exc_info=True)
+        return JSONResponse(
+            content={"status": "error", "message": str(e)},
+            status_code=400
+        )
+
