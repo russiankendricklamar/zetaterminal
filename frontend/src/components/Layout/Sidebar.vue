@@ -716,4 +716,3 @@ onUnmounted(() => clearInterval(timer))
 .val.connected { color: #4ade80; }
 .val.mono { font-family: monospace; }
 </style>
-
