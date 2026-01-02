@@ -702,4 +702,3 @@ const triggerExplosion = (path: string) => {
   }
 }
 </style>
-
