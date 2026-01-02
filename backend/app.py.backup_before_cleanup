@@ -272,6 +272,66 @@ async def get_diagnostics():
         }
     }
 
+@app.post("/api/monte-carlo")
+async def run_monte_carlo(
+    n_paths: int = Query(10000),
+    steps: int = Query(252),
+    model: str = Query("levy")
+):
+    """Запустить Monte Carlo симуляцию"""
+    def simulate_levy_paths(n_paths, steps, s0=100, mu=0.05, sigma=0.2, alpha=1.7):
+        paths = np.zeros((n_paths, steps))
+        paths[:, 0] = s0
+        
+        dt = 1.0 / steps
+        for i in range(1, steps):
+            if model == "levy":
+                shocks = np.random.standard_cauchy(n_paths) * sigma * np.sqrt(dt)
+            else:
+                shocks = np.random.normal(0, sigma * np.sqrt(dt), n_paths)
+            
+            returns = (mu - 0.5 * sigma**2) * dt + shocks
+            paths[:, i] = paths[:, i-1] * np.exp(returns)
+        
+        return paths
+
+    import time
+    start = time.time()
+    
+    paths = simulate_levy_paths(n_paths, steps, s0=100, mu=0.05, sigma=0.2)
+    final_prices = paths[:, -1]
+    
+    # Вычисления
+    mean_price = float(np.mean(final_prices))
+    std_price = float(np.std(final_prices))
+    var_95 = float(np.percentile(final_prices, 5))
+    var_99 = float(np.percentile(final_prices, 1))
+    quantiles = {
+        "p01": float(np.percentile(final_prices, 1)),
+        "p05": float(np.percentile(final_prices, 5)),
+        "p25": float(np.percentile(final_prices, 25)),
+        "p50": float(np.percentile(final_prices, 50)),
+        "p75": float(np.percentile(final_prices, 75)),
+        "p95": float(np.percentile(final_prices, 95)),
+        "p99": float(np.percentile(final_prices, 99)),
+    }
+    
+    computation_time_ms = int((time.time() - start) * 1000)
+    
+    return {
+        "n_paths": n_paths,
+        "steps": steps,
+        "model": model,
+        "results": {
+            "mean": mean_price,
+            "std": std_price,
+            "var_95": var_95,
+            "var_99": var_99,
+            "quantiles": quantiles
+        },
+        "computation_time_ms": computation_time_ms
+    }
+
 @app.get("/api/backtest-results")
 async def get_backtest_results(
     start_date: str = Query("2024-01-01"),
@@ -340,14 +400,58 @@ if __name__ == "__main__":
     uvicorn.run("app:app", host="127.0.0.1", port=8000, reload=True)
 
 # ============ MONTE CARLO ENDPOINT ============
+@app.post("/api/monte-carlo")
+def monte_carlo_simulation(payload: dict):
+    """
+    POST /api/monte-carlo
+    Body: {
+        "mu": [0.08, 0.12, 0.10],
+        "sigma": [[0.0225, ...], [...], [...]],
+        "weights": [0.5, 0.3, 0.2],
+        "X_0": 1000000,
+        "T": 1.0,
+        "n_paths": 10000
+    }
+    """
+    try:
+        from quantitative_engine.block_7_montecarlo import simulate_montecarlo
+        
+        mu = np.array(payload['mu'])
+        sigma = np.array(payload['sigma'])
+        weights = np.array(payload['weights'])
+        X_0 = payload['X_0']
+        T = payload['T']
+        n_paths = payload.get('n_paths', 5000)
+        
+        X_paths, t_grid, asset_dict = simulate_montecarlo(
+            mu=mu, sigma=sigma, weights=weights, X_0=X_0, 
+            T=T, n_paths=n_paths
+        )
+        
+        # Compute stats
+        final_vals = X_paths[:, -1]
+        
+        return {
+            "status": "success",
+            "stats": {
+                "mean": float(final_vals.mean()),
+                "std": float(final_vals.std()),
+                "var_95": float(np.percentile(final_vals, 5)),
+                "var_99": float(np.percentile(final_vals, 1)),
+                "max_drawdown": float((1 - X_paths.min(axis=1) / X_0).max())
+            },
+            "paths_shape": X_paths.shape
+        }
+    except Exception as e:
+        return {"status": "error", "message": str(e)}, 400
+
 
 # ============================================================================
-# MONTE CARLO ENDPOINT (SINGLE, CLEAN VERSION)
+# MONTE CARLO ENDPOINT
 # ============================================================================
 
-from typing import List
 from pydantic import BaseModel
-from fastapi.responses import JSONResponse
+from typing import List
 
 class MonteCarloRequest(BaseModel):
     mu: List[float]
@@ -357,17 +461,18 @@ class MonteCarloRequest(BaseModel):
     T: float
     n_paths: int = 5000
 
-@app.post("/api/monte-carlo")
+class MonteCarloResponse(BaseModel):
+    status: str
+    stats: dict
+
+@app.post("/api/monte-carlo", response_model=MonteCarloResponse)
 async def monte_carlo_endpoint(request: MonteCarloRequest):
-    """Monte Carlo симуляция портфеля с Numba ускорением"""
     try:
         from quantitative_engine.block_7_montecarlo import simulate_montecarlo
         
         mu = np.array(request.mu)
         sigma = np.array(request.sigma)
         weights = np.array(request.weights)
-        
-        logger.info(f"MC: {request.n_paths} paths, T={request.T}")
         
         X_paths, t_grid, asset_dict = simulate_montecarlo(
             mu=mu, sigma=sigma, weights=weights, 
@@ -376,30 +481,18 @@ async def monte_carlo_endpoint(request: MonteCarloRequest):
         
         final_vals = X_paths[:, -1]
         
-        # Санитизация
-        mean_val = float(np.nanmean(final_vals))
-        std_val = float(np.nanstd(final_vals))
-        var95 = float(np.nanpercentile(final_vals, 5))
-        var99 = float(np.nanpercentile(final_vals, 1))
-        max_dd = float((1 - X_paths.min(axis=1) / request.X_0).max())
-        
-        result = {
-            "status": "success",
-            "stats": {
-                "mean": mean_val,
-                "std": std_val,
-                "var_95": var95,
-                "var_99": var99,
-                "max_drawdown": max_dd
+        return MonteCarloResponse(
+            status="success",
+            stats={
+                "mean": float(final_vals.mean()),
+                "std": float(final_vals.std()),
+                "var_95": float(np.percentile(final_vals, 5)),
+                "var_99": float(np.percentile(final_vals, 1)),
+                "max_drawdown": float((1 - X_paths.min(axis=1) / request.X_0).max()),
+                "paths_shape": X_paths.shape
             }
-        }
-        
-        return JSONResponse(content=result)
-        
-    except Exception as e:
-        logger.error(f"MC error: {str(e)}", exc_info=True)
-        return JSONResponse(
-            content={"status": "error", "message": str(e)},
-            status_code=400
         )
+    except Exception as e:
+        logger.error(f"MC error: {str(e)}")
+        raise HTTPException(status_code=400, detail=str(e))
 

@@ -9,3 +9,4 @@ scikit-learn
 matplotlib
 seaborn
 python-multipart
+numba>=0.56.0
