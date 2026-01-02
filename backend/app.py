@@ -2,6 +2,9 @@ import numpy as np
 import logging
 import asyncio
 from datetime import datetime, timedelta
+from pydantic import BaseModel
+from typing import List, Dict
+from fastapi.responses import JSONResponse
 
 from fastapi import FastAPI, HTTPException, WebSocket, Query
 from fastapi.middleware.cors import CORSMiddleware
@@ -37,6 +40,21 @@ logger = logging.getLogger(__name__)
 @app.get("/health")
 async def health_check():
     return {"status": "ok", "message": "Risk Engine is running"}
+
+class MonteCarloRequest(BaseModel):
+    mu: List[float]
+    sigma: List[List[float]]
+    weights: List[float]
+    X_0: float
+    T: float
+    n_paths: int = 5000
+
+
+class BatchMonteCarloRequest(BaseModel):
+    scenarios: List[Dict]
+    n_paths: int = 5000
+
+
 
 @app.post("/api/calculate", response_model=CalculationResponse)
 async def calculate_portfolio(request: CalculationRequest):
@@ -349,14 +367,6 @@ from typing import List
 from pydantic import BaseModel
 from fastapi.responses import JSONResponse
 
-class MonteCarloRequest(BaseModel):
-    mu: List[float]
-    sigma: List[List[float]]
-    weights: List[float]
-    X_0: float
-    T: float
-    n_paths: int = 5000
-
 @app.post("/api/monte-carlo")
 async def monte_carlo_endpoint(request: MonteCarloRequest):
     """Monte Carlo с путями для визуализации"""
@@ -402,6 +412,37 @@ async def monte_carlo_endpoint(request: MonteCarloRequest):
         
     except Exception as e:
         logger.error(f"MC error: {str(e)}", exc_info=True)
+        return JSONResponse(
+            content={"status": "error", "message": str(e)},
+            status_code=400
+        )
+
+
+# ============================================================================
+# BATCH MONTE CARLO ENDPOINT
+# ============================================================================
+
+@app.post("/api/monte-carlo/batch")
+async def batch_monte_carlo_endpoint(request: BatchMonteCarloRequest):
+    """Batch MC симуляция для нескольких портфелей"""
+    try:
+        from quantitative_engine.block_7_montecarlo_batch import batch_monte_carlo
+        
+        logger.info(f"Batch MC: {len(request.scenarios)} scenarios, {request.n_paths} paths each")
+        
+        results = await batch_monte_carlo(request.scenarios, request.n_paths)
+        
+        return JSONResponse(content={
+            "status": "success",
+            "results": results,
+            "metadata": {
+                "n_scenarios": len(request.scenarios),
+                "n_paths": request.n_paths
+            }
+        })
+        
+    except Exception as e:
+        logger.error(f"Batch MC error: {str(e)}", exc_info=True)
         return JSONResponse(
             content={"status": "error", "message": str(e)},
             status_code=400
