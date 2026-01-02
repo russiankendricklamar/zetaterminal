@@ -2,6 +2,7 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import MainLayout from '@/components/Layout/MainLayout.vue'
 
+
 import Home from '@/pages/Home.vue'
 import MainDashboard from '@/pages/MainDashboard.vue'
 import Portfolio from '@/pages/Portfolio.vue'
@@ -14,7 +15,10 @@ import Settings from '@/pages/Settings.vue'
 import RegimeAnalysis from '@/pages/RegimeAnalysis.vue'
 import RegimeDetails from '@/pages/RegimeDetails.vue'
 import YieldAnalysis from '@/pages/YieldAnalysis.vue'
+import BondValuation from '@/pages/BondValuation.vue'
+import ZCYCViewer from '@/pages/ZCYCViewer.vue'
 import NotFound from '@/pages/NotFound.vue'
+
 
 const routes = [
   // HOME — без MainLayout, чистый фуллскрин
@@ -24,6 +28,7 @@ const routes = [
     component: Home,
     meta: { title: 'Главная', icon: '🏠', bare: true }
   },
+
 
   // Остальное — под MainLayout (с сайдбаром и хедером)
   {
@@ -98,7 +103,32 @@ const routes = [
         name: 'Режимная аналитика',
         meta: { title: 'HMM Аналитика', icon: '🔬' }
       },
-      // pricing‑маршруты, если уже добавил
+
+      // ====================================================================
+      // FIXED INCOME & DERIVATIVES PRICING
+      // ====================================================================
+
+      {
+        path: 'bond-valuation',
+        component: BondValuation,
+        name: 'Доходный подход (DCF)',
+        meta: { title: 'Справедливая стоимость облигаций', icon: '💰' }
+      },
+
+      {
+        path: 'zcyc-viewer',
+        component: ZCYCViewer,
+        name: 'КБД (Zero-Coupon Yield Curve)',
+        meta: { title: 'Кривая бескупонных доходностей', icon: '📈' }
+      },
+      {
+        path: 'bond-report',
+        component: () => import('@/pages/BondReport.vue'),
+        name: 'Отчет по облигациям',
+        meta: { title: 'Отчет об оценке облигаций', icon: '📄' }
+      },
+
+      // Закомментированные маршруты для будущих расширений:
       // {
       //   path: 'pricing/options',
       //   component: () => import('@/pages/OptionPricing.vue'),
@@ -118,12 +148,6 @@ const routes = [
       //   meta: { title: 'Поверхность волатильности', icon: '🌋' }
       // },
       // {
-      //   path: 'pricing/bonds',
-      //   component: () => import('@/pages/BondPricing.vue'),
-      //   name: 'BondPricing',
-      //   meta: { title: 'Справедливая стоимость облигаций', icon: '💰' }
-      // },
-      // {
       //   path: 'pricing/forwards',
       //   component: () => import('@/pages/ForwardPricing.vue'),
       //   name: 'ForwardPricing',
@@ -138,6 +162,7 @@ const routes = [
     ]
   },
 
+
   {
     path: '/:pathMatch(.*)*',
     name: 'NotFound',
@@ -146,15 +171,18 @@ const routes = [
   }
 ]
 
+
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes
 })
+
 
 router.beforeEach((to, from, next) => {
   const title = (to.meta?.title as string) || 'QuantPro'
   document.title = `${title} | Risk Management`
   next()
 })
+
 
 export default router

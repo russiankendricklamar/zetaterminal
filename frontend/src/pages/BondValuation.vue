@@ -126,10 +126,10 @@
 
           <div class="info-row">
             <span class="label">Цена в % от номинала:</span>
-            <span class="value">{{ formatNumber(results.pricePercent, 3) }}%</span>
+            <span class="value">{{ formatNumber(results.pricePercent, 2) }}%</span>
           </div>
           <div class="info-row">
-            <span class="label">Дюрация:</span>
+            <span class="label">Дюрация Макалея:</span>
             <span class="value">{{ formatNumber(results.duration, 4) }} лет</span>
           </div>
         </div>
@@ -578,6 +578,3 @@ onMounted(() => {
   }
 }
 </style>
-
-
-

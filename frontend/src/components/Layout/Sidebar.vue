@@ -19,6 +19,9 @@
 
   <!-- Sliding Sidebar Panel -->
   <aside class="sidebar" :class="{ 'sidebar--open': isSidebarOpen }">
+    <!-- Lava Lamp Background (3 blobs) -->
+    <div class="sidebar-lava-layer"></div>
+
     <div class="sidebar-header">
       <span class="app-logo">Quantitative Analitics</span>
       <button class="close-btn" @click="closeSidebar">✕</button>
@@ -171,6 +174,65 @@
         </div>
       </div>
 
+      <!-- ✅ Bond Fair Value — АКТИВНАЯ СЕКЦИЯ ПОСЛЕ QUANT -->
+      <div class="tool-group">
+        <button
+          class="tool-header"
+          @click="toggleTool('bonds')"
+          :class="{ expanded: expandedTools.bonds }"
+        >
+           <!-- GREEN SUPERNOVA (для активной секции) -->
+          <div class="glossy-icon">
+            <div class="supernova green"></div>
+          </div>
+          <div class="tool-info">
+            <span class="tool-title">Справедливая стоимость облигаций</span>
+            <span class="tool-subtitle">Доходный подход (DCF)</span>
+          </div>
+          <div class="chevron">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="6 9 12 15 18 9" />
+            </svg>
+          </div>
+        </button>
+        <div
+          class="tool-content-wrapper"
+          :style="{ maxHeight: expandedTools.bonds ? '200px' : '0' }"
+        >
+          <div class="tool-content">
+            <!-- Оценка облигаций -->
+            <router-link 
+              to="/bond-valuation" 
+              class="nav-item"
+              :class="{ active: isActive('/bond-valuation') }"
+              @click="closeSidebar"
+            >
+              <span class="nav-label">Оценка облигаций</span>
+            </router-link>
+            
+            <!-- КБД (Zero-Coupon Yield Curve) -->
+            <router-link 
+              to="/zcyc-viewer" 
+              class="nav-item"
+              :class="{ active: isActive('/zcyc-viewer') }"
+              @click="closeSidebar"
+            >
+              <span class="nav-label">Кривая бескупонной доходности</span>
+            </router-link>
+
+            <!-- ✨ Отчет по облигациям -->
+            <router-link 
+              to="/bond-report" 
+              class="nav-item"
+              :class="{ active: isActive('/bond-report') }"
+              @click="closeSidebar"
+            >
+              <span class="nav-label">Отчет об оценке</span>
+            </router-link>
+          </div>
+        </div>
+      </div>
+
       <!-- =========================================================
            BELOW: UNAVAILABLE / SOON BLOCKS
            ========================================================= -->
@@ -276,40 +338,6 @@
         </div>
       </div>
 
-      <!-- Bond Fair Value -->
-      <div class="tool-group">
-        <button
-          class="tool-header"
-          @click="toggleTool('bonds')"
-          :class="{ expanded: expandedTools.bonds }"
-        >
-           <!-- ORANGE SUPERNOVA -->
-          <div class="glossy-icon">
-            <div class="supernova orange"></div>
-          </div>
-          <div class="tool-info">
-            <span class="tool-title">Справедливая стоимость облигаций</span>
-            <span class="tool-subtitle">Доходный подход (DCF)</span>
-          </div>
-          <div class="chevron">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <polyline points="6 9 12 15 18 9" />
-            </svg>
-          </div>
-        </button>
-        <div
-          class="tool-content-wrapper"
-          :style="{ maxHeight: expandedTools.bonds ? '100px' : '0' }"
-        >
-          <div class="tool-content">
-            <router-link to="/pricing/bonds" class="nav-item coming-soon">
-              <span class="nav-label">Оценка облигаций</span>
-              <span class="nav-soon">SOON</span>
-            </router-link>
-          </div>
-        </div>
-      </div>
-
       <!-- Forward Pricing -->
       <div class="tool-group">
         <button
@@ -406,11 +434,12 @@ const expandedTools = reactive({
   portfolio: true,
   risk: false,
   quant: false,
+  // ACTIVE TOOLS
+  bonds: false,
   // SOON blocks
   options: false,
   swaps: false,
   vol: false,
-  bonds: false,
   forwards: false,
   margin: false,
 })
@@ -462,9 +491,54 @@ onUnmounted(() => clearInterval(timer))
 </script>
 
 <style scoped>
-/* --------------------------------------
-   GLOSSY ICON CONTAINER
-   -------------------------------------- */
+/* ===== LAVA LAMP BACKGROUND ===== */
+.sidebar-lava-layer {
+  position: absolute;
+  inset: 0;
+  background: 
+    radial-gradient(circle 80px at 30% 20%, rgba(99, 102, 241, 0.15), transparent 60%),
+    radial-gradient(circle 60px at 60% 60%, rgba(34, 211, 238, 0.12), transparent 50%),
+    radial-gradient(circle 70px at 20% 80%, rgba(168, 85, 247, 0.12), transparent 55%);
+  filter: blur(30px);
+  pointer-events: none;
+  z-index: 1;
+  animation: lava-drift 12s ease-in-out infinite;
+}
+
+@keyframes lava-drift {
+  0% {
+    background: 
+      radial-gradient(circle 80px at 30% 20%, rgba(99, 102, 241, 0.15), transparent 60%),
+      radial-gradient(circle 60px at 60% 60%, rgba(34, 211, 238, 0.12), transparent 50%),
+      radial-gradient(circle 70px at 20% 80%, rgba(168, 85, 247, 0.12), transparent 55%);
+  }
+  25% {
+    background: 
+      radial-gradient(circle 85px at 35% 25%, rgba(99, 102, 241, 0.18), transparent 60%),
+      radial-gradient(circle 65px at 55% 65%, rgba(34, 211, 238, 0.14), transparent 50%),
+      radial-gradient(circle 75px at 25% 75%, rgba(168, 85, 247, 0.14), transparent 55%);
+  }
+  50% {
+    background: 
+      radial-gradient(circle 75px at 25% 30%, rgba(99, 102, 241, 0.13), transparent 60%),
+      radial-gradient(circle 70px at 65% 55%, rgba(34, 211, 238, 0.11), transparent 50%),
+      radial-gradient(circle 65px at 15% 70%, rgba(168, 85, 247, 0.13), transparent 55%);
+  }
+  75% {
+    background: 
+      radial-gradient(circle 82px at 32% 22%, rgba(99, 102, 241, 0.16), transparent 60%),
+      radial-gradient(circle 62px at 58% 62%, rgba(34, 211, 238, 0.13), transparent 50%),
+      radial-gradient(circle 72px at 22% 78%, rgba(168, 85, 247, 0.13), transparent 55%);
+  }
+  100% {
+    background: 
+      radial-gradient(circle 80px at 30% 20%, rgba(99, 102, 241, 0.15), transparent 60%),
+      radial-gradient(circle 60px at 60% 60%, rgba(34, 211, 238, 0.12), transparent 50%),
+      radial-gradient(circle 70px at 20% 80%, rgba(168, 85, 247, 0.12), transparent 55%);
+  }
+}
+
+/* ===== GLOSSY ICON CONTAINER ===== */
 .glossy-icon {
   width: 32px;
   height: 32px;
@@ -480,16 +554,11 @@ onUnmounted(() => clearInterval(timer))
   flex-shrink: 0;
 }
 
-/* Hover: subtle lift & brighter border */
 .tool-header:hover .glossy-icon {
   transform: translateY(-1px);
   border-color: rgba(255,255,255,0.3);
 }
 
-/* 
-   THE "LIGHT BEAM" / WOBBLE 
-   (Background ambience)
-*/
 .glossy-icon::after {
   content: "";
   position: absolute;
@@ -502,7 +571,7 @@ onUnmounted(() => clearInterval(timer))
   opacity: 0;
   pointer-events: none;
   transition: opacity 0.4s ease;
-  z-index: 1; /* Below the supernova */
+  z-index: 1;
 }
 .tool-header:hover .glossy-icon::after {
   opacity: 0.15;
@@ -515,27 +584,20 @@ onUnmounted(() => clearInterval(timer))
   100% { transform: translate(0, 0) scale(1); }
 }
 
-/* --------------------------------------
-   SUPERNOVA (The Glowing Core)
-   -------------------------------------- */
+/* ===== SUPERNOVA (The Glowing Core) ===== */
 .supernova {
-  width: 12px; /* Increased from 6px */
+  width: 12px;
   height: 12px;
   border-radius: 50%;
-  
-  /* IRIDESCENT CORE: Pearl-like shifting gradient */
   background: linear-gradient(135deg, #ffffff 0%, #e0f2fe 33%, #faf5ff 66%, #ffffff 100%);
   background-size: 200% 200%;
-  
   position: relative;
   z-index: 2;
   transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
-  
-  /* Pulse + Shimmer animation */
   animation: star-pulse 3s infinite ease-in-out, shimmer 3s infinite linear;
 }
 
-/* COLOR VARIANTS (The Normal State Glow) */
+/* COLOR VARIANTS */
 .supernova.blue {
   box-shadow: 0 0 12px 2px rgba(59, 130, 246, 0.6);
 }
@@ -548,8 +610,10 @@ onUnmounted(() => clearInterval(timer))
 .supernova.orange {
   box-shadow: 0 0 12px 2px rgba(249, 115, 22, 0.6);
 }
+.supernova.green {
+  box-shadow: 0 0 12px 2px rgba(34, 197, 94, 0.6);
+}
 
-/* Home Page Dot (Adjusted to match iridescent style but larger) */
 .supernova-home {
   width: 18px; height: 18px; border-radius: 50%;
   background: linear-gradient(135deg, #22d3ee, #ffffff, #6366f1);
@@ -558,16 +622,11 @@ onUnmounted(() => clearInterval(timer))
   animation: star-pulse 4s infinite ease-in-out, shimmer 4s infinite linear;
 }
 
-/* 
-   INTERACTION: FLARE UP 
-   Brighter halo and faster shimmer on hover
-*/
 .tool-header:hover .supernova {
   transform: scale(1.15);
-  animation-duration: 1.5s; /* Speed up pulse */
+  animation-duration: 1.5s;
 }
 
-/* Intense Glows on Hover (Double shadow for depth) */
 .tool-header:hover .supernova.blue {
   box-shadow: 0 0 20px 6px #60a5fa, 0 0 40px 12px rgba(59, 130, 246, 0.4);
 }
@@ -580,6 +639,9 @@ onUnmounted(() => clearInterval(timer))
 .tool-header:hover .supernova.orange {
   box-shadow: 0 0 20px 6px #fb923c, 0 0 40px 12px rgba(249, 115, 22, 0.4);
 }
+.tool-header:hover .supernova.green {
+  box-shadow: 0 0 20px 6px #4ade80, 0 0 40px 12px rgba(34, 197, 94, 0.4);
+}
 
 @keyframes star-pulse {
   0%, 100% { opacity: 0.85; transform: scale(1); }
@@ -591,10 +653,7 @@ onUnmounted(() => clearInterval(timer))
   100% { background-position: 200% 50%; }
 }
 
-
-/* --------------------------------------
-   EXISTING SIDEBAR STYLES
-   -------------------------------------- */
+/* ===== SIDEBAR STYLES ===== */
 .sidebar-tab {
   position: fixed; top: 0; left: 0; bottom: 0; width: 64px; z-index: 1100;
   background: rgba(15, 15, 30, 0.6); border-right: 1px solid rgba(255, 255, 255, 0.08);
@@ -616,19 +675,22 @@ onUnmounted(() => clearInterval(timer))
   backdrop-filter: blur(40px) saturate(180%); display: flex; flex-direction: column;
   transform: translateX(-100%); transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
   box-shadow: 20px 0 50px rgba(0, 0, 0, 0.5);
+  overflow: hidden;
 }
 .sidebar.sidebar--open { transform: translateX(0); }
 
 .sidebar-header {
   height: 64px; display: flex; align-items: center; justify-content: space-between;
   padding: 0 20px; border-bottom: 1px solid rgba(255, 255, 255, 0.05); flex-shrink: 0;
+  position: relative;
+  z-index: 10;
 }
 .app-logo { font-size: 16px; font-weight: 700; color: #fff; letter-spacing: 0.05em; }
 .highlight { color: #00d9ff; }
 .close-btn { background: none; border: none; color: rgba(255, 255, 255, 0.5); font-size: 18px; cursor: pointer; }
 .close-btn:hover { color: #fff; }
 
-.sidebar-tools { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 12px; }
+.sidebar-tools { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 12px; position: relative; z-index: 5; }
 .custom-scroll { scrollbar-width: thin; scrollbar-color: rgba(255, 255, 255, 0.1) transparent; }
 .custom-scroll::-webkit-scrollbar { width: 4px; }
 .custom-scroll::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.1); border-radius: 2px; }
@@ -649,7 +711,6 @@ onUnmounted(() => clearInterval(timer))
 }
 .home-entry.active { border-color: #38bdf8; box-shadow: 0 18px 45px rgba(56, 189, 248, 0.45); }
 
-/* Keep Home Icon special (reusing supernova-home logic now inside CSS) */
 .home-icon {
   width: 32px; height: 32px; border-radius: 999px;
   border: 1px solid rgba(148, 163, 184, 0.7);
@@ -661,7 +722,7 @@ onUnmounted(() => clearInterval(timer))
 .home-title { font-size: 13px; font-weight: 600; }
 .home-subtitle { font-size: 11px; color: rgba(148, 163, 184, 0.9); }
 
-/* Tool Groups Container */
+/* Tool Groups */
 .tool-group {
   background: rgba(255, 255, 255, 0.03); border-radius: 12px;
   border: 1px solid rgba(255, 255, 255, 0.05);
@@ -669,7 +730,6 @@ onUnmounted(() => clearInterval(timer))
 }
 .tool-group:hover { border-color: rgba(255, 255, 255, 0.1); }
 
-/* Tool Header Button */
 .tool-header {
   width: 100%; display: flex; align-items: center; gap: 12px; padding: 12px;
   background: transparent; border: none; cursor: pointer; text-align: left;
@@ -678,16 +738,13 @@ onUnmounted(() => clearInterval(timer))
 .tool-header:hover:not(.disabled) { background: rgba(255, 255, 255, 0.05); }
 .tool-header.expanded { background: rgba(255, 255, 255, 0.02); }
 
-/* Tool Info Text */
 .tool-info { flex: 1; display: flex; flex-direction: column; gap: 2px; }
 .tool-title { font-size: 13px; font-weight: 600; color: #fff; }
 .tool-subtitle { font-size: 11px; color: rgba(255, 255, 255, 0.5); }
 
-/* Chevron */
 .chevron { color: rgba(255, 255, 255, 0.3); transition: transform 0.3s; }
 .tool-header.expanded .chevron { transform: rotate(180deg); }
 
-/* Content Wrapper */
 .tool-content-wrapper { transition: max-height 0.3s cubic-bezier(0.4, 0, 0.2, 1); overflow: hidden; }
 .tool-content {
   padding: 4px 12px 12px 12px; display: flex; flex-direction: column; gap: 2px;
@@ -707,8 +764,8 @@ onUnmounted(() => clearInterval(timer))
 .nav-soon { margin-left: auto; font-size: 9px; border: 1px solid rgba(255, 255, 255, 0.2); color: rgba(255, 255, 255, 0.5); padding: 1px 4px; border-radius: 4px; text-transform: uppercase; }
 
 /* Footer */
-.sidebar-divider { height: 1px; background: rgba(255, 255, 255, 0.05); margin: 0 20px; flex-shrink: 0; }
-.sidebar-footer { padding: 16px 20px; border-top: 1px solid rgba(255, 255, 255, 0.05); background: rgba(0, 0, 0, 0.2); flex-shrink: 0; margin-top: auto; }
+.sidebar-divider { height: 1px; background: rgba(255, 255, 255, 0.05); margin: 0 20px; flex-shrink: 0; position: relative; z-index: 10; }
+.sidebar-footer { padding: 16px 20px; border-top: 1px solid rgba(255, 255, 255, 0.05); background: rgba(0, 0, 0, 0.2); flex-shrink: 0; margin-top: auto; position: relative; z-index: 10; }
 .status-row { display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 6px; }
 .status-row:last-child { margin-bottom: 0; }
 .lbl { color: rgba(255, 255, 255, 0.4); }

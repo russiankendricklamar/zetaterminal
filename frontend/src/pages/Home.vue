@@ -37,12 +37,7 @@
         <h2 class="tools-title">Инструменты платформы</h2>
 
         <div class="tools-grid">
-          <!-- 
-            Мы заменили router-link на div с обработчиком click.
-            Добавлен класс :class="{ 'is-exploding': activeExplosion === '/portfolio' }"
-          -->
-
-          <!-- Portfolio -->
+          <!-- 1. Portfolio -->
           <div 
             class="tool-card cursor-pointer"
             :class="{ 'is-exploding': activeExplosion === '/portfolio', 'is-faded': isFaded('/portfolio') }"
@@ -59,7 +54,24 @@
             </div>
           </div>
 
-          <!-- Market Regimes -->
+          <!-- 2. Risk Management -->
+          <div 
+            class="tool-card cursor-pointer"
+            :class="{ 'is-exploding': activeExplosion === '/stress', 'is-faded': isFaded('/stress') }"
+            @click="triggerExplosion('/stress')"
+          >
+            <div class="tool-icon red">
+              <div class="supernova red"></div>
+            </div>
+            <div class="tool-body">
+              <div class="tool-name">Риск менеджмент</div>
+              <div class="tool-desc">
+                Стресс‑тесты, бэктестинг VaR, сценарный анализ портфеля.
+              </div>
+            </div>
+          </div>
+
+          <!-- 3. Market Regimes -->
           <div 
             class="tool-card cursor-pointer"
             :class="{ 'is-exploding': activeExplosion === '/regimes', 'is-faded': isFaded('/regimes') }"
@@ -72,6 +84,23 @@
               <div class="tool-name">Скрытая марковская цепь для портфелей ценных бумаг</div>
               <div class="tool-desc">
                 Скрытые состояния, матрицы переходов, стационарное распределение.
+              </div>
+            </div>
+          </div>
+
+          <!-- 4. Bonds (NO SOON TAG) -->
+          <div 
+            class="tool-card cursor-pointer"
+            :class="{ 'is-exploding': activeExplosion === '/bond-valuation', 'is-faded': isFaded('/bond-valuation') }"
+            @click="triggerExplosion('/bond-valuation')"
+          >
+            <div class="tool-icon green">
+              <div class="supernova green"></div>
+            </div>
+            <div class="tool-body">
+              <div class="tool-name">Определение справедливой стоимости облигаций (DCF)</div>
+              <div class="tool-desc">
+                Доходный подход, спреды к кривой, модифиц. дюрация, convexity.
               </div>
             </div>
           </div>
@@ -130,24 +159,6 @@
             </div>
           </div>
 
-          <!-- Bonds -->
-          <div 
-            class="tool-card cursor-pointer"
-            :class="{ 'is-exploding': activeExplosion === '/pricing/bonds', 'is-faded': isFaded('/pricing/bonds') }"
-            @click="triggerExplosion('/pricing/bonds')"
-          >
-            <div class="tool-icon green">
-              <div class="supernova green"></div>
-            </div>
-            <div class="tool-body">
-              <div class="tool-name">Определение справедливой стоимости облигаций (DCF)</div>
-              <div class="tool-tag">Soon</div>
-              <div class="tool-desc">
-                Доходный подход, спреды к кривой, модифиц. дюрация, convexity.
-              </div>
-            </div>
-          </div>
-
           <!-- Forwards -->
           <div 
             class="tool-card cursor-pointer"
@@ -180,23 +191,6 @@
               <div class="tool-tag">Soon</div>
               <div class="tool-desc">
                 Вариационная/начальная, стресс‑надбавки.
-              </div>
-            </div>
-          </div>
-
-          <!-- Risk -->
-          <div 
-            class="tool-card cursor-pointer"
-            :class="{ 'is-exploding': activeExplosion === '/stress', 'is-faded': isFaded('/stress') }"
-            @click="triggerExplosion('/stress')"
-          >
-            <div class="tool-icon red">
-              <div class="supernova red"></div>
-            </div>
-            <div class="tool-body">
-              <div class="tool-name">Риск менеджмент</div>
-              <div class="tool-desc">
-                Стресс‑тесты, бэктестинг VaR, сценарный анализ портфеля.
               </div>
             </div>
           </div>
