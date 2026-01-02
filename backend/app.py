@@ -359,9 +359,10 @@ class MonteCarloRequest(BaseModel):
 
 @app.post("/api/monte-carlo")
 async def monte_carlo_endpoint(request: MonteCarloRequest):
-    """Monte Carlo симуляция портфеля с Numba ускорением"""
+    """Monte Carlo с путями для визуализации"""
     try:
         from quantitative_engine.block_7_montecarlo import simulate_montecarlo
+        from quantitative_engine.block_7_montecarlo_analytics import extract_quantile_paths, compute_full_statistics
         
         mu = np.array(request.mu)
         sigma = np.array(request.sigma)
@@ -374,23 +375,26 @@ async def monte_carlo_endpoint(request: MonteCarloRequest):
             X_0=request.X_0, T=request.T, n_paths=request.n_paths
         )
         
-        final_vals = X_paths[:, -1]
+        # Compute stats
+        stats = compute_full_statistics(X_paths, request.X_0)
         
-        # Санитизация
-        mean_val = float(np.nanmean(final_vals))
-        std_val = float(np.nanstd(final_vals))
-        var95 = float(np.nanpercentile(final_vals, 5))
-        var99 = float(np.nanpercentile(final_vals, 1))
-        max_dd = float((1 - X_paths.min(axis=1) / request.X_0).max())
+        # Extract quantile paths for confidence intervals
+        quantile_paths = extract_quantile_paths(X_paths)
+        
+        # Time grid
+        time_grid = (t_grid * 252).tolist()  # Convert to days
         
         result = {
             "status": "success",
-            "stats": {
-                "mean": mean_val,
-                "std": std_val,
-                "var_95": var95,
-                "var_99": var99,
-                "max_drawdown": max_dd
+            "stats": stats,
+            "paths": {
+                "time_grid": time_grid,
+                "quantiles": quantile_paths
+            },
+            "metadata": {
+                "n_paths": request.n_paths,
+                "n_steps": X_paths.shape[1],
+                "T": request.T
             }
         }
         
