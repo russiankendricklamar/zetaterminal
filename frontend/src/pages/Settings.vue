@@ -6,274 +6,281 @@
     <div class="section-header">
       <div class="header-left">
         <h1 class="section-title">Настройки</h1>
-        <p class="section-subtitle">Настройки моделей и интерфейса</p>
+        <p class="section-subtitle">Конфигурация моделей и интерфейса</p>
       </div>
-      <button @click="saveSettings" class="btn btn-save" :class="{ 'has-changes': hasChanges }" :disabled="!hasChanges">
-        <span v-if="hasChanges">Сохранить изменения</span>
+      <button @click="saveSettings" class="btn-glass primary btn-save" :class="{ 'has-changes': hasChanges }" :disabled="!hasChanges">
+        <span v-if="hasChanges">Сохранить</span>
         <span v-else>Сохранено</span>
       </button>
     </div>
 
-    <div class="settings-layout">
+    <!-- Horizontal Tabs Navigation -->
+    <div class="tabs-navigation">
+      <button
+        v-for="tab in tabs"
+        :key="tab.id"
+        @click="activeTab = tab.id"
+        class="tab-item"
+        :class="{ active: activeTab === tab.id }"
+      >
+        <span class="tab-label">{{ tab.name }}</span>
+        <span v-if="tab.id === 'api' && apiError" class="badge-dot"></span>
+      </button>
+    </div>
+
+    <!-- Content Grid Layout -->
+    <div class="settings-grid">
       
-      <!-- Sidebar Navigation -->
-      <div class="settings-sidebar">
-        <div class="sidebar-menu glass-panel">
-          <button
-            v-for="tab in tabs"
-            :key="tab.id"
-            @click="activeTab = tab.id"
-            class="menu-item"
-            :class="{ active: activeTab === tab.id }"
-          >
-            <span class="menu-label">{{ tab.name }}</span>
-            <span v-if="tab.id === 'api' && apiError" class="badge-dot"></span>
-          </button>
-        </div>
-      </div>
-
-      <!-- Main Content Area -->
-      <div class="settings-content">
+      <!-- Tab: GENERAL -->
+      <transition name="fade" mode="out-in">
+      <div v-show="activeTab === 'general'" class="grid-content">
         
-        <!-- Tab: GENERAL -->
-        <div v-show="activeTab === 'general'" class="settings-view">
-          <div class="settings-block glass-panel">
-            <h3 class="block-title">Интерфейс</h3>
-            <div class="control-group">
-              <div class="control-row">
-                <label>Тема оформления</label>
-                <div class="segmented-control">
-                  <button :class="{ active: settings.general.theme === 'dark' }" @click="settings.general.theme = 'dark'">Тёмная тема</button>
-                  <button :class="{ active: settings.general.theme === 'light' }" @click="settings.general.theme = 'light'">Светлая тема</button>
-                  <button :class="{ active: settings.general.theme === 'auto' }" @click="settings.general.theme = 'auto'">Как в системе</button>
-                </div>
-              </div>
-              <div class="divider"></div>
-              <div class="control-row">
-                <label>Язык</label>
-                <div class="control-right">
-                  <select v-model="settings.general.language" class="glass-select">
-                    <option value="ru">Русский</option>
-                    <option value="en">English</option>
-                    <option value="de">Deutsch</option>
-                    <option value="ch">中國人</option>
-                    <option value="ja">日本語</option>
-                    <option value="qa">Қазақ</option>
-                  </select>
-                </div>
-              </div>
-              <div class="divider"></div>
-               <div class="control-row">
-                <label>Валюта портфеля</label>
-                <div class="control-right">
-                  <select v-model="settings.general.currency" class="glass-select">
-                    <option value="RUB">RUB</option>
-                    <option value="USD">USD</option>
-                    <option value="EUR">EUR</option>
-                    <option value="CNY">CNY</option>
-                    <option value="CHF">CHF</option>
-                    <option value="GBP">GBP</option>
-                    <option value="JPY">JPY</option>
-                    <option value="AED">AED</option>
-                    <option value="QAR">QAR</option>
-                    <option value="HKD">HKD</option>
-                  </select>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Tab: MODELS -->
-        <div v-show="activeTab === 'models'" class="settings-view">
-          <div class="settings-block glass-panel">
-            <h3 class="block-title">Оптимизация и VaR</h3>
-            <div class="control-group">
-              <div class="control-row">
-                <div class="label-group">
-                   <label>Модель оптимизации</label>
-                   <span class="sub-label">Метод расчета весов</span>
-                </div>
-                <div class="control-right">
-                  <select v-model="settings.models.portfolioModel" class="glass-select">
-                    <option value="markowitz">Markowitz (Mean-Variance)</option>
-                    <option value="black-litterman">Black-Litterman</option>
-                    <option value="risk-parity">Risk Parity</option>
-                    <option value="hrp">HRP (Hierarchical)</option>
-                  </select>
-                </div>
-              </div>
-              <div class="divider"></div>
-              <div class="control-row">
-                <div class="label-group">
-                   <label>Модель VaR</label>
-                   <span class="sub-label">Оценка хвостового риска</span>
-                </div>
-                <div class="control-right">
-                  <select v-model="settings.models.varModel" class="glass-select">
-                     <option value="historical">Историческая</option>
-                     <option value="parametric">Параметрическая</option>
-                     <option value="cornish">Cornish-Fisher</option>
-                     <option value="gpd">EVT (GPD)</option>
-                  </select>
-                </div>
-              </div>
-              <div class="divider"></div>
-              <div class="control-row">
-                <label>Confidence Level</label>
-                <div class="control-right">
-                  <select v-model="settings.models.varConfidence" class="glass-select">
-                    <option value="0.90">90%</option>
-                    <option value="0.95">95%</option>
-                    <option value="0.99">99%</option>
-                  </select>
-                </div>
+        <div class="glass-panel settings-block">
+          <h3 class="block-title">Интерфейс</h3>
+          <div class="control-group">
+            <div class="control-row">
+              <label>Тема оформления</label>
+              <div class="segmented-control">
+                <button :class="{ active: settings.general.theme === 'dark' }" @click="settings.general.theme = 'dark'">Тёмная</button>
+                <button :class="{ active: settings.general.theme === 'light' }" @click="settings.general.theme = 'light'">Светлая</button>
+                <button :class="{ active: settings.general.theme === 'auto' }" @click="settings.general.theme = 'auto'">Авто</button>
               </div>
             </div>
             
-            <h3 class="block-title mt-4">Параметры данных</h3>
-            <div class="control-group">
-               <div class="control-row">
-                 <label>Скользящее окно (Rolling Window)</label>
-                 <label class="switch">
-                    <input type="checkbox" v-model="settings.models.useRollingWindow">
-                    <span class="slider"></span>
-                 </label>
-               </div>
-               <div class="divider"></div>
-               <div class="control-row">
-                 <label>Экспоненциальное взвешивание (EWMA)</label>
-                 <label class="switch">
-                    <input type="checkbox" v-model="settings.models.exponentialWeighting">
-                    <span class="slider"></span>
-                 </label>
-               </div>
+            <div class="divider"></div>
+            
+            <div class="control-row">
+              <label>Язык интерфейса</label>
+              <div class="control-right">
+                <select v-model="settings.general.language" class="glass-select">
+                  <option value="ru">Русский</option>
+                  <option value="en">English</option>
+                  <option value="de">Deutsch</option>
+                </select>
+              </div>
+            </div>
+            
+            <div class="divider"></div>
+            
+            <div class="control-row">
+              <label>Валюта портфеля</label>
+              <div class="control-right">
+                <select v-model="settings.general.currency" class="glass-select">
+                  <option value="RUB">RUB (₽)</option>
+                  <option value="USD">USD ($)</option>
+                  <option value="EUR">EUR (€)</option>
+                  <option value="CNY">CNY (¥)</option>
+                </select>
+              </div>
             </div>
           </div>
-        </div>
-
-        <!-- Tab: RISK -->
-        <div v-show="activeTab === 'risk'" class="settings-view">
-          <div class="settings-block glass-panel">
-            <h3 class="block-title">Лимиты</h3>
-            <div class="control-group risk-limits">
-               <div class="control-row">
-                  <label>Макс. VaR портфеля</label>
-                  <div class="input-wrapper">
-                    <input type="number" v-model.number="settings.risk.maxVaR" class="glass-input">
-                    <span class="unit">%</span>
-                  </div>
-               </div>
-               <div class="divider"></div>
-               <div class="control-row">
-                  <label>Макс. концентрация (1 актив)</label>
-                  <div class="input-wrapper">
-                    <input type="number" v-model.number="settings.risk.maxConcentration" class="glass-input">
-                    <span class="unit">%</span>
-                  </div>
-               </div>
-               <div class="divider"></div>
-               <div class="control-row">
-                  <label>Мин. коэффициент Шарпа</label>
-                  <div class="input-wrapper">
-                    <input type="number" v-model.number="settings.risk.minSharpeRatio" class="glass-input" step="0.1">
-                  </div>
-               </div>
-            </div>
-
-            <h3 class="block-title mt-4">Автоматизация</h3>
-             <div class="control-group">
-               <div class="control-row">
-                 <label>Стресс-тестирование</label>
-                 <label class="switch">
-                    <input type="checkbox" v-model="settings.risk.enableStressTesting">
-                    <span class="slider"></span>
-                 </label>
-               </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Tab: API -->
-        <div v-show="activeTab === 'api'" class="settings-view">
-           
-           <!-- Cbonds API Section -->
-           <div class="settings-block glass-panel">
-              <h3 class="block-title">Cbonds API</h3>
-              <div class="control-group api-group">
-                 <div class="control-row vertical">
-                    <label>Логин</label>
-                    <input type="text" v-model="settings.api.cbondsLogin" class="glass-input full" placeholder="username@company.com">
-                 </div>
-                 <div class="divider"></div>
-                 <div class="control-row vertical">
-                    <label>Пароль</label>
-                    <input type="password" v-model="settings.api.cbondsPassword" class="glass-input full" placeholder="••••••••">
-                 </div>
-              </div>
-              <div class="status-footer">
-                  <button class="btn-xs" @click="testConnection('cbonds')">Проверить подключение</button>
-                  <span class="status-text" :class="getConnectionStatus('cbonds').class">
-                      {{ getConnectionStatus('cbonds').text }}
-                  </span>
-              </div>
-           </div>
-
-           <!-- RuData API Section -->
-           <div class="settings-block glass-panel">
-              <h3 class="block-title">RuData / Interfax</h3>
-              <div class="control-group api-group">
-                 <div class="control-row vertical">
-                    <label>Логин</label>
-                    <input type="text" v-model="settings.api.rudataLogin" class="glass-input full" placeholder="login">
-                 </div>
-                 <div class="divider"></div>
-                 <div class="control-row vertical">
-                    <label>Пароль</label>
-                    <input type="password" v-model="settings.api.rudataPassword" class="glass-input full" placeholder="••••••••">
-                 </div>
-              </div>
-              <div class="status-footer">
-                  <button class="btn-xs" @click="testConnection('rudata')">Проверить подключение</button>
-                  <span class="status-text" :class="getConnectionStatus('rudata').class">
-                      {{ getConnectionStatus('rudata').text }}
-                  </span>
-              </div>
-           </div>
-           
-           <!-- Global Providers -->
-           <div class="settings-block glass-panel">
-              <h3 class="block-title">Глобальные Провайдеры</h3>
-              <div class="control-group">
-                 <div class="control-row vertical">
-                    <label>Bloomberg API Key</label>
-                    <input type="password" v-model="settings.api.bloombergKey" placeholder="••••••••••••••••" class="glass-input full">
-                 </div>
-                 <div class="divider"></div>
-                 <div class="control-row vertical">
-                    <label>Webhook URL (Alerts)</label>
-                    <input type="text" v-model="settings.api.webhookUrl" placeholder="https://hooks.slack.com/..." class="glass-input full">
-                 </div>
-              </div>
-           </div>
-
-           <!-- Connected Services Status -->
-           <div class="settings-block glass-panel mt-4">
-              <h3 class="block-title">Статус подключений</h3>
-              <div class="services-list">
-                 <div v-for="srv in settings.connectedServices" :key="srv.id" class="service-item">
-                    <div class="srv-left">
-                       <span class="srv-name">{{ srv.name }}</span>
-                    </div>
-                    <span class="status-indicator" :class="{ connected: srv.connected }">
-                       {{ srv.connected ? 'Активно' : 'Отключено' }}
-                    </span>
-                 </div>
-              </div>
-           </div>
         </div>
 
       </div>
+      </transition>
+
+      <!-- Tab: MODELS -->
+      <transition name="fade" mode="out-in">
+      <div v-show="activeTab === 'models'" class="grid-content">
+        
+        <div class="glass-panel settings-block">
+          <h3 class="block-title">Модели Оптимизации</h3>
+          <div class="control-group">
+            <div class="control-row">
+              <div class="label-group">
+                <label>Алгоритм весов</label>
+                <span class="sub-label">Метод ребалансировки портфеля</span>
+              </div>
+              <div class="control-right">
+                <select v-model="settings.models.portfolioModel" class="glass-select">
+                  <option value="markowitz">Markowitz (Mean-Variance)</option>
+                  <option value="black-litterman">Black-Litterman</option>
+                  <option value="risk-parity">Risk Parity (ERC)</option>
+                  <option value="hrp">Hierarchical Risk Parity</option>
+                </select>
+              </div>
+            </div>
+            
+            <div class="divider"></div>
+            
+            <div class="control-row">
+              <div class="label-group">
+                <label>Модель VaR</label>
+                <span class="sub-label">Оценка хвостового риска</span>
+              </div>
+              <div class="control-right">
+                <select v-model="settings.models.varModel" class="glass-select">
+                  <option value="historical">Историческая (Historical)</option>
+                  <option value="parametric">Параметрическая (Normal)</option>
+                  <option value="cornish">Cornish-Fisher (Modified)</option>
+                  <option value="gpd">Extreme Value Theory (GPD)</option>
+                </select>
+              </div>
+            </div>
+            
+            <div class="divider"></div>
+            
+            <div class="control-row">
+              <label>Доверительный интервал</label>
+              <div class="control-right">
+                <select v-model="settings.models.varConfidence" class="glass-select">
+                  <option value="0.90">90.0%</option>
+                  <option value="0.95">95.0%</option>
+                  <option value="0.99">99.0%</option>
+                </select>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="glass-panel settings-block">
+          <h3 class="block-title">Обработка данных</h3>
+          <div class="control-group">
+            <div class="control-row">
+              <label>Скользящее окно (Rolling Window)</label>
+              <label class="switch">
+                <input type="checkbox" v-model="settings.models.useRollingWindow">
+                <span class="slider"></span>
+              </label>
+            </div>
+            
+            <div class="divider"></div>
+            
+            <div class="control-row">
+              <label>EWMA (Экспоненциальное взвешивание)</label>
+              <label class="switch">
+                <input type="checkbox" v-model="settings.models.exponentialWeighting">
+                <span class="slider"></span>
+              </label>
+            </div>
+          </div>
+        </div>
+
+      </div>
+      </transition>
+
+      <!-- Tab: RISK -->
+      <transition name="fade" mode="out-in">
+      <div v-show="activeTab === 'risk'" class="grid-content">
+        
+        <div class="glass-panel settings-block">
+          <h3 class="block-title">Глобальные Лимиты</h3>
+          <div class="control-group risk-limits">
+            <div class="control-row">
+              <label>Макс. VaR портфеля</label>
+              <div class="input-wrapper">
+                <input type="number" v-model.number="settings.risk.maxVaR" class="glass-input right-align">
+                <span class="unit">%</span>
+              </div>
+            </div>
+            
+            <div class="divider"></div>
+            
+            <div class="control-row">
+              <label>Макс. концентрация (на актив)</label>
+              <div class="input-wrapper">
+                <input type="number" v-model.number="settings.risk.maxConcentration" class="glass-input right-align">
+                <span class="unit">%</span>
+              </div>
+            </div>
+            
+            <div class="divider"></div>
+            
+            <div class="control-row">
+              <label>Мин. коэффициент Шарпа</label>
+              <div class="input-wrapper">
+                <input type="number" v-model.number="settings.risk.minSharpeRatio" class="glass-input right-align" step="0.1">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="glass-panel settings-block">
+          <h3 class="block-title">Автоматизация</h3>
+          <div class="control-group">
+            <div class="control-row">
+              <div class="label-group">
+                <label>Автоматическое стресс-тестирование</label>
+                <span class="sub-label">Запускать при каждом обновлении весов</span>
+              </div>
+              <label class="switch">
+                <input type="checkbox" v-model="settings.risk.enableStressTesting">
+                <span class="slider"></span>
+              </label>
+            </div>
+          </div>
+        </div>
+
+      </div>
+      </transition>
+
+      <!-- Tab: API -->
+      <transition name="fade" mode="out-in">
+      <div v-show="activeTab === 'api'" class="grid-content">
+        
+        <!-- Cbonds API Section -->
+        <div class="glass-panel settings-block">
+          <h3 class="block-title">Cbonds API</h3>
+          <div class="control-group">
+            <div class="control-row vertical">
+              <label>Login</label>
+              <input type="text" v-model="settings.api.cbondsLogin" class="glass-input full" placeholder="username@company.com">
+            </div>
+            <div class="divider"></div>
+            <div class="control-row vertical">
+              <label>Password</label>
+              <input type="password" v-model="settings.api.cbondsPassword" class="glass-input full" placeholder="••••••••">
+            </div>
+          </div>
+          <div class="status-footer">
+            <button class="btn-glass xs" @click="testConnection('cbonds')">Проверить</button>
+            <span class="status-text" :class="getConnectionStatus('cbonds').class">
+              {{ getConnectionStatus('cbonds').text }}
+            </span>
+          </div>
+        </div>
+
+        <!-- RuData API Section -->
+        <div class="glass-panel settings-block">
+          <h3 class="block-title">RuData / Interfax</h3>
+          <div class="control-group">
+            <div class="control-row vertical">
+              <label>Login</label>
+              <input type="text" v-model="settings.api.rudataLogin" class="glass-input full" placeholder="login">
+            </div>
+            <div class="divider"></div>
+            <div class="control-row vertical">
+              <label>Password</label>
+              <input type="password" v-model="settings.api.rudataPassword" class="glass-input full" placeholder="••••••••">
+            </div>
+          </div>
+          <div class="status-footer">
+            <button class="btn-glass xs" @click="testConnection('rudata')">Проверить</button>
+            <span class="status-text" :class="getConnectionStatus('rudata').class">
+              {{ getConnectionStatus('rudata').text }}
+            </span>
+          </div>
+        </div>
+        
+        <!-- Connected Services Status -->
+        <div class="glass-panel settings-block">
+          <h3 class="block-title">Активные подключения</h3>
+          <div class="services-list">
+            <div v-for="srv in settings.connectedServices" :key="srv.id" class="service-item">
+              <div class="srv-left">
+                <span class="srv-dot" :class="{ connected: srv.connected }"></span>
+                <span class="srv-name">{{ srv.name }}</span>
+              </div>
+              <span class="status-indicator" :class="{ connected: srv.connected }">
+                {{ srv.connected ? 'Active' : 'Offline' }}
+              </span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+      </transition>
+
     </div>
   </div>
 </template>
@@ -286,10 +293,10 @@ const hasChanges = ref(true)
 const apiError = ref(false)
 
 const tabs = [
-  { id: 'general', name: 'Общие'},
-  { id: 'models', name: 'Модели'},
-  { id: 'risk', name: 'Риск-менеджмент'},
-  { id: 'api', name: 'API и Данные'},
+  { id: 'general', name: 'Общие', iconClass: 'icon-gen' },
+  { id: 'models', name: 'Модели', iconClass: 'icon-mod' },
+  { id: 'risk', name: 'Риск', iconClass: 'icon-risk' },
+  { id: 'api', name: 'API', iconClass: 'icon-api' },
 ]
 
 // Mock Connection States
@@ -308,28 +315,25 @@ const settings = reactive({
     maxVaR: 5.0, maxConcentration: 25, minSharpeRatio: 1.2, enableStressTesting: true
   },
   api: { 
-      cbondsLogin: '', 
-      cbondsPassword: '', 
-      rudataLogin: '', 
-      rudataPassword: '',
-      bloombergKey: '', 
-      webhookUrl: '' 
+      cbondsLogin: '', cbondsPassword: '', 
+      rudataLogin: '', rudataPassword: '',
+      bloombergKey: '', webhookUrl: '' 
   },
   connectedServices: [
-    { id: 1, name: 'Cbonds', connected: false },
-    { id: 2, name: 'RuData', connected: false },
-    { id: 3, name: 'Bloomberg', connected: false },
-    { id: 4, name: 'MOEX', connected: false }
+    { id: 1, name: 'Cbonds API', connected: false },
+    { id: 2, name: 'RuData Reference', connected: false },
+    { id: 3, name: 'Bloomberg Data', connected: false },
+    { id: 4, name: 'MOEX ISS', connected: true }
   ]
 })
 
 // UI Helpers
 const getConnectionStatus = (provider: 'cbonds' | 'rudata') => {
     const s = connectionStates[provider].status
-    if (s === 'checking') return { text: 'Проверка...', class: 'text-blue' }
-    if (s === 'success') return { text: 'Подключено успешно', class: 'text-green' }
-    if (s === 'error') return { text: 'Ошибка авторизации', class: 'text-red' }
-    return { text: 'Не проверено', class: 'text-muted' }
+    if (s === 'checking') return { text: 'Checking...', class: 'text-blue' }
+    if (s === 'success') return { text: 'Connected', class: 'text-green' }
+    if (s === 'error') return { text: 'Auth Error', class: 'text-red' }
+    return { text: 'Not connected', class: 'text-muted' }
 }
 
 const testConnection = (provider: 'cbonds' | 'rudata') => {
@@ -339,7 +343,6 @@ const testConnection = (provider: 'cbonds' | 'rudata') => {
     setTimeout(() => {
         if (settings.api[`${provider}Login`] && settings.api[`${provider}Password`]) {
             connectionStates[provider].status = 'success'
-            // Update the list status
             const srv = settings.connectedServices.find(s => s.name.toLowerCase().includes(provider))
             if(srv) srv.connected = true
         } else {
@@ -363,114 +366,161 @@ watch(settings, () => { hasChanges.value = true }, { deep: true })
 .page-container {
   display: flex;
   flex-direction: column;
-  gap: 26px;
-  padding: 28px;
-  max-width: 1280px;
+  gap: 20px;
+  padding: 24px 32px;
+  max-width: 1400px;
   margin: 0 auto;
-  height: calc(100vh - 60px);
+  height: 100%;
+  overflow: hidden;
 }
 
 .section-header {
   display: flex;
   justify-content: space-between;
   align-items: flex-end;
-  margin-bottom: 10px;
   flex-shrink: 0;
+}
+
+.header-left {
+  display: flex;
+  flex-direction: column;
 }
 
 .section-title {
   font-size: 28px;
   font-weight: 700;
-  margin: 0;
   color: #fff;
-  letter-spacing: -0.02em;
+  margin: 0 0 4px 0;
+  letter-spacing: -0.01em;
 }
 
 .section-subtitle {
   font-size: 13px;
-  color: rgba(255, 255, 255, 0.5);
-  margin: 4px 0 0 0;
+  color: rgba(255,255,255,0.5);
+  margin: 0;
 }
 
-.settings-layout {
-  display: flex;
-  gap: 24px;
-  flex: 1;
-  overflow: hidden;
+.btn-save {
+  height: 36px;
+  padding: 0 16px;
+  border-radius: 10px;
+  font-weight: 600;
+  font-size: 13px;
+  cursor: pointer;
+  border: none;
+  transition: all 0.2s;
 }
 
 /* ============================================
-   SIDEBAR
+   HORIZONTAL TABS
    ============================================ */
-.settings-sidebar {
-  width: 240px;
+.tabs-navigation {
+  display: flex;
+  gap: 8px;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
   flex-shrink: 0;
-  display: flex;
-  flex-direction: column;
+  padding-bottom: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
 }
 
-.sidebar-menu {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  padding: 12px;
+.tabs-navigation::-webkit-scrollbar {
+  display: none;
 }
 
-.menu-item {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 10px 12px;
+.tab-item {
+  position: relative;
+  padding: 12px 20px;
   background: transparent;
   border: none;
-  border-radius: 8px;
-  color: rgba(255, 255, 255, 0.6);
-  font-size: 13px;
-  font-weight: 500;
+  color: rgba(255,255,255,0.4);
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
   cursor: pointer;
-  text-align: left;
-  transition: all 0.2s;
-  position: relative;
+  transition: color 0.2s;
+  white-space: nowrap;
+  letter-spacing: 0.05em;
 }
 
-.menu-item:hover {
-  background: rgba(255, 255, 255, 0.05);
-  color: #fff;
+.tab-item:hover {
+  color: rgba(255,255,255,0.6);
 }
 
-.menu-item.active {
-  background: rgba(59, 130, 246, 0.2);
-  color: #60a5fa;
+.tab-item.active {
+  color: rgba(255,255,255,0.9);
+}
+
+.tab-item.active::after {
+  content: '';
+  position: absolute;
+  bottom: -1px;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: #3b82f6;
 }
 
 .badge-dot {
   width: 6px;
   height: 6px;
-  background: #f87171;
+  background: #ef4444;
   border-radius: 50%;
-  margin-left: auto;
+  margin-left: 6px;
+  display: inline-block;
 }
 
 /* ============================================
-   CONTENT AREA
+   GRID CONTENT LAYOUT
    ============================================ */
-.settings-content {
+.settings-grid {
+  display: flex;
   flex: 1;
-  overflow-y: auto;
-  padding-bottom: 40px;
-  padding-right: 4px;
+  overflow: hidden;
 }
 
-.settings-view {
-  display: flex;
-  flex-direction: column;
-  gap: 24px;
-  max-width: 700px;
+.grid-content {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
+  gap: 20px;
+  width: 100%;
+  padding-right: 4px;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.grid-content::-webkit-scrollbar {
+  width: 6px;
+}
+
+.grid-content::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.grid-content::-webkit-scrollbar-thumb {
+  background: rgba(255,255,255,0.1);
+  border-radius: 3px;
+}
+
+.grid-content::-webkit-scrollbar-thumb:hover {
+  background: rgba(255,255,255,0.15);
+}
+
+/* ============================================
+   GLASS PANELS
+   ============================================ */
+.glass-panel {
+  background: rgba(30, 32, 40, 0.4);
+  backdrop-filter: blur(30px) saturate(160%);
+  border-radius: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 10px 30px -10px rgba(0,0,0,0.3);
+  overflow: hidden;
 }
 
 .settings-block {
-  padding: 0;
-  overflow: hidden;
+  display: flex;
+  flex-direction: column;
 }
 
 .block-title {
@@ -483,41 +533,15 @@ watch(settings, () => { hasChanges.value = true }, { deep: true })
   letter-spacing: 0.05em;
 }
 
-.mt-4 {
-  margin-top: 24px;
-}
-
-.mb-group {
-  margin-bottom: 16px;
-}
-
 /* ============================================
-   CONTROL GROUP
+   CONTROLS
    ============================================ */
 .control-group {
   background: rgba(255, 255, 255, 0.03);
-  margin: 0;
+  margin: 0 16px 16px;
   padding: 0 16px;
   border-radius: 12px;
   border: 1px solid rgba(255, 255, 255, 0.05);
-  overflow: hidden;
-}
-
-/* API-specific control groups with extra margin */
-.control-group.api-group {
-  margin: 0 20px;
-}
-
-/* Risk Limits Group - выравнивание по левому краю */
-.control-group.risk-limits .control-row {
-  justify-content: flex-start;
-  gap: 16px;
-}
-
-.control-group.risk-limits .control-row label {
-  flex-shrink: 0;
-  min-width: 200px;
-  margin-right: 0;
 }
 
 .control-row {
@@ -526,41 +550,24 @@ watch(settings, () => { hasChanges.value = true }, { deep: true })
   align-items: center;
   padding: 14px 4px;
   min-height: 48px;
-  box-sizing: border-box;
 }
 
 .control-row.vertical {
   flex-direction: column;
   align-items: flex-start;
   gap: 8px;
-  padding: 14px 16px;
+  min-height: auto;
 }
 
 .control-row label {
   font-size: 13px;
   color: #fff;
   font-weight: 500;
-  flex-shrink: 0;
-  margin-right: 16px;
 }
 
 .control-right {
   display: flex;
-  justify-content: flex-end;
   align-items: center;
-  gap: 6px;
-  flex-shrink: 0;
-}
-
-.label-group {
-  display: flex;
-  flex-direction: column;
-}
-
-.sub-label {
-  font-size: 11px;
-  color: rgba(255, 255, 255, 0.5);
-  font-weight: 400;
 }
 
 .divider {
@@ -569,53 +576,25 @@ watch(settings, () => { hasChanges.value = true }, { deep: true })
   margin: 0 -4px;
 }
 
-.status-footer {
-  padding: 12px 20px 16px 20px;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.status-text {
-  font-size: 12px;
-  font-weight: 500;
-}
-
-/* ============================================
-   GLASS PANEL
-   ============================================ */
-.glass-panel {
-  background: rgba(20, 22, 28, 0.4);
-  backdrop-filter: blur(34px);
-  border-radius: 18px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-}
-
-/* ============================================
-   INPUTS & CONTROLS
-   ============================================ */
+/* INPUT ELEMENTS */
 .glass-select {
   appearance: none;
-  background: rgba(0, 0, 0, 0.2);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(0,0,0,0.2);
+  border: 1px solid rgba(255,255,255,0.1);
   color: #fff;
-  padding: 6px 10px;
+  padding: 6px 12px;
   border-radius: 8px;
   font-size: 13px;
   outline: none;
   text-align: right;
-  max-width: 180px;
-  flex-shrink: 0;
   cursor: pointer;
-}
-
-.glass-select:hover {
-  background: rgba(0, 0, 0, 0.3);
+  transition: all 0.2s;
+  min-width: 140px;
 }
 
 .glass-select:focus {
-  border-color: #60a5fa;
-  background: rgba(0, 0, 0, 0.4);
+  border-color: #3b82f6;
+  background: rgba(0,0,0,0.4);
 }
 
 .glass-select option {
@@ -624,69 +603,44 @@ watch(settings, () => { hasChanges.value = true }, { deep: true })
 }
 
 .glass-input {
-  background: rgba(0, 0, 0, 0.2);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(0,0,0,0.2);
+  border: 1px solid rgba(255,255,255,0.1);
   color: #fff;
-  padding: 6px 10px;
+  padding: 8px 12px;
   border-radius: 8px;
   font-size: 13px;
   outline: none;
+  transition: all 0.2s;
 }
 
 .glass-input:focus {
-  border-color: #60a5fa;
-  background: rgba(0, 0, 0, 0.4);
+  border-color: #3b82f6;
+  background: rgba(0,0,0,0.4);
 }
 
 .glass-input.full {
   width: 100%;
-  text-align: left;
+  box-sizing: border-box;
+}
+
+.glass-input.right-align {
+  text-align: right;
+  width: 100%;
 }
 
 .input-wrapper {
   display: flex;
   align-items: center;
-  gap: 4px;
-  flex-shrink: 0;
+  gap: 6px;
 }
 
 .unit {
-  font-size: 13px;
-  color: rgba(255, 255, 255, 0.5);
-  flex-shrink: 0;
-}
-
-/* Segmented Control */
-.segmented-control {
-  background: rgba(0, 0, 0, 0.3);
-  border-radius: 8px;
-  padding: 3px;
-  display: flex;
-  gap: 2px;
-  flex-shrink: 0;
-}
-
-.segmented-control button {
-  background: transparent;
-  border: none;
-  color: rgba(255, 255, 255, 0.6);
-  padding: 4px 10px;
   font-size: 12px;
-  border-radius: 6px;
-  cursor: pointer;
-  transition: all 0.2s;
+  color: rgba(255,255,255,0.4);
+  flex-shrink: 0;
 }
 
-.segmented-control button:hover {
-  color: #fff;
-}
-
-.segmented-control button.active {
-  background: rgba(255, 255, 255, 0.15);
-  color: #fff;
-}
-
-/* Switch */
+/* SWITCH */
 .switch {
   position: relative;
   display: inline-block;
@@ -705,9 +659,9 @@ watch(settings, () => { hasChanges.value = true }, { deep: true })
   position: absolute;
   cursor: pointer;
   inset: 0;
-  background-color: rgba(255, 255, 255, 0.15);
+  background-color: rgba(255,255,255,0.15);
   border-radius: 22px;
-  transition: 0.3s;
+  transition: .3s;
 }
 
 .slider:before {
@@ -719,71 +673,117 @@ watch(settings, () => { hasChanges.value = true }, { deep: true })
   bottom: 2px;
   background-color: white;
   border-radius: 50%;
-  transition: 0.3s;
+  transition: .3s;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
 }
 
 input:checked + .slider {
-  background-color: #4ade80;
+  background-color: #34c759;
 }
 
 input:checked + .slider:before {
   transform: translateX(18px);
 }
 
-/* Buttons */
-.btn-save {
-  padding: 8px 16px;
+/* SEGMENTED CONTROL */
+.segmented-control {
+  background: rgba(0,0,0,0.3);
   border-radius: 8px;
+  padding: 2px;
+  display: flex;
+  gap: 2px;
+}
+
+.segmented-control button {
+  background: transparent;
   border: none;
-  font-size: 13px;
-  font-weight: 600;
+  color: rgba(255,255,255,0.6);
+  padding: 4px 12px;
+  font-size: 12px;
+  border-radius: 6px;
   cursor: pointer;
   transition: all 0.2s;
-  background: rgba(255, 255, 255, 0.1);
-  color: rgba(255, 255, 255, 0.4);
+  font-weight: 500;
 }
 
-.btn-save.has-changes {
-  background: linear-gradient(135deg, #0ea5e9, #2563eb);
+.segmented-control button.active {
+  background: rgba(255,255,255,0.15);
   color: #fff;
-  box-shadow: 0 0 15px rgba(37, 99, 235, 0.4);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
 }
 
-.btn-save:disabled {
-  background: rgba(255, 255, 255, 0.1);
-  color: rgba(255, 255, 255, 0.4);
-  cursor: default;
-}
-
-.btn-xs {
-  padding: 6px 12px;
-  font-size: 11px;
+/* BUTTONS */
+.btn-glass {
+  height: 34px;
+  padding: 0 16px;
+  border-radius: 10px;
   font-weight: 600;
-  border-radius: 6px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  background: rgba(255, 255, 255, 0.05);
-  color: #fff;
-  cursor: pointer;
-  transition: 0.2s;
-}
-
-.btn-xs:hover {
-  background: rgba(255, 255, 255, 0.1);
-}
-
-/* Services List */
-.services-list {
+  font-size: 12px;
   display: flex;
-  flex-direction: column;
-  padding: 8px 20px;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  border: none;
+  transition: all 0.2s;
+}
+
+.btn-glass.primary {
+  background: #3b82f6;
+  color: #fff;
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+}
+
+.btn-glass.primary:hover:not(:disabled) {
+  background: #2563eb;
+  transform: translateY(-1px);
+}
+
+.btn-glass.primary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  background: rgba(255,255,255,0.1);
+  box-shadow: none;
+}
+
+.btn-glass.xs {
+  height: 28px;
+  padding: 0 12px;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.1);
+  color: #fff;
+  flex-shrink: 0;
+}
+
+.btn-glass.xs:hover {
+  background: rgba(255,255,255,0.1);
+}
+
+/* ============================================
+   API SECTION SPECIFIC
+   ============================================ */
+.status-footer {
+  padding: 12px 20px 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: rgba(255,255,255,0.02);
+}
+
+.status-text {
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.services-list {
+  padding: 0 20px 8px;
 }
 
 .service-item {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 10px 0;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  padding: 12px 0;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
 }
 
 .service-item:last-child {
@@ -796,6 +796,19 @@ input:checked + .slider:before {
   gap: 10px;
 }
 
+.srv-dot {
+  width: 6px;
+  height: 6px;
+  background: #ef4444;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.srv-dot.connected {
+  background: #4ade80;
+  box-shadow: 0 0 6px #4ade80;
+}
+
 .srv-name {
   font-size: 13px;
   color: #fff;
@@ -803,51 +816,67 @@ input:checked + .slider:before {
 
 .status-indicator {
   font-size: 11px;
-  color: #f87171;
-  flex-shrink: 0;
+  color: rgba(255,255,255,0.4);
 }
 
 .status-indicator.connected {
   color: #4ade80;
 }
 
-/* Colors */
-.text-green {
-  color: #4ade80;
+/* ============================================
+   UTILITIES
+   ============================================ */
+.label-group {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
 }
 
-.text-red {
-  color: #f87171;
+.sub-label {
+  font-size: 11px;
+  color: rgba(255,255,255,0.4);
 }
 
-.text-blue {
-  color: #60a5fa;
-}
+.text-green { color: #4ade80; }
+.text-red { color: #ef4444; }
+.text-blue { color: #60a5fa; }
+.text-muted { color: rgba(255,255,255,0.4); }
 
-.text-muted {
-  color: rgba(255, 255, 255, 0.4);
-}
-
+/* ============================================
+   RESPONSIVE
+   ============================================ */
 @media (max-width: 1024px) {
-  .settings-layout {
-    flex-direction: column;
-  }
-
-  .settings-sidebar {
-    width: 100%;
-    flex-direction: row;
-    align-items: center;
-  }
-
-  .sidebar-menu {
-    flex-direction: row;
-    width: 100%;
-    overflow-x: auto;
-  }
-
   .page-container {
-    height: auto;
+    padding: 16px 24px;
+  }
+
+  .grid-content {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .page-container {
+    gap: 16px;
+    padding: 16px;
+  }
+
+  .section-title {
+    font-size: 24px;
+  }
+
+  .tabs-navigation {
+    gap: 4px;
+  }
+
+  .tab-item {
+    padding: 10px 14px;
+    font-size: 11px;
+  }
+
+  .grid-content {
+    grid-template-columns: 1fr;
+    gap: 16px;
   }
 }
 </style>
-

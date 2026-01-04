@@ -1,16 +1,16 @@
 <template>
-  <div class="page-container">
+  <div class="page-container custom-scroll">
     
     <!-- Header & Controls -->
     <div class="section-header">
-      <div>
+      <div class="header-left">
         <h1 class="section-title">Анализ кривых доходности</h1>
-        <p class="section-subtitle">Динамика рынка и стресс-сценарии</p>
+        <p class="section-subtitle">Сценарное моделирование и стресс-тестирование (Monte Carlo)</p>
       </div>
       
-      <div class="header-controls">
-        <button class="btn-refresh" @click="generateData">
-             <span class="icon">↻</span> Обновить
+      <div class="header-actions">
+        <button class="btn-glass" @click="generateData">
+             <span class="icon">↻</span> Обновить симуляцию
         </button>
       </div>
     </div>
@@ -22,69 +22,70 @@
         <div class="charts-column">
             
             <!-- Chart 1: Daily Changes (Volatile "Spaghetti") -->
-            <div class="card glass-panel chart-container">
+            <div class="glass-card chart-container">
                 <div class="panel-header">
-                    <h3>Ежедневные изменения (%)</h3>
+                    <h3>Ежедневные изменения (Daily Returns %)</h3>
                     <div class="legend">
-                         <span class="l-item faded"><span class="dot bg-gray"></span> Кластеры волатильности</span>
-                         <span class="l-item"><span class="dot bg-green"></span> Выбросы</span>
+                         <span class="l-item faded"><span class="dot bg-gray"></span> Сценарии</span>
+                         <span class="l-item"><span class="dot bg-green"></span> Выбросы (Outliers)</span>
                     </div>
                 </div>
                 
                 <div class="chart-area big-chart">
-                    <svg viewBox="0 0 1000 300" preserveAspectRatio="none" class="svg-chart">
+                    <svg viewBox="0 0 1000 320" preserveAspectRatio="none" class="svg-chart">
                         <!-- Grid -->
                         <line v-for="i in 6" :key="'g1-'+i" x1="0" :y1="i*50" x2="1000" :y2="i*50" stroke="rgba(255,255,255,0.05)" />
-                        <line x1="0" y1="150" x2="1000" y2="150" stroke="rgba(255,255,255,0.2)" stroke-dasharray="4"/> 
+                        <line x1="0" y1="160" x2="1000" y2="160" stroke="rgba(255,255,255,0.2)" stroke-dasharray="4"/> 
 
                         <!-- Daily Change Paths (Noise) -->
                         <path 
                             v-for="(path, idx) in dailyPaths" 
                             :key="'d-'+idx" 
-                            :d="makePath(path, 10, -10)" 
+                            :d="makePath(path, 12, -12)" 
                             fill="none" 
                             :stroke="getDailyColor(idx)" 
                             stroke-width="0.8"
-                            opacity="0.6"
+                            opacity="0.5"
+                            style="mix-blend-mode: screen;"
                         />
                          
-                         <!-- Spike Highlighting (Optional overlay for extreme moves) -->
-                         <path :d="makePath(dailyPaths[48], 10, -10)" fill="none" stroke="#4ade80" stroke-width="1.5" />
+                         <!-- Spike Highlighting (Green Line) -->
+                         <path v-if="dailyPaths.length" :d="makePath(dailyPaths[48], 12, -12)" fill="none" stroke="#4ade80" stroke-width="2" filter="drop-shadow(0 0 4px rgba(74,222,128,0.5))" />
                     </svg>
-                    <div class="chart-label">График 1: Изменения доходностей (%)</div>
+                    <div class="chart-label">Симуляция волатильности (250 шагов)</div>
                 </div>
             </div>
 
             <!-- Chart 2: Cumulative Changes (Trends) -->
-            <div class="card glass-panel chart-container">
+            <div class="glass-card chart-container">
                 <div class="panel-header">
-                    <h3>Накопленные изменения (%)</h3>
+                    <h3>Накопленная доходность (Cumulative Returns %)</h3>
                     <div class="legend">
-                         <span class="l-item"><span class="dot bg-blue"></span> US10Y</span>
-                         <span class="l-item"><span class="dot bg-purple"></span> US02Y</span>
+                         <span class="l-item"><span class="dot bg-blue"></span> US10Y Trend</span>
+                         <span class="l-item"><span class="dot bg-purple"></span> US02Y Trend</span>
                     </div>
                 </div>
                 
                 <div class="chart-area big-chart">
-                    <svg viewBox="0 0 1000 300" preserveAspectRatio="none" class="svg-chart">
+                    <svg viewBox="0 0 1000 320" preserveAspectRatio="none" class="svg-chart">
                         <line v-for="i in 6" :key="'g2-'+i" x1="0" :y1="i*50" x2="1000" :y2="i*50" stroke="rgba(255,255,255,0.05)" />
-                        <line x1="0" y1="150" x2="1000" y2="150" stroke="rgba(255,255,255,0.2)" stroke-dasharray="4"/>
+                        <line x1="0" y1="160" x2="1000" y2="160" stroke="rgba(255,255,255,0.2)" stroke-dasharray="4"/>
 
-                        <!-- Cumulative Scenario Paths -->
+                        <!-- Cumulative Scenario Paths (Background) -->
                         <path 
                             v-for="(path, idx) in scenarioPaths" 
                             :key="'c-'+idx" 
-                            :d="makePath(path, 40, -40)" 
+                            :d="makePath(path, 50, -50)" 
                             fill="none" 
-                            stroke="rgba(255,255,255,0.08)" 
+                            stroke="rgba(255,255,255,0.05)" 
                             stroke-width="1"
                         />
 
-                        <!-- Real Asset Trends -->
-                        <path :d="makePath(assetPaths.US10Y, 40, -40)" fill="none" stroke="#3b82f6" stroke-width="2.5" />
-                        <path :d="makePath(assetPaths.US02Y, 40, -40)" fill="none" stroke="#a855f7" stroke-width="2.5" />
+                        <!-- Real Asset Trends (Foreground) -->
+                        <path v-if="assetPaths.US10Y" :d="makePath(assetPaths.US10Y, 50, -50)" fill="none" stroke="#3b82f6" stroke-width="3" filter="drop-shadow(0 0 6px rgba(59,130,246,0.4))" />
+                        <path v-if="assetPaths.US02Y" :d="makePath(assetPaths.US02Y, 50, -50)" fill="none" stroke="#a855f7" stroke-width="3" filter="drop-shadow(0 0 6px rgba(168,85,247,0.4))" />
                     </svg>
-                    <div class="chart-label">График 2: Накопленный итог (%)</div>
+                    <div class="chart-label">Долгосрочные тренды</div>
                 </div>
             </div>
 
@@ -92,43 +93,52 @@
 
         <!-- Right: Info & Stats -->
         <aside class="stats-column">
-            <div class="card glass-panel h-full sticky-panel">
+            <div class="glass-card sticky-panel">
                 <div class="panel-header-sm"><h3>Статистика волатильности</h3></div>
                 
-                <div class="stat-row">
-                    <span class="lbl">Максимальный дневной всплеск</span>
-                    <span class="val text-red">+8.4%</span>
-                </div>
-                <div class="stat-row">
-                    <span class="lbl">Возврат к среднему</span>
-                    <span class="val">0.45</span>
-                </div>
-                <div class="stat-row">
-                    <span class="lbl">Эксцесс</span>
-                    <span class="val text-orange">5.2</span>
+                <div class="stat-list">
+                    <div class="stat-row">
+                        <span class="lbl">Max Daily Change</span>
+                        <span class="val text-red font-mono">+8.4%</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="lbl">Mean Reversion</span>
+                        <span class="val font-mono">0.45</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="lbl">Kurtosis (Эксцесс)</span>
+                        <span class="val text-orange font-mono">5.2</span>
+                    </div>
                 </div>
                 
                 <div class="divider"></div>
 
-                <div class="panel-header-sm"><h3>Параметры</h3></div>
-                <div class="stat-row">
-                    <span class="lbl">Количество облигаций</span>
-                    <span class="val">50</span>
-                </div>
-                <div class="stat-row">
-                    <span class="lbl">Временной горизонт</span>
-                    <span class="val">18M</span>
+                <div class="panel-header-sm"><h3>Параметры симуляции</h3></div>
+                <div class="stat-list">
+                    <div class="stat-row">
+                        <span class="lbl">Количество путей</span>
+                        <span class="val font-mono">50</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="lbl">Горизонт</span>
+                        <span class="val font-mono">250 дней</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="lbl">Модель</span>
+                        <span class="val font-mono text-blue">GARCH(1,1)</span>
+                    </div>
                 </div>
 
                 <div class="divider"></div>
                 <div class="info-block">
-                    <p>
-                        <strong>График 1:</strong> Показывает "шум" и кластеры волатильности. 
-                        Всплеск в конце графика (зеленая линия) указывает на шоковое событие.
-                    </p>
-                    <p class="mt-2">
-                        <strong>График 2:</strong> Показывает долгосрочный тренд, который формируется из этих ежедневных изменений.
-                    </p>
+                    <div class="info-item">
+                        <span class="icon">PARAMS</span>
+                        <p><strong>График 1</strong> визуализирует "шум" и кластеризацию волатильности. Зеленая линия выделяет экстремальный сценарий (tail risk).</p>
+                    </div>
+                    <div class="info-item mt-4">
+                        <span class="icon">TRENDS</span>
+                        <p><strong>График 2</strong> показывает интегральные траектории (накопленный итог), формирующие долгосрочные тренды US10Y и US02Y.</p>
+                    </div>
                 </div>
             </div>
         </aside>
@@ -146,23 +156,28 @@ const assetPaths = ref<{ [key: string]: number[] }>({ US10Y: [], US02Y: [] })
 
 const generateData = () => {
     const points = 250
+    const pathsCount = 50
     
     // 1. Daily Changes (Noise/Spikes)
     const dailies = []
     const cumulatives = []
     
-    for(let i=0; i<50; i++) {
+    for(let i=0; i<pathsCount; i++) {
         const dPath = []
         const cPath = [0]
         let cumVal = 0
         
         for(let j=0; j<points; j++) {
-            // Generate daily change (mostly noise)
-            let dailyChange = (Math.random() - 0.5) * 2
+            // Generate daily change (mostly noise with volatility clustering simulation)
+            // Simple GARCH-like behavior: vol depends on previous shock
+            let vol = 1.0
+            if (j > 0 && Math.abs(dPath[j-1]) > 2) vol = 2.5
             
-            // Add a "shock" event at the end (like in your screenshot)
-            if (j > 220 && Math.random() > 0.8) {
-                dailyChange *= 8 // Huge spike
+            let dailyChange = (Math.random() - 0.5) * 2 * vol
+            
+            // Add a "shock" event at the end
+            if (j > 220 && Math.random() > 0.95 && i === 48) { // Specific index for the green line
+                dailyChange *= 6 // Huge spike
             }
             
             dPath.push(dailyChange)
@@ -178,26 +193,27 @@ const generateData = () => {
     scenarioPaths.value = cumulatives
 
     // 2. Asset Trends
-    const makeTrend = (drift: number) => {
+    const makeTrend = (drift: number, volatility: number) => {
         const p = [0]
         let v = 0
         for(let j=0; j<points; j++) {
-            v += (Math.random() - 0.5) + drift
+            v += (Math.random() - 0.5) * volatility + drift
             p.push(v)
         }
         return p
     }
     assetPaths.value = {
-        US10Y: makeTrend(0.1),
-        US02Y: makeTrend(-0.05)
+        US10Y: makeTrend(0.12, 1.5),
+        US02Y: makeTrend(-0.08, 1.2)
     }
 }
 
 // Helper: Color logic for daily "spaghetti"
 const getDailyColor = (idx: number) => {
-    // Randomize colors slightly to match the "messy" look of the screenshot
-    const hue = Math.floor(Math.random() * 360)
-    return `hsla(${hue}, 60%, 70%, 0.4)`
+    // Randomize colors slightly to match the "messy" look
+    // Using HSL for better control over lightness/saturation
+    const hue = (idx * 137) % 360 // Deterministic random-looking hue
+    return `hsla(${hue}, 70%, 75%, 0.6)`
 }
 
 // Helper: SVG Path Builder with customizable Y-scale
@@ -205,10 +221,14 @@ const makePath = (data: number[], maxVal: number, minVal: number) => {
     if (!data || data.length === 0) return ''
     
     const width = 1000
-    const height = 300
+    const height = 320
     
     const scaleX = (i: number) => (i / (data.length - 1)) * width
-    const scaleY = (v: number) => height - ((v - minVal) / (maxVal - minVal)) * height
+    const scaleY = (v: number) => {
+        const range = maxVal - minVal
+        const norm = (v - minVal) / range
+        return height - (norm * height)
+    }
 
     return 'M ' + data.map((val, i) => 
         `${scaleX(i).toFixed(1)},${scaleY(val).toFixed(1)}`
@@ -221,56 +241,92 @@ onMounted(() => {
 </script>
 
 <style scoped>
-/* Layout */
-.page-container { padding: 28px; max-width: 1600px; margin: 0 auto; color: #fff; height: 100vh; overflow-y: auto; }
-.section-header { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 24px; }
-.section-title { font-size: 24px; font-weight: 700; margin: 0; letter-spacing: -0.5px; }
+/* ============================================
+   PAGE LAYOUT
+   ============================================ */
+.page-container { padding: 24px 32px; max-width: 1600px; margin: 0 auto; height: 100%; display: flex; flex-direction: column; gap: 24px; }
+
+.section-header { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 4px; flex-shrink: 0; }
+.section-title { font-size: 28px; font-weight: 700; color: #fff; margin: 0; letter-spacing: -0.01em; }
 .section-subtitle { font-size: 13px; color: rgba(255,255,255,0.5); margin: 4px 0 0 0; }
 
-.btn-refresh { 
-    background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.1); 
-    color: #fff; padding: 8px 16px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; gap: 8px; font-size: 13px;
-    transition: all 0.2s;
+/* ============================================
+   GLASS COMPONENTS
+   ============================================ */
+.glass-card {
+  background: rgba(30, 32, 40, 0.4); backdrop-filter: blur(40px) saturate(160%);
+  border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 20px;
+  box-shadow: 0 20px 40px -10px rgba(0,0,0,0.4);
+  padding: 24px;
 }
-.btn-refresh:hover { background: rgba(255,255,255,0.15); }
 
-/* Grid */
-.analysis-grid { display: grid; grid-template-columns: 1fr 300px; gap: 24px; }
-.charts-column { display: flex; flex-direction: column; gap: 24px; }
+.btn-glass {
+  display: flex; align-items: center; gap: 8px; padding: 8px 16px;
+  background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 10px; color: #fff; font-size: 13px; font-weight: 500;
+  cursor: pointer; transition: all 0.2s;
+}
+.btn-glass:hover { background: rgba(255,255,255,0.1); transform: translateY(-1px); }
+.icon { font-size: 14px; }
 
-/* Cards */
-.card { background: rgba(20, 22, 28, 0.4); backdrop-filter: blur(40px); border: 1px solid rgba(255,255,255,0.08); border-radius: 16px; padding: 20px; }
-.glass-panel { box-shadow: 0 10px 30px rgba(0,0,0,0.2); }
-.sticky-panel { position: sticky; top: 20px; }
+/* ============================================
+   GRID & LAYOUT
+   ============================================ */
+.analysis-grid { display: grid; grid-template-columns: 1fr 320px; gap: 24px; flex: 1; min-height: 0; }
+.charts-column { display: flex; flex-direction: column; gap: 24px; overflow-y: auto; }
+.stats-column { display: flex; flex-direction: column; }
 
-.panel-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
-.panel-header h3 { margin: 0; font-size: 14px; color: #fff; font-weight: 600; }
-.legend { display: flex; gap: 12px; font-size: 11px; }
-.l-item { display: flex; align-items: center; gap: 6px; color: rgba(255,255,255,0.7); }
-.dot { width: 6px; height: 6px; border-radius: 50%; }
-.bg-blue { background: #3b82f6; }
-.bg-purple { background: #a855f7; }
-.bg-green { background: #4ade80; }
-.bg-gray { background: rgba(255,255,255,0.3); }
+.sticky-panel { position: sticky; top: 0; }
 
-/* Charts */
-.chart-container { position: relative; }
-.chart-area.big-chart { height: 300px; width: 100%; overflow: hidden; position: relative; }
+/* ============================================
+   CHARTS
+   ============================================ */
+.chart-container { display: flex; flex-direction: column; min-height: 380px; }
+.panel-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+.panel-header h3 { margin: 0; font-size: 14px; color: #fff; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; }
+
+.legend { display: flex; gap: 16px; font-size: 11px; }
+.l-item { display: flex; align-items: center; gap: 6px; color: rgba(255,255,255,0.8); }
+.l-item.faded { opacity: 0.6; }
+
+.chart-area.big-chart { flex: 1; width: 100%; overflow: hidden; position: relative; border-radius: 12px; background: rgba(0,0,0,0.1); border: 1px solid rgba(255,255,255,0.03); }
 .svg-chart { width: 100%; height: 100%; }
-.chart-label { position: absolute; bottom: 10px; right: 20px; font-size: 11px; color: rgba(255,255,255,0.3); font-style: italic; }
+.chart-label { position: absolute; bottom: 12px; right: 16px; font-size: 10px; color: rgba(255,255,255,0.3); text-transform: uppercase; font-weight: 600; pointer-events: none; }
 
-/* Stats Sidebar */
-.h-full { height: auto; min-height: 100%; box-sizing: border-box; }
-.panel-header-sm h3 { margin: 0 0 16px 0; font-size: 11px; text-transform: uppercase; color: rgba(255,255,255,0.4); letter-spacing: 0.05em; font-weight: 600; }
-.stat-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; font-size: 13px; }
+/* ============================================
+   STATS SIDEBAR
+   ============================================ */
+.panel-header-sm h3 { margin: 0 0 16px 0; font-size: 11px; text-transform: uppercase; color: rgba(255,255,255,0.5); letter-spacing: 0.05em; font-weight: 700; }
+
+.stat-list { display: flex; flex-direction: column; gap: 12px; }
+.stat-row { display: flex; justify-content: space-between; align-items: center; font-size: 13px; }
 .stat-row .lbl { color: rgba(255,255,255,0.6); }
-.stat-row .val { font-weight: 500; font-family: monospace; color: #fff; }
+.stat-row .val { font-weight: 600; color: #fff; }
+
+.info-block { margin-top: 8px; }
+.info-item { display: flex; flex-direction: column; gap: 4px; }
+.info-item .icon { font-size: 9px; color: rgba(255,255,255,0.3); font-weight: 700; border: 1px solid rgba(255,255,255,0.1); padding: 2px 6px; border-radius: 4px; width: fit-content; }
+.info-item p { font-size: 12px; line-height: 1.5; color: rgba(255,255,255,0.6); margin: 0; }
+
+/* ============================================
+   UTILS
+   ============================================ */
+.dot { width: 8px; height: 8px; border-radius: 50%; box-shadow: 0 0 6px currentColor; }
+.bg-blue { background: #3b82f6; color: #3b82f6; }
+.bg-purple { background: #a855f7; color: #a855f7; }
+.bg-green { background: #4ade80; color: #4ade80; }
+.bg-gray { background: #9ca3af; color: #9ca3af; }
+
 .text-red { color: #f87171; }
 .text-orange { color: #fbbf24; }
+.text-blue { color: #3b82f6; }
+.font-mono { font-family: "SF Mono", monospace; }
 
-.divider { height: 1px; background: rgba(255,255,255,0.1); margin: 20px 0; }
-.info-block p { font-size: 12px; line-height: 1.5; color: rgba(255,255,255,0.5); margin: 0; }
-.mt-2 { margin-top: 12px; }
+.divider { height: 1px; background: rgba(255,255,255,0.1); margin: 24px 0; }
+.mt-4 { margin-top: 16px; }
 
+@media (max-width: 1200px) {
+  .analysis-grid { grid-template-columns: 1fr; }
+  .stats-column { display: none; } /* Hide stats on small screens or move below */
+}
 </style>
-

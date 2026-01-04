@@ -13,20 +13,36 @@
     <div class="home-layout">
       <!-- Левая колонка -->
       <section class="hero">
-        <div class="logo-badge">Калькулятор количественной аналитики</div>
+        <div class="logo-badge">
+          <span class="badge-icon">◆</span>
+          Quantitative Analytics
+        </div>
         <h1 class="hero-title">
-          Комплексный <span>калькулятор</span> для портфелей ценных бумаг и деривативов
+          Комплексный <span>калькулятор</span> для портфелей и деривативов
         </h1>
-        <p class="hero-subtitle">
-          Единая панель для портфельного анализа, режимов рынка, справедливой
-          стоимости деривативов и риск‑менеджмента институционального уровня.
-        </p>
+        
+        <!-- Framed subtitle -->
+        <div class="subtitle-frame">
+          <p class="hero-subtitle">
+            Единая платформа для портфельного анализа, скрытых марковских цепей, справедливой стоимости деривативов и риск‑менеджмента институционального уровня.
+          </p>
+        </div>
 
         <div class="hero-actions">
           <router-link to="/dashboard" class="btn primary">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path>
+              <polyline points="13 2 13 9 20 9"></polyline>
+            </svg>
             Открыть рабочую панель
           </router-link>
           <router-link to="/regimes" class="btn ghost">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="12 3 20 7.5 20 16.5 12 21 4 16.5 4 7.5 12 3"></polyline>
+              <line x1="12" y1="12" x2="20" y2="7.5"></line>
+              <line x1="12" y1="12" x2="12" y2="21"></line>
+              <line x1="12" y1="12" x2="4" y2="7.5"></line>
+            </svg>
             Смотреть рыночные режимы
           </router-link>
         </div>
@@ -34,12 +50,14 @@
 
       <!-- Правая колонка: список инструментов -->
       <section class="tool-grid">
-        <h2 class="tools-title">Инструменты платформы</h2>
+        <div class="tools-header">
+          <h2 class="tools-title">Инструменты платформы</h2>
+        </div>
 
         <div class="tools-grid">
-          <!-- 1. Portfolio -->
+          <!-- 1. Portfolio Analytics -->
           <div 
-            class="tool-card cursor-pointer"
+            class="tool-card"
             :class="{ 'is-exploding': activeExplosion === '/portfolio', 'is-faded': isFaded('/portfolio') }"
             @click="triggerExplosion('/portfolio')"
           >
@@ -49,48 +67,63 @@
             <div class="tool-body">
               <div class="tool-name">Портфельный анализ</div>
               <div class="tool-desc">
-                Доходность, риск‑метрики, VaR/ES, мониторинг позиций.
+                Доходность, VaR/ES, мониторинг позиций, корреляции активов
               </div>
+            </div>
+            <div class="tool-arrow">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="9 18 15 12 9 6" />
+              </svg>
             </div>
           </div>
 
           <!-- 2. Risk Management -->
           <div 
-            class="tool-card cursor-pointer"
+            class="tool-card"
             :class="{ 'is-exploding': activeExplosion === '/stress', 'is-faded': isFaded('/stress') }"
             @click="triggerExplosion('/stress')"
           >
-            <div class="tool-icon red">
-              <div class="supernova red"></div>
+            <div class="tool-icon purple">
+              <div class="supernova purple"></div>
             </div>
             <div class="tool-body">
-              <div class="tool-name">Риск менеджмент</div>
+              <div class="tool-name">Риск-менеджмент</div>
               <div class="tool-desc">
-                Стресс‑тесты, бэктестинг VaR, сценарный анализ портфеля.
+                Стресс-тесты, бэктестинг VaR, сценарный анализ портфеля
               </div>
+            </div>
+            <div class="tool-arrow">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="9 18 15 12 9 6" />
+              </svg>
             </div>
           </div>
 
-          <!-- 3. Market Regimes -->
+          <!-- 3. Market Regimes (HMM) -->
           <div 
-            class="tool-card cursor-pointer"
+            class="tool-card"
             :class="{ 'is-exploding': activeExplosion === '/regimes', 'is-faded': isFaded('/regimes') }"
             @click="triggerExplosion('/regimes')"
           >
-            <div class="tool-icon indigo">
-              <div class="supernova indigo"></div>
+            <div class="tool-icon cyan">
+              <div class="supernova cyan"></div>
             </div>
             <div class="tool-body">
-              <div class="tool-name">Скрытая марковская цепь для портфелей ценных бумаг</div>
+              <div class="tool-name">Скрытая Марковская цепь</div>
               <div class="tool-desc">
-                Скрытые состояния, матрицы переходов, стационарное распределение.
+                Рыночные режимы, матрицы переходов, стационарное распределение
               </div>
+            </div>
+            <div class="tool-arrow">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="9 18 15 12 9 6" />
+              </svg>
             </div>
           </div>
 
-          <!-- 4. Bonds (NO SOON TAG) -->
+          <!-- 4. Bond Valuation (DCF) -->
           <div 
-            class="tool-card cursor-pointer"
+            class="tool-card"
             :class="{ 'is-exploding': activeExplosion === '/bond-valuation', 'is-faded': isFaded('/bond-valuation') }"
             @click="triggerExplosion('/bond-valuation')"
           >
@@ -98,16 +131,43 @@
               <div class="supernova green"></div>
             </div>
             <div class="tool-body">
-              <div class="tool-name">Определение справедливой стоимости облигаций (DCF)</div>
+              <div class="tool-name">Справедливая стоимость облигаций</div>
               <div class="tool-desc">
-                Доходный подход, спреды к кривой, модифиц. дюрация, convexity.
+                DCF подход, спреды к кривой, дюрация, выпуклость (convexity)
               </div>
+            </div>
+            <div class="tool-arrow">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="9 18 15 12 9 6" />
+              </svg>
             </div>
           </div>
 
-          <!-- Option Pricing -->
+          <!-- 5. Bond Reports (НОВЫЙ БЛОК) -->
           <div 
-            class="tool-card cursor-pointer"
+            class="tool-card"
+            :class="{ 'is-exploding': activeExplosion === '/vanila-bond-report', 'is-faded': isFaded('/vanila-bond-report') }"
+            @click="triggerExplosion('/vanila-bond-report')"
+          >
+            <div class="tool-icon nova">
+              <div class="supernova nova"></div>
+            </div>
+            <div class="tool-body">
+              <div class="tool-name">Отчёты по облигациям</div>
+              <div class="tool-desc">
+                Vanila Bond Report, шаблонные отчеты и аналитика
+              </div>
+            </div>
+            <div class="tool-arrow">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="9 18 15 12 9 6" />
+              </svg>
+            </div>
+          </div>
+
+          <!-- 6. Option Pricing -->
+          <div 
+            class="tool-card coming-soon"
             :class="{ 'is-exploding': activeExplosion === '/pricing/options', 'is-faded': isFaded('/pricing/options') }"
             @click="triggerExplosion('/pricing/options')"
           >
@@ -115,17 +175,22 @@
               <div class="supernova orange"></div>
             </div>
             <div class="tool-body">
-              <div class="tool-name">Вычисление справедливой стоимости опционов</div>
-              <div class="tool-tag">Soon</div>
+              <div class="tool-name">Справедливая стоимость опционов</div>
               <div class="tool-desc">
-                БШМ, Модель Хестона, процессы Леви.
+                БШМ, модель Хестона, процессы Леви, FFT-ценообразование
               </div>
+              <div class="tool-tag">Soon</div>
+            </div>
+            <div class="tool-arrow">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="9 18 15 12 9 6" />
+              </svg>
             </div>
           </div>
 
-          <!-- Swaps -->
+          <!-- 7. Swaps -->
           <div 
-            class="tool-card cursor-pointer"
+            class="tool-card coming-soon"
             :class="{ 'is-exploding': activeExplosion === '/pricing/swaps', 'is-faded': isFaded('/pricing/swaps') }"
             @click="triggerExplosion('/pricing/swaps')"
           >
@@ -133,17 +198,22 @@
               <div class="supernova orange"></div>
             </div>
             <div class="tool-body">
-              <div class="tool-name">Вычисление справедливой стоимости сделок СВОП</div>
-              <div class="tool-tag">Soon</div>
+              <div class="tool-name">Справедливая стоимость СВОПов</div>
               <div class="tool-desc">
-                Процентные и валютные свопы, NPV, DV01, чувствительность.
+                IRS & FX свопы, NPV, DV01, чувствительность к кривой
               </div>
+              <div class="tool-tag">Soon</div>
+            </div>
+            <div class="tool-arrow">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="9 18 15 12 9 6" />
+              </svg>
             </div>
           </div>
 
-          <!-- Vol Surface -->
+          <!-- 8. Volatility Surface -->
           <div 
-            class="tool-card cursor-pointer"
+            class="tool-card coming-soon"
             :class="{ 'is-exploding': activeExplosion === '/pricing/surface', 'is-faded': isFaded('/pricing/surface') }"
             @click="triggerExplosion('/pricing/surface')"
           >
@@ -152,16 +222,21 @@
             </div>
             <div class="tool-body">
               <div class="tool-name">Поверхность волатильности</div>
-              <div class="tool-tag">Soon</div>
               <div class="tool-desc">
-                Калибровка SABR/SVI, smile & term‑structure, арбитраж‑free.
+                Калибровка SABR/SVI, smile & term-structure, arbitrage-free
               </div>
+              <div class="tool-tag">Soon</div>
+            </div>
+            <div class="tool-arrow">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="9 18 15 12 9 6" />
+              </svg>
             </div>
           </div>
 
-          <!-- Forwards -->
+          <!-- 9. Forwards -->
           <div 
-            class="tool-card cursor-pointer"
+            class="tool-card coming-soon"
             :class="{ 'is-exploding': activeExplosion === '/pricing/forwards', 'is-faded': isFaded('/pricing/forwards') }"
             @click="triggerExplosion('/pricing/forwards')"
           >
@@ -169,17 +244,22 @@
               <div class="supernova orange"></div>
             </div>
             <div class="tool-body">
-              <div class="tool-name">Определение справедливой стоимости сделок Форвард</div>
-              <div class="tool-tag">Soon</div>
+              <div class="tool-name">Справедливая стоимость форвардов</div>
               <div class="tool-desc">
-                Теоретическая цена, cost‑of‑carry, кросс‑курсы, roll‑down.
+                Теоретическая цена, cost-of-carry, кросс-курсы, roll-down
               </div>
+              <div class="tool-tag">Soon</div>
+            </div>
+            <div class="tool-arrow">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="9 18 15 12 9 6" />
+              </svg>
             </div>
           </div>
 
-          <!-- Margin -->
+          <!-- 10. Margin -->
           <div 
-            class="tool-card cursor-pointer"
+            class="tool-card coming-soon"
             :class="{ 'is-exploding': activeExplosion === '/pricing/margin', 'is-faded': isFaded('/pricing/margin') }"
             @click="triggerExplosion('/pricing/margin')"
           >
@@ -188,89 +268,74 @@
             </div>
             <div class="tool-body">
               <div class="tool-name">Маржа по деривативам</div>
-              <div class="tool-tag">Soon</div>
               <div class="tool-desc">
-                Вариационная/начальная, стресс‑надбавки.
+                Вариационная/начальная маржа, SIMM, стресс-надбавки
               </div>
+              <div class="tool-tag">Soon</div>
+            </div>
+            <div class="tool-arrow">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="9 18 15 12 9 6" />
+              </svg>
             </div>
           </div>
         </div>
       </section>
     </div>
     
-    <!-- Flash Overlay (optional extra smoothness) -->
+    <!-- Flash Overlay -->
     <div class="flash-overlay" :class="{ active: !!activeExplosion }"></div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 
 const router = useRouter()
 const activeExplosion = ref<string | null>(null)
 
-// Checks if we should fade out this card (if another card is exploding)
+const totalTools = computed(() => 10)
+
 const isFaded = (path: string) => {
   return activeExplosion.value !== null && activeExplosion.value !== path
 }
 
 const triggerExplosion = (path: string) => {
-  if (activeExplosion.value) return // prevent double clicks
+  if (activeExplosion.value) return
   
   activeExplosion.value = path
   
-  // Wait for the explosion animation to fill the screen
   setTimeout(() => {
     router.push(path)
-  }, 350) // Match this with CSS animation duration
+  }, 350)
 }
 </script>
 
 <style scoped>
-/* --------------------------------------
-   EXPLOSION LOGIC
-   -------------------------------------- */
-
-.cursor-pointer {
-  cursor: pointer;
-}
-
-/* When a card explodes */
+/* ============================================
+   EXPLOSION ANIMATIONS
+   ============================================ */
 .tool-card.is-exploding {
   z-index: 9999;
-  border-color: rgba(255,255,255,0.8); /* Сразу светлеет */
-  background: rgba(15,23,42,1); 
+  border-color: rgba(255, 255, 255, 0.8);
+  background: rgba(15, 23, 42, 1);
   transform: scale(1.02);
-  animation: shockwave 0.3s linear; 
+  animation: shockwave 0.3s linear;
 }
 
-/* 
-   CRITICAL: Remove overflow hidden from the icon container 
-   when exploding so the star can expand infinitely.
-*/
 .tool-card.is-exploding .tool-icon {
   overflow: visible !important;
-  background: transparent !important; /* Hide the container box background */
+  background: transparent !important;
   box-shadow: none !important;
   border-color: transparent !important;
 }
 
-/* 
-   Hide the "beam" effect during explosion so it doesn't 
-   look weird floating in the middle of a giant star 
-*/
 .tool-card.is-exploding .tool-icon::after {
-  display: none; /* Убираем сразу, чтобы не мерцало */
+  display: none;
 }
 
-/* THE BIG BANG ANIMATION */
 .tool-card.is-exploding .supernova {
-  /* 
-     Было: 0.8s
-     Стало: 0.5s 
-     Bezier: (0.1, 0, 0, 1) — "экспоненциальный взлет" (сразу быстро)
-  */
   animation: big-bang 0.5s cubic-bezier(0.1, 0, 0, 1) forwards !important;
 }
 
@@ -281,35 +346,31 @@ const triggerExplosion = (path: string) => {
     background: #fff;
   }
   30% {
-    /* Очень быстрая вспышка до белого */
     transform: scale(8);
-    box-shadow: 0 0 100px 50px rgba(255,255,255,1);
+    box-shadow: 0 0 100px 50px rgba(255, 255, 255, 1);
   }
   100% {
-    /* Заполнение экрана */
-    transform: scale(200); 
+    transform: scale(200);
     opacity: 1;
     background: #fff;
-    box-shadow: 0 0 1000px 500px rgba(255,255,255,1);
+    box-shadow: 0 0 1000px 500px rgba(255, 255, 255, 1);
   }
 }
 
 @keyframes shockwave {
   0% { transform: scale(1); }
-  50% { transform: scale(0.96); } /* Сжатие перед взрывом */
+  50% { transform: scale(0.96); }
   100% { transform: scale(1.02); }
 }
 
-/* Fade out other cards when one is active */
 .tool-card.is-faded {
   opacity: 0;
   pointer-events: none;
   transform: scale(0.9);
   filter: blur(4px);
-  transition: all 0.3s ease; /* Ускорено с 0.4s */
+  transition: all 0.3s ease;
 }
 
-/* White Flash Overlay for smoother transition to next page */
 .flash-overlay {
   position: fixed;
   inset: 0;
@@ -317,18 +378,16 @@ const triggerExplosion = (path: string) => {
   z-index: 9998;
   opacity: 0;
   pointer-events: none;
-  transition: opacity 0.1s ease; /* Мгновенное появление */
+  transition: opacity 0.1s ease;
 }
 .flash-overlay.active {
-  transition-delay: 0.25s; /* Появляется почти сразу за взрывом */
+  transition-delay: 0.25s;
   opacity: 1;
 }
 
-
-/* --------------------------------------
-   STANDARD STYLES (Kept exactly as before)
-   -------------------------------------- */
-
+/* ============================================
+   HOME ROOT & LAYOUT
+   ============================================ */
 .home-root {
   position: relative;
   min-height: 100vh;
@@ -337,14 +396,29 @@ const triggerExplosion = (path: string) => {
   color: #f9fafb;
 }
 
-/* ===================== LAVA LAMP BACKGROUND ===================== */
+.home-layout {
+  position: relative;
+  z-index: 1;
+  max-width: 1480px;
+  margin: 0 auto;
+  padding: 80px 40px 80px 40px;
+  display: grid;
+  grid-template-columns: 1.2fr 1fr;
+  gap: 60px;
+  align-items: flex-start;
+  height: 100vh;
+}
+
+/* ============================================
+   LAVA LAMP BACKGROUND
+   ============================================ */
 .lava-layer {
   position: absolute;
   inset: 0;
   overflow: hidden;
   z-index: 0;
   pointer-events: none;
-  filter: blur(36px) saturate(150%);
+  filter: blur(40px) saturate(150%);
 }
 
 .blob {
@@ -388,69 +462,85 @@ const triggerExplosion = (path: string) => {
   position: absolute;
   inset: 5%;
   background:
-    radial-gradient(circle at 10% 0%, rgba(255,255,255,0.10), transparent 40%),
-    radial-gradient(circle at 90% 100%, rgba(255,255,255,0.06), transparent 45%);
+    radial-gradient(circle at 10% 0%, rgba(255, 255, 255, 0.1), transparent 40%),
+    radial-gradient(circle at 90% 100%, rgba(255, 255, 255, 0.06), transparent 45%);
   opacity: 0.9;
 }
 
-/* ===================== LAYOUT ===================== */
-.home-layout {
-  position: relative;
-  z-index: 1;
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 64px 32px 40px 32px;
-  display: grid;
-  grid-template-columns: minmax(0, 1.25fr) minmax(0, 1.1fr);
-  gap: 40px;
-  align-items: start;
-}
-
+/* ============================================
+   HERO SECTION
+   ============================================ */
 .hero {
   display: flex;
   flex-direction: column;
-  gap: 20px;
-  max-width: 560px;
+  gap: 24px;
+  max-width: 580px;
+  padding-top: 12px;
 }
 
 .logo-badge {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-  padding: 6px 10px;
+  gap: 8px;
+  padding: 8px 14px;
   border-radius: 999px;
-  border: 1px solid rgba(148,163,184,0.4);
-  background: radial-gradient(circle at 0 0, rgba(255,255,255,0.18), rgba(15,23,42,0.8));
-  box-shadow: 0 10px 30px rgba(15,23,42,0.8);
-  font-size: 13px;
+  border: 1px solid rgba(148, 163, 184, 0.4);
+  background: radial-gradient(circle at 0 0, rgba(255, 255, 255, 0.18), rgba(15, 23, 42, 0.8));
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.8);
+  font-size: 12px;
   font-weight: 600;
-  letter-spacing: 0.16em;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
+  width: fit-content;
 }
-.logo-badge span {
-  color: #38bdf8;
+
+.badge-icon {
+  color: #22d3ee;
+  font-size: 14px;
 }
 
 .hero-title {
-  font-size: 32px;
+  font-size: 36px;
   line-height: 1.2;
   font-weight: 700;
-  letter-spacing: -0.03em;
+  letter-spacing: -0.02em;
+  margin: 0;
 }
+
 .hero-title span {
-  color: #a5b4fc;
+  background: linear-gradient(135deg, #a5b4fc, #22d3ee, #34d399);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ============================================
+   SUBTITLE FRAME
+   ============================================ */
+.subtitle-frame {
+  backdrop-filter: blur(16px);
+  background: rgba(34, 211, 238, 0.08);
+  border: 1.5px solid rgba(34, 211, 238, 0.2);
+  border-radius: 16px;
+  padding: 18px 20px;
+  box-shadow: 
+    0 0 24px rgba(34, 211, 238, 0.1),
+    inset 0 1px 16px rgba(34, 211, 238, 0.08);
 }
 
 .hero-subtitle {
-  font-size: 14px;
+  font-size: 15px;
   line-height: 1.7;
-  color: rgba(226,232,240,0.75);
+  color: rgba(226, 232, 240, 0.95);
+  margin: 0;
+  font-weight: 500;
 }
 
 .hero-actions {
   display: flex;
   flex-wrap: wrap;
-  gap: 12px;
+  gap: 14px;
+  margin-top: 8px;
 }
 
 .btn {
@@ -458,107 +548,160 @@ const triggerExplosion = (path: string) => {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 10px 18px;
+  gap: 8px;
+  padding: 11px 20px;
   border-radius: 999px;
   font-size: 13px;
-  font-weight: 500;
+  font-weight: 600;
   text-decoration: none;
   cursor: pointer;
   transition: all 0.2s ease;
   border: 1px solid transparent;
 }
+
 .btn.primary {
-  background: radial-gradient(circle at 0 0, #22d3ee, #6366f1);
+  background: linear-gradient(135deg, #22d3ee, #6366f1);
   color: #0b1020;
-  box-shadow: 0 10px 40px rgba(56,189,248,0.35);
+  box-shadow: 0 12px 45px rgba(56, 189, 248, 0.3);
 }
+
 .btn.primary:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 16px 45px rgba(56,189,248,0.45);
+  transform: translateY(-2px);
+  box-shadow: 0 18px 55px rgba(56, 189, 248, 0.45);
 }
+
 .btn.ghost {
-  background: rgba(15,23,42,0.8);
+  background: rgba(15, 23, 42, 0.85);
   color: #e5e7eb;
-  border-color: rgba(148,163,184,0.5);
+  border-color: rgba(148, 163, 184, 0.5);
 }
+
 .btn.ghost:hover {
-  background: rgba(15,23,42,0.95);
+  background: rgba(15, 23, 42, 0.95);
+  border-color: rgba(148, 163, 184, 0.8);
 }
 
-.hero-footnote {
-  margin-top: 4px;
-  font-size: 11px;
-  color: rgba(148,163,184,0.9);
-}
-
-/* ===================== TOOLS GRID ===================== */
+/* ============================================
+   TOOLS GRID - FRAMED CONTAINER
+   ============================================ */
 .tool-grid {
   backdrop-filter: blur(24px);
-  background: radial-gradient(circle at 0 0, rgba(15,23,42,0.9), rgba(15,23,42,0.85));
+  background: rgba(15, 23, 42, 0.6);
   border-radius: 24px;
-  border: 1px solid rgba(148,163,184,0.35);
-  box-shadow: 0 30px 80px rgba(15,23,42,0.9);
-  padding: 20px 18px 18px;
-  transform: translateY(-24px);
+  border: 1.5px solid rgba(34, 211, 238, 0.25);
+  box-shadow: 
+    0 0 30px rgba(34, 211, 238, 0.15),
+    inset 0 1px 20px rgba(34, 211, 238, 0.1),
+    0 30px 80px rgba(15, 23, 42, 0.9);
+  padding: 24px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  max-height: calc(100vh - 160px);
+  overflow-y: auto;
+}
+
+/* Стилизованный скроллбар */
+.tool-grid::-webkit-scrollbar {
+  width: 6px;
+}
+
+.tool-grid::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.tool-grid::-webkit-scrollbar-thumb {
+  background: rgba(34, 211, 238, 0.2);
+  border-radius: 3px;
+}
+
+.tool-grid::-webkit-scrollbar-thumb:hover {
+  background: rgba(34, 211, 238, 0.4);
+}
+
+.tools-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 6px;
 }
 
 .tools-title {
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 600;
-  letter-spacing: 0.12em;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: rgba(209,213,219,0.9);
-  margin-bottom: 14px;
+  color: rgba(209, 213, 219, 0.9);
+  margin: 0;
+}
+
+.tools-count {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: rgba(34, 211, 238, 0.15);
+  color: #22d3ee;
+  font-size: 12px;
+  font-weight: 600;
+  border: 1px solid rgba(34, 211, 238, 0.3);
 }
 
 .tools-grid {
-  display: grid;
-  grid-template-columns: 1fr;
+  display: flex;
+  flex-direction: column;
   gap: 8px;
 }
 
-/* Note: we removed router-link, using div now */
 .tool-card {
   display: flex;
-  gap: 12px;
+  gap: 14px;
   align-items: center;
-  padding: 10px 10px;
-  border-radius: 14px;
+  padding: 12px 12px;
+  border-radius: 12px;
   text-decoration: none;
   color: inherit;
-  background: radial-gradient(circle at 0 0, rgba(255,255,255,0.04), rgba(15,23,42,0.8));
-  border: 1px solid transparent;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(148, 163, 184, 0.15);
+  cursor: pointer;
   transition: all 0.2s ease;
 }
+
 .tool-card:hover {
-  border-color: rgba(148,163,184,0.7);
-  background: radial-gradient(circle at 0 0, rgba(255,255,255,0.08), rgba(15,23,42,0.9));
-  transform: translateY(-1px);
+  border-color: rgba(148, 163, 184, 0.4);
+  background: rgba(255, 255, 255, 0.05);
+  transform: translateX(4px);
 }
 
-/* CONTAINER FOR THE SUPERNOVA */
+.tool-card.coming-soon {
+  opacity: 0.65;
+}
+
 .tool-icon {
-  width: 36px;
-  height: 36px;
-  border-radius: 10px; 
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  box-shadow: inset 0 0 10px rgba(0,0,0,0.3);
+  box-shadow: inset 0 0 12px rgba(0, 0, 0, 0.4);
   position: relative;
-  overflow: hidden; /* Clips the beam normally */
-  border: 1px solid rgba(255,255,255,0.05);
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.08);
   transition: all 0.2s;
 }
 
-.tool-icon.blue { background: rgba(56,189,248,0.1); }
-.tool-icon.indigo { background: rgba(129,140,248,0.1); }
-.tool-icon.orange { background: rgba(249,115,22,0.1); }
-.tool-icon.green { background: rgba(34,197,94,0.1); }
-.tool-icon.red { background: rgba(248,113,113,0.1); }
+.tool-icon.blue { background: rgba(56, 189, 248, 0.12); }
+.tool-icon.purple { background: rgba(168, 85, 247, 0.12); }
+.tool-icon.cyan { background: rgba(34, 211, 238, 0.12); }
+.tool-icon.green { background: rgba(34, 197, 94, 0.12); }
+.tool-icon.nova { background: rgba(255, 51, 102, 0.12); }
+.tool-icon.orange { background: rgba(249, 115, 22, 0.12); }
 
-/* The "Light Beam" */
 .tool-icon::after {
   content: "";
   position: absolute;
@@ -571,17 +714,17 @@ const triggerExplosion = (path: string) => {
   opacity: 0;
   pointer-events: none;
   transition: opacity 0.4s ease;
-  z-index: 1; 
+  z-index: 1;
 }
+
 .tool-card:hover .tool-icon::after {
   opacity: 0.2;
-  animation: beam-wobble 2s infinite ease-in-out; 
+  animation: beam-wobble 2s infinite ease-in-out;
   transform: scale(1);
 }
 
-/* SUPERNOVA CORE */
 .supernova {
-  width: 12px; 
+  width: 12px;
   height: 12px;
   border-radius: 50%;
   background: linear-gradient(135deg, #ffffff 0%, #e0f2fe 33%, #faf5ff 66%, #ffffff 100%);
@@ -592,55 +735,86 @@ const triggerExplosion = (path: string) => {
   animation: star-pulse 3s infinite ease-in-out, shimmer 3s infinite linear;
 }
 
-.supernova.blue   { box-shadow: 0 0 12px 2px rgba(59, 130, 246, 0.6); }
-.supernova.indigo { box-shadow: 0 0 12px 2px rgba(129, 140, 248, 0.6); }
+.supernova.blue { box-shadow: 0 0 12px 2px rgba(59, 130, 246, 0.6); }
+.supernova.purple { box-shadow: 0 0 12px 2px rgba(168, 85, 247, 0.6); }
+.supernova.cyan { box-shadow: 0 0 12px 2px rgba(34, 211, 238, 0.6); }
+.supernova.green { box-shadow: 0 0 12px 2px rgba(34, 197, 94, 0.6); }
+.supernova.nova { box-shadow: 0 0 12px 2px rgba(255, 51, 102, 0.6); }
 .supernova.orange { box-shadow: 0 0 12px 2px rgba(249, 115, 22, 0.6); }
-.supernova.green  { box-shadow: 0 0 12px 2px rgba(34, 197, 94, 0.6); }
-.supernova.red    { box-shadow: 0 0 12px 2px rgba(248, 113, 113, 0.6); }
 
-/* Standard Hover */
 .tool-card:hover .supernova {
-  transform: scale(1.15);
+  transform: scale(1.2);
   animation-duration: 1.5s;
 }
-.tool-card:hover .supernova.blue { box-shadow: 0 0 15px 5px #60a5fa, 0 0 30px 10px rgba(59, 130, 246, 0.4); }
-.tool-card:hover .supernova.indigo { box-shadow: 0 0 15px 5px #a5b4fc, 0 0 30px 10px rgba(129, 140, 248, 0.4); }
-.tool-card:hover .supernova.orange { box-shadow: 0 0 15px 5px #fb923c, 0 0 30px 10px rgba(249, 115, 22, 0.4); }
-.tool-card:hover .supernova.green { box-shadow: 0 0 15px 5px #4ade80, 0 0 30px 10px rgba(34, 197, 94, 0.4); }
-.tool-card:hover .supernova.red { box-shadow: 0 0 15px 5px #f87171, 0 0 30px 10px rgba(248, 113, 113, 0.4); }
+
+.tool-card:hover .supernova.blue { box-shadow: 0 0 18px 6px #60a5fa, 0 0 36px 12px rgba(59, 130, 246, 0.3); }
+.tool-card:hover .supernova.purple { box-shadow: 0 0 18px 6px #c084fc, 0 0 36px 12px rgba(168, 85, 247, 0.3); }
+.tool-card:hover .supernova.cyan { box-shadow: 0 0 18px 6px #67e8f9, 0 0 36px 12px rgba(34, 211, 238, 0.3); }
+.tool-card:hover .supernova.green { box-shadow: 0 0 18px 6px #4ade80, 0 0 36px 12px rgba(34, 197, 94, 0.3); }
+.tool-card:hover .supernova.nova { box-shadow: 0 0 18px 6px #ff3366, 0 0 36px 12px rgba(255, 51, 102, 0.3); }
+.tool-card:hover .supernova.orange { box-shadow: 0 0 18px 6px #fb923c, 0 0 36px 12px rgba(249, 115, 22, 0.3); }
 
 .tool-body {
   flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 3px;
+  min-width: 0;
 }
-.tool-name { font-size: 13px; font-weight: 600; }
-.tool-desc { font-size: 11px; color: rgba(148,163,184,0.95); }
+
+.tool-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: #fff;
+  line-height: 1.3;
+}
+
+.tool-desc {
+  font-size: 12px;
+  color: rgba(148, 163, 184, 0.85);
+  line-height: 1.4;
+}
+
 .tool-tag {
   align-self: flex-start;
   font-size: 9px;
   text-transform: uppercase;
-  letter-spacing: 0.16em;
-  padding: 1px 6px;
-  border-radius: 999px;
-  border: 1px solid rgba(251,191,36,0.6);
-  color: #facc15;
-  background: rgba(15,23,42,0.9);
+  letter-spacing: 0.1em;
+  padding: 2px 6px;
+  border-radius: 4px;
+  border: 1px solid rgba(251, 191, 36, 0.5);
+  color: #fbbf24;
+  background: rgba(251, 191, 36, 0.1);
+  margin-top: 2px;
 }
 
-/* ===================== ANIMATIONS ===================== */
+.tool-arrow {
+  color: rgba(148, 163, 184, 0.4);
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.tool-card:hover .tool-arrow {
+  color: rgba(148, 163, 184, 0.8);
+  transform: translateX(2px);
+}
+
+/* ============================================
+   ANIMATIONS
+   ============================================ */
 @keyframes star-pulse {
   0%, 100% { opacity: 0.85; transform: scale(1); }
   50% { opacity: 1; transform: scale(1.05); }
 }
+
 @keyframes shimmer {
   0% { background-position: 0% 50%; }
   100% { background-position: 200% 50%; }
 }
+
 @keyframes beam-wobble {
-  0%   { transform: translate(0, 0) scale(1); }
-  50%  { transform: translate(2px, -2px) scale(1.1); }
+  0% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(2px, -2px) scale(1.1); }
   100% { transform: translate(0, 0) scale(1); }
 }
 
@@ -674,25 +848,97 @@ const triggerExplosion = (path: string) => {
   20% { transform: translate3d(50%, 20%, 0) scale(1.1); }
   40% { transform: translate3d(65%, 35%, 0) scale(0.95); }
   60% { transform: translate3d(55%, 55%, 0) scale(1.15); }
-  80% { transform: translate3d(40%, 45%, 0) scale(1.0); }
+  80% { transform: translate3d(40%, 45%, 0) scale(1); }
   100% { transform: translate3d(35%, 30%, 0) scale(0.9); }
 }
 
-@media (max-width: 1024px) {
+/* ============================================
+   RESPONSIVE
+   ============================================ */
+@media (max-width: 1200px) {
   .home-layout {
-    padding: 72px 16px 32px 16px;
-    grid-template-columns: minmax(0, 1fr);
-    gap: 32px;
+    grid-template-columns: 1fr;
+    gap: 48px;
+    padding: 72px 32px 60px 32px;
+    height: auto;
   }
+
   .tool-grid {
-    max-width: 520px;
-    margin-top: 8px;
-    transform: translateY(0);     
+    max-height: none;
+    overflow-y: visible;
+  }
+
+  .hero-title {
+    font-size: 32px;
   }
 }
-@media (max-width: 640px) {
+
+@media (max-width: 768px) {
   .home-layout {
-    padding: 64px 16px 24px 16px;
+    padding: 64px 20px 40px 20px;
+    gap: 36px;
+    height: auto;
+  }
+
+  .hero-title {
+    font-size: 28px;
+  }
+
+  .subtitle-frame {
+    padding: 16px 18px;
+  }
+
+  .hero-subtitle {
+    font-size: 14px;
+  }
+
+  .hero-actions {
+    flex-direction: column;
+  }
+
+  .btn {
+    width: 100%;
+  }
+
+  .tool-grid {
+    padding: 18px 14px;
+    max-height: none;
+  }
+
+  .tool-card {
+    padding: 10px 10px;
+  }
+
+  .tool-name {
+    font-size: 12px;
+  }
+
+  .tool-desc {
+    font-size: 11px;
+  }
+}
+
+@media (max-width: 480px) {
+  .home-layout {
+    padding: 56px 16px 32px 16px;
+    height: auto;
+  }
+
+  .hero-title {
+    font-size: 24px;
+  }
+
+  .subtitle-frame {
+    padding: 14px 16px;
+  }
+
+  .tool-icon {
+    width: 36px;
+    height: 36px;
+  }
+
+  .tool-arrow {
+    display: none;
   }
 }
 </style>

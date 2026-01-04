@@ -4,7 +4,7 @@
   <div
     class="sidebar-tab"
     @click="toggleSidebar"
-    :class="{ active: isSidebarOpen, hidden: isSidebarOpen }"
+    :class="{ hidden: isSidebarOpen }"
     title="Open Menu"
   >
     <div class="burger-icon">
@@ -19,11 +19,11 @@
 
   <!-- Sliding Sidebar Panel -->
   <aside class="sidebar" :class="{ 'sidebar--open': isSidebarOpen }">
-    <!-- Lava Lamp Background (3 blobs) -->
+    <!-- Lava Lamp Background -->
     <div class="sidebar-lava-layer"></div>
 
     <div class="sidebar-header">
-      <span class="app-logo">Quantitative Analitics</span>
+      <span class="app-logo">Quantitative <span class="highlight">Analytics</span></span>
       <button class="close-btn" @click="closeSidebar">✕</button>
     </div>
 
@@ -38,7 +38,6 @@
         @click="closeSidebar"
       >
         <div class="home-icon">
-          <!-- The "Home" supernova style -->
           <div class="supernova-home"></div>
         </div>
         <div class="home-info">
@@ -47,10 +46,6 @@
         </div>
       </router-link>
 
-      <!-- =========================================================
-           TOP 3 (AVAILABLE): Portfolio Analytics -> Risk -> Research
-           ========================================================= -->
-
       <!-- 1) Portfolio Analytics -->
       <div class="tool-group">
         <button
@@ -58,16 +53,15 @@
           @click="toggleTool('portfolio')"
           :class="{ expanded: expandedTools.portfolio }"
         >
-          <!-- BLUE SUPERNOVA -->
           <div class="glossy-icon">
-             <div class="supernova blue"></div>
+            <div class="supernova blue"></div>
           </div>
           <div class="tool-info">
             <span class="tool-title">Портфельный анализ</span>
             <span class="tool-subtitle">Анализ и оптимизация</span>
           </div>
           <div class="chevron">
-             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <polyline points="6 9 12 15 18 9" />
             </svg>
           </div>
@@ -75,7 +69,7 @@
 
         <div
           class="tool-content-wrapper"
-          :style="{ maxHeight: expandedTools.portfolio ? '600px' : '0' }"
+          :style="{ maxHeight: expandedTools.portfolio ? '300px' : '0' }"
         >
           <div class="tool-content">
             <router-link
@@ -92,20 +86,19 @@
         </div>
       </div>
 
-      <!-- 2) Risk Management (ENABLED) -->
+      <!-- 2) Risk Management -->
       <div class="tool-group">
         <button
           class="tool-header"
           @click="toggleTool('risk')"
           :class="{ expanded: expandedTools.risk }"
         >
-          <!-- PURPLE SUPERNOVA -->
           <div class="glossy-icon">
             <div class="supernova purple"></div>
           </div>
           <div class="tool-info">
             <span class="tool-title">Риск-менеджмент</span>
-            <span class="tool-subtitle">Бэктестинг, стресс-тестировние</span>
+            <span class="tool-subtitle">Бэктестинг, стресс-тестирование</span>
           </div>
           <div class="chevron">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -116,7 +109,7 @@
 
         <div
           class="tool-content-wrapper"
-          :style="{ maxHeight: expandedTools.risk ? '220px' : '0' }"
+          :style="{ maxHeight: expandedTools.risk ? '180px' : '0' }"
         >
           <div class="tool-content">
             <router-link
@@ -133,14 +126,13 @@
         </div>
       </div>
 
-      <!-- 3) Market Research -->
+      <!-- 3) Hidden Markov Chain -->
       <div class="tool-group">
         <button
           class="tool-header"
           @click="toggleTool('quant')"
           :class="{ expanded: expandedTools.quant }"
         >
-          <!-- CYAN SUPERNOVA -->
           <div class="glossy-icon">
             <div class="supernova cyan"></div>
           </div>
@@ -157,7 +149,7 @@
 
         <div
           class="tool-content-wrapper"
-          :style="{ maxHeight: expandedTools.quant ? '300px' : '0' }"
+          :style="{ maxHeight: expandedTools.quant ? '220px' : '0' }"
         >
           <div class="tool-content">
             <router-link
@@ -174,20 +166,19 @@
         </div>
       </div>
 
-      <!-- ✅ Bond Fair Value — АКТИВНАЯ СЕКЦИЯ ПОСЛЕ QUANT -->
+      <!-- 4) Bond Valuation -->
       <div class="tool-group">
         <button
           class="tool-header"
           @click="toggleTool('bonds')"
           :class="{ expanded: expandedTools.bonds }"
         >
-           <!-- GREEN SUPERNOVA (для активной секции) -->
           <div class="glossy-icon">
             <div class="supernova green"></div>
           </div>
           <div class="tool-info">
             <span class="tool-title">Справедливая стоимость облигаций</span>
-            <span class="tool-subtitle">Доходный подход (DCF)</span>
+            <span class="tool-subtitle">Оценка и анализ</span>
           </div>
           <div class="chevron">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -197,10 +188,9 @@
         </button>
         <div
           class="tool-content-wrapper"
-          :style="{ maxHeight: expandedTools.bonds ? '200px' : '0' }"
+          :style="{ maxHeight: expandedTools.bonds ? '220px' : '0' }"
         >
           <div class="tool-content">
-            <!-- Оценка облигаций -->
             <router-link 
               to="/bond-valuation" 
               class="nav-item"
@@ -210,7 +200,6 @@
               <span class="nav-label">Оценка облигаций</span>
             </router-link>
             
-            <!-- КБД (Zero-Coupon Yield Curve) -->
             <router-link 
               to="/zcyc-viewer" 
               class="nav-item"
@@ -220,7 +209,6 @@
               <span class="nav-label">Кривая бескупонной доходности</span>
             </router-link>
 
-            <!-- ✨ Отчет по облигациям -->
             <router-link 
               to="/bond-report" 
               class="nav-item"
@@ -233,20 +221,52 @@
         </div>
       </div>
 
-      <!-- =========================================================
-           BELOW: UNAVAILABLE / SOON BLOCKS
-           ========================================================= -->
+      <!-- 5) Bond Reports (НОВЫЙ БЛОК) -->
+      <div class="tool-group">
+        <button
+          class="tool-header"
+          @click="toggleTool('bondReports')"
+          :class="{ expanded: expandedTools.bondReports }"
+        >
+          <div class="glossy-icon">
+            <div class="supernova nova"></div>
+          </div>
+          <div class="tool-info">
+            <span class="tool-title">Отчёты по облигациям</span>
+            <span class="tool-subtitle">Шаблонные отчеты</span>
+          </div>
+          <div class="chevron">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="6 9 12 15 18 9" />
+            </svg>
+          </div>
+        </button>
+        <div
+          class="tool-content-wrapper"
+          :style="{ maxHeight: expandedTools.bondReports ? '100px' : '0' }"
+        >
+          <div class="tool-content">
+            <router-link 
+              to="/vanila-bond-report" 
+              class="nav-item"
+              :class="{ active: isActive('/vanila-bond-report') }"
+              @click="closeSidebar"
+            >
+              <span class="nav-label">Vanila Bond Report</span>
+            </router-link>
+          </div>
+        </div>
+      </div>
 
-      <!-- Option Pricing -->
+      <!-- 6) Option Pricing -->
       <div class="tool-group">
         <button
           class="tool-header"
           @click="toggleTool('options')"
           :class="{ expanded: expandedTools.options }"
         >
-          <!-- ORANGE SUPERNOVA -->
           <div class="glossy-icon">
-            <div class="supernova orange"></div>
+            <div class="supernova nova"></div>
           </div>
           <div class="tool-info">
             <span class="tool-title">Опционы</span>
@@ -260,27 +280,57 @@
         </button>
         <div
           class="tool-content-wrapper"
-          :style="{ maxHeight: expandedTools.options ? '100px' : '0' }"
+          :style="{ maxHeight: expandedTools.options ? '200px' : '0' }"
         >
           <div class="tool-content">
-            <router-link to="/pricing/options" class="nav-item coming-soon">
+            <router-link 
+              to="/pricing/options" 
+              class="nav-item"
+              :class="{ active: isActive('/pricing/options') }"
+              @click="closeSidebar"
+            >
               <span class="nav-label">Калькулятор опционов</span>
-              <span class="nav-soon">SOON</span>
+            </router-link>
+
+            <router-link 
+              to="/pricing/options/models" 
+              class="nav-item"
+              :class="{ active: isActive('/pricing/options/models') }"
+              @click="closeSidebar"
+            >
+              <span class="nav-label">Сравнение моделей</span>
+            </router-link>
+
+            <router-link 
+              to="/pricing/options/greeks" 
+              class="nav-item"
+              :class="{ active: isActive('/pricing/options/greeks') }"
+              @click="closeSidebar"
+            >
+              <span class="nav-label">Анализ Greeks</span>
+            </router-link>
+
+            <router-link 
+              to="/pricing/options/portfolio" 
+              class="nav-item"
+              :class="{ active: isActive('/pricing/options/portfolio') }"
+              @click="closeSidebar"
+            >
+              <span class="nav-label">Портфель опционов</span>
             </router-link>
           </div>
         </div>
       </div>
 
-      <!-- Swap Valuation -->
+      <!-- 7) Swap Valuation -->
       <div class="tool-group">
         <button
           class="tool-header"
           @click="toggleTool('swaps')"
           :class="{ expanded: expandedTools.swaps }"
         >
-           <!-- ORANGE SUPERNOVA -->
           <div class="glossy-icon">
-            <div class="supernova orange"></div>
+            <div class="supernova yellow"></div>
           </div>
           <div class="tool-info">
             <span class="tool-title">СВОПы</span>
@@ -294,7 +344,7 @@
         </button>
         <div
           class="tool-content-wrapper"
-          :style="{ maxHeight: expandedTools.swaps ? '100px' : '0' }"
+          :style="{ maxHeight: expandedTools.swaps ? '80px' : '0' }"
         >
           <div class="tool-content">
             <router-link to="/pricing/swaps" class="nav-item coming-soon">
@@ -305,19 +355,19 @@
         </div>
       </div>
 
-      <!-- Volatility Surface -->
+      <!-- 8) Volatility Surface -->
       <div class="tool-group">
         <button
           class="tool-header"
           @click="toggleTool('vol')"
           :class="{ expanded: expandedTools.vol }"
         >
-           <!-- ORANGE SUPERNOVA -->
           <div class="glossy-icon">
-            <div class="supernova orange"></div>
+            <div class="supernova indigo"></div>
           </div>
           <div class="tool-info">
             <span class="tool-title">Поверхность волатильности</span>
+            <span class="tool-subtitle">SABR/SVI модели</span>
           </div>
           <div class="chevron">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -327,27 +377,26 @@
         </button>
         <div
           class="tool-content-wrapper"
-          :style="{ maxHeight: expandedTools.vol ? '100px' : '0' }"
+          :style="{ maxHeight: expandedTools.vol ? '80px' : '0' }"
         >
           <div class="tool-content">
             <router-link to="/pricing/surface" class="nav-item coming-soon">
-              <span class="nav-label">Построение (SABR/SVI)</span>
+              <span class="nav-label">Построение поверхности</span>
               <span class="nav-soon">SOON</span>
             </router-link>
           </div>
         </div>
       </div>
 
-      <!-- Forward Pricing -->
+      <!-- 9) Forward Pricing -->
       <div class="tool-group">
         <button
           class="tool-header"
           @click="toggleTool('forwards')"
           :class="{ expanded: expandedTools.forwards }"
         >
-           <!-- ORANGE SUPERNOVA -->
           <div class="glossy-icon">
-            <div class="supernova orange"></div>
+            <div class="supernova red"></div>
           </div>
           <div class="tool-info">
             <span class="tool-title">Форварды</span>
@@ -361,7 +410,7 @@
         </button>
         <div
           class="tool-content-wrapper"
-          :style="{ maxHeight: expandedTools.forwards ? '100px' : '0' }"
+          :style="{ maxHeight: expandedTools.forwards ? '80px' : '0' }"
         >
           <div class="tool-content">
             <router-link to="/pricing/forwards" class="nav-item coming-soon">
@@ -372,19 +421,19 @@
         </div>
       </div>
 
-      <!-- Derivatives Margin -->
+      <!-- 10) Derivatives Margin -->
       <div class="tool-group">
         <button
           class="tool-header"
           @click="toggleTool('margin')"
           :class="{ expanded: expandedTools.margin }"
         >
-           <!-- ORANGE SUPERNOVA -->
           <div class="glossy-icon">
-            <div class="supernova orange"></div>
+            <div class="supernova violet"></div>
           </div>
           <div class="tool-info">
             <span class="tool-title">Маржа по деривативам</span>
+            <span class="tool-subtitle">SIMM/SA-CCR</span>
           </div>
           <div class="chevron">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -394,7 +443,7 @@
         </button>
         <div
           class="tool-content-wrapper"
-          :style="{ maxHeight: expandedTools.margin ? '100px' : '0' }"
+          :style="{ maxHeight: expandedTools.margin ? '80px' : '0' }"
         >
           <div class="tool-content">
             <router-link to="/pricing/margin" class="nav-item coming-soon">
@@ -404,10 +453,31 @@
           </div>
         </div>
       </div>
+
     </nav>
 
     <div class="sidebar-divider"></div>
 
+    <!-- SETTINGS LINK (Bottom) -->
+    <router-link
+      to="/settings"
+      class="settings-link-button"
+      :class="{ active: isActive('/settings') }"
+      @click="closeSidebar"
+    >
+      <div class="settings-glossy-icon">
+        <div class="supernova pink"></div>
+      </div>
+      <div class="settings-info">
+        <span class="settings-title">Параметры</span>
+        <span class="settings-subtitle">Конфигурация</span>
+      </div>
+      <svg class="settings-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <polyline points="9 18 15 12 9 6" />
+      </svg>
+    </router-link>
+
+    <!-- Footer Status -->
     <div class="sidebar-footer">
       <div class="status-row">
         <span class="lbl">API статус</span>
@@ -429,14 +499,12 @@ const route = useRoute()
 const marketTime = ref('--:--')
 const isSidebarOpen = ref(false)
 
-// Independent state for each block
 const expandedTools = reactive({
   portfolio: true,
   risk: false,
   quant: false,
-  // ACTIVE TOOLS
   bonds: false,
-  // SOON blocks
+  bondReports: false,
   options: false,
   swaps: false,
   vol: false,
@@ -449,29 +517,32 @@ const toggleTool = (id: keyof typeof expandedTools) => {
 }
 
 const portfolioItems = [
-  { path: '/dashboard', label: 'Главная'},
-  { path: '/portfolio', label: 'Оптимизация портфеля'},
-  { path: '/monte-carlo', label: 'Симуляция Монте-Карло'},
-  { path: '/greeks', label: 'Риск-метрики'},
-  { path: '/reports', label: 'Отчёты'},
-  { path: '/settings', label: 'Параметры'},
+  { path: '/dashboard', label: 'Главная' },
+  { path: '/portfolio', label: 'Оптимизация портфеля' },
+  { path: '/monte-carlo', label: 'Симуляция Монте-Карло' },
+  { path: '/greeks', label: 'Риск-метрики' },
+  { path: '/reports', label: 'Отчёты' },
 ]
 
 const riskItems = [
-  { path: '/backtest', label: 'Бэктестинг'},
-  { path: '/stress', label: 'Стресс-тестирование'},
+  { path: '/backtest', label: 'Бэктестинг' },
+  { path: '/stress', label: 'Стресс-тестирование' },
 ]
 
 const quantItems = [
-  { path: '/regimes', label: 'Рыночные режимы'},
-  { path: '/regime-details', label: 'Детальный анализ режимов'},
-  { path: '/fixed-income', label: 'Доходности облигаций'},
+  { path: '/regimes', label: 'Рыночные режимы' },
+  { path: '/regime-details', label: 'Детальный анализ режимов' },
+  { path: '/fixed-income', label: 'Доходности облигаций' },
 ]
 
-const isActive = (path: string) => route.path === path
+const isActive = (path: string): boolean => {
+  return route.path === path
+}
+
 const toggleSidebar = () => {
   isSidebarOpen.value = !isSidebarOpen.value
 }
+
 const closeSidebar = () => {
   isSidebarOpen.value = false
 }
@@ -482,6 +553,7 @@ const updateTime = () => {
     minute: '2-digit',
   })
 }
+
 let timer: any
 onMounted(() => {
   updateTime()
@@ -491,7 +563,9 @@ onUnmounted(() => clearInterval(timer))
 </script>
 
 <style scoped>
-/* ===== LAVA LAMP BACKGROUND ===== */
+/* ============================================
+   LAVA LAMP BACKGROUND — СТАТИЧЕСКИЙ ФОН
+   ============================================ */
 .sidebar-lava-layer {
   position: absolute;
   inset: 0;
@@ -502,274 +576,631 @@ onUnmounted(() => clearInterval(timer))
   filter: blur(30px);
   pointer-events: none;
   z-index: 1;
-  animation: lava-drift 12s ease-in-out infinite;
+  backface-visibility: hidden;
 }
 
-@keyframes lava-drift {
-  0% {
-    background: 
-      radial-gradient(circle 80px at 30% 20%, rgba(99, 102, 241, 0.15), transparent 60%),
-      radial-gradient(circle 60px at 60% 60%, rgba(34, 211, 238, 0.12), transparent 50%),
-      radial-gradient(circle 70px at 20% 80%, rgba(168, 85, 247, 0.12), transparent 55%);
-  }
-  25% {
-    background: 
-      radial-gradient(circle 85px at 35% 25%, rgba(99, 102, 241, 0.18), transparent 60%),
-      radial-gradient(circle 65px at 55% 65%, rgba(34, 211, 238, 0.14), transparent 50%),
-      radial-gradient(circle 75px at 25% 75%, rgba(168, 85, 247, 0.14), transparent 55%);
-  }
-  50% {
-    background: 
-      radial-gradient(circle 75px at 25% 30%, rgba(99, 102, 241, 0.13), transparent 60%),
-      radial-gradient(circle 70px at 65% 55%, rgba(34, 211, 238, 0.11), transparent 50%),
-      radial-gradient(circle 65px at 15% 70%, rgba(168, 85, 247, 0.13), transparent 55%);
-  }
-  75% {
-    background: 
-      radial-gradient(circle 82px at 32% 22%, rgba(99, 102, 241, 0.16), transparent 60%),
-      radial-gradient(circle 62px at 58% 62%, rgba(34, 211, 238, 0.13), transparent 50%),
-      radial-gradient(circle 72px at 22% 78%, rgba(168, 85, 247, 0.13), transparent 55%);
-  }
-  100% {
-    background: 
-      radial-gradient(circle 80px at 30% 20%, rgba(99, 102, 241, 0.15), transparent 60%),
-      radial-gradient(circle 60px at 60% 60%, rgba(34, 211, 238, 0.12), transparent 50%),
-      radial-gradient(circle 70px at 20% 80%, rgba(168, 85, 247, 0.12), transparent 55%);
-  }
-}
-
-/* ===== GLOSSY ICON CONTAINER ===== */
+/* ============================================
+   GLOSSY ICON
+   ============================================ */
 .glossy-icon {
   width: 32px;
   height: 32px;
-  border-radius: 999px; 
-  background: radial-gradient(circle at 50% 50%, rgba(255,255,255,0.08), rgba(255,255,255,0.02) 80%);
-  border: 1px solid rgba(255,255,255,0.15);
+  border-radius: 999px;
+  background: radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.02) 80%);
+  border: 1px solid rgba(255, 255, 255, 0.15);
   display: flex;
   align-items: center;
   justify-content: center;
   position: relative;
-  overflow: hidden; 
-  transition: transform 0.3s ease, border-color 0.3s ease;
+  overflow: hidden;
   flex-shrink: 0;
+  transition: transform 0.3s ease, border-color 0.3s ease;
+  backface-visibility: hidden;
 }
 
 .tool-header:hover .glossy-icon {
   transform: translateY(-1px);
-  border-color: rgba(255,255,255,0.3);
+  border-color: rgba(255, 255, 255, 0.3);
 }
 
-.glossy-icon::after {
-  content: "";
-  position: absolute;
-  top: -50%;
-  left: -50%;
-  width: 200%;
-  height: 200%;
-  background: radial-gradient(circle, rgba(255, 255, 255, 0.4) 0%, transparent 60%);
-  transform: scale(0);
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 0.4s ease;
-  z-index: 1;
-}
-.tool-header:hover .glossy-icon::after {
-  opacity: 0.15;
-  animation: beam-wobble 2s infinite ease-in-out; 
-  transform: scale(1);
-}
-@keyframes beam-wobble {
-  0%   { transform: translate(0, 0) scale(1); }
-  50%  { transform: translate(2px, -2px) scale(1.1); }
-  100% { transform: translate(0, 0) scale(1); }
-}
-
-/* ===== SUPERNOVA (The Glowing Core) ===== */
+/* ============================================
+   SUPERNOVA — БЕЗ АНИМАЦИЙ
+   ============================================ */
 .supernova {
   width: 12px;
   height: 12px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #ffffff 0%, #e0f2fe 33%, #faf5ff 66%, #ffffff 100%);
-  background-size: 200% 200%;
   position: relative;
   z-index: 2;
-  transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
-  animation: star-pulse 3s infinite ease-in-out, shimmer 3s infinite linear;
+  backface-visibility: hidden;
 }
 
-/* COLOR VARIANTS */
-.supernova.blue {
-  box-shadow: 0 0 12px 2px rgba(59, 130, 246, 0.6);
+.supernova.blue { 
+  background: linear-gradient(135deg, #60a5fa 0%, #3b82f6 50%, #1e40af 100%);
+  box-shadow: 0 0 12px 2px rgba(59, 130, 246, 0.8);
 }
-.supernova.purple {
-  box-shadow: 0 0 12px 2px rgba(168, 85, 247, 0.6);
+
+.supernova.purple { 
+  background: linear-gradient(135deg, #c084fc 0%, #a855f7 50%, #7e22ce 100%);
+  box-shadow: 0 0 12px 2px rgba(168, 85, 247, 0.8);
 }
-.supernova.cyan {
-  box-shadow: 0 0 12px 2px rgba(34, 211, 238, 0.6);
+
+.supernova.cyan { 
+  background: linear-gradient(135deg, #67e8f9 0%, #22d3ee 50%, #0891b2 100%);
+  box-shadow: 0 0 12px 2px rgba(34, 211, 238, 0.8);
 }
-.supernova.orange {
-  box-shadow: 0 0 12px 2px rgba(249, 115, 22, 0.6);
+
+.supernova.green { 
+  background: linear-gradient(135deg, #4ade80 0%, #22c55e 50%, #15803d 100%);
+  box-shadow: 0 0 12px 2px rgba(34, 197, 94, 0.8);
 }
-.supernova.green {
-  box-shadow: 0 0 12px 2px rgba(34, 197, 94, 0.6);
+
+.supernova.pink { 
+  background: linear-gradient(135deg, #f472b6 0%, #ec4899 50%, #be185d 100%);
+  box-shadow: 0 0 12px 2px rgba(236, 72, 153, 0.8);
+}
+
+.supernova.nova {
+  background: linear-gradient(135deg, #ff3366 0%, #ff99cc 33%, #ff6699 66%, #ff3366 100%);
+  box-shadow: 0 0 12px 2px rgba(255, 51, 102, 0.85), 0 0 20px 4px rgba(255, 102, 153, 0.5);
+}
+
+.supernova.yellow {
+  background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 50%, #d97706 100%);
+  box-shadow: 0 0 12px 2px rgba(251, 191, 36, 0.85);
+}
+
+.supernova.indigo {
+  background: linear-gradient(135deg, #a5b4fc 0%, #818cf8 50%, #4f46e5 100%);
+  box-shadow: 0 0 12px 2px rgba(129, 140, 248, 0.85);
+}
+
+.supernova.red {
+  background: linear-gradient(135deg, #f87171 0%, #ef4444 50%, #b91c1c 100%);
+  box-shadow: 0 0 12px 2px rgba(239, 68, 68, 0.85);
+}
+
+.supernova.violet {
+  background: linear-gradient(135deg, #d8b4fe 0%, #c4b5fd 50%, #7c3aed 100%);
+  box-shadow: 0 0 12px 2px rgba(124, 58, 237, 0.85);
 }
 
 .supernova-home {
-  width: 18px; height: 18px; border-radius: 50%;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
   background: linear-gradient(135deg, #22d3ee, #ffffff, #6366f1);
   background-size: 200% 200%;
-  box-shadow: 0 0 15px rgba(99, 102, 241, 0.6);
-  animation: star-pulse 4s infinite ease-in-out, shimmer 4s infinite linear;
+  box-shadow: 0 0 15px rgba(99, 102, 241, 0.8);
+  backface-visibility: hidden;
 }
 
-.tool-header:hover .supernova {
-  transform: scale(1.15);
-  animation-duration: 1.5s;
+/* Hover states — только box-shadow */
+.tool-header:hover .supernova.blue { 
+  box-shadow: 0 0 18px 4px rgba(96, 165, 250, 0.9), 0 0 32px 8px rgba(59, 130, 246, 0.4);
+}
+.tool-header:hover .supernova.purple { 
+  box-shadow: 0 0 18px 4px rgba(192, 132, 252, 0.9), 0 0 32px 8px rgba(168, 85, 247, 0.4);
+}
+.tool-header:hover .supernova.cyan { 
+  box-shadow: 0 0 18px 4px rgba(103, 232, 249, 0.9), 0 0 32px 8px rgba(34, 211, 238, 0.4);
+}
+.tool-header:hover .supernova.green { 
+  box-shadow: 0 0 18px 4px rgba(74, 222, 128, 0.9), 0 0 32px 8px rgba(34, 197, 94, 0.4);
+}
+.tool-header:hover .supernova.pink { 
+  box-shadow: 0 0 18px 4px rgba(244, 114, 182, 0.9), 0 0 32px 8px rgba(236, 72, 153, 0.4);
+}
+.tool-header:hover .supernova.nova { 
+  box-shadow: 0 0 18px 4px rgba(255, 51, 102, 0.95), 0 0 32px 8px rgba(255, 102, 153, 0.5);
+}
+.tool-header:hover .supernova.yellow { 
+  box-shadow: 0 0 18px 4px rgba(251, 191, 36, 0.95), 0 0 32px 8px rgba(251, 191, 36, 0.4);
+}
+.tool-header:hover .supernova.indigo { 
+  box-shadow: 0 0 18px 4px rgba(165, 180, 252, 0.9), 0 0 32px 8px rgba(129, 140, 248, 0.4);
+}
+.tool-header:hover .supernova.red { 
+  box-shadow: 0 0 18px 4px rgba(248, 113, 113, 0.9), 0 0 32px 8px rgba(239, 68, 68, 0.4);
+}
+.tool-header:hover .supernova.violet { 
+  box-shadow: 0 0 18px 4px rgba(216, 180, 254, 0.9), 0 0 32px 8px rgba(124, 58, 237, 0.4);
 }
 
-.tool-header:hover .supernova.blue {
-  box-shadow: 0 0 20px 6px #60a5fa, 0 0 40px 12px rgba(59, 130, 246, 0.4);
-}
-.tool-header:hover .supernova.purple {
-  box-shadow: 0 0 20px 6px #c084fc, 0 0 40px 12px rgba(168, 85, 247, 0.4);
-}
-.tool-header:hover .supernova.cyan {
-  box-shadow: 0 0 20px 6px #67e8f9, 0 0 40px 12px rgba(34, 211, 238, 0.4);
-}
-.tool-header:hover .supernova.orange {
-  box-shadow: 0 0 20px 6px #fb923c, 0 0 40px 12px rgba(249, 115, 22, 0.4);
-}
-.tool-header:hover .supernova.green {
-  box-shadow: 0 0 20px 6px #4ade80, 0 0 40px 12px rgba(34, 197, 94, 0.4);
-}
-
-@keyframes star-pulse {
-  0%, 100% { opacity: 0.85; transform: scale(1); }
-  50% { opacity: 1; transform: scale(1.05); }
-}
-
-@keyframes shimmer {
-  0% { background-position: 0% 50%; }
-  100% { background-position: 200% 50%; }
-}
-
-/* ===== SIDEBAR STYLES ===== */
+/* ============================================
+   SIDEBAR LAYOUT
+   ============================================ */
 .sidebar-tab {
-  position: fixed; top: 0; left: 0; bottom: 0; width: 64px; z-index: 1100;
-  background: rgba(15, 15, 30, 0.6); border-right: 1px solid rgba(255, 255, 255, 0.08);
-  backdrop-filter: blur(12px); cursor: pointer; display: flex; align-items: center; justify-content: center;
-  transition: transform 0.3s ease, opacity 0.3s;
+  position: fixed;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width: 64px;
+  z-index: 1100;
+  background: rgba(15, 15, 30, 0.6);
+  border-right: 1px solid rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(12px);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.3s ease, opacity 0.3s ease;
+  backface-visibility: hidden;
 }
-.sidebar-tab:hover { background: rgba(255, 255, 255, 0.05); }
-.sidebar-tab.hidden { transform: translateX(-100%); opacity: 0; pointer-events: none; }
 
-.burger-icon { display: flex; flex-direction: column; gap: 5px; }
-.burger-icon span { width: 20px; height: 2px; background: #00d9ff; border-radius: 2px; transition: 0.3s; }
-.sidebar-tab:hover span { background: #fff; }
+.sidebar-tab:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
 
-.sidebar-backdrop { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.6); z-index: 1105; backdrop-filter: blur(2px); }
+.sidebar-tab.hidden {
+  transform: translateX(-100%);
+  opacity: 0;
+  pointer-events: none;
+}
+
+.burger-icon {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  pointer-events: none;
+}
+
+.burger-icon span {
+  width: 20px;
+  height: 2px;
+  background: #00d9ff;
+  border-radius: 2px;
+  transition: background 0.2s ease;
+  backface-visibility: hidden;
+}
+
+.sidebar-tab:hover span {
+  background: #fff;
+}
+
+.sidebar-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  z-index: 1105;
+  backdrop-filter: blur(2px);
+  animation: fade-in 0.2s ease-out;
+  backface-visibility: hidden;
+}
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
 
 .sidebar {
-  position: fixed; top: 0; left: 0; bottom: 0; width: 280px; z-index: 1110;
-  background: rgba(20, 22, 28, 0.95); border-right: 1px solid rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(40px) saturate(180%); display: flex; flex-direction: column;
-  transform: translateX(-100%); transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+  position: fixed;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width: 280px;
+  z-index: 1110;
+  background: rgba(20, 22, 28, 0.95);
+  border-right: 1px solid rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(40px) saturate(180%);
+  display: flex;
+  flex-direction: column;
+  transform: translateX(-100%);
+  transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
   box-shadow: 20px 0 50px rgba(0, 0, 0, 0.5);
   overflow: hidden;
+  backface-visibility: hidden;
 }
-.sidebar.sidebar--open { transform: translateX(0); }
+
+.sidebar.sidebar--open {
+  transform: translateX(0);
+}
 
 .sidebar-header {
-  height: 64px; display: flex; align-items: center; justify-content: space-between;
-  padding: 0 20px; border-bottom: 1px solid rgba(255, 255, 255, 0.05); flex-shrink: 0;
+  height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 20px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  flex-shrink: 0;
   position: relative;
   z-index: 10;
 }
-.app-logo { font-size: 16px; font-weight: 700; color: #fff; letter-spacing: 0.05em; }
-.highlight { color: #00d9ff; }
-.close-btn { background: none; border: none; color: rgba(255, 255, 255, 0.5); font-size: 18px; cursor: pointer; }
-.close-btn:hover { color: #fff; }
 
-.sidebar-tools { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 12px; position: relative; z-index: 5; }
-.custom-scroll { scrollbar-width: thin; scrollbar-color: rgba(255, 255, 255, 0.1) transparent; }
-.custom-scroll::-webkit-scrollbar { width: 4px; }
-.custom-scroll::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.1); border-radius: 2px; }
-.custom-scroll::-webkit-scrollbar-track { background: transparent; }
+.app-logo {
+  font-size: 14px;
+  font-weight: 700;
+  color: #fff;
+  letter-spacing: 0.05em;
+}
 
-/* HOME entry */
+.highlight {
+  color: #00d9ff;
+}
+
+.close-btn {
+  background: none;
+  border: none;
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 18px;
+  cursor: pointer;
+  transition: color 0.2s ease;
+  padding: 4px;
+  backface-visibility: hidden;
+}
+
+.close-btn:hover {
+  color: #fff;
+}
+
+/* ============================================
+   NAVIGATION TOOLS
+   ============================================ */
+.sidebar-tools {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  position: relative;
+  z-index: 5;
+  -webkit-overflow-scrolling: touch;
+}
+
+.custom-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.1) transparent;
+}
+
+.custom-scroll::-webkit-scrollbar {
+  width: 4px;
+}
+
+.custom-scroll::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 2px;
+  transition: background 0.2s ease;
+  backface-visibility: hidden;
+}
+
+.custom-scroll::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.custom-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* HOME ENTRY */
 .home-entry {
-  display: flex; align-items: center; gap: 10px; padding: 10px 12px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
   border-radius: 12px;
   background: radial-gradient(circle at 0 0, rgba(148, 163, 184, 0.25), rgba(15, 23, 42, 0.95));
   border: 1px solid rgba(148, 163, 184, 0.5);
-  text-decoration: none; color: #e5e7eb; box-shadow: 0 16px 40px rgba(15, 23, 42, 0.9);
+  text-decoration: none;
+  color: #e5e7eb;
+  box-shadow: 0 16px 40px rgba(15, 23, 42, 0.9);
   transition: all 0.2s ease;
+  margin-bottom: 8px;
+  backface-visibility: hidden;
 }
+
 .home-entry:hover {
   background: radial-gradient(circle at 0 0, rgba(248, 250, 252, 0.22), rgba(15, 23, 42, 0.98));
-  border-color: rgba(226, 232, 240, 0.9); transform: translateY(-1px);
+  border-color: rgba(226, 232, 240, 0.9);
+  transform: translateY(-1px);
 }
-.home-entry.active { border-color: #38bdf8; box-shadow: 0 18px 45px rgba(56, 189, 248, 0.45); }
+
+.home-entry.active {
+  border-color: #38bdf8;
+  box-shadow: 0 18px 45px rgba(56, 189, 248, 0.45);
+}
 
 .home-icon {
-  width: 32px; height: 32px; border-radius: 999px;
+  width: 32px;
+  height: 32px;
+  border-radius: 999px;
   border: 1px solid rgba(148, 163, 184, 0.7);
   background: radial-gradient(circle at 0 0, rgba(248, 250, 252, 0.32), rgba(15, 23, 42, 0.96));
-  display: flex; align-items: center; justify-content: center; position: relative; overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+  flex-shrink: 0;
+  backface-visibility: hidden;
 }
 
-.home-info { display: flex; flex-direction: column; gap: 1px; }
-.home-title { font-size: 13px; font-weight: 600; }
-.home-subtitle { font-size: 11px; color: rgba(148, 163, 184, 0.9); }
+.home-info {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
 
-/* Tool Groups */
+.home-title {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.home-subtitle {
+  font-size: 11px;
+  color: rgba(148, 163, 184, 0.9);
+}
+
+/* TOOL GROUPS */
 .tool-group {
-  background: rgba(255, 255, 255, 0.03); border-radius: 12px;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 12px;
   border: 1px solid rgba(255, 255, 255, 0.05);
-  overflow: hidden; transition: background 0.2s, border-color 0.2s; flex-shrink: 0;
+  overflow: hidden;
+  transition: background 0.2s ease, border-color 0.2s ease;
+  flex-shrink: 0;
+  backface-visibility: hidden;
 }
-.tool-group:hover { border-color: rgba(255, 255, 255, 0.1); }
+
+.tool-group:hover {
+  border-color: rgba(255, 255, 255, 0.1);
+}
 
 .tool-header {
-  width: 100%; display: flex; align-items: center; gap: 12px; padding: 12px;
-  background: transparent; border: none; cursor: pointer; text-align: left;
-  transition: background 0.2s;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.2s ease;
+  backface-visibility: hidden;
 }
-.tool-header:hover:not(.disabled) { background: rgba(255, 255, 255, 0.05); }
-.tool-header.expanded { background: rgba(255, 255, 255, 0.02); }
 
-.tool-info { flex: 1; display: flex; flex-direction: column; gap: 2px; }
-.tool-title { font-size: 13px; font-weight: 600; color: #fff; }
-.tool-subtitle { font-size: 11px; color: rgba(255, 255, 255, 0.5); }
+.tool-header:hover:not(.disabled) {
+  background: rgba(255, 255, 255, 0.05);
+}
 
-.chevron { color: rgba(255, 255, 255, 0.3); transition: transform 0.3s; }
-.tool-header.expanded .chevron { transform: rotate(180deg); }
+.tool-header.expanded {
+  background: rgba(255, 255, 255, 0.02);
+}
 
-.tool-content-wrapper { transition: max-height 0.3s cubic-bezier(0.4, 0, 0.2, 1); overflow: hidden; }
+.tool-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.tool-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: #fff;
+  line-height: 1.2;
+}
+
+.tool-subtitle {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.5);
+  line-height: 1.2;
+}
+
+.chevron {
+  color: rgba(255, 255, 255, 0.3);
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  backface-visibility: hidden;
+}
+
+.tool-header.expanded .chevron {
+  transform: rotate(180deg);
+}
+
+.tool-content-wrapper {
+  transition: max-height 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.2s ease;
+  overflow: hidden;
+  backface-visibility: hidden;
+}
+
 .tool-content {
-  padding: 4px 12px 12px 12px; display: flex; flex-direction: column; gap: 2px;
+  padding: 4px 12px 12px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
   border-top: 1px solid rgba(255, 255, 255, 0.03);
 }
 
-/* Nav Items */
+/* NAV ITEMS */
 .nav-item {
-  display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 8px;
-  color: rgba(255, 255, 255, 0.7); text-decoration: none; font-size: 13px; transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  color: rgba(255, 255, 255, 0.7);
+  text-decoration: none;
+  font-size: 12px;
+  transition: all 0.2s ease;
+  backface-visibility: hidden;
 }
-.nav-item:hover { background: rgba(255, 255, 255, 0.05); color: #fff; }
-.nav-item.active { background: rgba(0, 217, 255, 0.15); color: #00d9ff; font-weight: 500; }
-.nav-item.coming-soon { opacity: 0.6; cursor: default; }
-.nav-icon { width: 18px; text-align: center; font-size: 14px; }
-.nav-badge { margin-left: auto; font-size: 10px; background: #ff006e; color: #fff; padding: 1px 5px; border-radius: 4px; font-weight: 700; }
-.nav-soon { margin-left: auto; font-size: 9px; border: 1px solid rgba(255, 255, 255, 0.2); color: rgba(255, 255, 255, 0.5); padding: 1px 4px; border-radius: 4px; text-transform: uppercase; }
 
-/* Footer */
-.sidebar-divider { height: 1px; background: rgba(255, 255, 255, 0.05); margin: 0 20px; flex-shrink: 0; position: relative; z-index: 10; }
-.sidebar-footer { padding: 16px 20px; border-top: 1px solid rgba(255, 255, 255, 0.05); background: rgba(0, 0, 0, 0.2); flex-shrink: 0; margin-top: auto; position: relative; z-index: 10; }
-.status-row { display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 6px; }
-.status-row:last-child { margin-bottom: 0; }
-.lbl { color: rgba(255, 255, 255, 0.4); }
-.val { color: #fff; font-weight: 500; }
-.val.connected { color: #4ade80; }
-.val.mono { font-family: monospace; }
+.nav-item:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: #fff;
+}
+
+.nav-item.active {
+  background: rgba(0, 217, 255, 0.15);
+  color: #00d9ff;
+  font-weight: 500;
+}
+
+.nav-item.coming-soon {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.nav-label {
+  flex: 1;
+}
+
+.nav-soon {
+  font-size: 9px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: rgba(255, 255, 255, 0.5);
+  padding: 1px 4px;
+  border-radius: 4px;
+  text-transform: uppercase;
+  flex-shrink: 0;
+}
+
+/* ============================================
+   SETTINGS LINK BUTTON (Bottom)
+   ============================================ */
+.settings-link-button {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  background: rgba(236, 72, 153, 0.08);
+  border: 1px solid rgba(236, 72, 153, 0.2);
+  text-decoration: none;
+  color: rgba(255, 255, 255, 0.8);
+  transition: all 0.2s ease;
+  position: relative;
+  z-index: 10;
+  border-radius: 0;
+  margin: 0;
+  backface-visibility: hidden;
+}
+
+.settings-link-button:hover {
+  background: rgba(236, 72, 153, 0.12);
+  border-color: rgba(236, 72, 153, 0.4);
+  color: #fff;
+}
+
+.settings-link-button.active {
+  background: rgba(236, 72, 153, 0.15);
+  border-color: rgba(236, 72, 153, 0.6);
+  box-shadow: inset 0 0 20px rgba(236, 72, 153, 0.1);
+}
+
+.settings-glossy-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 999px;
+  background: radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.02) 80%);
+  border: 1px solid rgba(236, 72, 153, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+  transition: transform 0.3s ease, border-color 0.3s ease;
+  flex-shrink: 0;
+  backface-visibility: hidden;
+}
+
+.settings-link-button:hover .settings-glossy-icon {
+  transform: translateY(-1px);
+  border-color: rgba(236, 72, 153, 0.6);
+}
+
+.settings-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.settings-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: #fff;
+}
+
+.settings-subtitle {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.settings-arrow {
+  color: rgba(236, 72, 153, 0.4);
+  transition: transform 0.3s ease, color 0.3s ease;
+  flex-shrink: 0;
+  backface-visibility: hidden;
+}
+
+.settings-link-button:hover .settings-arrow {
+  transform: translateX(2px);
+  color: rgba(236, 72, 153, 0.8);
+}
+
+/* ============================================
+   DIVIDER & FOOTER
+   ============================================ */
+.sidebar-divider {
+  height: 1px;
+  background: rgba(255, 255, 255, 0.05);
+  flex-shrink: 0;
+  position: relative;
+  z-index: 10;
+}
+
+.sidebar-footer {
+  padding: 12px 16px;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  background: rgba(0, 0, 0, 0.2);
+  flex-shrink: 0;
+  position: relative;
+  z-index: 10;
+}
+
+.status-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  margin-bottom: 4px;
+  letter-spacing: 0.5px;
+}
+
+.status-row:last-child {
+  margin-bottom: 0;
+}
+
+.lbl {
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.val {
+  color: #fff;
+  font-weight: 500;
+}
+
+.val.connected {
+  color: #4ade80;
+}
+
+.val.mono {
+  font-family: 'SF Mono', monospace;
+}
+
+/* ============================================
+   RESPONSIVE
+   ============================================ */
+@media (max-width: 768px) {
+  .sidebar {
+    width: 260px;
+  }
+}
 </style>

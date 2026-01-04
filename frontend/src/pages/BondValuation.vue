@@ -1,218 +1,347 @@
 <template>
-  <div class="bond-valuation-page">
+  <div class="page-container custom-scroll">
+    
     <!-- Header -->
-    <div class="page-header">
-      <div>
-        <h1>Оценка облигаций</h1>
-        <p class="subtitle">DCF-модель с данными MOEX ISS API</p>
+    <div class="section-header">
+      <div class="header-left">
+        <h1 class="section-title">Оценка облигаций (DCF)</h1>
+        <p class="section-subtitle">Моделирование денежных потоков на данных MOEX ISS API</p>
       </div>
-      <button class="btn btn-primary" @click="calculateBond" :disabled="loading">
-        {{ loading ? 'Загрузка...' : 'Рассчитать' }}
-      </button>
-    </div>
-
-    <!-- Input Parameters Card -->
-    <div class="card">
-      <div class="card-header">
-        <h3>Параметры оценки</h3>
-      </div>
-      <div class="card-body">
-        <div class="params-grid">
-          <div class="form-group">
-            <label>ISIN оцениваемой облигации</label>
-            <input
-              v-model="params.secid"
-              type="text"
-              class="form-control"
-              placeholder="RU000A10AU99"
-            />
-          </div>
-
-          <div class="form-group">
-            <label>Дата оценки</label>
-            <input
-              v-model="params.valuationDate"
-              type="date"
-              class="form-control"
-            />
-          </div>
-
-          <div class="form-group">
-            <label>Доходность (аналога/индекса) %</label>
-            <input
-              v-model.number="params.discountYield"
-              type="number"
-              step="0.01"
-              class="form-control"
-              placeholder="14.0"
-            />
-          </div>
-
-          <div class="form-group">
-            <label>База расчета</label>
-            <select v-model.number="params.dayCount" class="form-control">
-              <option :value="365">365 (Actual/365)</option>
-              <option :value="360">360 (30/360)</option>
-            </select>
-          </div>
-        </div>
+      <div class="header-actions">
+        <button class="btn-glass primary" @click="calculateBond" :disabled="loading">
+            <span v-if="!loading">▶ Рассчитать</span>
+            <span v-else class="flex-center"><span class="spinner-mini"></span> Загрузка...</span>
+        </button>
       </div>
     </div>
 
-    <!-- Error Alert -->
-    <div v-if="error" class="alert alert-danger">
-      <span>⚠️</span>
-      <span>{{ error }}</span>
-    </div>
+    <div class="dashboard-grid">
+        
+        <!-- LEFT COLUMN: Inputs & Dual Scenario Results -->
+        <div class="left-panel">
+            
+            <!-- Basic Parameters -->
+            <div class="glass-card panel">
+                <div class="panel-header"><h3>Параметры оценки</h3></div>
+                <div class="controls-form">
+                    <div class="form-group">
+                        <label class="lbl">ISIN Облигации</label>
+                        <input v-model="params.secid" type="text" class="glass-input" placeholder="RU000..." />
+                    </div>
 
-    <!-- Results Grid -->
-    <div v-if="results" class="results-grid">
-      <!-- Bond Info Card -->
-      <div class="card">
-        <div class="card-header">
-          <h3>Параметры облигации</h3>
-        </div>
-        <div class="card-body">
-          <div class="info-row">
-            <span class="label">SECID:</span>
-            <span class="value">{{ results.secid }}</span>
-          </div>
-          <div class="info-row">
-            <span class="label">Номинал:</span>
-            <span class="value">{{ formatNumber(results.faceValue) }} ₽</span>
-          </div>
-          <div class="info-row">
-            <span class="label">Купон:</span>
-            <span class="value">{{ results.couponPercent }}% годовых</span>
-          </div>
-          <div class="info-row">
-            <span class="label">Дата выпуска:</span>
-            <span class="value">{{ formatDate(results.issueDate) }}</span>
-          </div>
-          <div class="info-row">
-            <span class="label">Дата погашения:</span>
-            <span class="value">{{ formatDate(results.maturityDate) }}</span>
-          </div>
-          <div class="info-row">
-            <span class="label">Периодичность:</span>
-            <span class="value">{{ results.paymentsPerYear }} в год</span>
-          </div>
-        </div>
-      </div>
+                    <div class="form-group">
+                        <label class="lbl">Дата оценки</label>
+                        <input v-model="params.valuationDate" type="date" class="glass-input" />
+                    </div>
 
-      <!-- Valuation Results Card -->
-      <div class="card">
-        <div class="card-header">
-          <h3>Результаты оценки</h3>
-        </div>
-        <div class="card-body">
-          <div class="metric-large">
-            <div class="metric-label">Dirty Price (с НКД)</div>
-            <div class="metric-value text-gradient-blue">
-              {{ formatNumber(results.dirtyPrice, 4) }} ₽
+                    <div class="form-group">
+                        <label class="lbl">Базис</label>
+                        <select v-model.number="params.dayCount" class="glass-input">
+                            <option :value="365">ACT/365</option>
+                            <option :value="360">30/360</option>
+                        </select>
+                    </div>
+                </div>
             </div>
-          </div>
 
-          <div class="metrics-row">
-            <div class="metric">
-              <div class="metric-label">НКД</div>
-              <div class="metric-value">{{ formatNumber(results.accruedInterest, 4) }}</div>
+            <!-- SCENARIO 1: Доходность Аналога (Input Block) -->
+            <div class="glass-card panel input-scenario scenario-1-input">
+                <div class="panel-header">
+                    <h3>Сценарий 1: Y аналога</h3>
+                </div>
+                <div class="scenario-input-group">
+                    <label class="lbl">Ставка дисконтирования (%)</label>
+                    <input v-model.number="params.discountYield1" type="number" step="0.1" class="glass-input scenario-input" placeholder="14.0" />
+                </div>
             </div>
-            <div class="metric">
-              <div class="metric-label">Clean Price</div>
-              <div class="metric-value text-gradient-green">{{ formatNumber(results.cleanPrice, 4) }}</div>
+
+            <!-- SCENARIO 2: Доходность индекса (Input Block) -->
+            <div class="glass-card panel input-scenario scenario-2-input">
+                <div class="panel-header">
+                    <h3>Сценарий 2: Y индекса</h3>
+                </div>
+                <div class="scenario-input-group">
+                    <label class="lbl">Ставка дисконтирования (%)</label>
+                    <input v-model.number="params.discountYield2" type="number" step="0.1" class="glass-input scenario-input" placeholder="16.0" />
+                </div>
             </div>
-          </div>
 
-          <div class="info-row">
-            <span class="label">Цена в % от номинала:</span>
-            <span class="value">{{ formatNumber(results.pricePercent, 2) }}%</span>
-          </div>
-          <div class="info-row">
-            <span class="label">Дюрация Макалея:</span>
-            <span class="value">{{ formatNumber(results.duration, 4) }} лет</span>
-          </div>
-        </div>
-      </div>
-    </div>
+            <!-- Error Alert -->
+            <transition name="fade">
+                <div v-if="error" class="error-banner">
+                    <span class="icon">⚠️</span> {{ error }}
+                </div>
+            </transition>
 
-    <!-- Cash Flows Table -->
-    <div v-if="results && results.cashFlows" class="card table-card">
-      <div class="card-header">
-        <h3>Денежные потоки (дисконтированные)</h3>
-        <span class="badge">{{ results.cashFlows.length }} платежей</span>
-      </div>
-      <div class="card-body">
-        <div class="table-wrapper">
-          <table class="data-table">
-            <thead>
-              <tr>
-                <th>#</th>
-                <th>Дата</th>
-                <th>t (лет)</th>
-                <th>CF (₽)</th>
-                <th>DF</th>
-                <th>PV (₽)</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-for="(cf, idx) in results.cashFlows" :key="idx">
-                <td>{{ idx + 1 }}</td>
-                <td>{{ formatDate(cf.date) }}</td>
-                <td class="mono">{{ formatNumber(cf.t, 4) }}</td>
-                <td class="mono">{{ formatNumber(cf.cf, 2) }}</td>
-                <td class="mono">{{ formatNumber(cf.df, 6) }}</td>
-                <td class="mono" :class="cf.pv > 0 ? 'positive' : ''">
-                  {{ formatNumber(cf.pv, 4) }}
-                </td>
-              </tr>
-            </tbody>
-            <tfoot>
-              <tr>
-                <td colspan="5" class="text-right"><strong>Итого (Dirty Price):</strong></td>
-                <td class="mono positive"><strong>{{ formatNumber(results.dirtyPrice, 4) }}</strong></td>
-              </tr>
-            </tfoot>
-          </table>
-        </div>
-      </div>
-    </div>
+            <!-- SCENARIO 1: Results -->
+            <transition name="fade">
+            <div v-if="results" class="glass-card panel result-card scenario-1">
+                <div class="panel-header">
+                    <h3>Результаты Сценарий 1</h3>
+                    <span class="scenario-badge">{{ formatNumber(params.discountYield1, 1) }}%</span>
+                </div>
+                
+                <div class="scenario-results">
+                    <div class="main-metric-small">
+                        <span class="metric-label-small">DIRTY PRICE</span>
+                        <span class="metric-value-small text-gradient-blue">{{ formatNumber(results.scenario1.dirtyPrice, 2) }} ₽</span>
+                    </div>
 
-    <!-- All Coupons Schedule -->
-    <div v-if="results && results.allCoupons" class="card table-card">
-      <div class="card-header">
-        <h3>Полное расписание купонов</h3>
-        <span class="badge">{{ results.allCoupons.length }} купонов</span>
-      </div>
-      <div class="card-body">
-        <div class="table-wrapper">
-          <table class="data-table">
-            <thead>
-              <tr>
-                <th>#</th>
-                <th>Дата купона</th>
-                <th>Сумма (₽)</th>
-                <th>Статус</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-for="(coupon, idx) in results.allCoupons" :key="idx">
-                <td>{{ idx + 1 }}</td>
-                <td>{{ formatDate(coupon.date) }}</td>
-                <td class="mono">{{ formatNumber(coupon.value, 2) }}</td>
-                <td>
-                  <span 
-                    class="status-badge" 
-                    :class="coupon.isPaid ? 'paid' : 'future'"
-                  >
-                    {{ coupon.isPaid ? '✓ Выплачен' : '◷ Будущий' }}
-                  </span>
-                </td>
-              </tr>
-            </tbody>
-          </table>
+                    <div class="metrics-grid-small">
+                        <div class="m-item-small">
+                            <span class="sub">Clean Price</span>
+                            <span class="val-small text-green">{{ formatNumber(results.scenario1.cleanPrice, 2) }} ₽</span>
+                        </div>
+                        <div class="m-item-small">
+                            <span class="sub">НКД</span>
+                            <span class="val-small">{{ formatNumber(results.accruedInterest, 2) }} ₽</span>
+                        </div>
+                        <div class="m-item-small">
+                            <span class="sub">% от номинала</span>
+                            <span class="val-small">{{ formatNumber(results.scenario1.pricePercent, 2) }}%</span>
+                        </div>
+                        <div class="m-item-small">
+                            <span class="sub">Дюрация (Mac)</span>
+                            <span class="val-small text-orange">{{ formatNumber(results.scenario1.duration, 2) }} лет</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            </transition>
+
+            <!-- SCENARIO 2: Results -->
+            <transition name="fade">
+            <div v-if="results" class="glass-card panel result-card scenario-2">
+                <div class="panel-header">
+                    <h3>Результаты Сценарий 2</h3>
+                    <span class="scenario-badge variant-2">{{ formatNumber(params.discountYield2, 1) }}%</span>
+                </div>
+                
+                <div class="scenario-results">
+                    <div class="main-metric-small">
+                        <span class="metric-label-small">DIRTY PRICE</span>
+                        <span class="metric-value-small text-gradient-green">{{ formatNumber(results.scenario2.dirtyPrice, 2) }} ₽</span>
+                    </div>
+
+                    <div class="metrics-grid-small">
+                        <div class="m-item-small">
+                            <span class="sub">Clean Price</span>
+                            <span class="val-small text-blue">{{ formatNumber(results.scenario2.cleanPrice, 2) }} ₽</span>
+                        </div>
+                        <div class="m-item-small">
+                            <span class="sub">НКД</span>
+                            <span class="val-small">{{ formatNumber(results.accruedInterest, 2) }} ₽</span>
+                        </div>
+                        <div class="m-item-small">
+                            <span class="sub">% от номинала</span>
+                            <span class="val-small">{{ formatNumber(results.scenario2.pricePercent, 2) }}%</span>
+                        </div>
+                        <div class="m-item-small">
+                            <span class="sub">Дюрация (Mac)</span>
+                            <span class="val-small text-orange">{{ formatNumber(results.scenario2.duration, 2) }} лет</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            </transition>
+
+            <!-- Bond Info -->
+            <transition name="fade">
+            <div v-if="results" class="glass-card panel info-panel">
+                <div class="panel-header"><h3>Паспорт бумаги</h3></div>
+                <div class="info-list">
+                    <div class="info-row"><span>SECID</span> <strong>{{ results.secid }}</strong></div>
+                    <div class="info-row"><span>Номинал</span> <strong>{{ formatNumber(results.faceValue, 0) }} ₽</strong></div>
+                    <div class="info-row"><span>Купон</span> <strong>{{ results.couponPercent }}%</strong></div>
+                    <div class="info-row"><span>Погашение</span> <strong>{{ formatDate(results.maturityDate) }}</strong></div>
+                    <div class="info-row"><span>Частота</span> <strong>{{ results.paymentsPerYear }} / год</strong></div>
+                </div>
+            </div>
+            </transition>
+
         </div>
-      </div>
+
+        <!-- RIGHT COLUMN: Tables & Scenarios -->
+        <div class="main-panel">
+            
+            <!-- Scenario Comparison -->
+            <transition name="fade">
+            <div v-if="results" class="glass-card panel comparison-panel h-auto">
+                <div class="panel-header">
+                    <h3>Сравнение сценариев</h3>
+                </div>
+                <div class="comparison-table-wrapper">
+                    <table class="comparison-table">
+                        <thead>
+                            <tr>
+                                <th>Метрика</th>
+                                <th class="scenario-col">
+                                    <span class="scenario-label">Сценарий 1</span>
+                                    <span class="scenario-rate">{{ formatNumber(params.discountYield1, 1) }}%</span>
+                                </th>
+                                <th class="scenario-col">
+                                    <span class="scenario-label">Сценарий 2</span>
+                                    <span class="scenario-rate variant-2">{{ formatNumber(params.discountYield2, 1) }}%</span>
+                                </th>
+                                <th class="diff-col">
+                                    <span class="scenario-label">Разница</span>
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><strong>Dirty Price</strong></td>
+                                <td class="mono text-gradient-blue">{{ formatNumber(results.scenario1.dirtyPrice, 2) }} ₽</td>
+                                <td class="mono text-gradient-green">{{ formatNumber(results.scenario2.dirtyPrice, 2) }} ₽</td>
+                                <td class="mono" :class="results.scenario1.dirtyPrice > results.scenario2.dirtyPrice ? 'text-green' : 'text-red'">
+                                    {{ formatNumber(results.scenario1.dirtyPrice - results.scenario2.dirtyPrice, 2) }} ₽
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><strong>Clean Price</strong></td>
+                                <td class="mono">{{ formatNumber(results.scenario1.cleanPrice, 2) }} ₽</td>
+                                <td class="mono">{{ formatNumber(results.scenario2.cleanPrice, 2) }} ₽</td>
+                                <td class="mono" :class="results.scenario1.cleanPrice > results.scenario2.cleanPrice ? 'text-green' : 'text-red'">
+                                    {{ formatNumber(results.scenario1.cleanPrice - results.scenario2.cleanPrice, 2) }} ₽
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><strong>% от номинала</strong></td>
+                                <td class="mono">{{ formatNumber(results.scenario1.pricePercent, 2) }}%</td>
+                                <td class="mono">{{ formatNumber(results.scenario2.pricePercent, 2) }}%</td>
+                                <td class="mono" :class="results.scenario1.pricePercent > results.scenario2.pricePercent ? 'text-green' : 'text-red'">
+                                    {{ formatNumber(results.scenario1.pricePercent - results.scenario2.pricePercent, 2) }}%
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><strong>Дюрация (Mac)</strong></td>
+                                <td class="mono">{{ formatNumber(results.scenario1.duration, 2) }} лет</td>
+                                <td class="mono">{{ formatNumber(results.scenario2.duration, 2) }} лет</td>
+                                <td class="mono text-muted">
+                                    (одинаковая)
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            </transition>
+
+            <!-- Cash Flows (Scenario 1) -->
+            <transition name="fade">
+            <div v-if="results && results.cashFlows1" class="glass-card panel h-auto">
+                <div class="panel-header">
+                    <h3>Денежные потоки (Сценарий 1)</h3>
+                    <div class="glass-pill">{{ results.cashFlows1.length }} платежей</div>
+                </div>
+                
+                <div class="table-wrapper custom-scroll">
+                    <table class="glass-table">
+                        <thead>
+                            <tr>
+                                <th>Дата</th>
+                                <th class="text-right">T (лет)</th>
+                                <th class="text-right">CF (₽)</th>
+                                <th class="text-right">DF</th>
+                                <th class="text-right">PV (₽)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr v-for="(cf, idx) in results.cashFlows1" :key="idx">
+                                <td class="text-muted">{{ formatDate(cf.date) }}</td>
+                                <td class="text-right mono text-muted">{{ formatNumber(cf.t, 3) }}</td>
+                                <td class="text-right mono">{{ formatNumber(cf.cf, 2) }}</td>
+                                <td class="text-right mono text-muted">{{ formatNumber(cf.df, 4) }}</td>
+                                <td class="text-right mono font-bold text-blue">{{ formatNumber(cf.pv, 2) }}</td>
+                            </tr>
+                        </tbody>
+                        <tfoot>
+                            <tr>
+                                <td colspan="4" class="text-right text-muted">Total PV (Dirty):</td>
+                                <td class="text-right mono text-blue font-bold">{{ formatNumber(results.scenario1.dirtyPrice, 2) }}</td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+            </transition>
+
+            <!-- Cash Flows (Scenario 2) -->
+            <transition name="fade">
+            <div v-if="results && results.cashFlows2" class="glass-card panel h-auto">
+                <div class="panel-header">
+                    <h3>Денежные потоки (Сценарий 2)</h3>
+                    <div class="glass-pill">{{ results.cashFlows2.length }} платежей</div>
+                </div>
+                
+                <div class="table-wrapper custom-scroll">
+                    <table class="glass-table">
+                        <thead>
+                            <tr>
+                                <th>Дата</th>
+                                <th class="text-right">T (лет)</th>
+                                <th class="text-right">CF (₽)</th>
+                                <th class="text-right">DF</th>
+                                <th class="text-right">PV (₽)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr v-for="(cf, idx) in results.cashFlows2" :key="idx">
+                                <td class="text-muted">{{ formatDate(cf.date) }}</td>
+                                <td class="text-right mono text-muted">{{ formatNumber(cf.t, 3) }}</td>
+                                <td class="text-right mono">{{ formatNumber(cf.cf, 2) }}</td>
+                                <td class="text-right mono text-muted">{{ formatNumber(cf.df, 4) }}</td>
+                                <td class="text-right mono font-bold text-green">{{ formatNumber(cf.pv, 2) }}</td>
+                            </tr>
+                        </tbody>
+                        <tfoot>
+                            <tr>
+                                <td colspan="4" class="text-right text-muted">Total PV (Dirty):</td>
+                                <td class="text-right mono text-green font-bold">{{ formatNumber(results.scenario2.dirtyPrice, 2) }}</td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+            </transition>
+
+            <!-- Coupon Schedule (улучшенная вёрстка) -->
+            <transition name="fade">
+            <div v-if="results && results.allCoupons" class="glass-card panel h-auto">
+                <div class="panel-header">
+                    <h3>График купонных выплат</h3>
+                    <div class="schedule-stats">
+                        <span class="stat-badge paid">{{ results.allCoupons.filter(c => c.isPaid).length }} выплачено</span>
+                        <span class="stat-badge future">{{ results.allCoupons.filter(c => !c.isPaid).length }} будущих</span>
+                    </div>
+                </div>
+                <div class="schedule-grid">
+                    <div v-for="(coupon, idx) in results.allCoupons" :key="idx" class="coupon-card" :class="coupon.isPaid ? 'paid' : 'future'">
+                        <div class="coupon-index">{{ idx + 1 }}</div>
+                        <div class="coupon-content">
+                            <div class="coupon-date">{{ formatDate(coupon.date) }}</div>
+                            <div class="coupon-amount">{{ formatNumber(coupon.value, 2) }} ₽</div>
+                        </div>
+                        <div class="coupon-status">
+                            <span class="status-badge" :class="coupon.isPaid ? 'paid' : 'future'">
+                                {{ coupon.isPaid ? '✓ Выплачен' : '◯ Будущий' }}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            </transition>
+
+            <!-- Empty State -->
+            <div v-if="!results && !loading" class="empty-placeholder">
+                <div class="placeholder-content">
+                    <span class="icon-lg">📊</span>
+                    <h3>Введите параметры и нажмите «Рассчитать»</h3>
+                    <p>Для загрузки данных о купонах используется MOEX API</p>
+                </div>
+            </div>
+
+        </div>
     </div>
   </div>
 </template>
@@ -220,49 +349,46 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 
-// Types
-interface BondParams {
-  secid: string
-  valuationDate: string
-  discountYield: number
-  dayCount: number
-}
-
+// --- Types ---
 interface CashFlow {
-  date: string
-  t: number
-  cf: number
-  df: number
-  pv: number
+  date: string; t: number; cf: number; df: number; pv: number
 }
 
 interface Coupon {
-  date: string
-  value: number
-  isPaid: boolean
+  date: string; value: number; isPaid: boolean
 }
 
-interface BondResults {
-  secid: string
-  faceValue: number
-  couponPercent: number
-  issueDate: string
-  maturityDate: string
-  paymentsPerYear: number
+interface ScenarioResults {
   dirtyPrice: number
-  accruedInterest: number
   cleanPrice: number
   pricePercent: number
   duration: number
-  cashFlows: CashFlow[]
+}
+
+interface BondResults {
+  secid: string; faceValue: number; couponPercent: number; issueDate: string; maturityDate: string; paymentsPerYear: number
+  accruedInterest: number
+  scenario1: ScenarioResults
+  scenario2: ScenarioResults
+  cashFlows1: CashFlow[]
+  cashFlows2: CashFlow[]
   allCoupons: Coupon[]
 }
 
-// State
+interface BondParams {
+  secid: string
+  valuationDate: string
+  discountYield1: number
+  discountYield2: number
+  dayCount: number
+}
+
+// --- State ---
 const params = ref<BondParams>({
   secid: 'RU000A10AU99',
-  valuationDate: '2026-01-01',
-  discountYield: 14.0,
+  valuationDate: new Date().toISOString().split('T')[0],
+  discountYield1: 14.0,
+  discountYield2: 16.0,
   dayCount: 365
 })
 
@@ -270,311 +396,333 @@ const results = ref<BondResults | null>(null)
 const loading = ref(false)
 const error = ref('')
 
-// Methods
+// --- Methods ---
+
+// Helper: Calculate scenario with given yield
+const calculateScenario = (yield_: number, baseCF: any[], accruedInterest: number, faceValue: number): ScenarioResults => {
+  let totalPV = 0
+  const r = yield_ / 100
+  
+  baseCF.forEach(cf => {
+    const t = cf.t
+    const df = Math.exp(-r * t)
+    const pv = cf.cf * df
+    totalPV += pv
+  })
+
+  const cleanPrice = totalPV - accruedInterest
+  const pricePercent = (cleanPrice / faceValue) * 100
+
+  // Macaulay Duration
+  let weightedTime = 0
+  baseCF.forEach(cf => {
+    const t = cf.t
+    const df = Math.exp(-r * t)
+    const pv = cf.cf * df
+    weightedTime += t * pv
+  })
+  const duration = weightedTime / totalPV
+
+  return {
+    dirtyPrice: totalPV,
+    cleanPrice: cleanPrice,
+    pricePercent: pricePercent,
+    duration: duration
+  }
+}
+
+// Helper: Generate base cash flows (used for both scenarios)
+const generateBaseCashFlows = (startDate: Date): any[] => {
+  const cfs = []
+  const baseDate = new Date(startDate)
+  
+  for (let i = 1; i <= 6; i++) {
+    const cfDate = new Date(baseDate)
+    cfDate.setMonth(cfDate.getMonth() + i * 6)
+    
+    const t = i * 0.5 // 6-month intervals
+    const cf = i === 6 ? 1045 : 45 // Last includes face value
+    
+    cfs.push({
+      date: cfDate.toISOString(),
+      t: t,
+      cf: cf
+    })
+  }
+  
+  return cfs
+}
+
+// Helper: Add discount factors and PV to cash flows
+const calculateCashFlowsWithDF = (baseCF: any[], yield_: number): CashFlow[] => {
+  const r = yield_ / 100
+  return baseCF.map(cf => ({
+    date: cf.date,
+    t: cf.t,
+    cf: cf.cf,
+    df: Math.exp(-r * cf.t),
+    pv: cf.cf * Math.exp(-r * cf.t)
+  }))
+}
+
 const calculateBond = async () => {
   loading.value = true
   error.value = ''
   results.value = null
 
-  try {
-    // Вызов бэкенда (Flask/FastAPI)
-    const response = await fetch('http://localhost:8000/api/bond/valuation', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        secid: params.value.secid,
-        valuation_date: params.value.valuationDate,
-        discount_yield: params.value.discountYield / 100,
-        day_count: params.value.dayCount
-      })
-    })
-
-    if (!response.ok) {
-      throw new Error(`HTTP ${response.status}: ${response.statusText}`)
-    }
-
-    const data = await response.json()
-    results.value = data
-  } catch (err: any) {
-    error.value = err.message || 'Ошибка при расчёте облигации'
-    console.error(err)
-  } finally {
+  // Validation
+  if (!params.value.discountYield1 || !params.value.discountYield2) {
+    error.value = 'Заполните обе ставки дисконтирования'
     loading.value = false
+    return
   }
+
+  setTimeout(() => {
+    try {
+      const faceValue = 1000
+      const accruedInterest = 15.5
+      const startDate = new Date()
+
+      // Generate base cash flows
+      const baseCF = generateBaseCashFlows(startDate)
+
+      // Calculate both scenarios
+      const scenario1 = calculateScenario(params.value.discountYield1, baseCF, accruedInterest, faceValue)
+      const scenario2 = calculateScenario(params.value.discountYield2, baseCF, accruedInterest, faceValue)
+
+      // Generate cash flows with DFs for both scenarios
+      const cashFlows1 = calculateCashFlowsWithDF(baseCF, params.value.discountYield1)
+      const cashFlows2 = calculateCashFlowsWithDF(baseCF, params.value.discountYield2)
+
+      // Mock Schedule
+      const coupons = []
+      for (let i = 0; i < 10; i++) {
+        const couponDate = new Date()
+        couponDate.setMonth(couponDate.getMonth() - (4 - i) * 6)
+        coupons.push({
+          date: couponDate.toISOString(),
+          value: 45.0,
+          isPaid: i < 4
+        })
+      }
+
+      results.value = {
+        secid: params.value.secid,
+        faceValue: faceValue,
+        couponPercent: 9.0,
+        issueDate: '2023-01-01',
+        maturityDate: '2028-01-01',
+        paymentsPerYear: 2,
+        accruedInterest: accruedInterest,
+        scenario1: scenario1,
+        scenario2: scenario2,
+        cashFlows1: cashFlows1,
+        cashFlows2: cashFlows2,
+        allCoupons: coupons
+      }
+      loading.value = false
+    } catch (e) {
+      error.value = 'Ошибка соединения с API'
+      loading.value = false
+    }
+  }, 1200)
 }
 
-// Formatters
-const formatNumber = (val: number, decimals = 2): string => {
-  return val.toLocaleString('ru-RU', {
-    minimumFractionDigits: decimals,
-    maximumFractionDigits: decimals
-  })
-}
-
-const formatDate = (dateStr: string): string => {
-  return new Date(dateStr).toLocaleDateString('ru-RU')
-}
-
-// Auto-load on mount (optional)
-onMounted(() => {
-  // calculateBond()
-})
+// --- Formatters ---
+const formatNumber = (val: number, decimals = 2) => val.toLocaleString('ru-RU', { minimumFractionDigits: decimals, maximumFractionDigits: decimals })
+const formatDate = (dateStr: string) => new Date(dateStr).toLocaleDateString('ru-RU')
 </script>
 
 <style scoped>
-.bond-valuation-page {
-  padding: 24px;
-  max-width: 1400px;
-  margin: 0 auto;
-  display: flex;
-  flex-direction: column;
-  gap: 20px; /* 🎯 Главный gap между всеми элементами */
+/* ============================================
+   LAYOUT
+   ============================================ */
+.page-container { padding: 24px 32px; max-width: 1600px; margin: 0 auto; height: 100%; display: flex; flex-direction: column; gap: 24px; }
+.dashboard-grid { display: grid; grid-template-columns: 380px 1fr; gap: 28px; flex: 1; min-height: 0; }
+.left-panel, .main-panel { display: flex; flex-direction: column; gap: 20px; overflow-y: auto; }
+
+/* Header */
+.section-header { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 4px; flex-shrink: 0; }
+.section-title { font-size: 28px; font-weight: 700; color: #fff; margin: 0; letter-spacing: -0.01em; }
+.section-subtitle { font-size: 13px; color: rgba(255,255,255,0.5); margin: 4px 0 0 0; }
+.header-actions { display: flex; gap: 12px; }
+.header-left { display: flex; flex-direction: column; }
+
+/* ============================================
+   GLASS COMPONENTS
+   ============================================ */
+.glass-card {
+  background: rgba(30, 32, 40, 0.4); backdrop-filter: blur(40px) saturate(160%);
+  border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 20px;
+  box-shadow: 0 20px 40px -10px rgba(0,0,0,0.4);
+}
+.panel { padding: 24px; }
+.panel-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+.panel-header h3 { margin: 0; font-size: 12px; font-weight: 700; text-transform: uppercase; color: rgba(255,255,255,0.5); letter-spacing: 0.05em; }
+
+/* Controls */
+.controls-form { display: flex; flex-direction: column; gap: 16px; }
+.form-group { display: flex; flex-direction: column; gap: 6px; }
+.lbl { font-size: 11px; color: rgba(255,255,255,0.6); font-weight: 600; text-transform: uppercase; }
+
+.glass-input {
+    background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); 
+    color: #fff; padding: 10px 12px; border-radius: 10px; width: 100%; outline: none; transition: 0.2s; font-family: "SF Mono", monospace; font-size: 13px;
+}
+.glass-input:focus { border-color: #3b82f6; background: rgba(0,0,0,0.5); }
+
+/* Buttons */
+.btn-glass {
+    border: none; padding: 10px 20px; border-radius: 10px; cursor: pointer; color: #fff; font-weight: 600; font-size: 13px;
+    display: flex; align-items: center; justify-content: center; gap: 8px; transition: all 0.2s;
+}
+.btn-glass.primary { background: linear-gradient(135deg, #3b82f6, #2563eb); box-shadow: 0 4px 15px rgba(59, 130, 246, 0.4); }
+.btn-glass.primary:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(59, 130, 246, 0.5); }
+.btn-glass:disabled { opacity: 0.6; cursor: not-allowed; }
+
+/* ============================================
+   INPUT SCENARIOS (Left Panel)
+   ============================================ */
+.input-scenario { padding: 16px 24px; }
+.input-scenario.scenario-1-input { border-top: 3px solid #3b82f6; }
+.input-scenario.scenario-2-input { border-top: 3px solid #10b981; }
+
+.scenario-input-group { display: flex; flex-direction: column; gap: 8px; }
+
+/* ============================================
+   RESULT SCENARIOS
+   ============================================ */
+.result-card { position: relative; overflow: hidden; margin-top: 12px; }
+.result-card.scenario-1 { border-top: 3px solid #3b82f6; }
+.result-card.scenario-2 { border-top: 3px solid #10b981; }
+
+.scenario-badge { font-size: 10px; background: rgba(59, 130, 246, 0.2); padding: 4px 10px; border-radius: 6px; color: #60a5fa; font-weight: 600; }
+.scenario-badge.variant-2 { background: rgba(16, 185, 129, 0.2); color: #4ade80; }
+
+.scenario-results { display: flex; flex-direction: column; gap: 16px; }
+
+.main-metric-small { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.metric-label-small { font-size: 10px; text-transform: uppercase; color: rgba(255,255,255,0.5); letter-spacing: 0.08em; }
+.metric-value-small { font-size: 22px; font-weight: 700; font-family: "SF Mono", monospace; }
+
+.metrics-grid-small { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.m-item-small { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 4px; padding: 10px; background: rgba(255,255,255,0.02); border-radius: 10px; border: 1px solid rgba(255,255,255,0.05); }
+.m-item-small .sub { font-size: 10px; color: rgba(255,255,255,0.4); }
+.m-item-small .val-small { font-size: 13px; font-weight: 600; font-family: "SF Mono", monospace; color: #fff; }
+
+/* Comparison Table */
+.comparison-panel { margin-bottom: 12px; }
+.comparison-table-wrapper { width: 100%; overflow-x: auto; }
+.comparison-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.comparison-table th { text-align: left; padding: 12px; color: rgba(255,255,255,0.4); font-weight: 600; font-size: 10px; text-transform: uppercase; border-bottom: 1px solid rgba(255,255,255,0.1); }
+.comparison-table td { padding: 12px; border-bottom: 1px solid rgba(255,255,255,0.05); }
+.comparison-table tr:last-child td { border-bottom: none; }
+
+.scenario-col { text-align: center; }
+.scenario-label { display: block; font-size: 10px; text-transform: uppercase; color: rgba(255,255,255,0.5); margin-bottom: 4px; }
+.scenario-rate { display: block; font-size: 13px; font-weight: 700; color: #60a5fa; font-family: "SF Mono", monospace; }
+.scenario-rate.variant-2 { color: #4ade80; }
+
+.diff-col { text-align: center; width: 100px; }
+
+/* Info Panel */
+.info-panel { padding-top: 16px; }
+.info-list { display: flex; flex-direction: column; gap: 10px; }
+.info-row { display: flex; justify-content: space-between; font-size: 13px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 8px; }
+.info-row:last-child { border: none; }
+.info-row span { color: rgba(255,255,255,0.5); }
+.info-row strong { font-weight: 500; color: #fff; }
+
+/* ============================================
+   SCHEDULE (Grid Layout - улучшено)
+   ============================================ */
+.schedule-stats { display: flex; gap: 8px; }
+.stat-badge { font-size: 10px; padding: 3px 8px; border-radius: 4px; font-weight: 600; }
+.stat-badge.paid { background: rgba(74, 222, 128, 0.15); color: #4ade80; }
+.stat-badge.future { background: rgba(255, 255, 255, 0.1); color: rgba(255,255,255,0.5); }
+
+.schedule-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 12px; }
+.coupon-card {
+  padding: 14px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1);
+  background: rgba(255,255,255,0.02); transition: all 0.2s;
+  display: flex; flex-direction: column; gap: 10px;
+}
+.coupon-card.paid { border-left: 3px solid #4ade80; background: rgba(74, 222, 128, 0.04); }
+.coupon-card.future { border-left: 3px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.01); }
+.coupon-card:hover { border-color: rgba(255,255,255,0.2); background: rgba(255,255,255,0.04); }
+
+.coupon-index { font-size: 10px; color: rgba(255,255,255,0.3); font-weight: 700; text-transform: uppercase; }
+.coupon-content { display: flex; flex-direction: column; gap: 6px; }
+.coupon-date { font-size: 11px; color: rgba(255,255,255,0.6); font-weight: 500; }
+.coupon-amount { font-size: 14px; font-weight: 700; font-family: "SF Mono", monospace; color: #fff; }
+.coupon-status { display: flex; justify-content: center; }
+
+.status-badge { padding: 4px 8px; border-radius: 4px; font-size: 10px; font-weight: 600; text-transform: uppercase; display: inline-block; }
+.status-badge.paid { background: rgba(74, 222, 128, 0.15); color: #4ade80; }
+.status-badge.future { background: rgba(255, 255, 255, 0.1); color: rgba(255,255,255,0.5); }
+
+/* ============================================
+   TABLES
+   ============================================ */
+.table-wrapper { width: 100%; }
+.glass-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.glass-table th { text-align: left; padding: 12px; color: rgba(255,255,255,0.4); font-weight: 600; font-size: 11px; text-transform: uppercase; border-bottom: 1px solid rgba(255,255,255,0.1); }
+.glass-table td { padding: 10px 12px; border-bottom: 1px solid rgba(255,255,255,0.05); color: #e2e8f0; }
+.glass-table tr:last-child td { border-bottom: none; }
+.glass-table tfoot td { border-top: 1px solid rgba(255,255,255,0.1); padding-top: 16px; }
+
+.glass-pill { background: rgba(255,255,255,0.1); padding: 4px 10px; border-radius: 99px; font-size: 11px; color: rgba(255,255,255,0.7); }
+
+/* Empty State */
+.empty-placeholder { height: 100%; display: flex; align-items: center; justify-content: center; opacity: 0.5; border: 2px dashed rgba(255,255,255,0.1); border-radius: 20px; }
+.placeholder-content { text-align: center; }
+.icon-lg { font-size: 48px; display: block; margin-bottom: 16px; }
+.empty-placeholder h3 { font-size: 16px; color: #fff; margin: 0 0 8px 0; }
+.empty-placeholder p { font-size: 13px; margin: 0; }
+
+/* Utils */
+.text-right { text-align: right; }
+.text-center { text-align: center; }
+.text-green { color: #4ade80; }
+.text-blue { color: #3b82f6; }
+.text-orange { color: #fbbf24; }
+.text-red { color: #f87171; }
+.text-muted { color: rgba(255,255,255,0.4); }
+.mono { font-family: "SF Mono", monospace; }
+.font-bold { font-weight: 700; }
+.h-auto { height: auto; }
+.flex-center { display: flex; align-items: center; gap: 8px; }
+
+.text-gradient-blue { background: linear-gradient(to right, #60a5fa, #3b82f6); -webkit-background-clip: text; color: transparent; }
+.text-gradient-green { background: linear-gradient(to right, #4ade80, #22c55e); -webkit-background-clip: text; color: transparent; }
+
+.error-banner { background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.3); color: #fca5a5; padding: 12px; border-radius: 10px; margin-bottom: 20px; font-size: 13px; display: flex; align-items: center; gap: 8px; }
+.spinner-mini { width: 14px; height: 14px; border: 2px solid #fff; border-top-color: transparent; border-radius: 50%; animation: spin 1s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* Transition */
+.fade-enter-active, .fade-leave-active { transition: opacity 0.3s; }
+.fade-enter-from, .fade-leave-to { opacity: 0; }
+
+/* Custom scrollbar */
+.custom-scroll::-webkit-scrollbar { width: 6px; }
+.custom-scroll::-webkit-scrollbar-track { background: transparent; }
+.custom-scroll::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 3px; }
+.custom-scroll::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.2); }
+
+@media (max-width: 1280px) {
+  .dashboard-grid { grid-template-columns: 340px 1fr; }
+  .schedule-grid { grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); }
 }
 
-.page-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  /* убрал margin-bottom, теперь gap в родителе */
+@media (max-width: 1024px) {
+  .dashboard-grid { grid-template-columns: 1fr; }
+  .metrics-grid-small { grid-template-columns: 1fr; }
+  .schedule-grid { grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); }
 }
 
-.page-header h1 {
-  font-size: 32px;
-  font-weight: 600;
-  margin: 0;
-  letter-spacing: -0.8px;
-}
-
-.page-header .subtitle {
-  margin-top: 6px;
-  font-size: 14px;
-  color: var(--text-secondary);
-}
-
-/* Parameters Grid */
-.params-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-  gap: 16px;
-}
-
-.form-group {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.form-group label {
-  font-size: 12px;
-  font-weight: 500;
-  color: var(--text-secondary);
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-/* Alert */
-.alert {
-  padding: 14px 18px;
-  border-radius: var(--radius-md);
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  background: rgba(239, 68, 68, 0.12);
-  border: 1px solid rgba(239, 68, 68, 0.3);
-  color: #fca5a5;
-  font-size: 13px;
-  /* убрал margin-bottom */
-}
-
-/* Results Grid */
-.results-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-  gap: 20px;
-  /* убрал margin-bottom */
-}
-
-/* Info Rows */
-.info-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 10px 0;
-  border-bottom: 1px solid var(--glass-border-soft);
-  font-size: 13px;
-}
-
-.info-row:last-child {
-  border-bottom: none;
-}
-
-.info-row .label {
-  color: var(--text-secondary);
-  font-weight: 500;
-}
-
-.info-row .value {
-  color: var(--text-primary);
-  font-family: var(--font-family-mono);
-}
-
-/* Metrics */
-.metric-large {
-  text-align: center;
-  padding: 20px 0;
-  border-bottom: 1px solid var(--glass-border-soft);
-  margin-bottom: 16px;
-}
-
-.metric-large .metric-label {
-  font-size: 12px;
-  color: var(--text-secondary);
-  text-transform: uppercase;
-  letter-spacing: 0.8px;
-  margin-bottom: 8px;
-}
-
-.metric-large .metric-value {
-  font-size: 36px;
-  font-weight: 700;
-  font-family: var(--font-family-mono);
-}
-
-.metrics-row {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 16px;
-  margin-bottom: 16px;
-}
-
-.metric {
-  text-align: center;
-  padding: 12px;
-  background: rgba(255, 255, 255, 0.03);
-  border-radius: var(--radius-sm);
-  border: 1px solid var(--glass-border-soft);
-}
-
-.metric .metric-label {
-  font-size: 11px;
-  color: var(--text-tertiary);
-  text-transform: uppercase;
-  margin-bottom: 6px;
-}
-
-.metric .metric-value {
-  font-size: 20px;
-  font-weight: 600;
-  font-family: var(--font-family-mono);
-}
-
-/* Badge */
-.badge {
-  padding: 4px 10px;
-  border-radius: var(--radius-pill);
-  font-size: 11px;
-  font-weight: 600;
-  background: rgba(255, 255, 255, 0.08);
-  color: var(--text-secondary);
-}
-
-/* Table Cards - добавил дополнительный класс для визуального разделения */
-.table-card {
-  /* можно добавить дополнительные стили если нужно */
-}
-
-/* Table */
-.table-wrapper {
-  overflow-x: auto;
-  border-radius: var(--radius-sm);
-}
-
-.data-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 13px;
-}
-
-.data-table thead th {
-  text-align: left;
-  padding: 10px 12px;
-  font-size: 11px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  color: var(--text-secondary);
-  border-bottom: 1px solid var(--glass-border-soft);
-}
-
-.data-table tbody td {
-  padding: 10px 12px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
-  color: var(--text-primary);
-}
-
-.data-table tbody tr:hover {
-  background: rgba(255, 255, 255, 0.02);
-}
-
-.data-table tfoot td {
-  padding: 12px;
-  font-weight: 600;
-  border-top: 2px solid var(--glass-border);
-  background: rgba(255, 255, 255, 0.02);
-}
-
-.data-table .mono {
-  font-family: var(--font-family-mono);
-}
-
-.data-table .positive {
-  color: var(--color-accent-success);
-}
-
-.data-table .text-right {
-  text-align: right;
-}
-
-/* Status Badge */
-.status-badge {
-  display: inline-block;
-  padding: 3px 10px;
-  border-radius: var(--radius-pill);
-  font-size: 11px;
-  font-weight: 600;
-}
-
-.status-badge.paid {
-  background: rgba(34, 197, 94, 0.15);
-  color: #4ade80;
-}
-
-.status-badge.future {
-  background: rgba(245, 158, 11, 0.15);
-  color: #fbbf24;
-}
-
-/* Responsive */
 @media (max-width: 768px) {
-  .bond-valuation-page {
-    padding: 16px;
-  }
-
-  .page-header {
-    flex-direction: column;
-    gap: 16px;
-  }
-
-  .page-header .btn {
-    width: 100%;
-  }
-
-  .results-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .params-grid {
-    grid-template-columns: 1fr;
-  }
+  .schedule-grid { grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 10px; }
+  .coupon-card { padding: 12px; gap: 8px; }
 }
 </style>

@@ -5,14 +5,14 @@
     <!-- Header -->
     <div class="section-header">
       <div class="header-left">
-        <h1 class="section-title">Симуляция траекторий методом Монте-Карло</h1>
-        <p class="section-subtitle">Генерация стохастических сценариев и оценка хвостовых рисков</p>
+        <h1 class="section-title">Симуляция Монте-Карло</h1>
+        <p class="section-subtitle">Генерация стохастических сценариев (GBM Model)</p>
       </div>
       <div class="header-actions">
-         <span class="status-badge" :class="isRunning ? 'pulse' : ''">
+         <div class="glass-pill status-pill" :class="{ pulse: isRunning }">
              <span class="dot" :class="isRunning ? 'bg-orange' : 'bg-green'"></span>
              {{ isRunning ? 'Вычисление...' : 'Готов к запуску' }}
-         </span>
+         </div>
       </div>
     </div>
 
@@ -21,40 +21,37 @@
         <!-- LEFT COLUMN: CONTROLS -->
         <aside class="controls-column">
             <!-- Settings Card -->
-            <div class="card glass-panel settings-card">
+            <div class="glass-card settings-card">
                 <div class="panel-header-sm">
                     <h3>Параметры модели</h3>
                 </div>
 
                 <div class="controls-form">
-                    <!-- Initial Price (Scrubbable) -->
+                    <!-- Initial Price -->
                     <div class="input-group">
                         <label class="lbl">Начальная цена (S₀)</label>
-                        <ScrubInput 
-                           v-model="params.startPrice" 
-                           :step="1" :min="1" :max="5000" prefix="$"
-                           @change="runSimulationFast"
-                        />
+                        <div class="glass-input-wrapper">
+                            <input v-model.number="params.startPrice" type="number" class="reset-input" />
+                            <span class="suffix">$</span>
+                        </div>
                     </div>
 
-                    <!-- Volatility (Scrubbable) -->
+                    <!-- Volatility -->
                     <div class="input-group">
                         <label class="lbl">Волатильность (σ)</label>
-                        <ScrubInput 
-                           v-model="params.volatility" 
-                           :step="0.5" :min="1" :max="200" :decimals="1" suffix="%"
-                           @change="runSimulationFast"
-                        />
+                        <div class="glass-input-wrapper">
+                            <input v-model.number="params.volatility" type="number" step="0.1" class="reset-input" />
+                            <span class="suffix">%</span>
+                        </div>
                     </div>
 
-                    <!-- Drift (Scrubbable) -->
+                    <!-- Drift -->
                     <div class="input-group">
-                        <label class="lbl">Ожидаемая доходность (μ)</label>
-                        <ScrubInput 
-                           v-model="params.drift" 
-                           :step="0.5" :min="-50" :max="100" :decimals="1" suffix="%"
-                           @change="runSimulationFast"
-                        />
+                        <label class="lbl">Доходность (μ)</label>
+                        <div class="glass-input-wrapper">
+                            <input v-model.number="params.drift" type="number" step="0.1" class="reset-input" />
+                            <span class="suffix">%</span>
+                        </div>
                     </div>
 
                     <div class="divider"></div>
@@ -62,16 +59,20 @@
                     <!-- Time & Paths -->
                     <div class="row-2-col">
                         <div class="input-group">
-                            <label class="lbl">Горизонт (T)</label>
-                            <input v-model.number="params.days" type="number" class="glass-input" placeholder="252" />
+                            <label class="lbl">Дней (T)</label>
+                            <div class="glass-input-wrapper">
+                                <input v-model.number="params.days" type="number" class="reset-input" />
+                            </div>
                         </div>
                         <div class="input-group">
-                            <label class="lbl">Количество путей (N)</label>
-                            <input v-model.number="params.paths" type="number" step="1000" class="glass-input" />
+                            <label class="lbl">Путей (N)</label>
+                            <div class="glass-input-wrapper">
+                                <input v-model.number="params.paths" type="number" step="1000" class="reset-input" />
+                            </div>
                         </div>
                     </div>
 
-                    <button @click="runSimulationFull" :disabled="isRunning" class="btn btn-primary-gradient btn-full-width">
+                    <button @click="runSimulationFull" :disabled="isRunning" class="btn-glass primary w-full mt-4">
                         <span v-if="!isRunning">Запустить симуляцию</span>
                         <span v-else>Расчет...</span>
                     </button>
@@ -79,17 +80,18 @@
             </div>
 
             <!-- Statistics Card -->
-            <div v-if="results" class="card glass-panel stats-card">
+            <transition name="fade">
+            <div v-if="results" class="glass-card stats-card">
                 <div class="panel-header-sm">
-                    <h3>Статистика прогона</h3>
+                    <h3>Результаты (T={{ params.days }})</h3>
                 </div>
                 <ul class="simple-list">
                     <li>
-                        <span>Мин. значение</span>
+                        <span>Мин. цена</span>
                         <span class="mono text-red">{{ formatCurrency(results.min) }}</span>
                     </li>
                     <li>
-                        <span>Макс. значение</span>
+                        <span>Макс. цена</span>
                         <span class="mono text-green">{{ formatCurrency(results.max) }}</span>
                     </li>
                     <li>
@@ -98,6 +100,7 @@
                     </li>
                 </ul>
             </div>
+            </transition>
         </aside>
 
         <!-- RIGHT COLUMN: VISUALIZATION -->
@@ -105,39 +108,39 @@
             
             <!-- Key Metrics Cards -->
             <div class="metrics-row">
-                <div class="kpi-card-mini">
-                    <span class="kpi-lbl">Математическое ожидание (E)</span>
+                <div class="glass-card kpi-card-mini">
+                    <span class="kpi-lbl">Среднее (Mean)</span>
                     <span class="kpi-val" :class="getColor(results?.meanChange)">
                         {{ results ? formatCurrency(results.mean) : '—' }}
                     </span>
                 </div>
-                <div class="kpi-card-mini">
+                <div class="glass-card kpi-card-mini">
                     <span class="kpi-lbl">VaR (95%)</span>
                     <span class="kpi-val text-red">
                         {{ results ? formatCurrency(results.var95) : '—' }}
                     </span>
                 </div>
-                <div class="kpi-card-mini">
+                <div class="glass-card kpi-card-mini">
                     <span class="kpi-lbl">Вероятность роста</span>
                     <span class="kpi-val text-green">
                         {{ results ? results.winProb + '%' : '—' }}
                     </span>
                 </div>
-                <div class="kpi-card-mini">
-                    <span class="kpi-lbl">Текущий день симуляции</span>
+                <div class="glass-card kpi-card-mini">
+                    <span class="kpi-lbl">День симуляции</span>
                     <span class="kpi-val text-blue">
-                        {{ playbackStep }} <span class="text-sm text-muted">/ {{ params.days }}</span>
+                        {{ playbackStep }} <span class="text-sm opacity-50">/ {{ params.days }}</span>
                     </span>
                 </div>
             </div>
 
             <!-- Main Chart Area -->
-            <div class="card glass-panel chart-panel">
+            <div class="glass-card chart-panel">
                 <div class="chart-header">
-                    <h3>
-                        Траектории симуляции
-                        <span v-if="isPlaying" class="live-badge">● LIVE PLAYBACK</span>
-                    </h3>
+                    <div class="flex items-center gap-2">
+                        <h3>Траектории</h3>
+                        <span v-if="isPlaying" class="live-badge">● LIVE</span>
+                    </div>
                     
                     <!-- Playback Controls -->
                     <div class="playback-controls" v-if="chartData.paths.length">
@@ -169,39 +172,39 @@
                         <line x1="0" y1="200" x2="1000" y2="200" stroke="rgba(255,255,255,0.05)" />
                         <line x1="0" y1="50" x2="1000" y2="50" stroke="rgba(255,255,255,0.05)" />
 
-                        <!-- Start Price Reference Line -->
+                        <!-- Start Price Line -->
                         <line 
                             x1="0" 
                             :y1="scaleY(params.startPrice)" 
                             x2="1000" 
                             :y2="scaleY(params.startPrice)" 
-                            stroke="rgba(255,255,255,0.3)" 
+                            stroke="rgba(255,255,255,0.2)" 
                             stroke-dasharray="4" 
                         />
 
-                        <!-- Dynamic Paths -->
+                        <!-- Paths -->
                         <path 
                             v-for="(path, i) in chartData.displayPaths" 
                             :key="`path-${i}`"
                             :d="generatePathD(path, playbackStep)"
                             fill="none" 
-                            stroke="rgba(59, 130, 246, 0.15)" 
+                            stroke="rgba(59, 130, 246, 0.2)" 
                             stroke-width="1" 
                         />
 
-                        <!-- Confidence Area (5-95%) -->
+                        <!-- Confidence Area -->
                         <path 
                             :d="generateAreaD(chartData.q05, chartData.q95, playbackStep)"
                             fill="rgba(59, 130, 246, 0.1)" 
                             stroke="none" 
                         />
 
-                        <!-- Median Path (Bold) -->
+                        <!-- Median Path -->
                         <path 
                             :d="generatePathD(chartData.medianPath, playbackStep)"
                             fill="none" 
                             stroke="#3b82f6" 
-                            stroke-width="3" 
+                            stroke-width="2.5" 
                         />
                               
                         <!-- Quantile Lines -->
@@ -232,9 +235,9 @@
                         />
                     </svg>
 
-                    <div v-else class="empty-chart">
-                        <div class="spinner-large" v-if="isRunning"></div>
-                        <span v-else>Запустите симуляцию для отображения графиков</span>
+                    <div v-else class="empty-state">
+                        <div v-if="isRunning" class="spinner"></div>
+                        <span v-else>Нажмите «Запустить» для генерации</span>
                     </div>
                 </div>
             </div>
@@ -245,9 +248,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted, onUnmounted } from 'vue'
+import { ref, reactive, onUnmounted } from 'vue'
 import { useTaskStore } from '@/stores/tasks'
-import ScrubInput from '@/components/common/ScrubInput.vue'
 
 // --- State ---
 const taskStore = useTaskStore()
@@ -261,7 +263,6 @@ const params = reactive({
     model: 'gbm'
 })
 
-// Playback State
 const playbackStep = ref(0)
 const isPlaying = ref(false)
 let animationFrame: number | null = null
@@ -279,20 +280,13 @@ const chartData = reactive({
 
 // --- Simulation Logic ---
 
-const runSimulationFast = () => {
-    generateData()
-    calculateMetrics()
-    if (playbackStep.value >= params.days) {
-        playbackStep.value = params.days
-    }
-}
-
 const runSimulationFull = async () => {
     if (isRunning.value) return
     isRunning.value = true
     results.value = null 
     stopPlay()
     
+    // Эмуляция задачи
     const taskId = taskStore.addTask(`Monte Carlo (${params.paths} paths)`, 'simulation')
 
     try {
@@ -310,7 +304,7 @@ const runSimulationFull = async () => {
                 playbackStep.value = 0
                 togglePlay()
             }
-        }, 150)
+        }, 100)
     } catch (e) {
         taskStore.failTask(taskId)
         isRunning.value = false
@@ -346,7 +340,8 @@ const resetPlayback = () => {
 const animate = () => {
     if (!isPlaying.value) return
     
-    const nextStep = playbackStep.value + 2
+    // Скорость анимации
+    const nextStep = playbackStep.value + Math.max(1, Math.floor(params.days / 100))
     
     if (nextStep >= params.days) {
         playbackStep.value = params.days
@@ -436,14 +431,12 @@ const calculateMetrics = () => {
     }
 }
 
-// --- SVG & Helpers ---
-
+// --- Helpers ---
 const boxMullerRandom = (): number => {
-    let u = 0
-    let v = 0
-    while (u === 0) u = Math.random()
-    while (v === 0) v = Math.random()
-    return Math.sqrt(-2.0 * Math.log(u)) * Math.cos(2.0 * Math.PI * v)
+    let u = 0, v = 0;
+    while(u === 0) u = Math.random();
+    while(v === 0) v = Math.random();
+    return Math.sqrt(-2.0 * Math.log(u)) * Math.cos(2.0 * Math.PI * v);
 }
 
 const scaleX = (t: number): number => (t / params.days) * 1000
@@ -474,11 +467,7 @@ const generateAreaD = (lower: number[], upper: number[], limit: number): string 
 }
 
 const formatCurrency = (val: number): string => 
-    new Intl.NumberFormat('en-US', { 
-        style: 'currency', 
-        currency: 'USD', 
-        maximumFractionDigits: 0 
-    }).format(val)
+    new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(val)
 
 const getColor = (val: number | string): string => {
     const numVal = typeof val === 'string' ? parseFloat(val) : val
@@ -486,13 +475,7 @@ const getColor = (val: number | string): string => {
 }
 
 onUnmounted(() => {
-    if (animationFrame) {
-        cancelAnimationFrame(animationFrame)
-    }
-})
-
-onMounted(() => {
-    // Optional initialization
+    if (animationFrame) cancelAnimationFrame(animationFrame)
 })
 </script>
 
@@ -501,486 +484,125 @@ onMounted(() => {
    PAGE LAYOUT
    ============================================ */
 .page-container {
-    display: flex;
-    flex-direction: column;
-    gap: 24px;
-    padding: 28px;
-    max-width: 1600px;
-    margin: 0 auto;
-    min-height: 100vh;
-    overflow-y: auto;
+    padding: 24px 32px; max-width: 1600px; margin: 0 auto;
+    display: flex; flex-direction: column; gap: 24px; height: 100%;
 }
 
 /* ============================================
-   HEADER SECTION
+   HEADER
    ============================================ */
-.section-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-end;
-    margin-bottom: 8px;
-}
+.section-header { display: flex; justify-content: space-between; align-items: flex-end; padding-bottom: 8px; }
+.section-title { font-size: 28px; font-weight: 700; color: #fff; margin: 0; letter-spacing: -0.01em; }
+.section-subtitle { font-size: 13px; color: rgba(255, 255, 255, 0.5); margin: 4px 0 0 0; }
 
-.header-left {
-    flex: 1;
+.glass-pill {
+    display: flex; align-items: center; gap: 8px; padding: 6px 14px;
+    background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 99px; font-size: 12px; color: rgba(255,255,255,0.8); font-weight: 500;
 }
-
-.section-title {
-    font-size: 28px;
-    font-weight: 700;
-    color: #fff;
-    margin: 0;
-}
-
-.section-subtitle {
-    font-size: 13px;
-    color: rgba(255, 255, 255, 0.5);
-    margin: 4px 0 0 0;
-}
-
-.status-badge {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 6px 12px;
-    background: rgba(255, 255, 255, 0.05);
-    border-radius: 20px;
-    font-size: 11px;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    color: rgba(255, 255, 255, 0.6);
-    border: 1px solid rgba(255, 255, 255, 0.05);
-}
-
-.status-badge.pulse {
-    border-color: rgba(251, 191, 36, 0.4);
-    color: #fbbf24;
-}
-
-.dot {
-    width: 6px;
-    height: 6px;
-    border-radius: 50%;
-}
+.glass-pill.pulse { border-color: rgba(251, 191, 36, 0.4); color: #fbbf24; }
+.dot { width: 6px; height: 6px; border-radius: 50%; box-shadow: 0 0 6px currentColor; }
+.bg-green { background: #4ade80; color: #4ade80; }
+.bg-orange { background: #fbbf24; color: #fbbf24; }
 
 /* ============================================
-   GRID LAYOUT
+   GRID
    ============================================ */
-.mc-grid-layout {
-    display: grid;
-    grid-template-columns: 320px 1fr;
-    gap: 24px;
-    flex: 1;
-}
+.mc-grid-layout { display: grid; grid-template-columns: 300px 1fr; gap: 24px; flex: 1; min-height: 0; }
+.controls-column { display: flex; flex-direction: column; gap: 16px; overflow-y: auto; }
+.viz-column { display: flex; flex-direction: column; gap: 16px; min-height: 0; }
 
-/* ============================================
-   CONTROLS COLUMN
-   ============================================ */
-.controls-column {
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-}
-
-.settings-card {
-    flex-shrink: 0;
-}
-
-.stats-card {
-    flex-shrink: 0;
-    margin-top: auto;
-}
-
-.card {
-    border-radius: 18px;
-    overflow: hidden;
-    background: rgba(20, 22, 28, 0.25);
-    backdrop-filter: blur(40px) saturate(180%);
+/* GLASS CARD */
+.glass-card {
+    border-radius: 20px; background: rgba(30, 32, 40, 0.4);
+    backdrop-filter: blur(30px) saturate(160%);
     border: 1px solid rgba(255, 255, 255, 0.08);
-    box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.5);
-}
-
-.glass-panel {
+    box-shadow: 0 20px 40px -10px rgba(0,0,0,0.4);
     padding: 20px;
 }
 
-.panel-header-sm h3 {
-    margin: 0 0 16px 0;
-    font-size: 12px;
-    font-weight: 700;
-    text-transform: uppercase;
-    color: rgba(255, 255, 255, 0.4);
-    letter-spacing: 0.05em;
+/* ============================================
+   INPUTS & CONTROLS
+   ============================================ */
+.panel-header-sm h3 { margin: 0 0 16px 0; font-size: 12px; font-weight: 700; text-transform: uppercase; color: rgba(255, 255, 255, 0.4); letter-spacing: 0.05em; }
+.controls-form { display: flex; flex-direction: column; gap: 14px; }
+.input-group { display: flex; flex-direction: column; gap: 6px; }
+.lbl { font-size: 11px; color: rgba(255, 255, 255, 0.5); font-weight: 600; }
+
+/* REFACTORED INPUTS */
+.glass-input-wrapper {
+  display: flex; align-items: center; background: rgba(0,0,0,0.2);
+  border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 0 10px; height: 36px;
+  transition: all 0.2s;
 }
+.glass-input-wrapper:focus-within { background: rgba(0,0,0,0.35); border-color: rgba(255,255,255,0.3); }
+
+.reset-input {
+  width: 100%; background: transparent !important; border: none !important;
+  color: #fff; text-align: right; padding: 0; margin-right: 4px;
+  font-family: "SF Mono", monospace; outline: none; font-size: 13px; height: 100%;
+}
+.suffix { font-size: 13px; color: rgba(255,255,255,0.4); font-weight: 500; }
+
+.row-2-col { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.divider { height: 1px; background: rgba(255, 255, 255, 0.1); margin: 4px 0; }
+
+/* BTN */
+.btn-glass {
+  height: 40px; border-radius: 10px; font-weight: 600; font-size: 13px; cursor: pointer;
+  display: flex; align-items: center; justify-content: center; transition: all 0.2s; border: none;
+}
+.btn-glass.primary { background: #3b82f6; color: #fff; box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3); }
+.btn-glass.primary:hover:not(:disabled) { background: #2563eb; transform: translateY(-1px); }
+.btn-glass:disabled { opacity: 0.6; cursor: not-allowed; }
+.mt-4 { margin-top: 16px; }
+
+/* LIST */
+.simple-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 10px; }
+.simple-list li { display: flex; justify-content: space-between; font-size: 12px; border-bottom: 1px solid rgba(255, 255, 255, 0.05); padding-bottom: 6px; color: rgba(255, 255, 255, 0.7); }
 
 /* ============================================
-   FORM CONTROLS
+   VIZ METRICS
    ============================================ */
-.controls-form {
-    display: flex;
-    flex-direction: column;
-    gap: 14px;
-}
-
-.input-group {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-}
-
-.lbl {
-    font-size: 11px;
-    color: rgba(255, 255, 255, 0.5);
-    font-weight: 500;
-}
-
-.row-2-col {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 10px;
-}
-
-.glass-input,
-.glass-select {
-    width: 100%;
-    background: rgba(0, 0, 0, 0.3);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    color: #fff;
-    padding: 10px;
-    border-radius: 8px;
-    font-family: var(--font-family-mono);
-    font-size: 13px;
-    outline: none;
-    transition: 0.2s;
-}
-
-.glass-input:focus,
-.glass-select:focus {
-    border-color: #3b82f6;
-}
-
-.simple-list {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-}
-
-.simple-list li {
-    display: flex;
-    justify-content: space-between;
-    font-size: 12px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-    padding-bottom: 6px;
-    color: rgba(255, 255, 255, 0.7);
-}
+.metrics-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+.kpi-card-mini { padding: 16px; display: flex; flex-direction: column; gap: 4px; align-items: flex-start; }
+.kpi-lbl { font-size: 10px; color: rgba(255, 255, 255, 0.4); text-transform: uppercase; font-weight: 700; letter-spacing: 0.05em; }
+.kpi-val { font-size: 20px; font-weight: 700; color: #fff; font-family: "SF Mono", monospace; }
 
 /* ============================================
-   VISUALIZATION COLUMN
+   CHART
    ============================================ */
-.viz-column {
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
-}
+.chart-panel { flex: 1; display: flex; flex-direction: column; min-height: 400px; }
+.chart-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+.chart-header h3 { margin: 0; font-size: 14px; font-weight: 600; color: #fff; }
+.live-badge { font-size: 10px; color: #ef4444; font-weight: 700; animation: blink 1.5s infinite; }
+@keyframes blink { 50% { opacity: 0.5; } }
 
-.metrics-row {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 16px;
-}
+/* PLAYBACK */
+.playback-controls { display: flex; align-items: center; gap: 12px; background: rgba(0,0,0,0.3); padding: 4px 12px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.1); }
+.icon-btn { background: none; border: none; color: #fff; cursor: pointer; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; font-size: 12px; border-radius: 50%; transition: 0.2s; }
+.icon-btn:hover { background: rgba(255,255,255,0.1); }
 
-.kpi-card-mini {
-    background: rgba(255, 255, 255, 0.03);
-    border: 1px solid rgba(255, 255, 255, 0.05);
-    border-radius: 12px;
-    padding: 16px;
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-}
+.timeline-wrapper { position: relative; width: 140px; height: 4px; background: rgba(255,255,255,0.1); border-radius: 2px; display: flex; align-items: center; }
+.timeline-slider { position: absolute; width: 100%; height: 100%; opacity: 0; cursor: pointer; z-index: 2; margin: 0; }
+.timeline-track { height: 100%; background: #3b82f6; border-radius: 2px; pointer-events: none; }
 
-.kpi-lbl {
-    font-size: 10px;
-    color: rgba(255, 255, 255, 0.4);
-    text-transform: uppercase;
-    font-weight: 600;
-    letter-spacing: 0.05em;
-}
+.chart-container { flex: 1; position: relative; background: rgba(0,0,0,0.2); border-radius: 8px; overflow: hidden; }
+.main-svg { width: 100%; height: 100%; }
+.empty-state { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; color: rgba(255,255,255,0.3); font-size: 13px; }
+.spinner { width: 24px; height: 24px; border: 2px solid rgba(255,255,255,0.1); border-top-color: #3b82f6; border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 8px; }
+@keyframes spin { to { transform: rotate(360deg); } }
 
-.kpi-val {
-    font-size: 20px;
-    font-weight: 700;
-    color: #fff;
-    font-family: var(--font-family-mono);
-}
+/* UTILS */
+.text-green { color: #4ade80; }
+.text-red { color: #f87171; }
+.text-blue { color: #60a5fa; }
+.mono { font-family: "SF Mono", monospace; }
+.opacity-50 { opacity: 0.5; }
+.w-full { width: 100%; }
 
-.text-sm {
-    font-size: 12px;
-}
-
-/* ============================================
-   CHART PANEL
-   ============================================ */
-.chart-panel {
-    display: flex;
-    flex-direction: column;
-    flex: 1;
-    min-height: 500px;
-}
-
-.chart-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 16px;
-    min-height: 32px;
-}
-
-.chart-header h3 {
-    margin: 0;
-    font-size: 14px;
-    font-weight: 600;
-    color: #fff;
-}
-
-/* ============================================
-   PLAYBACK CONTROLS
-   ============================================ */
-.playback-controls {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    background: rgba(0, 0, 0, 0.3);
-    padding: 4px 12px;
-    border-radius: 20px;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.icon-btn {
-    background: none;
-    border: none;
-    color: #fff;
-    cursor: pointer;
-    width: 24px;
-    height: 24px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 50%;
-    transition: 0.2s;
-    font-size: 12px;
-}
-
-.icon-btn:hover {
-    background: rgba(255, 255, 255, 0.1);
-}
-
-.timeline-wrapper {
-    position: relative;
-    width: 140px;
-    height: 4px;
-    background: rgba(255, 255, 255, 0.1);
-    border-radius: 2px;
-    display: flex;
-    align-items: center;
-}
-
-.timeline-slider {
-    position: absolute;
-    width: 100%;
-    height: 100%;
-    opacity: 0;
-    cursor: pointer;
-    z-index: 2;
-    margin: 0;
-}
-
-.timeline-track {
-    height: 100%;
-    background: #3b82f6;
-    border-radius: 2px;
-    pointer-events: none;
-    transition: width 0.05s linear;
-}
-
-.live-badge {
-    font-size: 10px;
-    color: #ef4444;
-    margin-left: 8px;
-    animation: blink 1s infinite;
-}
-
-@keyframes blink {
-    50% {
-        opacity: 0.5;
-    }
-}
-
-/* ============================================
-   CHART CONTAINER
-   ============================================ */
-.chart-container {
-    flex-grow: 1;
-    position: relative;
-    background: rgba(0, 0, 0, 0.2);
-    border-radius: 8px;
-    overflow: hidden;
-    min-height: 350px;
-}
-
-.main-svg {
-    width: 100%;
-    height: 100%;
-}
-
-.empty-chart {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    height: 100%;
-    color: rgba(255, 255, 255, 0.3);
-    font-size: 13px;
-    gap: 12px;
-}
-
-/* ============================================
-   BUTTONS
-   ============================================ */
-.btn {
-    border: none;
-    border-radius: 8px;
-    padding: 12px 16px;
-    font-weight: 600;
-    font-size: 13px;
-    cursor: pointer;
-    color: white;
-    transition: 0.2s;
-    text-align: center;
-}
-
-.btn-primary-gradient {
-    background: linear-gradient(135deg, #3b82f6, #2563eb);
-}
-
-.btn-primary-gradient:hover:not(:disabled) {
-    filter: brightness(1.1);
-}
-
-.btn:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-}
-
-.btn-full-width {
-    width: 100%;
-    margin-top: 4px;
-}
-
-/* ============================================
-   UTILITY CLASSES
-   ============================================ */
-.text-green {
-    color: #4ade80;
-}
-
-.text-red {
-    color: #f87171;
-}
-
-.text-blue {
-    color: #60a5fa;
-}
-
-.bg-green {
-    background: #4ade80;
-}
-
-.bg-red {
-    background: #f87171;
-}
-
-.bg-blue {
-    background: #3b82f6;
-}
-
-.bg-orange {
-    background: #fbbf24;
-}
-
-.text-muted {
-    color: rgba(255, 255, 255, 0.4);
-}
-
-.mono {
-    font-family: var(--font-family-mono);
-}
-
-.divider {
-    height: 1px;
-    background: rgba(255, 255, 255, 0.1);
-    margin: 6px 0;
-}
-
-.pl-6 {
-    padding-left: 24px;
-}
-
-/* ============================================
-   SPINNER
-   ============================================ */
-.spinner-large {
-    width: 32px;
-    height: 32px;
-    border: 3px solid rgba(255, 255, 255, 0.1);
-    border-top-color: #3b82f6;
-    border-radius: 50%;
-    animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-    to {
-        transform: rotate(360deg);
-    }
-}
-
-/* ============================================
-   RESPONSIVE
-   ============================================ */
 @media (max-width: 1024px) {
-    .mc-grid-layout {
-        grid-template-columns: 1fr;
-    }
-
-    .metrics-row {
-        grid-template-columns: 1fr 1fr;
-    }
-}
-
-@media (max-width: 640px) {
-    .page-container {
-        padding: 16px;
-        gap: 16px;
-    }
-
-    .section-title {
-        font-size: 22px;
-    }
-
-    .metrics-row {
-        grid-template-columns: 1fr;
-    }
-
-    .playback-controls {
-        width: 100%;
-    }
-
-    .timeline-wrapper {
-        flex: 1;
-    }
+    .mc-grid-layout { grid-template-columns: 1fr; }
+    .metrics-row { grid-template-columns: 1fr 1fr; }
 }
 </style>
-
