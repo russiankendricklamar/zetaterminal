@@ -54,7 +54,7 @@
           :class="{ expanded: expandedTools.portfolio }"
         >
           <div class="glossy-icon">
-            <div class="supernova blue"></div>
+            <div class="supernova purple"></div>
           </div>
           <div class="tool-info">
             <span class="tool-title">Портфельный анализ</span>
@@ -134,7 +134,7 @@
           :class="{ expanded: expandedTools.quant }"
         >
           <div class="glossy-icon">
-            <div class="supernova cyan"></div>
+            <div class="supernova indigo"></div>
           </div>
           <div class="tool-info">
             <span class="tool-title">Скрытая марковская цепь</span>
@@ -221,43 +221,6 @@
         </div>
       </div>
 
-      <!-- 5) Bond Reports (НОВЫЙ БЛОК) -->
-      <div class="tool-group">
-        <button
-          class="tool-header"
-          @click="toggleTool('bondReports')"
-          :class="{ expanded: expandedTools.bondReports }"
-        >
-          <div class="glossy-icon">
-            <div class="supernova nova"></div>
-          </div>
-          <div class="tool-info">
-            <span class="tool-title">Отчёты по облигациям</span>
-            <span class="tool-subtitle">Шаблонные отчеты</span>
-          </div>
-          <div class="chevron">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <polyline points="6 9 12 15 18 9" />
-            </svg>
-          </div>
-        </button>
-        <div
-          class="tool-content-wrapper"
-          :style="{ maxHeight: expandedTools.bondReports ? '100px' : '0' }"
-        >
-          <div class="tool-content">
-            <router-link 
-              to="/vanila-bond-report" 
-              class="nav-item"
-              :class="{ active: isActive('/vanila-bond-report') }"
-              @click="closeSidebar"
-            >
-              <span class="nav-label">Vanila Bond Report</span>
-            </router-link>
-          </div>
-        </div>
-      </div>
-
       <!-- 6) Option Pricing -->
       <div class="tool-group">
         <button
@@ -266,7 +229,7 @@
           :class="{ expanded: expandedTools.options }"
         >
           <div class="glossy-icon">
-            <div class="supernova nova"></div>
+            <div class="supernova green"></div>
           </div>
           <div class="tool-info">
             <span class="tool-title">Опционы</span>
@@ -289,7 +252,7 @@
               :class="{ active: isActive('/pricing/options') }"
               @click="closeSidebar"
             >
-              <span class="nav-label">Калькулятор опционов</span>
+              <span class="nav-label">Справедливая стоимость опционов</span>
             </router-link>
 
             <router-link 
@@ -322,39 +285,6 @@
         </div>
       </div>
 
-      <!-- 7) Swap Valuation -->
-      <div class="tool-group">
-        <button
-          class="tool-header"
-          @click="toggleTool('swaps')"
-          :class="{ expanded: expandedTools.swaps }"
-        >
-          <div class="glossy-icon">
-            <div class="supernova yellow"></div>
-          </div>
-          <div class="tool-info">
-            <span class="tool-title">СВОПы</span>
-            <span class="tool-subtitle">Справедливая стоимость</span>
-          </div>
-          <div class="chevron">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <polyline points="6 9 12 15 18 9" />
-            </svg>
-          </div>
-        </button>
-        <div
-          class="tool-content-wrapper"
-          :style="{ maxHeight: expandedTools.swaps ? '80px' : '0' }"
-        >
-          <div class="tool-content">
-            <router-link to="/pricing/swaps" class="nav-item coming-soon">
-              <span class="nav-label">IRS & Currency Swaps</span>
-              <span class="nav-soon">SOON</span>
-            </router-link>
-          </div>
-        </div>
-      </div>
-
       <!-- 8) Volatility Surface -->
       <div class="tool-group">
         <button
@@ -380,15 +310,91 @@
           :style="{ maxHeight: expandedTools.vol ? '80px' : '0' }"
         >
           <div class="tool-content">
-            <router-link to="/pricing/surface" class="nav-item coming-soon">
+            <router-link
+              to="/analytics/volatility"
+              class="nav-item"
+              :class="{ active: isActive('/analytics/volatility') }"
+              @click="closeSidebar"
+            >
               <span class="nav-label">Построение поверхности</span>
+            </router-link>
+          </div>
+        </div>
+      </div>
+
+      <!-- 7) Swap Valuation -->
+      <div class="tool-group">
+        <button
+          class="tool-header"
+          @click="toggleTool('swaps')"
+          :class="{ expanded: expandedTools.swaps }"
+        >
+          <div class="glossy-icon">
+            <div class="supernova green"></div>
+          </div>
+          <div class="tool-info">
+            <span class="tool-title">СВОПы</span>
+            <span class="tool-subtitle">Greeks, Pricing & Risk</span>
+          </div>
+          <div class="chevron">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="6 9 12 15 18 9" />
+            </svg>
+          </div>
+        </button>
+
+        <div
+          class="tool-content-wrapper"
+          :style="{ maxHeight: expandedTools.swaps ? '200px' : '0' }"
+        >
+          <div class="tool-content">
+            <router-link
+              to="/valuation/swaps"
+              class="nav-item"
+              :class="{ active: isActive('/valuation/swaps') }"
+              @click="closeSidebar"
+            >
+              <span class="nav-label">Справедливая стоимость СВОПов</span>
+            </router-link>
+
+            <router-link
+              to="/swap-greeks"
+              class="nav-item"
+              :class="{ active: isActive('/swap-greeks') }"
+              @click="closeSidebar"
+            >
+              <span class="nav-label">Греки</span>
+            </router-link>
+
+            <router-link
+              to="/analytics/pnl"
+              class="nav-item"
+              :class="{ active: isActive('/analytics/pnl') }"
+              @click="closeSidebar"
+            >
+              <span class="nav-label">Факторная декомпозиция P&L</span>
+            </router-link>
+
+            <router-link
+              to="/hedging"
+              class="nav-item"
+              :class="{ active: isActive('/hedging') }"
+              @click="closeSidebar"
+            >
+              <span class="nav-label">Регрессионное хеджирование</span>
+            </router-link>
+
+            <router-link
+              to="/reports/swaps"
+              class="nav-item coming-soon"
+            >
+              <span class="nav-label">Отчеты по СВОПам</span>
               <span class="nav-soon">SOON</span>
             </router-link>
           </div>
         </div>
       </div>
 
-      <!-- 9) Forward Pricing -->
       <div class="tool-group">
         <button
           class="tool-header"
@@ -396,7 +402,7 @@
           :class="{ expanded: expandedTools.forwards }"
         >
           <div class="glossy-icon">
-            <div class="supernova red"></div>
+            <div class="supernova green"></div>
           </div>
           <div class="tool-info">
             <span class="tool-title">Форварды</span>
@@ -408,14 +414,64 @@
             </svg>
           </div>
         </button>
+
         <div
           class="tool-content-wrapper"
-          :style="{ maxHeight: expandedTools.forwards ? '80px' : '0' }"
+          :style="{ maxHeight: expandedTools.forwards ? '200px' : '0' }"
         >
           <div class="tool-content">
-            <router-link to="/pricing/forwards" class="nav-item coming-soon">
+            <router-link
+              to="/valuation/forwards"
+              class="nav-item"
+              :class="{ active: isActive('/valuation/forwards') }"
+              @click="closeSidebar"
+            >
               <span class="nav-label">Оценка форвардов</span>
-              <span class="nav-soon">SOON</span>
+            </router-link>
+
+            <router-link
+              to="/forwards/curve"
+              class="nav-item"
+              :class="{ active: isActive('/forwards/curve') }"
+              @click="closeSidebar"
+            >
+              <span class="nav-label">Построение форвардной кривой</span>
+            </router-link>
+
+            <router-link
+              to="/forwards/greeks"
+              class="nav-item"
+              :class="{ active: isActive('/forwards/greeks') }"
+              @click="closeSidebar"
+            >
+              <span class="nav-label">Греки</span>
+            </router-link>
+
+            <router-link
+              to="/forwards/basis"
+              class="nav-item"
+              :class="{ active: isActive('/forwards/basis') }"
+              @click="closeSidebar"
+            >
+              <span class="nav-label">Анализ спот-форвард базиса</span>
+            </router-link>
+
+            <router-link
+              to="/forwards/margin"
+              class="nav-item"
+              :class="{ active: isActive('/forwards/margin') }"
+              @click="closeSidebar"
+            >
+              <span class="nav-label">Управление маржой</span>
+            </router-link>
+
+            <router-link
+              to="/forwards/arbitrage"
+              class="nav-item"
+              :class="{ active: isActive('/forwards/arbitrage') }"
+              @click="closeSidebar"
+            >
+              <span class="nav-label">Арбитраж</span>
             </router-link>
           </div>
         </div>
@@ -429,7 +485,7 @@
           :class="{ expanded: expandedTools.margin }"
         >
           <div class="glossy-icon">
-            <div class="supernova violet"></div>
+            <div class="supernova yellow"></div>
           </div>
           <div class="tool-info">
             <span class="tool-title">Маржа по деривативам</span>
@@ -449,6 +505,42 @@
             <router-link to="/pricing/margin" class="nav-item coming-soon">
               <span class="nav-label">Расчет маржи</span>
               <span class="nav-soon">SOON</span>
+            </router-link>
+          </div>
+        </div>
+      </div>
+
+      <div class="tool-group">
+        <button
+          class="tool-header"
+          @click="toggleTool('bondReports')"
+          :class="{ expanded: expandedTools.bondReports }"
+        >
+          <div class="glossy-icon">
+            <div class="supernova nova"></div>
+          </div>
+          <div class="tool-info">
+            <span class="tool-title">Отчёты по облигациям</span>
+            <span class="tool-subtitle">Шаблонные отчеты</span>
+          </div>
+          <div class="chevron">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="6 9 12 15 18 9" />
+            </svg>
+          </div>
+        </button>
+        <div
+          class="tool-content-wrapper"
+          :style="{ maxHeight: expandedTools.bondReports ? '100px' : '0' }"
+        >
+          <div class="tool-content">
+            <router-link 
+              to="/vanila-bond-report" 
+              class="nav-item"
+              :class="{ active: isActive('/vanila-bond-report') }"
+              @click="closeSidebar"
+            >
+              <span class="nav-label">Vanila Bond Report</span>
             </router-link>
           </div>
         </div>
@@ -500,7 +592,8 @@ const marketTime = ref('--:--')
 const isSidebarOpen = ref(false)
 
 const expandedTools = reactive({
-  portfolio: true,
+  dashboard: true,
+  portfolio: false,
   risk: false,
   quant: false,
   bonds: false,
@@ -510,6 +603,7 @@ const expandedTools = reactive({
   vol: false,
   forwards: false,
   margin: false,
+
 })
 
 const toggleTool = (id: keyof typeof expandedTools) => {
@@ -519,6 +613,7 @@ const toggleTool = (id: keyof typeof expandedTools) => {
 const portfolioItems = [
   { path: '/dashboard', label: 'Главная' },
   { path: '/portfolio', label: 'Оптимизация портфеля' },
+  { path: '/CCMVoptimization', label: 'CCMV оптимизация' },
   { path: '/monte-carlo', label: 'Симуляция Монте-Карло' },
   { path: '/greeks', label: 'Риск-метрики' },
   { path: '/reports', label: 'Отчёты' },
@@ -526,7 +621,8 @@ const portfolioItems = [
 
 const riskItems = [
   { path: '/backtest', label: 'Бэктестинг' },
-  { path: '/stress', label: 'Стресс-тестирование' },
+  { path: '/stress', label: 'Стресс-тестирование портфеля облигаций' },
+  { path: '/stress/swaps', label: 'Стресс-тестирование портфеля СВОПов' },
 ]
 
 const quantItems = [

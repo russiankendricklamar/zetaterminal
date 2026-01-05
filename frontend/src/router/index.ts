@@ -22,6 +22,19 @@ import OptionPricing from '@/pages/OptionPricing.vue'
 import OptionModelsComparison from '@/pages/OptionModelsComparison.vue'
 import OptionGreeksAnalyzer from '@/pages/OptionGreeksAnalyzer.vue'
 import OptionPortfolio from '@/pages/OptionPortfolio.vue'
+import StressSwapsView from '@/pages/StressTestingSwap.vue'
+import SwapGreeksDashboard from '@/pages/SwapGreeksDashboard.vue'
+import SwapValuation from '@/pages/SwapValuation.vue'
+import PnLAttribution from '@/pages/PnLAttribution.vue'
+import HedgingAssistant from '@/pages/HedgingAssistant.vue'
+import ForwardValuation from '@/pages/ForwardValuation.vue'
+import ForwardCurveBuilder from '@/pages/ForwardCurveBuilder.vue'
+import ForwardsGreeksDashboard from '@/pages/ForwardsGreeksDashboard.vue'
+import BasisAnalysis from '@/pages/BasisAnalysis.vue'
+import MarginFinancing from '@/pages/MarginFinancing.vue'
+import ArbitrageScanner from '@/pages/ArbitrageScanner.vue'
+import VolatilitySurface from '@/pages/VolatilitySurface.vue'
+import CCMVOptimizationPage from '@/pages/CCMVOptimization.vue'
 
 const routes = [
   {
@@ -149,6 +162,84 @@ const routes = [
         component: OptionPortfolio,
         name: 'OptionPortfolio',
         meta: { title: 'Портфель опционов', icon: 'ƒ' }
+      },
+      {
+        path: 'stress/swaps',
+        component: StressSwapsView,
+        name: 'stress-swaps',
+        meta: { title: 'Стресс-тестирование Свопов', icon: 'ƒ' }
+      },
+      {
+        path: 'swap-greeks',
+        component: SwapGreeksDashboard,
+        name: 'SwapGreeksDashboard',
+        meta: { title: 'Греки СВОПов', icon: '⚡' }
+      },
+      {
+        path: 'valuation/swaps',
+        component: SwapValuation,
+        name: 'SwapValuation',
+        meta: { title: 'Оценка справедливой стоимости СВОПов', icon: '💰' }
+      },
+      {
+        path: 'analytics/pnl',
+        component: PnLAttribution,
+        name: 'PnLAttribution',
+        meta: { title: 'Факторная декомпозиция P&L', icon: '📊' }
+      },
+      {
+        path: 'hedging',
+        component: HedgingAssistant,
+        name: 'HedgingAssistant',
+        meta: { title: 'Регрессионное хеджирование', icon: '🎯' }
+      },
+      {
+        path: 'valuation/forwards',
+        component: ForwardValuation,
+        name: 'ForwardValuation',
+        meta: { title: 'Forward Valuation', icon: '📊' }
+      },
+      {
+        path: 'forwards/curve',
+        component: ForwardCurveBuilder,
+        name: 'ForwardCurveBuilder',
+        meta: { title: 'Forward Curve Builder', icon: '📈' }
+      },
+      {
+        path: 'forwards/greeks',
+        component: ForwardsGreeksDashboard,
+        name: 'ForwardsGreeksDashboard',
+        meta: { title: 'Greeks Dashboard', icon: '🎯' }
+      },
+      {
+        path: 'forwards/basis',
+        component: BasisAnalysis,
+        name: 'BasisAnalysis',
+        meta: { title: 'Basis Analysis', icon: '📈' }
+      },
+      {
+        path: 'forwards/margin',
+        component: MarginFinancing,
+        name: 'MarginFinancing',
+        meta: { title: 'Margin & Financing', icon: '💰' }
+      },
+      {
+        path: 'forwards/arbitrage',
+        component: ArbitrageScanner,
+        name: 'ArbitrageScanner',
+        meta: { title: 'Arbitrage Scanner', icon: '🔍' }
+      },
+      {
+        path: 'analytics/volatility',
+        component: VolatilitySurface,
+        name: 'VolatilitySurface',
+        meta: { title: 'Volatility Surface', icon: '📊' }
+      },
+      {
+        path: '/CCMVoptimization',
+        name: 'CCMVOptimization',
+        component: CCMVOptimizationPage,
+        meta: { title: 'CCMV Оптимизация' }
       },
     ]
   },

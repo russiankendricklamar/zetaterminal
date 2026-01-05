@@ -61,8 +61,8 @@
             :class="{ 'is-exploding': activeExplosion === '/portfolio', 'is-faded': isFaded('/portfolio') }"
             @click="triggerExplosion('/portfolio')"
           >
-            <div class="tool-icon blue">
-              <div class="supernova blue"></div>
+            <div class="tool-icon purple">
+              <div class="supernova purple"></div>
             </div>
             <div class="tool-body">
               <div class="tool-name">Портфельный анализ</div>
@@ -105,8 +105,8 @@
             :class="{ 'is-exploding': activeExplosion === '/regimes', 'is-faded': isFaded('/regimes') }"
             @click="triggerExplosion('/regimes')"
           >
-            <div class="tool-icon cyan">
-              <div class="supernova cyan"></div>
+            <div class="tool-icon blue">
+              <div class="supernova blue"></div>
             </div>
             <div class="tool-body">
               <div class="tool-name">Скрытая Марковская цепь</div>
@@ -143,66 +143,20 @@
             </div>
           </div>
 
-          <!-- 5. Bond Reports (НОВЫЙ БЛОК) -->
-          <div 
-            class="tool-card"
-            :class="{ 'is-exploding': activeExplosion === '/vanila-bond-report', 'is-faded': isFaded('/vanila-bond-report') }"
-            @click="triggerExplosion('/vanila-bond-report')"
-          >
-            <div class="tool-icon nova">
-              <div class="supernova nova"></div>
-            </div>
-            <div class="tool-body">
-              <div class="tool-name">Отчёты по облигациям</div>
-              <div class="tool-desc">
-                Vanila Bond Report, шаблонные отчеты и аналитика
-              </div>
-            </div>
-            <div class="tool-arrow">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <polyline points="9 18 15 12 9 6" />
-              </svg>
-            </div>
-          </div>
-
           <!-- 6. Option Pricing -->
           <div 
-            class="tool-card coming-soon"
+            class="tool-card"
             :class="{ 'is-exploding': activeExplosion === '/pricing/options', 'is-faded': isFaded('/pricing/options') }"
             @click="triggerExplosion('/pricing/options')"
           >
-            <div class="tool-icon orange">
-              <div class="supernova orange"></div>
+            <div class="tool-icon green">
+              <div class="supernova green"></div>
             </div>
             <div class="tool-body">
               <div class="tool-name">Справедливая стоимость опционов</div>
               <div class="tool-desc">
                 БШМ, модель Хестона, процессы Леви, FFT-ценообразование
               </div>
-              <div class="tool-tag">Soon</div>
-            </div>
-            <div class="tool-arrow">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <polyline points="9 18 15 12 9 6" />
-              </svg>
-            </div>
-          </div>
-
-          <!-- 7. Swaps -->
-          <div 
-            class="tool-card coming-soon"
-            :class="{ 'is-exploding': activeExplosion === '/pricing/swaps', 'is-faded': isFaded('/pricing/swaps') }"
-            @click="triggerExplosion('/pricing/swaps')"
-          >
-            <div class="tool-icon orange">
-              <div class="supernova orange"></div>
-            </div>
-            <div class="tool-body">
-              <div class="tool-name">Справедливая стоимость СВОПов</div>
-              <div class="tool-desc">
-                IRS & FX свопы, NPV, DV01, чувствительность к кривой
-              </div>
-              <div class="tool-tag">Soon</div>
             </div>
             <div class="tool-arrow">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -213,19 +167,18 @@
 
           <!-- 8. Volatility Surface -->
           <div 
-            class="tool-card coming-soon"
-            :class="{ 'is-exploding': activeExplosion === '/pricing/surface', 'is-faded': isFaded('/pricing/surface') }"
-            @click="triggerExplosion('/pricing/surface')"
+            class="tool-card"
+            :class="{ 'is-exploding': activeExplosion === '/analytics/volatility', 'is-faded': isFaded('/analytics/volatility') }"
+            @click="triggerExplosion('/analytics/volatility')"
           >
-            <div class="tool-icon orange">
-              <div class="supernova orange"></div>
+            <div class="tool-icon blue">
+              <div class="supernova blue"></div>
             </div>
             <div class="tool-body">
               <div class="tool-name">Поверхность волатильности</div>
               <div class="tool-desc">
                 Калибровка SABR/SVI, smile & term-structure, arbitrage-free
               </div>
-              <div class="tool-tag">Soon</div>
             </div>
             <div class="tool-arrow">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -234,21 +187,41 @@
             </div>
           </div>
 
-          <!-- 9. Forwards -->
+          <!-- 7. Swaps -->
           <div 
-            class="tool-card coming-soon"
-            :class="{ 'is-exploding': activeExplosion === '/pricing/forwards', 'is-faded': isFaded('/pricing/forwards') }"
-            @click="triggerExplosion('/pricing/forwards')"
+            class="tool-card"
+            :class="{ 'is-exploding': activeExplosion === 'valuation/swaps', 'is-faded': isFaded('valuation/swaps') }"
+            @click="triggerExplosion('valuation/swaps')"
           >
-            <div class="tool-icon orange">
-              <div class="supernova orange"></div>
+            <div class="tool-icon green">
+              <div class="supernova green"></div>
+            </div>
+            <div class="tool-body">
+              <div class="tool-name">Справедливая стоимость СВОПов</div>
+              <div class="tool-desc">
+                IRS & FX свопы, NPV, DV01, чувствительность к кривой
+              </div>
+            </div>
+            <div class="tool-arrow">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="9 18 15 12 9 6" />
+              </svg>
+            </div>
+          </div>
+
+          <div 
+            class="tool-card"
+            :class="{ 'is-exploding': activeExplosion === 'valuation/forwards', 'is-faded': isFaded('valuation/forwards') }"
+            @click="triggerExplosion('valuation/forwards')"
+          >
+            <div class="tool-icon green">
+              <div class="supernova green"></div>
             </div>
             <div class="tool-body">
               <div class="tool-name">Справедливая стоимость форвардов</div>
               <div class="tool-desc">
-                Теоретическая цена, cost-of-carry, кросс-курсы, roll-down
+                Оценка справедливой стоимости, построение кривой, арбитраж
               </div>
-              <div class="tool-tag">Soon</div>
             </div>
             <div class="tool-arrow">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -280,6 +253,28 @@
             </div>
           </div>
         </div>
+
+        <div 
+          class="tool-card"
+          :class="{ 'is-exploding': activeExplosion === '/vanila-bond-report', 'is-faded': isFaded('/vanila-bond-report') }"
+          @click="triggerExplosion('/vanila-bond-report')"
+        >
+          <div class="tool-icon nova">
+            <div class="supernova nova"></div>
+          </div>
+          <div class="tool-body">
+            <div class="tool-name">Отчёты по облигациям</div>
+            <div class="tool-desc">
+              Vanila Bond Report, шаблонные отчеты и аналитика
+            </div>
+          </div>
+          <div class="tool-arrow">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="9 18 15 12 9 6" />
+            </svg>
+          </div>
+        </div>
+
       </section>
     </div>
     
