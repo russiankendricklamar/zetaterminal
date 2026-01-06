@@ -159,12 +159,16 @@ onMounted(() => {
    ROOT & BACKGROUND PHYSICS
    ============================================ */
 .app-root {
-  width: 100vw; height: 100vh; overflow: hidden;
+  width: 100vw; 
+  height: 100vh; 
+  overflow-x: hidden;
+  overflow-y: auto;
   background-color: #02040a; /* Deep Space Black */
   position: relative;
   color: #f5f5f7; /* Apple Off-White */
   font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, sans-serif;
   -webkit-font-smoothing: antialiased;
+  -webkit-overflow-scrolling: touch;
 }
 
 /* Шум для текстурности (убирает пластиковый эффект) */
@@ -207,7 +211,8 @@ onMounted(() => {
    LAYOUT GRID
    ============================================ */
 .app-container {
-  position: relative; z-index: 10; display: flex; height: 100%;
+  position: relative; z-index: 10; display: flex; 
+  min-height: 100%;
   padding: 12px 12px 12px 80px; /* Отступы для "парящего" окна */
   box-sizing: border-box;
   gap: 12px;
@@ -218,7 +223,10 @@ onMounted(() => {
    ============================================ */
 .main-window {
   flex: 1; display: flex; flex-direction: column;
-  position: relative; overflow: hidden;
+  position: relative; 
+  overflow-x: hidden;
+  overflow-y: auto;
+  min-height: 100%;
   
   /* GLASS RECIPE */
   background: rgba(30, 35, 45, 0.40); /* Полупрозрачная темная база */
@@ -367,8 +375,12 @@ onMounted(() => {
 
 /* Scrollbar & Content */
 .window-content { 
-  flex: 1; overflow-y: auto; position: relative; 
+  flex: 1; 
+  overflow-y: auto; 
+  overflow-x: hidden;
+  position: relative; 
   padding: 0; /* Контент сам делает отступы */
+  -webkit-overflow-scrolling: touch;
 }
 /* Стеклянный скроллбар */
 .window-content::-webkit-scrollbar { width: 6px; }
@@ -380,9 +392,56 @@ onMounted(() => {
 .fade-enter-from, .fade-leave-to { opacity: 0; }
 
 @media (max-width: 768px) {
-  .app-container { padding: 0; gap: 0; }
-  .main-window { border-radius: 0; border: none; background: #000; box-shadow: none; }
+  .app-root {
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    height: auto;
+    min-height: 100vh;
+  }
+
+  .app-container { 
+    padding: 0; 
+    gap: 0; 
+    min-height: 100vh;
+    height: auto;
+  }
+  
+  .main-window { 
+    border-radius: 0; 
+    border: none; 
+    background: #000; 
+    box-shadow: none; 
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    min-height: 100vh;
+  }
+  
+  .window-content {
+    overflow-y: visible;
+    -webkit-overflow-scrolling: touch;
+  }
+  
   .header-bottom { flex-direction: column; gap: 16px; align-items: stretch; }
   .search-wrapper { width: 100%; }
+}
+
+@media (max-width: 480px) {
+  .app-root {
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .app-container {
+    min-height: 100vh;
+  }
+
+  .main-window {
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .window-content {
+    overflow-y: visible;
+  }
 }
 </style>

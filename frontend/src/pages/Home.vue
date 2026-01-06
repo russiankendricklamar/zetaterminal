@@ -386,10 +386,12 @@ const triggerExplosion = (path: string) => {
 .home-root {
   position: relative;
   min-height: 100vh;
+  width: 100%;
   overflow-x: hidden;
   overflow-y: auto;
   background: radial-gradient(circle at top, #050816 0%, #020308 45%, #000 100%);
   color: #f9fafb;
+  -webkit-overflow-scrolling: touch;
 }
 
 .home-layout {
@@ -403,6 +405,8 @@ const triggerExplosion = (path: string) => {
   gap: 60px;
   align-items: flex-start;
   min-height: 100vh;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 /* ============================================
