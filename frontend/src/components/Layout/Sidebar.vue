@@ -46,6 +46,37 @@
         </div>
       </router-link>
 
+      <!-- Документация -->
+      <router-link
+        to="/docs"
+        class="docs-entry"
+        :class="{ active: isActive('/docs') }"
+        @click="closeSidebar"
+      >
+        <div class="home-icon">
+          <div class="supernova-home"></div>
+        </div>
+        <div class="home-info">
+          <div class="home-title">Документация</div>
+          <div class="home-subtitle">Как работать с этим приложением?</div>
+        </div>
+      </router-link>
+
+      <router-link
+        to="/data"
+        class="data-entry"
+        :class="{ active: isActive('/data') }"
+        @click="closeSidebar"
+      >
+        <div class="data-icon">
+          <div class="supernova-home"></div>
+        </div>
+        <div class="data-info">
+          <div class="data-title">Рыночные данные</div>
+          <div class="data-subtitle">Потоковые данные в реальном времени</div>
+        </div>
+      </router-link>
+
       <!-- 1) Portfolio Analytics -->
       <div class="tool-group">
         <button
@@ -1025,6 +1056,157 @@ onUnmounted(() => clearInterval(timer))
 }
 
 .home-subtitle {
+  font-size: 11px;
+  color: rgba(148, 163, 184, 0.9);
+}
+
+.docs-entry {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: radial-gradient(circle at 0 0, rgba(74, 222, 128, 0.12), rgba(15, 23, 42, 0.95));
+  border: 1px solid rgba(34, 197, 94, 0.6);
+  text-decoration: none;
+  color: #e5e7eb;
+  box-shadow: 0 16px 40px rgba(34, 197, 94, 0.2);
+  transition: all 0.2s ease;
+  margin-bottom: 8px;
+  backface-visibility: hidden;
+}
+
+.docs-entry:hover {
+  background: radial-gradient(circle at 0 0, rgba(74, 222, 128, 0.18), rgba(15, 23, 42, 0.98));
+  border-color: rgba(34, 197, 94, 0.9);
+  transform: translateY(-1px);
+}
+
+.docs-entry.active {
+  border-color: #22c55e;
+  box-shadow: 0 18px 45px rgba(34, 197, 94, 0.45);
+}
+
+.docs-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 999px;
+  border: 1px solid rgba(148, 163, 184, 0.7);
+  background: radial-gradient(circle at 0 0, rgba(248, 250, 252, 0.32), rgba(15, 23, 42, 0.96));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+  flex-shrink: 0;
+  backface-visibility: hidden;
+}
+
+.docs-entry .home-icon {
+  border: 1px solid rgba(34, 197, 94, 0.7);
+  background: radial-gradient(circle at 0 0, rgba(74, 222, 128, 0.32), rgba(15, 23, 42, 0.96));
+  box-shadow: 0 0 20px rgba(34, 197, 94, 0.6);
+}
+
+.docs-entry .supernova-home {
+  background: linear-gradient(135deg, #4ade80, #22c55e, #10b981);
+  box-shadow: 0 0 20px rgba(34, 197, 94, 0.9);
+}
+
+.docs-entry:hover .home-icon {
+  border-color: rgba(34, 197, 94, 0.95);
+  box-shadow: 0 0 30px rgba(74, 222, 128, 0.9), 0 0 50px rgba(34, 197, 94, 0.4);
+}
+
+.docs-entry:hover .supernova-home {
+  box-shadow: 0 0 30px rgba(34, 197, 94, 1);
+}
+
+.docs-info {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.docs-title {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.docs-subtitle {
+  font-size: 11px;
+  color: rgba(148, 163, 184, 0.9);
+}
+
+.data-entry {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: radial-gradient(circle at 0 0, rgba(239, 68, 68, 0.15), rgba(15, 23, 42, 0.95));
+  border: 1px solid rgba(239, 68, 68, 0.5);
+  text-decoration: none;
+  color: #e5e7eb;
+  box-shadow: 0 16px 40px rgba(15, 23, 42, 0.9);
+  transition: all 0.2s ease;
+  margin-bottom: 8px;
+  backface-visibility: hidden;
+}
+
+.data-entry:hover {
+  background: radial-gradient(circle at 0 0, rgba(248, 113, 113, 0.22), rgba(15, 23, 42, 0.98));
+  border-color: rgba(226, 232, 240, 0.9);
+  transform: translateY(-1px);
+}
+
+.data-entry.active {
+  border-color: #ef4444;
+  box-shadow: 0 18px 45px rgba(239, 68, 68, 0.45);
+}
+
+.data-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 999px;
+  border: 1px solid rgba(239, 68, 68, 0.7);
+  background: radial-gradient(circle at 0 0, rgba(248, 113, 113, 0.32), rgba(15, 23, 42, 0.96));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+  flex-shrink: 0;
+  box-shadow: 0 0 15px rgba(239, 68, 68, 0.6);
+  backface-visibility: hidden;
+}
+
+.data-entry .supernova-home {
+  background: linear-gradient(135deg, #f87171, #ef4444, #b91c1c);
+  box-shadow: 0 0 15px rgba(239, 68, 68, 0.9);
+}
+
+.data-entry:hover .data-icon {
+  border-color: rgba(239, 68, 68, 0.95);
+  box-shadow: 0 0 30px rgba(248, 113, 113, 0.9), 0 0 50px rgba(239, 68, 68, 0.4);
+}
+
+.data-entry:hover .supernova-home {
+  box-shadow: 0 0 30px rgba(239, 68, 68, 1);
+}
+
+.data-info {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.data-title {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.data-subtitle {
   font-size: 11px;
   color: rgba(148, 163, 184, 0.9);
 }

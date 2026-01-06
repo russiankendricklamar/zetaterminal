@@ -35,6 +35,7 @@ import MarginFinancing from '@/pages/MarginFinancing.vue'
 import ArbitrageScanner from '@/pages/ArbitrageScanner.vue'
 import VolatilitySurface from '@/pages/VolatilitySurface.vue'
 import CCMVOptimizationPage from '@/pages/CCMVOptimization.vue'
+import DocumentationPage from '@/pages/DocumentationPage.vue'
 
 const routes = [
   {
@@ -42,6 +43,12 @@ const routes = [
     name: 'Home',
     component: Home,
     meta: { title: 'Главная', icon: '🏠', bare: true }
+  },
+  {
+    path: '/docs',
+    name: 'Documentation',
+    component: DocumentationPage,
+    meta: { title: 'Документация' }
   },
   {
     path: '/',
@@ -236,7 +243,7 @@ const routes = [
         meta: { title: 'Volatility Surface', icon: '📊' }
       },
       {
-        path: '/CCMVoptimization',
+        path: 'CCMVoptimization',
         name: 'CCMVOptimization',
         component: CCMVOptimizationPage,
         meta: { title: 'CCMV Оптимизация' }

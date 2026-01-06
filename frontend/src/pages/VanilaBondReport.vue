@@ -1,47 +1,45 @@
 <!-- src/pages/VanillaBondReport.vue -->
 <template>
-  <div class="bond-report-page">
+  <div class="page-container">
     
     <!-- Header Section -->
-    <div class="page-header">
+    <div class="section-header">
       <div class="header-left">
-        <h1 class="page-title">Vanilla Bond Report</h1>
-        <p class="page-subtitle">
+        <h1 class="section-title">Vanilla Bond Report</h1>
+        <p class="section-subtitle">
           Паспорт выпуска и аналитика по ISIN: <span class="text-accent">{{ isin || '—' }}</span>
         </p>
       </div>
       
-      <div class="header-right">
+      <div class="header-actions">
         <!-- Search Control -->
-        <div class="control-group">
-          <label class="control-label">ISIN:</label>
-          <div class="search-control">
-            <input 
-              v-model="localIsin"
-              type="text"
-              class="search-input"
-              placeholder="RU000A103943"
-              @keyup.enter="onChangeIsin"
-            />
-            <button class="btn-search" @click="onChangeIsin" :disabled="!localIsin">🔍</button>
-          </div>
+        <div class="glass-pill">
+          <label class="lbl-mini">ISIN:</label>
+          <input 
+            v-model="localIsin"
+            type="text"
+            class="search-input"
+            placeholder="RU000A103943"
+            @keyup.enter="onChangeIsin"
+          />
+          <button class="btn-search" @click="onChangeIsin" :disabled="!localIsin">🔍</button>
         </div>
       </div>
     </div>
 
     <!-- States -->
     <section v-if="loading" class="state-section">
-      <div class="card">
+      <div class="glass-card">
         <span class="spinner"></span> Загрузка данных...
       </div>
     </section>
 
     <section v-else-if="error" class="state-section">
-      <div class="card error">⚠ {{ error }}</div>
+      <div class="glass-card error">⚠ {{ error }}</div>
     </section>
 
     <section v-else-if="!report" class="state-section">
-      <div class="card">Введите ISIN для генерации отчёта</div>
+      <div class="glass-card">Введите ISIN для генерации отчёта</div>
     </section>
 
     <!-- Report Content -->
@@ -49,7 +47,7 @@
       
       <!-- General Info Section -->
       <div class="grid-2">
-        <div class="card">
+        <div class="glass-card">
           <div class="card-header">
             <h3>Общие сведения</h3>
           </div>
@@ -63,7 +61,7 @@
           </table>
         </div>
 
-        <div class="card">
+        <div class="glass-card">
           <div class="card-header">
             <h3>Параметры выпуска</h3>
           </div>
@@ -78,7 +76,7 @@
 
       <!-- Ratings Section -->
       <div class="grid-3">
-        <div class="card">
+        <div class="glass-card">
           <div class="card-header">
             <h3>Рейтинг эмиссии</h3>
           </div>
@@ -92,7 +90,7 @@
           <p v-else class="muted">Нет данных</p>
         </div>
 
-        <div class="card">
+        <div class="glass-card">
           <div class="card-header">
             <h3>Рейтинг эмитента</h3>
           </div>
@@ -109,7 +107,7 @@
           <p v-else class="muted">Нет данных</p>
         </div>
 
-        <div class="card">
+        <div class="glass-card">
           <div class="card-header">
             <h3>Рейтинг гаранта</h3>
           </div>
@@ -126,9 +124,10 @@
 
       <!-- Market & Pricing Metrics -->
       <div class="grid-3">
-<<<<<<< HEAD
         <div class="glass-card">
-          <h3>Активность рынка</h3>
+          <div class="card-header">
+            <h3>Активность рынка</h3>
+          </div>
           <div class="metric-list">
             <div class="metric"><span>Кол-во торговых дней</span><span class="val">{{ report.market_activity?.trading_days ?? '—' }}</span></div>
             <div class="metric"><span>Кол-во сделок</span><span class="val">{{ report.market_activity?.trades ?? '—' }}</span></div>
@@ -138,7 +137,9 @@
         </div>
 
         <div class="glass-card">
-          <h3>Котировка и доходность</h3>
+          <div class="card-header">
+            <h3>Котировка и доходность</h3>
+          </div>
           <div class="metric-list">
             <div class="metric"><span>Чистая цена</span><span class="val accent">{{ report.pricing?.clean_price_pct?.toFixed(2) }}%</span></div>
             <div class="metric"><span>YTM</span><span class="val accent">{{ (report.pricing?.ytm * 100).toFixed(2) }}%</span></div>
@@ -148,91 +149,20 @@
         </div>
 
         <div class="glass-card">
-          <h3>Риск-метрики</h3>
+          <div class="card-header">
+            <h3>Риск-метрики</h3>
+          </div>
           <div class="metric-list">
             <div class="metric"><span>Дюрация</span><span class="val">{{ report.risk_indicators?.duration?.toFixed(2) }}</span></div>
             <div class="metric"><span>Выпуклость</span><span class="val">{{ report.risk_indicators?.convexity?.toFixed(2) }}</span></div>
             <div class="metric"><span>DV01</span><span class="val">{{ formatNumber(report.risk_indicators?.dv01) }}</span></div>
-=======
-        <div class="card">
-          <div class="card-header">
-            <h3>Активность рынка</h3>
-          </div>
-          <div class="metrics-list">
-            <div class="metric-item">
-              <span class="metric-label">Кол-во торговых дней</span>
-              <span class="metric-value">{{ report.market_activity?.trading_days ?? '—' }}</span>
-            </div>
-            <div class="metric-item">
-              <span class="metric-label">Кол-во сделок</span>
-              <span class="metric-value">{{ report.market_activity?.trades ?? '—' }}</span>
-            </div>
-            <div class="metric-item">
-              <span class="metric-label">Объем торгов/выпуск</span>
-              <span class="metric-value">{{ (report.market_activity?.turnover_to_outstanding * 100).toFixed(2) }}%</span>
-            </div>
-            <div class="metric-item">
-              <span class="metric-label">Торги 30 дней</span>
-              <span class="metric-value">{{ report.market_activity?.traded_last_30d ? 'Да' : 'Нет' }}</span>
-            </div>
-          </div>
-        </div>
-
-        <div class="card">
-          <div class="card-header">
-            <h3>Котировка и доходность</h3>
-          </div>
-          <div class="metrics-list">
-            <div class="metric-item">
-              <span class="metric-label">Чистая цена</span>
-              <span class="metric-value accent">{{ report.pricing?.clean_price_pct?.toFixed(2) }}%</span>
-            </div>
-            <div class="metric-item">
-              <span class="metric-label">YTM</span>
-              <span class="metric-value accent">{{ (report.pricing?.ytm * 100).toFixed(2) }}%</span>
-            </div>
-            <div class="metric-item">
-              <span class="metric-label">G-spread</span>
-              <span class="metric-value mono">{{ report.pricing?.g_spread_bps }} bps</span>
-            </div>
-            <div class="metric-item">
-              <span class="metric-label">G-curve</span>
-              <span class="metric-value mono">{{ (report.pricing?.g_curve_yield * 100).toFixed(2) }}%</span>
-            </div>
-          </div>
-        </div>
-
-        <div class="card">
-          <div class="card-header">
-            <h3>Риск-метрики</h3>
-          </div>
-          <div class="metrics-list">
-            <div class="metric-item">
-              <span class="metric-label">Дюрация</span>
-              <span class="metric-value">{{ report.risk_indicators?.duration?.toFixed(2) }}</span>
-            </div>
-            <div class="metric-item">
-              <span class="metric-label">Выпуклость</span>
-              <span class="metric-value">{{ report.risk_indicators?.convexity?.toFixed(2) }}</span>
-            </div>
-            <div class="metric-item">
-              <span class="metric-label">DV01</span>
-              <span class="metric-value mono">{{ formatNumber(report.risk_indicators?.dv01) }}</span>
-            </div>
->>>>>>> 9f1a505 (feat: description of changes)
           </div>
         </div>
       </div>
 
-<<<<<<< HEAD
       <!-- BLOCK 2: Price Chart -->
       <div class="glass-card full-width">
-        <div class="chart-top">
-=======
-      <!-- Price History Chart -->
-      <div class="card full-width">
         <div class="chart-header">
->>>>>>> 9f1a505 (feat: description of changes)
           <h3>Динамика цены</h3>
           <button class="btn-export" @click="exportChart('price')">💾 PNG</button>
         </div>
@@ -241,15 +171,9 @@
         </div>
       </div>
 
-<<<<<<< HEAD
       <!-- BLOCK 3: Yield Chart -->
       <div class="glass-card full-width">
-        <div class="chart-top">
-=======
-      <!-- Yield Dynamics Chart -->
-      <div class="card full-width">
         <div class="chart-header">
->>>>>>> 9f1a505 (feat: description of changes)
           <h3>Динамика доходности</h3>
           <button class="btn-export" @click="exportChart('yield')">💾 PNG</button>
         </div>
@@ -392,31 +316,17 @@ const initCharts = () => {
         datasets: [{
           label: 'Price',
           data: [92, 92.5, 93.1, 93.8, 94.1, 94.2],
-<<<<<<< HEAD
-          borderColor: '#fff',
-          backgroundColor: 'rgba(255,255,255,0.05)',
-          fill: true,
-          tension: 0.4,
-          pointRadius: 0
-=======
           borderColor: '#60a5fa',
           backgroundColor: 'rgba(96, 165, 250, 0.08)',
           fill: true,
           tension: 0.4,
           pointRadius: 0,
           borderWidth: 2
->>>>>>> 9f1a505 (feat: description of changes)
         }]
       },
       options: {
         responsive: true,
         maintainAspectRatio: false,
-<<<<<<< HEAD
-        plugins: { legend: { display: false } },
-        scales: {
-          x: { grid: { display: false }, ticks: { color: 'rgba(255,255,255,0.3)' } },
-          y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: 'rgba(255,255,255,0.3)' } }
-=======
         plugins: { 
           legend: { display: false },
           filler: { propagate: true }
@@ -430,7 +340,6 @@ const initCharts = () => {
             grid: { color: 'rgba(255,255,255,0.05)' }, 
             ticks: { color: 'rgba(255,255,255,0.3)', font: { size: 11 } } 
           }
->>>>>>> 9f1a505 (feat: description of changes)
         }
       }
     } as any)
@@ -446,30 +355,17 @@ const initCharts = () => {
             label: 'YTM',
             data: [18.95, 19.1, 19.2, 19.8, 20.2, 21.5],
             borderColor: '#38bdf8',
-<<<<<<< HEAD
-            backgroundColor: 'rgba(56, 189, 248, 0.05)',
-            fill: true,
-            tension: 0.4,
-            pointRadius: 0
-=======
             backgroundColor: 'rgba(56, 189, 248, 0.08)',
             fill: true,
             tension: 0.4,
             pointRadius: 0,
             borderWidth: 2
->>>>>>> 9f1a505 (feat: description of changes)
           }
         ]
       },
       options: {
         responsive: true,
         maintainAspectRatio: false,
-<<<<<<< HEAD
-        plugins: { legend: { display: false } },
-        scales: {
-          y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: 'rgba(255,255,255,0.3)' } },
-          x: { grid: { display: false }, ticks: { color: 'rgba(255,255,255,0.3)' } }
-=======
         plugins: { 
           legend: { display: false },
           filler: { propagate: true }
@@ -483,7 +379,6 @@ const initCharts = () => {
             grid: { display: false }, 
             ticks: { color: 'rgba(255,255,255,0.3)', font: { size: 11 } } 
           }
->>>>>>> 9f1a505 (feat: description of changes)
         }
       }
     } as any)
@@ -517,11 +412,10 @@ onBeforeUnmount(() => {
 </script>
 
 <style scoped>
-<<<<<<< HEAD
 * { box-sizing: border-box; }
 
 /* ============================================
-   PAGE CONTAINER WITH ANIMATED BACKGROUND
+   PAGE CONTAINER & BACKGROUND
    ============================================ */
 .page-container {
   padding: 24px 32px;
@@ -532,7 +426,6 @@ onBeforeUnmount(() => {
   display: flex;
   flex-direction: column;
   gap: 20px;
-  
   background: linear-gradient(135deg, #02040a 0%, #0f1219 25%, #1a1d26 50%, #0f1219 75%, #02040a 100%);
 }
 
@@ -545,12 +438,10 @@ onBeforeUnmount(() => {
   height: 100%;
   z-index: 0;
   pointer-events: none;
-  
   background: 
     radial-gradient(600px at 20% 50%, rgba(59, 130, 246, 0.15) 0%, transparent 80%),
     radial-gradient(600px at 80% 80%, rgba(139, 92, 246, 0.12) 0%, transparent 80%),
     radial-gradient(600px at 50% 0%, rgba(168, 85, 247, 0.08) 0%, transparent 80%);
-  
   animation: gradientShift 15s ease-in-out infinite;
 }
 
@@ -564,7 +455,6 @@ onBeforeUnmount(() => {
   z-index: 1;
   pointer-events: none;
   opacity: 0.03;
-  
   background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
 }
 
@@ -616,369 +506,11 @@ onBeforeUnmount(() => {
   backdrop-filter: blur(30px);
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 20px;
-=======
-/* ============================================
-   PAGE LAYOUT & BACKGROUND
-   ============================================ */
-.bond-report-page {
-  width: 100%;
-  padding: 24px;
-  background: linear-gradient(180deg, rgba(15,20,25,0.5) 0%, rgba(26,31,46,0.3) 100%);
-  color: #fff;
-  min-height: 100vh;
 }
 
 /* ============================================
-   HEADER
+   HEADER & INPUTS
    ============================================ */
-.page-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  margin-bottom: 32px;
-  gap: 24px;
-  flex-wrap: wrap;
-}
-
-.header-left {
-  flex: 1;
-  min-width: 300px;
-}
-
-.page-title {
-  font-size: 28px;
-  font-weight: 700;
-  margin: 0 0 8px 0;
-  letter-spacing: -0.01em;
-}
-
-.page-subtitle {
-  font-size: 13px;
-  color: rgba(255,255,255,0.5);
-  margin: 0;
-}
-
-.header-right {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  flex-wrap: wrap;
-}
-
-.control-group {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  background: rgba(255,255,255,0.04);
-  padding: 8px 16px;
-  border-radius: 8px;
-  border: 1px solid rgba(255,255,255,0.08);
-}
-
-.control-label {
-  font-size: 11px;
-  color: rgba(255,255,255,0.5);
-  font-weight: 600;
-  text-transform: uppercase;
-  white-space: nowrap;
-}
-
-.search-control {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.search-input {
-  background: transparent;
-  border: none;
-  color: #fff;
-  font-size: 12px;
-  outline: none;
-  padding: 4px 8px;
-  width: 140px;
-  font-family: "SF Mono", monospace;
-}
-
-.search-input::placeholder {
-  color: rgba(255,255,255,0.2);
-}
-
-.btn-search {
-  background: transparent;
-  border: none;
-  color: #3b82f6;
-  cursor: pointer;
-  font-size: 14px;
-  transition: color 0.2s;
-  padding: 4px 8px;
-}
-
-.btn-search:hover:not(:disabled) {
-  color: #60a5fa;
-}
-
-.btn-search:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-/* ============================================
-   CARDS & SECTIONS
-   ============================================ */
-.card {
-  background: rgba(30, 32, 40, 0.4);
-  backdrop-filter: blur(30px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 12px;
-  padding: 20px;
-  transition: all 0.2s;
-}
-
-.card:hover {
-  border-color: rgba(255, 255, 255, 0.15);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
-}
-
-.card.error {
-  background: rgba(239, 68, 68, 0.05);
-  border-color: rgba(239, 68, 68, 0.2);
-  color: #ef4444;
-}
-
-.card-header {
-  margin-bottom: 16px;
-}
-
-.card-header h3 {
-  font-size: 12px;
-  font-weight: 600;
-  color: rgba(255,255,255,0.6);
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  margin: 0;
-}
-
-/* ============================================
-   GRIDS
-   ============================================ */
-.report-content {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-}
-
-.grid-2 {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 20px;
-}
-
-.grid-3 {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 20px;
-}
-
-.full-width {
-  grid-column: 1 / -1;
-}
-
-/* ============================================
-   TABLES
-   ============================================ */
-.info-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 12px;
-}
-
-.info-table tr {
-  border-bottom: 1px solid rgba(255,255,255,0.05);
-}
-
-.info-table tr:last-child {
-  border-bottom: none;
-}
-
-.info-table td {
-  padding: 10px 0;
-  color: rgba(255,255,255,0.9);
-}
-
-.info-table .label {
-  color: rgba(255,255,255,0.5);
-  font-weight: 500;
-  width: 40%;
-}
-
-.info-table .value {
-  text-align: right;
-  font-weight: 500;
-}
-
-/* ============================================
-   RATINGS
-   ============================================ */
-.ratings-list {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.rating-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  font-size: 11px;
-  gap: 8px;
-  padding: 8px;
-  background: rgba(255,255,255,0.02);
-  border-radius: 6px;
-}
-
-.agency {
-  color: rgba(255,255,255,0.4);
-  font-size: 10px;
-  font-weight: 500;
-  min-width: 70px;
-}
-
-.rating-info {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 2px;
-}
-
-.grade {
-  font-weight: 700;
-  color: #fff;
-  font-size: 11px;
-}
-
-.outlook {
-  font-size: 9px;
-  color: rgba(255,255,255,0.4);
-}
-
-.date {
-  font-size: 9px;
-  color: rgba(255,255,255,0.3);
-  white-space: nowrap;
-}
-
-/* ============================================
-   METRICS
-   ============================================ */
-.metrics-list {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.metric-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding-bottom: 8px;
-  border-bottom: 1px solid rgba(255,255,255,0.03);
-}
-
-.metric-item:last-child {
-  border-bottom: none;
-  padding-bottom: 0;
-}
-
-.metric-label {
-  font-size: 11px;
-  color: rgba(255,255,255,0.5);
-  font-weight: 500;
-}
-
-.metric-value {
-  font-size: 12px;
-  font-weight: 600;
-  color: #fff;
-  text-align: right;
-}
-
-.metric-value.accent {
-  color: #38bdf8;
-  font-family: "SF Mono", monospace;
-}
-
-/* ============================================
-   STATE SECTION
-   ============================================ */
-.state-section {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  min-height: 300px;
-}
-
-.spinner {
-  display: inline-block;
-  width: 14px;
-  height: 14px;
-  border: 2px solid rgba(56, 189, 248, 0.3);
-  border-top-color: #38bdf8;
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-  margin-right: 8px;
-}
-
-@keyframes spin {
-  to { transform: rotate(360deg); }
-}
-
-.muted {
-  color: rgba(255,255,255,0.4);
-  margin: 0;
-  font-size: 12px;
-}
-
-.text-accent {
-  color: #38bdf8;
-  font-weight: 600;
-}
-
-.mono {
-  font-family: "SF Mono", monospace;
-}
-
-.accent {
-  color: #38bdf8;
-  font-weight: 600;
-}
-
-/* ============================================
-   CHARTS
-   ============================================ */
-.chart-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 16px;
-}
-
-.chart-header h3 {
-  font-size: 12px;
-  font-weight: 600;
-  color: rgba(255,255,255,0.6);
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  margin: 0;
-}
-
-.chart-container {
->>>>>>> 9f1a505 (feat: description of changes)
-  position: relative;
-  z-index: 2;
-}
-
-<<<<<<< HEAD
 .section-header {
   display: flex;
   justify-content: space-between;
@@ -988,192 +520,87 @@ onBeforeUnmount(() => {
 }
 
 .header-left { flex: 1; }
-
-.section-title {
-  font-size: 28px;
-  font-weight: 700;
-  color: #fff;
-  margin: 0;
-  letter-spacing: -0.01em;
-}
-
-.section-subtitle {
-  font-size: 13px;
-  color: rgba(255, 255, 255, 0.5);
-  margin: 4px 0 0 0;
-}
-
+.section-title { font-size: 28px; font-weight: 700; color: #fff; margin: 0; letter-spacing: -0.01em; }
+.section-subtitle { font-size: 13px; color: rgba(255, 255, 255, 0.5); margin: 4px 0 0 0; }
 .header-actions { display: flex; gap: 12px; }
 
-.lbl-mini { font-size: 10px; color: rgba(255, 255, 255, 0.5); font-weight: 600; text-transform: uppercase; }
-
-.search-input { flex: 1; background: transparent; border: none; color: #fff; font-size: 13px; outline: none; padding: 4px; }
+.search-input { flex: 1; background: transparent; border: none; color: #fff; font-size: 13px; outline: none; padding: 4px; font-family: 'SF Mono', monospace; }
 .search-input::placeholder { color: rgba(255, 255, 255, 0.2); }
 
 .btn-search { background: transparent; border: none; color: #3b82f6; cursor: pointer; font-size: 14px; }
 .btn-search:hover:not(:disabled) { color: #60a5fa; }
 .btn-search:disabled { opacity: 0.5; cursor: not-allowed; }
+.lbl-mini { font-size: 10px; color: rgba(255,255,255,0.5); font-weight: 600; text-transform: uppercase; }
 
+/* ============================================
+   GRID & CONTENT
+   ============================================ */
 .report-content { display: flex; flex-direction: column; gap: 20px; position: relative; z-index: 2; }
-
 .state-section { display: flex; justify-content: center; align-items: center; min-height: 300px; position: relative; z-index: 2; }
-
 .grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; }
 .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
-
 .full-width { grid-column: 1 / -1; }
 
-.glass-card h3 { margin: 0 0 16px 0; font-size: 12px; font-weight: 700; text-transform: uppercase; color: rgba(255, 255, 255, 0.9); }
+.card-header h3 { font-size: 12px; font-weight: 600; color: rgba(255,255,255,0.6); text-transform: uppercase; margin: 0 0 16px 0; letter-spacing: 0.05em; }
 
+/* ============================================
+   TABLES & METRICS
+   ============================================ */
 .info-table { width: 100%; border-collapse: collapse; font-size: 12px; }
-.info-table tr { border-bottom: 1px solid rgba(255, 255, 255, 0.05); }
-.info-table tr:last-child { border-bottom: none; }
-.info-table td { padding: 8px 0; color: rgba(255, 255, 255, 0.9); }
-.info-table td:first-child { color: rgba(255, 255, 255, 0.5); width: 40%; }
+.info-table td { padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.05); color: rgba(255,255,255,0.9); }
+.info-table tr:last-child td { border-bottom: none; }
+.info-table td:first-child { color: rgba(255,255,255,0.5); width: 40%; font-weight: 500; }
 .info-table td:last-child { text-align: right; font-weight: 500; }
-
-.ratings-list { display: flex; flex-direction: column; gap: 6px; }
-.rating-item { display: flex; justify-content: space-between; font-size: 12px; gap: 8px; }
-.agency { color: rgba(255, 255, 255, 0.4); font-size: 10px; }
-.grade { font-weight: 700; color: #fff; }
-.outlook { font-size: 10px; color: rgba(255, 255, 255, 0.4); }
-.date { font-size: 10px; color: rgba(255, 255, 255, 0.3); }
 
 .metric-list { display: flex; flex-direction: column; gap: 8px; }
 .metric { display: flex; justify-content: space-between; font-size: 12px; padding-bottom: 6px; border-bottom: 1px dashed rgba(107, 114, 128, 0.1); }
 .metric:last-child { border-bottom: none; }
-.metric > span:first-child { color: rgba(255, 255, 255, 0.5); }
-.val { color: #fff; font-weight: 500; }
+.metric > span:first-child { color: rgba(255, 255, 255, 0.5); font-weight: 500; }
+.val { color: #fff; font-weight: 600; }
 
-.mono { font-family: 'SF Mono', monospace; }
-.accent { color: #38bdf8; font-weight: 600; }
-.text-accent { color: #38bdf8; }
-.muted { color: rgba(255, 255, 255, 0.4); margin: 0; }
+.ratings-list { display: flex; flex-direction: column; gap: 6px; }
+.rating-item { display: flex; justify-content: space-between; font-size: 12px; gap: 8px; padding: 8px; background: rgba(255,255,255,0.02); border-radius: 6px; }
+.rating-info { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; }
+.agency { color: rgba(255,255,255,0.4); font-size: 10px; font-weight: 500; }
+.grade { font-weight: 700; color: #fff; }
+.outlook { font-size: 10px; color: rgba(255, 255, 255, 0.4); }
+.date { font-size: 10px; color: rgba(255, 255, 255, 0.3); }
 
-.chart-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
-.btn-export { background: transparent; border: 1px solid rgba(255, 255, 255, 0.1); color: rgba(255, 255, 255, 0.7); padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 11px; }
-.btn-export:hover { background: rgba(255, 255, 255, 0.05); border-color: rgba(255, 255, 255, 0.2); color: #fff; }
-
+/* ============================================
+   CHARTS & UTILS
+   ============================================ */
+.chart-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
 .chart-container { position: relative; width: 100%; height: 360px; background: rgba(15, 23, 42, 0.4); border-radius: 12px; padding: 12px; border: 1px solid rgba(107, 114, 128, 0.08); }
 .chart-container.tall { height: 480px; }
 .chart-container canvas { width: 100% !important; height: 100% !important; }
 
+.btn-export { background: transparent; border: 1px solid rgba(255,255,255,0.1); color: rgba(255,255,255,0.6); padding: 4px 8px; border-radius: 4px; font-size: 11px; cursor: pointer; transition: all 0.2s; }
+.btn-export:hover { background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.2); color: #fff; }
+
+.mono { font-family: 'SF Mono', monospace; }
+.accent { color: #38bdf8; font-weight: 600; }
+.text-accent { color: #38bdf8; font-weight: 600; }
+.muted { color: rgba(255, 255, 255, 0.4); margin: 0; font-size: 12px; }
 .spinner { display: inline-block; width: 14px; height: 14px; border: 2px solid rgba(56, 189, 248, 0.3); border-top-color: #38bdf8; border-radius: 50%; animation: spin 1s linear infinite; margin-right: 8px; }
-
 @keyframes spin { to { transform: rotate(360deg); } }
-
-@media (max-width: 1200px) { .grid-3 { grid-template-columns: repeat(2, 1fr); } }
-@media (max-width: 768px) { .page-container { padding: 16px; } .section-header { flex-direction: column; gap: 16px; } .grid-2, .grid-3 { grid-template-columns: 1fr; } }
-</style>
-=======
-.chart-container.tall {
-  height: 480px;
-}
-
-.chart-container canvas {
-  width: 100% !important;
-  height: 100% !important;
-}
-
-.btn-export {
-  background: transparent;
-  border: 1px solid rgba(255,255,255,0.1);
-  color: rgba(255,255,255,0.6);
-  padding: 6px 12px;
-  border-radius: 6px;
-  cursor: pointer;
-  font-size: 11px;
-  font-weight: 500;
-  transition: all 0.2s;
-  white-space: nowrap;
-}
-
-.btn-export:hover {
-  background: rgba(255,255,255,0.05);
-  border-color: rgba(255,255,255,0.2);
-  color: #fff;
-}
 
 /* ============================================
    RESPONSIVE
    ============================================ */
-@media (max-width: 1400px) {
-  .grid-3 {
-    grid-template-columns: repeat(2, 1fr);
-  }
-}
-
+@media (max-width: 1400px) { .grid-3 { grid-template-columns: repeat(2, 1fr); } }
 @media (max-width: 1024px) {
-  .page-header {
-    flex-direction: column;
-  }
-
-  .header-right {
-    width: 100%;
-  }
-
-  .control-group {
-    width: 100%;
-  }
-
-  .search-input {
-    flex: 1;
-  }
-
-  .grid-2,
-  .grid-3 {
-    grid-template-columns: 1fr;
-  }
+  .section-header { flex-direction: column; align-items: flex-start; gap: 16px; }
+  .header-actions { width: 100%; }
+  .glass-pill { width: 100%; }
+  .search-input { flex: 1; }
+  .grid-2, .grid-3 { grid-template-columns: 1fr; }
 }
-
-@media (max-width: 768px) {
-  .bond-report-page {
-    padding: 16px;
-  }
-
-  .page-header {
-    gap: 16px;
-  }
-
-  .header-left {
-    min-width: unset;
-  }
-
-  .page-title {
-    font-size: 24px;
-  }
-
-  .control-group {
-    flex-direction: column;
-    gap: 8px;
-  }
-
-  .search-input {
-    width: 100%;
-  }
-
-  .chart-container {
-    height: 300px;
-  }
-
-  .chart-container.tall {
-    height: 400px;
-  }
-
-  .rating-item {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-
-  .metric-item {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 4px;
-  }
-
-  .metric-value {
-    text-align: left;
-  }
+@media (max-width: 768px) { 
+  .page-container { padding: 16px; } 
+  .section-title { font-size: 24px; }
+  .chart-container { height: 300px; }
+  .chart-container.tall { height: 400px; }
+  .rating-item, .metric { flex-direction: column; align-items: flex-start; gap: 4px; }
+  .val, .metric-value { text-align: left; }
 }
 </style>
->>>>>>> 9f1a505 (feat: description of changes)
