@@ -879,4 +879,71 @@ input:checked + .slider:before {
     gap: 16px;
   }
 }
+
+@media (max-width: 480px) {
+  .page-container {
+    padding: 12px;
+    gap: 12px;
+  }
+  
+  .section-title {
+    font-size: 20px;
+  }
+  
+  .section-subtitle {
+    font-size: 11px;
+  }
+  
+  .section-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+  
+  .btn-save {
+    width: 100%;
+  }
+  
+  .tabs-navigation {
+    gap: 2px;
+  }
+  
+  .tab-item {
+    padding: 8px 10px;
+    font-size: 10px;
+  }
+  
+  .grid-content {
+    gap: 12px;
+  }
+  
+  .settings-block {
+    padding: 12px;
+  }
+  
+  .block-title {
+    padding: 12px 16px 6px 16px;
+    font-size: 10px;
+  }
+  
+  .control-group {
+    margin: 0 12px 12px;
+    padding: 0 12px;
+  }
+  
+  .control-row {
+    padding: 10px 2px;
+    min-height: 40px;
+  }
+  
+  .control-row label {
+    font-size: 12px;
+  }
+  
+  .glass-select,
+  .glass-input {
+    font-size: 12px;
+    padding: 6px 10px;
+  }
+}
 </style>

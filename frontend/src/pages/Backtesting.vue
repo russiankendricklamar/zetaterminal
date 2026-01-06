@@ -373,4 +373,94 @@ const getReturnClass = (returnValue: string) => {
   .dashboard-grid { grid-template-columns: 1fr; }
   .kpi-cards-grid { grid-template-columns: repeat(2, 1fr); }
 }
+
+@media (max-width: 768px) {
+  .page-container {
+    padding: 16px;
+    gap: 16px;
+  }
+  
+  .section-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+  }
+  
+  .section-title {
+    font-size: 22px;
+  }
+  
+  .section-subtitle {
+    font-size: 12px;
+  }
+  
+  .glass-segmented-control {
+    width: 100%;
+    overflow-x: auto;
+  }
+  
+  .kpi-cards-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .kpi-card {
+    min-height: 90px;
+    padding: 16px;
+  }
+  
+  .kpi-value {
+    font-size: 24px;
+  }
+  
+  .chart-panel {
+    padding: 16px;
+    min-height: 250px;
+  }
+  
+  .panel-full {
+    padding: 16px;
+  }
+  
+  .table-wrapper {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
+@media (max-width: 480px) {
+  .page-container {
+    padding: 12px;
+    gap: 12px;
+  }
+  
+  .section-title {
+    font-size: 20px;
+  }
+  
+  .section-subtitle {
+    font-size: 11px;
+  }
+  
+  .kpi-value {
+    font-size: 20px;
+  }
+  
+  .chart-panel {
+    min-height: 200px;
+    padding: 12px;
+  }
+  
+  .panel-full {
+    padding: 12px;
+  }
+  
+  .heatmap-table {
+    font-size: 10px;
+  }
+  
+  .val-pill {
+    font-size: 9px;
+    padding: 4px 2px;
+  }
+}
 </style>

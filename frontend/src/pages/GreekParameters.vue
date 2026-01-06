@@ -519,4 +519,130 @@ const runStressTest = async () => {
   .dashboard-grid { grid-template-columns: 1fr; }
   .kpi-cards-grid { grid-template-columns: repeat(2, 1fr); }
 }
+
+@media (max-width: 768px) {
+  .page-container {
+    padding: 16px;
+    gap: 16px;
+  }
+  
+  .section-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+  }
+  
+  .header-actions {
+    width: 100%;
+    flex-wrap: wrap;
+  }
+  
+  .glass-pill {
+    flex: 1;
+    min-width: 120px;
+  }
+  
+  .section-title {
+    font-size: 22px;
+  }
+  
+  .section-subtitle {
+    font-size: 12px;
+  }
+  
+  .kpi-cards-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .kpi-card {
+    min-height: 90px;
+    padding: 16px;
+  }
+  
+  .kpi-value {
+    font-size: 22px;
+  }
+  
+  .panel {
+    padding: 16px;
+  }
+  
+  .risk-table-wrapper {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  .correlation-matrix-grid {
+    grid-template-columns: 30px repeat(5, 1fr);
+    gap: 2px;
+  }
+  
+  .matrix-cell {
+    height: 32px;
+    font-size: 10px;
+  }
+}
+
+@media (max-width: 480px) {
+  .page-container {
+    padding: 12px;
+    gap: 12px;
+  }
+  
+  .section-title {
+    font-size: 20px;
+  }
+  
+  .section-subtitle {
+    font-size: 11px;
+  }
+  
+  .glass-pill {
+    width: 100%;
+    min-width: 100%;
+  }
+  
+  .kpi-value {
+    font-size: 20px;
+  }
+  
+  .panel {
+    padding: 12px;
+  }
+  
+  .panel-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+  
+  .glass-table {
+    font-size: 11px;
+  }
+  
+  .glass-table th,
+  .glass-table td {
+    padding: 8px 0;
+  }
+  
+  .correlation-matrix-grid {
+    grid-template-columns: 25px repeat(5, 1fr);
+    gap: 1px;
+  }
+  
+  .matrix-cell {
+    height: 28px;
+    font-size: 9px;
+  }
+  
+  .stress-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+  
+  .stress-result {
+    text-align: left;
+  }
+}
 </style>

@@ -314,4 +314,143 @@ const generateReport = () => {
 /* SPINNER */
 .spinner-mini { width: 12px; height: 12px; border: 2px solid rgba(255,255,255,0.3); border-top-color: #fff; border-radius: 50%; animation: spin 1s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
+
+/* ============================================
+   RESPONSIVE
+   ============================================ */
+@media (max-width: 1024px) {
+  .page-container {
+    padding: 16px 20px;
+    gap: 20px;
+  }
+  
+  .section-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+  }
+  
+  .header-actions {
+    width: 100%;
+  }
+  
+  .report-viewport {
+    padding: 20px;
+  }
+  
+  .a4-sheet {
+    width: 100%;
+    max-width: 210mm;
+  }
+  
+  .metrics-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .page-container {
+    padding: 16px;
+    gap: 16px;
+  }
+  
+  .section-title {
+    font-size: 22px;
+  }
+  
+  .section-subtitle {
+    font-size: 12px;
+  }
+  
+  .report-viewport {
+    padding: 16px;
+  }
+  
+  .a4-sheet {
+    padding: 12mm;
+  }
+  
+  .rep-main-title {
+    font-size: 20px;
+  }
+  
+  .metrics-grid {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+  
+  .m-value {
+    font-size: 18px;
+  }
+  
+  .chart-container-print {
+    height: 150px;
+    padding: 12px;
+  }
+  
+  .print-table {
+    font-size: 11px;
+  }
+}
+
+@media (max-width: 480px) {
+  .page-container {
+    padding: 12px;
+    gap: 12px;
+  }
+  
+  .section-title {
+    font-size: 18px;
+  }
+  
+  .section-subtitle {
+    font-size: 11px;
+  }
+  
+  .btn-glass {
+    font-size: 12px;
+    padding: 0 12px;
+    height: 36px;
+  }
+  
+  .report-viewport {
+    padding: 12px;
+  }
+  
+  .a4-sheet {
+    padding: 10mm;
+  }
+  
+  .rep-main-title {
+    font-size: 18px;
+  }
+  
+  .rep-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+  
+  .rep-meta {
+    text-align: left;
+  }
+  
+  .m-value {
+    font-size: 16px;
+  }
+  
+  .chart-container-print {
+    height: 120px;
+    padding: 8px;
+  }
+  
+  .print-table {
+    font-size: 10px;
+  }
+  
+  .print-table th,
+  .print-table td {
+    padding: 6px 0;
+  }
+}
 </style>

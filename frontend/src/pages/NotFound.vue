@@ -262,5 +262,76 @@ const goBack = () => {
     color: #fff;
     border-color: rgba(255,255,255,0.2);
 }
+
+/* ============================================
+   RESPONSIVE
+   ============================================ */
+@media (max-width: 768px) {
+  .page-container {
+    padding: 16px;
+  }
+  
+  .glass-panel {
+    padding: 32px 24px;
+  }
+  
+  .error-code {
+    font-size: 72px;
+  }
+  
+  .error-title {
+    font-size: 20px;
+  }
+  
+  .error-desc {
+    font-size: 13px;
+  }
+  
+  .actions {
+    flex-direction: column;
+  }
+  
+  .btn {
+    width: 100%;
+  }
+  
+  .links-row {
+    flex-direction: column;
+    width: 100%;
+  }
+  
+  .link-pill {
+    width: 100%;
+    text-align: center;
+  }
+}
+
+@media (max-width: 480px) {
+  .page-container {
+    padding: 12px;
+  }
+  
+  .glass-panel {
+    padding: 24px 16px;
+  }
+  
+  .error-code {
+    font-size: 56px;
+  }
+  
+  .error-title {
+    font-size: 18px;
+  }
+  
+  .error-desc {
+    font-size: 12px;
+    max-width: 100%;
+  }
+  
+  .btn {
+    font-size: 12px;
+    padding: 8px 16px;
+  }
+}
 </style>
 
