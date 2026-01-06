@@ -861,6 +861,7 @@ onUnmounted(() => clearInterval(timer))
   justify-content: center;
   transition: transform 0.3s ease, opacity 0.3s ease;
   backface-visibility: hidden;
+  touch-action: manipulation;
 }
 
 .sidebar-tab:hover {
@@ -1497,6 +1498,16 @@ onUnmounted(() => clearInterval(timer))
 }
 
 @media (max-width: 768px) {
+  .sidebar-tab {
+    width: 60px;
+    min-width: 60px;
+  }
+
+  .burger-icon span {
+    width: 21px;
+    height: 2.5px;
+  }
+
   .sidebar {
     width: 260px;
   }
@@ -1520,6 +1531,16 @@ onUnmounted(() => clearInterval(timer))
 }
 
 @media (max-width: 480px) {
+  .sidebar-tab {
+    width: 56px;
+    min-width: 56px;
+  }
+
+  .burger-icon span {
+    width: 22px;
+    height: 2.5px;
+  }
+
   .sidebar {
     width: 100%;
     max-width: 320px;

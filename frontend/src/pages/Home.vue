@@ -386,7 +386,8 @@ const triggerExplosion = (path: string) => {
 .home-root {
   position: relative;
   min-height: 100vh;
-  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: auto;
   background: radial-gradient(circle at top, #050816 0%, #020308 45%, #000 100%);
   color: #f9fafb;
 }
@@ -401,7 +402,7 @@ const triggerExplosion = (path: string) => {
   grid-template-columns: 1.2fr 1fr;
   gap: 60px;
   align-items: flex-start;
-  height: 100vh;
+  min-height: 100vh;
 }
 
 /* ============================================
@@ -869,9 +870,15 @@ const triggerExplosion = (path: string) => {
 }
 
 @media (max-width: 768px) {
+  .home-root {
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
   .home-layout {
     padding: 64px 20px 40px 20px;
     gap: 36px;
+    min-height: auto;
     height: auto;
   }
 
@@ -898,6 +905,7 @@ const triggerExplosion = (path: string) => {
   .tool-grid {
     padding: 18px 14px;
     max-height: none;
+    overflow-y: visible;
   }
 
   .tool-card {
@@ -914,8 +922,14 @@ const triggerExplosion = (path: string) => {
 }
 
 @media (max-width: 480px) {
+  .home-root {
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
   .home-layout {
     padding: 56px 16px 32px 16px;
+    min-height: auto;
     height: auto;
   }
 
@@ -934,6 +948,10 @@ const triggerExplosion = (path: string) => {
 
   .tool-arrow {
     display: none;
+  }
+
+  .tool-grid {
+    max-height: none;
   }
 }
 </style>
