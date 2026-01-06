@@ -472,9 +472,15 @@
           <span class="panel-badge">Режимная индикация</span>
        </div>
        <div class="panel-body" style="padding-top: 16px;">
-          <p class="section-description" style="margin-bottom: 0; padding: 8px 12px; border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; background: rgba(0,0,0,0.2); font-size: 12px; line-height: 1.4;">
-             3D поверхность показывает, является ли импульс торговаемым (гладкий хребет) 
-             или шумом (пилообразные пики). Используется для динамической подстройки размера позиции.
+          <p class="section-description" style="margin-bottom: 0; padding: 8px 12px; border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; background: rgba(0,0,0,0.2); font-size: 12px; line-height: 1.5;">
+             3D поверхность показывает взаимосвязь между импульсом (Momentum), волатильностью (Volatility) и неровностью (Jaggedness). 
+             <br><strong>Цветовая карта:</strong> 
+             <span style="color: #3b82f6;">🔵 Синий</span> = низкий риск (безопасная зона), 
+             <span style="color: #10b981;">🟢 Зеленый</span> = норма (торгуемый импульс), 
+             <span style="color: #fbbf24;">🟡 Желтый</span> = внимание (повышенная волатильность), 
+             <span style="color: #f97316;">🟠 Оранжевый</span> = предупреждение (высокий риск), 
+             <span style="color: #ef4444;">🔴 Красный</span> = экстремальный риск (шум, не торгуемо).
+             <br>Используется для динамической подстройки размера позиции на основе режима рынка.
           </p>
           
           <!-- 3D Surface Plotly -->
@@ -522,8 +528,15 @@
         <span class="panel-badge alert">Leading Indicator</span>
       </div>
       <div class="panel-body" style="padding-top: 16px;">
-        <p class="section-description" style="margin-bottom: 12px; padding: 8px 12px; border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; background: rgba(0,0,0,0.2); font-size: 12px; line-height: 1.4;">
-          3D поверхность волатильности: детектирует предварительные сигналы сдвига пика волатильности...
+        <p class="section-description" style="margin-bottom: 12px; padding: 8px 12px; border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; background: rgba(0,0,0,0.2); font-size: 12px; line-height: 1.5;">
+          3D поверхность волатильности детектирует предварительные сигналы сдвига пика волатильности до того, как это отразится в ценах.
+          <br><strong>Цветовая карта:</strong> 
+          <span style="color: #3b82f6;">🔵 Синий</span> = низкий Z-Score (нормальная волатильность), 
+          <span style="color: #10b981;">🟢 Зеленый</span> = норма (стабильное состояние), 
+          <span style="color: #fbbf24;">🟡 Желтый</span> = повышенный Z-Score (внимание, возможен сдвиг), 
+          <span style="color: #f97316;">🟠 Оранжевый</span> = высокий Z-Score (предупреждение о сдвиге), 
+          <span style="color: #ef4444;">🔴 Красный</span> = экстремальный Z-Score (критический сигнал, рекомендуется снижение позиций).
+          <br>Пик на поверхности показывает текущее положение максимума волатильности. Сдвиг пика влево/вправо предупреждает о потенциальных изменениях.
         </p>
 
         <div class="latent-vol-status" :class="'status-' + latentVolAlert.severity" style="margin-bottom: 0;">
@@ -761,50 +774,103 @@ const initWave3D = async () => {
     }
 
     const { x, y, z } = generateSurface(0)
+    
+    // Вычисляем min и max для нормализации цветов
+    const zFlat = z.flat()
+    const zMin = Math.min(...zFlat)
+    const zMax = Math.max(...zFlat)
+    const zRange = zMax - zMin
+
+    // Красочная цветовая карта с градиентом от синего (низкие) к красному (высокие)
+    // Показывает разные уровни риска/волатильности
+    const colorscale = [
+      [0.0, '#1e3a8a'],      // Темно-синий - очень низкие значения (безопасная зона)
+      [0.2, '#3b82f6'],      // Синий - низкие значения
+      [0.35, '#22d3ee'],     // Голубой - умеренно низкие
+      [0.5, '#10b981'],      // Зеленый - средние значения (нормальная зона)
+      [0.65, '#84cc16'],     // Лайм - умеренно высокие
+      [0.8, '#fbbf24'],      // Желтый - высокие значения (внимание)
+      [0.9, '#f97316'],      // Оранжевый - очень высокие (предупреждение)
+      [1.0, '#ef4444']       // Красный - экстремальные значения (опасная зона)
+    ]
 
     const trace = {
       x: x,
       y: y,
       z: z,
       type: 'surface',
-      colorscale: waveRegime.value.currentRegime === 'CHOPPY' ? 
-        [[0, '#7f1d1d'], [0.5, '#ef4444'], [1, '#fca5a5']] :
-        [[0, '#064e3b'], [0.5, '#4ade80'], [1, '#bbf7d0']],
+      colorscale: colorscale,
+      showscale: true,
+      colorbar: {
+        title: {
+          text: 'Уровень риска',
+          font: { color: 'rgba(255,255,255,0.9)', size: 12 }
+        },
+        tickfont: { color: 'rgba(255,255,255,0.7)', size: 10 },
+        tickmode: 'array',
+        tickvals: [0, 0.25, 0.5, 0.75, 1],
+        ticktext: ['Низкий', 'Умеренный', 'Средний', 'Высокий', 'Экстремальный'],
+        len: 0.6,
+        thickness: 15,
+        x: 1.02,
+        xpad: 10
+      },
       contours: {
         z: {
           show: true,
           usecolorscale: true,
-          project: { z: true }
+          project: { z: true },
+          width: 2,
+          color: 'rgba(255,255,255,0.3)'
+        },
+        x: {
+          show: true,
+          highlight: true,
+          highlightcolor: 'rgba(255,255,255,0.5)',
+          highlightwidth: 2
+        },
+        y: {
+          show: true,
+          highlight: true,
+          highlightcolor: 'rgba(255,255,255,0.5)',
+          highlightwidth: 2
         }
       },
-      showscale: false
+      lighting: {
+        ambient: 0.6,
+        diffuse: 0.8,
+        specular: 0.3,
+        roughness: 0.5,
+        fresnel: 0.2
+      },
+      lightposition: { x: 100, y: 100, z: 100 }
     }
 
     const layout = {
       scene: {
         xaxis: { 
-          title: 'Momentum',
+          title: 'Momentum (Импульс)',
           backgroundcolor: 'rgba(0,0,0,0)',
-          gridcolor: 'rgba(255,255,255,0.1)',
+          gridcolor: 'rgba(255,255,255,0.15)',
           showbackground: true,
-          titlefont: { color: 'rgba(255,255,255,0.7)', size: 14 },
-          tickfont: { size: 12 }
+          titlefont: { color: 'rgba(255,255,255,0.9)', size: 14, family: 'system-ui' },
+          tickfont: { size: 11, color: 'rgba(255,255,255,0.6)' }
         },
         yaxis: { 
-          title: 'Volatility',
+          title: 'Volatility (Волатильность)',
           backgroundcolor: 'rgba(0,0,0,0)',
-          gridcolor: 'rgba(255,255,255,0.1)',
+          gridcolor: 'rgba(255,255,255,0.15)',
           showbackground: true,
-          titlefont: { color: 'rgba(255,255,255,0.7)', size: 14 },
-          tickfont: { size: 12 }
+          titlefont: { color: 'rgba(255,255,255,0.9)', size: 14, family: 'system-ui' },
+          tickfont: { size: 11, color: 'rgba(255,255,255,0.6)' }
         },
         zaxis: { 
-          title: 'Jaggedness',
+          title: 'Jaggedness (Неровность)',
           backgroundcolor: 'rgba(0,0,0,0)',
-          gridcolor: 'rgba(255,255,255,0.1)',
+          gridcolor: 'rgba(255,255,255,0.15)',
           showbackground: true,
-          titlefont: { color: 'rgba(255,255,255,0.7)', size: 14 },
-          tickfont: { size: 12 }
+          titlefont: { color: 'rgba(255,255,255,0.9)', size: 14, family: 'system-ui' },
+          tickfont: { size: 11, color: 'rgba(255,255,255,0.6)' }
         },
         bgcolor: 'rgba(0,0,0,0)',
         camera: {
@@ -817,9 +883,17 @@ const initWave3D = async () => {
       paper_bgcolor: 'transparent',
       plot_bgcolor: 'transparent',
       font: { color: '#fff', family: 'system-ui' },
-      margin: { l: 0, r: 0, b: 0, t: 30 },
+      margin: { l: 0, r: 80, b: 0, t: 30 },
       showlegend: false,
-      autosize: true
+      autosize: true,
+      title: {
+        text: 'Цветовая карта: от синего (низкий риск) до красного (высокий риск)',
+        font: { color: 'rgba(255,255,255,0.7)', size: 11 },
+        x: 0.5,
+        xanchor: 'center',
+        y: 0.98,
+        yanchor: 'top'
+      }
     }
 
     const config = {
@@ -1047,23 +1121,73 @@ const initLatentVol3D = async () => {
   }
 
   const { x, y, z } = generateLatentSurface(0)
+  
+  // Вычисляем min и max для нормализации
+  const zFlat = z.flat()
+  const zMin = Math.min(...zFlat)
+  const zMax = Math.max(...zFlat)
 
+  // Красочная цветовая карта для Latent Volatility
+  // Показывает уровень Z-Score и риск сдвига волатильности
   const colorscale = [
-    [0, '#7f1d1d'],
-    [0.25, '#dc2626'],
-    [0.5, '#ef4444'],
-    [0.65, '#f97316'],
-    [0.8, '#fbbf24'],
-    [1, '#fcd34d'],
+    [0.0, '#1e3a8a'],      // Темно-синий - очень низкий Z-Score (норма)
+    [0.15, '#3b82f6'],     // Синий - низкий Z-Score
+    [0.3, '#22d3ee'],      // Голубой - умеренно низкий
+    [0.5, '#10b981'],      // Зеленый - нормальный уровень
+    [0.65, '#84cc16'],     // Лайм - умеренно повышенный
+    [0.8, '#fbbf24'],      // Желтый - повышенный Z-Score (внимание)
+    [0.9, '#f97316'],      // Оранжевый - высокий Z-Score (предупреждение)
+    [1.0, '#ef4444']       // Красный - экстремальный Z-Score (тревога)
   ]
 
   const trace = {
     x, y, z,
     type: 'surface',
     colorscale,
-    contours: { z: { show: true, usecolorscale: true, project: { z: true } } },
     showscale: true,
-    colorbar: { title: 'Z-Score', thickness: 15, len: 0.7, x: 1.02 }
+    colorbar: {
+      title: {
+        text: 'Z-Score (Уровень риска)',
+        font: { color: 'rgba(255,255,255,0.9)', size: 12 }
+      },
+      tickfont: { color: 'rgba(255,255,255,0.7)', size: 10 },
+      tickmode: 'array',
+      tickvals: [0, 0.25, 0.5, 0.75, 1],
+      ticktext: ['Низкий', 'Умеренный', 'Норма', 'Высокий', 'Экстремальный'],
+      len: 0.6,
+      thickness: 15,
+      x: 1.02,
+      xpad: 10
+    },
+    contours: {
+      z: {
+        show: true,
+        usecolorscale: true,
+        project: { z: true },
+        width: 2,
+        color: 'rgba(255,255,255,0.3)'
+      },
+      x: {
+        show: true,
+        highlight: true,
+        highlightcolor: 'rgba(255,255,255,0.5)',
+        highlightwidth: 2
+      },
+      y: {
+        show: true,
+        highlight: true,
+        highlightcolor: 'rgba(255,255,255,0.5)',
+        highlightwidth: 2
+      }
+    },
+    lighting: {
+      ambient: 0.6,
+      diffuse: 0.8,
+      specular: 0.3,
+      roughness: 0.5,
+      fresnel: 0.2
+    },
+    lightposition: { x: 100, y: 100, z: 100 }
   }
 
   const layout = {
@@ -1071,26 +1195,26 @@ const initLatentVol3D = async () => {
       xaxis: { 
         title: 'Vol Peak Position (%)',
         backgroundcolor: 'rgba(0,0,0,0)',
-        gridcolor: 'rgba(255,255,255,0.1)',
+        gridcolor: 'rgba(255,255,255,0.15)',
         showbackground: true,
-        titlefont: { color: 'rgba(255,255,255,0.7)', size: 14 },
-        tickfont: { size: 12 }
+        titlefont: { color: 'rgba(255,255,255,0.9)', size: 14, family: 'system-ui' },
+        tickfont: { size: 11, color: 'rgba(255,255,255,0.6)' }
       },
       yaxis: { 
         title: 'Period (Days)',
         backgroundcolor: 'rgba(0,0,0,0)',
-        gridcolor: 'rgba(255,255,255,0.1)',
+        gridcolor: 'rgba(255,255,255,0.15)',
         showbackground: true,
-        titlefont: { color: 'rgba(255,255,255,0.7)', size: 14 },
-        tickfont: { size: 12 }
+        titlefont: { color: 'rgba(255,255,255,0.9)', size: 14, family: 'system-ui' },
+        tickfont: { size: 11, color: 'rgba(255,255,255,0.6)' }
       },
       zaxis: { 
         title: 'Z-Score Shift',
         backgroundcolor: 'rgba(0,0,0,0)',
-        gridcolor: 'rgba(255,255,255,0.1)',
+        gridcolor: 'rgba(255,255,255,0.15)',
         showbackground: true,
-        titlefont: { color: 'rgba(255,255,255,0.7)', size: 14 },
-        tickfont: { size: 12 }
+        titlefont: { color: 'rgba(255,255,255,0.9)', size: 14, family: 'system-ui' },
+        tickfont: { size: 11, color: 'rgba(255,255,255,0.6)' }
       },
       camera: { 
         eye: { x: 3.0, y: 3.0, z: 2.5 },
@@ -1101,7 +1225,16 @@ const initLatentVol3D = async () => {
     },
     paper_bgcolor: 'transparent',
     plot_bgcolor: 'transparent',
-    margin: { l: 0, r: 60, b: 0, t: 0 }
+    font: { color: '#fff', family: 'system-ui' },
+    margin: { l: 0, r: 80, b: 0, t: 30 },
+    title: {
+      text: 'Цветовая карта: от синего (норма) до красного (экстремальный риск)',
+      font: { color: 'rgba(255,255,255,0.7)', size: 11 },
+      x: 0.5,
+      xanchor: 'center',
+      y: 0.98,
+      yanchor: 'top'
+    }
   }
 
     Plotly.newPlot(container, [trace], layout, { responsive: true, displayModeBar: false })

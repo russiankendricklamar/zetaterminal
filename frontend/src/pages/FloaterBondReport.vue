@@ -1253,7 +1253,7 @@ onBeforeUnmount(() => {
 .info-table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 12px;
+  font-size: 12px; 
 }
 
 .info-table td {
@@ -1636,7 +1636,7 @@ onBeforeUnmount(() => {
 
 .analog-name {
   color: rgba(255, 255, 255, 0.9);
-  font-size: 12px;
+  font-size: 12px; 
   flex: 1;
 }
 
@@ -1646,7 +1646,7 @@ onBeforeUnmount(() => {
   color: #f87171;
   width: 24px;
   height: 24px;
-  border-radius: 50%;
+  border-radius: 50%; 
   cursor: pointer;
   font-size: 18px;
   line-height: 1;
@@ -1678,7 +1678,7 @@ onBeforeUnmount(() => {
   text-align: left;
   padding: 12px 16px;
   color: rgba(255, 255, 255, 0.5);
-  font-weight: 600;
+  font-weight: 600; 
   text-transform: uppercase;
   font-size: 10px;
   letter-spacing: 0.05em;
@@ -1745,7 +1745,7 @@ onBeforeUnmount(() => {
   }
 }
 
-@media (max-width: 768px) { 
+@media (max-width: 768px) {
   .page-container { padding: 16px; } 
   .section-title { font-size: 20px; }
   .chart-container { height: 300px; }

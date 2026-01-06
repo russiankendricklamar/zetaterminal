@@ -37,6 +37,7 @@ import ArbitrageScanner from '@/pages/ArbitrageScanner.vue'
 import VolatilitySurface from '@/pages/VolatilitySurface.vue'
 import CCMVOptimizationPage from '@/pages/CCMVOptimization.vue'
 import DocumentationPage from '@/pages/DocumentationPage.vue'
+import MarketData from '@/pages/MarketData.vue'
 
 const routes = [
   {
@@ -50,6 +51,12 @@ const routes = [
     name: 'Documentation',
     component: DocumentationPage,
     meta: { title: 'Документация' }
+  },
+  {
+    path: '/data',
+    name: 'MarketData',
+    component: MarketData,
+    meta: { title: 'Рыночные данные', icon: '📊' }
   },
   {
     path: '/',
