@@ -475,7 +475,17 @@ const triggerExplosion = (path: string) => {
   flex-direction: column;
   gap: 24px;
   max-width: 580px;
-  padding-top: 12px;
+  padding: 32px;
+  border-radius: 20px;
+  backdrop-filter: blur(20px);
+  background: rgba(15, 23, 42, 0.75);
+  border: 1.5px solid rgba(34, 211, 238, 0.25);
+  box-shadow: 
+    0 0 40px rgba(34, 211, 238, 0.12),
+    inset 0 1px 20px rgba(34, 211, 238, 0.08),
+    0 20px 60px rgba(15, 23, 42, 0.8);
+  position: relative;
+  z-index: 2;
 }
 
 .logo-badge {
@@ -886,6 +896,11 @@ const triggerExplosion = (path: string) => {
     height: auto;
   }
 
+  .hero {
+    padding: 24px;
+    border-radius: 16px;
+  }
+
   .hero-title {
     font-size: 28px;
   }
@@ -935,6 +950,11 @@ const triggerExplosion = (path: string) => {
     padding: 56px 16px 32px 16px;
     min-height: auto;
     height: auto;
+  }
+
+  .hero {
+    padding: 20px;
+    border-radius: 14px;
   }
 
   .hero-title {
