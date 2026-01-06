@@ -53,11 +53,6 @@
       </div>
     </div>
 
-    <div class="axes-labels">
-      <div class="axis-label x-label">X: Strike (%)</div>
-      <div class="axis-label y-label">Y: IV (%)</div>
-      <div class="axis-label z-label">Z: Tenor</div>
-    </div>
 
     <!-- Statistics & Info -->
     <div class="grid-4">
@@ -400,7 +395,7 @@ const initThreeJS = () => {
 
   // Camera
   camera = new THREE.PerspectiveCamera(75, width / height, 0.1, 1000)
-  camera.position.set(12, 12, 0)
+  camera.position.set(12, 12, 12)
   camera.lookAt(0, 0, 0)
 
   // Renderer
@@ -503,7 +498,7 @@ const buildSurface = () => {
   const material = new THREE.MeshPhongMaterial({
     vertexColors: true,
     wireframe: showWireframe.value,
-    flatShaping: false,
+    flatShading: false,
     emissive: 0x1a1a1a,
     shininess: 30
   })
@@ -511,11 +506,25 @@ const buildSurface = () => {
   mesh = new THREE.Mesh(geometry, material)
   sceneContainer.add(mesh)
 
-  // Add grid if enabled
+  // Add grids on all planes if enabled
   if (showGrid.value) {
-    const gridHelper = new THREE.GridHelper(12, 12, 0x444444, 0x222222)
-    gridHelper.position.y = -0.5
-    sceneContainer.add(gridHelper)
+    // Grid on XZ plane (horizontal, at y = -0.5)
+    const gridXZ = new THREE.GridHelper(12, 12, 0x444444, 0x222222)
+    gridXZ.position.y = -0.5
+    gridXZ.rotation.x = 0
+    sceneContainer.add(gridXZ)
+    
+    // Grid on XY plane (vertical, at z = -6)
+    const gridXY = new THREE.GridHelper(12, 12, 0x444444, 0x222222)
+    gridXY.position.z = -6
+    gridXY.rotation.x = Math.PI / 2
+    sceneContainer.add(gridXY)
+    
+    // Grid on YZ plane (vertical, at x = -6)
+    const gridYZ = new THREE.GridHelper(12, 12, 0x444444, 0x222222)
+    gridYZ.position.x = -6
+    gridYZ.rotation.z = Math.PI / 2
+    sceneContainer.add(gridYZ)
   }
 
   // Create axes и добавь их в КОНТЕЙНЕР
@@ -530,15 +539,58 @@ const createAxes = (container: THREE.Group) => {
   axesGroup.name = 'axesGroup'
 
   // Оси на углу плоскости XZ, ВЫШЕ на оси Y
-  const offset = new THREE.Vector3(-6, 0, -6)  // ← ВЫШЕ (Y = -2.8)
+  const offset = new THREE.Vector3(-6, 0, -6)
   axesGroup.position.copy(offset)
 
   const axesLength = 12
   const arrowSize = 0.3
   const lineWidth = 3
+  const tickSize = 0.2
+  const numTicks = 6
 
   const whiteColor = 0xffffff
   const lineMaterial = new THREE.LineBasicMaterial({ color: whiteColor, linewidth: lineWidth })
+  const tickMaterial = new THREE.LineBasicMaterial({ color: whiteColor, linewidth: 1 })
+
+  // Helper function для создания текстового спрайта (подписи на делениях)
+  const createTextSprite = (text: string, position: THREE.Vector3) => {
+    const canvas = document.createElement('canvas')
+    canvas.width = 1024
+    canvas.height = 512
+    const ctx = canvas.getContext('2d')!
+    ctx.fillStyle = '#ffffff'
+    ctx.font = 'bold 72px Arial'
+    ctx.textAlign = 'center'
+    ctx.textBaseline = 'middle'
+    ctx.fillText(text, 512, 256)
+    
+    const texture = new THREE.CanvasTexture(canvas)
+    const spriteMaterial = new THREE.SpriteMaterial({ map: texture })
+    const sprite = new THREE.Sprite(spriteMaterial)
+    sprite.scale.set(5, 2.5, 1)
+    sprite.position.copy(position)
+    return sprite
+  }
+
+  // Helper function для создания названий осей (больше размер)
+  const createAxisLabelSprite = (text: string, position: THREE.Vector3) => {
+    const canvas = document.createElement('canvas')
+    canvas.width = 1024
+    canvas.height = 512
+    const ctx = canvas.getContext('2d')!
+    ctx.fillStyle = '#ffffff'
+    ctx.font = 'bold 96px Arial'
+    ctx.textAlign = 'center'
+    ctx.textBaseline = 'middle'
+    ctx.fillText(text, 512, 256)
+    
+    const texture = new THREE.CanvasTexture(canvas)
+    const spriteMaterial = new THREE.SpriteMaterial({ map: texture })
+    const sprite = new THREE.Sprite(spriteMaterial)
+    sprite.scale.set(7, 3.5, 1)
+    sprite.position.copy(position)
+    return sprite
+  }
 
   // ===== X-AXIS (Strike) - Вправо =====
   const xGeometry = new THREE.BufferGeometry()
@@ -560,6 +612,31 @@ const createAxes = (container: THREE.Group) => {
   xArrow.rotation.z = -Math.PI / 2
   axesGroup.add(xArrow)
 
+  // X ticks and labels
+  for (let i = 0; i <= numTicks; i++) {
+    const t = (i / numTicks) * axesLength
+    // Tick line
+    const tickGeometry = new THREE.BufferGeometry()
+    tickGeometry.setAttribute(
+      'position',
+      new THREE.BufferAttribute(
+        new Float32Array([t, -tickSize, 0, t, tickSize, 0]),
+        3
+      )
+    )
+    const tick = new THREE.Line(tickGeometry, tickMaterial)
+    axesGroup.add(tick)
+    
+    // Label
+    const strikeValue = ((strikes[Math.floor((i / numTicks) * (strikes.length - 1))] - 1) * 100).toFixed(0)
+    const label = createTextSprite(strikeValue + '%', new THREE.Vector3(t, -0.8, 0))
+    axesGroup.add(label)
+  }
+
+  // X axis label
+  const xLabel = createAxisLabelSprite('Strike (%)', new THREE.Vector3(axesLength / 2, -2.5, 0))
+  axesGroup.add(xLabel)
+
   // ===== Y-AXIS (Volatility) - Вверх =====
   const yGeometry = new THREE.BufferGeometry()
   yGeometry.setAttribute(
@@ -579,7 +656,33 @@ const createAxes = (container: THREE.Group) => {
   yArrow.position.set(0, axesLength + 0.15, 0)
   axesGroup.add(yArrow)
 
-  // ===== Z-AXIS (Tenor) - Назад (ЛЕВАЯ ТРОЙКА) =====
+  // Y ticks and labels
+  const maxVol = Math.max(...volSurfaceData.flat()) * 100
+  for (let i = 0; i <= numTicks; i++) {
+    const t = (i / numTicks) * axesLength
+    // Tick line
+    const tickGeometry = new THREE.BufferGeometry()
+    tickGeometry.setAttribute(
+      'position',
+      new THREE.BufferAttribute(
+        new Float32Array([-tickSize, t, 0, tickSize, t, 0]),
+        3
+      )
+    )
+    const tick = new THREE.Line(tickGeometry, tickMaterial)
+    axesGroup.add(tick)
+    
+    // Label
+    const volValue = ((t / axesLength) * maxVol).toFixed(1)
+    const label = createTextSprite(volValue + '%', new THREE.Vector3(-0.8, t, 0))
+    axesGroup.add(label)
+  }
+
+  // Y axis label
+  const yLabel = createAxisLabelSprite('IV (%)', new THREE.Vector3(-2.5, axesLength / 2, 0))
+  axesGroup.add(yLabel)
+
+  // ===== Z-AXIS (Tenor) - Назад =====
   const zGeometry = new THREE.BufferGeometry()
   zGeometry.setAttribute(
     'position',
@@ -598,6 +701,31 @@ const createAxes = (container: THREE.Group) => {
   zArrow.position.set(0, 0, axesLength - 0.15)
   zArrow.rotation.x = Math.PI / 2
   axesGroup.add(zArrow)
+
+  // Z ticks and labels
+  for (let i = 0; i <= numTicks; i++) {
+    const t = (i / numTicks) * axesLength
+    // Tick line
+    const tickGeometry = new THREE.BufferGeometry()
+    tickGeometry.setAttribute(
+      'position',
+      new THREE.BufferAttribute(
+        new Float32Array([-tickSize, 0, t, tickSize, 0, t]),
+        3
+      )
+    )
+    const tick = new THREE.Line(tickGeometry, tickMaterial)
+    axesGroup.add(tick)
+    
+    // Label
+    const tenorIdx = Math.floor((i / numTicks) * (tenors.length - 1))
+    const label = createTextSprite(tenors[tenorIdx], new THREE.Vector3(0, -0.8, t))
+    axesGroup.add(label)
+  }
+
+  // Z axis label
+  const zLabel = createAxisLabelSprite('Tenor', new THREE.Vector3(0, -2.5, axesLength / 2))
+  axesGroup.add(zLabel)
 
   // Origin point
   const originGeometry = new THREE.SphereGeometry(0.12, 12, 12)
@@ -631,45 +759,125 @@ const createLabelCanvas = (text: string, fontSize: number): HTMLCanvasElement =>
 const setupControls = () => {
   if (!threeCanvas.value || !camera || !sceneContainer) return
 
-  let isDragging = false
+  let isRotating = false
+  let isPanning = false
   let previousMousePosition = { x: 0, y: 0 }
   let rotation = { x: 0, y: 0 }
+  const target = new THREE.Vector3(0, 0, 0)
+  const minDistance = 5
+  const maxDistance = 50
+
+  // Вращение камеры вокруг цели
+  const rotateCamera = (deltaX: number, deltaY: number) => {
+    if (!camera) return
+    
+    const spherical = new THREE.Spherical()
+    spherical.setFromVector3(camera.position.clone().sub(target))
+    
+    spherical.theta -= deltaX * 0.01
+    spherical.phi += deltaY * 0.01
+    
+    // Ограничиваем phi, чтобы камера не переворачивалась
+    spherical.phi = Math.max(0.1, Math.min(Math.PI - 0.1, spherical.phi))
+    
+    const newPosition = new THREE.Vector3()
+    newPosition.setFromSpherical(spherical)
+    newPosition.add(target)
+    
+    camera.position.copy(newPosition)
+    camera.lookAt(target)
+  }
+
+  // Панорамирование камеры
+  const panCamera = (deltaX: number, deltaY: number) => {
+    if (!camera) return
+    
+    const panSpeed = 0.01
+    const direction = new THREE.Vector3()
+    camera.getWorldDirection(direction)
+    
+    const right = new THREE.Vector3()
+    right.crossVectors(direction, camera.up).normalize()
+    
+    const up = new THREE.Vector3()
+    up.crossVectors(right, direction).normalize()
+    
+    const distance = camera.position.distanceTo(target)
+    const panDistance = distance * panSpeed
+    
+    target.add(right.multiplyScalar(-deltaX * panDistance))
+    target.add(up.multiplyScalar(deltaY * panDistance))
+    
+    camera.position.add(right.multiplyScalar(-deltaX * panDistance))
+    camera.position.add(up.multiplyScalar(deltaY * panDistance))
+    
+    camera.lookAt(target)
+  }
+
+  // Зум камеры
+  const zoomCamera = (delta: number) => {
+    if (!camera) return
+    
+    const direction = new THREE.Vector3()
+    direction.subVectors(camera.position, target).normalize()
+    
+    const distance = camera.position.distanceTo(target)
+    const zoomSpeed = 0.1
+    const newDistance = distance + delta * zoomSpeed * distance
+    
+    if (newDistance >= minDistance && newDistance <= maxDistance) {
+      camera.position.add(direction.multiplyScalar(delta * zoomSpeed * distance))
+      camera.lookAt(target)
+    }
+  }
 
   threeCanvas.value.addEventListener('mousedown', (e) => {
-    isDragging = true
-    previousMousePosition = { x: e.clientX, y: e.clientY }
+    if (e.button === 0) { // Левая кнопка мыши - вращение
+      isRotating = true
+      previousMousePosition = { x: e.clientX, y: e.clientY }
+      threeCanvas.value!.style.cursor = 'grabbing'
+    } else if (e.button === 2) { // Правая кнопка мыши - панорамирование
+      isPanning = true
+      previousMousePosition = { x: e.clientX, y: e.clientY }
+      threeCanvas.value!.style.cursor = 'move'
+    }
   })
 
   threeCanvas.value.addEventListener('mousemove', (e) => {
-    if (isDragging && sceneContainer) {  // ← Вращаем КОНТЕЙНЕР!
+    if (isRotating && camera) {
       const deltaX = e.clientX - previousMousePosition.x
       const deltaY = e.clientY - previousMousePosition.y
-
-      rotation.y += deltaX * 0.005
-      //rotation.x += deltaY * 0.005
-
-      sceneContainer.rotation.y = rotation.y
-      sceneContainer.rotation.x = rotation.x
-
-      const panSpeed = 0.01
-      camera.position.y -= deltaY * panSpeed
-
+      rotateCamera(deltaX, deltaY)
+      previousMousePosition = { x: e.clientX, y: e.clientY }
+    } else if (isPanning && camera) {
+      const deltaX = e.clientX - previousMousePosition.x
+      const deltaY = e.clientY - previousMousePosition.y
+      panCamera(deltaX, deltaY)
       previousMousePosition = { x: e.clientX, y: e.clientY }
     }
   })
 
   threeCanvas.value.addEventListener('mouseup', () => {
-    isDragging = false
+    isRotating = false
+    isPanning = false
+    threeCanvas.value!.style.cursor = 'default'
+  })
+
+  threeCanvas.value.addEventListener('mouseleave', () => {
+    isRotating = false
+    isPanning = false
+    threeCanvas.value!.style.cursor = 'default'
+  })
+
+  // Предотвращаем контекстное меню при правой кнопке мыши
+  threeCanvas.value.addEventListener('contextmenu', (e) => {
+    e.preventDefault()
   })
 
   threeCanvas.value.addEventListener('wheel', (e) => {
     e.preventDefault()
-    const zoomSpeed = 0.1
-    if (e.deltaY > 0) {
-      camera!.position.multiplyScalar(1 + zoomSpeed)
-    } else {
-      camera!.position.multiplyScalar(1 - zoomSpeed)
-    }
+    const delta = e.deltaY > 0 ? 1 : -1
+    zoomCamera(delta)
   })
 }
 
@@ -684,10 +892,12 @@ const updateSurface = () => {
 }
 
 const resetCamera = () => {
-  if (camera && mesh) {
-    camera.position.set(5, 8, 8)
+  if (camera && sceneContainer) {
+    camera.position.set(12, 12, 12)
     camera.lookAt(0, 0, 0)
-    mesh.rotation.set(0, 0, 0)
+    if (sceneContainer) {
+      sceneContainer.rotation.set(0, 0, 0)
+    }
   }
 }
 
@@ -742,10 +952,37 @@ const buildSmileChart = () => {
     options: {
       responsive: true,
       maintainAspectRatio: false,
-      plugins: { legend: { labels: { color: 'rgba(255,255,255,0.6)' } } },
+      plugins: { 
+        legend: { labels: { color: 'rgba(255,255,255,0.6)' } },
+        title: {
+          display: true,
+          text: 'Volatility Smile (by Tenor)',
+          color: 'rgba(255,255,255,0.6)',
+          font: { size: 12, weight: 'bold' },
+          padding: { bottom: 10 }
+        }
+      },
       scales: {
-        x: { grid: { display: false }, ticks: { color: 'rgba(255,255,255,0.3)' } },
-        y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: 'rgba(255,255,255,0.3)' } }
+        x: { 
+          grid: { display: false }, 
+          ticks: { color: 'rgba(255,255,255,0.3)', font: { size: 10 } },
+          title: {
+            display: true,
+            text: 'Strike (%)',
+            color: 'rgba(255,255,255,0.6)',
+            font: { size: 11, weight: 'bold' }
+          }
+        },
+        y: { 
+          grid: { color: 'rgba(255,255,255,0.05)' }, 
+          ticks: { color: 'rgba(255,255,255,0.3)', font: { size: 10 } },
+          title: {
+            display: true,
+            text: 'IV (%)',
+            color: 'rgba(255,255,255,0.6)',
+            font: { size: 11, weight: 'bold' }
+          }
+        }
       }
     }
   })
@@ -785,10 +1022,37 @@ const buildTermChart = () => {
     options: {
       responsive: true,
       maintainAspectRatio: false,
-      plugins: { legend: { labels: { color: 'rgba(255,255,255,0.6)' } } },
+      plugins: { 
+        legend: { labels: { color: 'rgba(255,255,255,0.6)' } },
+        title: {
+          display: true,
+          text: 'Term Structure (by Moneyness)',
+          color: 'rgba(255,255,255,0.6)',
+          font: { size: 12, weight: 'bold' },
+          padding: { bottom: 10 }
+        }
+      },
       scales: {
-        x: { grid: { display: false }, ticks: { color: 'rgba(255,255,255,0.3)' } },
-        y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: 'rgba(255,255,255,0.3)' } }
+        x: { 
+          grid: { color: 'rgba(255,255,255,0.05)' }, 
+          ticks: { color: 'rgba(255,255,255,0.3)', font: { size: 10 } },
+          title: {
+            display: true,
+            text: 'Tenor',
+            color: 'rgba(255,255,255,0.6)',
+            font: { size: 11, weight: 'bold' }
+          }
+        },
+        y: { 
+          grid: { color: 'rgba(255,255,255,0.05)' }, 
+          ticks: { color: 'rgba(255,255,255,0.3)', font: { size: 10 } },
+          title: {
+            display: true,
+            text: 'IV (%)',
+            color: 'rgba(255,255,255,0.6)',
+            font: { size: 11, weight: 'bold' }
+          }
+        }
       }
     }
   })
@@ -801,7 +1065,7 @@ const buildHeatmapChart = () => {
 
   charts.heatmap?.destroy()
 
-  const heatmapData = []
+  const heatmapData: { x: number; y: number; v: number }[] = []
   for (let i = 0; i < strikes.length; i++) {
     for (let j = 0; j < tenors.length; j++) {
       heatmapData.push({
@@ -834,10 +1098,57 @@ const buildHeatmapChart = () => {
     options: {
       responsive: true,
       maintainAspectRatio: false,
-      plugins: { legend: { display: false } },
+      plugins: { 
+        legend: { display: false },
+        title: {
+          display: true,
+          text: '2D Heatmap: Strike × Tenor',
+          color: 'rgba(255,255,255,0.6)',
+          font: { size: 12, weight: 'bold' },
+          padding: { bottom: 10 }
+        }
+      },
       scales: {
-        x: { min: -0.5, max: 5.5, grid: { display: false }, ticks: { color: 'rgba(255,255,255,0.3)' } },
-        y: { min: -0.5, max: 8.5, grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: 'rgba(255,255,255,0.3)' } }
+        x: { 
+          min: -0.5, 
+          max: 5.5, 
+          grid: { display: false }, 
+          ticks: { 
+            color: 'rgba(255,255,255,0.3)', 
+            font: { size: 10 },
+            callback: function(value: any) {
+              return tenors[value] || ''
+            }
+          },
+          title: {
+            display: true,
+            text: 'Tenor',
+            color: 'rgba(255,255,255,0.6)',
+            font: { size: 11, weight: 'bold' }
+          }
+        },
+        y: { 
+          min: -0.5, 
+          max: 8.5, 
+          grid: { color: 'rgba(255,255,255,0.05)' }, 
+          ticks: { 
+            color: 'rgba(255,255,255,0.3)', 
+            font: { size: 10 },
+            callback: function(value: any) {
+              const strikeIdx = Math.round(value)
+              if (strikeIdx >= 0 && strikeIdx < strikes.length) {
+                return ((strikes[strikeIdx] - 1) * 100).toFixed(0) + '%'
+              }
+              return ''
+            }
+          },
+          title: {
+            display: true,
+            text: 'Strike (%)',
+            color: 'rgba(255,255,255,0.6)',
+            font: { size: 11, weight: 'bold' }
+          }
+        }
       }
     }
   })
@@ -877,10 +1188,37 @@ const buildVegaChart = () => {
     options: {
       responsive: true,
       maintainAspectRatio: false,
-      plugins: { legend: { display: false } },
+      plugins: { 
+        legend: { display: false },
+        title: {
+          display: true,
+          text: 'Vega (by Strike & Tenor)',
+          color: 'rgba(255,255,255,0.6)',
+          font: { size: 12, weight: 'bold' },
+          padding: { bottom: 10 }
+        }
+      },
       scales: {
-        x: { grid: { display: false }, ticks: { color: 'rgba(255,255,255,0.3)' } },
-        y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: 'rgba(255,255,255,0.3)' } }
+        x: { 
+          grid: { color: 'rgba(255,255,255,0.05)' }, 
+          ticks: { color: 'rgba(255,255,255,0.3)', font: { size: 10 } },
+          title: {
+            display: true,
+            text: 'Strike (%)',
+            color: 'rgba(255,255,255,0.6)',
+            font: { size: 11, weight: 'bold' }
+          }
+        },
+        y: { 
+          grid: { color: 'rgba(255,255,255,0.05)' }, 
+          ticks: { color: 'rgba(255,255,255,0.3)', font: { size: 10 } },
+          title: {
+            display: true,
+            text: 'Vega',
+            color: 'rgba(255,255,255,0.6)',
+            font: { size: 11, weight: 'bold' }
+          }
+        }
       }
     }
   })
@@ -917,10 +1255,37 @@ const buildConvexityChart = () => {
     options: {
       responsive: true,
       maintainAspectRatio: false,
-      plugins: { legend: { display: false } },
+      plugins: { 
+        legend: { display: false },
+        title: {
+          display: true,
+          text: 'Volatility Convexity',
+          color: 'rgba(255,255,255,0.6)',
+          font: { size: 12, weight: 'bold' },
+          padding: { bottom: 10 }
+        }
+      },
       scales: {
-        x: { grid: { display: false }, ticks: { color: 'rgba(255,255,255,0.3)' } },
-        y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: 'rgba(255,255,255,0.3)' } }
+        x: { 
+          grid: { color: 'rgba(255,255,255,0.05)' }, 
+          ticks: { color: 'rgba(255,255,255,0.3)', font: { size: 10 } },
+          title: {
+            display: true,
+            text: 'Strike (%)',
+            color: 'rgba(255,255,255,0.6)',
+            font: { size: 11, weight: 'bold' }
+          }
+        },
+        y: { 
+          grid: { color: 'rgba(255,255,255,0.05)' }, 
+          ticks: { color: 'rgba(255,255,255,0.3)', font: { size: 10 } },
+          title: {
+            display: true,
+            text: 'Convexity',
+            color: 'rgba(255,255,255,0.6)',
+            font: { size: 11, weight: 'bold' }
+          }
+        }
       }
     }
   })
@@ -974,9 +1339,17 @@ onBeforeUnmount(() => {
   align-items: center;
   gap: 8px;
   padding: 8px 14px;
-  background: rgba(255,255,255,0.04);
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
   border-radius: 8px;
-  border: 1px solid rgba(255,255,255,0.08);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  transition: all 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.control-group:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.15);
 }
 
 .control-group.checkbox {
@@ -1027,35 +1400,51 @@ onBeforeUnmount(() => {
   font-size: 13px;
   cursor: pointer;
   white-space: nowrap;
-  transition: all 0.2s;
+  transition: all 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
 }
 
 .btn-primary {
-  background: #3b82f6;
+  background: rgba(59, 130, 246, 0.8);
   color: #fff;
-  box-shadow: 0 4px 12px rgba(59,130,246,0.3);
+  box-shadow: 0 4px 16px rgba(59, 130, 246, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-.btn-primary:hover { background: #2563eb; transform: translateY(-1px); }
+.btn-primary:hover { 
+  background: rgba(59, 130, 246, 0.9); 
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4);
+}
 
 .btn-secondary {
-  background: rgba(255,255,255,0.1);
-  color: rgba(255,255,255,0.8);
-  border: 1px solid rgba(255,255,255,0.2);
+  background: rgba(255, 255, 255, 0.05);
+  color: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-.btn-secondary:hover { background: rgba(255,255,255,0.15); }
+.btn-secondary:hover { 
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.2);
+  transform: translateY(-1px);
+}
 
 /* 3D Canvas */
 .three-d-container {
   position: relative;
   width: 100%;
   height: 600px;
-  background: rgba(10,15,20,0.6);
-  border-radius: 12px;
-  border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(10, 15, 20, 0.6);
+  backdrop-filter: blur(40px) saturate(180%);
+  -webkit-backdrop-filter: blur(40px) saturate(180%);
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
   overflow: hidden;
   margin-bottom: 24px;
+  box-shadow: 
+    0 20px 40px -10px rgba(0, 0, 0, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
 }
 
 .three-canvas {
@@ -1068,11 +1457,14 @@ onBeforeUnmount(() => {
   position: absolute;
   bottom: 12px;
   left: 12px;
-  background: rgba(0,0,0,0.5);
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
   padding: 8px 12px;
-  border-radius: 6px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
   font-size: 10px;
-  color: rgba(255,255,255,0.6);
+  color: rgba(255, 255, 255, 0.6);
   pointer-events: none;
 }
 
@@ -1095,10 +1487,21 @@ onBeforeUnmount(() => {
 
 /* stat cards */
 .stat-card {
-  background: rgba(30,32,40,0.4);
-  border-radius: 12px;
-  border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(30, 32, 40, 0.4);
+  backdrop-filter: blur(40px) saturate(180%);
+  -webkit-backdrop-filter: blur(40px) saturate(180%);
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
   padding: 16px;
+  box-shadow: 
+    0 20px 40px -10px rgba(0, 0, 0, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  transition: all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.stat-card:hover {
+  background: rgba(40, 45, 55, 0.5);
+  border-color: rgba(255, 255, 255, 0.12);
 }
 
 .stat-header h3 {
@@ -1140,11 +1543,21 @@ onBeforeUnmount(() => {
 
 /* cards */
 .card {
-  background: rgba(30,32,40,0.4);
-  border-radius: 12px;
-  border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(30, 32, 40, 0.4);
+  backdrop-filter: blur(40px) saturate(180%);
+  -webkit-backdrop-filter: blur(40px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 20px;
   padding: 20px;
   margin-bottom: 20px;
+  box-shadow: 
+    0 20px 40px -10px rgba(0, 0, 0, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  transition: all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.card-header {
+  margin-bottom: 24px;
 }
 
 .card-header h3 {
@@ -1152,13 +1565,14 @@ onBeforeUnmount(() => {
   text-transform: uppercase;
   letter-spacing: 0.05em;
   color: rgba(255,255,255,0.6);
-  margin: 0;
+  margin: 0 0 6px 0;
 }
 
 .card-subtitle {
   font-size: 11px;
   color: rgba(255,255,255,0.4);
-  margin-top: 4px;
+  margin: 0;
+  display: block;
 }
 
 /* matrix table */
@@ -1232,9 +1646,9 @@ onBeforeUnmount(() => {
 .chart-container {
   position: relative;
   height: 280px;
-  background: rgba(15,23,42,0.45);
-  border-radius: 12px;
-  border: 1px solid rgba(107,114,128,0.12);
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 8px;
+  border: 1px solid rgba(255,255,255,0.05);
   padding: 12px;
 }
 
@@ -1270,28 +1684,44 @@ onBeforeUnmount(() => {
 /* info grid */
 .info-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-  gap: 12px;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
 }
 
 .info-item {
-  background: rgba(255,255,255,0.02);
-  border: 1px solid rgba(255,255,255,0.05);
-  border-radius: 8px;
-  padding: 12px;
+  background: rgba(255, 255, 255, 0.02);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 14px 16px;
   display: flex;
-  justify-content: space-between;
-  font-size: 11px;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 12px;
+  min-height: 60px;
+  transition: all 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.info-item:hover {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.12);
 }
 
 .info-item .label {
-  color: rgba(255,255,255,0.6);
+  color: rgba(255,255,255,0.5);
   font-weight: 600;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
 }
 
 .info-item .value {
-  color: rgba(255,255,255,0.8);
+  color: rgba(255,255,255,0.9);
   font-family: "SF Mono", monospace;
+  font-size: 13px;
+  font-weight: 500;
+  word-break: break-word;
 }
 
 .mono { font-family: "SF Mono", monospace; }
@@ -1310,14 +1740,85 @@ onBeforeUnmount(() => {
 /* responsive */
 @media (max-width: 1200px) {
   .grid-4 { grid-template-columns: repeat(2, 1fr); }
+  .info-grid { grid-template-columns: repeat(2, 1fr); }
 }
 
-@media (max-width: 900px) {
+@media (max-width: 1024px) {
   .page-header { flex-direction: column; }
   .header-right { width: 100%; flex-direction: column; }
   .control-group { width: 100%; }
   .grid-4 { grid-template-columns: 1fr; }
   .grid-2 { grid-template-columns: 1fr; }
   .three-d-container { height: 400px; }
+  .info-grid { grid-template-columns: 1fr; }
+  .mc-grid-layout {
+    grid-template-columns: 1fr;
+  }
+  .controls-column {
+    order: 2;
+  }
+  .viz-column {
+    order: 1;
+  }
+}
+
+@media (max-width: 768px) {
+  .page-container {
+    padding: 16px;
+  }
+  .three-d-container { 
+    height: 350px; 
+  }
+  .chart-container {
+    height: 250px;
+  }
+  .chart-container.tall {
+    height: 300px;
+  }
+  .info-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+  .info-item {
+    padding: 12px;
+    min-height: auto;
+  }
+  .info-item .label {
+    font-size: 9px;
+  }
+  .info-item .value {
+    font-size: 12px;
+  }
+  .controls-hint {
+    font-size: 10px;
+  }
+}
+
+@media (max-width: 480px) {
+  .page-container {
+    padding: 12px;
+  }
+  .three-d-container { 
+    height: 300px; 
+  }
+  .chart-container {
+    height: 200px;
+  }
+  .chart-container.tall {
+    height: 250px;
+  }
+  .info-item {
+    padding: 10px;
+  }
+  .info-item .label {
+    font-size: 8px;
+  }
+  .info-item .value {
+    font-size: 11px;
+  }
+  .controls-hint {
+    font-size: 9px;
+    padding: 8px;
+  }
 }
 </style>

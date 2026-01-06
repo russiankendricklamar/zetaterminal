@@ -73,78 +73,6 @@
                 </div>
             </transition>
 
-            <!-- SCENARIO 1: Results -->
-            <transition name="fade">
-            <div v-if="results" class="glass-card panel result-card scenario-1">
-                <div class="panel-header">
-                    <h3>Результаты Сценарий 1</h3>
-                    <span class="scenario-badge">{{ formatNumber(params.discountYield1, 1) }}%</span>
-                </div>
-                
-                <div class="scenario-results">
-                    <div class="main-metric-small">
-                        <span class="metric-label-small">DIRTY PRICE</span>
-                        <span class="metric-value-small text-gradient-blue">{{ formatNumber(results.scenario1.dirtyPrice, 2) }} ₽</span>
-                    </div>
-
-                    <div class="metrics-grid-small">
-                        <div class="m-item-small">
-                            <span class="sub">Clean Price</span>
-                            <span class="val-small text-green">{{ formatNumber(results.scenario1.cleanPrice, 2) }} ₽</span>
-                        </div>
-                        <div class="m-item-small">
-                            <span class="sub">НКД</span>
-                            <span class="val-small">{{ formatNumber(results.accruedInterest, 2) }} ₽</span>
-                        </div>
-                        <div class="m-item-small">
-                            <span class="sub">% от номинала</span>
-                            <span class="val-small">{{ formatNumber(results.scenario1.pricePercent, 2) }}%</span>
-                        </div>
-                        <div class="m-item-small">
-                            <span class="sub">Дюрация (Mac)</span>
-                            <span class="val-small text-orange">{{ formatNumber(results.scenario1.duration, 2) }} лет</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            </transition>
-
-            <!-- SCENARIO 2: Results -->
-            <transition name="fade">
-            <div v-if="results" class="glass-card panel result-card scenario-2">
-                <div class="panel-header">
-                    <h3>Результаты Сценарий 2</h3>
-                    <span class="scenario-badge variant-2">{{ formatNumber(params.discountYield2, 1) }}%</span>
-                </div>
-                
-                <div class="scenario-results">
-                    <div class="main-metric-small">
-                        <span class="metric-label-small">DIRTY PRICE</span>
-                        <span class="metric-value-small text-gradient-green">{{ formatNumber(results.scenario2.dirtyPrice, 2) }} ₽</span>
-                    </div>
-
-                    <div class="metrics-grid-small">
-                        <div class="m-item-small">
-                            <span class="sub">Clean Price</span>
-                            <span class="val-small text-blue">{{ formatNumber(results.scenario2.cleanPrice, 2) }} ₽</span>
-                        </div>
-                        <div class="m-item-small">
-                            <span class="sub">НКД</span>
-                            <span class="val-small">{{ formatNumber(results.accruedInterest, 2) }} ₽</span>
-                        </div>
-                        <div class="m-item-small">
-                            <span class="sub">% от номинала</span>
-                            <span class="val-small">{{ formatNumber(results.scenario2.pricePercent, 2) }}%</span>
-                        </div>
-                        <div class="m-item-small">
-                            <span class="sub">Дюрация (Mac)</span>
-                            <span class="val-small text-orange">{{ formatNumber(results.scenario2.duration, 2) }} лет</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            </transition>
-
             <!-- Bond Info -->
             <transition name="fade">
             <div v-if="results" class="glass-card panel info-panel">
@@ -537,9 +465,9 @@ const formatDate = (dateStr: string) => new Date(dateStr).toLocaleDateString('ru
 /* ============================================
    LAYOUT
    ============================================ */
-.page-container { padding: 24px 32px; max-width: 1600px; margin: 0 auto; height: 100%; display: flex; flex-direction: column; gap: 24px; }
-.dashboard-grid { display: grid; grid-template-columns: 380px 1fr; gap: 28px; flex: 1; min-height: 0; }
-.left-panel, .main-panel { display: flex; flex-direction: column; gap: 20px; overflow-y: auto; }
+.page-container { padding: 24px 32px; max-width: 1600px; margin: 0 auto; min-height: 100vh; display: flex; flex-direction: column; gap: 24px; }
+.dashboard-grid { display: grid; grid-template-columns: 380px 1fr; gap: 28px; flex: 1; }
+.left-panel, .main-panel { display: flex; flex-direction: column; gap: 20px; }
 
 /* Header */
 .section-header { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 4px; flex-shrink: 0; }
@@ -552,9 +480,20 @@ const formatDate = (dateStr: string) => new Date(dateStr).toLocaleDateString('ru
    GLASS COMPONENTS
    ============================================ */
 .glass-card {
-  background: rgba(30, 32, 40, 0.4); backdrop-filter: blur(40px) saturate(160%);
-  border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 20px;
-  box-shadow: 0 20px 40px -10px rgba(0,0,0,0.4);
+  background: rgba(30, 32, 40, 0.4);
+  backdrop-filter: blur(40px) saturate(180%);
+  -webkit-backdrop-filter: blur(40px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 20px;
+  box-shadow: 
+    0 20px 40px -10px rgba(0, 0, 0, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  transition: all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.glass-card:hover {
+  background: rgba(40, 45, 55, 0.5);
+  border-color: rgba(255, 255, 255, 0.12);
 }
 .panel { padding: 24px; }
 .panel-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
@@ -566,10 +505,25 @@ const formatDate = (dateStr: string) => new Date(dateStr).toLocaleDateString('ru
 .lbl { font-size: 11px; color: rgba(255,255,255,0.6); font-weight: 600; text-transform: uppercase; }
 
 .glass-input {
-    background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); 
-    color: #fff; padding: 10px 12px; border-radius: 10px; width: 100%; outline: none; transition: 0.2s; font-family: "SF Mono", monospace; font-size: 13px;
+  background: rgba(0, 0, 0, 0.2);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #fff;
+  padding: 10px 12px;
+  border-radius: 10px;
+  width: 100%;
+  outline: none;
+  transition: all 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+  font-family: "SF Mono", monospace;
+  font-size: 13px;
 }
-.glass-input:focus { border-color: #3b82f6; background: rgba(0,0,0,0.5); }
+
+.glass-input:focus {
+  border-color: rgba(255, 255, 255, 0.25);
+  background: rgba(0, 0, 0, 0.3);
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.05);
+}
 
 /* Buttons */
 .btn-glass {
@@ -719,10 +673,45 @@ const formatDate = (dateStr: string) => new Date(dateStr).toLocaleDateString('ru
   .dashboard-grid { grid-template-columns: 1fr; }
   .metrics-grid-small { grid-template-columns: 1fr; }
   .schedule-grid { grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); }
+  .page-container {
+    padding: 16px 20px;
+  }
 }
 
 @media (max-width: 768px) {
-  .schedule-grid { grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 10px; }
-  .coupon-card { padding: 12px; gap: 8px; }
+  .page-container {
+    padding: 16px;
+  }
+  .schedule-grid { 
+    grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); 
+    gap: 10px; 
+  }
+  .coupon-card { 
+    padding: 12px; 
+    gap: 8px; 
+  }
+  .left-panel,
+  .main-panel {
+    padding: 12px;
+  }
+}
+
+@media (max-width: 480px) {
+  .page-container {
+    padding: 12px;
+  }
+  .schedule-grid { 
+    grid-template-columns: 1fr; 
+    gap: 8px; 
+  }
+  .coupon-card { 
+    padding: 10px; 
+    gap: 6px; 
+    font-size: 11px;
+  }
+  .left-panel,
+  .main-panel {
+    padding: 10px;
+  }
 }
 </style>

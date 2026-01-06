@@ -230,12 +230,21 @@ const alerts = ref([
 
 /* Base Glass Card */
 .glass-card {
-  border-radius: 20px; overflow: hidden;
+  border-radius: 20px;
+  overflow: hidden;
   background: rgba(30, 32, 40, 0.4);
-  backdrop-filter: blur(30px) saturate(160%);
+  backdrop-filter: blur(40px) saturate(180%);
+  -webkit-backdrop-filter: blur(40px) saturate(180%);
   border: 1px solid rgba(255, 255, 255, 0.08);
-  box-shadow: 0 20px 40px -10px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.1);
-  transition: transform 0.2s, background 0.2s;
+  box-shadow: 
+    0 20px 40px -10px rgba(0, 0, 0, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  transition: all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.glass-card:hover {
+  background: rgba(40, 45, 55, 0.5);
+  border-color: rgba(255, 255, 255, 0.12);
 }
 
 /* ============================================
@@ -429,9 +438,79 @@ const alerts = ref([
 .bg-grey { background: #94a3b8; }
 
 @media (max-width: 1200px) {
-    .dashboard-grid { grid-template-columns: 1fr; }
-    .hero-section { flex-direction: column; align-items: flex-start; gap: 12px; }
-    .risk-gauge-container { flex-direction: column; gap: 20px; align-items: flex-start; }
-    .risk-stats { width: 100%; }
+  .dashboard-grid { 
+    grid-template-columns: 1fr; 
+  }
+  .hero-section { 
+    flex-direction: column; 
+    align-items: flex-start; 
+    gap: 12px; 
+  }
+  .risk-gauge-container { 
+    flex-direction: column; 
+    gap: 20px; 
+    align-items: flex-start; 
+  }
+  .risk-stats { 
+    width: 100%; 
+  }
+}
+
+@media (max-width: 1024px) {
+  .page-container {
+    padding: 16px 20px;
+  }
+}
+
+@media (max-width: 768px) {
+  .page-container {
+    padding: 16px;
+  }
+  .hero-section {
+    gap: 10px;
+  }
+  .hero-title {
+    font-size: 20px;
+  }
+  .hero-subtitle {
+    font-size: 12px;
+  }
+  .ticker-item {
+    font-size: 11px;
+    padding: 4px 8px;
+  }
+  .shortcut-card {
+    padding: 12px;
+  }
+  .shortcut-title {
+    font-size: 12px;
+  }
+  .risk-meter-wrapper {
+    width: 100px;
+    height: 50px;
+  }
+  .risk-meter {
+    width: 100px;
+    height: 50px;
+  }
+}
+
+@media (max-width: 480px) {
+  .page-container {
+    padding: 12px;
+  }
+  .hero-title {
+    font-size: 18px;
+  }
+  .ticker-item {
+    font-size: 10px;
+    padding: 3px 6px;
+  }
+  .shortcut-card {
+    padding: 10px;
+  }
+  .shortcut-title {
+    font-size: 11px;
+  }
 }
 </style>

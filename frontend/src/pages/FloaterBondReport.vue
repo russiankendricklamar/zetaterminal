@@ -1,4 +1,4 @@
-<!-- src/pages/VanillaBondReport.vue -->
+<!-- src/pages/FloaterBondReport.vue -->
 <template>
   <div class="page-container">
     
@@ -8,12 +8,12 @@
         <h1 class="section-title" v-if="report">
           {{ report.issuer }}, {{ report.isin }}
         </h1>
-        <h1 class="section-title" v-else>Vanilla Bond Report</h1>
+        <h1 class="section-title" v-else>Floater Bond Report</h1>
         <p class="section-subtitle" v-if="report">
-          Паспорт выпуска и аналитика по ISIN: <span class="text-accent">{{ report.isin }}</span>
+          Отчет по облигации с плавающим купоном ISIN: <span class="text-accent">{{ report.isin }}</span>
         </p>
         <p class="section-subtitle" v-else>
-          Паспорт выпуска и аналитика по ISIN: <span class="text-accent">{{ isin || '—' }}</span>
+          Отчет по облигации с плавающим купоном ISIN: <span class="text-accent">{{ isin || '—' }}</span>
         </p>
       </div>
       
@@ -60,22 +60,26 @@
           <table class="info-table">
             <tr><td class="label">Эмитент</td><td class="value">{{ report.issuer }}</td></tr>
             <tr><td class="label">ISIN</td><td class="value mono">{{ report.isin }}</td></tr>
-            <tr><td class="label">Страна</td><td class="value">{{ report.risk_country || '—' }}</td></tr>
+            <tr><td class="label">Страна риска</td><td class="value">{{ report.risk_country || '—' }}</td></tr>
             <tr><td class="label">Сектор</td><td class="value">{{ report.sector || '—' }}</td></tr>
             <tr><td class="label">Отрасль</td><td class="value">{{ report.industry || '—' }}</td></tr>
-            <tr><td class="label">Объём</td><td class="value mono">{{ formatNumber(report.outstanding_amount) || '—' }}</td></tr>
+            <tr><td class="label">Кол-во выпусков в обращении</td><td class="value mono">{{ report.issues_count || '—' }}</td></tr>
           </table>
         </div>
 
         <div class="glass-card">
           <div class="card-header">
-            <h3>Параметры выпуска</h3>
+            <h3>Информация по выпуску</h3>
           </div>
           <table class="info-table">
-            <tr><td class="label">Дата начала</td><td class="value mono">{{ formatDate(report.issue_info?.issue_date) }}</td></tr>
+            <tr><td class="label">Дата выпуска</td><td class="value mono">{{ formatDate(report.issue_info?.issue_date) }}</td></tr>
+            <tr><td class="label">Объем в обращении, RUB</td><td class="value mono">{{ formatNumber(report.outstanding_amount) || '—' }}</td></tr>
             <tr><td class="label">Дата погашения</td><td class="value mono">{{ formatDate(report.issue_info?.maturity_date) }}</td></tr>
-            <tr><td class="label">Ставка купона</td><td class="value"><span v-if="report.issue_info?.coupon_rate !== null && report.issue_info?.coupon_rate !== undefined" class="accent">{{ ((report.issue_info?.coupon_rate || 0) * 100).toFixed(2) }}%</span><span v-else>—</span></td></tr>
-            <tr><td class="label">Купонов в год</td><td class="value mono">{{ report.issue_info?.coupon_per_year ?? '—' }}</td></tr>
+            <tr><td class="label">Купон, %</td><td class="value accent">{{ report.issue_info?.coupon_formula || '—' }}</td></tr>
+            <tr><td class="label">Следующий купон</td><td class="value accent">{{ report.issue_info?.next_coupon ? ((report.issue_info.next_coupon * 100).toFixed(2) + '%') : '—' }}</td></tr>
+            <tr><td class="label">Номинал, RUB</td><td class="value mono">{{ report.issue_info?.nominal ? formatNumber(report.issue_info.nominal) : '—' }}</td></tr>
+            <tr><td class="label">Кол-во купонных платежей в год</td><td class="value mono">{{ report.issue_info?.coupon_per_year ?? '—' }}</td></tr>
+            <tr><td class="label">Анализируемый период</td><td class="value mono">{{ report.analysis_period || '—' }}</td></tr>
           </table>
         </div>
       </div>
@@ -153,6 +157,7 @@
             <div class="metric"><span>G-spread</span><span class="val mono">{{ report.pricing?.g_spread_bps ?? '—' }}<span v-if="report.pricing?.g_spread_bps"> bps</span></span></div>
             <div class="metric"><span>G-curve</span><span class="val mono">{{ report.pricing?.g_curve_yield ? ((report.pricing.g_curve_yield * 100).toFixed(2) + '%') : '—' }}</span></div>
           </div>
+          <p class="note-text">* Доходность, дюрация и следующий купон рассчитаны на основе рыночных значений форвардной кривой к ключевой ставке ЦБ РФ</p>
         </div>
 
         <div class="glass-card">
@@ -171,7 +176,7 @@
       <!-- BLOCK 2: Price Chart -->
       <div class="glass-card full-width">
         <div class="chart-header">
-          <h3>Динамика цены</h3>
+          <h3>Динамика цен</h3>
           <button class="btn-export" @click="exportChart('price')">💾 PNG</button>
         </div>
         <div class="chart-container tall">
@@ -179,18 +184,18 @@
         </div>
       </div>
 
-      <!-- BLOCK 3: Yield Chart with G-curve and G-spread -->
+      <!-- BLOCK 3: DM and QM Dynamics Chart -->
       <div class="glass-card full-width">
         <div class="chart-header">
-          <h3>Динамика доходности облигации в RUB, g-curve, g-spread</h3>
-          <button class="btn-export" @click="exportChart('yield')">💾 PNG</button>
+          <h3>Динамика дисконтной маржи (DM) и фиксированной маржи (QM)</h3>
+          <button class="btn-export" @click="exportChart('margin')">💾 PNG</button>
         </div>
         <div class="chart-container tall">
-          <canvas ref="yieldDynamicsRef"></canvas>
+          <canvas ref="marginDynamicsRef"></canvas>
         </div>
       </div>
 
-      <!-- BLOCK 4: Comparison with Indices -->
+      <!-- Comparison with Indices -->
       <div class="glass-card full-width">
         <div class="card-header">
           <h3>Сравнение с индексами корпоративных облигаций Московской биржи</h3>
@@ -205,28 +210,24 @@
             </thead>
             <tbody>
               <tr>
-                <td>Доходность индекса государственных облигаций (менее года)</td>
-                <td class="mono">{{ report.indices?.gov_less_1y?.toFixed(2) || '—' }}%</td>
+                <td>Доходность индекса государственных облигаций (1-3 года)</td>
+                <td class="mono">{{ report.indices?.gov_1_3y ? ((report.indices.gov_1_3y * 100).toFixed(2)) : '—' }}%</td>
               </tr>
               <tr>
-                <td>Доходность индекса корпоративных облигаций с рейтингом ААА</td>
-                <td class="mono">{{ report.indices?.corp_aaa?.toFixed(2) || '—' }}%</td>
+                <td>Доходность индекса корпоративных облигаций с рейтингом ААА (1-3 года)</td>
+                <td class="mono">{{ report.indices?.corp_aaa_1_3y ? ((report.indices.corp_aaa_1_3y * 100).toFixed(2)) : '—' }}%</td>
               </tr>
               <tr>
-                <td>Доходность индекса корпоративных облигаций с рейтингом АА</td>
-                <td class="mono">{{ report.indices?.corp_aa?.toFixed(2) || '—' }}%</td>
-              </tr>
-              <tr class="highlight-row">
-                <td><strong>Оцениваемая облигация</strong></td>
-                <td class="mono accent"><strong>{{ report.pricing?.ytm ? ((report.pricing.ytm * 100).toFixed(2) + '%') : '—' }}</strong></td>
+                <td>Доходность индекса корпоративных облигаций с рейтингом АА (1-3 года)</td>
+                <td class="mono">{{ report.indices?.corp_aa_1_3y ? ((report.indices.corp_aa_1_3y * 100).toFixed(2)) : '—' }}%</td>
               </tr>
               <tr>
-                <td>Доходность индекса корпоративных облигаций с рейтингом А</td>
-                <td class="mono">{{ report.indices?.corp_a?.toFixed(2) || '—' }}%</td>
+                <td>Доходность индекса корпоративных облигаций с рейтингом А (1-3 года)</td>
+                <td class="mono">{{ report.indices?.corp_a_1_3y ? ((report.indices.corp_a_1_3y * 100).toFixed(2)) : '—' }}%</td>
               </tr>
               <tr>
                 <td>Доходность индекса корпоративных облигаций с рейтингом ВВВ</td>
-                <td class="mono">{{ report.indices?.corp_bbb?.toFixed(2) || '—' }}%</td>
+                <td class="mono">{{ report.indices?.corp_bbb ? ((report.indices.corp_bbb * 100).toFixed(2)) : '—' }}%</td>
               </tr>
             </tbody>
           </table>
@@ -269,6 +270,7 @@
         <div class="chart-container tall">
           <canvas ref="analogousBondsRef"></canvas>
         </div>
+        <p v-if="report.analogous_bonds_note" class="note-text">{{ report.analogous_bonds_note }}</p>
       </div>
 
       <!-- BLOCK 6: Corporate Events -->
@@ -286,12 +288,11 @@
       </div>
 
     </section>
-
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref, onBeforeUnmount } from 'vue'
+import { ref, computed, onMounted, watch, onBeforeUnmount } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import Chart from 'chart.js/auto'
 
@@ -309,11 +310,27 @@ interface BondReport {
   sector?: string | null
   industry?: string | null
   outstanding_amount?: number | null
+  issues_count?: number | null
+  analysis_period?: string | null
   issue_info?: {
     issue_date?: string | null
     maturity_date?: string | null
-    coupon_rate?: number | null
+    coupon_formula?: string | null
+    next_coupon?: number | null
+    nominal?: number | null
     coupon_per_year?: number | null
+  }
+  ratings?: {
+    issue?: RatingEntry[]
+    issuer?: RatingEntry[]
+    guarantor?: RatingEntry[]
+  }
+  activity_criteria?: {
+    trading_days?: { value?: number; threshold?: number }
+    trades?: { value?: number; threshold?: number }
+    turnover?: { value?: number; threshold?: number }
+    traded_30d?: boolean
+    source?: string
   }
   market_activity?: {
     trading_days?: number | null
@@ -333,16 +350,11 @@ interface BondReport {
     convexity?: number | null
     dv01?: number | null
   }
-  ratings?: {
-    issue?: RatingEntry[]
-    issuer?: RatingEntry[]
-    guarantor?: RatingEntry[]
-  }
   indices?: {
-    gov_less_1y?: number
-    corp_aaa?: number
-    corp_aa?: number
-    corp_a?: number
+    gov_1_3y?: number
+    corp_aaa_1_3y?: number
+    corp_aa_1_3y?: number
+    corp_a_1_3y?: number
     corp_bbb?: number
   }
   corporate_events?: {
@@ -354,6 +366,7 @@ interface BondReport {
     duration: number
     yield: number
   }[]
+  analogous_bonds_note?: string
 }
 
 const route = useRoute()
@@ -377,12 +390,12 @@ const analogBondsList = ref<Array<{
 }>>([])
 
 const priceHistoryRef = ref<HTMLCanvasElement | null>(null)
-const yieldDynamicsRef = ref<HTMLCanvasElement | null>(null)
+const marginDynamicsRef = ref<HTMLCanvasElement | null>(null)
 const indicesComparisonRef = ref<HTMLCanvasElement | null>(null)
 const analogousBondsRef = ref<HTMLCanvasElement | null>(null)
 
 let priceHistoryChart: Chart | null = null
-let yieldDynamicsChart: Chart | null = null
+let marginDynamicsChart: Chart | null = null
 let indicesComparisonChart: Chart | null = null
 let analogousBondsChart: Chart | null = null
 
@@ -395,73 +408,119 @@ const fetchReport = async (targetIsin: string) => {
   try {
     await new Promise(r => setTimeout(r, 600))
     
+    // Data from template (РУСАЛ, БО-001Р-09)
     report.value = {
-      isin: targetIsin,
-      issuer: 'Синара - Транспортные Машины, АО',
+      isin: targetIsin || 'RU000A108VW7',
+      issuer: '"Объединённая Компания "РУСАЛ", МКПАО',
       risk_country: 'Россия',
       sector: 'Корпоративный',
-      industry: 'Прочее машиностроение и приборостроение',
-      outstanding_amount: 10000000000,
+      industry: 'Цветная металлургия',
+      outstanding_amount: 30000000000,
+      issues_count: 15,
+      analysis_period: 'с 01.10.2025 по 01.11.2025',
       issue_info: {
-        issue_date: '2021-07-28',
-        maturity_date: '2026-07-22',
-        coupon_rate: 0.087,
-        coupon_per_year: 2
+        issue_date: '2024-07-02',
+        maturity_date: '2027-06-17',
+        coupon_formula: 'Ключевая ставка ЦБ РФ + 2,2%',
+        next_coupon: 0.187,
+        nominal: 1000,
+        coupon_per_year: 12
+      },
+      ratings: {
+        issue: [
+          { agency: 'AKPA', rating: 'A+(RU)', date: '2025-03-27' }
+        ],
+        issuer: [
+          { agency: 'Эксперт РА', rating: 'ruA+', outlook: 'Стабильный', date: '2025-08-29' },
+          { agency: 'AKPA', rating: 'a+(ru)', outlook: 'Стабильный', date: '2025-03-27' }
+        ]
+      },
+      activity_criteria: {
+        trading_days: { value: 22, threshold: 5 },
+        trades: { value: 3312, threshold: 10 },
+        turnover: { value: 0.0093, threshold: 0.001 },
+        traded_30d: true,
+        source: 'Московская биржа'
       },
       market_activity: {
-        trading_days: 20,
-        trades: 3447,
-        turnover_to_outstanding: 0.0092,
+        trading_days: 22,
+        trades: 3312,
+        turnover_to_outstanding: 0.0093,
         traded_last_30d: true
       },
       pricing: {
-        clean_price_pct: 93.95,
-        ytm: 0.1991,
-        g_spread_bps: 622.94,
-        g_curve_yield: 0.1369
+        clean_price_pct: 100.29,
+        ytm: 0.1721,
+        g_spread_bps: 326.47,
+        g_curve_yield: 0.1394
       },
       risk_indicators: {
-        duration: 0.62,
-        convexity: 0.71,
-        dv01: 52
-      },
-      ratings: {
-        issue: [{ agency: 'AKPA', rating: 'A(RU)', date: '2025-02-07' }],
-        issuer: [
-          { agency: 'AKPA', rating: 'a(ru)', outlook: 'Стабильный', date: '2025-02-07' },
-          { agency: 'HKP', rating: 'a+.ru', outlook: 'Негативный', date: '2025-06-11' }
-        ]
+        duration: 1.43,
+        convexity: 0.04,
+        dv01: 6
       },
       indices: {
-        gov_less_1y: 0.1389,
-        corp_aaa: 0.1569,
-        corp_aa: 0.1689,
-        corp_a: 0.2054,
-        corp_bbb: 0.2268
+        gov_1_3y: 0.1398,
+        corp_aaa_1_3y: 0.1576,
+        corp_aa_1_3y: 0.1711,
+        corp_a_1_3y: 0.2028,
+        corp_bbb: 0.3072
       },
       corporate_events: [
-        { date: '2025-08-21', description: 'НОВИКОМ и «Синара - Транспортные машины» подписали кредитное соглашение на 10 млрд рублей' },
-        { date: '2025-07-11', description: '«Синара - Транспортные Машины» получает финансирование на создание производства трамваев' }
+        { date: '2025-10-30', description: '"Русал" созовет акционеров 3 декабря для рассмотрения вопроса о выплате дивидендов' },
+        { date: '2025-10-17', description: 'Русал объявил о выкупе 3 миллионов своих облигаций на сумму 3 миллиарда китайских юаней с обязательным досрочным выкупом за месяц до погашения' },
+        { date: '2025-10-13', description: 'Русал приостановил работу крупнейшего кремниевого завода в Иркутской области с 1 января 2026 года из-за мирового перепроизводства кремния и демпингового импорта из Китая' }
       ],
-      analogous_bonds: []
+      analogous_bonds: [
+        { name: 'ХК Новотранс, 001P-05', duration: 1.1, yield: 17.7 },
+        { name: 'Новабев Групп, БО-П05', duration: 1.0, yield: 16.8 },
+        { name: 'КАМАЗ, БО-П15', duration: 1.4, yield: 16.0 },
+        { name: 'Автодор (Государственная компания), БО-003Р-02', duration: 1.6, yield: 16.7 },
+        { name: 'ЕвразХолдинг Финанс, 003Р-04', duration: 1.95, yield: 16.5 }
+      ],
+      analogous_bonds_note: 'В связи недостаточным количеством аналогов по отрасли, также приведены аналоги из других отраслей'
     }
     setTimeout(() => initCharts(), 100)
-  } catch (e) {
-    error.value = 'Ошибка загрузки'
+  } catch (err: any) {
+    error.value = err.message || 'Ошибка загрузки данных'
   } finally {
     loading.value = false
   }
 }
 
+const onChangeIsin = () => {
+  if (!localIsin.value) return
+  router.push(`/floater-bond-report/${localIsin.value}`)
+}
+
+const formatDate = (dateStr?: string | null): string => {
+  if (!dateStr) return '—'
+  try {
+    const date = new Date(dateStr)
+    const day = String(date.getDate()).padStart(2, '0')
+    const month = String(date.getMonth() + 1).padStart(2, '0')
+    const year = date.getFullYear()
+    return `${day}.${month}.${year}`
+  } catch {
+    return dateStr
+  }
+}
+
+const formatNumber = (num?: number | null): string => {
+  if (num === undefined || num === null) return '—'
+  return new Intl.NumberFormat('ru-RU').format(num)
+}
+
 const initCharts = () => {
   if (priceHistoryChart) priceHistoryChart.destroy()
-  if (yieldDynamicsChart) yieldDynamicsChart.destroy()
+  if (marginDynamicsChart) marginDynamicsChart.destroy()
   if (indicesComparisonChart) indicesComparisonChart.destroy()
   if (analogousBondsChart) analogousBondsChart.destroy()
 
+  // Price History Chart
   if (priceHistoryRef.value?.getContext('2d')) {
-    const months = ['Dec 2024', 'Jan 2025', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec 2025']
-    const prices = [74, 75, 78, 82, 85, 87, 88, 89, 90, 91, 92, 93, 94]
+    const months = ['01.11.2024', '01.12.2024', '01.01.2025', '01.02.2025', '01.03.2025', '01.04.2025', '01.05.2025', '01.06.2025', '01.07.2025', '01.08.2025', '01.09.2025', '01.10.2025', '01.11.2025']
+    const prices = [98, 92, 88, 90, 92, 94, 93, 95, 96, 97, 98, 99, 100]
     
     priceHistoryChart = new Chart(priceHistoryRef.value.getContext('2d') as any, {
       type: 'line',
@@ -482,8 +541,7 @@ const initCharts = () => {
         responsive: true,
         maintainAspectRatio: false,
         plugins: { 
-          legend: { display: false },
-          filler: { propagate: true }
+          legend: { display: false }
         },
         scales: {
           x: { 
@@ -493,6 +551,8 @@ const initCharts = () => {
           y: { 
             grid: { color: 'rgba(255,255,255,0.05)' }, 
             ticks: { color: 'rgba(255,255,255,0.3)', font: { size: 11 } },
+            min: 88,
+            max: 102,
             title: {
               display: true,
               text: 'Цена, %',
@@ -505,60 +565,42 @@ const initCharts = () => {
     } as any)
   }
 
-  if (yieldDynamicsRef.value?.getContext('2d')) {
-    const months = ['Dec 2024', 'Jan 2025', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec 2025']
-    const ytm = [28, 27, 26, 25, 24, 23, 22, 21, 20, 19, 18.5, 19, 19.91]
-    const gcurve = [20, 19.5, 19, 18, 17, 16, 15.5, 15, 14.5, 14, 13.8, 13.7, 13.69]
-    const gspread = [800, 750, 700, 650, 600, 550, 500, 450, 400, 420, 600, 620, 622.94]
+  // Margin Dynamics Chart (DM and QM)
+  if (marginDynamicsRef.value?.getContext('2d')) {
+    const months = ['01.11.2024', '01.12.2024', '01.01.2025', '01.02.2025', '01.03.2025', '01.04.2025', '01.05.2025', '01.06.2025', '01.07.2025', '01.08.2025', '01.09.2025', '01.10.2025', '01.11.2025']
+    const dm = [250, 280, 320, 380, 450, 520, 570, 580, 400, 250, 220, 200, 200]
+    const qm = [200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200]
     
-    yieldDynamicsChart = new Chart(yieldDynamicsRef.value.getContext('2d') as any, {
+    marginDynamicsChart = new Chart(marginDynamicsRef.value.getContext('2d') as any, {
       type: 'line',
       data: {
         labels: months,
         datasets: [
           {
-            label: 'YTM',
-            data: ytm,
-            borderColor: '#38bdf8',
-            backgroundColor: 'rgba(56, 189, 248, 0.08)',
+            label: 'DM',
+            data: dm,
+            borderColor: '#60a5fa',
+            backgroundColor: 'rgba(96, 165, 250, 0.08)',
             fill: true,
             tension: 0.4,
             pointRadius: 0,
-            borderWidth: 2,
-            yAxisID: 'y'
+            borderWidth: 2
           },
           {
-            label: 'g-curve',
-            data: gcurve,
+            label: 'QM',
+            data: qm,
             borderColor: '#f59e0b',
             backgroundColor: 'transparent',
             fill: false,
             tension: 0.4,
             pointRadius: 0,
-            borderWidth: 2,
-            borderDash: [5, 5],
-            yAxisID: 'y'
-          },
-          {
-            label: 'g-spread',
-            data: gspread,
-            borderColor: '#9ca3af',
-            backgroundColor: 'transparent',
-            fill: false,
-            tension: 0.4,
-            pointRadius: 0,
-            borderWidth: 2,
-            yAxisID: 'y1'
+            borderWidth: 2
           }
         ]
       },
       options: {
         responsive: true,
         maintainAspectRatio: false,
-        interaction: {
-          mode: 'index',
-          intersect: false
-        },
         plugins: { 
           legend: { 
             display: true,
@@ -571,44 +613,38 @@ const initCharts = () => {
           }
         },
         scales: {
-          y: { 
-            type: 'linear',
-            position: 'left',
-            grid: { color: 'rgba(255,255,255,0.05)' }, 
-            ticks: { color: 'rgba(255,255,255,0.3)', font: { size: 11 } },
-            title: {
-              display: true,
-              text: 'Доходность, %',
-              color: 'rgba(255,255,255,0.5)',
-              font: { size: 11 }
-            }
-          },
-          y1: {
-            type: 'linear',
-            position: 'right',
-            grid: { display: false },
-            ticks: { color: 'rgba(255,255,255,0.3)', font: { size: 11 } } 
-          },
           x: { 
             grid: { display: false }, 
             ticks: { color: 'rgba(255,255,255,0.3)', font: { size: 11 } } 
+          },
+          y: { 
+            grid: { color: 'rgba(255,255,255,0.05)' }, 
+            ticks: { color: 'rgba(255,255,255,0.3)', font: { size: 11 } },
+            min: 170,
+            max: 620,
+            title: {
+              display: true,
+              text: 'б.п.',
+              color: 'rgba(255,255,255,0.5)',
+              font: { size: 11 }
+            }
           }
         }
       }
     } as any)
   }
 
-  // Indices Comparison Chart - Timeline style with points
+  // Indices Comparison Chart
   if (indicesComparisonRef.value?.getContext('2d') && report.value?.indices && report.value?.pricing) {
     const indices = report.value.indices
     const bondYtm = (report.value.pricing.ytm || 0) * 100
     
     const dataPoints = [
-      { label: 'Индекс гос. облигаций', value: (indices.gov_less_1y || 0) * 100, color: '#9ca3af' },
-      { label: 'Индекс корп. облигаций (ААА)', value: (indices.corp_aaa || 0) * 100, color: '#9ca3af' },
-      { label: 'Индекс корп. облигаций (АА)', value: (indices.corp_aa || 0) * 100, color: '#9ca3af' },
+      { label: 'Индекс гос. облигаций', value: (indices.gov_1_3y || 0) * 100, color: '#9ca3af' },
+      { label: 'Индекс корп. облигаций (ААА)', value: (indices.corp_aaa_1_3y || 0) * 100, color: '#9ca3af' },
+      { label: 'Индекс корп. облигаций (АА)', value: (indices.corp_aa_1_3y || 0) * 100, color: '#9ca3af' },
       { label: 'Оцениваемая облигация', value: bondYtm, color: '#ef4444' },
-      { label: 'Индекс корп. облигаций (А)', value: (indices.corp_a || 0) * 100, color: '#9ca3af' },
+      { label: 'Индекс корп. облигаций (А)', value: (indices.corp_a_1_3y || 0) * 100, color: '#9ca3af' },
       { label: 'Индекс корп. облигаций (ВВВ)', value: (indices.corp_bbb || 0) * 100, color: '#9ca3af' }
     ]
     
@@ -618,19 +654,17 @@ const initCharts = () => {
         datasets: dataPoints.map((point, index) => ({
           label: point.label,
           data: [{ x: point.value, y: 0 }],
-          backgroundColor: index === 3 ? 'rgba(239, 68, 68, 0)' : point.color, // Transparent for red point, will be drawn by plugin
+          backgroundColor: index === 3 ? 'rgba(239, 68, 68, 0)' : point.color,
           borderColor: index === 3 ? 'rgba(239, 68, 68, 0)' : point.color,
-          pointRadius: index === 3 ? 1 : 10, // Small invisible radius for hover detection
-          pointHoverRadius: index === 3 ? 14 : 12, // Keep hover area for tooltip
+          pointRadius: index === 3 ? 1 : 10,
+          pointHoverRadius: index === 3 ? 14 : 12,
           showLine: false
         }))
       },
       options: {
         responsive: true,
         maintainAspectRatio: false,
-        animation: {
-          duration: 0 // Disable default animation for custom blinking
-        },
+        animation: { duration: 0 },
         plugins: {
           legend: { display: false },
           tooltip: {
@@ -642,13 +676,8 @@ const initCharts = () => {
             borderColor: 'rgba(255, 255, 255, 0.3)',
             borderWidth: 1,
             padding: 14,
-            titleFont: {
-              size: 13,
-              weight: 'bold'
-            },
-            bodyFont: {
-              size: 12
-            },
+            titleFont: { size: 13, weight: 'bold' },
+            bodyFont: { size: 12 },
             cornerRadius: 8,
             callbacks: {
               title: (context: any) => {
@@ -666,17 +695,10 @@ const initCharts = () => {
           x: {
             type: 'linear',
             position: 'bottom',
-            min: 12,
-            max: 25,
-            grid: { 
-              color: 'rgba(255,255,255,0.05)',
-              display: true
-            },
-            ticks: { 
-              color: 'rgba(255,255,255,0.3)', 
-              font: { size: 11 },
-              stepSize: 1
-            },
+            min: 13,
+            max: 31,
+            grid: { color: 'rgba(255,255,255,0.05)', display: true },
+            ticks: { color: 'rgba(255,255,255,0.3)', font: { size: 11 }, stepSize: 2 },
             title: {
               display: true,
               text: 'Доходность, %',
@@ -701,10 +723,8 @@ const initCharts = () => {
           const chartArea = chart.chartArea
           const yCenter = (chartArea.top + chartArea.bottom) / 2
           const barHeight = 40
-          
-          // Draw horizontal beige bar
           ctx.save()
-          ctx.fillStyle = 'rgba(245, 245, 220, 0.3)' // Beige color
+          ctx.fillStyle = 'rgba(245, 245, 220, 0.3)'
           ctx.fillRect(chartArea.left, yCenter - barHeight / 2, chartArea.right - chartArea.left, barHeight)
           ctx.restore()
         }
@@ -712,32 +732,24 @@ const initCharts = () => {
         id: 'blinkingRedPoint',
         afterDraw: (chart: any) => {
           const ctx = chart.ctx
-          const redPointIndex = 3 // Index of "Оцениваемая облигация"
+          const redPointIndex = 3
           const meta = chart.getDatasetMeta(redPointIndex)
           if (!meta || !meta.data || meta.data.length === 0) return
-          
           const dataPoint = meta.data[0]
           const view = dataPoint.getProps(['x', 'y'], true)
-          
-          // Blinking animation
           const time = Date.now() / 1000
-          const blink = Math.sin(time * 3) * 0.5 + 0.5 // 0 to 1
-          const alpha = 0.5 + blink * 0.5 // 0.5 to 1.0
-          const radius = 10 + blink * 4 // 10 to 14
-          
-          // Draw outer glow
+          const blink = Math.sin(time * 3) * 0.5 + 0.5
+          const alpha = 0.5 + blink * 0.5
+          const radius = 10 + blink * 4
           const gradient = ctx.createRadialGradient(view.x, view.y, 0, view.x, view.y, radius * 2)
           gradient.addColorStop(0, `rgba(239, 68, 68, ${alpha * 0.4})`)
           gradient.addColorStop(0.5, `rgba(239, 68, 68, ${alpha * 0.2})`)
           gradient.addColorStop(1, 'rgba(239, 68, 68, 0)')
-          
           ctx.save()
           ctx.fillStyle = gradient
           ctx.beginPath()
           ctx.arc(view.x, view.y, radius * 2, 0, Math.PI * 2)
           ctx.fill()
-          
-          // Draw blinking circular point
           ctx.fillStyle = `rgba(239, 68, 68, ${alpha})`
           ctx.strokeStyle = `rgba(255, 255, 255, ${alpha * 0.9})`
           ctx.lineWidth = 2
@@ -750,7 +762,6 @@ const initCharts = () => {
       }]
     } as any)
     
-    // Start animation loop for blinking red point
     let indicesAnimationFrameId: number | null = null
     let isIndicesAnimating = true
     const animateIndices = () => {
@@ -767,7 +778,6 @@ const initCharts = () => {
     }
     animateIndices()
     
-    // Store animation frame ID for cleanup
     if (indicesComparisonChart) {
       const chartRef = indicesComparisonChart as any
       chartRef.__animationFrameId = indicesAnimationFrameId
@@ -818,15 +828,11 @@ const initCharts = () => {
     
     analogousBondsChart = new Chart(analogousBondsRef.value.getContext('2d') as any, {
       type: 'scatter',
-      data: {
-        datasets: datasets
-      },
+      data: { datasets },
       options: {
         responsive: true,
         maintainAspectRatio: false,
-        animation: {
-          duration: 0 // Disable default animation for custom blinking
-        },
+        animation: { duration: 0 },
         plugins: {
           legend: {
             display: true,
@@ -868,29 +874,21 @@ const initCharts = () => {
           const currentBondDatasetIndex = chart.data.datasets.length - 1
           const meta = chart.getDatasetMeta(currentBondDatasetIndex)
           if (!meta || !meta.data || meta.data.length === 0) return
-          
           const point = meta.data[0]
           const view = point.getProps(['x', 'y'], true)
-          
-          // Blinking animation using sine wave
           const time = Date.now() / 1000
-          const blink = Math.sin(time * 3) * 0.5 + 0.5 // 0 to 1
-          const alpha = 0.4 + blink * 0.6 // 0.4 to 1.0
-          const radius = 10 + blink * 5 // 10 to 15
-          
-          // Draw outer glow
+          const blink = Math.sin(time * 3) * 0.5 + 0.5
+          const alpha = 0.4 + blink * 0.6
+          const radius = 10 + blink * 5
           const gradient = ctx.createRadialGradient(view.x, view.y, 0, view.x, view.y, radius * 2.5)
           gradient.addColorStop(0, `rgba(239, 68, 68, ${alpha * 0.5})`)
           gradient.addColorStop(0.4, `rgba(239, 68, 68, ${alpha * 0.2})`)
           gradient.addColorStop(1, 'rgba(239, 68, 68, 0)')
-          
           ctx.save()
           ctx.fillStyle = gradient
           ctx.beginPath()
           ctx.arc(view.x, view.y, radius * 2.5, 0, Math.PI * 2)
           ctx.fill()
-          
-          // Draw blinking circular point
           ctx.fillStyle = `rgba(239, 68, 68, ${alpha})`
           ctx.strokeStyle = `rgba(255, 255, 255, ${alpha * 0.8})`
           ctx.lineWidth = 2
@@ -903,7 +901,6 @@ const initCharts = () => {
       }]
     } as any)
     
-    // Start continuous animation loop
     let animationFrameId: number | null = null
     let isAnimating = true
     const animate = () => {
@@ -914,14 +911,12 @@ const initCharts = () => {
             animationFrameId = requestAnimationFrame(animate)
           }
         } catch (e) {
-          // Chart was destroyed
           isAnimating = false
         }
       }
     }
     animate()
     
-    // Store animation frame ID and stop function for cleanup
     if (analogousBondsChart) {
       const chartRef = analogousBondsChart as any
       chartRef.__animationFrameId = animationFrameId
@@ -935,16 +930,6 @@ const initCharts = () => {
     }
   }
 }
-
-const onChangeIsin = () => {
-  if (localIsin.value?.trim()) {
-    router.push({ params: { isin: localIsin.value } })
-    fetchReport(localIsin.value)
-  }
-}
-
-const formatNumber = (v: any) => v ? new Intl.NumberFormat('ru-RU').format(v) : '—'
-const formatDate = (v: any) => v || '—'
 
 // Analogous bonds functions
 const addAnalogBond = async () => {
@@ -1051,20 +1036,48 @@ const removeAnalogBond = (index: number) => {
   }
 }
 
-const exportChart = (name: 'price' | 'yield') => {
-  const canvas = name === 'price' ? priceHistoryRef.value : yieldDynamicsRef.value
+const exportChart = (name: 'price' | 'margin') => {
+  const canvas = name === 'price' ? priceHistoryRef.value : marginDynamicsRef.value
   if (!canvas) return
   const link = document.createElement('a')
   link.href = canvas.toDataURL('image/png')
-  link.download = `bond-${name}-${new Date().toISOString().split('T')[0]}.png`
+  link.download = `floater-bond-${name}-${new Date().toISOString().split('T')[0]}.png`
   link.click()
 }
 
-onMounted(() => fetchReport(isin.value || 'RU000A103943'))
+watch(() => route.params.isin, (newIsin) => {
+  if (newIsin) {
+    localIsin.value = newIsin as string
+    fetchReport(newIsin as string)
+  }
+}, { immediate: true })
+
+onMounted(() => {
+  if (isin.value) {
+    fetchReport(isin.value)
+  } else {
+    // Load default ISIN
+    fetchReport('RU000A108VW7')
+  }
+})
+
 onBeforeUnmount(() => {
   if (priceHistoryChart) priceHistoryChart.destroy()
-  if (yieldDynamicsChart) yieldDynamicsChart.destroy()
-  if (indicesComparisonChart) indicesComparisonChart.destroy()
+  if (marginDynamicsChart) marginDynamicsChart.destroy()
+  if (indicesComparisonChart) {
+    // Stop animation
+    const stopAnimation = (indicesComparisonChart as any).__stopAnimation
+    if (stopAnimation && typeof stopAnimation === 'function') {
+      stopAnimation()
+    }
+    
+    // Cancel animation frame if exists
+    const frameId = (indicesComparisonChart as any).__animationFrameId
+    if (frameId !== null && frameId !== undefined && typeof frameId === 'number') {
+      cancelAnimationFrame(frameId)
+    }
+    indicesComparisonChart.destroy()
+  }
   if (analogousBondsChart) {
     // Stop animation
     const stopAnimation = (analogousBondsChart as any).__stopAnimation
@@ -1204,6 +1217,7 @@ onBeforeUnmount(() => {
   opacity: 0.5;
   cursor: not-allowed;
 }
+
 .lbl-mini { font-size: 10px; color: rgba(255,255,255,0.5); font-weight: 600; text-transform: uppercase; }
 
 /* ============================================
@@ -1272,7 +1286,7 @@ onBeforeUnmount(() => {
 .metric {
   display: flex;
   justify-content: space-between;
-  font-size: 12px;
+  font-size: 12px; 
   padding-bottom: 6px;
   border-bottom: 1px dashed rgba(255, 255, 255, 0.08);
   transition: all 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
@@ -1289,7 +1303,7 @@ onBeforeUnmount(() => {
 
 .val {
   color: #fff;
-  font-weight: 600;
+  font-weight: 600; 
 }
 
 .ratings-list { display: flex; flex-direction: column; gap: 6px; }
@@ -1316,6 +1330,116 @@ onBeforeUnmount(() => {
 .grade { font-weight: 700; color: #fff; }
 .outlook { font-size: 10px; color: rgba(255, 255, 255, 0.4); }
 .date { font-size: 10px; color: rgba(255, 255, 255, 0.3); }
+
+.grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; }
+.grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+
+.info-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+
+.info-table td {
+  padding: 8px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.info-table tr:last-child td {
+  border-bottom: none;
+}
+
+.info-table td:first-child {
+  color: rgba(255, 255, 255, 0.5);
+  width: 40%;
+  font-weight: 500;
+}
+
+.info-table td:last-child {
+  text-align: right;
+  font-weight: 500;
+}
+
+.ratings-list { display: flex; flex-direction: column; gap: 6px; }
+.rating-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 12px;
+  gap: 8px;
+  padding: 8px;
+  background: rgba(255, 255, 255, 0.02);
+  backdrop-filter: blur(10px) saturate(180%);
+  -webkit-backdrop-filter: blur(10px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+}
+
+.rating-info { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; }
+.agency { color: rgba(255,255,255,0.4); font-size: 10px; font-weight: 500; }
+.grade { font-weight: 700; color: #fff; }
+.outlook { font-size: 10px; color: rgba(255, 255, 255, 0.4); }
+.date { font-size: 10px; color: rgba(255, 255, 255, 0.3); }
+
+.activity-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+
+.activity-table thead th {
+  text-align: left;
+  padding: 12px 16px;
+  color: rgba(255, 255, 255, 0.5);
+  font-weight: 600;
+  text-transform: uppercase; 
+  font-size: 10px;
+  letter-spacing: 0.05em; 
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.activity-table tbody td {
+  padding: 12px 16px;
+  color: rgba(255, 255, 255, 0.9);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.activity-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.status-badge {
+  display: inline-block;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.status-badge.fulfilled {
+  background: rgba(34, 197, 94, 0.2);
+  color: #4ade80;
+  border: 1px solid rgba(34, 197, 94, 0.3);
+}
+
+.status-text-active {
+  color: #4ade80;
+  font-weight: 600;
+}
+
+.status-text-active {
+  color: #4ade80;
+  font-weight: 600;
+}
+
+.note-text {
+  margin-top: 16px;
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.4);
+  font-style: italic;
+}
 
 /* ============================================
    CHARTS & UTILS
@@ -1373,10 +1497,6 @@ onBeforeUnmount(() => {
 .accent { color: #38bdf8; font-weight: 600; }
 .text-accent { color: #38bdf8; font-weight: 600; }
 .muted { color: rgba(255, 255, 255, 0.4); margin: 0; font-size: 12px; }
-.status-text-active {
-  color: #4ade80;
-  font-weight: 600;
-}
 .spinner { display: inline-block; width: 14px; height: 14px; border: 2px solid rgba(56, 189, 248, 0.3); border-top-color: #38bdf8; border-radius: 50%; animation: spin 1s linear infinite; margin-right: 8px; }
 @keyframes spin { to { transform: rotate(360deg); } }
 
@@ -1392,7 +1512,7 @@ onBeforeUnmount(() => {
 .comparison-table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 12px;
+  font-size: 12px; 
 }
 
 .comparison-table thead th {
@@ -1422,7 +1542,7 @@ onBeforeUnmount(() => {
 
 .comparison-table tbody tr.highlight-row td {
   color: #fff;
-  font-weight: 600;
+  font-weight: 600; 
 }
 
 /* ============================================
@@ -1430,7 +1550,7 @@ onBeforeUnmount(() => {
    ============================================ */
 .events-list {
   display: flex;
-  flex-direction: column;
+    flex-direction: column;
   gap: 12px;
 }
 
@@ -1463,26 +1583,8 @@ onBeforeUnmount(() => {
   color: rgba(255, 255, 255, 0.9);
   font-size: 12px;
   line-height: 1.5;
-  flex: 1;
-}
-
-/* ============================================
-   STATUS BADGES
-   ============================================ */
-.status-badge {
-  display: inline-block;
-  padding: 4px 8px;
-  border-radius: 4px;
-  font-size: 10px;
-  font-weight: 600;
-  text-transform: uppercase;
-}
-
-.status-badge.fulfilled {
-  background: rgba(34, 197, 94, 0.2);
-  color: #4ade80;
-  border: 1px solid rgba(34, 197, 94, 0.3);
-}
+    flex: 1;
+  }
 
 /* ============================================
    ANALOGOUS BONDS INPUT
@@ -1564,6 +1666,68 @@ onBeforeUnmount(() => {
 }
 
 /* ============================================
+   ACTIVITY TABLE
+   ============================================ */
+.activity-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+
+.activity-table thead th {
+  text-align: left;
+  padding: 12px 16px;
+  color: rgba(255, 255, 255, 0.5);
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: 10px;
+  letter-spacing: 0.05em;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.activity-table tbody td {
+  padding: 12px 16px;
+  color: rgba(255, 255, 255, 0.9);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.activity-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.status-badge {
+  display: inline-block;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.status-badge.fulfilled {
+  background: rgba(34, 197, 94, 0.2);
+  color: #4ade80;
+  border: 1px solid rgba(34, 197, 94, 0.3);
+}
+
+.status-text-active {
+  color: #4ade80;
+  font-weight: 600;
+}
+
+.status-text-active {
+  color: #4ade80;
+  font-weight: 600;
+}
+
+.note-text {
+  margin-top: 16px;
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.4);
+  font-style: italic;
+}
+
+/* ============================================
    RESPONSIVE
    ============================================ */
 @media (max-width: 1200px) { 
@@ -1578,7 +1742,7 @@ onBeforeUnmount(() => {
   .grid-2, .grid-3 { grid-template-columns: 1fr; }
   .comparison-section {
     gap: 16px;
-}
+  }
 }
 
 @media (max-width: 768px) { 
@@ -1621,6 +1785,13 @@ onBeforeUnmount(() => {
   .event-date {
     min-width: auto;
   }
+  .activity-table {
+    font-size: 11px;
+  }
+  .activity-table thead th,
+  .activity-table tbody td {
+    padding: 8px 12px;
+  }
 }
 
 @media (max-width: 480px) {
@@ -1637,6 +1808,13 @@ onBeforeUnmount(() => {
   }
   .comparison-table thead th,
   .comparison-table tbody td {
+    padding: 6px 8px;
+  }
+  .activity-table {
+    font-size: 10px;
+  }
+  .activity-table thead th,
+  .activity-table tbody td {
     padding: 6px 8px;
   }
   .status-badge {

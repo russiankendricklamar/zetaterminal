@@ -703,17 +703,24 @@ onBeforeUnmount(() => {
    ============================================ */
 .card {
   background: rgba(30, 32, 40, 0.4);
-  backdrop-filter: blur(30px);
+  backdrop-filter: blur(40px) saturate(180%);
+  -webkit-backdrop-filter: blur(40px) saturate(180%);
   border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 12px;
+  border-radius: 20px;
   padding: 20px;
-  transition: all 0.2s;
+  box-shadow: 
+    0 20px 40px -10px rgba(0, 0, 0, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  transition: all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
   margin-bottom: 20px;
 }
 
 .card:hover {
-  border-color: rgba(255, 255, 255, 0.15);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+  background: rgba(40, 45, 55, 0.5);
+  border-color: rgba(255, 255, 255, 0.12);
+  box-shadow: 
+    0 25px 50px -10px rgba(0, 0, 0, 0.5),
+    inset 0 1px 0 rgba(255, 255, 255, 0.15);
 }
 
 .card-header {
@@ -802,12 +809,23 @@ onBeforeUnmount(() => {
    ============================================ */
 .metric-card {
   background: rgba(30, 32, 40, 0.4);
+  backdrop-filter: blur(40px) saturate(180%);
+  -webkit-backdrop-filter: blur(40px) saturate(180%);
   border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 12px;
+  border-radius: 20px;
   padding: 20px;
   display: flex;
   flex-direction: column;
   gap: 12px;
+  box-shadow: 
+    0 20px 40px -10px rgba(0, 0, 0, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  transition: all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.metric-card:hover {
+  background: rgba(40, 45, 55, 0.5);
+  border-color: rgba(255, 255, 255, 0.12);
 }
 
 .metric-header {

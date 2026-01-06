@@ -594,10 +594,19 @@ const formatDate = (dateStr: string): string => {
    ============================================ */
 .glass-card {
   background: rgba(30, 32, 40, 0.4);
-  backdrop-filter: blur(40px) saturate(160%);
+  backdrop-filter: blur(40px) saturate(180%);
+  -webkit-backdrop-filter: blur(40px) saturate(180%);
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 20px;
-  box-shadow: 0 20px 40px -10px rgba(0,0,0,0.4);
+  box-shadow: 
+    0 20px 40px -10px rgba(0, 0, 0, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  transition: all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.glass-card:hover {
+  background: rgba(40, 45, 55, 0.5);
+  border-color: rgba(255, 255, 255, 0.12);
 }
 
 .panel { padding: 24px; }
@@ -644,21 +653,24 @@ const formatDate = (dateStr: string): string => {
 }
 
 .glass-input {
-  background: rgba(0,0,0,0.3);
-  border: 1px solid rgba(255,255,255,0.1);
+  background: rgba(0, 0, 0, 0.2);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   color: #fff;
   padding: 10px 12px;
   border-radius: 10px;
   width: 100%;
   outline: none;
-  transition: 0.2s;
+  transition: all 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
   font-family: "SF Mono", monospace;
   font-size: 13px;
 }
 
 .glass-input:focus {
-  border-color: #3b82f6;
-  background: rgba(0,0,0,0.5);
+  border-color: rgba(255, 255, 255, 0.25);
+  background: rgba(0, 0, 0, 0.3);
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.05);
 }
 
 .glass-input.textarea {
@@ -681,12 +693,15 @@ const formatDate = (dateStr: string): string => {
   align-items: center;
   justify-content: center;
   gap: 8px;
-  transition: all 0.2s;
+  transition: all 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
 }
 
 .btn-glass.primary {
   background: linear-gradient(135deg, #3b82f6, #2563eb);
   box-shadow: 0 4px 15px rgba(59, 130, 246, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .btn-glass.primary:hover:not(:disabled) {
@@ -695,12 +710,15 @@ const formatDate = (dateStr: string): string => {
 }
 
 .btn-glass.secondary {
-  background: rgba(255,255,255,0.1);
-  border: 1px solid rgba(255,255,255,0.2);
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .btn-glass.secondary:hover:not(:disabled) {
-  background: rgba(255,255,255,0.15);
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.2);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
 }
 
 .btn-glass:disabled {
@@ -799,13 +817,16 @@ const formatDate = (dateStr: string): string => {
 .report-preview {
   font-size: 13px;
   line-height: 1.6;
-  color: rgba(255,255,255,0.9);
+  color: #1a1a1a;
+  background: #ffffff;
+  padding: 24px;
+  border-radius: 8px;
 }
 
 .report-section {
   margin-bottom: 32px;
   padding-bottom: 24px;
-  border-bottom: 1px solid rgba(255,255,255,0.1);
+  border-bottom: 1px solid rgba(0,0,0,0.1);
 }
 
 .report-section:last-child {
@@ -825,13 +846,13 @@ const formatDate = (dateStr: string): string => {
 
 .report-desc {
   font-size: 11px;
-  color: rgba(255,255,255,0.4);
+  color: rgba(0,0,0,0.6);
   margin-bottom: 12px;
   font-style: italic;
 }
 
 .summary-box {
-  background: rgba(96, 165, 250, 0.08);
+  background: rgba(96, 165, 250, 0.1);
   border-left: 3px solid #60a5fa;
   padding: 16px;
   border-radius: 10px;
@@ -849,12 +870,12 @@ const formatDate = (dateStr: string): string => {
 }
 
 .summary-row .label {
-  color: rgba(255,255,255,0.6);
+  color: rgba(0,0,0,0.7);
 }
 
 .summary-row .value {
   font-weight: 600;
-  color: #fff;
+  color: #1a1a1a;
 }
 
 /* ============================================
@@ -873,27 +894,27 @@ const formatDate = (dateStr: string): string => {
 .report-table th {
   text-align: left;
   padding: 10px 12px;
-  background: rgba(255,255,255,0.05);
-  color: rgba(255,255,255,0.5);
+  background: rgba(0,0,0,0.05);
+  color: rgba(0,0,0,0.7);
   font-weight: 600;
   text-transform: uppercase;
-  border-bottom: 1px solid rgba(255,255,255,0.1);
+  border-bottom: 1px solid rgba(0,0,0,0.1);
 }
 
 .report-table td {
   padding: 10px 12px;
-  border-bottom: 1px solid rgba(255,255,255,0.05);
-  color: rgba(255,255,255,0.8);
+  border-bottom: 1px solid rgba(0,0,0,0.05);
+  color: rgba(0,0,0,0.9);
 }
 
 .report-table .label {
   font-weight: 500;
-  color: rgba(255,255,255,0.6);
+  color: rgba(0,0,0,0.7);
   width: 40%;
 }
 
 .report-table .value {
-  color: #fff;
+  color: #1a1a1a;
 }
 
 .report-table .mono {
@@ -925,16 +946,16 @@ const formatDate = (dateStr: string): string => {
 }
 
 .status-badge.future {
-  background: rgba(255,255,255,0.1);
-  color: rgba(255,255,255,0.5);
+  background: rgba(0,0,0,0.1);
+  color: rgba(0,0,0,0.7);
 }
 
 .report-footer {
   padding-top: 20px;
   margin-top: 20px;
-  border-top: 1px solid rgba(255,255,255,0.1);
+  border-top: 1px solid rgba(0,0,0,0.1);
   font-size: 11px;
-  color: rgba(255,255,255,0.4);
+  color: rgba(0,0,0,0.6);
   display: flex;
   flex-direction: column;
   gap: 4px;
@@ -955,8 +976,6 @@ const formatDate = (dateStr: string): string => {
   backdrop-filter: blur(40px);
   border: 1px solid rgba(255,255,255,0.08);
   border-radius: 20px;
-  position: sticky;
-  bottom: 20px;
 }
 
 .action-bar .btn-glass {

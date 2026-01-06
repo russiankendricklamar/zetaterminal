@@ -492,6 +492,9 @@ const scrollToContent = () => {
 .docs-root {
   position: relative;
   min-height: 100vh;
+  height: 100vh;
+  overflow-y: auto;
+  overflow-x: hidden;
   background: radial-gradient(circle at top, #050816 0%, #020308 45%, #000 100%);
   color: #f9fafb;
 }

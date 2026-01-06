@@ -17,6 +17,7 @@ import BondValuation from '@/pages/BondValuation.vue'
 import ZCYCViewer from '@/pages/ZCYCViewer.vue'
 import BondReport from '@/pages/BondReport.vue'
 import VanilaBondReport from '@/pages/VanilaBondReport.vue'
+import FloaterBondReport from '@/pages/FloaterBondReport.vue'
 import NotFound from '@/pages/NotFound.vue'
 import OptionPricing from '@/pages/OptionPricing.vue'
 import OptionModelsComparison from '@/pages/OptionModelsComparison.vue'
@@ -145,6 +146,12 @@ const routes = [
         component: VanilaBondReport,
         name: 'VanilaBondReport',
         meta: { title: 'Vanila Bond Report', icon: '📊' }
+      },
+      {
+        path: 'floater-bond-report/:isin?',
+        component: FloaterBondReport,
+        name: 'FloaterBondReport',
+        meta: { title: 'Floater Bond Report', icon: '📋' }
       },
       {
         path: 'pricing/options',

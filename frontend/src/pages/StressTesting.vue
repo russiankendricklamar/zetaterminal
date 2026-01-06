@@ -928,4 +928,26 @@ const runAllStressTests = async () => {
     -webkit-overflow-scrolling: touch;
   }
 }
+
+@media (max-width: 480px) {
+  .page-container {
+    padding: 12px;
+    gap: 12px;
+  }
+  .section-title {
+    font-size: 18px;
+  }
+  .chart-container {
+    height: 250px;
+  }
+  .chart-container.tall {
+    height: 300px;
+  }
+  .scenarios-grid {
+    gap: 12px;
+  }
+  .impact-metrics-grid {
+    grid-template-columns: 1fr;
+  }
+}
 </style>

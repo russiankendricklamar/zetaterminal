@@ -562,7 +562,7 @@
         </button>
         <div
           class="tool-content-wrapper"
-          :style="{ maxHeight: expandedTools.bondReports ? '100px' : '0' }"
+          :style="{ maxHeight: expandedTools.bondReports ? '150px' : '0' }"
         >
           <div class="tool-content">
             <router-link 
@@ -572,6 +572,14 @@
               @click="closeSidebar"
             >
               <span class="nav-label">Vanila Bond Report</span>
+            </router-link>
+            <router-link 
+              to="/floater-bond-report" 
+              class="nav-item"
+              :class="{ active: isActive('/floater-bond-report') }"
+              @click="closeSidebar"
+            >
+              <span class="nav-label">Floater Bond Report</span>
             </router-link>
           </div>
         </div>
@@ -1476,9 +1484,74 @@ onUnmounted(() => clearInterval(timer))
 /* ============================================
    RESPONSIVE
    ============================================ */
+@media (max-width: 1024px) {
+  .sidebar {
+    width: 280px;
+  }
+  .tool-title {
+    font-size: 12px;
+  }
+  .tool-subtitle {
+    font-size: 10px;
+  }
+}
+
 @media (max-width: 768px) {
   .sidebar {
     width: 260px;
+  }
+  .tool-title {
+    font-size: 11px;
+  }
+  .tool-subtitle {
+    font-size: 9px;
+  }
+  .home-title,
+  .data-title {
+    font-size: 13px;
+  }
+  .home-subtitle,
+  .data-subtitle {
+    font-size: 11px;
+  }
+  .nav-label {
+    font-size: 11px;
+  }
+}
+
+@media (max-width: 480px) {
+  .sidebar {
+    width: 100%;
+    max-width: 320px;
+  }
+  .sidebar-header {
+    padding: 16px;
+  }
+  .app-logo {
+    font-size: 16px;
+  }
+  .tool-title {
+    font-size: 10px;
+  }
+  .tool-subtitle {
+    font-size: 8px;
+  }
+  .home-title,
+  .data-title {
+    font-size: 12px;
+  }
+  .home-subtitle,
+  .data-subtitle {
+    font-size: 10px;
+  }
+  .nav-label {
+    font-size: 10px;
+  }
+  .sidebar-footer {
+    padding: 10px 12px;
+  }
+  .status-row {
+    font-size: 10px;
   }
 }
 </style>

@@ -861,10 +861,18 @@ onBeforeUnmount(() => {
   display: flex;
   align-items: center;
   gap: 12px;
-  background: rgba(255,255,255,0.04);
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
   padding: 8px 16px;
   border-radius: 8px;
-  border: 1px solid rgba(255,255,255,0.08);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  transition: all 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.control-group:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.15);
 }
 
 .control-label {
@@ -953,12 +961,23 @@ onBeforeUnmount(() => {
    ============================================ */
 .status-card {
   background: rgba(30, 32, 40, 0.4);
+  backdrop-filter: blur(40px) saturate(180%);
+  -webkit-backdrop-filter: blur(40px) saturate(180%);
   border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 12px;
+  border-radius: 20px;
   padding: 16px;
   display: flex;
   flex-direction: column;
   gap: 10px;
+  box-shadow: 
+    0 20px 40px -10px rgba(0, 0, 0, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  transition: all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.status-card:hover {
+  background: rgba(40, 45, 55, 0.5);
+  border-color: rgba(255, 255, 255, 0.12);
 }
 
 .status-header {
@@ -1017,12 +1036,21 @@ onBeforeUnmount(() => {
    ============================================ */
 .card {
   background: rgba(30, 32, 40, 0.4);
-  backdrop-filter: blur(30px);
+  backdrop-filter: blur(40px) saturate(180%);
+  -webkit-backdrop-filter: blur(40px) saturate(180%);
   border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 12px;
+  border-radius: 20px;
   padding: 20px;
-  transition: all 0.2s;
+  box-shadow: 
+    0 20px 40px -10px rgba(0, 0, 0, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  transition: all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
   margin-bottom: 20px;
+}
+
+.card:hover {
+  background: rgba(40, 45, 55, 0.5);
+  border-color: rgba(255, 255, 255, 0.12);
 }
 
 .card:hover {
@@ -1717,6 +1745,32 @@ onBeforeUnmount(() => {
   .filter-btn {
     flex: 1;
     min-width: 80px;
+  }
+}
+
+@media (max-width: 480px) {
+  .arbitrage-scanner-page {
+    padding: 12px;
+  }
+  .chart-container {
+    height: 250px;
+  }
+  .chart-container.tall {
+    height: 300px;
+  }
+  .opportunities-table,
+  .watchlist-table {
+    font-size: 8px;
+  }
+  .opportunities-table th,
+  .opportunities-table td,
+  .watchlist-table th,
+  .watchlist-table td {
+    padding: 4px;
+  }
+  .filter-btn {
+    font-size: 11px;
+    padding: 6px 10px;
   }
 }
 </style>

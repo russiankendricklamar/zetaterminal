@@ -485,7 +485,7 @@ onUnmounted(() => {
    ============================================ */
 .page-container {
     padding: 24px 32px; max-width: 1600px; margin: 0 auto;
-    display: flex; flex-direction: column; gap: 24px; height: 100%;
+    display: flex; flex-direction: column; gap: 24px; min-height: 100vh;
 }
 
 /* ============================================
@@ -508,17 +508,27 @@ onUnmounted(() => {
 /* ============================================
    GRID
    ============================================ */
-.mc-grid-layout { display: grid; grid-template-columns: 300px 1fr; gap: 24px; flex: 1; min-height: 0; }
-.controls-column { display: flex; flex-direction: column; gap: 16px; overflow-y: auto; }
-.viz-column { display: flex; flex-direction: column; gap: 16px; min-height: 0; }
+.mc-grid-layout { display: grid; grid-template-columns: 300px 1fr; gap: 24px; flex: 1; }
+.controls-column { display: flex; flex-direction: column; gap: 16px; }
+.viz-column { display: flex; flex-direction: column; gap: 16px; }
 
 /* GLASS CARD */
 .glass-card {
-    border-radius: 20px; background: rgba(30, 32, 40, 0.4);
-    backdrop-filter: blur(30px) saturate(160%);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    box-shadow: 0 20px 40px -10px rgba(0,0,0,0.4);
-    padding: 20px;
+  border-radius: 20px;
+  background: rgba(30, 32, 40, 0.4);
+  backdrop-filter: blur(40px) saturate(180%);
+  -webkit-backdrop-filter: blur(40px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 
+    0 20px 40px -10px rgba(0, 0, 0, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  padding: 20px;
+  transition: all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.glass-card:hover {
+  background: rgba(40, 45, 55, 0.5);
+  border-color: rgba(255, 255, 255, 0.12);
 }
 
 /* ============================================
@@ -602,7 +612,41 @@ onUnmounted(() => {
 .w-full { width: 100%; }
 
 @media (max-width: 1024px) {
-    .mc-grid-layout { grid-template-columns: 1fr; }
-    .metrics-row { grid-template-columns: 1fr 1fr; }
+  .mc-grid-layout { 
+    grid-template-columns: 1fr; 
+  }
+  .metrics-row { 
+    grid-template-columns: 1fr 1fr; 
+  }
+  .page-container {
+    padding: 16px 20px;
+  }
+}
+
+@media (max-width: 768px) {
+  .page-container {
+    padding: 16px;
+  }
+  .metrics-row { 
+    grid-template-columns: 1fr; 
+  }
+  .controls-column {
+    padding: 12px;
+  }
+  .chart-container {
+    height: 300px;
+  }
+}
+
+@media (max-width: 480px) {
+  .page-container {
+    padding: 12px;
+  }
+  .chart-container {
+    height: 250px;
+  }
+  .controls-column {
+    padding: 10px;
+  }
 }
 </style>

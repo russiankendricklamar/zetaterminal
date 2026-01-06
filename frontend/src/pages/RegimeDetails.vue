@@ -237,8 +237,8 @@
    PAGE LAYOUT
    ============================================ */
 .page-container {
-  display: flex; flex-direction: column; gap: 24px; padding: 24px 32px;
-  max-width: 1400px; margin: 0 auto; height: 100%;
+  display: flex; flex-direction: column; gap: 24px; padding: 24px 32px 60px 32px;
+  max-width: 1400px; margin: 0 auto; min-height: 100vh;
 }
 
 .section-header { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 4px; }
@@ -249,10 +249,21 @@
    GLASS COMPONENTS
    ============================================ */
 .glass-card {
-  background: rgba(30, 32, 40, 0.4); backdrop-filter: blur(30px) saturate(160%);
-  border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 20px;
-  box-shadow: 0 20px 40px -10px rgba(0,0,0,0.4);
+  background: rgba(30, 32, 40, 0.4);
+  backdrop-filter: blur(40px) saturate(180%);
+  -webkit-backdrop-filter: blur(40px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 20px;
+  box-shadow: 
+    0 20px 40px -10px rgba(0, 0, 0, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
   padding: 24px;
+  transition: all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.glass-card:hover {
+  background: rgba(40, 45, 55, 0.5);
+  border-color: rgba(255, 255, 255, 0.12);
 }
 
 .glass-pill {

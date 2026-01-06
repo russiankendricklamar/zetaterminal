@@ -492,10 +492,19 @@ calculatePrice()
 /* Glass Components */
 .glass-card {
   background: rgba(30, 32, 40, 0.4);
-  backdrop-filter: blur(40px) saturate(160%);
+  backdrop-filter: blur(40px) saturate(180%);
+  -webkit-backdrop-filter: blur(40px) saturate(180%);
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 24px;
-  box-shadow: 0 20px 50px -10px rgba(0, 0, 0, 0.5);
+  box-shadow: 
+    0 20px 50px -10px rgba(0, 0, 0, 0.5),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  transition: all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.glass-card:hover {
+  background: rgba(40, 45, 55, 0.5);
+  border-color: rgba(255, 255, 255, 0.12);
 }
 
 .glass-pill {
@@ -504,9 +513,17 @@ calculatePrice()
   gap: 8px;
   padding: 4px 12px;
   background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(10px) saturate(180%);
+  -webkit-backdrop-filter: blur(10px) saturate(180%);
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 99px;
   height: 36px;
+  transition: all 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.glass-pill:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.15);
 }
 
 .panel {
@@ -543,20 +560,23 @@ calculatePrice()
 }
 
 .glass-input {
-  background: rgba(0, 0, 0, 0.3);
+  background: rgba(0, 0, 0, 0.2);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
   border: 1px solid rgba(255, 255, 255, 0.1);
   color: #fff;
   padding: 10px 12px;
   border-radius: 12px;
   width: 100%;
   outline: none;
-  transition: 0.2s;
+  transition: all 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
   font-size: 12px;
 }
 
 .glass-input:focus {
-  border-color: #3b82f6;
-  background: rgba(0, 0, 0, 0.5);
+  border-color: rgba(255, 255, 255, 0.25);
+  background: rgba(0, 0, 0, 0.3);
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.05);
 }
 
 .radio-group {
@@ -805,19 +825,54 @@ calculatePrice()
   .dashboard-grid {
     grid-template-columns: 1fr;
   }
-
   .decomposition-grid {
     grid-template-columns: repeat(2, 1fr);
+  }
+  .page-container {
+    padding: 16px 20px;
   }
 }
 
 @media (max-width: 768px) {
   .page-container {
-    padding: 16px 20px;
+    padding: 16px;
   }
-
   .decomposition-grid {
     grid-template-columns: 1fr;
+  }
+  .left-panel {
+    padding: 12px;
+  }
+  .chart-container {
+    height: 300px;
+  }
+  .chart-container.tall {
+    height: 400px;
+  }
+}
+
+@media (max-width: 480px) {
+  .page-container {
+    padding: 12px;
+  }
+  .left-panel {
+    padding: 10px;
+  }
+  .chart-container {
+    height: 250px;
+  }
+  .chart-container.tall {
+    height: 300px;
+  }
+  .input-group {
+    margin-bottom: 12px;
+  }
+  .lbl {
+    font-size: 11px;
+  }
+  .glass-input {
+    font-size: 12px;
+    padding: 8px 12px;
   }
 }
 </style>
