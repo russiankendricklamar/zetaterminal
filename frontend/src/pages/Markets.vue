@@ -259,10 +259,6 @@
                       <span class="chart-subtitle">Implied Volatility Surface</span>
                     </div>
                     <div id="volatility-surface-detail" class="chart-container-large"></div>
-                    <div class="chart-legend cyberpunk">
-                      <span class="legend-item"><span class="dot" style="background: #3b82f6;"></span> ATM Vol</span>
-                      <span class="legend-item"><span class="dot" style="background: #60a5fa;"></span> Skew</span>
-                    </div>
                   </div>
                 </div>
                 
@@ -1934,25 +1930,28 @@ const initVolatilitySurface = async () => {
     scene: {
       xaxis: {
         title: { text: 'Strike %', font: { color: 'rgba(255,255,255,0.8)' } },
-        backgroundcolor: 'rgba(0,0,0,0.3)',
+        backgroundcolor: 'transparent',
         gridcolor: 'rgba(255,255,255,0.1)',
         zerolinecolor: 'rgba(255,255,255,0.2)',
-        tickfont: { size: 9, color: 'rgba(255,255,255,0.6)' }
+        tickfont: { size: 9, color: 'rgba(255,255,255,0.6)' },
+        showbackground: false
       },
       yaxis: {
         title: { text: 'Срок (лет)', font: { color: 'rgba(255,255,255,0.8)' } },
-        backgroundcolor: 'rgba(0,0,0,0.3)',
+        backgroundcolor: 'transparent',
         gridcolor: 'rgba(255,255,255,0.1)',
         zerolinecolor: 'rgba(255,255,255,0.2)',
-        tickfont: { size: 9, color: 'rgba(255,255,255,0.6)' }
+        tickfont: { size: 9, color: 'rgba(255,255,255,0.6)' },
+        showbackground: false
       },
       zaxis: {
         title: { text: 'Волатильность %', font: { color: 'rgba(255,255,255,0.8)' } },
-        backgroundcolor: 'rgba(0,0,0,0.3)',
+        backgroundcolor: 'transparent',
         gridcolor: 'rgba(255,255,255,0.08)',
-        tickfont: { size: 9, color: 'rgba(255,255,255,0.6)' }
+        tickfont: { size: 9, color: 'rgba(255,255,255,0.6)' },
+        showbackground: false
       },
-      bgcolor: 'rgba(0,0,0,0.5)',
+      bgcolor: 'transparent',
       camera: { eye: { x: 2.2, y: 1.5, z: 1.4 } }, // Different angle for volatility surface
       aspectratio: { x: 1.3, y: 1, z: 0.75 }
     },
@@ -2014,8 +2013,8 @@ const initWaveSurfaceDetail = async () => {
       xaxis: { title: 'Momentum', gridcolor: 'rgba(255,255,255,0.1)', tickfont: { size: 8, color: 'rgba(255,255,255,0.5)' }, titlefont: { color: 'rgba(255,255,255,0.8)' } },
       yaxis: { title: 'Volatility', gridcolor: 'rgba(255,255,255,0.1)', tickfont: { size: 8, color: 'rgba(255,255,255,0.5)' }, titlefont: { color: 'rgba(255,255,255,0.8)' } },
       zaxis: { title: 'σ', gridcolor: 'rgba(255,255,255,0.1)', tickfont: { size: 8, color: 'rgba(255,255,255,0.5)' }, titlefont: { color: 'rgba(255,255,255,0.8)' } },
-      bgcolor: 'rgba(0,0,0,0)',
-      camera: { eye: { x: 1.5, y: 2.0, z: 1.5 } }, // Different angle for WAVE surface
+      bgcolor: 'transparent',
+      camera: { eye: { x: 1.5, y: 2.0, z: 1.8 } }, // Raised camera for WAVE surface
       aspectratio: { x: 1.5, y: 1, z: 0.8 } // Wider aspect ratio
     },
     paper_bgcolor: 'transparent',
@@ -2111,13 +2110,13 @@ const initInsaneSurface = async () => {
       xaxis: { title: 'Latent X', gridcolor: 'rgba(255,255,255,0.1)', tickfont: { size: 8, color: 'rgba(255,255,255,0.5)' }, titlefont: { color: 'rgba(255,255,255,0.8)' } },
       yaxis: { title: 'Latent Y', gridcolor: 'rgba(255,255,255,0.1)', tickfont: { size: 8, color: 'rgba(255,255,255,0.5)' }, titlefont: { color: 'rgba(255,255,255,0.8)' } },
       zaxis: { title: 'Peak λ', gridcolor: 'rgba(255,255,255,0.1)', tickfont: { size: 8, color: 'rgba(255,255,255,0.5)' }, titlefont: { color: 'rgba(255,255,255,0.8)' } },
-      bgcolor: 'rgba(0,0,0,0.3)',
-      camera: { eye: { x: 1.9, y: 1.3, z: 1.8 } }, // Different angle for INSANE surface
+      bgcolor: 'transparent',
+      camera: { eye: { x: 1.7, y: 1.2, z: 2.0 } }, // Raised and shifted left for INSANE surface
       aspectratio: { x: 1.4, y: 1, z: 0.9 } // Larger aspect ratio
     },
     paper_bgcolor: 'transparent',
     font: { color: 'rgba(255,255,255,0.9)' },
-    margin: { l: 0, r: 40, b: 0, t: 0 },
+    margin: { l: -20, r: 50, b: 0, t: 0 }, // Shifted left to show colorbar
     autosize: true
   }
 
@@ -3386,13 +3385,14 @@ onBeforeUnmount(() => {
   grid-template-columns: 1fr 420px;
   gap: 24px;
   margin-bottom: 4px;
+  align-items: stretch;
 }
 
 .detail-volatility-section {
-  min-height: 550px;
   display: flex;
   flex-direction: column;
   height: 100%;
+  align-self: stretch;
 }
 
 .detail-right-column {
@@ -3413,6 +3413,9 @@ onBeforeUnmount(() => {
     0 0 0 1px rgba(255, 255, 255, 0.05) inset,
     0 1px 0 rgba(255, 255, 255, 0.1) inset;
   transition: all 0.3s ease;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
 }
 
 .chart-card:hover {
@@ -3508,7 +3511,8 @@ onBeforeUnmount(() => {
 }
 
 .chart-container-large {
-  height: 500px;
+  flex: 1;
+  min-height: 500px;
   padding: 16px;
   width: 100%;
   background: rgba(0, 0, 0, 0.2);
