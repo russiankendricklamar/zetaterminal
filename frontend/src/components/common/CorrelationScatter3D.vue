@@ -920,7 +920,7 @@ const updatePlot = async () => {
     paper_bgcolor: 'transparent',
     plot_bgcolor: 'transparent',
     font: { color: '#fff', family: 'system-ui' },
-    margin: { l: 0, r: -50, t: 30, b: 50 },
+    margin: { l: 0, r: 50, t: 30, b: 50 },
     showlegend: true,
     legend: {
       bgcolor: 'rgba(0,0,0,0.3)',
