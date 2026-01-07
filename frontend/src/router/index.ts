@@ -38,6 +38,7 @@ import VolatilitySurface from '@/pages/VolatilitySurface.vue'
 import CCMVOptimizationPage from '@/pages/CCMVOptimization.vue'
 import DocumentationPage from '@/pages/DocumentationPage.vue'
 import MarketData from '@/pages/MarketData.vue'
+import Markets from '@/pages/Markets.vue'
 
 const routes = [
   {
@@ -57,6 +58,12 @@ const routes = [
     name: 'MarketData',
     component: MarketData,
     meta: { title: 'Рыночные данные', icon: '📊' }
+  },
+  {
+    path: '/markets',
+    name: 'Markets',
+    component: Markets,
+    meta: { title: 'Рынки', icon: '🌍' }
   },
   {
     path: '/',

@@ -18,6 +18,16 @@
 
       <!-- Navigation Buttons -->
       <nav class="sidebar-nav">
+        <!-- Markets link - navigates to separate page -->
+        <router-link
+          to="/markets"
+          class="nav-btn nav-link"
+        >
+          РЫНКИ
+          <span class="nav-external-icon">↗</span>
+        </router-link>
+        
+        <!-- Tab buttons -->
         <button
           v-for="tab in sidebarNavItems"
           :key="tab.id"
@@ -223,30 +233,28 @@
                 </div>
               </div>
               <div class="ai-section">
-                <div class="ai-section-title">Оповещения</div>
+                <div class="ai-section-title">
+                  <span class="section-title-icon">◈</span>
+                  Оповещения
+                  <span class="alerts-count">{{ alerts.length }}</span>
+                </div>
                 <div class="ai-alerts">
-                  <div class="alert-item" v-for="(alert, idx) in alerts" :key="idx">
-                    <span class="alert-text">{{ alert.text }}</span>
+                  <div 
+                    class="alert-item" 
+                    v-for="(alert, idx) in alerts" 
+                    :key="idx"
+                    :class="getAlertType(alert.text)"
+                  >
+                    <div class="alert-icon-wrapper">
+                      <span class="alert-icon">{{ getAlertIcon(alert.text) }}</span>
+                      <span class="alert-pulse"></span>
+                    </div>
+                    <div class="alert-content">
+                      <span class="alert-text">{{ alert.text }}</span>
+                      <span class="alert-time">{{ getAlertTime(idx) }}</span>
+                    </div>
                   </div>
                 </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- 3D Surface Block -->
-          <div class="surface-block">
-            <div class="surface-block-header">
-              <div class="surface-block-info">
-                <span class="surface-label">LATENT MANIFOLD</span>
-                <span class="surface-title">Surface Inference</span>
-                <span class="surface-value">{{ surfaceInferenceValue.toFixed(2) }} <span class="surface-delta" :class="surfaceDelta >= 0 ? 'positive' : 'negative'">{{ surfaceDelta >= 0 ? '▲' : '▼' }}</span></span>
-              </div>
-            </div>
-            <div class="surface-canvas-container">
-              <canvas ref="liquidity3DCanvas" class="surface-canvas-mini"></canvas>
-              <div v-if="liquidity3DStatus !== 'ready'" class="surface-fallback">
-                <span v-if="liquidity3DStatus === 'error'">Ошибка 3D: {{ liquidity3DError }}</span>
-                <span v-else>Загрузка 3D...</span>
               </div>
             </div>
           </div>
@@ -1735,7 +1743,6 @@ import Chart from 'chart.js/auto'
 
 // Sidebar Navigation Items
 const sidebarNavItems = ref([
-  { id: 'markets', label: 'РЫНКИ' },
   { id: 'indices', label: 'ИНДЕКСЫ' },
   { id: 'bonds', label: 'ОБЛИГАЦИИ' },
   { id: 'forex', label: 'ФОРЕКС' },
@@ -2107,9 +2114,27 @@ const alerts = ref([
   { text: 'Рубль укрепился до 88.5 за доллар' }
 ])
 
-// Surface Inference Data
-const surfaceInferenceValue = ref(18.11)
-const surfaceDelta = ref(0.42)
+// Alert helper functions
+const getAlertType = (text: string): string => {
+  if (text.includes('сопротивлен') || text.includes('поддержк')) return 'alert-resistance'
+  if (text.includes('волатильность') || text.includes('риск')) return 'alert-warning'
+  if (text.includes('укрепи') || text.includes('рост')) return 'alert-positive'
+  if (text.includes('ослаб') || text.includes('падени')) return 'alert-negative'
+  return 'alert-info'
+}
+
+const getAlertIcon = (text: string): string => {
+  if (text.includes('сопротивлен') || text.includes('поддержк')) return '◉'
+  if (text.includes('волатильность') || text.includes('риск')) return '⚡'
+  if (text.includes('укрепи') || text.includes('рост')) return '↗'
+  if (text.includes('ослаб') || text.includes('падени')) return '↘'
+  return '●'
+}
+
+const getAlertTime = (idx: number): string => {
+  const times = ['2 мин назад', '8 мин назад', '15 мин назад', '32 мин назад', '1 час назад']
+  return times[idx % times.length]
+}
 
 // Signal Matrix Data (3 rows x 12 columns)
 const signalMatrix = ref<number[][]>([])
@@ -2135,11 +2160,6 @@ const updateSignalMatrix = () => {
       return Math.max(0, Math.min(1, cell + change))
     })
   )
-  
-  // Update surface inference value based on flow pressure
-  const prevValue = surfaceInferenceValue.value
-  surfaceInferenceValue.value = 10 + liquidityParams.value.flowPressure * 20 + (Math.random() - 0.5) * 2
-  surfaceDelta.value = surfaceInferenceValue.value - prevValue
 }
 
 // Get color for signal matrix cell
@@ -3129,10 +3149,6 @@ const formatChange = (change: number): string => {
 // LIQUIDITY SURFACE DASHBOARD
 // ============================================
 
-// Liquidity 3D Canvas
-const liquidity3DCanvas = ref<HTMLCanvasElement | null>(null)
-const liquidity3DStatus = ref<'idle' | 'initializing' | 'ready' | 'error'>('idle')
-const liquidity3DError = ref('')
 const priceStreamChart = ref<SVGElement | null>(null)
 const signalMatrixChart = ref<SVGElement | null>(null)
 
@@ -3159,323 +3175,6 @@ const avgVolume = ref(95.3)
 const peakVolume = ref(185.6)
 const liquidityStress = ref(0.35)
 const avgSpread = ref(0.0012)
-
-// Three.js for Liquidity Surface
-let liquidityScene: THREE.Scene | null = null
-let liquidityCamera: THREE.PerspectiveCamera | null = null
-let liquidityRenderer: THREE.WebGLRenderer | null = null
-let liquidityMesh: THREE.Mesh | null = null
-let liquiditySurfaceGeometry: THREE.PlaneGeometry | null = null
-let liquidityAnimationId: number | null = null
-let liquidityRotation = 0
-let liquidityGradientUniforms: { uMinH: { value: number }; uMaxH: { value: number } } | null = null
-
-// Generate Liquidity Surface (Manifold Learning Simulation)
-// Lightweight value-noise for micro-variations (fast, deterministic)
-const noise2D = (x: number, y: number, seed = 0): number => {
-  const lerp = (a: number, b: number, t: number) => a + (b - a) * t
-  const smoothstep = (t: number) => t * t * (3 - 2 * t)
-  const fract = (n: number) => n - Math.floor(n)
-
-  // Pseudo-random hash in [0, 1)
-  const rand = (ix: number, iy: number) => {
-    const n = Math.sin(ix * 127.1 + iy * 311.7 + seed * 101.3) * 43758.5453123
-    return fract(n)
-  }
-
-  const ix = Math.floor(x)
-  const iy = Math.floor(y)
-  const fx = x - ix
-  const fy = y - iy
-
-  const u = smoothstep(fx)
-  const v = smoothstep(fy)
-
-  const a = rand(ix, iy)
-  const b = rand(ix + 1, iy)
-  const c = rand(ix, iy + 1)
-  const d = rand(ix + 1, iy + 1)
-
-  const x1 = lerp(a, b, u)
-  const x2 = lerp(c, d, u)
-
-  // Map to [-1, 1]
-  return lerp(x1, x2, v) * 2 - 1
-}
-
-const LIQUIDITY_SEGMENTS = 50 // >= 50x50 vertices
-const LIQUIDITY_SIZE = 10
-const LIQUIDITY_SIGMA = 1.8
-const LIQUIDITY_NOISE_SCALE = 0.8
-
-const createLiquiditySurfaceGeometry = () => {
-  return new THREE.PlaneGeometry(LIQUIDITY_SIZE, LIQUIDITY_SIZE, LIQUIDITY_SEGMENTS, LIQUIDITY_SEGMENTS)
-}
-
-const updateLiquiditySurfaceGeometry = (geometry: THREE.PlaneGeometry, time: number) => {
-  const positions = geometry.attributes.position.array as Float32Array
-
-  // Dynamic parameters based on liquidityParams
-  const flowPressure = liquidityParams.value.flowPressure
-  const periodSetting = liquidityParams.value.liquidity
-
-  // Peak amplitude: 0.3 to 0.8 based on flow pressure
-  const peakAmplitude = 0.3 + flowPressure * 0.5
-  // Wave frequency based on period settings
-  const waveFrequency = 0.5 + periodSetting * 0.8
-
-  let minZ = Number.POSITIVE_INFINITY
-  let maxZ = Number.NEGATIVE_INFINITY
-
-  for (let i = 0; i < positions.length; i += 3) {
-    const x = positions[i]
-    const y = positions[i + 1]
-
-    // Distance from center
-    const r = Math.sqrt(x * x + y * y)
-
-    // 1. Central Gaussian peak: z = A * exp(-r^2/(2σ^2))
-    const gaussianPeak = peakAmplitude * Math.exp(-(r * r) / (2 * LIQUIDITY_SIGMA * LIQUIDITY_SIGMA))
-
-    // 2. Concentric ripple waves spreading from center
-    const ripplePhase = r * waveFrequency - time * 2
-    const rippleAmplitude = 0.08 * Math.exp(-r * 0.15) // Decay with distance
-    const ripples = rippleAmplitude * Math.sin(ripplePhase * Math.PI)
-
-    // 3. Secondary slower waves
-    const slowWave = 0.03 * Math.sin(r * 0.3 - time * 0.5) * Math.exp(-r * 0.1)
-
-    // 4. Micro noise texture for surface detail
-    const microNoise = 0.015 * noise2D(x * LIQUIDITY_NOISE_SCALE + time * 0.2, y * LIQUIDITY_NOISE_SCALE, time * 0.1)
-
-    // Combined height
-    const z = gaussianPeak + ripples + slowWave + microNoise
-
-    positions[i + 2] = z
-    if (z < minZ) minZ = z
-    if (z > maxZ) maxZ = z
-  }
-
-  ;(geometry.attributes.position as THREE.BufferAttribute).needsUpdate = true
-  geometry.computeVertexNormals()
-
-  return { minZ, maxZ }
-}
-
-// Initialize Liquidity 3D Surface
-const initLiquidity3D = () => {
-  const canvas = liquidity3DCanvas.value
-  if (!canvas) {
-    console.warn('liquidity3DCanvas not found, retrying...')
-    liquidity3DStatus.value = 'initializing'
-    setTimeout(initLiquidity3D, 500)
-    return
-  }
-
-  liquidity3DStatus.value = 'initializing'
-  liquidity3DError.value = ''
-  
-  // Get container dimensions
-  const container = canvas.parentElement
-  const width = container?.clientWidth || canvas.clientWidth || 300
-  const height = container?.clientHeight || canvas.clientHeight || 220
-  
-  if (width < 10 || height < 10) {
-    console.warn('Canvas too small, retrying...')
-    setTimeout(initLiquidity3D, 500)
-    return
-  }
-
-  // WebGL availability check (gives a clear error instead of silent blank canvas)
-  try {
-    const gl = canvas.getContext('webgl2') || canvas.getContext('webgl') || canvas.getContext('experimental-webgl')
-    if (!gl) {
-      liquidity3DStatus.value = 'error'
-      liquidity3DError.value = 'WebGL недоступен в браузере/системе'
-      return
-    }
-  } catch {
-    liquidity3DStatus.value = 'error'
-    liquidity3DError.value = 'WebGL недоступен в браузере/системе'
-    return
-  }
-  
-  // Cleanup previous instance if exists
-  if (liquidityAnimationId) {
-    cancelAnimationFrame(liquidityAnimationId)
-  }
-  if (liquidityRenderer) {
-    liquidityRenderer.dispose()
-  }
-  
-  console.log('Initializing 3D Surface:', width, 'x', height)
-
-  try {
-    
-  // Scene with dark background
-  liquidityScene = new THREE.Scene()
-  liquidityScene.background = new THREE.Color(0x0a0a0a)
-
-  // Camera - isometric perspective (30° elevation, 45° azimuth)
-  liquidityCamera = new THREE.PerspectiveCamera(45, width / height, 0.1, 1000)
-  const cameraRadius = 12
-  const elevationAngle = 30 * Math.PI / 180 // 30 degrees
-  const azimuthAngle = 45 * Math.PI / 180   // 45 degrees
-  liquidityCamera.position.set(
-    cameraRadius * Math.cos(elevationAngle) * Math.sin(azimuthAngle),
-    cameraRadius * Math.sin(elevationAngle),
-    cameraRadius * Math.cos(elevationAngle) * Math.cos(azimuthAngle)
-  )
-  liquidityCamera.lookAt(0, 0, 0)
-
-  // Renderer with antialiasing
-  liquidityRenderer = new THREE.WebGLRenderer({ 
-    canvas: canvas, 
-    antialias: true,
-    alpha: false
-  })
-  liquidityRenderer.setSize(width, height)
-  liquidityRenderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
-  
-  // Soft ambient lighting
-  const ambientLight = new THREE.AmbientLight(0xffffff, 0.6)
-  liquidityScene.add(ambientLight)
-  
-  // Directional light from above for soft shading
-  const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8)
-  directionalLight.position.set(5, 10, 5)
-  liquidityScene.add(directionalLight)
-  
-  // Colored accent lights
-  const pinkLight = new THREE.PointLight(0xff6090, 0.5, 50)
-  pinkLight.position.set(-8, 5, -8)
-  liquidityScene.add(pinkLight)
-  
-  const greenLight = new THREE.PointLight(0x90ff60, 0.4, 50)
-  greenLight.position.set(8, 8, 8)
-  liquidityScene.add(greenLight)
-  
-  // Create surface mesh with smooth shading (geometry updated in-place)
-  liquidityGradientUniforms = null
-  liquiditySurfaceGeometry?.dispose()
-  liquiditySurfaceGeometry = createLiquiditySurfaceGeometry()
-  const initialRange = updateLiquiditySurfaceGeometry(liquiditySurfaceGeometry, 0)
-
-  const material = new THREE.MeshPhongMaterial({
-    color: 0xffffff,
-    wireframe: false,
-    flatShading: false,
-    shininess: 40,
-    side: THREE.DoubleSide
-  })
-
-  // Custom shader: height-based gradient color map (as per requirements)
-  material.onBeforeCompile = (shader) => {
-    shader.uniforms.uMinH = { value: initialRange.minZ }
-    shader.uniforms.uMaxH = { value: initialRange.maxZ }
-    liquidityGradientUniforms = {
-      uMinH: shader.uniforms.uMinH,
-      uMaxH: shader.uniforms.uMaxH
-    }
-
-    shader.vertexShader = `varying float vHeight;\n${shader.vertexShader}`
-    shader.vertexShader = shader.vertexShader.replace(
-      '#include <begin_vertex>',
-      '#include <begin_vertex>\n  vHeight = transformed.z;'
-    )
-
-    shader.fragmentShader = `varying float vHeight;\nuniform float uMinH;\nuniform float uMaxH;\n${shader.fragmentShader}`
-    shader.fragmentShader = shader.fragmentShader.replace(
-      'vec4 diffuseColor = vec4( diffuse, opacity );',
-      `
-      float ht = clamp((vHeight - uMinH) / (uMaxH - uMinH + 1e-5), 0.0, 1.0);
-      vec3 c0 = vec3(0.16, 0.04, 0.25); // deep purple/red (low)
-      vec3 c1 = vec3(0.92, 0.28, 0.62); // pink
-      vec3 c2 = vec3(0.98, 0.45, 0.12); // orange
-      vec3 c3 = vec3(0.95, 0.85, 0.12); // yellow
-      vec3 c4 = vec3(0.62, 1.00, 0.38); // lime (peak)
-      vec3 grad;
-      if (ht < 0.25) {
-        grad = mix(c0, c1, ht / 0.25);
-      } else if (ht < 0.50) {
-        grad = mix(c1, c2, (ht - 0.25) / 0.25);
-      } else if (ht < 0.75) {
-        grad = mix(c2, c3, (ht - 0.50) / 0.25);
-      } else {
-        grad = mix(c3, c4, (ht - 0.75) / 0.25);
-      }
-      vec4 diffuseColor = vec4( grad, opacity );
-      `
-    )
-  }
-  material.needsUpdate = true
-
-  liquidityMesh = new THREE.Mesh(liquiditySurfaceGeometry, material)
-  liquidityMesh.rotation.x = -Math.PI / 2 // make Z-height point up (Y)
-
-  // Subtle wireframe overlay to emphasize the surface grid
-  const wireMaterial = new THREE.MeshBasicMaterial({
-    color: 0xffffff,
-    wireframe: true,
-    transparent: true,
-    opacity: 0.14,
-    polygonOffset: true,
-    polygonOffsetFactor: -1,
-    polygonOffsetUnits: -1
-  })
-  const wireMesh = new THREE.Mesh(liquiditySurfaceGeometry, wireMaterial)
-  wireMesh.renderOrder = 1
-  liquidityMesh.add(wireMesh)
-
-  liquidityScene.add(liquidityMesh)
-
-  // Render at least once immediately
-  liquidityRenderer.render(liquidityScene, liquidityCamera)
-
-  // Animation loop - slow rotation + dynamic deformation
-  let lastTime = performance.now()
-  const rotationSpeed = 0.012 // ~0.7° per frame at 60fps
-
-  const animate = () => {
-    liquidityAnimationId = requestAnimationFrame(animate)
-    const now = performance.now()
-    const dt = Math.min(0.05, (now - lastTime) / 1000) // cap at 50ms
-    lastTime = now
-
-    if (liquidityMesh && liquiditySurfaceGeometry) {
-      // Slow continuous rotation around vertical axis (Y)
-      liquidityMesh.rotation.y += rotationSpeed
-
-      // Update parameters smoothly (simulated real-time inputs)
-      liquidityParams.value.timeEvolution += dt * 1.6
-
-      const targetPressure = 0.5 + 0.4 * Math.sin(now * 0.0003)
-      const targetPeriod = 0.55 + 0.35 * Math.sin(now * 0.0002 + 1.3)
-
-      liquidityParams.value.flowPressure += (targetPressure - liquidityParams.value.flowPressure) * 0.08
-      liquidityParams.value.liquidity += (targetPeriod - liquidityParams.value.liquidity) * 0.05
-
-      // Update geometry in-place + update shader uniforms for gradient normalization
-      const range = updateLiquiditySurfaceGeometry(liquiditySurfaceGeometry, liquidityParams.value.timeEvolution)
-      if (liquidityGradientUniforms) {
-        liquidityGradientUniforms.uMinH.value = range.minZ
-        liquidityGradientUniforms.uMaxH.value = range.maxZ
-      }
-    }
-
-    if (liquidityRenderer && liquidityScene && liquidityCamera) {
-      liquidityRenderer.render(liquidityScene, liquidityCamera)
-    }
-  }
-  
-  animate()
-  liquidity3DStatus.value = 'ready'
-  } catch (err) {
-    console.error('initLiquidity3D failed:', err)
-    liquidity3DStatus.value = 'error'
-    liquidity3DError.value = err instanceof Error ? err.message : String(err)
-  }
-}
 
 // Generate Price Stream Data
 const generatePriceStream = () => {
@@ -4698,10 +4397,7 @@ onMounted(() => {
   // Update current time
   updateCurrentTime()
   setInterval(updateCurrentTime, 1000)
-  
-  // Initialize 3D Liquidity Surface
-  setTimeout(initLiquidity3D, 800)
-  
+
   // Update QuantLatent data every 100ms
   setInterval(updateQuantLatentData, 100)
   
@@ -4741,30 +4437,8 @@ onBeforeUnmount(() => {
   // Cleanup animation frames
   if (animationId !== null) cancelAnimationFrame(animationId)
   if (wireframeAnimationId !== null) cancelAnimationFrame(wireframeAnimationId)
-  if (liquidityAnimationId !== null) cancelAnimationFrame(liquidityAnimationId)
   
   // Cleanup THREE.js renderers and scenes
-  if (liquidityRenderer) {
-    if (liquidityMesh) {
-      liquidityMesh.traverse((obj) => {
-        const anyObj = obj as any
-        if (!anyObj?.material) return
-        const mat = anyObj.material
-        if (Array.isArray(mat)) mat.forEach((m) => m?.dispose?.())
-        else mat?.dispose?.()
-      })
-    }
-    if (liquiditySurfaceGeometry) {
-      liquiditySurfaceGeometry.dispose()
-      liquiditySurfaceGeometry = null
-    }
-    liquidityGradientUniforms = null
-    liquidityRenderer.dispose()
-    liquidityScene = null
-    liquidityCamera = null
-    liquidityRenderer = null
-    liquidityMesh = null
-  }
   if (renderer) {
     renderer.dispose()
     scene = null
@@ -4921,6 +4595,40 @@ onBeforeUnmount(() => {
   height: 14px;
 }
 
+/* Header Links Container */
+.header-links {
+  display: flex;
+  gap: 8px;
+}
+
+/* Back to Markets Button */
+.back-to-markets {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--accent-cyan);
+  text-decoration: none;
+  font-size: 12px;
+  font-weight: 500;
+  padding: 10px 14px;
+  background: linear-gradient(135deg, rgba(0, 212, 255, 0.08), rgba(0, 150, 200, 0.04));
+  border: 1.5px solid rgba(0, 212, 255, 0.3);
+  border-radius: 20px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.back-to-markets:hover {
+  border-color: var(--accent-cyan);
+  background: linear-gradient(135deg, rgba(0, 212, 255, 0.15), rgba(0, 150, 200, 0.08));
+  color: var(--accent-cyan);
+  box-shadow: 0 0 15px rgba(0, 212, 255, 0.4);
+}
+
+.back-to-markets svg {
+  width: 14px;
+  height: 14px;
+}
+
 /* Navigation Buttons */
 .sidebar-nav {
   display: flex;
@@ -4959,6 +4667,35 @@ onBeforeUnmount(() => {
   background: rgba(255, 140, 0, 0.12);
   color: var(--accent-orange);
   box-shadow: inset 0 0 10px rgba(255, 140, 0, 0.2), var(--glow-orange);
+}
+
+/* Navigation Link (to Markets page) */
+.nav-btn.nav-link {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  text-decoration: none;
+  background: linear-gradient(135deg, rgba(0, 212, 255, 0.08), rgba(0, 150, 200, 0.04));
+  border-color: rgba(0, 212, 255, 0.3);
+  color: var(--accent-cyan);
+}
+
+.nav-btn.nav-link:hover {
+  border-color: var(--accent-cyan);
+  background: linear-gradient(135deg, rgba(0, 212, 255, 0.15), rgba(0, 150, 200, 0.08));
+  color: var(--accent-cyan);
+  box-shadow: 0 0 20px rgba(0, 212, 255, 0.3);
+}
+
+.nav-external-icon {
+  font-size: 12px;
+  opacity: 0.7;
+  transition: transform 0.3s ease;
+}
+
+.nav-btn.nav-link:hover .nav-external-icon {
+  transform: translate(2px, -2px);
+  opacity: 1;
 }
 
 /* Sidebar Status */
@@ -5595,20 +5332,46 @@ onBeforeUnmount(() => {
 }
 
 .ai-section-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   font-size: 11px;
   font-weight: 700;
   color: var(--accent-orange);
   text-transform: uppercase;
   letter-spacing: 1px;
-  margin-bottom: 12px;
+  margin-bottom: 14px;
   text-shadow: 0 0 6px rgba(255, 140, 0, 0.3);
+}
+
+.section-title-icon {
+  font-size: 10px;
+  opacity: 0.7;
+  animation: pulse-icon 2s ease-in-out infinite;
+}
+
+@keyframes pulse-icon {
+  0%, 100% { opacity: 0.5; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.1); }
+}
+
+.alerts-count {
+  background: linear-gradient(135deg, rgba(255, 140, 0, 0.3), rgba(255, 100, 0, 0.2));
+  color: var(--accent-orange);
+  font-size: 9px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 10px;
+  margin-left: auto;
+  border: 1px solid rgba(255, 140, 0, 0.3);
+  box-shadow: 0 0 8px rgba(255, 140, 0, 0.2);
 }
 
 .ai-recommendations,
 .ai-alerts {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 10px;
 }
 
 .rec-item {
@@ -5629,110 +5392,125 @@ onBeforeUnmount(() => {
   font-weight: 500;
 }
 
+/* Alert Items - Enhanced Styling */
 .alert-item {
   display: flex;
   align-items: flex-start;
-  gap: 8px;
+  gap: 12px;
   font-size: 11px;
   color: var(--text-secondary);
-  padding: 8px 10px;
-  background: rgba(255, 200, 0, 0.05);
-  border-radius: 8px;
-  border-left: 2px solid var(--accent-yellow);
-}
-
-.alert-icon {
-  color: var(--accent-yellow);
-  font-size: 11px;
-}
-
-.alert-text {
-  line-height: 1.4;
-}
-
-/* 3D Surface Block */
-.surface-block {
-  background: rgba(20, 25, 35, 0.6);
-  border: 2px solid var(--accent-orange);
-  border-radius: 20px;
-  overflow: hidden;
-  box-shadow:
-    0 0 20px rgba(255, 140, 0, 0.3),
-    0 0 40px rgba(255, 140, 0, 0.1),
-    inset 0 1px 0 rgba(255, 255, 255, 0.05);
-}
-
-.surface-block-header {
-  padding: 14px 18px;
-  background: rgba(255, 140, 0, 0.1);
-  border-bottom: 1px solid rgba(255, 140, 0, 0.3);
-}
-
-.surface-block-info {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.surface-label {
-  font-size: 9px;
-  font-weight: 500;
-  color: rgba(255, 255, 255, 0.4);
-  text-transform: uppercase;
-  letter-spacing: 1px;
-}
-
-.surface-title {
-  font-size: 14px;
-  font-weight: 700;
-  color: var(--accent-cyan);
-}
-
-.surface-value {
-  font-size: 20px;
-  font-weight: 700;
-  color: var(--text-primary);
-  font-family: 'Monaco', 'Courier New', monospace;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.surface-delta {
-  font-size: 12px;
-}
-
-.surface-delta.positive {
-  color: var(--accent-lime);
-}
-
-.surface-delta.negative {
-  color: var(--accent-red);
-}
-
-.surface-canvas-container {
-  padding: 0;
-  background: rgba(0, 0, 0, 0.4);
+  padding: 12px 14px;
+  background: linear-gradient(135deg, rgba(30, 35, 50, 0.8), rgba(20, 25, 40, 0.6));
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
   position: relative;
+  overflow: hidden;
+  transition: all 0.3s ease;
 }
 
-.surface-canvas-mini {
-  width: 100%;
-  height: 220px;
-  display: block;
-}
-
-.surface-fallback {
+.alert-item::before {
+  content: '';
   position: absolute;
-  inset: 0;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  border-radius: 3px 0 0 3px;
+}
+
+.alert-item:hover {
+  transform: translateX(4px);
+  border-color: rgba(255, 255, 255, 0.1);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+
+/* Alert Type Variants */
+.alert-item.alert-resistance::before {
+  background: linear-gradient(180deg, var(--accent-cyan), var(--accent-blue));
+  box-shadow: 0 0 10px rgba(0, 212, 255, 0.5);
+}
+
+.alert-item.alert-warning::before {
+  background: linear-gradient(180deg, var(--accent-yellow), var(--accent-orange));
+  box-shadow: 0 0 10px rgba(255, 200, 0, 0.5);
+}
+
+.alert-item.alert-positive::before {
+  background: linear-gradient(180deg, var(--accent-lime), var(--accent-green));
+  box-shadow: 0 0 10px rgba(180, 255, 100, 0.5);
+}
+
+.alert-item.alert-negative::before {
+  background: linear-gradient(180deg, var(--accent-red), var(--accent-magenta));
+  box-shadow: 0 0 10px rgba(255, 100, 100, 0.5);
+}
+
+.alert-item.alert-info::before {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.4), rgba(255, 255, 255, 0.2));
+}
+
+/* Alert Icon Wrapper */
+.alert-icon-wrapper {
+  position: relative;
+  width: 28px;
+  height: 28px;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 10px 12px;
-  background: rgba(0, 0, 0, 0.35);
-  color: rgba(255, 255, 255, 0.55);
-  font-size: 11px;
-  text-align: center;
+  flex-shrink: 0;
+}
+
+.alert-icon {
+  font-size: 14px;
+  z-index: 1;
+}
+
+.alert-item.alert-resistance .alert-icon { color: var(--accent-cyan); }
+.alert-item.alert-warning .alert-icon { color: var(--accent-yellow); }
+.alert-item.alert-positive .alert-icon { color: var(--accent-lime); }
+.alert-item.alert-negative .alert-icon { color: var(--accent-red); }
+.alert-item.alert-info .alert-icon { color: rgba(255, 255, 255, 0.6); }
+
+.alert-pulse {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: currentColor;
+  opacity: 0.15;
+  animation: alert-pulse-anim 2s ease-out infinite;
+}
+
+.alert-item.alert-resistance .alert-pulse { background: var(--accent-cyan); }
+.alert-item.alert-warning .alert-pulse { background: var(--accent-yellow); }
+.alert-item.alert-positive .alert-pulse { background: var(--accent-lime); }
+.alert-item.alert-negative .alert-pulse { background: var(--accent-red); }
+
+@keyframes alert-pulse-anim {
+  0% { transform: scale(0.8); opacity: 0.2; }
+  50% { transform: scale(1.2); opacity: 0.1; }
+  100% { transform: scale(0.8); opacity: 0.2; }
+}
+
+/* Alert Content */
+.alert-content {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+  min-width: 0;
+}
+
+.alert-text {
+  line-height: 1.5;
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+.alert-time {
+  font-size: 9px;
+  color: rgba(255, 255, 255, 0.35);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
 /* Signal Matrix Block */
