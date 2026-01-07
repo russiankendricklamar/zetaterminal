@@ -221,6 +221,17 @@
             </div>
         </div>
 
+        <!-- 3D Correlation Scatter Plot -->
+        <div class="glass-panel">
+          <div class="panel-header">
+            <h3>3D Визуализация Корреляций</h3>
+            <span class="panel-badge">Интерактивный анализ</span>
+          </div>
+          <div class="panel-body" style="padding: 20px;">
+            <CorrelationScatter3D :available-assets="['SPY', 'TLT', 'GLD', 'QQQ', 'BTC']" />
+          </div>
+        </div>
+
       </div>
 
       <!-- RIGHT COLUMN -->
@@ -626,6 +637,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue'
+import CorrelationScatter3D from '../components/common/CorrelationScatter3D.vue'
 
 // Динамический импорт Plotly
 let Plotly: any = null
