@@ -1963,7 +1963,22 @@ const initVolatilitySurface = async () => {
     autosize: true
   }
 
-  Plotly.newPlot(container, [trace], layout, { responsive: true, displayModeBar: false })
+  const config = {
+    responsive: true,
+    displayModeBar: false,
+    scrollZoom: true,
+    doubleClick: 'reset'
+  }
+
+  Plotly.newPlot(container, [trace], layout, config)
+
+  // Enable camera rotation
+  container.on('plotly_relayout', (eventData: any) => {
+    if (eventData['scene.camera']) {
+      // Camera was rotated, update layout
+      layout.scene.camera = eventData['scene.camera']
+    }
+  })
 }
 
 // Initialize WAVE Surface for Detail View
@@ -2010,11 +2025,32 @@ const initWaveSurfaceDetail = async () => {
 
   const layout = {
     scene: {
-      xaxis: { title: 'Momentum', gridcolor: 'rgba(255,255,255,0.1)', tickfont: { size: 8, color: 'rgba(255,255,255,0.5)' }, titlefont: { color: 'rgba(255,255,255,0.8)' } },
-      yaxis: { title: 'Volatility', gridcolor: 'rgba(255,255,255,0.1)', tickfont: { size: 8, color: 'rgba(255,255,255,0.5)' }, titlefont: { color: 'rgba(255,255,255,0.8)' } },
-      zaxis: { title: 'σ', gridcolor: 'rgba(255,255,255,0.1)', tickfont: { size: 8, color: 'rgba(255,255,255,0.5)' }, titlefont: { color: 'rgba(255,255,255,0.8)' } },
+      xaxis: { 
+        title: 'Momentum', 
+        gridcolor: 'rgba(255,255,255,0.1)', 
+        tickfont: { size: 8, color: 'rgba(255,255,255,0.5)' }, 
+        titlefont: { color: 'rgba(255,255,255,0.8)' },
+        backgroundcolor: 'transparent',
+        showbackground: false
+      },
+      yaxis: { 
+        title: 'Volatility', 
+        gridcolor: 'rgba(255,255,255,0.1)', 
+        tickfont: { size: 8, color: 'rgba(255,255,255,0.5)' }, 
+        titlefont: { color: 'rgba(255,255,255,0.8)' },
+        backgroundcolor: 'transparent',
+        showbackground: false
+      },
+      zaxis: { 
+        title: 'σ', 
+        gridcolor: 'rgba(255,255,255,0.1)', 
+        tickfont: { size: 8, color: 'rgba(255,255,255,0.5)' }, 
+        titlefont: { color: 'rgba(255,255,255,0.8)' },
+        backgroundcolor: 'transparent',
+        showbackground: false
+      },
       bgcolor: 'transparent',
-      camera: { eye: { x: 1.5, y: 2.0, z: 1.8 } }, // Raised camera for WAVE surface
+      camera: { eye: { x: 1.5, y: 2.0, z: 2.2 } }, // Raised higher for WAVE surface
       aspectratio: { x: 1.5, y: 1, z: 0.8 } // Wider aspect ratio
     },
     paper_bgcolor: 'transparent',
@@ -2107,11 +2143,32 @@ const initInsaneSurface = async () => {
 
   const layout = {
     scene: {
-      xaxis: { title: 'Latent X', gridcolor: 'rgba(255,255,255,0.1)', tickfont: { size: 8, color: 'rgba(255,255,255,0.5)' }, titlefont: { color: 'rgba(255,255,255,0.8)' } },
-      yaxis: { title: 'Latent Y', gridcolor: 'rgba(255,255,255,0.1)', tickfont: { size: 8, color: 'rgba(255,255,255,0.5)' }, titlefont: { color: 'rgba(255,255,255,0.8)' } },
-      zaxis: { title: 'Peak λ', gridcolor: 'rgba(255,255,255,0.1)', tickfont: { size: 8, color: 'rgba(255,255,255,0.5)' }, titlefont: { color: 'rgba(255,255,255,0.8)' } },
+      xaxis: { 
+        title: 'Latent X', 
+        gridcolor: 'rgba(255,255,255,0.1)', 
+        tickfont: { size: 8, color: 'rgba(255,255,255,0.5)' }, 
+        titlefont: { color: 'rgba(255,255,255,0.8)' },
+        backgroundcolor: 'transparent',
+        showbackground: false
+      },
+      yaxis: { 
+        title: 'Latent Y', 
+        gridcolor: 'rgba(255,255,255,0.1)', 
+        tickfont: { size: 8, color: 'rgba(255,255,255,0.5)' }, 
+        titlefont: { color: 'rgba(255,255,255,0.8)' },
+        backgroundcolor: 'transparent',
+        showbackground: false
+      },
+      zaxis: { 
+        title: 'Peak λ', 
+        gridcolor: 'rgba(255,255,255,0.1)', 
+        tickfont: { size: 8, color: 'rgba(255,255,255,0.5)' }, 
+        titlefont: { color: 'rgba(255,255,255,0.8)' },
+        backgroundcolor: 'transparent',
+        showbackground: false
+      },
       bgcolor: 'transparent',
-      camera: { eye: { x: 1.7, y: 1.2, z: 2.0 } }, // Raised and shifted left for INSANE surface
+      camera: { eye: { x: 1.7, y: 1.2, z: 2.4 } }, // Raised higher for INSANE surface
       aspectratio: { x: 1.4, y: 1, z: 0.9 } // Larger aspect ratio
     },
     paper_bgcolor: 'transparent',
