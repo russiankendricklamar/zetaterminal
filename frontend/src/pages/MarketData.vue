@@ -27,6 +27,15 @@
           <span class="nav-external-icon">↗</span>
         </router-link>
         
+        <!-- Stocks button -->
+        <button
+          @click="activeTab = 'stocks'"
+          class="nav-btn"
+          :class="{ active: activeTab === 'stocks' }"
+        >
+          АКЦИИ
+        </button>
+        
         <!-- Tab buttons -->
         <button
           v-for="tab in sidebarNavItems"
@@ -1743,12 +1752,11 @@ import Chart from 'chart.js/auto'
 
 // Sidebar Navigation Items
 const sidebarNavItems = ref([
-  { id: 'indices', label: 'ИНДЕКСЫ' },
   { id: 'bonds', label: 'ОБЛИГАЦИИ' },
   { id: 'forex', label: 'ФОРЕКС' },
   { id: 'crypto', label: 'КРИПТО' },
   { id: 'news', label: 'НОВОСТИ' },
-  { id: 'technicals', label: 'ТЕХАНАЛИЗ' },
+  { id: 'technicals', label: 'КОЛИЧЕСТВЕННАЯ АНАЛИТИКА' },
   { id: 'ai', label: 'AI АНАЛИТИКА' }
 ])
 

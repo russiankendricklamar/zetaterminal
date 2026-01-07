@@ -229,14 +229,8 @@
             
             <!-- Detail View -->
             <div v-else class="detail-view">
-              <!-- Back Button & Brief Info -->
+              <!-- Brief Info -->
               <div class="detail-header">
-                <button class="detail-back-btn" @click="closeDetailView">
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M19 12H5M12 19l-7-7 7-7"/>
-                  </svg>
-                  Назад к списку
-                </button>
                 <div class="detail-brief">
                   <span class="detail-country">{{ detailViewIndex.country }}</span>
                   <span class="detail-symbol">{{ detailViewIndex.symbol }}</span>
@@ -839,7 +833,7 @@ const sidebarNavItems = ref([
   { id: 'forex', label: 'ФОРЕКС' },
   { id: 'crypto', label: 'КРИПТО' },
   { id: 'news', label: 'НОВОСТИ' },
-  { id: 'technicals', label: 'ТЕХАНАЛИЗ' },
+  { id: 'technicals', label: 'КОЛИЧЕСТВЕННАЯ АНАЛИТИКА' },
   { id: 'ai', label: 'AI АНАЛИТИКА' }
 ])
 

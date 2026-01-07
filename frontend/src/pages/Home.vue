@@ -46,6 +46,27 @@
             Смотреть рыночные режимы
           </router-link>
         </div>
+
+        <!-- Terminal Block -->
+        <router-link to="/data" class="terminal-block-link">
+          <div class="terminal-block">
+            <div class="terminal-block-icon">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="2" y="4" width="20" height="16" rx="2"/>
+                <path d="M6 8h12M6 12h8M6 16h4"/>
+              </svg>
+            </div>
+            <div class="terminal-block-content">
+              <div class="terminal-block-title">Терминал</div>
+              <div class="terminal-block-desc">Потоковые данные в реальном времени</div>
+            </div>
+            <div class="terminal-block-arrow">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="9 18 15 12 9 6" />
+              </svg>
+            </div>
+          </div>
+        </router-link>
       </section>
 
       <!-- Правая колонка: список инструментов -->
@@ -274,28 +295,6 @@
             </svg>
           </div>
         </div>
-
-        <!-- Terminal Button -->
-        <router-link 
-          to="/data"
-          class="tool-card terminal-card"
-          :class="{ 'is-faded': activeExplosion !== null }"
-        >
-          <div class="tool-icon terminal-icon">
-            <div class="terminal-block"></div>
-          </div>
-          <div class="tool-body">
-            <div class="tool-name">Терминал</div>
-            <div class="tool-desc">
-              Потоковые данные в реальном времени
-            </div>
-          </div>
-          <div class="tool-arrow">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <polyline points="9 18 15 12 9 6" />
-            </svg>
-          </div>
-        </router-link>
 
       </section>
     </div>
@@ -614,6 +613,94 @@ const triggerExplosion = (path: string) => {
 }
 
 /* ============================================
+   TERMINAL BLOCK (Left Column)
+   ============================================ */
+.terminal-block-link {
+  text-decoration: none;
+  color: inherit;
+  display: block;
+  margin-top: 24px;
+}
+
+.terminal-block {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 18px 20px;
+  background: rgba(15, 23, 42, 0.75);
+  backdrop-filter: blur(20px);
+  border: 1.5px solid rgba(34, 211, 238, 0.25);
+  border-radius: 16px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 
+    0 0 30px rgba(34, 211, 238, 0.12),
+    inset 0 1px 20px rgba(34, 211, 238, 0.08),
+    0 20px 60px rgba(15, 23, 42, 0.8);
+}
+
+.terminal-block:hover {
+  transform: translateY(-2px);
+  border-color: rgba(34, 211, 238, 0.5);
+  background: rgba(15, 23, 42, 0.85);
+  box-shadow: 
+    0 0 40px rgba(34, 211, 238, 0.2),
+    inset 0 1px 20px rgba(34, 211, 238, 0.12),
+    0 25px 70px rgba(15, 23, 42, 0.9);
+}
+
+.terminal-block-icon {
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(34, 211, 238, 0.12);
+  border: 1px solid rgba(34, 211, 238, 0.3);
+  border-radius: 12px;
+  color: #22d3ee;
+  flex-shrink: 0;
+  transition: all 0.3s ease;
+}
+
+.terminal-block:hover .terminal-block-icon {
+  background: rgba(34, 211, 238, 0.2);
+  border-color: rgba(34, 211, 238, 0.5);
+  color: #67e8f9;
+  transform: scale(1.05);
+}
+
+.terminal-block-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.terminal-block-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: #fff;
+  letter-spacing: 0.5px;
+}
+
+.terminal-block-desc {
+  font-size: 12px;
+  color: rgba(148, 163, 184, 0.85);
+  line-height: 1.4;
+}
+
+.terminal-block-arrow {
+  color: rgba(148, 163, 184, 0.4);
+  transition: all 0.3s ease;
+  flex-shrink: 0;
+}
+
+.terminal-block:hover .terminal-block-arrow {
+  color: #22d3ee;
+  transform: translateX(4px);
+}
+
+/* ============================================
    TOOLS GRID - FRAMED CONTAINER
    ============================================ */
 .tool-grid {
@@ -733,33 +820,6 @@ const triggerExplosion = (path: string) => {
 .tool-icon.green { background: rgba(34, 197, 94, 0.12); }
 .tool-icon.nova { background: rgba(255, 51, 102, 0.12); }
 .tool-icon.orange { background: rgba(249, 115, 22, 0.12); }
-.tool-icon.terminal-icon { 
-  background: rgba(239, 68, 68, 0.12); 
-  border: 1px solid rgba(239, 68, 68, 0.2);
-}
-
-.terminal-block {
-  width: 20px;
-  height: 20px;
-  background: linear-gradient(135deg, #ef4444, #dc2626);
-  border-radius: 4px;
-  box-shadow: 
-    0 0 8px rgba(239, 68, 68, 0.4),
-    inset 0 1px 0 rgba(255, 255, 255, 0.2);
-  transition: all 0.2s ease;
-}
-
-.terminal-card:hover .terminal-block {
-  transform: scale(1.05);
-  box-shadow: 
-    0 0 12px rgba(239, 68, 68, 0.6),
-    inset 0 1px 0 rgba(255, 255, 255, 0.3);
-}
-
-.terminal-card {
-  text-decoration: none;
-  color: inherit;
-}
 
 .tool-icon::after {
   content: "";
