@@ -920,7 +920,7 @@ const updatePlot = async () => {
     paper_bgcolor: 'transparent',
     plot_bgcolor: 'transparent',
     font: { color: '#fff', family: 'system-ui' },
-    margin: { l: 0, r: -0, t: 30, b: 50 },
+    margin: { l: 0, r: -50, t: 30, b: 50 },
     showlegend: true,
     legend: {
       bgcolor: 'rgba(0,0,0,0.3)',
@@ -1169,7 +1169,7 @@ declare global {
   max-width: 100%;
   box-sizing: border-box;
   overflow: visible;
-  align-items: start;
+  align-items: stretch;
 }
 
 .controls-column {
@@ -1177,7 +1177,7 @@ declare global {
   flex-direction: column;
   gap: 12px;
   overflow: visible;
-  min-height: 100%;
+  height: 100%;
 }
 
 .plot-column {
@@ -1190,6 +1190,7 @@ declare global {
   max-width: 100%;
   box-sizing: border-box;
   overflow: hidden;
+  height: 100%;
 }
 
 .control-panel {
@@ -1526,13 +1527,12 @@ declare global {
   position: relative;
   width: 100%;
   max-width: 100%;
-  height: 100%;
+  flex: 1;
   min-height: 680px;
   background: rgba(0, 0, 0, 0.2);
   border-radius: 10px;
   border: 1px solid rgba(255, 255, 255, 0.1);
   overflow: hidden;
-  flex: 1;
   box-sizing: border-box;
 }
 
