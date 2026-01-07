@@ -1952,7 +1952,7 @@ const initVolatilitySurface = async () => {
         showbackground: false
       },
       bgcolor: 'transparent',
-      camera: { eye: { x: 2.2, y: 1.5, z: 1.4 } }, // Different angle for volatility surface
+      camera: { eye: { x: 2.2, y: 1.5, z: 1.8 } }, // Raised higher for volatility surface
       aspectratio: { x: 1.3, y: 1, z: 0.75 }
     },
     paper_bgcolor: 'transparent',
@@ -2050,7 +2050,7 @@ const initWaveSurfaceDetail = async () => {
         showbackground: false
       },
       bgcolor: 'transparent',
-      camera: { eye: { x: 1.5, y: 2.0, z: 2.2 } }, // Raised higher for WAVE surface
+      camera: { eye: { x: 1.5, y: 2.0, z: 2.6 } }, // Raised even higher for WAVE surface
       aspectratio: { x: 1.5, y: 1, z: 0.8 } // Wider aspect ratio
     },
     paper_bgcolor: 'transparent',
@@ -2168,7 +2168,7 @@ const initInsaneSurface = async () => {
         showbackground: false
       },
       bgcolor: 'transparent',
-      camera: { eye: { x: 1.7, y: 1.2, z: 2.4 } }, // Raised higher for INSANE surface
+      camera: { eye: { x: 2.0, y: 1.8, z: 2.2 } }, // Better viewing angle for INSANE surface
       aspectratio: { x: 1.4, y: 1, z: 0.9 } // Larger aspect ratio
     },
     paper_bgcolor: 'transparent',
