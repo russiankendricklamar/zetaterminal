@@ -3421,6 +3421,11 @@ onBeforeUnmount(() => {
   align-items: center;
   gap: 16px;
   flex-wrap: wrap;
+  padding: 16px 20px;
+  border: 2px solid var(--accent-orange);
+  border-radius: 12px;
+  background: rgba(255, 140, 0, 0.05);
+  box-shadow: 0 0 20px rgba(255, 140, 0, 0.2);
 }
 
 .detail-country {
