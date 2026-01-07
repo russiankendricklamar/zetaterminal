@@ -17,7 +17,32 @@
       </div>
     </div>
 
-    <div class="dashboard-grid">
+    <!-- View Tabs -->
+    <div class="view-tabs">
+      <button 
+        @click="viewMode = '2d'" 
+        :class="['tab-btn', { active: viewMode === '2d' }]"
+      >
+        📊 2D Анализ
+      </button>
+      <button 
+        @click="viewMode = '3d'" 
+        :class="['tab-btn', { active: viewMode === '3d' }]"
+      >
+        🌐 3D Пространство режимов
+      </button>
+    </div>
+
+    <!-- 3D View -->
+    <div v-if="viewMode === '3d'" class="regime-3d-container">
+      <RegimeSpace3D 
+        :initial-asset="selectedAsset"
+        :initial-n-states="nComponents"
+      />
+    </div>
+
+    <!-- 2D View -->
+    <div v-else class="dashboard-grid">
         
         <!-- LEFT PANEL: Controls, Matrix, Stats -->
         <aside class="left-panel">
@@ -242,10 +267,12 @@
 import { ref, computed, onUnmounted } from 'vue'
 import { useTaskStore } from '@/stores/tasks'
 import ScrubInput from '@/components/common/ScrubInput.vue'
+import RegimeSpace3D from '@/components/common/RegimeSpace3D.vue'
 
 const taskStore = useTaskStore()
 const selectedAsset = ref('SPY')
-const nComponents = ref(3) 
+const nComponents = ref(3)
+const viewMode = ref<'2d' | '3d'>('2d') 
 const shockMultiplier = ref(1.0)
 const isLoading = ref(false)
 
@@ -587,6 +614,40 @@ onUnmounted(() => {
   }
 }
 
+.view-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 20px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.tab-btn {
+  padding: 12px 24px;
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.tab-btn:hover {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.tab-btn.active {
+  color: #fff;
+  border-bottom-color: #3b82f6;
+}
+
+.regime-3d-container {
+  width: 100%;
+  height: calc(100vh - 200px);
+  min-height: 800px;
+}
+
 @media (max-width: 768px) {
   .page-container {
     padding: 16px;
@@ -600,6 +661,10 @@ onUnmounted(() => {
   .empty-state {
     height: 300px;
     font-size: 12px;
+  }
+  .regime-3d-container {
+    height: calc(100vh - 150px);
+    min-height: 600px;
   }
 }
 

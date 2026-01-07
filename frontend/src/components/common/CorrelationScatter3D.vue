@@ -178,6 +178,7 @@
         />
         <span class="speed-label">{{ playbackSpeed }}x</span>
         </div>
+      </div>
 
         <!-- Statistics Panel -->
         <div class="stats-panel">
