@@ -72,7 +72,7 @@
           <div class="supernova-home"></div>
         </div>
         <div class="data-info">
-          <div class="data-title">Рыночные данные</div>
+          <div class="data-title">Терминал</div>
           <div class="data-subtitle">Потоковые данные в реальном времени</div>
         </div>
       </router-link>

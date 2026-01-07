@@ -18,9 +18,9 @@
 
       <!-- Navigation Buttons -->
       <nav class="sidebar-nav">
-        <!-- РЫНКИ - current page (active) -->
+        <!-- ИНДЕКСЫ - current page (active) -->
         <button class="nav-btn active">
-          РЫНКИ
+          ИНДЕКСЫ
         </button>
         
         <!-- Other tabs - link to MarketData page -->
@@ -361,23 +361,39 @@
                   </div>
                 </div>
                 <div class="info-card">
-                  <h4 class="info-card-title">Информация об индексе</h4>
+                  <h4 class="info-card-title">Спецификация индекса</h4>
                   <div class="info-grid">
-                    <div class="info-row">
-                      <span class="info-label">Регион</span>
-                      <span class="info-value">{{ getCountryName(detailViewIndex.country) }}</span>
+                    <div class="info-row" v-if="detailViewIndex.constituentsCount">
+                      <span class="info-label">Состав</span>
+                      <span class="info-value">{{ detailViewIndex.constituentsCount }} компонентов</span>
                     </div>
-                    <div class="info-row">
-                      <span class="info-label">Тип</span>
-                      <span class="info-value">Фондовый индекс</span>
+                    <div class="info-row" v-if="detailViewIndex.totalMarketCap">
+                      <span class="info-label">Капитализация</span>
+                      <span class="info-value">{{ formatMarketCap(detailViewIndex.totalMarketCap, detailViewIndex.currency || (detailViewIndex.region === 'russia' ? 'RUB' : detailViewIndex.region === 'usa' ? 'USD' : detailViewIndex.region === 'europe' ? 'EUR' : '')) }}</span>
+                    </div>
+                    <div class="info-row" v-if="detailViewIndex.indexMarketCap">
+                      <span class="info-label">Кап. в индексе</span>
+                      <span class="info-value">{{ formatMarketCap(detailViewIndex.indexMarketCap, detailViewIndex.currency || (detailViewIndex.region === 'russia' ? 'RUB' : detailViewIndex.region === 'usa' ? 'USD' : detailViewIndex.region === 'europe' ? 'EUR' : '')) }}</span>
+                    </div>
+                    <div class="info-row" v-if="detailViewIndex.calculationMethod">
+                      <span class="info-label">Метод расчета</span>
+                      <span class="info-value">{{ detailViewIndex.calculationMethod }}</span>
+                    </div>
+                    <div class="info-row" v-if="detailViewIndex.baseDate">
+                      <span class="info-label">Базовая дата</span>
+                      <span class="info-value">{{ detailViewIndex.baseDate }}</span>
+                    </div>
+                    <div class="info-row" v-if="detailViewIndex.baseValue">
+                      <span class="info-label">Базовое значение</span>
+                      <span class="info-value">{{ formatNumber(detailViewIndex.baseValue) }}</span>
+                    </div>
+                    <div class="info-row" v-if="detailViewIndex.exchange">
+                      <span class="info-label">Биржа</span>
+                      <span class="info-value">{{ detailViewIndex.exchange }}</span>
                     </div>
                     <div class="info-row">
                       <span class="info-label">Валюта</span>
-                      <span class="info-value">{{ detailViewIndex.region === 'russia' ? 'RUB' : detailViewIndex.region === 'usa' ? 'USD' : detailViewIndex.region === 'europe' ? 'EUR' : 'Local' }}</span>
-                    </div>
-                    <div class="info-row">
-                      <span class="info-label">Обновлено</span>
-                      <span class="info-value">{{ currentTime }}</span>
+                      <span class="info-value">{{ detailViewIndex.currency || (detailViewIndex.region === 'russia' ? 'RUB' : detailViewIndex.region === 'usa' ? 'USD' : detailViewIndex.region === 'europe' ? 'EUR' : 'Local') }}</span>
                     </div>
                   </div>
                 </div>
@@ -603,7 +619,7 @@
                   </div>
                   <div class="stat-card">
                     <span class="stat-label">Капитализация</span>
-                    <span class="stat-value">{{ formatMarketCap(getIndexMarketCap(selectedIndex.symbol)) }}</span>
+                    <span class="stat-value">{{ formatMarketCap(getIndexMarketCap(selectedIndex.symbol) / 1e9, selectedIndex.currency || (selectedIndex.region === 'russia' ? 'RUB' : selectedIndex.region === 'usa' ? 'USD' : selectedIndex.region === 'europe' ? 'EUR' : '')) }}</span>
                   </div>
                   <div class="stat-card">
                     <span class="stat-label">P/E</span>
@@ -751,6 +767,15 @@ interface IndexData {
   country: string
   region: string
   history: number[]
+  // Спецификация индекса
+  constituentsCount?: number // Количество компонентов
+  totalMarketCap?: number // Общая капитализация (млрд)
+  indexMarketCap?: number // Капитализация индекса (млрд)
+  baseDate?: string // Базовая дата
+  baseValue?: number // Базовое значение
+  calculationMethod?: string // Метод расчета
+  currency?: string // Валюта
+  exchange?: string // Биржа
 }
 
 // ============================================
@@ -810,7 +835,6 @@ interface Candle {
 
 // Sidebar Navigation Items (same as MarketData.vue)
 const sidebarNavItems = ref([
-  { id: 'indices', label: 'ИНДЕКСЫ' },
   { id: 'bonds', label: 'ОБЛИГАЦИИ' },
   { id: 'forex', label: 'ФОРЕКС' },
   { id: 'crypto', label: 'КРИПТО' },
@@ -885,8 +909,8 @@ const countries = ref<Record<string, { id: string; name: string; region: string 
 // Global Indices Data
 const indices = ref([
   // Russia
-  { symbol: 'IMOEX', name: 'Индекс МосБиржи', price: 3245.67, change: 1.24, changePoints: 39.82, open: 3210.50, high: 3258.90, low: 3198.45, flag: '🇷🇺', country: 'RU', region: 'russia', history: [] as number[] },
-  { symbol: 'RTS', name: 'Индекс РТС', price: 1156.34, change: 0.87, changePoints: 9.98, open: 1148.20, high: 1162.50, low: 1142.30, flag: '🇷🇺', country: 'RU', region: 'russia', history: [] as number[] },
+  { symbol: 'IMOEX', name: 'Индекс МосБиржи', price: 3245.67, change: 1.24, changePoints: 39.82, open: 3210.50, high: 3258.90, low: 3198.45, flag: '🇷🇺', country: 'RU', region: 'russia', history: [] as number[], constituentsCount: 25, totalMarketCap: 43.5, indexMarketCap: 43.5, baseDate: '1997-09-22', baseValue: 100, calculationMethod: 'Взвешенная по капитализации', currency: 'RUB', exchange: 'Московская биржа' },
+  { symbol: 'RTS', name: 'Индекс РТС', price: 1156.34, change: 0.87, changePoints: 9.98, open: 1148.20, high: 1162.50, low: 1142.30, flag: '🇷🇺', country: 'RU', region: 'russia', history: [] as number[], constituentsCount: 12, totalMarketCap: 0.48, indexMarketCap: 0.48, baseDate: '1995-09-01', baseValue: 100, calculationMethod: 'Взвешенная по капитализации', currency: 'USD', exchange: 'Московская биржа' },
   { symbol: 'RGBI', name: 'Индекс гособлигаций', price: 128.45, change: -0.15, changePoints: -0.19, open: 128.60, high: 128.78, low: 128.12, flag: '🇷🇺', country: 'RU', region: 'russia', history: [] as number[] },
   { symbol: 'MOEXBC', name: 'Индекс голубых фишек', price: 21567.89, change: 1.12, changePoints: 238.45, open: 21350.00, high: 21620.50, low: 21290.30, flag: '🇷🇺', country: 'RU', region: 'russia', history: [] as number[] },
   { symbol: 'MOEXOG', name: 'Нефть и газ', price: 8456.23, change: 0.78, changePoints: 65.34, open: 8400.00, high: 8490.80, low: 8380.45, flag: '🇷🇺', country: 'RU', region: 'russia', history: [] as number[] },
@@ -894,9 +918,9 @@ const indices = ref([
   { symbol: 'MOEXMM', name: 'Металлы и добыча', price: 9876.54, change: 0.56, changePoints: 54.89, open: 9830.00, high: 9910.40, low: 9800.20, flag: '🇷🇺', country: 'RU', region: 'russia', history: [] as number[] },
   
   // USA
-  { symbol: 'S&P 500', name: 'Standard & Poor\'s 500', price: 5234.18, change: 0.45, changePoints: 23.45, open: 5215.00, high: 5248.90, low: 5208.30, flag: '🇺🇸', country: 'US', region: 'usa', history: [] as number[] },
-  { symbol: 'NASDAQ', name: 'NASDAQ Composite', price: 16742.39, change: 0.78, changePoints: 129.67, open: 16650.00, high: 16789.50, low: 16612.20, flag: '🇺🇸', country: 'US', region: 'usa', history: [] as number[] },
-  { symbol: 'DOW', name: 'Dow Jones Industrial', price: 39127.80, change: 0.32, changePoints: 124.56, open: 39050.00, high: 39198.45, low: 38985.30, flag: '🇺🇸', country: 'US', region: 'usa', history: [] as number[] },
+  { symbol: 'S&P 500', name: 'Standard & Poor\'s 500', price: 5234.18, change: 0.45, changePoints: 23.45, open: 5215.00, high: 5248.90, low: 5208.30, flag: '🇺🇸', country: 'US', region: 'usa', history: [] as number[], constituentsCount: 500, totalMarketCap: 40250.0, indexMarketCap: 40250.0, baseDate: '1957-03-04', baseValue: 10, calculationMethod: 'Взвешенная по капитализации', currency: 'USD', exchange: 'NYSE, NASDAQ' },
+  { symbol: 'NASDAQ', name: 'NASDAQ Composite', price: 16742.39, change: 0.78, changePoints: 129.67, open: 16650.00, high: 16789.50, low: 16612.20, flag: '🇺🇸', country: 'US', region: 'usa', history: [] as number[], constituentsCount: 3000, totalMarketCap: 18500.0, indexMarketCap: 18500.0, baseDate: '1971-02-05', baseValue: 100, calculationMethod: 'Взвешенная по капитализации', currency: 'USD', exchange: 'NASDAQ' },
+  { symbol: 'DOW', name: 'Dow Jones Industrial', price: 39127.80, change: 0.32, changePoints: 124.56, open: 39050.00, high: 39198.45, low: 38985.30, flag: '🇺🇸', country: 'US', region: 'usa', history: [] as number[], constituentsCount: 30, totalMarketCap: 9850.0, indexMarketCap: 9850.0, baseDate: '1896-05-26', baseValue: 40.94, calculationMethod: 'Ценово-взвешенный', currency: 'USD', exchange: 'NYSE' },
   { symbol: 'NDX', name: 'NASDAQ 100', price: 18234.56, change: 0.92, changePoints: 166.23, open: 18100.00, high: 18290.80, low: 18050.45, flag: '🇺🇸', country: 'US', region: 'usa', history: [] as number[] },
   { symbol: 'RUT', name: 'Russell 2000', price: 2045.67, change: -0.23, changePoints: -4.71, open: 2052.00, high: 2058.90, low: 2038.30, flag: '🇺🇸', country: 'US', region: 'usa', history: [] as number[] },
   { symbol: 'VIX', name: 'CBOE Volatility Index', price: 14.56, change: -2.34, changePoints: -0.35, open: 14.90, high: 15.20, low: 14.30, flag: '🇺🇸', country: 'US', region: 'usa', history: [] as number[] },
@@ -904,9 +928,9 @@ const indices = ref([
   { symbol: 'SOX', name: 'PHLX Semiconductor', price: 4567.89, change: 1.89, changePoints: 84.67, open: 4490.00, high: 4590.80, low: 4470.45, flag: '🇺🇸', country: 'US', region: 'usa', history: [] as number[] },
   
   // Europe
-  { symbol: 'DAX', name: 'DAX 40', price: 18456.78, change: -0.28, changePoints: -52.34, open: 18520.00, high: 18545.90, low: 18412.30, flag: '🇩🇪', country: 'DE', region: 'europe', history: [] as number[] },
-  { symbol: 'FTSE', name: 'FTSE 100', price: 8234.56, change: 0.15, changePoints: 12.34, open: 8225.00, high: 8256.80, low: 8198.45, flag: '🇬🇧', country: 'GB', region: 'europe', history: [] as number[] },
-  { symbol: 'CAC', name: 'CAC 40', price: 7845.23, change: -0.42, changePoints: -33.12, open: 7890.00, high: 7912.50, low: 7820.30, flag: '🇫🇷', country: 'FR', region: 'europe', history: [] as number[] },
+  { symbol: 'DAX', name: 'DAX 40', price: 18456.78, change: -0.28, changePoints: -52.34, open: 18520.00, high: 18545.90, low: 18412.30, flag: '🇩🇪', country: 'DE', region: 'europe', history: [] as number[], constituentsCount: 40, totalMarketCap: 1850.0, indexMarketCap: 1850.0, baseDate: '1987-12-30', baseValue: 1000, calculationMethod: 'Взвешенная по капитализации', currency: 'EUR', exchange: 'XETRA' },
+  { symbol: 'FTSE', name: 'FTSE 100', price: 8234.56, change: 0.15, changePoints: 12.34, open: 8225.00, high: 8256.80, low: 8198.45, flag: '🇬🇧', country: 'GB', region: 'europe', history: [] as number[], constituentsCount: 100, totalMarketCap: 2150.0, indexMarketCap: 2150.0, baseDate: '1984-01-03', baseValue: 1000, calculationMethod: 'Взвешенная по капитализации', currency: 'GBP', exchange: 'LSE' },
+  { symbol: 'CAC', name: 'CAC 40', price: 7845.23, change: -0.42, changePoints: -33.12, open: 7890.00, high: 7912.50, low: 7820.30, flag: '🇫🇷', country: 'FR', region: 'europe', history: [] as number[], constituentsCount: 40, totalMarketCap: 1850.0, indexMarketCap: 1850.0, baseDate: '1987-12-31', baseValue: 1000, calculationMethod: 'Взвешенная по капитализации', currency: 'EUR', exchange: 'Euronext Paris' },
   { symbol: 'STOXX50', name: 'Euro Stoxx 50', price: 4987.65, change: 0.23, changePoints: 11.45, open: 4980.00, high: 5010.90, low: 4965.30, flag: '🇪🇺', country: 'EU', region: 'europe', history: [] as number[] },
   { symbol: 'IBEX', name: 'IBEX 35', price: 11234.56, change: 0.67, changePoints: 74.89, open: 11170.00, high: 11280.80, low: 11150.45, flag: '🇪🇸', country: 'ES', region: 'europe', history: [] as number[] },
   { symbol: 'FTSEMIB', name: 'FTSE MIB', price: 33456.78, change: -0.15, changePoints: -50.23, open: 33520.00, high: 33580.50, low: 33380.30, flag: '🇮🇹', country: 'IT', region: 'europe', history: [] as number[] },
@@ -918,7 +942,7 @@ const indices = ref([
   { symbol: 'PSI20', name: 'PSI 20', price: 6789.12, change: 0.23, changePoints: 15.56, open: 6775.00, high: 6810.80, low: 6760.45, flag: '🇵🇹', country: 'PT', region: 'europe', history: [] as number[] },
   
   // Asia
-  { symbol: 'NIKKEI', name: 'Nikkei 225', price: 38456.78, change: 1.56, changePoints: 591.23, open: 37950.00, high: 38520.90, low: 37890.45, flag: '🇯🇵', country: 'JP', region: 'asia', history: [] as number[] },
+  { symbol: 'NIKKEI', name: 'Nikkei 225', price: 38456.78, change: 1.56, changePoints: 591.23, open: 37950.00, high: 38520.90, low: 37890.45, flag: '🇯🇵', country: 'JP', region: 'asia', history: [] as number[], constituentsCount: 225, totalMarketCap: 4850.0, indexMarketCap: 4850.0, baseDate: '1950-05-16', baseValue: 176.21, calculationMethod: 'Ценово-взвешенный', currency: 'JPY', exchange: 'TSE' },
   { symbol: 'HSI', name: 'Hang Seng Index', price: 18234.56, change: -0.89, changePoints: -163.78, open: 18420.00, high: 18478.90, low: 18156.30, flag: '🇭🇰', country: 'HK', region: 'asia', history: [] as number[] },
   { symbol: 'SSE', name: 'Shanghai Composite', price: 3089.45, change: 0.34, changePoints: 10.45, open: 3080.00, high: 3098.90, low: 3065.30, flag: '🇨🇳', country: 'CN', region: 'asia', history: [] as number[] },
   { symbol: 'SZSE', name: 'Shenzhen Component', price: 9876.54, change: 0.67, changePoints: 65.78, open: 9820.00, high: 9910.80, low: 9800.45, flag: '🇨🇳', country: 'CN', region: 'asia', history: [] as number[] },
@@ -1225,6 +1249,14 @@ const formatNumber = (num: number): string => {
   return num.toLocaleString('ru-RU', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 }
 
+const formatMarketCap = (num: number, currency: string = ''): string => {
+  if (num >= 1000) {
+    return `${(num / 1000).toLocaleString('ru-RU', { minimumFractionDigits: 1, maximumFractionDigits: 1 })} трлн ${currency}`
+  } else {
+    return `${num.toLocaleString('ru-RU', { minimumFractionDigits: 1, maximumFractionDigits: 1 })} млрд ${currency}`
+  }
+}
+
 // Dropdown catalog methods
 const toggleIndicesCatalog = () => {
   showIndicesCatalog.value = !showIndicesCatalog.value
@@ -1474,11 +1506,7 @@ const formatVolume = (volume: number): string => {
   return volume.toFixed(0)
 }
 
-const formatMarketCap = (cap: number): string => {
-  if (cap >= 1e12) return (cap / 1e12).toFixed(2) + ' трлн ₽'
-  if (cap >= 1e9) return (cap / 1e9).toFixed(2) + ' млрд ₽'
-  return (cap / 1e6).toFixed(2) + ' млн ₽'
-}
+// formatMarketCap теперь определена выше с поддержкой валюты
 
 const getIndexVolume = (symbol: string): number => {
   const volumes: Record<string, number> = {
@@ -2050,7 +2078,7 @@ const initWaveSurfaceDetail = async () => {
         showbackground: false
       },
       bgcolor: 'transparent',
-      camera: { eye: { x: 1.5, y: 2.0, z: 2.6 } }, // Raised even higher for WAVE surface
+      camera: { eye: { x: 1.8, y: 1.5, z: 1.2 } }, // Lowered camera for WAVE surface
       aspectratio: { x: 1.5, y: 1, z: 0.8 } // Wider aspect ratio
     },
     paper_bgcolor: 'transparent',
@@ -2168,8 +2196,8 @@ const initInsaneSurface = async () => {
         showbackground: false
       },
       bgcolor: 'transparent',
-      camera: { eye: { x: 2.0, y: 1.8, z: 2.2 } }, // Better viewing angle for INSANE surface
-      aspectratio: { x: 1.4, y: 1, z: 0.9 } // Larger aspect ratio
+      camera: { eye: { x: 1.2, y: 1.0, z: 0.8 } }, // Lowered and zoomed in for INSANE surface
+      aspectratio: { x: 1.2, y: 1, z: 0.7 } // Closer aspect ratio for better visibility
     },
     paper_bgcolor: 'transparent',
     font: { color: 'rgba(255,255,255,0.9)' },
@@ -3486,11 +3514,56 @@ onBeforeUnmount(() => {
   height: 100%;
 }
 
+/* Убираем среднюю границу у chart-card внутри detail-view */
+.detail-view .chart-card {
+  border: none !important;
+  border-top: none !important;
+  background: transparent !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  box-shadow: none !important;
+}
+
+/* Убираем границы у wide карточки внутри detail-view */
+.detail-view .chart-card.wide {
+  border: none !important;
+  border-top: none !important;
+  background: transparent !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  box-shadow: none !important;
+  border-radius: 0 !important;
+}
+
+/* Дополнительно убираем границы у wide карточки в detail-price-chart */
+.detail-view .detail-price-chart .chart-card.wide {
+  border: none !important;
+  border-top: none !important;
+  border-bottom: none !important;
+  border-left: none !important;
+  border-right: none !important;
+  background: transparent !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  box-shadow: none !important;
+  border-radius: 0 !important;
+  outline: none !important;
+}
+
 .chart-card:hover {
   transform: translateY(-2px);
   border-color: var(--accent-orange);
   box-shadow: 0 0 20px rgba(255, 140, 0, 0.15), var(--shadow-light);
   background: var(--glass-light);
+}
+
+/* Убираем hover эффекты у chart-card внутри detail-view */
+.detail-view .chart-card:hover {
+  transform: none !important;
+  border: none !important;
+  border-top: none !important;
+  box-shadow: none !important;
+  background: transparent !important;
 }
 
 .chart-card.cyberpunk {
@@ -3509,6 +3582,22 @@ onBeforeUnmount(() => {
   background: var(--glass-light);
 }
 
+.detail-view .chart-card.cyberpunk {
+  border: none;
+  border-top: none;
+  background: transparent;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  box-shadow: none;
+}
+
+.detail-view .chart-card.cyberpunk:hover {
+  transform: none;
+  border: none;
+  box-shadow: none;
+  background: transparent;
+}
+
 .chart-card.neon {
   background: var(--glass-dark);
   backdrop-filter: blur(10px) saturate(180%);
@@ -3525,6 +3614,22 @@ onBeforeUnmount(() => {
   background: var(--glass-light);
 }
 
+.detail-view .chart-card.neon {
+  border: none;
+  border-top: none;
+  background: transparent;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  box-shadow: none;
+}
+
+.detail-view .chart-card.neon:hover {
+  transform: none;
+  border: none;
+  box-shadow: none;
+  background: transparent;
+}
+
 .chart-card.wide {
   grid-column: 1 / -1;
 }
@@ -3538,6 +3643,14 @@ onBeforeUnmount(() => {
   backdrop-filter: blur(10px) saturate(180%);
   -webkit-backdrop-filter: blur(10px) saturate(180%);
   border-bottom: 1px solid rgba(255, 140, 0, 0.2);
+}
+
+.detail-view .chart-card-header {
+  background: transparent;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  border-bottom: none;
+  padding: 16px 0;
 }
 
 .chart-title {
@@ -3634,14 +3747,14 @@ onBeforeUnmount(() => {
 /* Price Chart */
 .detail-price-chart {
   margin-top: 20px;
-  background: var(--glass-dark);
-  backdrop-filter: blur(10px) saturate(180%);
-  -webkit-backdrop-filter: blur(10px) saturate(180%);
-  border: 1.5px solid rgba(255, 140, 0, 0.3);
-  border-top: 3px solid var(--accent-orange);
-  border-radius: 14px;
-  overflow: hidden;
-  box-shadow: var(--shadow-light);
+  background: transparent;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  border: none;
+  border-top: none;
+  border-radius: 0;
+  overflow: visible;
+  box-shadow: none;
 }
 
 .timeframe-tabs {
@@ -3720,6 +3833,23 @@ onBeforeUnmount(() => {
   border-color: var(--accent-orange);
   box-shadow: 0 0 20px rgba(255, 140, 0, 0.15), var(--shadow-light);
   background: var(--glass-light);
+}
+
+/* Убираем среднюю границу у info-card внутри detail-view */
+.detail-view .info-card {
+  border: none;
+  border-top: none;
+  background: transparent;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  box-shadow: none;
+}
+
+.detail-view .info-card:hover {
+  transform: none;
+  border: none;
+  box-shadow: none;
+  background: transparent;
 }
 
 .info-card-title {

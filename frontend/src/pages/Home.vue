@@ -275,6 +275,28 @@
           </div>
         </div>
 
+        <!-- Terminal Button -->
+        <router-link 
+          to="/data"
+          class="tool-card terminal-card"
+          :class="{ 'is-faded': activeExplosion !== null }"
+        >
+          <div class="tool-icon terminal-icon">
+            <div class="terminal-block"></div>
+          </div>
+          <div class="tool-body">
+            <div class="tool-name">Терминал</div>
+            <div class="tool-desc">
+              Потоковые данные в реальном времени
+            </div>
+          </div>
+          <div class="tool-arrow">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="9 18 15 12 9 6" />
+            </svg>
+          </div>
+        </router-link>
+
       </section>
     </div>
     
@@ -711,6 +733,33 @@ const triggerExplosion = (path: string) => {
 .tool-icon.green { background: rgba(34, 197, 94, 0.12); }
 .tool-icon.nova { background: rgba(255, 51, 102, 0.12); }
 .tool-icon.orange { background: rgba(249, 115, 22, 0.12); }
+.tool-icon.terminal-icon { 
+  background: rgba(239, 68, 68, 0.12); 
+  border: 1px solid rgba(239, 68, 68, 0.2);
+}
+
+.terminal-block {
+  width: 20px;
+  height: 20px;
+  background: linear-gradient(135deg, #ef4444, #dc2626);
+  border-radius: 4px;
+  box-shadow: 
+    0 0 8px rgba(239, 68, 68, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  transition: all 0.2s ease;
+}
+
+.terminal-card:hover .terminal-block {
+  transform: scale(1.05);
+  box-shadow: 
+    0 0 12px rgba(239, 68, 68, 0.6),
+    inset 0 1px 0 rgba(255, 255, 255, 0.3);
+}
+
+.terminal-card {
+  text-decoration: none;
+  color: inherit;
+}
 
 .tool-icon::after {
   content: "";

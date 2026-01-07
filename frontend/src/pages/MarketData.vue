@@ -18,12 +18,12 @@
 
       <!-- Navigation Buttons -->
       <nav class="sidebar-nav">
-        <!-- Markets link - navigates to separate page -->
+        <!-- Indices link - navigates to separate page -->
         <router-link
           to="/markets"
           class="nav-btn nav-link"
         >
-          РЫНКИ
+          ИНДЕКСЫ
           <span class="nav-external-icon">↗</span>
         </router-link>
         
