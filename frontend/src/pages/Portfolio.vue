@@ -319,17 +319,6 @@
             </div>
         </div>
 
-        <!-- 3D Correlation Scatter Plot -->
-        <div class="glass-panel scatter-3d-panel">
-          <div class="panel-header">
-            <h3>3D Визуализация Корреляций</h3>
-            <span class="panel-badge">Интерактивный анализ</span>
-          </div>
-          <div class="panel-body scatter-3d-body">
-            <CorrelationScatter3D :available-assets="['SPY', 'TLT', 'GLD', 'QQQ', 'BTC']" />
-          </div>
-        </div>
-
       </div>
 
       <!-- RIGHT COLUMN -->
@@ -478,6 +467,17 @@
 
 
       </aside>
+    </div>
+
+    <!-- 3D Correlation Scatter Plot - Full Width -->
+    <div class="glass-panel scatter-3d-panel">
+      <div class="panel-header">
+        <h3>3D Визуализация Корреляций</h3>
+        <span class="panel-badge">Интерактивный анализ</span>
+      </div>
+      <div class="panel-body scatter-3d-body">
+        <CorrelationScatter3D :available-assets="['SPY', 'TLT', 'GLD', 'QQQ', 'BTC']" />
+      </div>
     </div>
 
     <!-- 3️⃣ WAVE_σ.9 SURFACE -->
@@ -1402,6 +1402,7 @@ const getMockHistogram = (symbol: string) => {
   display: flex;
   flex-direction: column;
   height: 100%;
+  min-height: 0;
 }
 
 .heatmap-panel .panel-body,
@@ -1416,12 +1417,6 @@ const getMockHistogram = (symbol: string) => {
   flex: 1;
   display: flex;
   height: 100%;
-  min-height: 280px;
-}
-
-.combined-metrics {
-  display: flex;
-  flex-direction: column;
   min-height: 280px;
 }
 
@@ -1702,13 +1697,14 @@ input:checked + .slider { background-color: #34c759; }
 input:checked + .slider:before { transform: translateX(12px); }
 
 /* Metrics Tabs */
-.combined-metrics { flex-shrink: 0; display: flex; flex-direction: column; min-height: 330px; }
+.combined-metrics { display: flex; flex-direction: column; height: 100%; min-height: 280px; }
 .combined-tabs { display: flex; gap: 0; border-bottom: 1px solid rgba(255,255,255,0.05); padding: 0 20px; flex-shrink: 0; }
 .tab-button { flex: 1; padding: 12px 16px; background: transparent; border: none; color: rgba(255,255,255,0.4); font-size: 11px; font-weight: 600; text-transform: uppercase; cursor: pointer; position: relative; transition: color 0.2s; }
 .tab-button:hover { color: rgba(255,255,255,0.6); }
 .tab-button.active { color: rgba(255,255,255,0.9); }
 .tab-button.active::after { content: ''; position: absolute; bottom: -1px; left: 0; right: 0; height: 2px; background: #3b82f6; }
-.tab-content { padding: 16px 20px; display: flex; flex-direction: column; gap: 8px; flex: 1; }
+.tab-content { padding: 16px 20px; display: flex; flex-direction: column; gap: 8px; flex: 1; min-height: 0; }
+.combined-metrics .tab-content { overflow-y: auto; }
 .metric-row { display: flex; justify-content: space-between; align-items: center; padding: 8px; background: rgba(0,0,0,0.15); border-radius: 6px; border-left: 2px solid rgba(255,255,255,0.1); }
 .metric-label { display: flex; flex-direction: column; gap: 1px; }
 .metric-label span:first-child { font-size: 10px; font-weight: 600; color: rgba(255,255,255,0.85); line-height: 1.2; }

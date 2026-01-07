@@ -397,6 +397,20 @@ const currentRegimeInfo = computed(() => {
 
 // Methods
 const runAnalysis = async () => {
+  if (!canvasContainer.value) {
+    console.error('Canvas container not found')
+    return
+  }
+  
+  console.log('Starting HMM analysis...', {
+    asset: selectedAsset.value,
+    nStates: nStates.value,
+    containerSize: {
+      width: canvasContainer.value.clientWidth,
+      height: canvasContainer.value.clientHeight
+    }
+  })
+  
   isLoading.value = true
   hasData.value = false
   
@@ -405,8 +419,52 @@ const runAnalysis = async () => {
     await new Promise(resolve => setTimeout(resolve, 500))
     allMarketData.value = generateMockMarketData(500)
     
-    // Initialize HMM Model
+    // Initialize HMM Model with correct number of states
+    // First, create a default model, then update it with computed transition matrix
     hmmModel.value = new HMMModel()
+    
+    // Update model to use correct number of states
+    const defaultMatrix = hmmModel.value.getTransitionMatrix()
+    const defaultMeans = hmmModel.value.getEmissionMeans()
+    const defaultCovs = hmmModel.value.getEmissionCovariances()
+    
+    // Adjust to match nStates
+    const adjustedMatrix: number[][] = []
+    const adjustedMeans: number[][] = []
+    const adjustedCovs: number[][][] = []
+    
+    for (let i = 0; i < nStates.value; i++) {
+      const row: number[] = []
+      for (let j = 0; j < nStates.value; j++) {
+        if (i < defaultMatrix.length && j < defaultMatrix[i].length) {
+          row.push(defaultMatrix[i][j])
+        } else {
+          // Equal probability for new states
+          row.push(1 / nStates.value)
+        }
+      }
+      // Normalize row
+      const sum = row.reduce((a, b) => a + b, 0)
+      row.forEach((val, idx) => row[idx] = val / sum)
+      adjustedMatrix.push(row)
+      
+      if (i < defaultMeans.length) {
+        adjustedMeans.push(defaultMeans[i])
+        adjustedCovs.push(defaultCovs[i])
+      } else {
+        // Use last regime's parameters for extra states
+        adjustedMeans.push([...defaultMeans[defaultMeans.length - 1]])
+        adjustedCovs.push(defaultCovs[defaultCovs.length - 1].map(row => [...row]))
+      }
+    }
+    
+    hmmModel.value.setParameters({
+      nStates: nStates.value,
+      transitionMatrix: adjustedMatrix,
+      initialStateDistribution: Array(nStates.value).fill(1 / nStates.value),
+      emissionMeans: adjustedMeans,
+      emissionCovariances: adjustedCovs
+    })
     
     // Compute transition matrix from data
     computeTransitionMatrixFromData()
@@ -429,21 +487,40 @@ const runAnalysis = async () => {
     
     // Initialize renderer
     if (canvasContainer.value && !renderer) {
+      // Ensure container has dimensions
+      if (canvasContainer.value.clientWidth === 0 || canvasContainer.value.clientHeight === 0) {
+        console.warn('Canvas container has zero dimensions, retrying...')
+        setTimeout(() => runAnalysis(), 200)
+        return
+      }
+      
       renderer = new RegimeSpaceRenderer(canvasContainer.value)
       
       // Handle window resize
       const handleResize = () => {
         if (renderer && canvasContainer.value) {
-          renderer.resize(
-            canvasContainer.value.clientWidth,
-            canvasContainer.value.clientHeight
-          )
+          const width = canvasContainer.value.clientWidth
+          const height = canvasContainer.value.clientHeight
+          if (width > 0 && height > 0) {
+            renderer.resize(width, height)
+          }
         }
       }
       window.addEventListener('resize', handleResize)
       onUnmounted(() => {
         window.removeEventListener('resize', handleResize)
       })
+      
+      // Force resize after initialization
+      setTimeout(() => {
+        if (renderer && canvasContainer.value) {
+          const width = canvasContainer.value.clientWidth
+          const height = canvasContainer.value.clientHeight
+          if (width > 0 && height > 0) {
+            renderer.resize(width, height)
+          }
+        }
+      }, 100)
     }
     
     // Update visualization
@@ -455,8 +532,16 @@ const runAnalysis = async () => {
     currentTimeIndex.value = filteredData.value.length - 1
     hasData.value = true
     
+    console.log('HMM analysis completed successfully', {
+      dataPoints: filteredData.value.length,
+      rendererInitialized: !!renderer,
+      hmmModelInitialized: !!hmmModel.value
+    })
+    
   } catch (error) {
     console.error('Error running analysis:', error)
+    // Show error to user
+    alert('Ошибка при запуске анализа: ' + (error as Error).message)
   } finally {
     isLoading.value = false
   }
@@ -636,8 +721,12 @@ watch(() => filteredData.value, () => {
 
 // Lifecycle
 onMounted(() => {
-  // Auto-run if needed
-  // runAnalysis()
+  // Auto-run analysis on mount with a small delay to ensure DOM is ready
+  setTimeout(() => {
+    if (canvasContainer.value && !isLoading.value && !hasData.value) {
+      runAnalysis()
+    }
+  }, 100)
 })
 
 onUnmounted(() => {
