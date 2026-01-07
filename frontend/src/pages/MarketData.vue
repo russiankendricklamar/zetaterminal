@@ -1,93 +1,516 @@
 <!-- src/pages/MarketData.vue -->
 <template>
-  <div class="page-container">
+  <div class="market-data-page">
     
-    <!-- Header -->
-    <div class="section-header">
-      <div class="header-left">
-        <router-link to="/dashboard" class="back-to-dashboard">
-          <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+    <!-- Left Sidebar -->
+    <aside class="market-sidebar">
+      <!-- Logo/Title -->
+      <div class="sidebar-header">
+        <h1 class="sidebar-title">ТЕРМИНАЛ</h1>
+        <p class="sidebar-subtitle">Потоковые данные в режиме реального времени</p>
+        <router-link to="/" class="back-to-dashboard">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M19 12H5M12 19l-7-7 7-7"/>
           </svg>
-          <span>Дашборд</span>
+          <span>На Главную</span>
         </router-link>
-        <div>
-          <h1 class="section-title">Российский финансовый рынок</h1>
-          <p class="section-subtitle">Потоковые данные в реальном времени</p>
-        </div>
       </div>
-      
-      <div class="header-actions">
-        <!-- Search Input -->
-        <div class="search-wrapper-market">
-          <svg class="search-icon-market" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <circle cx="11" cy="11" r="8"/>
-            <line x1="21" y1="21" x2="16.65" y2="16.65"/>
-          </svg>
-          <input 
-            type="text" 
-            v-model="searchQuery"
-            placeholder="Поиск по тикеру, ISIN..." 
-            class="search-input-market"
-            @input="handleSearch"
-          />
-          <button 
-            v-if="searchQuery" 
-            class="search-clear-btn"
-            @click="clearSearch"
-            aria-label="Очистить поиск"
-          >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <line x1="18" y1="6" x2="6" y2="18"/>
-              <line x1="6" y1="6" x2="18" y2="18"/>
-            </svg>
-          </button>
-        </div>
-        
-        <div class="glass-pill status-pill">
-          <span class="dot bg-green pulse"></span>
-          <span>Live</span>
-        </div>
-        <div class="glass-pill status-pill">
-          <span class="mono">{{ currentTime }}</span>
-        </div>
-      </div>
-    </div>
 
-    <!-- Market Ticker (Top) -->
-    <div class="ticker-wrapper">
-      <div class="ticker-track">
-        <div class="ticker-group">
-          <div 
-            v-for="(item, i) in marketTicker" 
-            :key="i" 
-            class="ticker-item"
-            @click="openAssetDetail(item)"
-            style="cursor: pointer;"
-          >
-            <span class="t-symbol">{{ item.symbol }}</span>
-            <span class="t-price">{{ formatPrice(item.price) }}</span>
-            <span class="t-change" :class="item.change >= 0 ? 'text-green' : 'text-red'">
-              {{ item.change >= 0 ? '▲' : '▼' }} {{ Math.abs(item.change).toFixed(2) }}%
-            </span>
+      <!-- Navigation Buttons -->
+      <nav class="sidebar-nav">
+        <button
+          v-for="tab in sidebarNavItems"
+          :key="tab.id"
+          @click="activeTab = tab.id"
+          class="nav-btn"
+          :class="{ active: activeTab === tab.id }"
+        >
+          {{ tab.label }}
+        </button>
+      </nav>
+
+      <!-- Live Status -->
+      <div class="sidebar-status">
+        <div class="status-indicator">
+          <span class="status-dot pulse"></span>
+          <span class="status-text">LIVE</span>
+        </div>
+        <div class="status-time">{{ currentTime }}</div>
+      </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main class="market-main">
+      <!-- Main Grid Layout -->
+      <div class="main-grid">
+        
+        <!-- Left: Regional Markets Grid -->
+        <div class="markets-panel">
+          
+          <!-- Markets Overview Block -->
+          <div class="markets-overview-block">
+            <div class="markets-overview-header">
+              <span class="markets-overview-title">Обзор рынков</span>
+              <span class="markets-overview-update">обновлено: {{ marketsUpdateTime }}</span>
+            </div>
+            <div class="markets-overview-content">
+              <table class="markets-table">
+                <thead>
+                  <tr>
+                    <th v-for="region in allRegions" :key="region.id">{{ region.name }}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr v-for="rowIndex in maxDataRows" :key="rowIndex">
+                    <td v-for="region in allRegions" :key="region.id + '-' + rowIndex">
+                      <template v-if="region.data[rowIndex - 1]">
+                        <span class="index-name">{{ region.data[rowIndex - 1].index }}</span>
+                        <span class="data-value">{{ region.data[rowIndex - 1].value }}</span>
+                        <span class="data-change" :class="region.data[rowIndex - 1].change >= 0 ? 'positive' : 'negative'">
+                          {{ region.data[rowIndex - 1].change >= 0 ? '+' : '' }}{{ region.data[rowIndex - 1].change.toFixed(2) }}%
+                        </span>
+                      </template>
+                      <template v-else>
+                        <span class="data-empty">—</span>
+                      </template>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Index Charts Row -->
+          <div class="index-charts-row">
+            <!-- IMOEX Chart -->
+            <div class="index-chart-block">
+              <div class="index-chart-header">
+                <div class="index-chart-title">
+                  <span class="index-chart-name">IMOEX</span>
+                  <span class="index-chart-freq">обновление: 2 сек</span>
+                </div>
+                <span class="index-chart-value" :class="imoexChange >= 0 ? 'positive' : 'negative'">
+                  {{ imoexChange >= 0 ? '+' : '' }}{{ imoexChange.toFixed(2) }}%
+                </span>
+              </div>
+              <div class="index-chart-container">
+                <svg class="index-chart-svg" viewBox="0 0 200 200" preserveAspectRatio="none">
+                  <defs>
+                    <linearGradient :id="'imoex-gradient'" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" :stop-color="imoexChange >= 0 ? 'rgba(0, 255, 136, 0.3)' : 'rgba(255, 51, 102, 0.3)'"/>
+                      <stop offset="100%" stop-color="transparent"/>
+                    </linearGradient>
+                  </defs>
+                  <path :d="imoexAreaPath" :fill="'url(#imoex-gradient)'" />
+                  <path :d="imoexLinePath" fill="none" :stroke="imoexChange >= 0 ? '#00ff88' : '#ff3366'" stroke-width="2"/>
+                </svg>
+              </div>
+            </div>
+
+            <!-- RTS Chart -->
+            <div class="index-chart-block">
+              <div class="index-chart-header">
+                <div class="index-chart-title">
+                  <span class="index-chart-name">RTS</span>
+                  <span class="index-chart-freq">обновление: 2 сек</span>
+                </div>
+                <span class="index-chart-value" :class="rtsChange >= 0 ? 'positive' : 'negative'">
+                  {{ rtsChange >= 0 ? '+' : '' }}{{ rtsChange.toFixed(2) }}%
+                </span>
+              </div>
+              <div class="index-chart-container">
+                <svg class="index-chart-svg" viewBox="0 0 200 200" preserveAspectRatio="none">
+                  <defs>
+                    <linearGradient :id="'rts-gradient'" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" :stop-color="rtsChange >= 0 ? 'rgba(0, 255, 136, 0.3)' : 'rgba(255, 51, 102, 0.3)'"/>
+                      <stop offset="100%" stop-color="transparent"/>
+                    </linearGradient>
+                  </defs>
+                  <path :d="rtsAreaPath" :fill="'url(#rts-gradient)'" />
+                  <path :d="rtsLinePath" fill="none" :stroke="rtsChange >= 0 ? '#00ff88' : '#ff3366'" stroke-width="2"/>
+                </svg>
+              </div>
+            </div>
+          </div>
+
+          <!-- News Section -->
+          <div class="news-block">
+            <div class="news-block-header">Новости</div>
+            <div class="news-carousel">
+              <TransitionGroup name="news-list" tag="div" class="news-carousel-inner">
+                <div 
+                  v-for="news in currentNewsGroup" 
+                  :key="news.text"
+                  class="news-item-row"
+                >
+                  <span class="news-region">{{ news.region }}</span>
+                  <p class="news-text">{{ news.text }}</p>
+                </div>
+              </TransitionGroup>
+            </div>
           </div>
         </div>
-        <div class="ticker-group">
-          <div v-for="(item, i) in marketTicker" :key="'dup'+i" class="ticker-item">
-            <span class="t-symbol">{{ item.symbol }}</span>
-            <span class="t-price">{{ formatPrice(item.price) }}</span>
-            <span class="t-change" :class="item.change >= 0 ? 'text-green' : 'text-red'">
-              {{ item.change >= 0 ? '▲' : '▼' }} {{ Math.abs(item.change).toFixed(2) }}%
-            </span>
+
+        <!-- Right: AI Insights -->
+        <div class="insights-panel">
+          <!-- Sparkline Charts: VIX, BRENT, Gold -->
+          <div class="sparkline-block">
+            <div class="sparkline-header">
+              <span class="sparkline-title">Индикаторы</span>
+              <span class="sparkline-update">обновление: 3 сек</span>
+            </div>
+            <div class="sparkline-content">
+              <!-- VIX -->
+              <div class="sparkline-item">
+                <div class="sparkline-info">
+                  <span class="sparkline-name">VIX</span>
+                  <span class="sparkline-value">{{ vixData.value.toFixed(2) }}</span>
+                  <span class="sparkline-change" :class="vixData.change >= 0 ? 'positive' : 'negative'">
+                    {{ vixData.change >= 0 ? '+' : '' }}{{ vixData.change.toFixed(2) }}%
+                  </span>
+                </div>
+                <div class="sparkline-chart">
+                  <svg viewBox="0 0 100 30" preserveAspectRatio="none" class="sparkline-svg">
+                    <path :d="vixSparklinePath" fill="none" stroke="rgba(255, 255, 255, 0.9)" stroke-width="1.5"/>
+                  </svg>
+                </div>
+              </div>
+              <!-- URALS -->
+              <div class="sparkline-item">
+                <div class="sparkline-info">
+                  <span class="sparkline-name">URALS</span>
+                  <span class="sparkline-value">${{ uralsData.value.toFixed(2) }}</span>
+                  <span class="sparkline-change" :class="uralsData.change >= 0 ? 'positive' : 'negative'">
+                    {{ uralsData.change >= 0 ? '+' : '' }}{{ uralsData.change.toFixed(2) }}%
+                  </span>
+                </div>
+                <div class="sparkline-chart">
+                  <svg viewBox="0 0 100 30" preserveAspectRatio="none" class="sparkline-svg">
+                    <path :d="uralsSparklinePath" fill="none" stroke="rgba(255, 255, 255, 0.9)" stroke-width="1.5"/>
+                  </svg>
+                </div>
+              </div>
+              <!-- Gold -->
+              <div class="sparkline-item">
+                <div class="sparkline-info">
+                  <span class="sparkline-name">ЗОЛОТО</span>
+                  <span class="sparkline-value">${{ goldData.value.toFixed(2) }}</span>
+                  <span class="sparkline-change" :class="goldData.change >= 0 ? 'positive' : 'negative'">
+                    {{ goldData.change >= 0 ? '+' : '' }}{{ goldData.change.toFixed(2) }}%
+                  </span>
+                </div>
+                <div class="sparkline-chart">
+                  <svg viewBox="0 0 100 30" preserveAspectRatio="none" class="sparkline-svg">
+                    <path :d="goldSparklinePath" fill="none" stroke="rgba(255, 255, 255, 0.9)" stroke-width="1.5"/>
+                  </svg>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- AI Аналитика -->
+          <div class="ai-insights-block">
+            <div class="ai-insights-header">
+              <span class="ai-insights-title">AI Аналитика</span>
+            </div>
+            <div class="ai-insights-content">
+              <div class="ai-signals">
+                <div class="ai-signal-item" v-for="(insight, idx) in aiInsights" :key="idx">
+                  <span class="ai-signal-icon" :class="insight.type">{{ insight.type === 'buy' ? '▲' : '▼' }}</span>
+                  <span class="ai-signal-action" :class="insight.type">{{ insight.action }}</span>
+                  <span class="ai-signal-symbol">{{ insight.symbol }}</span>
+                  <span class="ai-signal-value" :class="insight.type">{{ insight.value }}</span>
+                </div>
+              </div>
+              <div class="ai-section">
+                <div class="ai-section-title">Оповещения</div>
+                <div class="ai-alerts">
+                  <div class="alert-item" v-for="(alert, idx) in alerts" :key="idx">
+                    <span class="alert-text">{{ alert.text }}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 3D Surface Block -->
+          <div class="surface-block">
+            <div class="surface-block-header">
+              <div class="surface-block-info">
+                <span class="surface-label">LATENT MANIFOLD</span>
+                <span class="surface-title">Surface Inference</span>
+                <span class="surface-value">{{ surfaceInferenceValue.toFixed(2) }} <span class="surface-delta" :class="surfaceDelta >= 0 ? 'positive' : 'negative'">{{ surfaceDelta >= 0 ? '▲' : '▼' }}</span></span>
+              </div>
+            </div>
+            <div class="surface-canvas-container">
+              <canvas ref="liquidity3DCanvas" class="surface-canvas-mini"></canvas>
+              <div v-if="liquidity3DStatus !== 'ready'" class="surface-fallback">
+                <span v-if="liquidity3DStatus === 'error'">Ошибка 3D: {{ liquidity3DError }}</span>
+                <span v-else>Загрузка 3D...</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Signal Matrix Block -->
+          <div class="signal-matrix-block">
+            <div class="signal-matrix-header">
+              <span class="signal-matrix-title">SIGNAL MATRIX</span>
+              <span class="signal-matrix-update">●</span>
+            </div>
+            <div class="signal-matrix-content">
+              <div class="signal-matrix-grid">
+                <div 
+                  v-for="(row, rowIdx) in signalMatrix" 
+                  :key="rowIdx" 
+                  class="signal-matrix-row"
+                >
+                  <div 
+                    v-for="(cell, colIdx) in row" 
+                    :key="colIdx" 
+                    class="signal-matrix-cell"
+                    :style="{ backgroundColor: getSignalColor(cell) }"
+                  ></div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
-    </div>
+
+    </main>
+  </div>
+
+  <!-- Legacy content hidden -->
+  <div style="display: none;">
+      <div class="content-area">
+        
+        <!-- Tab: Акции / Индексы / Облигации / Форекс -->
+        <section v-if="activeTab !== 'news'" class="instruments-section">
+          
+          <!-- Indices Cards (if tab is indices) -->
+          <div v-if="activeTab === 'indices'" class="indices-grid">
+            <article
+              v-for="index in getCurrentIndices()"
+              :key="index.symbol"
+              class="index-card"
+              :data-symbol="index.symbol"
+              @click="openAssetDetail(index)"
+            >
+              <header class="card-header">
+                <h3 class="card-title">{{ index.symbol }}</h3>
+                <span class="card-badge" :class="index.change >= 0 ? 'positive' : 'negative'">
+                  {{ index.change >= 0 ? '+' : '' }}{{ index.change.toFixed(2) }}%
+                </span>
+              </header>
+              <div class="card-body">
+                <div class="card-value">{{ formatPrice(index.price) }}</div>
+                <div class="card-name">{{ index.name }}</div>
+              </div>
+            </article>
+          </div>
+
+          <!-- Instruments Cards Grid -->
+          <div v-else class="instruments-grid">
+            <article
+              v-for="instrument in getFilteredInstruments()"
+              :key="instrument.symbol"
+              class="instrument-card"
+              :data-symbol="instrument.symbol"
+              :data-market="activeMarket"
+              @click="openAssetDetail(instrument)"
+            >
+              <header class="card-header">
+                <h3 class="card-title">{{ instrument.symbol }}</h3>
+                <span class="card-badge" :class="instrument.change >= 0 ? 'positive' : 'negative'">
+                  {{ instrument.change >= 0 ? '+' : '' }}{{ instrument.change.toFixed(2) }}%
+                </span>
+              </header>
+              <div class="card-body">
+                <div class="card-price">{{ formatPrice(instrument.price) }}</div>
+                <div class="card-name">{{ instrument.name }}</div>
+                <div class="card-quotes">
+                  <span class="quote-item">
+                    <span class="quote-label">Bid:</span>
+                    <span class="quote-value">{{ formatPrice((instrument as any).bid || instrument.price * 0.9995) }}</span>
+                  </span>
+                  <span class="quote-item">
+                    <span class="quote-label">Ask:</span>
+                    <span class="quote-value">{{ formatPrice((instrument as any).ask || instrument.price * 1.0005) }}</span>
+                  </span>
+                </div>
+              </div>
+            </article>
+          </div>
+
+          <!-- Data Table (Full Width) -->
+          <div class="data-table-section">
+            <header class="table-header">
+              <h2 class="table-title">{{ getTabTitle() }}</h2>
+            </header>
+            <div class="table-container">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th @click="sortTable('symbol')" class="sortable">
+                      SYMBOL
+                      <span v-if="sortColumn === 'symbol'" class="sort-icon">{{ sortDirection === 'asc' ? '↑' : '↓' }}</span>
+                    </th>
+                    <th @click="sortTable('bid')" class="sortable">
+                      BID
+                      <span v-if="sortColumn === 'bid'" class="sort-icon">{{ sortDirection === 'asc' ? '↑' : '↓' }}</span>
+                    </th>
+                    <th @click="sortTable('ask')" class="sortable">
+                      ASK
+                      <span v-if="sortColumn === 'ask'" class="sort-icon">{{ sortDirection === 'asc' ? '↑' : '↓' }}</span>
+                    </th>
+                    <th @click="sortTable('price')" class="sortable">
+                      LAST PRICE
+                      <span v-if="sortColumn === 'price'" class="sort-icon">{{ sortDirection === 'asc' ? '↑' : '↓' }}</span>
+                    </th>
+                    <th @click="sortTable('change')" class="sortable">
+                      CHANGE
+                      <span v-if="sortColumn === 'change'" class="sort-icon">{{ sortDirection === 'asc' ? '↑' : '↓' }}</span>
+                    </th>
+                    <th @click="sortTable('changePercent')" class="sortable">
+                      %CHANGE
+                      <span v-if="sortColumn === 'changePercent'" class="sort-icon">{{ sortDirection === 'asc' ? '↑' : '↓' }}</span>
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr
+                    v-for="item in getSortedData()"
+                    :key="item.symbol"
+                    class="table-row"
+                    :data-symbol="item.symbol"
+                    @click="openAssetDetail(item)"
+                  >
+                    <td class="cell-symbol">
+                      <strong>{{ item.symbol }}</strong>
+                      <span class="cell-name">{{ item.name }}</span>
+                    </td>
+                    <td class="cell-bid">{{ formatPrice((item as any).bid || item.price * 0.9995) }}</td>
+                    <td class="cell-ask">{{ formatPrice((item as any).ask || item.price * 1.0005) }}</td>
+                    <td class="cell-price">{{ formatPrice(item.price) }}</td>
+                    <td class="cell-change" :class="item.change >= 0 ? 'positive' : 'negative'">
+                      {{ item.change >= 0 ? '+' : '' }}{{ formatChange(item.change) }}
+                    </td>
+                    <td class="cell-pchange" :class="item.change >= 0 ? 'positive' : 'negative'">
+                      {{ item.change >= 0 ? '+' : '' }}{{ item.change.toFixed(2) }}%
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- 3D Surfaces Section (Integrated) -->
+          <section class="surfaces-section">
+            <header class="section-header">
+              <h2 class="section-title">3D Analytics</h2>
+            </header>
+            <div class="surfaces-grid">
+              <div class="surface-card">
+                <div class="surface-header">
+                  <span>3D LIQUIDITY SURFACE</span>
+                </div>
+                <canvas class="surface-canvas"></canvas>
+              </div>
+              <div class="surface-card">
+                <div class="surface-header">
+                  <span>CHARTS</span>
+                </div>
+                <div class="charts-container">
+                  <div
+                    v-for="(chart, i) in selectedCharts"
+                    :key="i"
+                    class="chart-card"
+                  >
+                    <div class="chart-header">
+                      <span>{{ chart.symbol }} {{ getStockName(chart.symbol) }}</span>
+                    </div>
+                    <canvas
+                      :ref="el => {
+                        if (el && 'tagName' in el && el.tagName === 'CANVAS') {
+                          chartRefs[chart.symbol] = el as HTMLCanvasElement
+                        }
+                      }"
+                      class="chart-canvas"
+                      :data-symbol="chart.symbol"
+                    ></canvas>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+        </section>
+
+        <!-- Tab: Новости (2 колонны) -->
+        <section v-if="activeTab === 'news'" class="news-section">
+          <div class="news-grid">
+            <!-- Left Column: Corporate News -->
+            <div class="news-column">
+              <header class="news-column-header">
+                <h2 class="news-column-title">Корпоративные новости</h2>
+              </header>
+              <div class="news-list">
+                <article
+                  v-for="(news, i) in corporateNews"
+                  :key="i"
+                  class="news-card"
+                  :data-sentiment="news.sentiment"
+                >
+                  <header class="news-card-header">
+                    <h3 class="news-title">{{ news.title }}</h3>
+                    <span class="sentiment-badge" :class="news.sentiment">
+                      {{ getSentimentLabel(news.sentiment) }}
+                    </span>
+                  </header>
+                  <p class="news-description">{{ news.description }}</p>
+                  <footer class="news-footer">
+                    <span class="news-time">{{ news.time }}</span>
+                    <span class="news-source">{{ news.source }}</span>
+                  </footer>
+                </article>
+              </div>
+            </div>
+
+            <!-- Right Column: Macro News -->
+            <div class="news-column">
+              <header class="news-column-header">
+                <h2 class="news-column-title">Макроэкономические новости</h2>
+              </header>
+              <div class="news-list">
+                <article
+                  v-for="(news, i) in macroNews"
+                  :key="i"
+                  class="news-card"
+                  :data-sentiment="news.sentiment"
+                >
+                  <header class="news-card-header">
+                    <h3 class="news-title">{{ news.title }}</h3>
+                    <span class="sentiment-badge" :class="news.sentiment">
+                      {{ getSentimentLabel(news.sentiment) }}
+                    </span>
+                  </header>
+                  <p class="news-description">{{ news.description }}</p>
+                  <footer class="news-footer">
+                    <span class="news-time">{{ news.time }}</span>
+                    <span class="news-source">{{ news.source }}</span>
+                  </footer>
+                </article>
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
+    <!-- Legacy main end -->
+
 
     <!-- Tabs Navigation -->
     <div class="tabs-navigation-market">
       <button
-        v-for="tab in tabs"
+        v-for="tab in legacyTabs"
         :key="tab.id"
         @click="activeTab = tab.id"
         class="tab-item-market"
@@ -398,7 +821,7 @@
             
             <!-- Left: 3D Surface -->
             <div class="liquidity-3d-container">
-              <canvas ref="liquidity3DCanvas" class="liquidity-3d-canvas"></canvas>
+              <canvas class="liquidity-3d-canvas"></canvas>
               <div class="liquidity-3d-info">
                 <div class="surface-param">
                   <span class="param-label">Flow Pressure (Forced Selling)</span>
@@ -490,32 +913,8 @@
               <div class="signal-matrix-container">
                 <div class="signal-matrix-header">
                   <span class="matrix-title">SIGNAL MATRIX</span>
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="opacity: 0.6; cursor: pointer;">
-                    <circle cx="12" cy="12" r="3"/>
-                    <path d="M12 1v6m0 6v6M23 12h-6m-6 0H1"/>
-                  </svg>
                 </div>
-                <svg ref="signalMatrixChart" class="signal-matrix-svg" viewBox="0 0 800 150" preserveAspectRatio="none">
-                  <defs>
-                    <linearGradient id="grad-signal" x1="0" y1="0" x2="1" y2="0">
-                      <stop offset="0%" stop-color="#9333ea"/>
-                      <stop offset="33%" stop-color="#ec4899"/>
-                      <stop offset="66%" stop-color="#f97316"/>
-                      <stop offset="100%" stop-color="#eab308"/>
-                    </linearGradient>
-                  </defs>
-                  <!-- Heatmap Cells -->
-                  <rect 
-                    v-for="(cell, i) in signalMatrix" 
-                    :key="i"
-                    :x="cell.x" 
-                    :y="cell.y" 
-                    :width="cell.width" 
-                    :height="cell.height"
-                    :fill="cell.color"
-                    :opacity="cell.intensity"
-                  />
-                </svg>
+                <div class="signal-matrix-placeholder"></div>
               </div>
 
             </div>
@@ -1154,6 +1553,7 @@
 
     </div>
   </div>
+  <!-- End Legacy Hidden Content -->
 
   <!-- Asset Detail Modal -->
   <Teleport to="body">
@@ -1324,14 +1724,496 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onBeforeUnmount, computed, watch } from 'vue'
+import { ref, onMounted, onBeforeUnmount, computed, watch, nextTick } from 'vue'
 import { Teleport, Transition } from 'vue'
 import * as THREE from 'three'
 import Chart from 'chart.js/auto'
 
-// Tabs
-const activeTab = ref('overview')
-const tabs = [
+// ============================================
+// NEW DESIGN DATA (Matching the image)
+// ============================================
+
+// Sidebar Navigation Items
+const sidebarNavItems = ref([
+  { id: 'markets', label: 'РЫНКИ' },
+  { id: 'indices', label: 'ИНДЕКСЫ' },
+  { id: 'bonds', label: 'ОБЛИГАЦИИ' },
+  { id: 'forex', label: 'ФОРЕКС' },
+  { id: 'crypto', label: 'КРИПТО' },
+  { id: 'news', label: 'НОВОСТИ' },
+  { id: 'technicals', label: 'ТЕХАНАЛИЗ' },
+  { id: 'ai', label: 'AI АНАЛИТИКА' }
+])
+
+// Top Regions (РОССИЯ, ЕВРОПА, США)
+const topRegions = ref([
+  {
+    id: 'russia',
+    name: 'РОССИЯ',
+    data: [
+      { index: 'IMOEX', value: '3,250.80', change: 1.25 },
+      { index: 'RTS', value: '1,125.40', change: -0.45 },
+      { index: 'MOEXBC', value: '1,850.20', change: 0.82 },
+      { index: 'RGBI', value: '108.65', change: -0.15 }
+    ]
+  },
+  {
+    id: 'europe',
+    name: 'ЕВРОПА',
+    data: [
+      { index: 'STOXX 50', value: '4,485.20', change: 0.65 },
+      { index: 'DAX', value: '18,235.45', change: 0.42 },
+      { index: 'IBEX 35', value: '11,245.80', change: 0.38 },
+      { index: 'CAC 40', value: '7,890.15', change: 0.55 }
+    ]
+  },
+  {
+    id: 'usa',
+    name: 'США',
+    data: [
+      { index: 'S&P 500', value: '5,234.18', change: 0.85 },
+      { index: 'NASDAQ', value: '16,428.82', change: 1.24 },
+      { index: 'Dow Jones', value: '39,512.84', change: 0.32 },
+      { index: 'Russell 2000', value: '2,058.92', change: -0.68 }
+    ]
+  }
+])
+
+// Bottom Regions (АЗИЯ, КИТАЙ, ВЕЛИКОБРИТАНИЯ)
+const bottomRegions = ref([
+  {
+    id: 'asia',
+    name: 'АЗИЯ',
+    data: [
+      { index: 'Nikkei 225', value: '38,487.90', change: 1.85 },
+      { index: 'Hang Seng', value: '17,915.55', change: -1.22 },
+      { index: 'KOSPI', value: '2,687.45', change: 0.45 },
+      { index: 'ASX 200', value: '7,825.30', change: 0.28 }
+    ]
+  },
+  {
+    id: 'china',
+    name: 'КИТАЙ',
+    data: [
+      { index: 'Shanghai', value: '3,088.33', change: 0.96 },
+      { index: 'Shenzhen', value: '1,808.81', change: 0.18 },
+      { index: 'CSI 300', value: '3,542.65', change: 0.72 },
+      { index: 'ChiNext', value: '1,892.40', change: 1.15 }
+    ]
+  },
+  {
+    id: 'uk',
+    name: 'БРИТАНИЯ',
+    data: [
+      { index: 'FTSE 100', value: '8,125.30', change: -0.28 },
+      { index: 'FTSE 250', value: '20,485.60', change: 0.42 },
+      { index: 'FTSE AIM', value: '725.45', change: -0.15 },
+      { index: 'FTSE 350', value: '4,512.80', change: 0.18 }
+    ]
+  }
+])
+
+// All regions combined for table (порядок: РОССИЯ, США, КИТАЙ, ЕВРОПА, ВЕЛИКОБРИТАНИЯ, АЗИЯ)
+const allRegions = computed(() => {
+  const russia = topRegions.value.find(r => r.id === 'russia')
+  const usa = topRegions.value.find(r => r.id === 'usa')
+  const china = bottomRegions.value.find(r => r.id === 'china')
+  const europe = topRegions.value.find(r => r.id === 'europe')
+  const uk = bottomRegions.value.find(r => r.id === 'uk')
+  const asia = bottomRegions.value.find(r => r.id === 'asia')
+  return [russia, usa, china, europe, uk, asia].filter((r): r is NonNullable<typeof r> => r !== undefined)
+})
+
+// Max number of data rows across all regions
+const maxDataRows = computed(() => {
+  const lengths = allRegions.value.map(r => r.data.length)
+  return lengths.length > 0 ? Math.max(...lengths) : 0
+})
+
+// Markets update time
+const marketsUpdateTime = ref('')
+
+const updateMarketsUpdateTime = () => {
+  const now = new Date()
+  marketsUpdateTime.value = now.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+}
+
+// Update markets data
+const updateMarketsData = () => {
+  // Update top regions
+  topRegions.value.forEach(region => {
+    region.data.forEach(item => {
+      const currentValue = parseFloat(item.value.replace(/,/g, ''))
+      const change = (Math.random() - 0.5) * currentValue * 0.002
+      const newValue = currentValue + change
+      item.value = newValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+      item.change = item.change + (Math.random() - 0.5) * 0.3
+    })
+  })
+  
+  // Update bottom regions
+  bottomRegions.value.forEach(region => {
+    region.data.forEach(item => {
+      const currentValue = parseFloat(item.value.replace(/,/g, ''))
+      const change = (Math.random() - 0.5) * currentValue * 0.002
+      const newValue = currentValue + change
+      item.value = newValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+      item.change = item.change + (Math.random() - 0.5) * 0.3
+    })
+  })
+  
+  updateMarketsUpdateTime()
+}
+
+// Sparkline Data (VIX, URALS, Gold)
+const vixHistory = ref<number[]>([])
+const uralsHistory = ref<number[]>([])
+const goldHistory = ref<number[]>([])
+
+const vixData = ref({ value: 18.5, change: -2.35 })
+const uralsData = ref({ value: 68.45, change: 1.12 })
+const goldData = ref({ value: 2345.80, change: 0.45 })
+
+// Generate initial sparkline data
+const generateSparklineData = () => {
+  const vix: number[] = []
+  const urals: number[] = []
+  const gold: number[] = []
+  
+  let vixPrice = 18.5
+  let uralsPrice = 68.45
+  let goldPrice = 2345.80
+  
+  for (let i = 0; i < 20; i++) {
+    vixPrice += (Math.random() - 0.5) * 1.5
+    uralsPrice += (Math.random() - 0.48) * 1.2
+    goldPrice += (Math.random() - 0.48) * 15
+    
+    vix.push(Math.max(10, Math.min(40, vixPrice)))
+    urals.push(Math.max(50, Math.min(90, uralsPrice)))
+    gold.push(Math.max(2200, Math.min(2500, goldPrice)))
+  }
+  
+  vixHistory.value = vix
+  uralsHistory.value = urals
+  goldHistory.value = gold
+  
+  vixData.value.value = vix[vix.length - 1]
+  uralsData.value.value = urals[urals.length - 1]
+  goldData.value.value = gold[gold.length - 1]
+}
+
+// Update sparkline data
+const updateSparklineData = () => {
+  // VIX
+  const newVix = vixData.value.value + (Math.random() - 0.5) * 1.2
+  const clampedVix = Math.max(10, Math.min(40, newVix))
+  vixHistory.value.push(clampedVix)
+  if (vixHistory.value.length > 20) vixHistory.value.shift()
+  const prevVix = vixData.value.value
+  vixData.value.value = clampedVix
+  vixData.value.change = ((clampedVix - prevVix) / prevVix) * 100
+  
+  // URALS
+  const newUrals = uralsData.value.value + (Math.random() - 0.48) * 0.8
+  const clampedUrals = Math.max(50, Math.min(90, newUrals))
+  uralsHistory.value.push(clampedUrals)
+  if (uralsHistory.value.length > 20) uralsHistory.value.shift()
+  const prevUrals = uralsData.value.value
+  uralsData.value.value = clampedUrals
+  uralsData.value.change = ((clampedUrals - prevUrals) / prevUrals) * 100
+  
+  // Gold
+  const newGold = goldData.value.value + (Math.random() - 0.48) * 10
+  const clampedGold = Math.max(2200, Math.min(2500, newGold))
+  goldHistory.value.push(clampedGold)
+  if (goldHistory.value.length > 20) goldHistory.value.shift()
+  const prevGold = goldData.value.value
+  goldData.value.value = clampedGold
+  goldData.value.change = ((clampedGold - prevGold) / prevGold) * 100
+}
+
+// Generate sparkline SVG path
+const generateSparklinePath = (data: number[]): string => {
+  if (data.length < 2) return ''
+  const min = Math.min(...data)
+  const max = Math.max(...data)
+  const range = max - min || 1
+  
+  const points = data.map((val, i) => {
+    const x = (i / (data.length - 1)) * 100
+    const y = 30 - ((val - min) / range) * 28
+    return `${x},${y}`
+  })
+  
+  return `M ${points.join(' L ')}`
+}
+
+const vixSparklinePath = computed(() => generateSparklinePath(vixHistory.value))
+const uralsSparklinePath = computed(() => generateSparklinePath(uralsHistory.value))
+const goldSparklinePath = computed(() => generateSparklinePath(goldHistory.value))
+
+// AI Insights
+// AI Insights stocks pool
+const aiStocksPool = [
+  { symbol: 'SBER', basePrice: 285.40 },
+  { symbol: 'LKOH', basePrice: 7125.00 },
+  { symbol: 'GAZP', basePrice: 156.80 },
+  { symbol: 'YNDX', basePrice: 3450.00 },
+  { symbol: 'ROSN', basePrice: 512.30 },
+  { symbol: 'NVTK', basePrice: 1285.60 },
+  { symbol: 'GMKN', basePrice: 14520.00 },
+  { symbol: 'POLY', basePrice: 425.80 },
+  { symbol: 'MTSS', basePrice: 298.50 },
+  { symbol: 'MGNT', basePrice: 5840.00 },
+  { symbol: 'AFLT', basePrice: 42.15 },
+  { symbol: 'VTBR', basePrice: 0.024 },
+  { symbol: 'TATN', basePrice: 685.40 },
+  { symbol: 'NLMK', basePrice: 185.20 },
+  { symbol: 'CHMF', basePrice: 1425.00 }
+]
+
+const aiInsights = ref([
+  { type: 'buy', action: 'ПОКУПКА', symbol: 'SBER', value: '₽ 285.40' },
+  { type: 'buy', action: 'ПОКУПКА', symbol: 'LKOH', value: '₽ 7,125.00' },
+  { type: 'sell', action: 'ПРОДАЖА', symbol: 'GAZP', value: '₽ 156.80' },
+  { type: 'buy', action: 'ПОКУПКА', symbol: 'YNDX', value: '₽ 3,450.00' }
+])
+
+// Update AI Insights
+const updateAiInsights = () => {
+  const newInsights: typeof aiInsights.value = []
+  const usedIndices = new Set<number>()
+  
+  for (let i = 0; i < 4; i++) {
+    let randomIndex: number
+    do {
+      randomIndex = Math.floor(Math.random() * aiStocksPool.length)
+    } while (usedIndices.has(randomIndex))
+    usedIndices.add(randomIndex)
+    
+    const stock = aiStocksPool[randomIndex]
+    const priceChange = (Math.random() - 0.5) * stock.basePrice * 0.04
+    const newPrice = stock.basePrice + priceChange
+    const type = Math.random() > 0.4 ? 'buy' : 'sell'
+    
+    let formattedPrice: string
+    if (newPrice < 1) {
+      formattedPrice = `₽ ${newPrice.toFixed(4)}`
+    } else if (newPrice < 100) {
+      formattedPrice = `₽ ${newPrice.toFixed(2)}`
+    } else {
+      formattedPrice = `₽ ${newPrice.toLocaleString('ru-RU', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+    }
+    
+    newInsights.push({
+      type,
+      action: type === 'buy' ? 'ПОКУПКА' : 'ПРОДАЖА',
+      symbol: stock.symbol,
+      value: formattedPrice
+    })
+  }
+  
+  aiInsights.value = newInsights
+}
+
+// IMOEX & RTS Chart Data
+const imoexData = ref<number[]>([])
+const rtsData = ref<number[]>([])
+const imoexChange = ref(1.25)
+const rtsChange = ref(-0.45)
+
+// Generate initial chart data
+const generateChartData = () => {
+  const imoex: number[] = []
+  const rts: number[] = []
+  let imoexPrice = 3250
+  let rtsPrice = 1125
+  
+  for (let i = 0; i < 30; i++) {
+    imoexPrice += (Math.random() - 0.48) * 20
+    rtsPrice += (Math.random() - 0.52) * 10
+    imoex.push(imoexPrice)
+    rts.push(rtsPrice)
+  }
+  
+  imoexData.value = imoex
+  rtsData.value = rts
+  imoexChange.value = ((imoex[imoex.length - 1] - imoex[0]) / imoex[0]) * 100
+  rtsChange.value = ((rts[rts.length - 1] - rts[0]) / rts[0]) * 100
+}
+
+// Generate SVG path for chart
+const generatePath = (data: number[], width: number, height: number, isArea: boolean = false) => {
+  if (data.length === 0) return ''
+  
+  const min = Math.min(...data)
+  const max = Math.max(...data)
+  const range = max - min || 1
+  
+  const points = data.map((val, idx) => {
+    const x = (idx / (data.length - 1)) * width
+    const y = height - ((val - min) / range) * height * 0.8 - height * 0.1
+    return { x, y }
+  })
+  
+  let path = `M ${points[0].x} ${points[0].y}`
+  for (let i = 1; i < points.length; i++) {
+    path += ` L ${points[i].x} ${points[i].y}`
+  }
+  
+  if (isArea) {
+    path += ` L ${width} ${height} L 0 ${height} Z`
+  }
+  
+  return path
+}
+
+const imoexLinePath = computed(() => generatePath(imoexData.value, 200, 200))
+const imoexAreaPath = computed(() => generatePath(imoexData.value, 200, 200, true))
+const rtsLinePath = computed(() => generatePath(rtsData.value, 200, 200))
+const rtsAreaPath = computed(() => generatePath(rtsData.value, 200, 200, true))
+
+// Update chart data periodically
+const updateIndexCharts = () => {
+  if (imoexData.value.length > 0) {
+    const newImoex = [...imoexData.value.slice(1)]
+    const lastImoex = newImoex[newImoex.length - 1] + (Math.random() - 0.48) * 15
+    newImoex.push(lastImoex)
+    imoexData.value = newImoex
+    imoexChange.value = ((newImoex[newImoex.length - 1] - newImoex[0]) / newImoex[0]) * 100
+  }
+  
+  if (rtsData.value.length > 0) {
+    const newRts = [...rtsData.value.slice(1)]
+    const lastRts = newRts[newRts.length - 1] + (Math.random() - 0.52) * 8
+    newRts.push(lastRts)
+    rtsData.value = newRts
+    rtsChange.value = ((newRts[newRts.length - 1] - newRts[0]) / newRts[0]) * 100
+  }
+}
+
+// Recommendations
+const recommendations = ref([
+  { label: 'Портфель:', value: 'Диверсифицировать' },
+  { label: 'Риск-профиль:', value: 'Умеренный' },
+  { label: 'Горизонт:', value: '6-12 месяцев' }
+])
+
+// Alerts
+const alerts = ref([
+  { text: 'IMOEX приближается к уровню сопротивления 3,300' },
+  { text: 'Высокая волатильность в секторе нефтегаза' },
+  { text: 'Рубль укрепился до 88.5 за доллар' }
+])
+
+// Surface Inference Data
+const surfaceInferenceValue = ref(18.11)
+const surfaceDelta = ref(0.42)
+
+// Signal Matrix Data (3 rows x 12 columns)
+const signalMatrix = ref<number[][]>([])
+
+// Generate initial signal matrix
+const generateSignalMatrix = () => {
+  const matrix: number[][] = []
+  for (let i = 0; i < 3; i++) {
+    const row: number[] = []
+    for (let j = 0; j < 12; j++) {
+      row.push(Math.random())
+    }
+    matrix.push(row)
+  }
+  signalMatrix.value = matrix
+}
+
+// Update signal matrix
+const updateSignalMatrix = () => {
+  signalMatrix.value = signalMatrix.value.map(row => 
+    row.map(cell => {
+      const change = (Math.random() - 0.5) * 0.3
+      return Math.max(0, Math.min(1, cell + change))
+    })
+  )
+  
+  // Update surface inference value based on flow pressure
+  const prevValue = surfaceInferenceValue.value
+  surfaceInferenceValue.value = 10 + liquidityParams.value.flowPressure * 20 + (Math.random() - 0.5) * 2
+  surfaceDelta.value = surfaceInferenceValue.value - prevValue
+}
+
+// Get color for signal matrix cell
+const getSignalColor = (value: number): string => {
+  // Color palette: cream/yellow -> orange -> magenta -> purple
+  if (value < 0.25) {
+    // Cream/Yellow
+    const t = value / 0.25
+    return `rgb(${255}, ${230 - t * 30}, ${180 - t * 80})`
+  } else if (value < 0.5) {
+    // Orange
+    const t = (value - 0.25) / 0.25
+    return `rgb(${255 - t * 50}, ${200 - t * 80}, ${100 - t * 50})`
+  } else if (value < 0.75) {
+    // Magenta
+    const t = (value - 0.5) / 0.25
+    return `rgb(${205 - t * 80}, ${120 - t * 60}, ${50 + t * 100})`
+  } else {
+    // Purple
+    const t = (value - 0.75) / 0.25
+    return `rgb(${125 - t * 45}, ${60 + t * 20}, ${150 + t * 50})`
+  }
+}
+
+// News Feed
+const newsList = ref([
+  { region: 'РОССИЯ', text: 'Индекс Мосбиржи обновил максимум с начала года на фоне роста нефтяных котировок' },
+  { region: 'США', text: 'ФРС сохранила ключевую ставку на уровне 5.25-5.50%, рынки ожидают снижения' },
+  { region: 'КИТАЙ', text: 'Народный банк Китая снизил ставку по кредитам для поддержки экономики' },
+  { region: 'ЕВРОПА', text: 'ЕЦБ начал цикл смягчения политики, снизив ставку на 25 базисных пунктов' },
+  { region: 'АЗИЯ', text: 'Nikkei 225 достиг исторического максимума благодаря ослаблению иены' },
+  { region: 'РОССИЯ', text: 'Сбербанк отчитался о рекордной чистой прибыли за первое полугодие' },
+  { region: 'США', text: 'Apple и Microsoft продолжают гонку за звание самой дорогой компании' },
+  { region: 'КИТАЙ', text: 'Alibaba и JD.com показали рост выручки выше ожиданий аналитиков' },
+  { region: 'ЕВРОПА', text: 'Акции LVMH под давлением на фоне замедления спроса на luxury-товары' },
+  { region: 'АЗИЯ', text: 'Samsung анонсировал инвестиции в производство чипов нового поколения' },
+  { region: 'РОССИЯ', text: 'Газпром нарастил поставки газа в Китай до рекордных объёмов' },
+  { region: 'США', text: 'NVIDIA стала третьей компанией с капитализацией выше $3 трлн' },
+  { region: 'КИТАЙ', text: 'BYD обогнал Tesla по продажам электромобилей в мире' },
+  { region: 'ЕВРОПА', text: 'Volkswagen инвестирует €180 млрд в электрификацию до 2030 года' },
+  { region: 'АЗИЯ', text: 'Индия стала пятой по величине экономикой мира, обогнав Великобританию' }
+])
+
+const currentNewsIndex = ref(0)
+
+// Возвращает 3 новости начиная с текущего индекса
+const currentNewsGroup = computed(() => {
+  const result: typeof newsList.value = []
+  for (let i = 0; i < 3; i++) {
+    const idx = (currentNewsIndex.value + i) % newsList.value.length
+    result.push(newsList.value[idx])
+  }
+  return result
+})
+
+// News rotation interval
+let newsInterval: ReturnType<typeof setInterval> | null = null
+
+const startNewsRotation = () => {
+  newsInterval = setInterval(() => {
+    currentNewsIndex.value = (currentNewsIndex.value + 1) % newsList.value.length
+  }, 4000) // меняется по одной каждые 4 секунды
+}
+
+const stopNewsRotation = () => {
+  if (newsInterval) {
+    clearInterval(newsInterval)
+    newsInterval = null
+  }
+}
+
+
+// Legacy tabs (kept for backward compatibility with old sections)
+const legacyTabs = [
   { id: 'overview', name: 'Обзор рынка' },
   { id: 'stocks', name: 'Акции' },
   { id: 'bonds', name: 'Облигации' },
@@ -1339,16 +2221,12 @@ const tabs = [
   { id: 'quant', name: 'Количественный анализ' }
 ]
 
-// Search
+// Search Query
 const searchQuery = ref('')
 
 const handleSearch = () => {
-  // Фильтрация данных по поисковому запросу
-  // Можно добавить логику фильтрации для акций, облигаций и т.д.
-  if (searchQuery.value.trim()) {
-    // Здесь можно добавить логику поиска
-    console.log('Searching for:', searchQuery.value)
-  }
+  // Search is handled by getFilteredInstruments()
+  console.log('Searching for:', searchQuery.value)
 }
 
 const clearSearch = () => {
@@ -1700,14 +2578,367 @@ const getAssetTypeLabel = (type?: string) => {
   return labels[type || 'stock'] || 'Актив'
 }
 
-// Time
+// Time (defined later)
+
+// Market Selection
+const activeMarket = ref('russia')
+const markets = ref([
+  { id: 'russia', name: 'Россия', code: 'MOEX', flag: '🇷🇺' },
+  { id: 'usa', name: 'США', code: 'NYSE/NASDAQ', flag: '🇺🇸' },
+  { id: 'europe', name: 'Европа', code: 'XETRA', flag: '🇪🇺' },
+  { id: 'asia', name: 'Азия', code: 'Hong Kong', flag: '🌏' },
+  { id: 'uk', name: 'Великобритания', code: 'LSE', flag: '🇬🇧' },
+  { id: 'canada', name: 'Канада', code: 'TSX', flag: '🇨🇦' }
+])
+
+// Navigation Tabs
+const activeTab = ref('stocks')
+const navigationTabs = ref([
+  { id: 'stocks', label: 'Акции', icon: '📈' },
+  { id: 'indices', label: 'Индексы', icon: '📊' },
+  { id: 'bonds', label: 'Облигации', icon: '💵' },
+  { id: 'forex', label: 'Форекс', icon: '💱' },
+  { id: 'news', label: 'Новости', icon: '📰' }
+])
+
+// Sorting
+const sortColumn = ref<string | null>(null)
+const sortDirection = ref<'asc' | 'desc'>('asc')
+
+// Live Status
+const isLive = ref(true)
+
+// News Data
+const corporateNews = ref([
+  {
+    title: 'Apple Announces Record Earnings',
+    description: 'Компания Apple сообщила о рекордной прибыли в четвертом квартале, превысив ожидания аналитиков.',
+    time: '5m ago',
+    source: 'Bloomberg',
+    sentiment: 'positive'
+  },
+  {
+    title: 'Tesla Unveils New Model',
+    description: 'Tesla представила новую модель электромобиля с улучшенной батареей и увеличенным запасом хода.',
+    time: '1m ago',
+    source: 'Reuters',
+    sentiment: 'positive'
+  },
+  {
+    title: 'Microsoft Cloud Revenue Surges',
+    description: 'Microsoft сообщила о росте доходов от облачных сервисов на 25% в годовом исчислении.',
+    time: '8m ago',
+    source: 'CNBC',
+    sentiment: 'positive'
+  },
+  {
+    title: 'Amazon Expands Logistics Network',
+    description: 'Amazon объявила о расширении логистической сети в Европе и Азии.',
+    time: '12m ago',
+    source: 'WSJ',
+    sentiment: 'neutral'
+  }
+])
+
+const macroNews = ref([
+  {
+    title: 'Global Inflation Concerns Rise',
+    description: 'Международные эксперты выражают обеспокоенность ростом инфляции в развитых странах.',
+    time: '3m ago',
+    source: 'Financial Times',
+    sentiment: 'negative'
+  },
+  {
+    title: 'Interest Rates Held Steady by Fed',
+    description: 'Федеральная резервная система США сохранила ключевую ставку на прежнем уровне.',
+    time: '5m ago',
+    source: 'Fed',
+    sentiment: 'neutral'
+  },
+  {
+    title: 'Russian Market Shows Strong Growth',
+    description: 'Российский фондовый рынок демонстрирует устойчивый рост на фоне стабилизации экономики.',
+    time: '7m ago',
+    source: 'MOEX',
+    sentiment: 'positive'
+  },
+  {
+    title: 'OFZ Yields Decline',
+    description: 'Доходность облигаций федерального займа снизилась на фоне улучшения макроэкономических показателей.',
+    time: '10m ago',
+    source: 'CBR',
+    sentiment: 'positive'
+  }
+])
+
+// Chart Refs
+const chartRefs = ref<Record<string, HTMLCanvasElement | null>>({})
+const selectedCharts = ref([
+  { symbol: 'SBER' },
+  { symbol: 'GAZP' },
+  { symbol: 'LKOH' }
+])
+
+// Initialize Mini Charts (Candlestick style)
+const initMiniCharts = () => {
+  selectedCharts.value.forEach(chart => {
+    const canvas = chartRefs.value[chart.symbol]
+    if (!canvas) return
+    
+    const ctx = canvas.getContext('2d')
+    if (!ctx) return
+    
+    // Get stock data
+    const stock = topStocks.value.find(s => s.symbol === chart.symbol)
+    if (!stock) return
+    
+    // Generate candlestick data
+    const candles: Array<{open: number, high: number, low: number, close: number}> = []
+    const labels: string[] = []
+    let price = stock.price
+    for (let i = 0; i < 30; i++) {
+      const open = price
+      const change = (Math.random() - 0.5) * 0.03
+      price = price * (1 + change)
+      const close = price
+      const high = Math.max(open, close) * (1 + Math.random() * 0.01)
+      const low = Math.min(open, close) * (1 - Math.random() * 0.01)
+      candles.push({ open, high, low, close })
+      labels.push('')
+    }
+    
+    // Create line chart that looks like candlestick
+    const closePrices = candles.map(c => c.close)
+    const isUp = closePrices[closePrices.length - 1] >= closePrices[0]
+    
+    new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels,
+        datasets: [{
+          label: chart.symbol,
+          data: closePrices,
+          borderColor: isUp ? '#10b981' : '#ef4444',
+          backgroundColor: isUp 
+            ? 'rgba(16, 185, 129, 0.15)' 
+            : 'rgba(239, 68, 68, 0.15)',
+          fill: true,
+          tension: 0.1,
+          borderWidth: 1.5,
+          pointRadius: 0,
+          pointHoverRadius: 0
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: { enabled: false }
+        },
+        scales: {
+          x: { 
+            display: false,
+            grid: { display: false }
+          },
+          y: { 
+            display: false,
+            grid: { display: false }
+          }
+        },
+        elements: {
+          point: { radius: 0 }
+        }
+      }
+    })
+  })
+}
+
+// Major Indices (moved before marketData)
+const majorIndices = ref([
+  { symbol: 'IMOEX', name: 'Индекс МосБиржи', price: 3250.80, change: 0.28, volume: 125000000 },
+  { symbol: 'RTSI', name: 'Индекс РТС', price: 1125.40, change: -0.15, volume: 45000000 },
+  { symbol: 'MOEXBC', name: 'Индекс голубых фишек', price: 1850.20, change: 0.42, volume: 85000000 },
+  { symbol: 'MOEXINN', name: 'Индекс инноваций', price: 2850.60, change: 0.35, volume: 35000000 },
+  { symbol: 'MOEXIT', name: 'Индекс IT', price: 1450.30, change: 0.58, volume: 25000000 }
+])
+
+// Market Data by Region
+const marketData = ref<Record<string, {
+  stocks: Array<{symbol: string, name: string, price: number, change: number, volume: number}>
+  indices: Array<{symbol: string, name: string, price: number, change: number, volume: number}>
+}>>({
+  russia: {
+    stocks: [
+      { symbol: 'SBER', name: 'Сбербанк', price: 285.50, change: 0.85, volume: 45200000 },
+      { symbol: 'GAZP', name: 'Газпром', price: 178.20, change: 1.25, volume: 28500000 },
+      { symbol: 'LKOH', name: 'Лукойл', price: 7420.80, change: 0.65, volume: 18500000 },
+      { symbol: 'GMKN', name: 'Норникель', price: 15240.40, change: 1.15, volume: 32500000 },
+      { symbol: 'YNDX', name: 'Яндекс', price: 2848.90, change: -0.45, volume: 12500000 },
+      { symbol: 'ROSN', name: 'Роснефть', price: 485.20, change: 2.35, volume: 45000000 }
+    ],
+    indices: majorIndices.value
+  },
+  usa: {
+    stocks: [
+      { symbol: 'AAPL', name: 'Apple Inc.', price: 185.50, change: 1.25, volume: 85000000 },
+      { symbol: 'MSFT', name: 'Microsoft', price: 380.20, change: 0.95, volume: 45000000 },
+      { symbol: 'TSLA', name: 'Tesla', price: 245.80, change: -1.15, volume: 120000000 },
+      { symbol: 'AMZN', name: 'Amazon', price: 152.30, change: 0.65, volume: 65000000 },
+      { symbol: 'GOOGL', name: 'Alphabet', price: 142.50, change: 1.05, volume: 35000000 },
+      { symbol: 'NVDA', name: 'NVIDIA', price: 485.20, change: 2.35, volume: 55000000 }
+    ],
+    indices: [
+      { symbol: 'SPX', name: 'S&P 500', price: 4850.20, change: 0.45, volume: 0 },
+      { symbol: 'DJI', name: 'Dow Jones', price: 39800.50, change: 0.25, volume: 0 },
+      { symbol: 'IXIC', name: 'NASDAQ', price: 16250.80, change: 0.65, volume: 0 }
+    ]
+  },
+  europe: {
+    stocks: [
+      { symbol: 'SAP', name: 'SAP SE', price: 145.20, change: 0.85, volume: 2500000 },
+      { symbol: 'SIE', name: 'Siemens', price: 185.50, change: 1.15, volume: 1800000 },
+      { symbol: 'ASML', name: 'ASML', price: 785.30, change: 0.95, volume: 1200000 }
+    ],
+    indices: [
+      { symbol: 'DAX', name: 'DAX Index', price: 18500.20, change: 0.35, volume: 0 },
+      { symbol: 'CAC', name: 'CAC 40', price: 7850.50, change: 0.25, volume: 0 }
+    ]
+  },
+  asia: {
+    stocks: [
+      { symbol: 'TCEHY', name: 'Tencent', price: 45.20, change: 1.25, volume: 15000000 },
+      { symbol: 'BABA', name: 'Alibaba', price: 85.50, change: -0.45, volume: 12000000 },
+      { symbol: 'BIDU', name: 'Baidu', price: 125.80, change: 0.65, volume: 8500000 }
+    ],
+    indices: [
+      { symbol: 'HSI', name: 'Hang Seng', price: 18500.20, change: 0.45, volume: 0 },
+      { symbol: 'N225', name: 'Nikkei 225', price: 38500.50, change: 0.35, volume: 0 }
+    ]
+  },
+  uk: {
+    stocks: [
+      { symbol: 'HSBC', name: 'HSBC Holdings', price: 685.20, change: 0.85, volume: 8500000 },
+      { symbol: 'SHEL', name: 'Shell', price: 2850.50, change: 1.15, volume: 12000000 },
+      { symbol: 'ULVR', name: 'Unilever', price: 4250.80, change: 0.45, volume: 5500000 }
+    ],
+    indices: [
+      { symbol: 'FTSE', name: 'FTSE 100', price: 7850.20, change: 0.25, volume: 0 }
+    ]
+  },
+  canada: {
+    stocks: [
+      { symbol: 'RCI', name: 'Rogers', price: 65.20, change: 0.85, volume: 2500000 },
+      { symbol: 'BN', name: 'Brookfield', price: 45.50, change: 1.05, volume: 1800000 },
+      { symbol: 'MSFT', name: 'Microsoft', price: 380.20, change: 0.95, volume: 45000000 }
+    ],
+    indices: [
+      { symbol: 'TSX', name: 'TSX Composite', price: 21500.20, change: 0.35, volume: 0 }
+    ]
+  }
+})
+
+// Get Current Data Functions
+const getCurrentIndices = () => {
+  return marketData.value[activeMarket.value]?.indices || []
+}
+
+const getCurrentInstruments = () => {
+  switch (activeTab.value) {
+    case 'stocks':
+      return marketData.value[activeMarket.value]?.stocks || []
+    case 'bonds':
+      return [...governmentBonds.value, ...corporateBonds.value].map((b: any) => ({
+        symbol: b.symbol,
+        name: b.maturity || '',
+        price: 100,
+        change: b.change,
+        volume: 0,
+        yield: b.yield
+      }))
+    case 'forex':
+      return currencyPairs.value.map(c => ({
+        symbol: c.symbol,
+        name: c.symbol,
+        price: parseFloat(c.price.replace(',', '.')),
+        change: c.change,
+        volume: 0
+      }))
+    default:
+      return []
+  }
+}
+
+const getFilteredInstruments = () => {
+  const instruments = getCurrentInstruments()
+  if (!searchQuery.value.trim()) return instruments
+  const query = searchQuery.value.toLowerCase()
+  return instruments.filter(item => 
+    item.symbol.toLowerCase().includes(query) || 
+    item.name.toLowerCase().includes(query)
+  )
+}
+
+const getSortedData = () => {
+  const data = getFilteredInstruments().map(item => ({
+    ...item,
+    bid: item.price * 0.9995,
+    ask: item.price * 1.0005,
+    changePercent: item.change
+  }))
+  
+  if (!sortColumn.value) return data
+  
+  return [...data].sort((a, b) => {
+    const aVal = (a as any)[sortColumn.value!]
+    const bVal = (b as any)[sortColumn.value!]
+    const comparison = aVal > bVal ? 1 : aVal < bVal ? -1 : 0
+    return sortDirection.value === 'asc' ? comparison : -comparison
+  })
+}
+
+const sortTable = (column: string) => {
+  if (sortColumn.value === column) {
+    sortDirection.value = sortDirection.value === 'asc' ? 'desc' : 'asc'
+  } else {
+    sortColumn.value = column
+    sortDirection.value = 'asc'
+  }
+}
+
+const getActiveMarketName = () => {
+  const market = markets.value.find(m => m.id === activeMarket.value)
+  return market ? `${market.flag} ${market.name} (${market.code})` : 'Рынок'
+}
+
+const getTabTitle = () => {
+  const tab = navigationTabs.value.find(t => t.id === activeTab.value)
+  return tab ? tab.label : 'Данные'
+}
+
+const getSentimentLabel = (sentiment: string) => {
+  const labels: Record<string, string> = {
+    positive: 'Позитивно',
+    negative: 'Негативно',
+    neutral: 'Нейтрально'
+  }
+  return labels[sentiment] || 'Нейтрально'
+}
+
+// Current Time
 const currentTime = ref('')
-const updateTime = () => {
-  currentTime.value = new Date().toLocaleTimeString('ru-RU', { 
+const updateCurrentTime = () => {
+  const now = new Date()
+  currentTime.value = now.toLocaleTimeString('ru-RU', { 
     hour: '2-digit', 
     minute: '2-digit',
     second: '2-digit'
   })
+}
+
+const getStockName = (symbol: string) => {
+  const stock = topStocks.value.find(s => s.symbol === symbol)
+  return stock?.name || symbol
 }
 
 // Market Ticker (Российские индексы и инструменты)
@@ -1724,14 +2955,6 @@ const marketTicker = ref([
   { symbol: 'Золото', price: 6250.50, change: 0.42 }
 ])
 
-// Major Indices (Российские индексы)
-const majorIndices = ref([
-  { symbol: 'IMOEX', name: 'Индекс МосБиржи', price: 3250.80, change: 0.28, volume: 125000000 },
-  { symbol: 'RTSI', name: 'Индекс РТС', price: 1125.40, change: -0.15, volume: 45000000 },
-  { symbol: 'MOEXBC', name: 'Индекс голубых фишек', price: 1850.20, change: 0.42, volume: 85000000 },
-  { symbol: 'MOEXINN', name: 'Индекс инноваций', price: 2850.60, change: 0.35, volume: 35000000 },
-  { symbol: 'MOEXIT', name: 'Индекс IT', price: 1450.30, change: 0.58, volume: 25000000 }
-])
 
 // Currency Pairs (Российские валютные пары)
 const currencyPairs = ref([
@@ -1763,7 +2986,12 @@ const topStocks = ref([
   { symbol: 'NVTK', name: 'Новатэк', price: 1365.80, change: 0.95, volume: 18500000 },
   { symbol: 'TATN', name: 'Татнефть', price: 625.60, change: 0.55, volume: 8500000 },
   { symbol: 'MGNT', name: 'Магнит', price: 7850.30, change: -0.25, volume: 12000000 },
-  { symbol: 'ALRS', name: 'Алроса', price: 95.40, change: 1.85, volume: 15000000 }
+  { symbol: 'ALRS', name: 'Алроса', price: 95.40, change: 1.85, volume: 15000000 },
+  { symbol: 'PLZL', name: 'Полюс', price: 12580.50, change: 1.45, volume: 8500000 },
+  { symbol: 'CHMF', name: 'Северсталь', price: 1850.20, change: 0.75, volume: 12000000 },
+  { symbol: 'MOEX', name: 'МосБиржа', price: 245.80, change: -0.15, volume: 5500000 },
+  { symbol: 'VTBR', name: 'ВТБ', price: 0.035, change: 0.12, volume: 850000000 },
+  { symbol: 'AFKS', name: 'АФК Система', price: 12.85, change: -0.35, volume: 25000000 }
 ])
 
 // Government Bonds (ОФЗ)
@@ -1886,12 +3114,25 @@ const formatCurrency = (value: number): string => {
   return value.toLocaleString('ru-RU')
 }
 
+const formatChange = (change: number): string => {
+  const absChange = Math.abs(change)
+  if (absChange >= 100) {
+    return absChange.toFixed(2)
+  }
+  if (absChange >= 10) {
+    return absChange.toFixed(2)
+  }
+  return absChange.toFixed(2)
+}
+
 // ============================================
 // LIQUIDITY SURFACE DASHBOARD
 // ============================================
 
 // Liquidity 3D Canvas
 const liquidity3DCanvas = ref<HTMLCanvasElement | null>(null)
+const liquidity3DStatus = ref<'idle' | 'initializing' | 'ready' | 'error'>('idle')
+const liquidity3DError = ref('')
 const priceStreamChart = ref<SVGElement | null>(null)
 const signalMatrixChart = ref<SVGElement | null>(null)
 
@@ -1909,9 +3150,6 @@ const currentPrice = ref(285.50)
 const priceChange = ref(0.85)
 const priceEndY = ref(100)
 
-// Signal Matrix Data
-const signalMatrix = ref<Array<{ x: number, y: number, width: number, height: number, color: string, intensity: number }>>([])
-
 // Flow Metrics
 const bidFlow = ref(45.2)
 const askFlow = ref(38.7)
@@ -1927,158 +3165,316 @@ let liquidityScene: THREE.Scene | null = null
 let liquidityCamera: THREE.PerspectiveCamera | null = null
 let liquidityRenderer: THREE.WebGLRenderer | null = null
 let liquidityMesh: THREE.Mesh | null = null
+let liquiditySurfaceGeometry: THREE.PlaneGeometry | null = null
 let liquidityAnimationId: number | null = null
 let liquidityRotation = 0
+let liquidityGradientUniforms: { uMinH: { value: number }; uMaxH: { value: number } } | null = null
 
 // Generate Liquidity Surface (Manifold Learning Simulation)
-const generateLiquiditySurface = (time: number) => {
-  const segments = 50
-  const geometry = new THREE.PlaneGeometry(10, 10, segments, segments)
-  
+// Lightweight value-noise for micro-variations (fast, deterministic)
+const noise2D = (x: number, y: number, seed = 0): number => {
+  const lerp = (a: number, b: number, t: number) => a + (b - a) * t
+  const smoothstep = (t: number) => t * t * (3 - 2 * t)
+  const fract = (n: number) => n - Math.floor(n)
+
+  // Pseudo-random hash in [0, 1)
+  const rand = (ix: number, iy: number) => {
+    const n = Math.sin(ix * 127.1 + iy * 311.7 + seed * 101.3) * 43758.5453123
+    return fract(n)
+  }
+
+  const ix = Math.floor(x)
+  const iy = Math.floor(y)
+  const fx = x - ix
+  const fy = y - iy
+
+  const u = smoothstep(fx)
+  const v = smoothstep(fy)
+
+  const a = rand(ix, iy)
+  const b = rand(ix + 1, iy)
+  const c = rand(ix, iy + 1)
+  const d = rand(ix + 1, iy + 1)
+
+  const x1 = lerp(a, b, u)
+  const x2 = lerp(c, d, u)
+
+  // Map to [-1, 1]
+  return lerp(x1, x2, v) * 2 - 1
+}
+
+const LIQUIDITY_SEGMENTS = 50 // >= 50x50 vertices
+const LIQUIDITY_SIZE = 10
+const LIQUIDITY_SIGMA = 1.8
+const LIQUIDITY_NOISE_SCALE = 0.8
+
+const createLiquiditySurfaceGeometry = () => {
+  return new THREE.PlaneGeometry(LIQUIDITY_SIZE, LIQUIDITY_SIZE, LIQUIDITY_SEGMENTS, LIQUIDITY_SEGMENTS)
+}
+
+const updateLiquiditySurfaceGeometry = (geometry: THREE.PlaneGeometry, time: number) => {
   const positions = geometry.attributes.position.array as Float32Array
-  const colors: number[] = []
-  
+
+  // Dynamic parameters based on liquidityParams
+  const flowPressure = liquidityParams.value.flowPressure
+  const periodSetting = liquidityParams.value.liquidity
+
+  // Peak amplitude: 0.3 to 0.8 based on flow pressure
+  const peakAmplitude = 0.3 + flowPressure * 0.5
+  // Wave frequency based on period settings
+  const waveFrequency = 0.5 + periodSetting * 0.8
+
+  let minZ = Number.POSITIVE_INFINITY
+  let maxZ = Number.NEGATIVE_INFINITY
+
   for (let i = 0; i < positions.length; i += 3) {
     const x = positions[i]
     const y = positions[i + 1]
-    
-    // Manifold inference: нестационарная поверхность
+
+    // Distance from center
     const r = Math.sqrt(x * x + y * y)
-    const theta = Math.atan2(y, x)
-    
-    // Flow pressure влияет на высоту
-    const flowEffect = Math.sin(r * liquidityParams.value.flowPressure * 2 + time) * Math.cos(theta * 3 + time * 0.5) * liquidityParams.value.liquidity
-    
-    // Временная эволюция
-    const timeEffect = Math.sin((r + time) * 1.5) * Math.cos((theta + time) * 2) * 0.3
-    
-    // Общая высота
-    const z = flowEffect + timeEffect
-    
+
+    // 1. Central Gaussian peak: z = A * exp(-r^2/(2σ^2))
+    const gaussianPeak = peakAmplitude * Math.exp(-(r * r) / (2 * LIQUIDITY_SIGMA * LIQUIDITY_SIGMA))
+
+    // 2. Concentric ripple waves spreading from center
+    const ripplePhase = r * waveFrequency - time * 2
+    const rippleAmplitude = 0.08 * Math.exp(-r * 0.15) // Decay with distance
+    const ripples = rippleAmplitude * Math.sin(ripplePhase * Math.PI)
+
+    // 3. Secondary slower waves
+    const slowWave = 0.03 * Math.sin(r * 0.3 - time * 0.5) * Math.exp(-r * 0.1)
+
+    // 4. Micro noise texture for surface detail
+    const microNoise = 0.015 * noise2D(x * LIQUIDITY_NOISE_SCALE + time * 0.2, y * LIQUIDITY_NOISE_SCALE, time * 0.1)
+
+    // Combined height
+    const z = gaussianPeak + ripples + slowWave + microNoise
+
     positions[i + 2] = z
-    
-    // Цветовой градиент: розовый/магента в центре (низкие z) -> оранжевый/красный по краям (высокие z)
-    // Инвертируем нормализацию: низкие z (центр) = розовый, высокие z (края) = оранжевый/красный
-    const normalizedZ = (z + 2) / 4 // Нормализация от -2 до 2
-    const t = Math.max(0, Math.min(1, 1 - normalizedZ)) // Инвертируем для центра = розовый
-    
-    // Градиент: розовый/магента (#ec4899, #d946ef) в центре -> оранжевый/красный (#f97316, #ef4444) по краям
-    let rColor, gColor, bColor
-    if (t < 0.5) {
-      // Розовый/магента к оранжевому
-      const localT = t * 2
-      rColor = 236 + (249 - 236) * localT
-      gColor = 72 + (115 - 72) * localT
-      bColor = 153 + (22 - 153) * localT
-    } else {
-      // Оранжевый к красному
-      const localT = (t - 0.5) * 2
-      rColor = 249 + (239 - 249) * localT
-      gColor = 115 + (68 - 115) * localT
-      bColor = 22 + (68 - 22) * localT
-    }
-    
-    colors.push(rColor / 255, gColor / 255, bColor / 255)
+    if (z < minZ) minZ = z
+    if (z > maxZ) maxZ = z
   }
-  
-  geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3))
+
+  ;(geometry.attributes.position as THREE.BufferAttribute).needsUpdate = true
   geometry.computeVertexNormals()
-  
-  return geometry
+
+  return { minZ, maxZ }
 }
 
 // Initialize Liquidity 3D Surface
 const initLiquidity3D = () => {
-  if (!liquidity3DCanvas.value) {
-    console.warn('liquidity3DCanvas not found')
+  const canvas = liquidity3DCanvas.value
+  if (!canvas) {
+    console.warn('liquidity3DCanvas not found, retrying...')
+    liquidity3DStatus.value = 'initializing'
+    setTimeout(initLiquidity3D, 500)
+    return
+  }
+
+  liquidity3DStatus.value = 'initializing'
+  liquidity3DError.value = ''
+  
+  // Get container dimensions
+  const container = canvas.parentElement
+  const width = container?.clientWidth || canvas.clientWidth || 300
+  const height = container?.clientHeight || canvas.clientHeight || 220
+  
+  if (width < 10 || height < 10) {
+    console.warn('Canvas too small, retrying...')
+    setTimeout(initLiquidity3D, 500)
+    return
+  }
+
+  // WebGL availability check (gives a clear error instead of silent blank canvas)
+  try {
+    const gl = canvas.getContext('webgl2') || canvas.getContext('webgl') || canvas.getContext('experimental-webgl')
+    if (!gl) {
+      liquidity3DStatus.value = 'error'
+      liquidity3DError.value = 'WebGL недоступен в браузере/системе'
+      return
+    }
+  } catch {
+    liquidity3DStatus.value = 'error'
+    liquidity3DError.value = 'WebGL недоступен в браузере/системе'
     return
   }
   
-  // Wait for canvas to be properly sized
-  setTimeout(() => {
-    if (!liquidity3DCanvas.value) return
-    
-    const width = liquidity3DCanvas.value.clientWidth || 400
-    const height = liquidity3DCanvas.value.clientHeight || 400
-    
-    // Scene
-    liquidityScene = new THREE.Scene()
-    liquidityScene.background = new THREE.Color(0x000000)
+  // Cleanup previous instance if exists
+  if (liquidityAnimationId) {
+    cancelAnimationFrame(liquidityAnimationId)
+  }
+  if (liquidityRenderer) {
+    liquidityRenderer.dispose()
+  }
+  
+  console.log('Initializing 3D Surface:', width, 'x', height)
 
-    // Camera
-    liquidityCamera = new THREE.PerspectiveCamera(75, width / height, 0.1, 1000)
-    liquidityCamera.position.set(8, 8, 8)
-    liquidityCamera.lookAt(0, 0, 0)
+  try {
+    
+  // Scene with dark background
+  liquidityScene = new THREE.Scene()
+  liquidityScene.background = new THREE.Color(0x0a0a0a)
 
-    // Renderer
-    liquidityRenderer = new THREE.WebGLRenderer({ 
-      canvas: liquidity3DCanvas.value, 
-      antialias: true,
-      alpha: true
-    })
-    liquidityRenderer.setSize(width, height)
-    liquidityRenderer.setPixelRatio(window.devicePixelRatio)
-    
-    // Lighting
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.3)
-    liquidityScene.add(ambientLight)
-    
-    const pointLight1 = new THREE.PointLight(0xec4899, 0.8, 100)
-    pointLight1.position.set(10, 10, 10)
-    liquidityScene.add(pointLight1)
-    
-    const pointLight2 = new THREE.PointLight(0xf97316, 0.6, 100)
-    pointLight2.position.set(-10, -10, 10)
-    liquidityScene.add(pointLight2)
-    
-    // Create surface
-    const geometry = generateLiquiditySurface(0)
-    const material = new THREE.MeshPhongMaterial({
-      vertexColors: true,
-      wireframe: false,
-      transparent: true,
-      opacity: 0.9,
-      shininess: 30
-    })
-    
-    liquidityMesh = new THREE.Mesh(geometry, material)
-    liquidityMesh.rotation.x = -Math.PI / 4
-    liquidityScene.add(liquidityMesh)
-    
-    // Add grid
-    const gridHelper = new THREE.GridHelper(10, 20, 0x333333, 0x1a1a1a)
-    liquidityScene.add(gridHelper)
-    
-    // Animation loop
-    const animate = () => {
-      liquidityAnimationId = requestAnimationFrame(animate)
-      
-      if (liquidityMesh) {
-        // Rotate surface
-        liquidityRotation += 0.005
-        liquidityMesh.rotation.y = liquidityRotation
-        
-        // Update surface geometry
-        liquidityParams.value.timeEvolution += 0.02
-        const newGeometry = generateLiquiditySurface(liquidityParams.value.timeEvolution)
-        liquidityMesh.geometry.dispose()
-        liquidityMesh.geometry = newGeometry
+  // Camera - isometric perspective (30° elevation, 45° azimuth)
+  liquidityCamera = new THREE.PerspectiveCamera(45, width / height, 0.1, 1000)
+  const cameraRadius = 12
+  const elevationAngle = 30 * Math.PI / 180 // 30 degrees
+  const azimuthAngle = 45 * Math.PI / 180   // 45 degrees
+  liquidityCamera.position.set(
+    cameraRadius * Math.cos(elevationAngle) * Math.sin(azimuthAngle),
+    cameraRadius * Math.sin(elevationAngle),
+    cameraRadius * Math.cos(elevationAngle) * Math.cos(azimuthAngle)
+  )
+  liquidityCamera.lookAt(0, 0, 0)
+
+  // Renderer with antialiasing
+  liquidityRenderer = new THREE.WebGLRenderer({ 
+    canvas: canvas, 
+    antialias: true,
+    alpha: false
+  })
+  liquidityRenderer.setSize(width, height)
+  liquidityRenderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
+  
+  // Soft ambient lighting
+  const ambientLight = new THREE.AmbientLight(0xffffff, 0.6)
+  liquidityScene.add(ambientLight)
+  
+  // Directional light from above for soft shading
+  const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8)
+  directionalLight.position.set(5, 10, 5)
+  liquidityScene.add(directionalLight)
+  
+  // Colored accent lights
+  const pinkLight = new THREE.PointLight(0xff6090, 0.5, 50)
+  pinkLight.position.set(-8, 5, -8)
+  liquidityScene.add(pinkLight)
+  
+  const greenLight = new THREE.PointLight(0x90ff60, 0.4, 50)
+  greenLight.position.set(8, 8, 8)
+  liquidityScene.add(greenLight)
+  
+  // Create surface mesh with smooth shading (geometry updated in-place)
+  liquidityGradientUniforms = null
+  liquiditySurfaceGeometry?.dispose()
+  liquiditySurfaceGeometry = createLiquiditySurfaceGeometry()
+  const initialRange = updateLiquiditySurfaceGeometry(liquiditySurfaceGeometry, 0)
+
+  const material = new THREE.MeshPhongMaterial({
+    color: 0xffffff,
+    wireframe: false,
+    flatShading: false,
+    shininess: 40,
+    side: THREE.DoubleSide
+  })
+
+  // Custom shader: height-based gradient color map (as per requirements)
+  material.onBeforeCompile = (shader) => {
+    shader.uniforms.uMinH = { value: initialRange.minZ }
+    shader.uniforms.uMaxH = { value: initialRange.maxZ }
+    liquidityGradientUniforms = {
+      uMinH: shader.uniforms.uMinH,
+      uMaxH: shader.uniforms.uMaxH
+    }
+
+    shader.vertexShader = `varying float vHeight;\n${shader.vertexShader}`
+    shader.vertexShader = shader.vertexShader.replace(
+      '#include <begin_vertex>',
+      '#include <begin_vertex>\n  vHeight = transformed.z;'
+    )
+
+    shader.fragmentShader = `varying float vHeight;\nuniform float uMinH;\nuniform float uMaxH;\n${shader.fragmentShader}`
+    shader.fragmentShader = shader.fragmentShader.replace(
+      'vec4 diffuseColor = vec4( diffuse, opacity );',
+      `
+      float ht = clamp((vHeight - uMinH) / (uMaxH - uMinH + 1e-5), 0.0, 1.0);
+      vec3 c0 = vec3(0.16, 0.04, 0.25); // deep purple/red (low)
+      vec3 c1 = vec3(0.92, 0.28, 0.62); // pink
+      vec3 c2 = vec3(0.98, 0.45, 0.12); // orange
+      vec3 c3 = vec3(0.95, 0.85, 0.12); // yellow
+      vec3 c4 = vec3(0.62, 1.00, 0.38); // lime (peak)
+      vec3 grad;
+      if (ht < 0.25) {
+        grad = mix(c0, c1, ht / 0.25);
+      } else if (ht < 0.50) {
+        grad = mix(c1, c2, (ht - 0.25) / 0.25);
+      } else if (ht < 0.75) {
+        grad = mix(c2, c3, (ht - 0.50) / 0.25);
+      } else {
+        grad = mix(c3, c4, (ht - 0.75) / 0.25);
       }
-      
-      // Rotate camera around surface
-      if (liquidityCamera) {
-        const radius = 12
-        liquidityCamera.position.x = Math.cos(liquidityRotation * 0.3) * radius
-        liquidityCamera.position.z = Math.sin(liquidityRotation * 0.3) * radius
-        liquidityCamera.lookAt(0, 0, 0)
-      }
-      
-      if (liquidityRenderer && liquidityScene && liquidityCamera) {
-        liquidityRenderer.render(liquidityScene, liquidityCamera)
+      vec4 diffuseColor = vec4( grad, opacity );
+      `
+    )
+  }
+  material.needsUpdate = true
+
+  liquidityMesh = new THREE.Mesh(liquiditySurfaceGeometry, material)
+  liquidityMesh.rotation.x = -Math.PI / 2 // make Z-height point up (Y)
+
+  // Subtle wireframe overlay to emphasize the surface grid
+  const wireMaterial = new THREE.MeshBasicMaterial({
+    color: 0xffffff,
+    wireframe: true,
+    transparent: true,
+    opacity: 0.14,
+    polygonOffset: true,
+    polygonOffsetFactor: -1,
+    polygonOffsetUnits: -1
+  })
+  const wireMesh = new THREE.Mesh(liquiditySurfaceGeometry, wireMaterial)
+  wireMesh.renderOrder = 1
+  liquidityMesh.add(wireMesh)
+
+  liquidityScene.add(liquidityMesh)
+
+  // Render at least once immediately
+  liquidityRenderer.render(liquidityScene, liquidityCamera)
+
+  // Animation loop - slow rotation + dynamic deformation
+  let lastTime = performance.now()
+  const rotationSpeed = 0.012 // ~0.7° per frame at 60fps
+
+  const animate = () => {
+    liquidityAnimationId = requestAnimationFrame(animate)
+    const now = performance.now()
+    const dt = Math.min(0.05, (now - lastTime) / 1000) // cap at 50ms
+    lastTime = now
+
+    if (liquidityMesh && liquiditySurfaceGeometry) {
+      // Slow continuous rotation around vertical axis (Y)
+      liquidityMesh.rotation.y += rotationSpeed
+
+      // Update parameters smoothly (simulated real-time inputs)
+      liquidityParams.value.timeEvolution += dt * 1.6
+
+      const targetPressure = 0.5 + 0.4 * Math.sin(now * 0.0003)
+      const targetPeriod = 0.55 + 0.35 * Math.sin(now * 0.0002 + 1.3)
+
+      liquidityParams.value.flowPressure += (targetPressure - liquidityParams.value.flowPressure) * 0.08
+      liquidityParams.value.liquidity += (targetPeriod - liquidityParams.value.liquidity) * 0.05
+
+      // Update geometry in-place + update shader uniforms for gradient normalization
+      const range = updateLiquiditySurfaceGeometry(liquiditySurfaceGeometry, liquidityParams.value.timeEvolution)
+      if (liquidityGradientUniforms) {
+        liquidityGradientUniforms.uMinH.value = range.minZ
+        liquidityGradientUniforms.uMaxH.value = range.maxZ
       }
     }
-    animate()
-  }, 100)
+
+    if (liquidityRenderer && liquidityScene && liquidityCamera) {
+      liquidityRenderer.render(liquidityScene, liquidityCamera)
+    }
+  }
+  
+  animate()
+  liquidity3DStatus.value = 'ready'
+  } catch (err) {
+    console.error('initLiquidity3D failed:', err)
+    liquidity3DStatus.value = 'error'
+    liquidity3DError.value = err instanceof Error ? err.message : String(err)
+  }
 }
 
 // Generate Price Stream Data
@@ -2127,47 +3523,6 @@ const priceAreaPath = computed(() => {
   const height = 200
   return `${line} L ${width} ${height} L 0 ${height} Z`
 })
-
-// Generate Signal Matrix
-const generateSignalMatrix = () => {
-  const rows = 8
-  const cols = 50
-  const cellWidth = 800 / cols
-  const cellHeight = 150 / rows
-  const matrix: Array<{ x: number, y: number, width: number, height: number, color: string, intensity: number }> = []
-  
-  for (let row = 0; row < rows; row++) {
-    for (let col = 0; col < cols; col++) {
-      // Временные паттерны
-      const timePattern = Math.sin((col / cols) * Math.PI * 4 + liquidityParams.value.timeEvolution * 2)
-      const rowPattern = Math.cos((row / rows) * Math.PI * 2)
-      const intensity = (timePattern * rowPattern + 1) / 2
-      
-      // Цветовой градиент: фиолетовый → розовый → коралловый → желтый
-      let color
-      if (intensity < 0.25) {
-        color = '#9333ea' // Фиолетовый
-      } else if (intensity < 0.5) {
-        color = '#ec4899' // Розовый
-      } else if (intensity < 0.75) {
-        color = '#f97316' // Коралловый/оранжевый
-      } else {
-        color = '#eab308' // Желтый
-      }
-      
-      matrix.push({
-        x: col * cellWidth,
-        y: row * cellHeight,
-        width: cellWidth,
-        height: cellHeight,
-        color,
-        intensity: Math.max(0.3, intensity)
-      })
-    }
-  }
-  
-  signalMatrix.value = matrix
-}
 
 // Update Liquidity Data
 const updateLiquidityData = () => {
@@ -2810,7 +4165,6 @@ const calculatePerformanceStats = () => {
 // ============================================
 
 // Terminal State
-const isLive = ref(true)
 const terminalVix = ref(14.20)
 const threeCanvas = ref<HTMLCanvasElement | null>(null)
 const backtestChart = ref<SVGElement | null>(null)
@@ -3304,15 +4658,49 @@ let dataInterval: any = null
 let terminalInterval: any = null
 
 onMounted(() => {
-  updateTime()
-  timeInterval = setInterval(updateTime, 1000)
+  updateCurrentTime()
+  timeInterval = setInterval(updateCurrentTime, 1000)
   dataInterval = setInterval(updateMarketData, 2000)
   
+  // Start news rotation
+  startNewsRotation()
+  
+  // Initialize index charts
+  generateChartData()
+  setInterval(updateIndexCharts, 2000)
+  
+  // Initialize markets data updates
+  updateMarketsUpdateTime()
+  setInterval(updateMarketsData, 5000)
+  
+  // Initialize sparkline charts
+  generateSparklineData()
+  setInterval(updateSparklineData, 3000)
+  
+  // Initialize AI Insights updates
+  setInterval(updateAiInsights, 4000)
+  
+  // Initialize Signal Matrix
+  generateSignalMatrix()
+  setInterval(updateSignalMatrix, 2000)
+
   // Initialize QuantLatent
   generateGrowthData()
   setTimeout(() => {
     initWireframe()
   }, 300)
+  
+  // Initialize Mini Charts (legacy)
+  setTimeout(() => {
+    initMiniCharts()
+  }, 500)
+  
+  // Update current time
+  updateCurrentTime()
+  setInterval(updateCurrentTime, 1000)
+  
+  // Initialize 3D Liquidity Surface
+  setTimeout(initLiquidity3D, 800)
   
   // Update QuantLatent data every 100ms
   setInterval(updateQuantLatentData, 100)
@@ -3328,9 +4716,6 @@ onMounted(() => {
   // Initialize Liquidity Dashboard
   generatePriceStream()
   generateSignalMatrix()
-  setTimeout(() => {
-    initLiquidity3D()
-  }, 1500)
   
   // Update liquidity data every 2 seconds
   setInterval(updateLiquidityData, 2000)
@@ -3351,6 +4736,7 @@ onBeforeUnmount(() => {
   if (timeInterval) clearInterval(timeInterval)
   if (dataInterval) clearInterval(dataInterval)
   if (terminalInterval) clearInterval(terminalInterval)
+  stopNewsRotation()
   
   // Cleanup animation frames
   if (animationId !== null) cancelAnimationFrame(animationId)
@@ -3359,6 +4745,20 @@ onBeforeUnmount(() => {
   
   // Cleanup THREE.js renderers and scenes
   if (liquidityRenderer) {
+    if (liquidityMesh) {
+      liquidityMesh.traverse((obj) => {
+        const anyObj = obj as any
+        if (!anyObj?.material) return
+        const mat = anyObj.material
+        if (Array.isArray(mat)) mat.forEach((m) => m?.dispose?.())
+        else mat?.dispose?.()
+      })
+    }
+    if (liquiditySurfaceGeometry) {
+      liquiditySurfaceGeometry.dispose()
+      liquiditySurfaceGeometry = null
+    }
+    liquidityGradientUniforms = null
     liquidityRenderer.dispose()
     liquidityScene = null
     liquidityCamera = null
@@ -3383,12 +4783,2618 @@ onBeforeUnmount(() => {
 
 <style scoped>
 /* ============================================
-   PAGE LAYOUT - используем стили из main.css
+   MARKET DATA PAGE - NEW DESIGN SYSTEM
    ============================================ */
+
+/* ============================================
+   FUTURISTIC GLASS + DARK NEON ORANGE
+   ============================================ */
+
+.market-data-page {
+  /* Основные цвета фона */
+  --primary-bg: #050810;
+  --secondary-bg: #080c18;
+  --tertiary-bg: #0c1428;
+  
+  /* Glassmorphism */
+  --glass-dark: rgba(15, 21, 40, 0.7);
+  --glass-light: rgba(30, 45, 75, 0.3);
+  --glass-subtle: rgba(15, 21, 40, 0.5);
+  
+  /* Неоновые акценты */
+  --accent-orange: #ff8c00;
+  --accent-orange-dark: #ff6a00;
+  --accent-cyan: #00d9ff;
+  --accent-lime: #00ff88;
+  --accent-red: #ff3366;
+  --accent-yellow: #ffd60a;
+  
+  /* Текст */
+  --text-primary: #e8f0ff;
+  --text-secondary: #a0afc8;
+  --text-muted: #5a6f8f;
+  --text-dim: #3a4f6f;
+  
+  /* Свечения */
+  --glow-orange: 0 0 10px rgba(255, 140, 0, 0.5);
+  --glow-cyan: 0 0 10px rgba(0, 217, 255, 0.5);
+  --glow-lime: 0 0 10px rgba(0, 255, 136, 0.5);
+  --shadow-deep: 0 8px 32px rgba(0, 0, 0, 0.4);
+  --shadow-light: inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  
+  /* Legacy compatibility */
+  --primary: var(--primary-bg);
+  --secondary: var(--secondary-bg);
+  --accent: var(--accent-orange);
+  --success: var(--accent-lime);
+  --danger: var(--accent-red);
+  --glass: var(--glass-dark);
+}
+
+.market-data-page {
+  min-height: 100vh;
+  background: linear-gradient(135deg, var(--primary-bg) 0%, var(--tertiary-bg) 100%);
+  color: var(--text-primary);
+  display: flex;
+  font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, 'Roboto', sans-serif;
+  font-size: 12px;
+  position: relative;
+  margin: 0;
+  padding: 0;
+}
+
+/* ============================================
+   NEW SIDEBAR DESIGN (Glassmorphism Style)
+   ============================================ */
+.market-sidebar {
+  position: fixed;
+  left: 16px;
+  top: 16px;
+  width: 260px;
+  height: calc(100vh - 32px);
+  background: rgba(30, 32, 40, 0.4);
+  backdrop-filter: blur(40px) saturate(180%);
+  -webkit-backdrop-filter: blur(40px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 24px;
+  padding: 24px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  overflow-y: auto;
+  z-index: 100;
+  box-shadow:
+    0 20px 40px -10px rgba(0, 0, 0, 0.5),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  transition: all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+/* Sidebar Header */
+.sidebar-header {
+  padding-bottom: 20px;
+  border-bottom: 1.5px solid rgba(255, 140, 0, 0.2);
+  margin-bottom: 10px;
+}
+
+.sidebar-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text-primary);
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  margin: 0 0 6px 0;
+}
+
+.sidebar-subtitle {
+  font-size: 9px;
+  color: rgba(255, 255, 255, 0.4);
+  margin: 0 0 14px 0;
+  font-weight: 400;
+  letter-spacing: 0.5px;
+  line-height: 1.4;
+}
+
+.back-to-dashboard {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-secondary);
+  text-decoration: none;
+  font-size: 12px;
+  font-weight: 500;
+  padding: 10px 14px;
+  background: transparent;
+  border: 1.5px solid rgba(255, 140, 0, 0.2);
+  border-radius: 20px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.back-to-dashboard:hover {
+  border-color: var(--accent-orange);
+  background: rgba(255, 140, 0, 0.08);
+  color: var(--accent-orange);
+  box-shadow: var(--glow-orange);
+}
+
+.back-to-dashboard svg {
+  width: 14px;
+  height: 14px;
+}
+
+/* Navigation Buttons */
+.sidebar-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  flex: 1;
+}
+
+.nav-btn {
+  padding: 14px 16px;
+  background: transparent;
+  border: 1.5px solid rgba(255, 140, 0, 0.2);
+  border-radius: 20px;
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 1.2px;
+  text-align: left;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: var(--shadow-light);
+}
+
+.nav-btn:hover {
+  border-color: var(--accent-orange);
+  background: rgba(255, 140, 0, 0.08);
+  color: var(--text-primary);
+  box-shadow: 0 0 10px rgba(255, 140, 0, 0.2);
+  transform: translateY(-2px);
+}
+
+.nav-btn.active {
+  border-color: var(--accent-orange);
+  border-left: 3px solid var(--accent-orange);
+  background: rgba(255, 140, 0, 0.12);
+  color: var(--accent-orange);
+  box-shadow: inset 0 0 10px rgba(255, 140, 0, 0.2), var(--glow-orange);
+}
+
+/* Sidebar Status */
+.sidebar-status {
+  margin-top: auto;
+  padding-top: 20px;
+  border-top: 1.5px solid rgba(255, 140, 0, 0.2);
+}
+
+.status-indicator {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--accent-lime);
+  box-shadow: var(--glow-lime);
+}
+
+.status-dot.pulse {
+  animation: pulse 2s infinite;
+}
+
+.status-text {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--accent-lime);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.status-time {
+  font-size: 10px;
+  color: var(--text-muted);
+  font-family: 'Monaco', 'Courier New', monospace;
+}
+
+/* ============================================
+   MAIN CONTENT AREA
+   ============================================ */
+.market-main {
+  margin-left: 292px;
+  flex: 1;
+  padding: 16px 16px 16px 0;
+  min-height: 100vh;
+  overflow-y: auto;
+  box-sizing: border-box;
+}
+
+/* Main Grid */
+.main-grid {
+  display: grid;
+  grid-template-columns: 1fr 320px;
+  gap: 16px;
+  align-items: flex-start;
+}
+
+/* Markets Panel (Left) */
+.markets-panel {
+  background: rgba(30, 32, 40, 0.4);
+  backdrop-filter: blur(40px) saturate(180%);
+  -webkit-backdrop-filter: blur(40px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 24px;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+  box-shadow:
+    0 20px 40px -10px rgba(0, 0, 0, 0.5),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+/* Markets Overview Block */
+.markets-overview-block {
+  background: rgba(20, 25, 35, 0.6);
+  border: 2px solid var(--accent-orange);
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow:
+    0 0 20px rgba(255, 140, 0, 0.3),
+    0 0 40px rgba(255, 140, 0, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+.markets-overview-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  background: rgba(255, 140, 0, 0.1);
+  border-bottom: 1px solid rgba(255, 140, 0, 0.3);
+}
+
+.markets-overview-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--accent-orange);
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  text-shadow: 0 0 10px rgba(255, 140, 0, 0.5);
+}
+
+.markets-overview-update {
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.35);
+  font-weight: 400;
+}
+
+.markets-overview-content {
+  padding: 0;
+}
+
+/* Markets Table */
+.markets-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 11px;
+  table-layout: fixed;
+}
+
+.markets-table thead th {
+  padding: 10px 6px;
+  background: rgba(10, 15, 25, 0.6);
+  color: var(--text-primary);
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  text-align: center;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  white-space: nowrap;
+}
+
+.markets-table tbody td {
+  padding: 8px 6px;
+  text-align: center;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  vertical-align: middle;
+}
+
+.markets-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.markets-table tbody tr:hover {
+  background: rgba(255, 140, 0, 0.05);
+}
+
+.markets-table .data-value {
+  display: block;
+  color: var(--text-primary);
+  font-weight: 500;
+  font-family: 'Monaco', 'Courier New', monospace;
+  margin-bottom: 2px;
+}
+
+.markets-table .data-change {
+  display: block;
+  font-size: 11px;
+  font-weight: 600;
+  font-family: 'Monaco', 'Courier New', monospace;
+}
+
+.markets-table .data-change.positive {
+  color: var(--accent-lime);
+}
+
+.markets-table .data-change.negative {
+  color: var(--accent-red);
+}
+
+.markets-table .index-name {
+  display: block;
+  color: var(--accent-orange);
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 4px;
+  opacity: 0.9;
+}
+
+.markets-table .data-empty {
+  color: var(--text-muted);
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+.data-value {
+  color: var(--text-secondary);
+  font-family: 'Monaco', 'Courier New', monospace;
+}
+
+.data-change {
+  font-weight: 600;
+  font-family: 'Monaco', 'Courier New', monospace;
+}
+
+.data-change.positive {
+  color: var(--accent-lime);
+  text-shadow: 0 0 6px rgba(0, 255, 136, 0.3);
+}
+
+.data-change.negative {
+  color: var(--accent-red);
+  text-shadow: 0 0 6px rgba(255, 51, 102, 0.3);
+}
+
+/* Index Charts Row */
+.index-charts-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.index-chart-block {
+  background: rgba(20, 25, 35, 0.6);
+  border: 2px solid var(--accent-orange);
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow:
+    0 0 15px rgba(255, 140, 0, 0.2),
+    0 0 30px rgba(255, 140, 0, 0.1);
+}
+
+.index-chart-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 14px;
+  background: rgba(255, 140, 0, 0.1);
+  border-bottom: 1px solid rgba(255, 140, 0, 0.3);
+}
+
+.index-chart-title {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.index-chart-name {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--accent-orange);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.index-chart-freq {
+  font-size: 9px;
+  color: rgba(255, 255, 255, 0.35);
+  font-weight: 400;
+}
+
+.index-chart-value {
+  font-size: 12px;
+  font-weight: 700;
+  font-family: 'Monaco', 'Courier New', monospace;
+}
+
+.index-chart-value.positive {
+  color: var(--accent-lime);
+}
+
+.index-chart-value.negative {
+  color: var(--accent-red);
+}
+
+.index-chart-container {
+  height: 240px;
+  padding: 12px;
+  background: rgba(0, 0, 0, 0.2);
+}
+
+.index-chart-svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.index-chart-svg path {
+  transition: d 0.8s cubic-bezier(0.4, 0, 0.2, 1), 
+              stroke 0.3s ease,
+              fill 0.3s ease;
+}
+
+/* News Block */
+.news-block {
+  background: rgba(20, 25, 35, 0.6);
+  border: 2px solid var(--accent-orange);
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow:
+    0 0 20px rgba(255, 140, 0, 0.3),
+    0 0 40px rgba(255, 140, 0, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+.news-block-header {
+  padding: 16px 20px;
+  background: rgba(255, 140, 0, 0.1);
+  border-bottom: 1px solid rgba(255, 140, 0, 0.3);
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--accent-orange);
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  text-shadow: 0 0 10px rgba(255, 140, 0, 0.5);
+}
+
+.news-carousel {
+  padding: 16px 20px;
+  overflow: hidden;
+}
+
+.news-carousel-inner {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.news-item-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 10px 12px;
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 10px;
+  border-left: 3px solid transparent;
+  transition: all 0.3s ease;
+}
+
+.news-item-row:hover {
+  background: rgba(255, 140, 0, 0.05);
+  border-left-color: var(--accent-orange);
+}
+
+.news-region {
+  flex-shrink: 0;
+  padding: 4px 8px;
+  background: rgba(255, 140, 0, 0.15);
+  border: 1px solid rgba(255, 140, 0, 0.3);
+  border-radius: 8px;
+  font-size: 9px;
+  font-weight: 700;
+  color: var(--accent-orange);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  min-width: 60px;
+  text-align: center;
+}
+
+.news-block .news-text {
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--text-secondary);
+  margin: 0;
+  flex: 1;
+}
+
+/* News List Animation */
+.news-list-move,
+.news-list-enter-active,
+.news-list-leave-active {
+  transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.news-list-enter-from {
+  opacity: 0;
+  transform: translateY(30px);
+}
+
+.news-list-leave-to {
+  opacity: 0;
+  transform: translateY(-30px);
+}
+
+.news-list-leave-active {
+  position: absolute;
+  left: 0;
+  right: 0;
+}
+
+.news-content {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.news-text {
+  font-size: 11px;
+  line-height: 1.5;
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+.news-text.secondary {
+  color: var(--text-muted);
+}
+
+/* Insights Panel (Right) */
+.insights-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+/* Sparkline Block */
+.sparkline-block {
+  background: rgba(20, 25, 35, 0.6);
+  border: 2px solid var(--accent-orange);
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow:
+    0 0 20px rgba(255, 140, 0, 0.3),
+    0 0 40px rgba(255, 140, 0, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+.sparkline-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 18px;
+  background: rgba(255, 140, 0, 0.1);
+  border-bottom: 1px solid rgba(255, 140, 0, 0.3);
+}
+
+.sparkline-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--accent-orange);
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  text-shadow: 0 0 10px rgba(255, 140, 0, 0.5);
+}
+
+.sparkline-update {
+  font-size: 9px;
+  color: rgba(255, 255, 255, 0.35);
+  font-weight: 400;
+}
+
+.sparkline-content {
+  padding: 14px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.sparkline-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 12px;
+  transition: background 0.2s ease;
+}
+
+.sparkline-item:hover {
+  background: rgba(255, 140, 0, 0.08);
+}
+
+.sparkline-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 90px;
+}
+
+.sparkline-name {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.sparkline-value {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-primary);
+  font-family: 'Monaco', 'Courier New', monospace;
+}
+
+.sparkline-change {
+  font-size: 10px;
+  font-weight: 600;
+  font-family: 'Monaco', 'Courier New', monospace;
+}
+
+.sparkline-change.positive {
+  color: var(--accent-lime);
+}
+
+.sparkline-change.negative {
+  color: var(--accent-red);
+}
+
+.sparkline-chart {
+  flex: 1;
+  height: 30px;
+  min-width: 80px;
+}
+
+.sparkline-svg {
+  width: 100%;
+  height: 100%;
+}
+
+.sparkline-svg path {
+  transition: d 0.5s ease-out;
+}
+
+/* AI Insights Block - стилистика как у "Обзор рынков" */
+.ai-insights-block {
+  background: rgba(20, 25, 35, 0.6);
+  border: 2px solid var(--accent-orange);
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow:
+    0 0 20px rgba(255, 140, 0, 0.3),
+    0 0 40px rgba(255, 140, 0, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+.ai-insights-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  background: rgba(255, 140, 0, 0.1);
+  border-bottom: 1px solid rgba(255, 140, 0, 0.3);
+}
+
+.ai-insights-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--accent-orange);
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  text-shadow: 0 0 10px rgba(255, 140, 0, 0.5);
+}
+
+.ai-insights-content {
+  padding: 16px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.ai-signals {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.ai-signal-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 12px;
+  padding: 8px 12px;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 10px;
+  transition: background 0.2s ease;
+}
+
+.ai-signal-item:hover {
+  background: rgba(255, 140, 0, 0.08);
+}
+
+.ai-signal-icon {
+  font-size: 10px;
+}
+
+.ai-signal-icon.buy {
+  color: var(--accent-lime);
+}
+
+.ai-signal-icon.sell {
+  color: var(--accent-red);
+}
+
+.ai-signal-action {
+  font-weight: 700;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  min-width: 70px;
+}
+
+.ai-signal-action.buy {
+  color: var(--accent-lime);
+}
+
+.ai-signal-action.sell {
+  color: var(--accent-red);
+}
+
+.ai-signal-symbol {
+  color: var(--text-primary);
+  font-weight: 600;
+  flex: 1;
+}
+
+.ai-signal-value {
+  font-family: 'Monaco', 'Courier New', monospace;
+  font-weight: 600;
+  font-size: 11px;
+}
+
+.ai-signal-value.buy {
+  color: var(--accent-lime);
+}
+
+.ai-signal-value.sell {
+  color: var(--accent-red);
+}
+
+.ai-section {
+  margin-top: 0;
+  padding-top: 16px;
+  border-top: 1px solid rgba(255, 140, 0, 0.2);
+}
+
+.ai-section-title {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--accent-orange);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 12px;
+  text-shadow: 0 0 6px rgba(255, 140, 0, 0.3);
+}
+
+.ai-recommendations,
+.ai-alerts {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.rec-item {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  padding: 6px 10px;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 8px;
+}
+
+.rec-label {
+  color: var(--text-secondary);
+}
+
+.rec-value {
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+.alert-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 11px;
+  color: var(--text-secondary);
+  padding: 8px 10px;
+  background: rgba(255, 200, 0, 0.05);
+  border-radius: 8px;
+  border-left: 2px solid var(--accent-yellow);
+}
+
+.alert-icon {
+  color: var(--accent-yellow);
+  font-size: 11px;
+}
+
+.alert-text {
+  line-height: 1.4;
+}
+
+/* 3D Surface Block */
+.surface-block {
+  background: rgba(20, 25, 35, 0.6);
+  border: 2px solid var(--accent-orange);
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow:
+    0 0 20px rgba(255, 140, 0, 0.3),
+    0 0 40px rgba(255, 140, 0, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+.surface-block-header {
+  padding: 14px 18px;
+  background: rgba(255, 140, 0, 0.1);
+  border-bottom: 1px solid rgba(255, 140, 0, 0.3);
+}
+
+.surface-block-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.surface-label {
+  font-size: 9px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.4);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.surface-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--accent-cyan);
+}
+
+.surface-value {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text-primary);
+  font-family: 'Monaco', 'Courier New', monospace;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.surface-delta {
+  font-size: 12px;
+}
+
+.surface-delta.positive {
+  color: var(--accent-lime);
+}
+
+.surface-delta.negative {
+  color: var(--accent-red);
+}
+
+.surface-canvas-container {
+  padding: 0;
+  background: rgba(0, 0, 0, 0.4);
+  position: relative;
+}
+
+.surface-canvas-mini {
+  width: 100%;
+  height: 220px;
+  display: block;
+}
+
+.surface-fallback {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 12px;
+  background: rgba(0, 0, 0, 0.35);
+  color: rgba(255, 255, 255, 0.55);
+  font-size: 11px;
+  text-align: center;
+}
+
+/* Signal Matrix Block */
+.signal-matrix-block {
+  background: rgba(20, 25, 35, 0.6);
+  border: 2px solid var(--accent-orange);
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow:
+    0 0 20px rgba(255, 140, 0, 0.3),
+    0 0 40px rgba(255, 140, 0, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+.signal-matrix-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 18px;
+  background: rgba(255, 140, 0, 0.1);
+  border-bottom: 1px solid rgba(255, 140, 0, 0.3);
+}
+
+.signal-matrix-title {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--accent-orange);
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  text-shadow: 0 0 10px rgba(255, 140, 0, 0.5);
+}
+
+.signal-matrix-update {
+  font-size: 8px;
+  color: var(--accent-lime);
+  animation: pulse 1.5s infinite;
+}
+
+.signal-matrix-content {
+  padding: 16px 18px;
+}
+
+.signal-matrix-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.signal-matrix-row {
+  display: flex;
+  gap: 4px;
+}
+
+.signal-matrix-cell {
+  flex: 1;
+  height: 28px;
+  border-radius: 4px;
+  transition: background-color 0.5s ease;
+}
+
+/* ============================================
+   ANIMATIONS
+   ============================================ */
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.6;
+    transform: scale(1.2);
+  }
+}
+
+@keyframes textGlow {
+  0%, 100% {
+    text-shadow: 0 0 8px rgba(255, 140, 0, 0.3);
+  }
+  50% {
+    text-shadow: 0 0 16px rgba(255, 140, 0, 0.6);
+  }
+}
+
+@keyframes glow {
+  0%, 100% {
+    box-shadow: 0 0 10px rgba(255, 140, 0, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 20px rgba(255, 140, 0, 0.6);
+  }
+}
+
+/* ============================================
+   RESPONSIVE
+   ============================================ */
+@media (max-width: 1200px) {
+  .main-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .insights-panel {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 14px;
+  }
+  
+  .ai-insights-card {
+    grid-column: span 2;
+  }
+}
+
+@media (max-width: 1024px) {
+  .market-sidebar {
+    position: fixed;
+    left: -280px;
+    top: 0;
+    height: 100vh;
+    border-radius: 0 24px 24px 0;
+    transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  
+  .market-sidebar.open {
+    left: 0;
+  }
+  
+  .market-main {
+    margin-left: 16px;
+    padding: 16px;
+  }
+}
+
+@media (max-width: 768px) {
+  .markets-row {
+    grid-template-columns: 1fr;
+  }
+  
+  .insights-panel {
+    grid-template-columns: 1fr;
+  }
+  
+  .ai-insights-card {
+    grid-column: span 1;
+  }
+}
+
+/* ============================================
+   LEGACY SIDEBAR STYLES (keeping for compatibility)
+   ============================================ */
+
+.sidebar-search {
+  position: relative;
+  margin-bottom: 10px;
+}
+
+.search-input {
+  width: 100%;
+  padding: 12px 16px 12px 40px;
+  background: var(--glass-subtle);
+  backdrop-filter: blur(10px) saturate(180%);
+  -webkit-backdrop-filter: blur(10px) saturate(180%);
+  border: 1.5px solid rgba(255, 140, 0, 0.3);
+  border-radius: 10px;
+  color: var(--text-primary);
+  font-size: 12px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: var(--shadow-light);
+}
+
+.search-input::placeholder {
+  color: var(--text-dim);
+}
+
+.search-input:focus {
+  outline: none;
+  border-color: var(--accent-orange);
+  box-shadow: var(--glow-orange), var(--shadow-light);
+  background: var(--glass-light);
+}
+
+.search-icon {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: rgba(255, 255, 255, 0.5);
+  pointer-events: none;
+}
+
+/* Market Selection Grid (2x3) */
+.market-selection {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.market-selection .section-title {
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--text-secondary);
+  margin-bottom: 12px;
+}
+
+.market-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+}
+
+.market-card {
+  padding: 14px 12px;
+  background: var(--glass-subtle);
+  backdrop-filter: blur(10px) saturate(180%);
+  -webkit-backdrop-filter: blur(10px) saturate(180%);
+  border: 1.5px solid rgba(255, 140, 0, 0.3);
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  text-align: center;
+  box-shadow: var(--shadow-light);
+}
+
+.market-card:hover {
+  transform: translateY(-2px);
+  border-color: var(--accent-orange);
+  background: rgba(255, 140, 0, 0.08);
+  box-shadow: var(--glow-orange), var(--shadow-light);
+}
+
+.market-card.active {
+  border-color: var(--accent-orange);
+  background: rgba(255, 140, 0, 0.12);
+  box-shadow: var(--glow-orange), inset 0 0 10px rgba(255, 140, 0, 0.2);
+}
+
+.market-flag {
+  font-size: 24px;
+}
+
+.market-name {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.market-code {
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.5);
+  font-family: monospace;
+}
+
+/* Navigation Tabs */
+.sidebar-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.nav-tab {
+  padding: 14px 16px;
+  background: transparent;
+  border: 1.5px solid rgba(255, 140, 0, 0.2);
+  border-left: 3px solid transparent;
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 1.2px;
+  text-align: left;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border-radius: 10px;
+  margin-bottom: 8px;
+  box-shadow: var(--shadow-light);
+}
+
+.nav-tab:hover {
+  border-color: var(--accent-orange);
+  background: rgba(255, 140, 0, 0.08);
+  color: var(--text-primary);
+  box-shadow: 0 0 10px rgba(255, 140, 0, 0.2);
+  transform: translateY(-2px);
+}
+
+.nav-tab.active {
+  border-left-color: var(--accent-orange);
+  border-color: var(--accent-orange);
+  background: rgba(255, 140, 0, 0.12);
+  color: var(--accent-orange);
+  box-shadow: inset 0 0 10px rgba(255, 140, 0, 0.2), var(--glow-orange);
+}
+
+.nav-icon {
+  font-size: 18px;
+}
+
+.nav-label {
+  font-weight: 500;
+}
+
+/* Sidebar Status */
+.sidebar-status {
+  margin-top: auto;
+  padding-top: 20px;
+  border-top: 1.5px solid rgba(255, 140, 0, 0.2);
+}
+
+.status-indicator {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--accent-lime);
+  box-shadow: var(--glow-lime);
+}
+
+.status-dot.pulse {
+  animation: pulse 2s infinite;
+}
+
+.status-text {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-primary);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.status-time {
+  font-size: 10px;
+  color: var(--text-muted);
+  font-family: 'Monaco', 'Courier New', monospace;
+}
+
+
+.page-title {
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  text-shadow: 0 0 8px rgba(255, 140, 0, 0.3);
+}
+
+.live-badge-main {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background: rgba(0, 255, 136, 0.1);
+  backdrop-filter: blur(10px) saturate(180%);
+  -webkit-backdrop-filter: blur(10px) saturate(180%);
+  border: 1.5px solid rgba(0, 255, 136, 0.3);
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--accent-lime);
+  box-shadow: var(--glow-lime), var(--shadow-light);
+}
+
+.live-dot-main {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent-lime);
+  box-shadow: var(--glow-lime);
+  animation: pulse 2s infinite;
+}
+
+/* Content Area */
+.content-area {
+  display: flex;
+  flex-direction: column;
+  gap: 30px;
+}
+
+/* ============================================
+   INDICES GRID
+   ============================================ */
+.indices-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 20px;
+  margin-bottom: 30px;
+}
+
+.index-card {
+  background: var(--glass-dark);
+  backdrop-filter: blur(10px) saturate(180%);
+  -webkit-backdrop-filter: blur(10px) saturate(180%);
+  border: 1.5px solid rgba(255, 140, 0, 0.3);
+  border-top: 3px solid var(--accent-orange);
+  border-radius: 14px;
+  padding: 20px;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  animation: fadeIn 0.4s ease, slideUp 0.4s ease;
+  box-shadow: var(--shadow-light);
+}
+
+.index-card:hover {
+  transform: translateY(-2px);
+  border-color: var(--accent-orange);
+  box-shadow: 0 0 20px rgba(255, 140, 0, 0.15), var(--shadow-light);
+  background: var(--glass-light);
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid rgba(255, 140, 0, 0.2);
+}
+
+.card-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.card-badge {
+  padding: 4px 12px;
+  border-radius: 10px;
+  font-size: 11px;
+  font-weight: 600;
+  font-family: 'Monaco', 'Courier New', monospace;
+}
+
+.card-badge.positive {
+  background: rgba(0, 255, 136, 0.15);
+  color: var(--accent-lime);
+  text-shadow: 0 0 6px rgba(0, 255, 136, 0.3);
+}
+
+.card-badge.negative {
+  background: rgba(255, 51, 102, 0.15);
+  color: var(--accent-red);
+  text-shadow: 0 0 6px rgba(255, 51, 102, 0.3);
+}
+
+.card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.card-value {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text-primary);
+  font-family: 'Monaco', 'Courier New', monospace;
+}
+
+.card-name {
+  font-size: 11px;
+  color: var(--text-secondary);
+  line-height: 1.4;
+}
+
+/* ============================================
+   INSTRUMENTS GRID
+   ============================================ */
+.instruments-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 20px;
+  margin-bottom: 30px;
+}
+
+.instrument-card {
+  background: var(--glass-dark);
+  backdrop-filter: blur(10px) saturate(180%);
+  -webkit-backdrop-filter: blur(10px) saturate(180%);
+  border: 1.5px solid rgba(255, 140, 0, 0.3);
+  border-top: 3px solid var(--accent-orange);
+  border-radius: 14px;
+  padding: 20px;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  animation: fadeIn 0.4s ease, slideUp 0.4s ease;
+  box-shadow: var(--shadow-light);
+}
+
+.instrument-card:hover {
+  transform: translateY(-2px);
+  border-color: var(--accent-orange);
+  box-shadow: 0 0 20px rgba(255, 140, 0, 0.15), var(--shadow-light);
+  background: var(--glass-light);
+}
+
+.card-price {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 8px 0;
+  font-family: 'Monaco', 'Courier New', monospace;
+}
+
+.card-quotes {
+  display: flex;
+  gap: 16px;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(255, 140, 0, 0.15);
+}
+
+.quote-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.quote-label {
+  font-size: 10px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-weight: 500;
+}
+
+.quote-value {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-primary);
+  font-family: 'Monaco', 'Courier New', monospace;
+}
+
+/* ============================================
+   DATA TABLE
+   ============================================ */
+.data-table-section {
+  margin-bottom: 30px;
+}
+
+.table-header {
+  margin-bottom: 16px;
+  padding-bottom: 10px;
+  border-bottom: 2px solid var(--accent-orange);
+}
+
+.table-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--accent-orange);
+  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  text-shadow: 0 0 8px rgba(255, 140, 0, 0.3);
+}
+
+.table-container {
+  overflow-x: auto;
+  background: var(--glass-dark);
+  backdrop-filter: blur(10px) saturate(180%);
+  -webkit-backdrop-filter: blur(10px) saturate(180%);
+  border-radius: 14px;
+  border: 1.5px solid rgba(255, 140, 0, 0.2);
+  border-top: 3px solid var(--accent-orange);
+  box-shadow: var(--shadow-light);
+}
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.data-table thead {
+  background: rgba(255, 140, 0, 0.08);
+  backdrop-filter: blur(10px) saturate(180%);
+  -webkit-backdrop-filter: blur(10px) saturate(180%);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  border-bottom: 2px solid rgba(255, 140, 0, 0.3);
+}
+
+.data-table th {
+  padding: 12px 14px;
+  text-align: left;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-secondary);
+}
+
+.data-table th.sortable {
+  cursor: pointer;
+  user-select: none;
+  transition: color 0.2s ease;
+}
+
+.data-table th.sortable:hover {
+  color: var(--accent-orange);
+}
+
+.sort-icon {
+  margin-left: 8px;
+  color: var(--accent-orange);
+}
+
+.data-table td {
+  padding: 12px 14px;
+  border-bottom: 1px solid rgba(30, 45, 75, 0.5);
+  color: var(--text-secondary);
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+.table-row {
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.table-row:hover {
+  background: rgba(255, 140, 0, 0.05);
+}
+
+.cell-symbol {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.cell-symbol strong {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.cell-name {
+  font-size: 10px;
+  color: var(--text-muted);
+}
+
+.cell-bid,
+.cell-ask,
+.cell-price {
+  font-family: 'Monaco', 'Courier New', monospace;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.cell-change,
+.cell-pchange {
+  font-weight: 700;
+  font-family: monospace;
+}
+
+.cell-change.positive,
+.cell-pchange.positive {
+  color: var(--accent-lime);
+  font-weight: 600;
+  text-shadow: 0 0 6px rgba(0, 255, 136, 0.3);
+}
+
+.cell-change.negative,
+.cell-pchange.negative {
+  color: var(--accent-red);
+  font-weight: 600;
+  text-shadow: 0 0 6px rgba(255, 51, 102, 0.3);
+}
+
+/* ============================================
+   NEWS SECTION (2 COLUMNS)
+   ============================================ */
+.news-section {
+  margin-bottom: 30px;
+}
+
+.news-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 30px;
+}
+
+.news-column {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.news-column-header {
+  padding-bottom: 10px;
+  border-bottom: 2px solid var(--accent-orange);
+  margin-bottom: 20px;
+}
+
+.news-column-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--accent-orange);
+  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  text-shadow: 0 0 8px rgba(255, 140, 0, 0.3);
+}
+
+.news-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.news-card {
+  background: rgba(30, 45, 75, 0.2);
+  backdrop-filter: blur(10px) saturate(180%);
+  -webkit-backdrop-filter: blur(10px) saturate(180%);
+  border: 1px solid rgba(255, 140, 0, 0.15);
+  border-radius: 10px;
+  padding: 14px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  animation: fadeIn 0.4s ease;
+  box-shadow: var(--shadow-light);
+}
+
+.news-card:hover {
+  border-color: rgba(255, 140, 0, 0.6);
+  background: rgba(30, 45, 75, 0.4);
+  box-shadow: 0 0 15px rgba(255, 140, 0, 0.1);
+  transform: translateY(-2px);
+}
+
+.news-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 12px;
+  gap: 12px;
+}
+
+.news-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0;
+  flex: 1;
+  line-height: 1.4;
+}
+
+.sentiment-badge {
+  padding: 4px 10px;
+  border-radius: 10px;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  flex-shrink: 0;
+}
+
+.sentiment-badge.positive {
+  background: rgba(0, 255, 136, 0.15);
+  color: var(--accent-lime);
+  border: 1px solid rgba(0, 255, 136, 0.3);
+}
+
+.sentiment-badge.negative {
+  background: rgba(255, 51, 102, 0.15);
+  color: var(--accent-red);
+  border: 1px solid rgba(255, 51, 102, 0.3);
+}
+
+.sentiment-badge.neutral {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--text-secondary);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.news-description {
+  font-size: 11px;
+  line-height: 1.4;
+  color: var(--text-secondary);
+  margin-bottom: 12px;
+}
+
+.news-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 10px;
+  color: var(--text-muted);
+  padding-top: 12px;
+  border-top: 1px solid rgba(255, 140, 0, 0.15);
+}
+
+.news-time {
+  font-family: 'Monaco', 'Courier New', monospace;
+}
+
+.news-source {
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+/* ============================================
+   3D SURFACES SECTION
+   ============================================ */
+.surfaces-section {
+  margin-top: 30px;
+}
+
+.section-header {
+  margin-bottom: 20px;
+  padding-bottom: 10px;
+  border-bottom: 2px solid var(--accent-orange);
+}
+
+.section-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--accent-orange);
+  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  text-shadow: 0 0 8px rgba(255, 140, 0, 0.3);
+}
+
+.surfaces-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+  gap: 20px;
+}
+
+.surface-card {
+  background: var(--glass-dark);
+  backdrop-filter: blur(10px) saturate(180%);
+  -webkit-backdrop-filter: blur(10px) saturate(180%);
+  border: 1.5px solid rgba(255, 140, 0, 0.2);
+  border-top: 3px solid var(--accent-orange);
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: var(--shadow-light);
+}
+
+.surface-header {
+  padding: 14px 18px;
+  background: rgba(255, 140, 0, 0.08);
+  backdrop-filter: blur(10px) saturate(180%);
+  -webkit-backdrop-filter: blur(10px) saturate(180%);
+  border-bottom: 1px solid rgba(255, 140, 0, 0.2);
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: var(--accent-orange);
+  text-shadow: 0 0 8px rgba(255, 140, 0, 0.3);
+}
+
+.surface-canvas {
+  width: 100%;
+  height: 400px;
+  display: block;
+  background: #000;
+}
+
+.charts-container {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+}
+
+.chart-card {
+  background: rgba(30, 45, 75, 0.2);
+  backdrop-filter: blur(10px) saturate(180%);
+  -webkit-backdrop-filter: blur(10px) saturate(180%);
+  border: 1px solid rgba(255, 140, 0, 0.15);
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: var(--shadow-light);
+}
+
+.chart-header {
+  padding: 12px 14px;
+  background: rgba(0, 0, 0, 0.3);
+  border-bottom: 1px solid rgba(255, 140, 0, 0.15);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-primary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.chart-canvas {
+  width: 100%;
+  height: 120px;
+  display: block;
+  background: #000;
+}
+
+/* ============================================
+   ANIMATIONS
+   ============================================ */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(10px);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.5;
+    transform: scale(1.2);
+  }
+}
+
+@keyframes glow {
+  0%, 100% {
+    box-shadow: 0 0 10px rgba(255, 140, 0, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 20px rgba(255, 140, 0, 0.6);
+  }
+}
+
+@keyframes buttonHover {
+  from {
+    transform: translateY(0);
+  }
+  to {
+    transform: translateY(-2px);
+  }
+}
+
+@keyframes textGlow {
+  0%, 100% {
+    text-shadow: 0 0 8px rgba(255, 140, 0, 0.3);
+  }
+  50% {
+    text-shadow: 0 0 16px rgba(255, 140, 0, 0.6);
+  }
+}
+
+/* ============================================
+   RESPONSIVE DESIGN
+   ============================================ */
+@media (max-width: 1400px) {
+  .surfaces-grid {
+    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+  }
+}
+
+@media (max-width: 1024px) {
+  .market-data-page {
+    grid-template-columns: 1fr;
+  }
+  
+  .market-main {
+    margin-left: 0;
+  }
+  
+  .market-sidebar {
+    position: fixed;
+    left: -260px;
+    top: 0;
+    height: 100vh;
+    z-index: 1000;
+    transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    width: 200px;
+  }
+  
+  .market-sidebar.open {
+    left: 0;
+  }
+  
+  .news-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .indices-grid,
+  .instruments-grid {
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  }
+}
+
+@media (max-width: 768px) {
+  .market-main {
+    padding: 20px;
+  }
+  
+  .indices-grid,
+  .instruments-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .surfaces-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .page-title {
+    font-size: 20px;
+  }
+}
+
+@media (max-width: 480px) {
+  .market-main {
+    padding: 16px;
+  }
+  
+  .market-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+  }
+  
+  .news-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Top Market Navigation */
+.top-market-nav {
+  display: flex;
+  gap: 0;
+  background: rgba(5, 8, 16, 0.98);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  padding: 0;
+  backdrop-filter: blur(20px);
+  z-index: 10;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.market-nav-btn {
+  padding: 14px 28px;
+  background: transparent;
+  border: none;
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border-bottom: 2px solid transparent;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--font-family-mono);
+  position: relative;
+}
+
+.market-nav-btn:hover {
+  color: rgba(255, 255, 255, 0.8);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.market-nav-btn.active {
+  color: #fff;
+  border-bottom-color: #f97316;
+  background: rgba(249, 115, 22, 0.12);
+}
+
+.market-nav-btn.active svg {
+  color: #f97316;
+}
+
+/* Asset Class Navigation */
+.asset-class-nav {
+  display: flex;
+  gap: 0;
+  background: rgba(5, 8, 16, 0.95);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  padding: 0;
+  backdrop-filter: blur(20px);
+  z-index: 9;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.asset-class-btn {
+  padding: 16px 32px;
+  background: transparent;
+  border: none;
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border-bottom: 2px solid transparent;
+  font-family: var(--font-family-mono);
+  position: relative;
+}
+
+.asset-class-btn:hover {
+  color: rgba(255, 255, 255, 0.9);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.asset-class-btn.active {
+  color: #fff;
+  border-bottom-color: #f97316;
+  background: rgba(249, 115, 22, 0.18);
+  border: 1px solid rgba(249, 115, 22, 0.5);
+  border-bottom: 2px solid #f97316;
+  box-shadow: 0 2px 8px rgba(249, 115, 22, 0.2);
+}
+
+/* Main Grid: Three Panels */
+.trading-platform-grid {
+  display: grid;
+  grid-template-columns: 300px 1fr 380px;
+  gap: 0;
+  flex: 1;
+  overflow: hidden;
+  background: #0a0e1a;
+  min-height: 0;
+}
+
+/* Panel Common Styles */
+.panel-left,
+.panel-center,
+.panel-right {
+  background: rgba(5, 8, 16, 0.92);
+  border-right: 1px solid rgba(255, 255, 255, 0.06);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  position: relative;
+}
+
+.panel-right {
+  border-right: none;
+}
+
+.panel-header {
+  padding: 14px 20px;
+  background: rgba(0, 0, 0, 0.5);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  min-height: 48px;
+}
+
+.panel-header h3 {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  color: rgba(255, 255, 255, 0.95);
+  margin: 0;
+  font-family: var(--font-family-mono);
+}
+
+.panel-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.live-indicator {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: #10b981;
+  font-family: var(--font-family-mono);
+}
+
+.live-indicator-right {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 8px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: #10b981;
+  font-family: var(--font-family-mono);
+  padding: 4px 8px;
+  background: rgba(16, 185, 129, 0.1);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  border-radius: 4px;
+}
+
+.live-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #10b981;
+  box-shadow: 0 0 8px rgba(16, 185, 129, 0.8);
+  animation: pulse-dot 2s infinite;
+}
+
+.live-dot-small {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #10b981;
+  box-shadow: 0 0 6px rgba(16, 185, 129, 0.8);
+  animation: pulse-dot 2s infinite;
+}
+
+/* Left Panel: News Feeds */
+.news-feeds-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0;
+}
+
+.news-item {
+  padding: 14px 20px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.news-item:hover {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.news-content {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.news-category {
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: rgba(255, 255, 255, 0.6);
+  font-family: var(--font-family-mono);
+}
+
+.news-title {
+  font-size: 12px;
+  line-height: 1.6;
+  color: rgba(255, 255, 255, 0.95);
+  font-weight: 500;
+}
+
+.news-time {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.45);
+  font-family: var(--font-family-mono);
+}
+
+.news-time svg {
+  width: 11px;
+  height: 11px;
+  opacity: 0.6;
+}
+
+/* Center Panel: Data Table */
+.data-table-container {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: auto;
+}
+
+.trading-data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: var(--font-family-mono);
+  font-size: 11px;
+}
+
+.trading-data-table thead {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: rgba(0, 0, 0, 0.95);
+  backdrop-filter: blur(10px);
+}
+
+.trading-data-table th {
+  padding: 14px 18px;
+  text-align: left;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: rgba(255, 255, 255, 0.75);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+  font-size: 9px;
+  white-space: nowrap;
+}
+
+.trading-data-table td {
+  padding: 14px 18px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  color: rgba(255, 255, 255, 0.95);
+  font-size: 11px;
+}
+
+.data-row {
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.data-row:hover {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.symbol-cell {
+  font-weight: 700;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.symbol-cell strong {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.95);
+}
+
+.symbol-name {
+  font-size: 9px;
+  color: rgba(255, 255, 255, 0.55);
+  font-weight: 400;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.bid-cell,
+.ask-cell,
+.price-cell {
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.95);
+  font-size: 11px;
+}
+
+.change-cell {
+  font-weight: 700;
+  font-size: 11px;
+}
+
+.pchange-cell {
+  font-weight: 700;
+  font-size: 11px;
+}
+
+/* Right Panel: Charts & Surfaces */
+.charts-section {
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  max-height: 50%;
+  overflow-y: auto;
+}
+
+.chart-mini-container {
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 6px;
+  overflow: hidden;
+  min-height: 140px;
+}
+
+.chart-header-mini {
+  padding: 8px 12px;
+  background: rgba(0, 0, 0, 0.6);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.chart-symbol {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: rgba(255, 255, 255, 0.95);
+  font-family: var(--font-family-mono);
+}
+
+.chart-mini {
+  width: 100%;
+  height: 120px;
+  display: block;
+  background: #000;
+}
+
+.surfaces-section {
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  flex: 1;
+  overflow: hidden;
+  min-height: 0;
+}
+
+.surface-mini-container {
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 6px;
+  overflow: hidden;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.surface-header-mini {
+  padding: 8px 12px;
+  background: rgba(0, 0, 0, 0.6);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.surface-header-mini span {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: rgba(255, 255, 255, 0.9);
+  font-family: var(--font-family-mono);
+}
+
+.surface-mini {
+  width: 100%;
+  flex: 1;
+  min-height: 250px;
+  display: block;
+  background: #000;
+}
+
+/* Bottom Status Bar */
+.status-bar {
+  display: flex;
+  align-items: center;
+  gap: 40px;
+  padding: 14px 28px;
+  background: rgba(0, 0, 0, 0.85);
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(20px);
+  font-family: var(--font-family-mono);
+  font-size: 11px;
+  flex-shrink: 0;
+}
+
+.status-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.status-label {
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: rgba(255, 255, 255, 0.65);
+  font-size: 10px;
+}
+
+.status-value {
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.95);
+  font-size: 12px;
+  letter-spacing: 0.02em;
+}
+
+.status-change {
+  font-weight: 600;
+  font-size: 11px;
+}
+
+.status-live {
+  margin-left: auto;
+  margin-right: 0;
+}
+
+.live-badge {
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  color: rgba(255, 255, 255, 0.75);
+  padding: 6px 16px;
+  background: rgba(16, 185, 129, 0.12);
+  border: 1px solid rgba(16, 185, 129, 0.25);
+  border-radius: 4px;
+}
+
+/* Scrollbar Styling */
+.news-feeds-list::-webkit-scrollbar,
+.data-table-container::-webkit-scrollbar {
+  width: 6px;
+}
+
+.news-feeds-list::-webkit-scrollbar-track,
+.data-table-container::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.news-feeds-list::-webkit-scrollbar-thumb,
+.data-table-container::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 3px;
+}
+
+.news-feeds-list::-webkit-scrollbar-thumb:hover,
+.data-table-container::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+/* Pulse Animation */
+@keyframes pulse-dot {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.5;
+    transform: scale(1.2);
+  }
+}
+
+/* Responsive Design */
+@media (max-width: 1400px) {
+  .trading-platform-grid {
+    grid-template-columns: 260px 1fr 340px;
+  }
+}
+
+@media (max-width: 1200px) {
+  .trading-platform-grid {
+    grid-template-columns: 220px 1fr 280px;
+  }
+  
+  .panel-header h3 {
+    font-size: 10px;
+  }
+  
+  .trading-data-table {
+    font-size: 10px;
+  }
+  
+  .trading-data-table th,
+  .trading-data-table td {
+    padding: 12px 14px;
+  }
+  
+  .chart-mini {
+    height: 100px;
+  }
+}
+
+@media (max-width: 968px) {
+  .trading-platform-grid {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto auto auto;
+  }
+  
+  .panel-left,
+  .panel-center,
+  .panel-right {
+    border-right: none;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  }
+  
+  .panel-right {
+    border-bottom: none;
+  }
+  
+  .top-market-nav,
+  .asset-class-nav {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  .market-nav-btn,
+  .asset-class-btn {
+    flex-shrink: 0;
+  }
+  
+  .status-bar {
+    flex-wrap: wrap;
+    gap: 16px;
+    padding: 10px 16px;
+  }
+}
+
+@media (max-width: 640px) {
+  .top-market-nav {
+    padding: 0;
+  }
+  
+  .market-nav-btn {
+    padding: 10px 16px;
+    font-size: 10px;
+  }
+  
+  .asset-class-btn {
+    padding: 12px 20px;
+    font-size: 11px;
+  }
+  
+  .panel-header {
+    padding: 12px 16px;
+  }
+  
+  .trading-data-table {
+    font-size: 9px;
+  }
+  
+  .trading-data-table th,
+  .trading-data-table td {
+    padding: 8px 10px;
+  }
+  
+  .chart-mini {
+    height: 100px;
+  }
+  
+  .surface-mini {
+    min-height: 150px;
+  }
+}
+
 /* .page-container уже определен в main.css */
 
 /* ============================================
-   TABS NAVIGATION
+   TABS NAVIGATION (Legacy - можно удалить если не используется)
    ============================================ */
 .tabs-navigation-market {
   display: flex;
