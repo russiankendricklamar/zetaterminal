@@ -294,9 +294,9 @@ const filteredData = computed(() => {
 })
 
 const regimes: Regime[] = [
-  { id: 'low', name: 'Low Vol', color: '#10b981' },
+  { id: 'low', name: 'Low', color: '#10b981' },
   { id: 'medium', name: 'Medium', color: '#fbbf24' },
-  { id: 'high', name: 'High Vol', color: '#ef4444' }
+  { id: 'high', name: 'High', color: '#ef4444' }
 ]
 
 // Statistics
@@ -920,7 +920,7 @@ const updatePlot = async () => {
     paper_bgcolor: 'transparent',
     plot_bgcolor: 'transparent',
     font: { color: '#fff', family: 'system-ui' },
-    margin: { l: 50, r: 50, t: 30, b: 50 },
+    margin: { l: 50, r: 20, t: 30, b: 50 },
     showlegend: true,
     legend: {
       bgcolor: 'rgba(0,0,0,0.3)',
@@ -1153,29 +1153,31 @@ declare global {
   gap: 0;
   width: 100%;
   max-width: 100%;
-  height: 100%;
+  min-height: 100%;
+  height: auto;
   box-sizing: border-box;
-  overflow: hidden;
+  overflow: visible;
 }
 
 .main-layout {
   display: grid;
   grid-template-columns: 320px 1fr;
   gap: 12px;
-  height: 100%;
   min-height: 700px;
+  height: auto;
   width: 100%;
   max-width: 100%;
   box-sizing: border-box;
-  overflow: hidden;
+  overflow: visible;
+  align-items: start;
 }
 
 .controls-column {
   display: flex;
   flex-direction: column;
   gap: 12px;
-  overflow-y: auto;
-  max-height: 100%;
+  overflow: visible;
+  min-height: 100%;
 }
 
 .plot-column {
@@ -1543,8 +1545,8 @@ declare global {
   border-radius: 10px;
   border: 1px solid rgba(255, 255, 255, 0.1);
   flex-shrink: 0;
-  max-height: calc(100% - 400px);
-  overflow-y: auto;
+  min-height: auto;
+  overflow: visible;
 }
 
 .stats-section {
