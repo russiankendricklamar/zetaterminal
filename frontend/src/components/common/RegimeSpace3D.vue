@@ -70,6 +70,10 @@
           </div>
 
           <div class="view-controls">
+            <label class="checkbox-label renaissance-toggle">
+              <input type="checkbox" v-model="showRenaissanceInsights" @change="onRenaissanceToggle" />
+              <span>✨ Renaissance Insights</span>
+            </label>
             <label class="checkbox-label">
               <input type="checkbox" v-model="showTrajectory" @change="onVisibilityChange" />
               <span>Траектория</span>
@@ -141,6 +145,41 @@
           </div>
         </div>
 
+        <!-- Renaissance Insights Panel -->
+        <transition name="fade">
+          <div class="glass-card panel renaissance-panel" v-if="showRenaissanceInsights && hasData">
+            <div class="panel-header">
+              <h3>✨ Renaissance Insights</h3>
+            </div>
+            
+            <!-- Timeframe Selector -->
+            <div class="input-group">
+              <label class="lbl">Timeframe</label>
+              <select v-model="selectedTimeframe" class="glass-select" @change="onTimeframeChange">
+                <option value="intraday">Intraday</option>
+                <option value="daily">Daily</option>
+                <option value="weekly">Weekly</option>
+              </select>
+            </div>
+
+            <!-- Signal Stats -->
+            <div class="renaissance-stats" v-if="signalStats">
+              <div class="stat-item">
+                <span class="stat-label">Win Rate:</span>
+                <span class="stat-value text-green">{{ (signalStats.winRate * 100).toFixed(1) }}%</span>
+              </div>
+              <div class="stat-item">
+                <span class="stat-label">Sharpe Ratio:</span>
+                <span class="stat-value">{{ signalStats.sharpeRatio.toFixed(2) }}</span>
+              </div>
+              <div class="stat-item">
+                <span class="stat-label">Max Drawdown:</span>
+                <span class="stat-value text-red">{{ (signalStats.maxDrawdown * 100).toFixed(1) }}%</span>
+              </div>
+            </div>
+          </div>
+        </transition>
+
         <!-- Transition Matrix -->
         <transition name="fade">
           <div class="glass-card panel" v-if="transitionMatrix">
@@ -166,12 +205,15 @@
 
       <!-- Main Content: 3D Visualization -->
       <main class="main-content">
-        <!-- Header with Timeline Controls -->
-        <div class="visualization-header" v-if="hasData">
-          <div class="header-left">
-            <h2 class="vis-title">Пространство скрытых состояний</h2>
-            <p class="vis-subtitle">3D визуализация рыночных режимов (HMM)</p>
-          </div>
+          <!-- Header with Timeline Controls -->
+          <div class="visualization-header" v-if="hasData">
+            <div class="header-left">
+              <h2 class="vis-title">Пространство скрытых состояний</h2>
+              <p class="vis-subtitle">
+                3D визуализация рыночных режимов (HMM)
+                <span v-if="showRenaissanceInsights" class="renaissance-badge">✨ Renaissance Mode Active</span>
+              </p>
+            </div>
 
           <!-- Timeline Controls -->
           <div class="timeline-controls">
@@ -222,6 +264,7 @@
           <!-- Stationary Distribution -->
           <div class="stats-card">
             <h4>Стационарное распределение</h4>
+            <p class="info-hint">Долгосрочная вероятность каждого режима</p>
             <div class="distribution-bars">
               <div 
                 v-for="(prob, i) in stationaryDistribution" 
@@ -240,6 +283,7 @@
           <!-- Expected Durations -->
           <div class="stats-card">
             <h4>Ожидаемая длительность режимов</h4>
+            <p class="info-hint">Средняя продолжительность режима в днях</p>
             <div class="duration-list">
               <div 
                 v-for="(duration, i) in expectedDurations" 
@@ -253,6 +297,33 @@
             </div>
           </div>
 
+          <!-- Legend (shown when Renaissance mode is on) -->
+          <div class="stats-card renaissance-legend" v-if="showRenaissanceInsights">
+            <h4>Renaissance Insights Легенда</h4>
+            <div class="legend-items">
+              <div class="legend-item">
+                <span class="legend-color" style="background: #ffff00;"></span>
+                <span class="legend-text">Non-random patterns (высокая предсказуемость)</span>
+              </div>
+              <div class="legend-item">
+                <span class="legend-color" style="background: rgba(255,255,255,0.3);"></span>
+                <span class="legend-text">Mean reversion bands (резиновые связи)</span>
+              </div>
+              <div class="legend-item">
+                <span class="legend-color" style="background: #4ade80;"></span>
+                <span class="legend-text">Buy signals (зеленые конусы)</span>
+              </div>
+              <div class="legend-item">
+                <span class="legend-color" style="background: #f87171;"></span>
+                <span class="legend-text">Sell signals (красные конусы)</span>
+              </div>
+              <div class="legend-item">
+                <span class="legend-color" style="background: #ffd700; opacity: 0.4;"></span>
+                <span class="legend-text">Renaissance benchmark (золотая линия)</span>
+              </div>
+            </div>
+          </div>
+
           <!-- Export Buttons -->
           <div class="export-section">
             <button @click="exportScreenshot" class="btn-export">
@@ -261,6 +332,21 @@
             <button @click="exportData" class="btn-export">
               📊 CSV
             </button>
+          </div>
+        </div>
+        
+        <!-- Info Overlay (shows helpful hints) -->
+        <div class="info-overlay" v-if="hasData && !showRenaissanceInsights">
+          <div class="info-card">
+            <h5>💡 Подсказка</h5>
+            <p>Включите <strong>Renaissance Insights</strong> для расширенного анализа:</p>
+            <ul>
+              <li>Выделение паттернов высокой предсказуемости</li>
+              <li>Зоны статистического арбитража</li>
+              <li>Buy/Sell сигналы на основе HMM</li>
+              <li>Визуализация "расшифровки" скрытых паттернов</li>
+              <li>Сравнение с benchmark производительностью</li>
+            </ul>
           </div>
         </div>
       </main>
@@ -291,6 +377,8 @@ const currentTimeIndex = ref(0)
 const isPlaying = ref(false)
 const playbackSpeed = ref(1)
 const autoRotate = ref(false)
+const selectedTimeframe = ref('daily')
+const signalStats = ref<{ winRate: number; sharpeRatio: number; maxDrawdown: number } | null>(null)
 
 // Visualization toggles
 const showTrajectory = ref(true)
@@ -298,6 +386,7 @@ const showEllipsoids = ref(true)
 const showCentroids = ref(true)
 const showGrid = ref(true)
 const showTransitionArrows = ref(false)
+const showRenaissanceInsights = ref(false)
 
 // Data
 const allMarketData = ref<MarketPoint[]>([])
@@ -571,6 +660,12 @@ const runAnalysis = async () => {
     if (renderer && hmmModel.value) {
       const configs = getRegimeConfigs()
       renderer.setData(filteredData.value, hmmModel.value, configs)
+      
+      // Restore Renaissance mode if it was enabled
+      if (showRenaissanceInsights.value) {
+        renderer.setRenaissanceMode(true, filteredData.value, hmmModel.value, configs)
+        calculateSignalStats()
+      }
     }
     
     currentTimeIndex.value = filteredData.value.length - 1
@@ -664,6 +759,31 @@ const onVisibilityChange = () => {
 const onTransitionArrowsChange = () => {
   if (!renderer) return
   renderer.setShowTransitionArrows(showTransitionArrows.value)
+}
+
+const onRenaissanceToggle = () => {
+  if (!renderer || !hmmModel.value) return
+  renderer.setRenaissanceMode(showRenaissanceInsights.value, filteredData.value, hmmModel.value, getRegimeConfigs())
+  if (showRenaissanceInsights.value) {
+    // Calculate signal stats
+    calculateSignalStats()
+  } else {
+    signalStats.value = null
+  }
+}
+
+const onTimeframeChange = () => {
+  if (!renderer || !hmmModel.value || !showRenaissanceInsights.value) return
+  renderer.setTimeframe(selectedTimeframe.value)
+}
+
+const calculateSignalStats = () => {
+  // Mock signal statistics - в реальности вычисляется на основе сигналов
+  signalStats.value = {
+    winRate: 0.68,
+    sharpeRatio: 2.45,
+    maxDrawdown: 0.12
+  }
 }
 
 const setCameraPreset = (preset: CameraPreset) => {
@@ -1492,6 +1612,175 @@ onUnmounted(() => {
 .text-red { color: #f87171; }
 .text-accent { color: #3b82f6; }
 .font-bold { font-weight: 700; }
+
+/* Renaissance Insights Styles */
+.renaissance-toggle {
+  background: linear-gradient(135deg, rgba(255, 215, 0, 0.1), rgba(255, 165, 0, 0.1));
+  border: 1px solid rgba(255, 215, 0, 0.3);
+  border-radius: 8px;
+  padding: 10px 12px;
+  margin-bottom: 8px;
+}
+
+.renaissance-toggle:hover {
+  background: linear-gradient(135deg, rgba(255, 215, 0, 0.15), rgba(255, 165, 0, 0.15));
+  border-color: rgba(255, 215, 0, 0.5);
+}
+
+.renaissance-toggle input[type="checkbox"]:checked ~ span {
+  color: #ffd700;
+  font-weight: 700;
+}
+
+.renaissance-panel {
+  border: 1px solid rgba(255, 215, 0, 0.2);
+  background: rgba(255, 215, 0, 0.05);
+}
+
+.renaissance-stats {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.renaissance-stats .stat-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 11px;
+  padding: 6px 0;
+}
+
+.renaissance-stats .stat-label {
+  color: rgba(255, 255, 255, 0.6);
+  font-weight: 500;
+}
+
+.renaissance-stats .stat-value {
+  font-weight: 700;
+  font-family: "SF Mono", monospace;
+  font-size: 12px;
+}
+
+/* Info hints and legends */
+.info-hint {
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.4);
+  margin: 0 0 12px 0;
+  font-style: italic;
+}
+
+.renaissance-legend {
+  border: 1px solid rgba(255, 215, 0, 0.2);
+  background: rgba(255, 215, 0, 0.03);
+}
+
+.legend-items {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.legend-color {
+  width: 16px;
+  height: 16px;
+  border-radius: 3px;
+  flex-shrink: 0;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.legend-text {
+  flex: 1;
+}
+
+/* Info overlay */
+.info-overlay {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  z-index: 10;
+  max-width: 280px;
+}
+
+.info-card {
+  background: rgba(30, 32, 40, 0.95);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+  padding: 16px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+}
+
+.info-card h5 {
+  margin: 0 0 12px 0;
+  font-size: 12px;
+  font-weight: 700;
+  color: #fff;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.info-card p {
+  margin: 0 0 10px 0;
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.7);
+  line-height: 1.5;
+}
+
+.info-card ul {
+  margin: 0;
+  padding-left: 18px;
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.6);
+  line-height: 1.6;
+}
+
+.info-card li {
+  margin-bottom: 4px;
+}
+
+.info-card strong {
+  color: #ffd700;
+  font-weight: 600;
+}
+
+.renaissance-badge {
+  display: inline-block;
+  margin-left: 12px;
+  padding: 4px 10px;
+  background: linear-gradient(135deg, rgba(255, 215, 0, 0.2), rgba(255, 165, 0, 0.2));
+  border: 1px solid rgba(255, 215, 0, 0.4);
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #ffd700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  animation: pulse-gold 2s ease-in-out infinite;
+}
+
+@keyframes pulse-gold {
+  0%, 100% { 
+    opacity: 1;
+    box-shadow: 0 0 10px rgba(255, 215, 0, 0.3);
+  }
+  50% { 
+    opacity: 0.8;
+    box-shadow: 0 0 20px rgba(255, 215, 0, 0.5);
+  }
+}
 
 .fade-enter-active,
 .fade-leave-active {

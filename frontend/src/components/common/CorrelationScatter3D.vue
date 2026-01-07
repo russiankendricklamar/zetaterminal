@@ -963,7 +963,7 @@ const updatePlot = async () => {
       },
       bgcolor: 'rgba(0,0,0,0)',
       camera: {
-        eye: { x: 1.5, y: 1.5, z: 1.5 },
+        eye: { x: 1.8, y: 1.8, z: 1.4 },
         center: { x: 0, y: 0, z: 0 },
         up: { x: 0, y: 0, z: 1 }
       },
@@ -1069,7 +1069,7 @@ const resetView = () => {
   }
   updateTimeRange()
   Plotly.value.relayout(plotContainer.value, {
-    'scene.camera.eye': { x: 1.5, y: 1.5, z: 1.5 },
+    'scene.camera.eye': { x: 1.8, y: 1.8, z: 1.4 },
     'scene.camera.center': { x: 0, y: 0, z: 0 }
   })
 }
