@@ -2196,8 +2196,8 @@ const initInsaneSurface = async () => {
         showbackground: false
       },
       bgcolor: 'transparent',
-      camera: { eye: { x: 1.2, y: 1.0, z: 0.8 } }, // Lowered and zoomed in for INSANE surface
-      aspectratio: { x: 1.2, y: 1, z: 0.7 } // Closer aspect ratio for better visibility
+      camera: { eye: { x: 2.5, y: 2.2, z: 1.8 } }, // Zoomed out and rotated counter-clockwise for INSANE surface
+      aspectratio: { x: 1.4, y: 1, z: 0.9 } // Wider aspect ratio for better overview
     },
     paper_bgcolor: 'transparent',
     font: { color: 'rgba(255,255,255,0.9)' },
@@ -2688,10 +2688,10 @@ onBeforeUnmount(() => {
    INDICES CONTENT
    ============================================ */
 .indices-content {
-  background: rgba(20, 25, 35, 0.6);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 20px;
-  padding: 20px;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  padding: 0;
   max-height: calc(100vh - 200px);
   overflow-y: auto;
 }
