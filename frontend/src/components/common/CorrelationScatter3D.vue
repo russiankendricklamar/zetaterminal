@@ -6,151 +6,149 @@
       <div class="controls-column">
         <!-- Control Panel -->
         <div class="control-panel">
-      <div class="controls-row">
-        <!-- Asset Selection -->
-        <div class="control-group">
-          <label>Актив 1 (X):</label>
-          <select v-model="selectedAssets[0]" @change="updatePlot">
-            <option v-for="asset in availableAssets" :key="asset" :value="asset">{{ asset }}</option>
-          </select>
-        </div>
-        <div class="control-group">
-          <label>Актив 2 (Y):</label>
-          <select v-model="selectedAssets[1]" @change="updatePlot">
-            <option v-for="asset in availableAssets" :key="asset" :value="asset">{{ asset }}</option>
-          </select>
-        </div>
-        <div class="control-group">
-          <label>Актив 3 (Z):</label>
-          <select v-model="selectedAssets[2]" @change="updatePlot">
-            <option v-for="asset in availableAssets" :key="asset" :value="asset">{{ asset }}</option>
-          </select>
-        </div>
-      </div>
+          <!-- Two Column Layout -->
+          <div class="controls-two-column">
+            <!-- First Column -->
+            <div class="controls-col-1">
+              <!-- Asset Selection - Vertical Stack -->
+              <div class="control-group">
+                <label>Актив 1 (X):</label>
+                <select v-model="selectedAssets[0]" @change="updatePlot">
+                  <option v-for="asset in availableAssets" :key="asset" :value="asset">{{ asset }}</option>
+                </select>
+              </div>
+              <div class="control-group">
+                <label>Актив 2 (Y):</label>
+                <select v-model="selectedAssets[1]" @change="updatePlot">
+                  <option v-for="asset in availableAssets" :key="asset" :value="asset">{{ asset }}</option>
+                </select>
+              </div>
+              <div class="control-group">
+                <label>Актив 3 (Z):</label>
+                <select v-model="selectedAssets[2]" @change="updatePlot">
+                  <option v-for="asset in availableAssets" :key="asset" :value="asset">{{ asset }}</option>
+                </select>
+              </div>
 
-      <div class="controls-row">
-        <!-- View Mode -->
-        <div class="control-group">
-          <label>Режим:</label>
-          <div class="toggle-buttons">
-            <button 
-              :class="['toggle-btn', { active: viewMode === '3d' }]"
-              @click="viewMode = '3d'; updatePlot()"
-            >
-              3D
-            </button>
-            <button 
-              :class="['toggle-btn', { active: viewMode === '2d' }]"
-              @click="viewMode = '2d'; updatePlot()"
-            >
-              2D
-            </button>
+              <!-- Time Range Slider - Full Width -->
+              <div class="control-group full-width">
+                <label>Период: {{ dateRange[0] }} - {{ dateRange[1] }}</label>
+                <input 
+                  type="range" 
+                  :min="0" 
+                  :max="filteredData.length - 1" 
+                  v-model="timeRange" 
+                  @input="updateTimeRange"
+                  class="time-slider full-width-slider"
+                />
+              </div>
+
+              <!-- Reset Button -->
+              <button class="btn-reset full-width" @click="resetView">
+                <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                </svg>
+                Сброс
+              </button>
+            </div>
+
+            <!-- Second Column -->
+            <div class="controls-col-2">
+              <!-- View Mode -->
+              <div class="control-group">
+                <label>Режим:</label>
+                <div class="toggle-buttons">
+                  <button 
+                    :class="['toggle-btn', { active: viewMode === '3d' }]"
+                    @click="viewMode = '3d'; updatePlot()"
+                  >
+                    3D
+                  </button>
+                  <button 
+                    :class="['toggle-btn', { active: viewMode === '2d' }]"
+                    @click="viewMode = '2d'; updatePlot()"
+                  >
+                    2D
+                  </button>
+                </div>
+              </div>
+
+              <!-- Space Toggle -->
+              <div class="control-group">
+                <label>Пространство:</label>
+                <div class="toggle-buttons">
+                  <button 
+                    :class="['toggle-btn', { active: spaceMode === 'correlation' }]"
+                    @click="spaceMode = 'correlation'; updatePlot()"
+                  >
+                    Correlation
+                  </button>
+                  <button 
+                    :class="['toggle-btn', { active: spaceMode === 'pca' }]"
+                    @click="spaceMode = 'pca'; updatePlot()"
+                  >
+                    PCA
+                  </button>
+                </div>
+              </div>
+            </div>
           </div>
-        </div>
 
-        <!-- Time Range Slider -->
-        <div class="control-group">
-          <label>Период: {{ dateRange[0] }} - {{ dateRange[1] }}</label>
-          <input 
-            type="range" 
-            :min="0" 
-            :max="filteredData.length - 1" 
-            v-model="timeRange" 
-            @input="updateTimeRange"
-            class="time-slider"
-          />
-        </div>
-
-        <!-- Space Toggle -->
-        <div class="control-group">
-          <label>Пространство:</label>
-          <div class="toggle-buttons">
-            <button 
-              :class="['toggle-btn', { active: spaceMode === 'correlation' }]"
-              @click="spaceMode = 'correlation'; updatePlot()"
-            >
-              Correlation
-            </button>
-            <button 
-              :class="['toggle-btn', { active: spaceMode === 'pca' }]"
-              @click="spaceMode = 'pca'; updatePlot()"
-            >
-              PCA
-            </button>
+          <!-- Regime Filters - In One Row -->
+          <div class="controls-row regime-row">
+            <label class="regime-filter-label">Режимы:</label>
+            <label class="regime-checkbox" v-for="regime in regimes" :key="regime.id">
+              <input 
+                type="checkbox" 
+                :value="regime.id" 
+                v-model="visibleRegimes"
+                @change="updatePlot"
+              />
+              <span class="regime-dot" :style="{ backgroundColor: regime.color }"></span>
+              {{ regime.name }}
+            </label>
           </div>
-        </div>
 
-        <!-- Export Button -->
-        <button class="btn-export" @click="exportPNG">
-          <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
-          </svg>
-          PNG
-        </button>
-
-        <!-- Reset View -->
-        <button class="btn-reset" @click="resetView">
-          <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
-          </svg>
-          Reset
-        </button>
-      </div>
-
-      <!-- Regime Filters -->
-      <div class="controls-row">
-        <label class="regime-filter-label">Режимы:</label>
-        <label class="regime-checkbox" v-for="regime in regimes" :key="regime.id">
-          <input 
-            type="checkbox" 
-            :value="regime.id" 
-            v-model="visibleRegimes"
-            @change="updatePlot"
-          />
-          <span class="regime-dot" :style="{ backgroundColor: regime.color }"></span>
-          {{ regime.name }}
-        </label>
-      </div>
-
-      <!-- Advanced Controls -->
-      <div class="controls-row advanced-controls">
-        <div class="control-group">
-          <label>
-            <input type="checkbox" v-model="showTrajectory" @change="updatePlot" />
-            Траектория
-          </label>
-        </div>
-        <div class="control-group">
-          <label>
-            <input type="checkbox" v-model="showEllipsoids" @change="updatePlot" />
-            Эллипсоиды
-          </label>
-        </div>
-        <div class="control-group">
-          <label>
-            <input type="checkbox" v-model="showRegressions" @change="updatePlot" />
-            Регрессии
-          </label>
-        </div>
-        <div class="control-group">
-          <label>
-            <input type="checkbox" v-model="showClusters" @change="updatePlot" />
-            Кластеры
-          </label>
-        </div>
-        <div class="control-group">
-          <label>
-            <input type="checkbox" v-model="showCentroids" @change="updatePlot" />
-            Центроиды
-          </label>
-        </div>
-        <div class="control-group">
-          <label>
-            <input type="checkbox" v-model="showOutliers" @change="updatePlot" />
-            Outliers
-          </label>
-        </div>
-      </div>
+          <!-- Advanced Controls - Dropdown -->
+          <div class="control-group">
+            <div class="dropdown-controls">
+              <button 
+                class="dropdown-toggle"
+                @click="showAdvancedDropdown = !showAdvancedDropdown"
+              >
+                <span>Дополнительные настройки</span>
+                <svg width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" :d="showAdvancedDropdown ? 'M5 15l7-7 7 7' : 'M19 9l-7 7-7-7'"></path>
+                </svg>
+              </button>
+              <div v-show="showAdvancedDropdown" class="dropdown-content">
+                <label class="checkbox-item">
+                  <input type="checkbox" v-model="showTrajectory" @change="updatePlot" />
+                  <span>Траектория</span>
+                </label>
+                <label class="checkbox-item">
+                  <input type="checkbox" v-model="showRegressions" @change="updatePlot" />
+                  <span>Регрессии</span>
+                </label>
+                <label class="checkbox-item">
+                  <input type="checkbox" v-model="showOutliers" @change="updatePlot" />
+                  <span>Outliers</span>
+                </label>
+                <label class="checkbox-item">
+                  <input type="checkbox" v-model="showEllipsoids" @change="updatePlot" />
+                  <span>Эллипсоиды</span>
+                </label>
+                <label class="checkbox-item">
+                  <input type="checkbox" v-model="showClusters" @change="updatePlot" />
+                  <span>Кластеры</span>
+                </label>
+                <label class="checkbox-item">
+                  <input type="checkbox" v-model="showCentroids" @change="updatePlot" />
+                  <span>Центроиды</span>
+                </label>
+              </div>
+            </div>
+          </div>
 
       <!-- Playback Controls -->
       <div class="controls-row playback-controls" v-if="showTrajectory">
@@ -186,16 +184,16 @@
             <h4>Корреляции</h4>
             <div class="correlation-stats">
               <div class="stat-item">
-                <span class="stat-label">{{ selectedAssets[0] }} ↔ {{ selectedAssets[1] }}</span>
-                <span class="stat-value">{{ correlationMatrix[0][1].toFixed(3) }}</span>
+                <span class="stat-label-large">{{ selectedAssets[0] }} ↔ {{ selectedAssets[1] }}</span>
+                <span class="stat-value-large">{{ correlationMatrix[0][1].toFixed(3) }}</span>
               </div>
               <div class="stat-item">
-                <span class="stat-label">{{ selectedAssets[0] }} ↔ {{ selectedAssets[2] }}</span>
-                <span class="stat-value">{{ correlationMatrix[0][2].toFixed(3) }}</span>
+                <span class="stat-label-large">{{ selectedAssets[0] }} ↔ {{ selectedAssets[2] }}</span>
+                <span class="stat-value-large">{{ correlationMatrix[0][2].toFixed(3) }}</span>
               </div>
               <div class="stat-item">
-                <span class="stat-label">{{ selectedAssets[1] }} ↔ {{ selectedAssets[2] }}</span>
-                <span class="stat-value">{{ correlationMatrix[1][2].toFixed(3) }}</span>
+                <span class="stat-label-large">{{ selectedAssets[1] }} ↔ {{ selectedAssets[2] }}</span>
+                <span class="stat-value-large">{{ correlationMatrix[1][2].toFixed(3) }}</span>
               </div>
             </div>
           </div>
@@ -204,27 +202,11 @@
             <h4>Статистика</h4>
             <div class="stats-grid-compact">
               <div class="stat-item-compact" v-for="(stat, idx) in axisStats" :key="idx">
-                <span class="stat-label-small">{{ selectedAssets[idx] }}</span>
-                <div class="stat-details-compact">
+                <span class="stat-label-large">{{ selectedAssets[idx] }}</span>
+                <div class="stat-details-large">
                   <span>μ: {{ stat.mean.toFixed(2) }}%</span>
                   <span>σ: {{ stat.std.toFixed(2) }}%</span>
                 </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Legend -->
-          <div class="stats-section">
-            <h4>Легенда</h4>
-            <div class="legend-items">
-              <div 
-                v-for="regime in regimes" 
-                :key="regime.id"
-                class="legend-item"
-                v-show="visibleRegimes.includes(regime.id)"
-              >
-                <span class="legend-dot" :style="{ backgroundColor: regime.color }"></span>
-                <span>{{ regime.name }}</span>
               </div>
             </div>
           </div>
@@ -294,6 +276,7 @@ const showRegressions = ref(false)
 const showClusters = ref(false)
 const showCentroids = ref(false)
 const showOutliers = ref(true)
+const showAdvancedDropdown = ref(false)
 
 // Playback state
 const isPlaying = ref(false)
@@ -1225,11 +1208,31 @@ declare global {
   align-items: center;
 }
 
+/* Two Column Layout */
+.controls-two-column {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.controls-col-1,
+.controls-col-2 {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
 .control-group {
   display: flex;
   flex-direction: column;
   gap: 4px;
-  min-width: 120px;
+  min-width: 0;
+  width: 100%;
+}
+
+.control-group.full-width {
+  grid-column: 1 / -1;
 }
 
 .control-group label {
@@ -1288,12 +1291,16 @@ declare global {
 }
 
 .time-slider {
-  width: 200px;
+  width: 100%;
   height: 4px;
   -webkit-appearance: none;
   background: rgba(255, 255, 255, 0.1);
   border-radius: 2px;
   outline: none;
+}
+
+.time-slider.full-width-slider {
+  width: 100%;
 }
 
 .time-slider::-webkit-slider-thumb {
@@ -1314,9 +1321,8 @@ declare global {
   border: none;
 }
 
-.btn-export,
 .btn-reset {
-  padding: 6px 12px;
+  padding: 8px 12px;
   background: rgba(255, 255, 255, 0.1);
   border: 1px solid rgba(255, 255, 255, 0.2);
   border-radius: 6px;
@@ -1326,14 +1332,27 @@ declare global {
   cursor: pointer;
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 6px;
   transition: all 0.2s;
+  width: 100%;
 }
 
-.btn-export:hover,
+.btn-reset.full-width {
+  width: 100%;
+}
+
 .btn-reset:hover {
   background: rgba(255, 255, 255, 0.15);
   border-color: rgba(255, 255, 255, 0.3);
+}
+
+.regime-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: nowrap;
+  margin-bottom: 16px;
 }
 
 .regime-filter-label {
@@ -1341,7 +1360,8 @@ declare global {
   color: rgba(255, 255, 255, 0.6);
   font-weight: 600;
   text-transform: uppercase;
-  margin-right: 8px;
+  margin-right: 4px;
+  flex-shrink: 0;
 }
 
 .regime-checkbox {
@@ -1351,6 +1371,8 @@ declare global {
   font-size: 11px;
   color: rgba(255, 255, 255, 0.8);
   cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .regime-checkbox input[type="checkbox"] {
@@ -1364,24 +1386,66 @@ declare global {
   display: inline-block;
 }
 
-.advanced-controls {
-  padding-top: 8px;
-  border-top: 1px solid rgba(255, 255, 255, 0.05);
+/* Dropdown Controls */
+.dropdown-controls {
+  width: 100%;
 }
 
-.advanced-controls .control-group {
-  min-width: auto;
-}
-
-.advanced-controls label {
+.dropdown-toggle {
+  width: 100%;
+  padding: 8px 12px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
   display: flex;
   align-items: center;
-  gap: 6px;
-  font-size: 11px;
-  cursor: pointer;
+  justify-content: space-between;
+  gap: 8px;
+  transition: all 0.2s;
 }
 
-.advanced-controls input[type="checkbox"] {
+.dropdown-toggle:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.dropdown-toggle svg {
+  transition: transform 0.2s;
+  flex-shrink: 0;
+}
+
+.dropdown-content {
+  margin-top: 8px;
+  padding: 8px;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.checkbox-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.8);
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 4px;
+  transition: background 0.2s;
+}
+
+.checkbox-item:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.checkbox-item input[type="checkbox"] {
   cursor: pointer;
 }
 
@@ -1513,20 +1577,24 @@ declare global {
 
 .stat-item {
   display: flex;
-  flex-direction: column;
-  gap: 3px;
-  padding: 6px 8px;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
   background: rgba(255, 255, 255, 0.03);
   border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 .stat-item-compact {
   display: flex;
   flex-direction: column;
-  gap: 2px;
-  padding: 5px 6px;
+  gap: 6px;
+  padding: 10px 12px;
   background: rgba(255, 255, 255, 0.03);
   border-radius: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 .stat-label {
@@ -1540,8 +1608,21 @@ declare global {
   font-weight: 600;
 }
 
+.stat-label-large {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.7);
+  font-weight: 600;
+}
+
 .stat-value {
   font-size: 12px;
+  font-weight: 700;
+  color: #fff;
+  font-family: monospace;
+}
+
+.stat-value-large {
+  font-size: 16px;
   font-weight: 700;
   color: #fff;
   font-family: monospace;
@@ -1563,6 +1644,16 @@ declare global {
   font-size: 8px;
   color: rgba(255, 255, 255, 0.5);
   font-family: monospace;
+}
+
+.stat-details-large {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.7);
+  font-family: monospace;
+  font-weight: 500;
 }
 
 .legend-items {

@@ -575,8 +575,8 @@ onUnmounted(() => {
 .icon-btn:hover { opacity: 1; background: rgba(255,255,255,0.1); border-radius: 50%; transform: scale(1.1); }
 .timeline-wrapper { position: relative; width: 200px; height: 6px; background: rgba(255, 255, 255, 0.1); border-radius: 3px; display: flex; align-items: center; }
 .timeline-slider { position: absolute; width: 100%; height: 20px; top: 50%; transform: translateY(-50%); opacity: 0; cursor: pointer; z-index: 3; margin: 0; }
-.timeline-track { height: 100%; background: #3b82f6; border-radius: 3px; pointer-events: none; }
-.timeline-thumb { position: absolute; top: 50%; width: 12px; height: 12px; background: #fff; border-radius: 50%; transform: translate(-50%, -50%); box-shadow: 0 0 10px rgba(59, 130, 246, 0.5); z-index: 2; pointer-events: none; transition: transform 0.1s; }
+.timeline-track { height: 100%; background: #60a5fa; border-radius: 3px; pointer-events: none; }
+.timeline-thumb { position: absolute; top: 50%; width: 12px; height: 12px; background: #fff; border-radius: 50%; transform: translate(-50%, -50%); box-shadow: 0 0 10px rgba(96, 165, 250, 0.4); z-index: 2; pointer-events: none; transition: transform 0.1s; }
 .timeline-wrapper:hover .timeline-thumb { transform: translate(-50%, -50%) scale(1.3); }
 
 /* SVG */
@@ -644,8 +644,8 @@ onUnmounted(() => {
 
 .regime-3d-container {
   width: 100%;
-  height: calc(100vh - 200px);
   min-height: 800px;
+  height: auto;
 }
 
 @media (max-width: 768px) {
@@ -663,8 +663,8 @@ onUnmounted(() => {
     font-size: 12px;
   }
   .regime-3d-container {
-    height: calc(100vh - 150px);
     min-height: 600px;
+    height: auto;
   }
 }
 

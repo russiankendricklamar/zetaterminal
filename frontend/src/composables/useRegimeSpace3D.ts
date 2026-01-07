@@ -131,17 +131,17 @@ export class RegimeSpaceRenderer {
     const ambientLight = new THREE.AmbientLight(0xffffff, 0.4)
     this.scene.add(ambientLight)
 
-    // Directional lights
-    const light1 = new THREE.DirectionalLight(0x00ffff, 0.6)
+    // Directional lights - muted colors
+    const light1 = new THREE.DirectionalLight(0x60a5fa, 0.5)
     light1.position.set(30, 30, 30)
     light1.castShadow = true
     this.scene.add(light1)
 
-    const light2 = new THREE.DirectionalLight(0xff00ff, 0.4)
+    const light2 = new THREE.DirectionalLight(0xa78bfa, 0.3)
     light2.position.set(-30, 30, -30)
     this.scene.add(light2)
 
-    const light3 = new THREE.DirectionalLight(0x00ff00, 0.3)
+    const light3 = new THREE.DirectionalLight(0x4ade80, 0.2)
     light3.position.set(0, -30, 0)
     this.scene.add(light3)
   }
@@ -260,34 +260,34 @@ export class RegimeSpaceRenderer {
   private createAxes() {
     const axesGroup = new THREE.Group()
     
-    // X-axis (Return) - Cyan
+    // X-axis (Return) - Muted Cyan
     const xAxis = new THREE.ArrowHelper(
       new THREE.Vector3(1, 0, 0),
       new THREE.Vector3(0, 0, 0),
       35,
-      0x00ffff,
+      0x60a5fa,
       2,
       1
     )
     axesGroup.add(xAxis)
     
-    // Y-axis (Volatility) - Magenta
+    // Y-axis (Volatility) - Muted Magenta
     const yAxis = new THREE.ArrowHelper(
       new THREE.Vector3(0, 1, 0),
       new THREE.Vector3(0, 0, 0),
       35,
-      0xff00ff,
+      0xa78bfa,
       2,
       1
     )
     axesGroup.add(yAxis)
     
-    // Z-axis (Liquidity) - Green
+    // Z-axis (Liquidity) - Muted Green
     const zAxis = new THREE.ArrowHelper(
       new THREE.Vector3(0, 0, 1),
       new THREE.Vector3(0, 0, 0),
       35,
-      0x00ff00,
+      0x4ade80,
       2,
       1
     )

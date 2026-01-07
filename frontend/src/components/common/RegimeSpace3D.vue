@@ -153,7 +153,7 @@
                   v-for="(prob, j) in row" 
                   :key="j" 
                   class="matrix-cell"
-                  :style="{ backgroundColor: `rgba(59, 130, 246, ${prob * 0.8})` }"
+                  :style="{ backgroundColor: `rgba(96, 165, 250, ${prob * 0.6})` }"
                 >
                   <span class="m-val">{{ (prob * 100).toFixed(0) }}%</span>
                   <span class="m-lbl">S{{i}}→S{{j}}</span>
@@ -326,11 +326,11 @@ let renderer: RegimeSpaceRenderer | null = null
 
 // Regime Configs
 const regimeConfigs = ref<RegimeConfig[]>([
-  { id: 0, name: 'Low Vol / Accumulation', color: '#00ff00', mean: [0.15, 8.0, 0.8] },
-  { id: 1, name: 'Normal / Trending', color: '#00ffff', mean: [0.08, 15.0, 0.6] },
-  { id: 2, name: 'High Vol / Distribution', color: '#ff00ff', mean: [-0.05, 35.0, 0.4] },
-  { id: 3, name: 'Crisis / Panic', color: '#ff0000', mean: [-0.20, 60.0, 0.2] },
-  { id: 4, name: 'Recovery', color: '#ffff00', mean: [0.12, 20.0, 0.5] }
+  { id: 0, name: 'Low Vol / Accumulation', color: '#4ade80', mean: [0.15, 8.0, 0.8] },
+  { id: 1, name: 'Normal / Trending', color: '#60a5fa', mean: [0.08, 15.0, 0.6] },
+  { id: 2, name: 'High Vol / Distribution', color: '#a78bfa', mean: [-0.05, 35.0, 0.4] },
+  { id: 3, name: 'Crisis / Panic', color: '#f87171', mean: [-0.20, 60.0, 0.2] },
+  { id: 4, name: 'Recovery', color: '#fbbf24', mean: [0.12, 20.0, 0.5] }
 ])
 
 // Camera Presets
@@ -412,7 +412,7 @@ const getRegimeConfigs = (): RegimeConfig[] => {
       configs.push(regimeConfigs.value[i])
     } else {
       // Create default config for missing states
-      const defaultColors = ['#00ff00', '#00ffff', '#ff00ff', '#ff0000', '#ffff00', '#ff8800', '#0088ff']
+      const defaultColors = ['#4ade80', '#60a5fa', '#a78bfa', '#f87171', '#fbbf24', '#fb923c', '#3b82f6']
       configs.push({
         id: i,
         name: `Режим ${i}`,
@@ -795,7 +795,7 @@ onUnmounted(() => {
 <style scoped>
 .regime-space-3d {
   width: 100%;
-  height: 100%;
+  min-height: 100%;
   display: flex;
   flex-direction: column;
   background: #000;
@@ -803,30 +803,49 @@ onUnmounted(() => {
 
 .main-layout {
   display: grid;
-  grid-template-columns: 350px 1fr;
+  grid-template-columns: 300px 1fr;
   gap: 20px;
-  height: 100%;
-  padding: 20px;
+  min-height: 0;
+  padding: 24px 24px 24px 20px;
   box-sizing: border-box;
+  align-items: start;
 }
 
 .controls-panel {
   display: flex;
   flex-direction: column;
-  gap: 16px;
-  overflow-y: auto;
-  max-height: 100%;
+  gap: 20px;
+  overflow: visible;
 }
 
 .main-content {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 20px;
   min-height: 0;
+  overflow: visible;
+}
+
+/* Glass Card Styles - matching RegimeAnalysis.vue */
+.glass-card {
+  background: rgba(30, 32, 40, 0.4);
+  backdrop-filter: blur(40px) saturate(180%);
+  -webkit-backdrop-filter: blur(40px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 24px;
+  box-shadow: 
+    0 20px 50px -10px rgba(0, 0, 0, 0.5),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  transition: all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.glass-card:hover {
+  background: rgba(40, 45, 55, 0.5);
+  border-color: rgba(255, 255, 255, 0.12);
 }
 
 .panel {
-  padding: 20px;
+  padding: 24px;
 }
 
 .panel-header h3 {
@@ -841,7 +860,7 @@ onUnmounted(() => {
 .controls-section {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 14px;
 }
 
 .input-group {
@@ -915,7 +934,7 @@ onUnmounted(() => {
 .view-controls {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 12px;
 }
 
 .checkbox-label {
@@ -925,6 +944,13 @@ onUnmounted(() => {
   font-size: 12px;
   color: rgba(255, 255, 255, 0.8);
   cursor: pointer;
+  padding: 6px;
+  border-radius: 6px;
+  transition: all 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.checkbox-label:hover {
+  background: rgba(255, 255, 255, 0.05);
 }
 
 .checkbox-label input[type="checkbox"] {
@@ -934,7 +960,7 @@ onUnmounted(() => {
 .camera-presets {
   margin-top: 16px;
   padding-top: 16px;
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 .presets-title {
@@ -955,17 +981,22 @@ onUnmounted(() => {
 .btn-preset {
   padding: 8px;
   background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(10px) saturate(180%);
+  -webkit-backdrop-filter: blur(10px) saturate(180%);
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 8px;
   color: #fff;
   font-size: 11px;
   cursor: pointer;
-  transition: 0.2s;
+  transition: all 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+  box-shadow: 0 2px 8px -2px rgba(0, 0, 0, 0.2);
 }
 
 .btn-preset:hover {
   background: rgba(255, 255, 255, 0.1);
-  border-color: rgba(255, 255, 255, 0.2);
+  border-color: rgba(255, 255, 255, 0.15);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px -2px rgba(0, 0, 0, 0.3);
 }
 
 .regime-info {
@@ -980,8 +1011,13 @@ onUnmounted(() => {
   gap: 10px;
   padding: 12px;
   background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(10px) saturate(180%);
+  -webkit-backdrop-filter: blur(10px) saturate(180%);
   border: 2px solid;
   border-radius: 12px;
+  box-shadow: 
+    0 4px 12px -4px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
 }
 
 .regime-dot {
@@ -1001,22 +1037,33 @@ onUnmounted(() => {
   display: flex;
   flex-direction: column;
   gap: 8px;
+  padding-top: 8px;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 .stat-row {
   display: flex;
   justify-content: space-between;
+  align-items: center;
   font-size: 12px;
+  padding: 6px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.stat-row:last-child {
+  border-bottom: none;
 }
 
 .stat-label {
   color: rgba(255, 255, 255, 0.5);
+  font-weight: 500;
 }
 
 .stat-value {
   font-weight: 700;
   color: #fff;
   font-family: "SF Mono", monospace;
+  font-size: 13px;
 }
 
 .matrix-grid {
@@ -1037,18 +1084,29 @@ onUnmounted(() => {
   justify-content: center;
   color: #fff;
   font-size: 12px;
+  transition: all 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.matrix-cell:hover {
+  transform: scale(1.05);
+  box-shadow: 0 4px 12px -2px rgba(0, 0, 0, 0.4);
+  border-color: rgba(255, 255, 255, 0.1);
+  z-index: 10;
 }
 
 .m-val {
   font-weight: 700;
   font-family: "SF Mono", monospace;
   font-size: 14px;
+  line-height: 1.2;
 }
 
 .m-lbl {
   font-size: 9px;
   opacity: 0.7;
   margin-top: 2px;
+  line-height: 1;
 }
 
 .visualization-header {
@@ -1056,17 +1114,21 @@ onUnmounted(() => {
   justify-content: space-between;
   align-items: center;
   gap: 20px;
+  padding: 16px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  margin-bottom: 16px;
 }
 
 .vis-title {
-  font-size: 20px;
+  font-size: 28px;
   font-weight: 700;
   color: #fff;
   margin: 0;
+  letter-spacing: -0.01em;
 }
 
 .vis-subtitle {
-  font-size: 12px;
+  font-size: 13px;
   color: rgba(255, 255, 255, 0.5);
   margin: 4px 0 0 0;
 }
@@ -1075,10 +1137,15 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   gap: 12px;
-  background: rgba(0, 0, 0, 0.4);
+  background: rgba(30, 32, 40, 0.4);
+  backdrop-filter: blur(40px) saturate(180%);
+  -webkit-backdrop-filter: blur(40px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
   padding: 8px 16px;
-  border-radius: 12px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 24px;
+  box-shadow: 
+    0 10px 30px -10px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
 }
 
 .btn-play {
@@ -1086,6 +1153,8 @@ onUnmounted(() => {
   height: 36px;
   border-radius: 50%;
   background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px) saturate(180%);
+  -webkit-backdrop-filter: blur(10px) saturate(180%);
   border: 1px solid rgba(255, 255, 255, 0.2);
   color: #fff;
   font-size: 14px;
@@ -1093,13 +1162,16 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: 0.2s;
+  transition: all 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+  box-shadow: 0 4px 12px -4px rgba(0, 0, 0, 0.3);
 }
 
 .btn-play:hover,
 .btn-play.active {
   background: rgba(255, 255, 255, 0.2);
   border-color: rgba(255, 255, 255, 0.3);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px -4px rgba(0, 0, 0, 0.4);
 }
 
 .timeline-wrapper {
@@ -1107,9 +1179,12 @@ onUnmounted(() => {
   width: 300px;
   height: 6px;
   background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px) saturate(180%);
+  -webkit-backdrop-filter: blur(10px) saturate(180%);
   border-radius: 3px;
   display: flex;
   align-items: center;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.2);
 }
 
 .timeline-slider {
@@ -1126,7 +1201,7 @@ onUnmounted(() => {
 
 .timeline-track {
   height: 100%;
-  background: #3b82f6;
+  background: #60a5fa;
   border-radius: 3px;
   pointer-events: none;
   transition: width 0.1s;
@@ -1140,7 +1215,7 @@ onUnmounted(() => {
   background: #fff;
   border-radius: 50%;
   transform: translate(-50%, -50%);
-  box-shadow: 0 0 10px rgba(59, 130, 246, 0.5);
+  box-shadow: 0 0 10px rgba(96, 165, 250, 0.4);
   z-index: 2;
   pointer-events: none;
   transition: left 0.1s;
@@ -1148,12 +1223,26 @@ onUnmounted(() => {
 
 .speed-select {
   background: rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(10px) saturate(180%);
+  -webkit-backdrop-filter: blur(10px) saturate(180%);
   border: 1px solid rgba(255, 255, 255, 0.1);
   color: #fff;
   padding: 6px 10px;
   border-radius: 8px;
   font-size: 11px;
   cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.speed-select:hover {
+  border-color: rgba(255, 255, 255, 0.2);
+  background: rgba(0, 0, 0, 0.4);
+}
+
+.speed-select:focus {
+  border-color: #3b82f6;
+  background: rgba(0, 0, 0, 0.5);
+  outline: none;
 }
 
 .btn-reset {
@@ -1177,16 +1266,30 @@ onUnmounted(() => {
   font-family: "SF Mono", monospace;
   min-width: 100px;
   text-align: right;
+  padding: 6px 10px;
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(10px) saturate(180%);
+  -webkit-backdrop-filter: blur(10px) saturate(180%);
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .canvas-container {
   flex: 1;
   position: relative;
-  background: #0a0a0f;
-  border-radius: 16px;
+  background: rgba(30, 32, 40, 0.4);
+  backdrop-filter: blur(40px) saturate(180%);
+  -webkit-backdrop-filter: blur(40px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 24px;
   overflow: hidden;
   min-height: 600px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  height: 600px;
+  max-height: 80vh;
+  box-shadow: 
+    0 20px 50px -10px rgba(0, 0, 0, 0.5),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  transition: all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
 .canvas-container.loading {
@@ -1202,19 +1305,22 @@ onUnmounted(() => {
   right: 0;
   bottom: 0;
   background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   gap: 16px;
   z-index: 100;
+  border-radius: 24px;
 }
 
 .spinner-large {
   width: 40px;
   height: 40px;
   border: 3px solid rgba(255, 255, 255, 0.1);
-  border-top-color: #3b82f6;
+  border-top-color: #60a5fa;
   border-radius: 50%;
   animation: spin 1s linear infinite;
 }
@@ -1235,51 +1341,79 @@ onUnmounted(() => {
 .stats-panel {
   display: grid;
   grid-template-columns: 1fr 1fr auto;
-  gap: 16px;
+  gap: 20px;
   align-items: start;
+  padding-top: 20px;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 .stats-card {
-  background: rgba(0, 0, 0, 0.3);
-  padding: 16px;
-  border-radius: 12px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(30, 32, 40, 0.4);
+  backdrop-filter: blur(40px) saturate(180%);
+  -webkit-backdrop-filter: blur(40px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 24px;
+  padding: 24px;
+  box-shadow: 
+    0 20px 50px -10px rgba(0, 0, 0, 0.5),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  transition: all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.stats-card:hover {
+  background: rgba(40, 45, 55, 0.5);
+  border-color: rgba(255, 255, 255, 0.12);
 }
 
 .stats-card h4 {
   font-size: 11px;
   color: rgba(255, 255, 255, 0.5);
   text-transform: uppercase;
-  margin: 0 0 12px 0;
-  font-weight: 600;
+  margin: 0 0 16px 0;
+  font-weight: 700;
+  letter-spacing: 0.05em;
 }
 
 .distribution-bars {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 8px;
 }
 
 .dist-bar {
-  height: 24px;
-  border-radius: 6px;
+  height: 28px;
+  border-radius: 8px;
   display: flex;
   align-items: center;
-  padding: 0 8px;
-  transition: width 0.3s;
+  padding: 0 12px;
+  transition: all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+  box-shadow: 
+    0 2px 8px -2px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(0, 0, 0, 0.2);
+}
+
+.dist-bar:hover {
+  transform: scaleY(1.05);
+  box-shadow: 
+    0 4px 12px -2px rgba(0, 0, 0, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.15);
+  border-color: rgba(255, 255, 255, 0.1);
 }
 
 .dist-label {
   font-size: 10px;
   color: #fff;
-  font-weight: 600;
+  font-weight: 700;
   white-space: nowrap;
+  font-family: "SF Mono", monospace;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
 }
 
 .duration-list {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 10px;
 }
 
 .duration-item {
@@ -1287,46 +1421,71 @@ onUnmounted(() => {
   align-items: center;
   gap: 10px;
   font-size: 12px;
+  padding: 8px;
+  border-radius: 8px;
+  transition: all 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.duration-item:hover {
+  background: rgba(255, 255, 255, 0.05);
+  transform: translateX(4px);
 }
 
 .duration-dot {
   width: 8px;
   height: 8px;
   border-radius: 50%;
+  box-shadow: 0 0 8px currentColor;
+  transition: all 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.duration-item:hover .duration-dot {
+  transform: scale(1.2);
+  box-shadow: 0 0 12px currentColor;
 }
 
 .duration-name {
   flex: 1;
   color: rgba(255, 255, 255, 0.8);
+  font-weight: 500;
 }
 
 .duration-value {
   font-weight: 700;
   color: #fff;
   font-family: "SF Mono", monospace;
+  font-size: 11px;
 }
 
 .export-section {
   display: flex;
   flex-direction: column;
   gap: 8px;
+  padding-top: 8px;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 .btn-export {
   padding: 10px 16px;
   background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px) saturate(180%);
+  -webkit-backdrop-filter: blur(10px) saturate(180%);
   border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 8px;
+  border-radius: 12px;
   color: #fff;
   font-size: 12px;
+  font-weight: 600;
   cursor: pointer;
-  transition: 0.2s;
+  transition: all 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
   white-space: nowrap;
+  box-shadow: 0 4px 12px -4px rgba(0, 0, 0, 0.3);
 }
 
 .btn-export:hover {
   background: rgba(255, 255, 255, 0.15);
   border-color: rgba(255, 255, 255, 0.3);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px -4px rgba(0, 0, 0, 0.4);
 }
 
 .text-green { color: #4ade80; }
@@ -1346,7 +1505,7 @@ onUnmounted(() => {
 
 @media (max-width: 1400px) {
   .main-layout {
-    grid-template-columns: 300px 1fr;
+    grid-template-columns: 280px 1fr;
   }
 }
 
@@ -1356,7 +1515,7 @@ onUnmounted(() => {
   }
   
   .controls-panel {
-    max-height: 400px;
+    overflow: visible;
   }
   
   .stats-panel {
