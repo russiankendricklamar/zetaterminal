@@ -198,126 +198,29 @@
             </div>
         </div>
 
-        <!-- Heatmap and Metrics Row - aligned bottom -->
-        <div class="heatmap-metrics-row">
-            <!-- Market Map -->
-            <div class="glass-panel heatmap-panel">
-               <div class="panel-header">
-                  <h3>Тепловая карта</h3>
-               </div>
-               <div class="panel-body" style="padding: 0;">
-                  <div class="treemap-tall">
-                     <div 
-                        v-for="pos in positions" 
-                        :key="pos.symbol"
-                        class="treemap-item"
-                        :style="{ 
-                           flexGrow: pos.allocation, 
-                           backgroundColor: pos.dayChange > 0 ? 'rgba(16, 185, 129, 0.4)' : 'rgba(239, 68, 68, 0.4)'
-                        }"
-                     >
-                        <span class="tm-symbol">{{ pos.symbol }}</span>
-                        <span class="tm-val">{{ pos.dayChange > 0 ? '+' : '' }}{{ pos.dayChange }}%</span>
-                     </div>
-                  </div>
-               </div>
-            </div>
-            
-            <!-- Combined Metrics with Tournament Tab - moved here -->
-            <div class="glass-panel combined-metrics metrics-panel">
-               <div class="combined-tabs">
-                  <button 
-                     :class="['tab-button', { active: activeMetricsTab === 'risk' }]"
-                     @click="activeMetricsTab = 'risk'"
-                  >
-                     Риск
-                  </button>
-                  <button 
-                     :class="['tab-button', { active: activeMetricsTab === 'stats' }]"
-                     @click="activeMetricsTab = 'stats'"
-                  >
-                     Статистика
-                  </button>
-                  <button 
-                     :class="['tab-button', { active: activeMetricsTab === 'tournament' }]"
-                     @click="activeMetricsTab = 'tournament'"
-                  >
-                     🏆 Турнир
-                  </button>
-               </div>
-
-               <!-- Risk Tab -->
-               <div class="tab-content" v-show="activeMetricsTab === 'risk'">
-                  <div class="metric-row">
-                     <div class="metric-label">
-                        <span>Expected Shortfall</span>
-                        <span class="meta-hint">CVaR 95%</span>
-                     </div>
-                     <div class="metric-value text-red">-3.78%</div>
-                  </div>
-                  <div class="metric-row">
-                     <div class="metric-label">
-                        <span>Max Drawdown</span>
-                        <span class="meta-hint">Peak-to-Trough</span>
-                     </div>
-                     <div class="metric-value text-red">-18.24%</div>
-                  </div>
-                  <div class="metric-row">
-                     <div class="metric-label">
-                        <span>Calmar Ratio</span>
-                        <span class="meta-hint">Return / Max DD</span>
-                     </div>
-                     <div class="metric-value text-white">1.41</div>
-                  </div>
-                  <div class="metric-row">
-                     <div class="metric-label">
-                        <span>Rolling Vol (30D)</span>
-                        <span class="meta-hint">Annualized</span>
-                     </div>
-                     <div class="metric-value text-white">12.8%</div>
-                  </div>
-               </div>
-
-               <!-- Stats Tab -->
-               <div class="tab-content" v-show="activeMetricsTab === 'stats'">
-                  <div class="stats-grid">
-                     <div class="stat-item">
-                        <span class="stat-label">YTD Return</span>
-                        <span class="stat-value text-green">+8.42%</span>
-                     </div>
-                     <div class="stat-item">
-                        <span class="stat-label">Win Rate</span>
-                        <span class="stat-value text-green">58.3%</span>
-                     </div>
-                     <div class="stat-item">
-                        <span class="stat-label">Profit Factor</span>
-                        <span class="stat-value text-white">1.87x</span>
-                     </div>
-                     <div class="stat-item">
-                        <span class="stat-label">Avg Trade</span>
-                        <span class="stat-value text-white">+0.34%</span>
-                     </div>
-                  </div>
-               </div>
-
-               <!-- Tournament Tab -->
-               <div class="tab-content" v-show="activeMetricsTab === 'tournament'">
-                  <div class="tournament-mini">
-                     <div style="font-size: 10px; color: rgba(255,255,255,0.5); margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid rgba(255,255,255,0.1);">
-                        Рейтинг моделей (20-летний бэктест)
-                     </div>
-                     <div v-for="(model, i) in tournamentResults" :key="i" class="tournament-row">
-                        <span class="tournament-rank">{{ i + 1 }}</span>
-                        <span class="tournament-name">{{ model.name }}</span>
-                        <span class="tournament-sharpe">{{ model.sharpe.toFixed(2) }}</span>
-                     </div>
-                  </div>
-                  <router-link to="/tournament" class="btn-glass primary w-full mt-3" style="text-decoration: none; text-align: center; display: inline-flex; align-items: center; justify-content: center;">
-                     Открыть полный турнир →
-                  </router-link>
-               </div>
-            </div>
+        <!-- Heatmap - Full Width -->
+        <div class="glass-panel heatmap-panel">
+           <div class="panel-header">
+              <h3>Тепловая карта</h3>
+           </div>
+           <div class="panel-body" style="padding: 0;">
+              <div class="treemap-tall">
+                 <div 
+                    v-for="pos in positions" 
+                    :key="pos.symbol"
+                    class="treemap-item"
+                    :style="{ 
+                       flexGrow: pos.allocation, 
+                       backgroundColor: pos.dayChange > 0 ? 'rgba(16, 185, 129, 0.4)' : 'rgba(239, 68, 68, 0.4)'
+                    }"
+                 >
+                    <span class="tm-symbol">{{ pos.symbol }}</span>
+                    <span class="tm-val">{{ pos.dayChange > 0 ? '+' : '' }}{{ pos.dayChange }}%</span>
+                 </div>
+              </div>
+           </div>
         </div>
+
 
       </div>
 
@@ -465,6 +368,100 @@
            </div>
         </div>
 
+        <!-- Combined Metrics with Tournament Tab -->
+        <div class="glass-panel combined-metrics metrics-panel">
+           <div class="combined-tabs">
+              <button 
+                 :class="['tab-button', { active: activeMetricsTab === 'risk' }]"
+                 @click="activeMetricsTab = 'risk'"
+              >
+                 Риск
+              </button>
+              <button 
+                 :class="['tab-button', { active: activeMetricsTab === 'stats' }]"
+                 @click="activeMetricsTab = 'stats'"
+              >
+                 Статистика
+              </button>
+              <button 
+                 :class="['tab-button', { active: activeMetricsTab === 'tournament' }]"
+                 @click="activeMetricsTab = 'tournament'"
+              >
+                 🏆 Турнир
+              </button>
+           </div>
+
+           <!-- Risk Tab -->
+           <div class="tab-content" v-show="activeMetricsTab === 'risk'">
+              <div class="metric-row">
+                 <div class="metric-label">
+                    <span>Expected Shortfall</span>
+                    <span class="meta-hint">CVaR 95%</span>
+                 </div>
+                 <div class="metric-value text-red">-3.78%</div>
+              </div>
+              <div class="metric-row">
+                 <div class="metric-label">
+                    <span>Max Drawdown</span>
+                    <span class="meta-hint">Peak-to-Trough</span>
+                 </div>
+                 <div class="metric-value text-red">-18.24%</div>
+              </div>
+              <div class="metric-row">
+                 <div class="metric-label">
+                    <span>Calmar Ratio</span>
+                    <span class="meta-hint">Return / Max DD</span>
+                 </div>
+                 <div class="metric-value text-white">1.41</div>
+              </div>
+              <div class="metric-row">
+                 <div class="metric-label">
+                    <span>Rolling Vol (30D)</span>
+                    <span class="meta-hint">Annualized</span>
+                 </div>
+                 <div class="metric-value text-white">12.8%</div>
+              </div>
+           </div>
+
+           <!-- Stats Tab -->
+           <div class="tab-content" v-show="activeMetricsTab === 'stats'">
+              <div class="stats-grid">
+                 <div class="stat-item">
+                    <span class="stat-label">YTD Return</span>
+                    <span class="stat-value text-green">+8.42%</span>
+                 </div>
+                 <div class="stat-item">
+                    <span class="stat-label">Win Rate</span>
+                    <span class="stat-value text-green">58.3%</span>
+                 </div>
+                 <div class="stat-item">
+                    <span class="stat-label">Profit Factor</span>
+                    <span class="stat-value text-white">1.87x</span>
+                 </div>
+                 <div class="stat-item">
+                    <span class="stat-label">Avg Trade</span>
+                    <span class="stat-value text-white">+0.34%</span>
+                 </div>
+              </div>
+           </div>
+
+           <!-- Tournament Tab -->
+           <div class="tab-content" v-show="activeMetricsTab === 'tournament'">
+              <div class="tournament-mini">
+                 <div style="font-size: 10px; color: rgba(255,255,255,0.5); margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid rgba(255,255,255,0.1);">
+                    Рейтинг моделей (20-летний бэктест)
+                 </div>
+                 <div v-for="(model, i) in tournamentResults" :key="i" class="tournament-row">
+                    <span class="tournament-rank">{{ i + 1 }}</span>
+                    <span class="tournament-name">{{ model.name }}</span>
+                    <span class="tournament-sharpe">{{ model.sharpe.toFixed(2) }}</span>
+                 </div>
+              </div>
+              <router-link to="/tournament" class="btn-glass primary w-full mt-3" style="text-decoration: none; text-align: center; display: inline-flex; align-items: center; justify-content: center;">
+                 Открыть полный турнир →
+              </router-link>
+           </div>
+        </div>
 
       </aside>
     </div>
@@ -640,7 +637,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import CorrelationScatter3D from '../components/common/CorrelationScatter3D.vue'
 
 // Динамический импорт Plotly
@@ -1276,8 +1273,29 @@ watch(() => waveRegime.value.currentRegime, () => {
   initWave3D()
 })
 
+// Sync heights of heatmap and metrics panels
+const syncPanelHeights = () => {
+  if (typeof window === 'undefined') return
+  
+  setTimeout(() => {
+    const heatmapPanel = document.querySelector('.heatmap-panel') as HTMLElement
+    const metricsPanel = document.querySelector('.metrics-panel') as HTMLElement
+    
+    if (heatmapPanel && metricsPanel) {
+      const maxHeight = Math.max(heatmapPanel.offsetHeight, metricsPanel.offsetHeight)
+      if (maxHeight > 400) {
+        heatmapPanel.style.minHeight = `${maxHeight}px`
+        metricsPanel.style.minHeight = `${maxHeight}px`
+      }
+    }
+  }, 100)
+}
+
 onMounted(async () => {
   if (positions.value?.length > 0) selectedAsset.value = positions.value[0]
+  
+  // Sync panel heights
+  syncPanelHeights()
   
   // Инициализируем графики последовательно с задержкой
   setTimeout(async () => {
@@ -1292,7 +1310,16 @@ onMounted(async () => {
     latentVolAlert.value.isActive = true
     latentVolAlert.value.severity = 'warning'
     latentVolMetrics.value.currentZscore = 2.15
+    // Re-sync heights after content loads
+    syncPanelHeights()
   }, 2000)
+  
+  // Re-sync on window resize
+  window.addEventListener('resize', syncPanelHeights)
+})
+
+onUnmounted(() => {
+  window.removeEventListener('resize', syncPanelHeights)
 })
 
 const selectAsset = (pos: any) => selectedAsset.value = pos
@@ -1389,24 +1416,15 @@ const getMockHistogram = (symbol: string) => {
 .col-main { display: flex; flex-direction: column; gap: 24px; }
 .col-side-flex { display: flex; flex-direction: column; gap: 16px; height: 100%; }
 
-/* Heatmap and Metrics Row - aligned bottom */
-.heatmap-metrics-row { 
-  display: grid; 
-  grid-template-columns: 1fr 340px; 
-  gap: 24px; 
-  align-items: stretch;
-}
-
-.heatmap-panel,
-.metrics-panel {
+/* Heatmap Panel - Full Width */
+.heatmap-panel {
   display: flex;
   flex-direction: column;
-  height: 100%;
-  min-height: 0;
+  width: 100%;
+  min-height: 400px;
 }
 
-.heatmap-panel .panel-body,
-.metrics-panel .panel-body {
+.heatmap-panel .panel-body {
   flex: 1;
   display: flex;
   flex-direction: column;
@@ -1416,13 +1434,30 @@ const getMockHistogram = (symbol: string) => {
 .treemap-tall {
   flex: 1;
   display: flex;
-  height: 100%;
   min-height: 280px;
+}
+
+/* Metrics Panel - in right column, aligned with heatmap */
+.metrics-panel {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 400px;
+}
+
+.metrics-panel .panel-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
 }
 
 /* 3D Scatter Panel - optimized space */
 .scatter-3d-panel {
   width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  overflow: hidden;
 }
 
 .scatter-3d-body {
@@ -1430,6 +1465,10 @@ const getMockHistogram = (symbol: string) => {
   display: flex;
   flex-direction: column;
   min-height: 0;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  overflow: hidden;
 }
 
 .latent-vol-legend {
@@ -1697,7 +1736,13 @@ input:checked + .slider { background-color: #34c759; }
 input:checked + .slider:before { transform: translateX(12px); }
 
 /* Metrics Tabs */
-.combined-metrics { display: flex; flex-direction: column; height: 100%; min-height: 280px; }
+.combined-metrics { 
+  display: flex; 
+  flex-direction: column; 
+  height: 100%; 
+  min-height: 0;
+  flex: 1;
+}
 .combined-tabs { display: flex; gap: 0; border-bottom: 1px solid rgba(255,255,255,0.05); padding: 0 20px; flex-shrink: 0; }
 .tab-button { flex: 1; padding: 12px 16px; background: transparent; border: none; color: rgba(255,255,255,0.4); font-size: 11px; font-weight: 600; text-transform: uppercase; cursor: pointer; position: relative; transition: color 0.2s; }
 .tab-button:hover { color: rgba(255,255,255,0.6); }

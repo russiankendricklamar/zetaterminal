@@ -380,20 +380,49 @@ const currentRegimeInfo = computed(() => {
   if (filteredData.value.length === 0 || !filteredData.value[currentTimeIndex.value]) return null
   
   const point = filteredData.value[currentTimeIndex.value]
-  const regimeId = point.regime || 0
-  const config = regimeConfigs.value[regimeId]
+  const regimeId = point.regime !== undefined ? Math.max(0, Math.min(point.regime, nStates.value - 1)) : 0
+  
+  // Clamp regimeId to valid range
+  const clampedRegimeId = Math.max(0, Math.min(regimeId, regimeConfigs.value.length - 1))
+  const config = regimeConfigs.value[clampedRegimeId]
   if (!config) return null
 
-  const prob = point.probability ? point.probability[regimeId] : 0
-  const mean = hmmModel.value?.getEmissionMeans()[regimeId] || [0, 0, 0]
+  const prob = point.probability && clampedRegimeId < point.probability.length 
+    ? point.probability[clampedRegimeId] 
+    : 0
+    
+  const means = hmmModel.value?.getEmissionMeans()
+  const mean = means && clampedRegimeId < means.length 
+    ? means[clampedRegimeId] 
+    : [0, 0, 0]
 
   return {
     ...config,
     probability: prob,
-    meanReturn: mean[0],
-    meanVolatility: mean[1]
+    meanReturn: mean[0] || 0,
+    meanVolatility: mean[1] || 0
   }
 })
+
+// Helper function to get regime configs safely
+const getRegimeConfigs = (): RegimeConfig[] => {
+  const configs: RegimeConfig[] = []
+  for (let i = 0; i < nStates.value; i++) {
+    if (i < regimeConfigs.value.length) {
+      configs.push(regimeConfigs.value[i])
+    } else {
+      // Create default config for missing states
+      const defaultColors = ['#00ff00', '#00ffff', '#ff00ff', '#ff0000', '#ffff00', '#ff8800', '#0088ff']
+      configs.push({
+        id: i,
+        name: `Режим ${i}`,
+        color: defaultColors[i % defaultColors.length],
+        mean: [0, 10, 0.5]
+      })
+    }
+  }
+  return configs
+}
 
 // Methods
 const runAnalysis = async () => {
@@ -428,6 +457,12 @@ const runAnalysis = async () => {
     const defaultMeans = hmmModel.value.getEmissionMeans()
     const defaultCovs = hmmModel.value.getEmissionCovariances()
     
+    // Ensure arrays exist and have valid length
+    if (!defaultMatrix || !defaultMeans || !defaultCovs || 
+        defaultMatrix.length === 0 || defaultMeans.length === 0 || defaultCovs.length === 0) {
+      throw new Error('Failed to get default HMM model parameters')
+    }
+    
     // Adjust to match nStates
     const adjustedMatrix: number[][] = []
     const adjustedMeans: number[][] = []
@@ -436,7 +471,7 @@ const runAnalysis = async () => {
     for (let i = 0; i < nStates.value; i++) {
       const row: number[] = []
       for (let j = 0; j < nStates.value; j++) {
-        if (i < defaultMatrix.length && j < defaultMatrix[i].length) {
+        if (i < defaultMatrix.length && defaultMatrix[i] && j < defaultMatrix[i].length) {
           row.push(defaultMatrix[i][j])
         } else {
           // Equal probability for new states
@@ -445,16 +480,25 @@ const runAnalysis = async () => {
       }
       // Normalize row
       const sum = row.reduce((a, b) => a + b, 0)
-      row.forEach((val, idx) => row[idx] = val / sum)
+      if (sum > 0) {
+        row.forEach((val, idx) => row[idx] = val / sum)
+      }
       adjustedMatrix.push(row)
       
-      if (i < defaultMeans.length) {
-        adjustedMeans.push(defaultMeans[i])
-        adjustedCovs.push(defaultCovs[i])
+      if (i < defaultMeans.length && defaultMeans[i] && i < defaultCovs.length && defaultCovs[i]) {
+        adjustedMeans.push([...defaultMeans[i]])
+        adjustedCovs.push(defaultCovs[i].map((covRow: number[]) => [...covRow]))
       } else {
         // Use last regime's parameters for extra states
-        adjustedMeans.push([...defaultMeans[defaultMeans.length - 1]])
-        adjustedCovs.push(defaultCovs[defaultCovs.length - 1].map(row => [...row]))
+        const lastIdx = Math.max(0, defaultMeans.length - 1)
+        if (defaultMeans[lastIdx] && defaultCovs[lastIdx]) {
+          adjustedMeans.push([...defaultMeans[lastIdx]])
+          adjustedCovs.push(defaultCovs[lastIdx].map((covRow: number[]) => [...covRow]))
+        } else {
+          // Fallback to default values if arrays are empty
+          adjustedMeans.push([0, 10, 0.5])
+          adjustedCovs.push([[1, 0, 0], [0, 1, 0], [0, 0, 0.1]])
+        }
       }
     }
     
@@ -525,7 +569,7 @@ const runAnalysis = async () => {
     
     // Update visualization
     if (renderer && hmmModel.value) {
-      const configs = regimeConfigs.value.slice(0, nStates.value)
+      const configs = getRegimeConfigs()
       renderer.setData(filteredData.value, hmmModel.value, configs)
     }
     
@@ -558,16 +602,29 @@ const computeTransitionMatrixFromData = () => {
   for (let i = 1; i < allMarketData.value.length; i++) {
     const prev = allMarketData.value[i - 1].regime || 0
     const curr = allMarketData.value[i].regime || 0
-    transitions[prev][curr]++
+    
+    // Clamp regime indices to valid range [0, nStates - 1]
+    const prevClamped = Math.max(0, Math.min(prev, nStates.value - 1))
+    const currClamped = Math.max(0, Math.min(curr, nStates.value - 1))
+    
+    // Check bounds before accessing array
+    if (prevClamped >= 0 && prevClamped < transitions.length && 
+        currClamped >= 0 && currClamped < transitions[prevClamped].length) {
+      transitions[prevClamped][currClamped]++
+    }
   }
   
   // Normalize to probabilities
   const matrix: number[][] = []
   for (let i = 0; i < nStates.value; i++) {
     const row: number[] = []
+    if (!transitions[i]) {
+      // Initialize empty row if missing
+      transitions[i] = Array(nStates.value).fill(0)
+    }
     const total = transitions[i].reduce((a, b) => a + b, 0) || 1
     for (let j = 0; j < nStates.value; j++) {
-      row.push(transitions[i][j] / total)
+      row.push((transitions[i][j] || 0) / total)
     }
     matrix.push(row)
   }
@@ -582,18 +639,15 @@ const onAssetChange = () => {
 
 const onStatesChange = () => {
   // Update regime configs
-  if (nStates.value > regimeConfigs.value.length) {
-    // Add more configs if needed
-  }
   if (renderer && hmmModel.value) {
-    const configs = regimeConfigs.value.slice(0, nStates.value)
+    const configs = getRegimeConfigs()
     renderer.setData(filteredData.value, hmmModel.value, configs)
   }
 }
 
 const onTimePeriodChange = () => {
   if (renderer && hmmModel.value) {
-    const configs = regimeConfigs.value.slice(0, nStates.value)
+    const configs = getRegimeConfigs()
     renderer.setData(filteredData.value, hmmModel.value, configs)
     currentTimeIndex.value = Math.min(currentTimeIndex.value, filteredData.value.length - 1)
   }
@@ -714,7 +768,7 @@ const exportData = () => {
 // Watch
 watch(() => filteredData.value, () => {
   if (renderer && hmmModel.value && filteredData.value.length > 0) {
-    const configs = regimeConfigs.value.slice(0, nStates.value)
+    const configs = getRegimeConfigs()
     renderer.setData(filteredData.value, hmmModel.value, configs)
   }
 }, { deep: true })

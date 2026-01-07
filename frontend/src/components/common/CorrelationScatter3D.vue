@@ -937,16 +937,16 @@ const updatePlot = async () => {
     paper_bgcolor: 'transparent',
     plot_bgcolor: 'transparent',
     font: { color: '#fff', family: 'system-ui' },
-    margin: { l: 50, r: 30, t: 30, b: 50 },
+    margin: { l: 50, r: 50, t: 30, b: 50 },
     showlegend: true,
     legend: {
       bgcolor: 'rgba(0,0,0,0.3)',
       bordercolor: 'rgba(255,255,255,0.1)',
       borderwidth: 1,
       font: { color: '#fff', size: 10 },
-      x: 1.01,
+      x: 0.98,
       y: 1,
-      xanchor: 'left'
+      xanchor: 'right'
     },
     autosize: true,
     height: undefined // Let it fill container
@@ -1169,7 +1169,10 @@ declare global {
   flex-direction: column;
   gap: 0;
   width: 100%;
+  max-width: 100%;
   height: 100%;
+  box-sizing: border-box;
+  overflow: hidden;
 }
 
 .main-layout {
@@ -1178,6 +1181,10 @@ declare global {
   gap: 12px;
   height: 100%;
   min-height: 700px;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  overflow: hidden;
 }
 
 .controls-column {
@@ -1194,6 +1201,10 @@ declare global {
   position: relative;
   min-height: 0;
   flex: 1;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  overflow: hidden;
 }
 
 .control-panel {
@@ -1448,6 +1459,7 @@ declare global {
 .plot-container {
   position: relative;
   width: 100%;
+  max-width: 100%;
   height: 100%;
   min-height: 680px;
   background: rgba(0, 0, 0, 0.2);
@@ -1455,6 +1467,7 @@ declare global {
   border: 1px solid rgba(255, 255, 255, 0.1);
   overflow: hidden;
   flex: 1;
+  box-sizing: border-box;
 }
 
 .stats-panel {
