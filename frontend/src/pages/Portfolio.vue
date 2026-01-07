@@ -196,13 +196,16 @@
                   </div>
                </div>
             </div>
-            
+        </div>
+
+        <!-- Heatmap and Metrics Row - aligned bottom -->
+        <div class="heatmap-metrics-row">
             <!-- Market Map -->
-            <div class="glass-panel">
+            <div class="glass-panel heatmap-panel">
                <div class="panel-header">
                   <h3>Тепловая карта</h3>
                </div>
-               <div class="panel-body" style="min-height: 280px; padding: 0;">
+               <div class="panel-body" style="padding: 0;">
                   <div class="treemap-tall">
                      <div 
                         v-for="pos in positions" 
@@ -219,15 +222,110 @@
                   </div>
                </div>
             </div>
+            
+            <!-- Combined Metrics with Tournament Tab - moved here -->
+            <div class="glass-panel combined-metrics metrics-panel">
+               <div class="combined-tabs">
+                  <button 
+                     :class="['tab-button', { active: activeMetricsTab === 'risk' }]"
+                     @click="activeMetricsTab = 'risk'"
+                  >
+                     Риск
+                  </button>
+                  <button 
+                     :class="['tab-button', { active: activeMetricsTab === 'stats' }]"
+                     @click="activeMetricsTab = 'stats'"
+                  >
+                     Статистика
+                  </button>
+                  <button 
+                     :class="['tab-button', { active: activeMetricsTab === 'tournament' }]"
+                     @click="activeMetricsTab = 'tournament'"
+                  >
+                     🏆 Турнир
+                  </button>
+               </div>
+
+               <!-- Risk Tab -->
+               <div class="tab-content" v-show="activeMetricsTab === 'risk'">
+                  <div class="metric-row">
+                     <div class="metric-label">
+                        <span>Expected Shortfall</span>
+                        <span class="meta-hint">CVaR 95%</span>
+                     </div>
+                     <div class="metric-value text-red">-3.78%</div>
+                  </div>
+                  <div class="metric-row">
+                     <div class="metric-label">
+                        <span>Max Drawdown</span>
+                        <span class="meta-hint">Peak-to-Trough</span>
+                     </div>
+                     <div class="metric-value text-red">-18.24%</div>
+                  </div>
+                  <div class="metric-row">
+                     <div class="metric-label">
+                        <span>Calmar Ratio</span>
+                        <span class="meta-hint">Return / Max DD</span>
+                     </div>
+                     <div class="metric-value text-white">1.41</div>
+                  </div>
+                  <div class="metric-row">
+                     <div class="metric-label">
+                        <span>Rolling Vol (30D)</span>
+                        <span class="meta-hint">Annualized</span>
+                     </div>
+                     <div class="metric-value text-white">12.8%</div>
+                  </div>
+               </div>
+
+               <!-- Stats Tab -->
+               <div class="tab-content" v-show="activeMetricsTab === 'stats'">
+                  <div class="stats-grid">
+                     <div class="stat-item">
+                        <span class="stat-label">YTD Return</span>
+                        <span class="stat-value text-green">+8.42%</span>
+                     </div>
+                     <div class="stat-item">
+                        <span class="stat-label">Win Rate</span>
+                        <span class="stat-value text-green">58.3%</span>
+                     </div>
+                     <div class="stat-item">
+                        <span class="stat-label">Profit Factor</span>
+                        <span class="stat-value text-white">1.87x</span>
+                     </div>
+                     <div class="stat-item">
+                        <span class="stat-label">Avg Trade</span>
+                        <span class="stat-value text-white">+0.34%</span>
+                     </div>
+                  </div>
+               </div>
+
+               <!-- Tournament Tab -->
+               <div class="tab-content" v-show="activeMetricsTab === 'tournament'">
+                  <div class="tournament-mini">
+                     <div style="font-size: 10px; color: rgba(255,255,255,0.5); margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid rgba(255,255,255,0.1);">
+                        Рейтинг моделей (20-летний бэктест)
+                     </div>
+                     <div v-for="(model, i) in tournamentResults" :key="i" class="tournament-row">
+                        <span class="tournament-rank">{{ i + 1 }}</span>
+                        <span class="tournament-name">{{ model.name }}</span>
+                        <span class="tournament-sharpe">{{ model.sharpe.toFixed(2) }}</span>
+                     </div>
+                  </div>
+                  <router-link to="/tournament" class="btn-glass primary w-full mt-3" style="text-decoration: none; text-align: center; display: inline-flex; align-items: center; justify-content: center;">
+                     Открыть полный турнир →
+                  </router-link>
+               </div>
+            </div>
         </div>
 
         <!-- 3D Correlation Scatter Plot -->
-        <div class="glass-panel">
+        <div class="glass-panel scatter-3d-panel">
           <div class="panel-header">
             <h3>3D Визуализация Корреляций</h3>
             <span class="panel-badge">Интерактивный анализ</span>
           </div>
-          <div class="panel-body" style="padding: 20px;">
+          <div class="panel-body scatter-3d-body">
             <CorrelationScatter3D :available-assets="['SPY', 'TLT', 'GLD', 'QQQ', 'BTC']" />
           </div>
         </div>
@@ -378,100 +476,6 @@
            </div>
         </div>
 
-        <!-- Combined Metrics with Tournament Tab -->
-        <div class="glass-panel combined-metrics">
-           <div class="combined-tabs">
-              <button 
-                 :class="['tab-button', { active: activeMetricsTab === 'risk' }]"
-                 @click="activeMetricsTab = 'risk'"
-              >
-                 Риск
-              </button>
-              <button 
-                 :class="['tab-button', { active: activeMetricsTab === 'stats' }]"
-                 @click="activeMetricsTab = 'stats'"
-              >
-                 Статистика
-              </button>
-              <button 
-                 :class="['tab-button', { active: activeMetricsTab === 'tournament' }]"
-                 @click="activeMetricsTab = 'tournament'"
-              >
-                 🏆 Турнир
-              </button>
-           </div>
-
-           <!-- Risk Tab -->
-           <div class="tab-content" v-show="activeMetricsTab === 'risk'">
-              <div class="metric-row">
-                 <div class="metric-label">
-                    <span>Expected Shortfall</span>
-                    <span class="meta-hint">CVaR 95%</span>
-                 </div>
-                 <div class="metric-value text-red">-3.78%</div>
-              </div>
-              <div class="metric-row">
-                 <div class="metric-label">
-                    <span>Max Drawdown</span>
-                    <span class="meta-hint">Peak-to-Trough</span>
-                 </div>
-                 <div class="metric-value text-red">-18.24%</div>
-              </div>
-              <div class="metric-row">
-                 <div class="metric-label">
-                    <span>Calmar Ratio</span>
-                    <span class="meta-hint">Return / Max DD</span>
-                 </div>
-                 <div class="metric-value text-white">1.41</div>
-              </div>
-              <div class="metric-row">
-                 <div class="metric-label">
-                    <span>Rolling Vol (30D)</span>
-                    <span class="meta-hint">Annualized</span>
-                 </div>
-                 <div class="metric-value text-white">12.8%</div>
-              </div>
-           </div>
-
-           <!-- Stats Tab -->
-           <div class="tab-content" v-show="activeMetricsTab === 'stats'">
-              <div class="stats-grid">
-                 <div class="stat-item">
-                    <span class="stat-label">YTD Return</span>
-                    <span class="stat-value text-green">+8.42%</span>
-                 </div>
-                 <div class="stat-item">
-                    <span class="stat-label">Win Rate</span>
-                    <span class="stat-value text-green">58.3%</span>
-                 </div>
-                 <div class="stat-item">
-                    <span class="stat-label">Profit Factor</span>
-                    <span class="stat-value text-white">1.87x</span>
-                 </div>
-                 <div class="stat-item">
-                    <span class="stat-label">Avg Trade</span>
-                    <span class="stat-value text-white">+0.34%</span>
-                 </div>
-              </div>
-           </div>
-
-           <!-- Tournament Tab -->
-           <div class="tab-content" v-show="activeMetricsTab === 'tournament'">
-              <div class="tournament-mini">
-                 <div style="font-size: 10px; color: rgba(255,255,255,0.5); margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid rgba(255,255,255,0.1);">
-                    Рейтинг моделей (20-летний бэктест)
-                 </div>
-                 <div v-for="(model, i) in tournamentResults" :key="i" class="tournament-row">
-                    <span class="tournament-rank">{{ i + 1 }}</span>
-                    <span class="tournament-name">{{ model.name }}</span>
-                    <span class="tournament-sharpe">{{ model.sharpe.toFixed(2) }}</span>
-                 </div>
-              </div>
-              <router-link to="/tournament" class="btn-glass primary w-full mt-3" style="text-decoration: none; text-align: center; display: inline-flex; align-items: center; justify-content: center;">
-                 Открыть полный турнир →
-              </router-link>
-           </div>
-        </div>
 
       </aside>
     </div>
@@ -1385,6 +1389,54 @@ const getMockHistogram = (symbol: string) => {
 .col-main { display: flex; flex-direction: column; gap: 24px; }
 .col-side-flex { display: flex; flex-direction: column; gap: 16px; height: 100%; }
 
+/* Heatmap and Metrics Row - aligned bottom */
+.heatmap-metrics-row { 
+  display: grid; 
+  grid-template-columns: 1fr 340px; 
+  gap: 24px; 
+  align-items: stretch;
+}
+
+.heatmap-panel,
+.metrics-panel {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.heatmap-panel .panel-body,
+.metrics-panel .panel-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.treemap-tall {
+  flex: 1;
+  display: flex;
+  height: 100%;
+  min-height: 280px;
+}
+
+.combined-metrics {
+  display: flex;
+  flex-direction: column;
+  min-height: 280px;
+}
+
+/* 3D Scatter Panel - optimized space */
+.scatter-3d-panel {
+  width: 100%;
+}
+
+.scatter-3d-body {
+  padding: 12px !important;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
 .latent-vol-legend {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
@@ -1718,12 +1770,14 @@ input:checked + .slider:before { transform: translateX(12px); }
 /* Responsive */
 @media (max-width: 1400px) { 
   .dashboard-grid { grid-template-columns: 1fr; } 
+  .heatmap-metrics-row { grid-template-columns: 1fr; }
 }
 
 @media (max-width: 1024px) { 
   .kpi-grid { grid-template-columns: repeat(2, 1fr); } 
   .stats-grid { grid-template-columns: 1fr 1fr; } 
   .charts-row-two-col { grid-template-columns: 1fr; } 
+  .heatmap-metrics-row { grid-template-columns: 1fr; }
   .portfolio-page {
     padding: 16px 20px;
   }

@@ -1,7 +1,11 @@
 <template>
   <div class="correlation-scatter-3d">
-    <!-- Control Panel -->
-    <div class="control-panel">
+    <!-- Main Layout: Controls and Plot side by side -->
+    <div class="main-layout">
+      <!-- Left: Controls -->
+      <div class="controls-column">
+        <!-- Control Panel -->
+        <div class="control-panel">
       <div class="controls-row">
         <!-- Asset Selection -->
         <div class="control-group">
@@ -173,67 +177,69 @@
           title="Speed"
         />
         <span class="speed-label">{{ playbackSpeed }}x</span>
-      </div>
-    </div>
-
-    <!-- Loading Indicator -->
-    <div v-if="isLoading" class="loading-overlay">
-      <div class="spinner-large"></div>
-      <p>Загрузка данных...</p>
-    </div>
-
-    <!-- Plot Container -->
-    <div ref="plotContainer" class="plot-container"></div>
-
-    <!-- Statistics Panel -->
-    <div class="stats-panel">
-      <div class="stats-section">
-        <h4>Корреляции</h4>
-        <div class="correlation-stats">
-          <div class="stat-item">
-            <span class="stat-label">{{ selectedAssets[0] }} ↔ {{ selectedAssets[1] }}</span>
-            <span class="stat-value">{{ correlationMatrix[0][1].toFixed(3) }}</span>
-          </div>
-          <div class="stat-item">
-            <span class="stat-label">{{ selectedAssets[0] }} ↔ {{ selectedAssets[2] }}</span>
-            <span class="stat-value">{{ correlationMatrix[0][2].toFixed(3) }}</span>
-          </div>
-          <div class="stat-item">
-            <span class="stat-label">{{ selectedAssets[1] }} ↔ {{ selectedAssets[2] }}</span>
-            <span class="stat-value">{{ correlationMatrix[1][2].toFixed(3) }}</span>
-          </div>
         </div>
-      </div>
 
-      <div class="stats-section">
-        <h4>Статистика</h4>
-        <div class="stats-grid">
-          <div class="stat-item" v-for="(stat, idx) in axisStats" :key="idx">
-            <span class="stat-label">{{ selectedAssets[idx] }}</span>
-            <div class="stat-details">
-              <span>μ: {{ stat.mean.toFixed(2) }}%</span>
-              <span>σ: {{ stat.std.toFixed(2) }}%</span>
-              <span>min: {{ stat.min.toFixed(2) }}%</span>
-              <span>max: {{ stat.max.toFixed(2) }}%</span>
+        <!-- Statistics Panel -->
+        <div class="stats-panel">
+          <div class="stats-section">
+            <h4>Корреляции</h4>
+            <div class="correlation-stats">
+              <div class="stat-item">
+                <span class="stat-label">{{ selectedAssets[0] }} ↔ {{ selectedAssets[1] }}</span>
+                <span class="stat-value">{{ correlationMatrix[0][1].toFixed(3) }}</span>
+              </div>
+              <div class="stat-item">
+                <span class="stat-label">{{ selectedAssets[0] }} ↔ {{ selectedAssets[2] }}</span>
+                <span class="stat-value">{{ correlationMatrix[0][2].toFixed(3) }}</span>
+              </div>
+              <div class="stat-item">
+                <span class="stat-label">{{ selectedAssets[1] }} ↔ {{ selectedAssets[2] }}</span>
+                <span class="stat-value">{{ correlationMatrix[1][2].toFixed(3) }}</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="stats-section">
+            <h4>Статистика</h4>
+            <div class="stats-grid-compact">
+              <div class="stat-item-compact" v-for="(stat, idx) in axisStats" :key="idx">
+                <span class="stat-label-small">{{ selectedAssets[idx] }}</span>
+                <div class="stat-details-compact">
+                  <span>μ: {{ stat.mean.toFixed(2) }}%</span>
+                  <span>σ: {{ stat.std.toFixed(2) }}%</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Legend -->
+          <div class="stats-section">
+            <h4>Легенда</h4>
+            <div class="legend-items">
+              <div 
+                v-for="regime in regimes" 
+                :key="regime.id"
+                class="legend-item"
+                v-show="visibleRegimes.includes(regime.id)"
+              >
+                <span class="legend-dot" :style="{ backgroundColor: regime.color }"></span>
+                <span>{{ regime.name }}</span>
+              </div>
             </div>
           </div>
         </div>
       </div>
 
-      <!-- Legend -->
-      <div class="stats-section">
-        <h4>Легенда</h4>
-        <div class="legend-items">
-          <div 
-            v-for="regime in regimes" 
-            :key="regime.id"
-            class="legend-item"
-            v-show="visibleRegimes.includes(regime.id)"
-          >
-            <span class="legend-dot" :style="{ backgroundColor: regime.color }"></span>
-            <span>{{ regime.name }}</span>
-          </div>
-        </div>
+      <!-- Right: Plot Container -->
+      <div class="plot-column">
+        <!-- Loading Indicator -->
+        <div v-if="isLoading" class="loading-overlay">
+      <div class="spinner-large"></div>
+      <p>Загрузка данных...</p>
+    </div>
+
+        <!-- Plot Container -->
+        <div ref="plotContainer" class="plot-container"></div>
       </div>
     </div>
   </div>
@@ -930,14 +936,19 @@ const updatePlot = async () => {
     paper_bgcolor: 'transparent',
     plot_bgcolor: 'transparent',
     font: { color: '#fff', family: 'system-ui' },
-    margin: { l: 60, r: 60, t: 40, b: 60 },
+    margin: { l: 50, r: 30, t: 30, b: 50 },
     showlegend: true,
     legend: {
       bgcolor: 'rgba(0,0,0,0.3)',
       bordercolor: 'rgba(255,255,255,0.1)',
       borderwidth: 1,
-      font: { color: '#fff', size: 11 }
-    }
+      font: { color: '#fff', size: 10 },
+      x: 1.01,
+      y: 1,
+      xanchor: 'left'
+    },
+    autosize: true,
+    height: undefined // Let it fill container
   }
 
   if (viewMode.value === '3d') {
@@ -1000,10 +1011,17 @@ const updatePlot = async () => {
       height: 800,
       width: 1200,
       scale: 2
-    }
+    },
+    fillFrame: true,
+    frameMargins: 0
   }
 
   await Plotly.value.newPlot(plotContainer.value, traces, layout, config)
+  
+  // Force resize to use full container
+  if (Plotly.value.Plots && plotContainer.value) {
+    Plotly.value.Plots.resize(plotContainer.value)
+  }
 }
 
 // Time range update
@@ -1116,6 +1134,13 @@ onMounted(async () => {
     }, 250)
   }
   window.addEventListener('resize', handleResize)
+  
+  // Also resize after initial render to ensure proper sizing
+  setTimeout(() => {
+    if (Plotly.value && plotContainer.value) {
+      Plotly.value.Plots.resize(plotContainer.value)
+    }
+  }, 500)
 
   onUnmounted(() => {
     window.removeEventListener('resize', handleResize)
@@ -1141,18 +1166,44 @@ declare global {
 .correlation-scatter-3d {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 0;
   width: 100%;
+  height: 100%;
+}
+
+.main-layout {
+  display: grid;
+  grid-template-columns: 320px 1fr;
+  gap: 12px;
+  height: 100%;
+  min-height: 700px;
+}
+
+.controls-column {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  overflow-y: auto;
+  max-height: 100%;
+}
+
+.plot-column {
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  min-height: 0;
+  flex: 1;
 }
 
 .control-panel {
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  padding: 16px;
+  gap: 10px;
+  padding: 12px;
   background: rgba(0, 0, 0, 0.2);
-  border-radius: 12px;
+  border-radius: 10px;
   border: 1px solid rgba(255, 255, 255, 0.1);
+  flex-shrink: 0;
 }
 
 .controls-row {
@@ -1396,54 +1447,87 @@ declare global {
 .plot-container {
   position: relative;
   width: 100%;
-  min-height: 600px;
+  height: 100%;
+  min-height: 680px;
   background: rgba(0, 0, 0, 0.2);
-  border-radius: 12px;
+  border-radius: 10px;
   border: 1px solid rgba(255, 255, 255, 0.1);
   overflow: hidden;
+  flex: 1;
 }
 
 .stats-panel {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: 16px;
-  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px;
   background: rgba(0, 0, 0, 0.2);
-  border-radius: 12px;
+  border-radius: 10px;
   border: 1px solid rgba(255, 255, 255, 0.1);
+  flex-shrink: 0;
+  max-height: calc(100% - 400px);
+  overflow-y: auto;
+}
+
+.stats-section {
+  margin-bottom: 12px;
+}
+
+.stats-section:last-child {
+  margin-bottom: 0;
 }
 
 .stats-section h4 {
-  font-size: 11px;
+  font-size: 10px;
   color: rgba(255, 255, 255, 0.6);
   font-weight: 600;
   text-transform: uppercase;
-  margin: 0 0 12px 0;
+  margin: 0 0 8px 0;
 }
 
-.correlation-stats,
-.stats-grid {
+.correlation-stats {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 6px;
+}
+
+.stats-grid-compact {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
 }
 
 .stat-item {
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  padding: 8px;
+  gap: 3px;
+  padding: 6px 8px;
   background: rgba(255, 255, 255, 0.03);
   border-radius: 6px;
 }
 
+.stat-item-compact {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 5px 6px;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 4px;
+}
+
 .stat-label {
-  font-size: 10px;
+  font-size: 9px;
   color: rgba(255, 255, 255, 0.5);
 }
 
+.stat-label-small {
+  font-size: 9px;
+  color: rgba(255, 255, 255, 0.6);
+  font-weight: 600;
+}
+
 .stat-value {
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 700;
   color: #fff;
   font-family: monospace;
@@ -1453,22 +1537,31 @@ declare global {
   display: flex;
   flex-direction: column;
   gap: 2px;
-  font-size: 10px;
+  font-size: 9px;
   color: rgba(255, 255, 255, 0.6);
+  font-family: monospace;
+}
+
+.stat-details-compact {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  font-size: 8px;
+  color: rgba(255, 255, 255, 0.5);
   font-family: monospace;
 }
 
 .legend-items {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 4px;
 }
 
 .legend-item {
   display: flex;
   align-items: center;
-  gap: 8px;
-  font-size: 11px;
+  gap: 6px;
+  font-size: 10px;
   color: rgba(255, 255, 255, 0.8);
 }
 
@@ -1479,6 +1572,25 @@ declare global {
   display: inline-block;
 }
 
+@media (max-width: 1024px) {
+  .main-layout {
+    grid-template-columns: 1fr;
+    min-height: auto;
+  }
+
+  .controls-column {
+    max-height: none;
+  }
+
+  .stats-panel {
+    max-height: none;
+  }
+
+  .plot-container {
+    min-height: 500px;
+  }
+}
+
 @media (max-width: 768px) {
   .controls-row {
     flex-direction: column;
@@ -1487,10 +1599,6 @@ declare global {
 
   .control-group {
     width: 100%;
-  }
-
-  .stats-panel {
-    grid-template-columns: 1fr;
   }
 
   .plot-container {
