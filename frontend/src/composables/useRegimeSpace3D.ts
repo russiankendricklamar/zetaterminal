@@ -58,10 +58,10 @@ export class RegimeSpaceRenderer {
   private isAnimating = false
   private autoRotate = false
 
-  // Настройки
-  private showTrajectory = true
+  // Настройки - изначально включены только сетка и эллипсоиды
+  private showTrajectory = false
   private showEllipsoids = true
-  private showCentroids = true
+  private showCentroids = false
   private showGrid = true
   private currentTimeIndex = 0
   private showTransitionArrows = false
@@ -199,8 +199,13 @@ export class RegimeSpaceRenderer {
     if (this.axesHelper) this.scene.remove(this.axesHelper)
     if (this.gridHelper) this.scene.remove(this.gridHelper)
     
-    this.regimeEllipsoids.forEach(ellipsoid => this.scene.remove(ellipsoid))
-    this.regimeCentroids.forEach(centroid => this.scene.remove(centroid))
+    this.regimeEllipsoids.forEach(group => this.scene.remove(group))
+    // Центроиды находятся в группах, удаляем группы
+    this.regimeCentroids.forEach(centroid => {
+      if (centroid.parent) {
+        this.scene.remove(centroid.parent)
+      }
+    })
     this.transitionArrows.forEach(arrow => this.scene.remove(arrow))
     
     // Clear Renaissance overlays
@@ -740,56 +745,17 @@ export class RegimeSpaceRenderer {
       const z = this.getRegimeXPosition(regimeId)
       ellipsoid.position.set(x, y, z)
       
-      // Контур сферы - простая обводка без сетки
-      // Создаем только основные контурные линии (вертикальные и горизонтальные сечения)
-      const contourGroup = new THREE.Group()
-      
-      // Горизонтальные контурные линии (кольца)
-      const horizontalRings = 4
-      for (let i = 1; i < horizontalRings; i++) {
-        const yOffset = ((i / horizontalRings) - 0.5) * 2 * sphereRadius
-        const ringRadius = Math.sqrt(sphereRadius * sphereRadius - yOffset * yOffset)
-        
-        if (ringRadius > 0.1) {
-          const ringGeometry = new THREE.RingGeometry(ringRadius * 0.995, ringRadius, 64)
-          const ringMaterial = new THREE.MeshBasicMaterial({
-            color: new THREE.Color(regimeColor),
-            transparent: true,
-            opacity: 0.9,
-            side: THREE.DoubleSide
-          })
-          const ring = new THREE.Mesh(ringGeometry, ringMaterial)
-          ring.rotation.x = Math.PI / 2
-          ring.position.set(0, yOffset, 0)
-          contourGroup.add(ring)
-        }
-      }
-      
-      // Вертикальные контурные линии (меридианы)
-      const verticalMeridians = 8
-      for (let i = 0; i < verticalMeridians; i++) {
-        const angle = (i / verticalMeridians) * Math.PI * 2
-        const points: THREE.Vector3[] = []
-        const segments = 30
-        for (let j = 0; j <= segments; j++) {
-          const phi = (j / segments) * Math.PI
-          const x = Math.sin(phi) * Math.cos(angle) * sphereRadius
-          const y = Math.cos(phi) * sphereRadius
-          const z = Math.sin(phi) * Math.sin(angle) * sphereRadius
-          points.push(new THREE.Vector3(x, y, z))
-        }
-        const lineGeometry = new THREE.BufferGeometry().setFromPoints(points)
-        const lineMaterial = new THREE.LineBasicMaterial({
-          color: new THREE.Color(regimeColor),
-          transparent: true,
-          opacity: 0.9
+      // Wireframe сетка на сфере
+      const wireframe = new THREE.LineSegments(
+        new THREE.EdgesGeometry(geometry),
+        new THREE.LineBasicMaterial({ 
+          color: new THREE.Color(regimeColor), 
+          opacity: 0.7, 
+          transparent: true 
         })
-        const line = new THREE.Line(lineGeometry, lineMaterial)
-        contourGroup.add(line)
-      }
-      
-      contourGroup.position.copy(ellipsoid.position)
-      const wireframe = contourGroup
+      )
+      wireframe.scale.copy(ellipsoid.scale)
+      wireframe.position.copy(ellipsoid.position)
       
       // Добавляем текстовую метку над режимом
       const labelPosition = new THREE.Vector3(x, y + sphereRadius + 3, z)
@@ -918,6 +884,9 @@ export class RegimeSpaceRenderer {
 
   /**
    * Создание центроидов режимов
+   * Центроид - это центр кластера режима, математическое ожидание (mean) эмиссионного распределения
+   * Показывает "центр тяжести" режима в пространстве (Return × Volatility × Liquidity)
+   * Используется как визуальная точка отсчета для каждого режима, показывает где в среднем находится рынок в этом режиме
    */
   private createRegimeCentroids() {
     if (!this.showCentroids || !this.hmmModel) return
@@ -952,17 +921,20 @@ export class RegimeSpaceRenderer {
       const y = Math.max(0, mean[1] !== undefined ? mean[1] : 0) // Гарантируем положительное значение
       const z = this.getRegimeXPosition(regimeId)
       centroid.position.set(x, y, z)
-      centroid.userData = { regimeId, config }
+      centroid.userData = { regimeId, config, pulsePhase: Math.random() * Math.PI * 2 }
 
-      // Glow effect
+      // Glow effect с пульсацией - светящийся и пульсирующий центр
       const glowGeometry = new THREE.SphereGeometry(2, 16, 16)
       const glowMaterial = new THREE.MeshBasicMaterial({
         color: new THREE.Color(regimeColor),
         transparent: true,
-        opacity: 0.2
+        opacity: 0.4,
+        emissive: new THREE.Color(regimeColor),
+        emissiveIntensity: 0.8
       })
       const glow = new THREE.Mesh(glowGeometry, glowMaterial)
       glow.position.copy(centroid.position)
+      glow.userData = { baseScale: 1, baseOpacity: 0.4, pulsePhase: Math.random() * Math.PI * 2 }
 
       const group = new THREE.Group()
       group.add(centroid)
@@ -1085,71 +1057,10 @@ export class RegimeSpaceRenderer {
       this.createTransitionMarkers(curve, points)
     }
 
-    // Создаем узлы траектории (маленькие кружки) - конкретные наблюдения рынка
-    // Каждый узел - это вектор x_t = (r_t, σ_t, v_t)
-    // Эти узлы отображаются отдельно от узлов внутри сфер режимов
+    // Узлы траектории уже находятся внутри сфер режимов (создаются в createRegimeEllipsoids)
+    // Траектория (кривая линия) соединяет эти узлы, показывая путь рынка через пространство режимов
+    // Поэтому не создаем отдельные узлы здесь - они уже есть внутри сфер
     this.trajectoryNodes = []
-    if (this.showTrajectory && this.marketData.length > 0) {
-      this.marketData.slice(0, this.currentTimeIndex + 1).forEach((point, i) => {
-        // Проверяем, что все значения определены
-        if (point.return === undefined || point.volatility === undefined || point.liquidity === undefined) {
-          return
-        }
-        
-        // Учитываем диагональное отражение: X и Z поменяны местами
-        // Гарантируем только положительные значения для видимости
-        let x = point.liquidity !== undefined ? point.liquidity * 35 : 0  // v_t идет на X (было Z)
-        let y = point.volatility !== undefined ? point.volatility : 0     // σ_t идет на Y
-        let z = point.return !== undefined ? point.return : 0             // r_t идет на Z (было X)
-        
-        // Гарантируем положительные значения (смещаем отрицательные в положительную область)
-        x = Math.max(0, x)
-        y = Math.max(0, y)
-        z = Math.max(0, z)
-
-      // Определяем режим и цвет
-      const regimeId = point.regime || 0
-      let volatility = point.volatility
-      if (this.hmmModel) {
-        const means = this.hmmModel.getEmissionMeans()
-        if (means[regimeId] && means[regimeId][1]) {
-          volatility = means[regimeId][1]
-        }
-      }
-      
-      const regimeColor = this.getRegimeColorByVolatility(volatility)
-      
-      // Вероятность режима для определения размера и прозрачности
-      const prob = point.probability && point.probability[regimeId] !== undefined 
-        ? point.probability[regimeId] 
-        : (point.probability ? Math.max(...point.probability) : 0.5)
-
-      // Создаем маленькую сферу для узла (увеличиваем размер для видимости)
-      const nodeGeometry = new THREE.SphereGeometry(0.6, 12, 12)
-      const nodeMaterial = new THREE.MeshPhongMaterial({
-        color: new THREE.Color(regimeColor),
-        emissive: new THREE.Color(regimeColor),
-        emissiveIntensity: 0.8,
-        transparent: true,
-        opacity: 1.0,
-        shininess: 50
-      })
-
-      const node = new THREE.Mesh(nodeGeometry, nodeMaterial)
-      node.position.set(x, y, z)
-      
-      // Сохраняем информацию о узле
-      node.userData = {
-        timeIndex: i,
-        regimeId: regimeId,
-        point: point,
-        probability: prob
-      }
-
-      this.trajectoryNodes.push(node)
-      this.scene.add(node)
-      })
-    }
   }
 
   /**
@@ -1367,11 +1278,34 @@ export class RegimeSpaceRenderer {
       // Already handled by OrbitControls
     }
     
-    // Pulsing centroids
-    this.regimeCentroids.forEach((centroid, i) => {
-      if (centroid && centroid.material instanceof THREE.MeshPhongMaterial) {
-        const pulse = Math.sin(Date.now() * 0.001 + i) * 0.1 + 1
+    // Пульсирующие и светящиеся центроиды
+    const time = Date.now() * 0.001
+    this.regimeCentroids.forEach((centroid, idx) => {
+      if (!centroid || !centroid.parent) return
+      
+      // Пульсация размера центроида
+      if (centroid.userData.pulsePhase !== undefined) {
+        const pulse = Math.sin(time * 2 + centroid.userData.pulsePhase) * 0.2 + 1 // От 0.8 до 1.2
         centroid.scale.setScalar(pulse)
+        
+        // Пульсация свечения материала
+        if (centroid.material instanceof THREE.MeshPhongMaterial) {
+          centroid.material.emissiveIntensity = 0.7 + Math.sin(time * 3 + centroid.userData.pulsePhase) * 0.3
+        }
+      }
+      
+      // Пульсация glow эффекта (если есть)
+      const glow = centroid.parent.children.find(child => child !== centroid && child.type === 'Mesh') as THREE.Mesh | undefined
+      if (glow && glow.userData.pulsePhase !== undefined) {
+        const glowPulse = Math.sin(time * 2 + glow.userData.pulsePhase) * 0.4 + 1 // От 0.6 до 1.4
+        const baseScale = glow.userData.baseScale || 1
+        glow.scale.setScalar(baseScale * glowPulse)
+        
+        if (glow.material instanceof THREE.MeshBasicMaterial) {
+          const opacityPulse = Math.sin(time * 2 + glow.userData.pulsePhase) * 0.2 + glow.userData.baseOpacity
+          glow.material.opacity = Math.max(0.2, Math.min(0.8, opacityPulse))
+          glow.material.emissiveIntensity = 0.8 + Math.sin(time * 3 + glow.userData.pulsePhase) * 0.2
+        }
       }
     })
     

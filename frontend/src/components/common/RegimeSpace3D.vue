@@ -211,8 +211,10 @@
               <h2 class="vis-title">Пространство скрытых состояний</h2>
               <p class="vis-subtitle">
                 3D визуализация рыночных режимов (HMM)
-                <span v-if="showRenaissanceInsights && hasData" class="renaissance-badge">+ RENAISSANCE MODE ACTIVE</span>
               </p>
+              <div v-if="showRenaissanceInsights && hasData" class="renaissance-badge-wrapper">
+                <span class="renaissance-badge">+ RENAISSANCE MODE ACTIVE</span>
+              </div>
             </div>
 
           <!-- Timeline Controls -->
@@ -367,10 +369,10 @@ const autoRotate = ref(false)
 const selectedTimeframe = ref('daily')
 const signalStats = ref<{ winRate: number; sharpeRatio: number; maxDrawdown: number } | null>(null)
 
-// Visualization toggles
-const showTrajectory = ref(true)
+// Visualization toggles - изначально включены только сетка и эллипсоиды
+const showTrajectory = ref(false)
 const showEllipsoids = ref(true)
-const showCentroids = ref(true)
+const showCentroids = ref(false)
 const showGrid = ref(true)
 const showTransitionArrows = ref(false)
 const showRenaissanceInsights = ref(false)
@@ -833,8 +835,12 @@ const startPlayback = () => {
     }
     
     const speed = parseFloat(playbackSpeed.value.toString())
+    
+    // Инкремент индекса в зависимости от скорости
+    // Для скорости 1x делаем шаг 1, для 2x - шаг 2, и т.д.
+    const stepSize = Math.max(1, Math.ceil(speed))
     currentTimeIndex.value = Math.min(
-      currentTimeIndex.value + speed,
+      currentTimeIndex.value + stepSize,
       filteredData.value.length - 1
     )
     
@@ -845,7 +851,10 @@ const startPlayback = () => {
     }
     
     onTimelineChange()
-    playbackInterval = window.setTimeout(step, 50)
+    // Адаптивная скорость интервала в зависимости от скорости воспроизведения
+    // Быстрее скорость = меньше интервал между шагами для плавности
+    const intervalDelay = Math.max(30, Math.min(200, 150 / speed)) // От 30ms до 200ms в зависимости от скорости
+    playbackInterval = window.setTimeout(step, intervalDelay)
   }
   
   step()
@@ -1259,7 +1268,13 @@ onUnmounted(() => {
 .vis-subtitle {
   font-size: 13px;
   color: rgba(255, 255, 255, 0.5);
-  margin: 4px 0 0 0;
+  margin: 4px 0 8px 0;
+}
+
+.renaissance-badge-wrapper {
+  display: block;
+  margin-top: 8px;
+  margin-bottom: 0;
 }
 
 .timeline-controls {
@@ -1771,10 +1786,15 @@ onUnmounted(() => {
   font-weight: 600;
 }
 
+.renaissance-badge-wrapper {
+  display: block;
+  margin-top: 8px;
+  margin-bottom: 0;
+}
+
 .renaissance-badge {
   display: inline-flex;
   align-items: center;
-  margin-left: 16px;
   padding: 8px 16px;
   background: linear-gradient(135deg, rgba(255, 215, 0, 0.3), rgba(255, 165, 0, 0.3));
   border: 2px solid rgba(255, 215, 0, 0.6);
