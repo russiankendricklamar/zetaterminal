@@ -28,6 +28,13 @@ export interface CameraPreset {
   target: [number, number, number]
 }
 
+export interface HoverInfo {
+  type: 'regime' | 'trajectory-node' | 'centroid' | 'ellipsoid'
+  title: string
+  data: Record<string, any>
+  position: [number, number, number]
+}
+
 /**
  * Класс для рендеринга 3D пространства режимов
  */
@@ -52,6 +59,7 @@ export class RegimeSpaceRenderer {
   private marketData: MarketPoint[] = []
   private hmmModel: HMMModel | null = null
   private regimeConfigs: RegimeConfig[] = []
+  private regimeSphereRadii: Map<number, number> = new Map() // Радиусы сфер для каждого режима
 
   // Анимация
   private animationId: number | null = null
@@ -60,6 +68,12 @@ export class RegimeSpaceRenderer {
   private autoAnimationPlaying = false
   private autoAnimationStartTime = 0
   private autoAnimationDuration = 5000 // 5 секунд для полной анимации
+  
+  // Интерактивность - hover детализация
+  private raycaster: THREE.Raycaster | null = null
+  private mouse: THREE.Vector2 = new THREE.Vector2()
+  private hoveredObject: THREE.Object3D | null = null
+  private onHoverCallback: ((info: HoverInfo | null) => void) | null = null
 
   // Настройки - изначально включены сетка, эллипсоиды и траектория (для анимации)
   private showTrajectory = true
@@ -90,6 +104,7 @@ export class RegimeSpaceRenderer {
     this.initRenderer()
     this.initControls()
     this.initLighting()
+    this.initInteractivity()
     this.animate()
   }
 
@@ -110,8 +125,10 @@ export class RegimeSpaceRenderer {
     const width = this.container.clientWidth
     const height = this.container.clientHeight
     this.camera = new THREE.PerspectiveCamera(60, width / height, 0.1, 1000)
-    this.camera.position.set(40, 40, 40)
-    this.camera.lookAt(0, 0, 0)
+    // Позиция камеры для обзора всей сцены (сетка 0-120 по XZ, 0-80 по Y)
+    // Центр сцены примерно в (60, 40, 60)
+    this.camera.position.set(90, 90, 90)
+    this.camera.lookAt(60, 40, 60)
   }
 
   /**
@@ -140,6 +157,9 @@ export class RegimeSpaceRenderer {
     this.controls.minDistance = 10
     this.controls.maxDistance = 200
     this.controls.maxPolarAngle = Math.PI
+    // Устанавливаем target на центр сцены
+    this.controls.target.set(60, 40, 60)
+    this.controls.update()
   }
 
   /**
@@ -166,22 +186,289 @@ export class RegimeSpaceRenderer {
   }
 
   /**
+   * Инициализация интерактивности - hover детализация
+   */
+  private initInteractivity() {
+    this.raycaster = new THREE.Raycaster()
+    
+    // Обработчики событий мыши
+    const onMouseMove = (event: MouseEvent) => {
+      if (!this.renderer || !this.camera) return
+      
+      const rect = this.renderer.domElement.getBoundingClientRect()
+      this.mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1
+      this.mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1
+      
+      this.updateHover()
+    }
+    
+    const onMouseOut = () => {
+      if (this.hoveredObject) {
+        this.hoveredObject = null
+        if (this.onHoverCallback) {
+          this.onHoverCallback(null)
+        }
+      }
+    }
+    
+    this.renderer.domElement.addEventListener('mousemove', onMouseMove)
+    this.renderer.domElement.addEventListener('mouseout', onMouseOut)
+  }
+
+  /**
+   * Обновление состояния hover
+   * Приоритет: 1) Узлы траектории, 2) Центроиды, 3) Эллипсоиды
+   */
+  private updateHover() {
+    if (!this.raycaster || !this.camera) return
+    
+    this.raycaster.setFromCamera(this.mouse, this.camera)
+    
+    // Отдельные проверки для каждого типа объектов с приоритетом
+    let finalObject: THREE.Object3D | null = null
+    let finalDistance = Infinity
+    
+    // 1. Приоритет: Узлы траектории (маленькие шарики)
+    // Собираем все узлы: из trajectoryNodes и из групп эллипсоидов (regimePoints)
+    const allTrajectoryNodes: THREE.Object3D[] = [...this.trajectoryNodes]
+    
+    // Добавляем узлы из групп эллипсоидов (regimePoints с userData.point)
+    this.regimeEllipsoids.forEach(group => {
+      group.children.forEach(child => {
+        if (child instanceof THREE.Mesh && child.userData.point && !allTrajectoryNodes.includes(child)) {
+          allTrajectoryNodes.push(child)
+        }
+      })
+    })
+    
+    if (allTrajectoryNodes.length > 0) {
+      const nodeIntersects = this.raycaster.intersectObjects(allTrajectoryNodes, false)
+      if (nodeIntersects.length > 0 && nodeIntersects[0].distance < finalDistance) {
+        finalObject = nodeIntersects[0].object
+        finalDistance = nodeIntersects[0].distance
+      }
+    }
+    
+    // 2. Центроиды (ядра) - только если узел траектории не найден или дальше
+    if (this.regimeCentroids.length > 0) {
+      const centroidIntersects = this.raycaster.intersectObjects(this.regimeCentroids, false)
+      if (centroidIntersects.length > 0 && centroidIntersects[0].distance < finalDistance) {
+        finalObject = centroidIntersects[0].object
+        finalDistance = centroidIntersects[0].distance
+      }
+    }
+    
+    // 3. Эллипсоиды - только если нет более приоритетных объектов поблизости
+    // Проверяем только если нет узла или центроида в радиусе 5 единиц
+    if (!finalObject || finalDistance > 5) {
+      const ellipsoidMeshes: THREE.Object3D[] = []
+      this.regimeEllipsoids.forEach(group => {
+        group.children.forEach(child => {
+          if (child instanceof THREE.Mesh && !(child instanceof THREE.LineSegments)) {
+            ellipsoidMeshes.push(child)
+          }
+        })
+      })
+      
+      if (ellipsoidMeshes.length > 0) {
+        const ellipsoidIntersects = this.raycaster.intersectObjects(ellipsoidMeshes, false)
+        // Эллипсоид выбираем только если нет более приоритетных объектов
+        if (ellipsoidIntersects.length > 0 && !finalObject) {
+          finalObject = ellipsoidIntersects[0].object
+          finalDistance = ellipsoidIntersects[0].distance
+        }
+      }
+    }
+    
+    // Обновляем состояние hover
+    if (finalObject) {
+      if (this.hoveredObject !== finalObject) {
+        this.hoveredObject = finalObject
+        const info = this.getHoverInfo(finalObject)
+        if (this.onHoverCallback) {
+          this.onHoverCallback(info)
+        }
+      }
+    } else {
+      if (this.hoveredObject) {
+        this.hoveredObject = null
+        if (this.onHoverCallback) {
+          this.onHoverCallback(null)
+        }
+      }
+    }
+  }
+
+  /**
+   * Получение информации об объекте для hover
+   */
+  private getHoverInfo(object: THREE.Object3D): HoverInfo | null {
+    // Проверяем узлы траектории (включая те, что находятся в группах эллипсоидов)
+    // Сначала проверяем прямо в trajectoryNodes
+    for (const node of this.trajectoryNodes) {
+      if (node === object) {
+        return this.createTrajectoryNodeInfo(node)
+      }
+    }
+    
+    // Затем проверяем узлы внутри групп эллипсоидов (regimePoints)
+    for (const group of this.regimeEllipsoids) {
+      for (const child of group.children) {
+        if (child === object && child instanceof THREE.Mesh && child.userData.point) {
+          return this.createTrajectoryNodeInfo(child)
+        }
+      }
+    }
+    
+    // Проверяем центроиды
+    for (const centroid of this.regimeCentroids) {
+      if (centroid === object || (centroid.parent && centroid.parent.children.includes(object))) {
+        const userData = centroid.userData
+        const config = userData.config as RegimeConfig | undefined
+        if (config && this.hmmModel) {
+          const means = this.hmmModel.getEmissionMeans()
+          const mean = means[config.id]
+          return {
+            type: 'centroid',
+            title: `Ядро режима: ${config.name}`,
+            data: {
+              'Режим': config.name,
+              'Доходность (mean)': mean && mean[0] !== undefined ? (mean[0] * 100).toFixed(2) + '%' : 'N/A',
+              'Волатильность (mean)': mean && mean[1] !== undefined ? mean[1].toFixed(2) + '%' : 'N/A',
+              'Ликвидность (mean)': mean && mean[2] !== undefined ? mean[2].toFixed(3) : 'N/A',
+              'X': centroid.position.x.toFixed(2),
+              'Y': centroid.position.y.toFixed(2),
+              'Z': centroid.position.z.toFixed(2)
+            },
+            position: [centroid.position.x, centroid.position.y, centroid.position.z]
+          }
+        }
+      }
+    }
+    
+    // Проверяем эллипсоиды режимов
+    for (let i = 0; i < this.regimeEllipsoids.length; i++) {
+      const group = this.regimeEllipsoids[i]
+      // object может быть группой или mesh внутри группы
+      let isThisEllipsoid = false
+      let ellipsoidMesh: THREE.Object3D | null = null
+      
+      if (group === object) {
+        isThisEllipsoid = true
+        ellipsoidMesh = group.children.find(c => c instanceof THREE.Mesh) || group
+      } else {
+        for (const child of group.children) {
+          if (child === object) {
+            isThisEllipsoid = true
+            ellipsoidMesh = child
+            break
+          }
+        }
+      }
+      
+      if (isThisEllipsoid && ellipsoidMesh) {
+        // Получаем regimeId и config из userData группы
+        const regimeId = group.userData?.regimeId ?? i
+        const config = group.userData?.config || this.regimeConfigs.find(c => c.id === regimeId)
+        if (config && this.hmmModel) {
+          const means = this.hmmModel.getEmissionMeans()
+          const mean = means[config.id]
+          const radius = this.regimeSphereRadii.get(config.id) || 0
+          // Позиция эллипсоида на самом mesh, не на группе
+          const center = ellipsoidMesh.position.clone()
+          if (center.lengthSq() === 0 && group.children[0]) {
+            // Если позиция mesh нулевая, берём позицию первого ребенка
+            center.copy(group.children[0].position)
+          }
+          return {
+            type: 'ellipsoid',
+            title: `Сфера режима: ${config.name}`,
+            data: {
+              'Режим': config.name,
+              'Радиус сферы': radius.toFixed(2),
+              'Доходность (mean)': mean && mean[0] !== undefined ? (mean[0] * 100).toFixed(2) + '%' : 'N/A',
+              'Волатильность (mean)': mean && mean[1] !== undefined ? mean[1].toFixed(2) + '%' : 'N/A',
+              'Ликвидность (mean)': mean && mean[2] !== undefined ? mean[2].toFixed(3) : 'N/A',
+              'Позиция X': center.x.toFixed(2),
+              'Позиция Y': center.y.toFixed(2),
+              'Позиция Z': center.z.toFixed(2),
+              'Наблюдений в режиме': String(this.marketData.filter(p => (p.regime || 0) === config.id).length)
+            },
+            position: [center.x, center.y, center.z]
+          }
+        }
+      }
+    }
+    
+    return null
+  }
+
+  /**
+   * Создание информации об узле траектории
+   */
+  private createTrajectoryNodeInfo(node: THREE.Mesh): HoverInfo | null {
+    const userData = node.userData
+    const point = userData.point as MarketPoint | undefined
+    if (!point) return null
+    
+    return {
+      type: 'trajectory-node',
+      title: `Наблюдение #${userData.timeIndex ?? 'N/A'}`,
+      data: {
+        'Индекс': String(userData.timeIndex ?? 0),
+        'Режим ID': String(userData.regimeId ?? 0),
+        'Дата': point.date || 'N/A',
+        'Доходность': point.return !== undefined ? (point.return * 100).toFixed(2) + '%' : 'N/A',
+        'Волатильность': point.volatility !== undefined ? point.volatility.toFixed(2) + '%' : 'N/A',
+        'Ликвидность': point.liquidity !== undefined ? point.liquidity.toFixed(3) : 'N/A',
+        'Режим': this.getRegimeName(userData.regimeId ?? 0),
+        'X': node.position.x.toFixed(2),
+        'Y': node.position.y.toFixed(2),
+        'Z': node.position.z.toFixed(2),
+        'point': point
+      },
+      position: [node.position.x, node.position.y, node.position.z]
+    }
+  }
+
+  /**
+   * Получение названия режима
+   */
+  private getRegimeName(regimeId: number): string {
+    const config = this.regimeConfigs.find(c => c.id === regimeId)
+    return config ? config.name : `Режим ${regimeId}`
+  }
+
+  /**
+   * Установка callback для hover событий
+   */
+  setOnHover(callback: (info: HoverInfo | null) => void) {
+    this.onHoverCallback = callback
+  }
+
+  /**
    * Настройка данных
    */
   setData(marketData: MarketPoint[], hmmModel: HMMModel, regimeConfigs: RegimeConfig[]) {
+    console.log('RegimeSpaceRenderer.setData called:', {
+      marketDataLength: marketData.length,
+      hmmModelExists: !!hmmModel,
+      regimeConfigsLength: regimeConfigs.length,
+      showTrajectory: this.showTrajectory,
+      samplePoint: marketData.length > 0 ? marketData[0] : null
+    })
+    
     this.marketData = marketData
     this.hmmModel = hmmModel
     this.regimeConfigs = regimeConfigs
-    this.autoAnimationPlaying = false // Сбрасываем состояние анимации
+    this.currentTimeIndex = marketData.length - 1 // Показываем все данные сразу
     this.updateVisualization()
     
-    // Автоматически запускаем анимацию после загрузки данных и визуализации
-    // Небольшая задержка, чтобы визуализация успела отрисоваться
-    setTimeout(() => {
-      if (this.showTrajectory && this.marketData.length > 0 && this.trajectoryNodes.length > 0) {
-        this.startAutoAnimation()
-      }
-    }, 300)
+    console.log('After updateVisualization:', {
+      trajectoryNodesCount: this.trajectoryNodes.length,
+      trajectoryLineExists: !!this.trajectoryLine,
+      regimeEllipsoidsCount: this.regimeEllipsoids.length
+    })
   }
 
   /**
@@ -267,9 +554,9 @@ export class RegimeSpaceRenderer {
     }
     
     // Распределяем режимы равномерно вдоль оси X с большими интервалами
-    // Только положительное пространство с увеличенным масштабом: от 10 до 70
-    const minX = 10
-    const maxX = 70
+    // Увеличенный масштаб: от 15 до 100
+    const minX = 15
+    const maxX = 100
     const spacing = validRegimes.length > 1 ? (maxX - minX) / (validRegimes.length - 1) : 0
     const x = minX + (positionIndex * spacing)
     
@@ -314,9 +601,9 @@ export class RegimeSpaceRenderer {
     }
     
     // Распределяем режимы равномерно вдоль оси Z с интервалами
-    // Только положительная область с увеличенным масштабом: от 10 до 70
-    const minZ = 10
-    const maxZ = 70
+    // Увеличенный масштаб: от 15 до 100
+    const minZ = 15
+    const maxZ = 100
     const spacing = validRegimes.length > 1 ? (maxZ - minZ) / (validRegimes.length - 1) : 0
     const z = minZ + (positionIndex * spacing)
     
@@ -467,45 +754,45 @@ export class RegimeSpaceRenderer {
     })
     
     // Создаем горизонтальную сетку на плоскости XZ (плоскость Liquidity-Return) вручную
-    // Только положительная область с увеличенным масштабом (от 0 до 80)
-    const horizontalDivisions = 20
-    const horizontalGridSize = 80
+    // Увеличенный масштаб (от 0 до 120) для вмещения всех элементов
+    const horizontalDivisions = 24
+    const horizontalGridSize = 120
     const horizontalStep = horizontalGridSize / horizontalDivisions
     
-    // Линии параллельные оси X (Liquidity) — только положительная область (от 0 до 80)
+    // Линии параллельные оси X (Liquidity)
     for (let i = 0; i <= horizontalDivisions; i++) {
       const z = i * horizontalStep
       const geometry = new THREE.BufferGeometry()
       const positions = new Float32Array([
         0, 0, z,
-        80, 0, z
+        horizontalGridSize, 0, z
       ])
       geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3))
-      const isMainLine = i % 5 === 0
+      const isMainLine = i % 4 === 0
       const line = new THREE.Line(geometry, isMainLine ? gridMaterial : gridSecondaryMaterial)
       gridGroup.add(line)
     }
     
-    // Линии параллельные оси Z (Return) — только положительная область (от 0 до 80)
+    // Линии параллельные оси Z (Return)
     for (let i = 0; i <= horizontalDivisions; i++) {
       const x = i * horizontalStep
       const geometry = new THREE.BufferGeometry()
       const positions = new Float32Array([
         x, 0, 0,
-        x, 0, 80
+        x, 0, horizontalGridSize
       ])
       geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3))
-      const isMainLine = i % 5 === 0
+      const isMainLine = i % 4 === 0
       const line = new THREE.Line(geometry, isMainLine ? gridMaterial : gridSecondaryMaterial)
       gridGroup.add(line)
     }
     
-    // Создаем левую вертикальную сетку (плоскость YZ, X = 0) только для положительных Y и Z
-    const verticalGridSize = 50 // Только положительная область по Y
-    const verticalDivisions = 10
+    // Создаем левую вертикальную сетку (плоскость YZ, X = 0)
+    const verticalGridSize = 80 // Увеличенная область по Y
+    const verticalDivisions = 16
     const verticalStep = verticalGridSize / verticalDivisions
     
-    // Вертикальные линии (параллельны Y) — только положительная область Liquidity (от 0 до 80)
+    // Вертикальные линии (параллельны Y)
     for (let i = 0; i <= horizontalDivisions; i++) {
       const z = i * horizontalStep
       const geometry = new THREE.BufferGeometry()
@@ -514,35 +801,34 @@ export class RegimeSpaceRenderer {
         0, verticalGridSize, z
       ])
       geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3))
-      const line = new THREE.Line(geometry, i % 5 === 0 ? gridMaterial : gridSecondaryMaterial)
+      const line = new THREE.Line(geometry, i % 4 === 0 ? gridMaterial : gridSecondaryMaterial)
       gridGroup.add(line)
     }
     
-    // Горизонтальные линии (параллельны Z) — только положительная область Liquidity (от 0 до 80)
+    // Горизонтальные линии (параллельны Z)
     for (let i = 0; i <= verticalDivisions; i++) {
       const y = i * verticalStep
       const geometry = new THREE.BufferGeometry()
       const positions = new Float32Array([
         0, y, 0,
-        0, y, 80
+        0, y, horizontalGridSize
       ])
       geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3))
-      const line = new THREE.Line(geometry, i % 5 === 0 ? gridMaterial : gridSecondaryMaterial)
+      const line = new THREE.Line(geometry, i % 4 === 0 ? gridMaterial : gridSecondaryMaterial)
       gridGroup.add(line)
     }
     
-    // Названия осей на концах осей, ближе к камере (как на втором фото)
-    // Камера находится в (40, 40, 40), поэтому смещаем метки в сторону камеры
-    // Ось X (Return) - на конце положительного направления оси X, смещаем ближе к камере
-    const xAxisLabel = this.createAxisLabelAtEnd('Return', new THREE.Vector3(80, 5, 10), 0x60a5fa)
+    // Названия осей на концах осей
+    // Ось X (Return)
+    const xAxisLabel = this.createAxisLabelAtEnd('Return', new THREE.Vector3(horizontalGridSize, 5, 10), 0x60a5fa)
     if (xAxisLabel) gridGroup.add(xAxisLabel)
     
-    // Ось Y (Volatility) - на конце положительного направления оси Y, смещаем ближе к камере
+    // Ось Y (Volatility)
     const yAxisLabel = this.createAxisLabelAtEnd('Volatility', new THREE.Vector3(5, verticalGridSize, 10), 0xa78bfa)
     if (yAxisLabel) gridGroup.add(yAxisLabel)
     
-    // Ось Z (Liquidity) - на конце положительного направления оси Z, смещаем ближе к камере
-    const zAxisLabel = this.createAxisLabelAtEnd('Liquidity', new THREE.Vector3(10, 5, 80), 0x4ade80)
+    // Ось Z (Liquidity)
+    const zAxisLabel = this.createAxisLabelAtEnd('Liquidity', new THREE.Vector3(10, 5, horizontalGridSize), 0x4ade80)
     if (zAxisLabel) gridGroup.add(zAxisLabel)
     
     this.gridHelper = gridGroup
@@ -698,8 +984,39 @@ export class RegimeSpaceRenderer {
   /**
    * Создание эллипсоидов режимов
    */
+  /**
+   * Вычисление радиусов сфер для всех режимов (нужно для центроидов и траекторий)
+   */
+  private calculateSphereRadii() {
+    if (!this.hmmModel) return
+    
+    this.regimeSphereRadii.clear()
+    const covariances = this.hmmModel.getEmissionCovariances()
+    
+    covariances.forEach((cov, regimeId) => {
+      if (!cov || !Array.isArray(cov) || cov.length < 3) return
+      if (!cov[0] || !cov[1] || !cov[2]) return
+      
+      const cov00 = cov[0][0] !== undefined ? cov[0][0] : 1
+      const cov11 = cov[1][1] !== undefined ? cov[1][1] : 1
+      const cov22 = cov[2][2] !== undefined ? cov[2][2] : 1
+      
+      const avgStdDev = (Math.sqrt(Math.max(0, cov00)) + 
+                         Math.sqrt(Math.max(0, cov11)) + 
+                         Math.sqrt(Math.max(0, cov22))) / 3
+      
+      const sphereRadius = avgStdDev * 4.5
+      this.regimeSphereRadii.set(regimeId, sphereRadius)
+    })
+  }
+
   private createRegimeEllipsoids() {
-    if (!this.showEllipsoids || !this.hmmModel) return
+    if (!this.hmmModel) return
+    
+    // Всегда вычисляем радиусы (нужно для центроидов и траекторий)
+    this.calculateSphereRadii()
+    
+    if (!this.showEllipsoids) return
 
     const means = this.hmmModel.getEmissionMeans()
     const covariances = this.hmmModel.getEmissionCovariances()
@@ -746,8 +1063,9 @@ export class RegimeSpaceRenderer {
                          Math.sqrt(Math.max(0, cov22))) / 3
       
       // Применяем одинаковый масштаб по всем осям (шар)
-      const sphereRadius = avgStdDev * 4.5
+      const sphereRadius = this.regimeSphereRadii.get(regimeId) || avgStdDev * 4.5
       ellipsoid.scale.set(sphereRadius, sphereRadius, sphereRadius)
+      
       // Используем реальные позиции режимов в 3D пространстве
       // mean[0] = Return, mean[1] = Volatility, mean[2] = Liquidity
       // Переворачиваем диагонально: X и Z меняются местами
@@ -776,9 +1094,8 @@ export class RegimeSpaceRenderer {
       // Создаем маленькие кружки внутри эллипсоида для наблюдений этого режима
       const regimePoints: THREE.Mesh[] = []
       if (this.marketData.length > 0) {
-        // Находим все точки траектории, принадлежащие этому режиму
+        // Находим ВСЕ точки траектории, принадлежащие этому режиму
         const regimeObservations = this.marketData
-          .slice(0, this.currentTimeIndex + 1)
           .filter(point => (point.regime || 0) === regimeId)
         
         // Ограничиваем количество точек для производительности (максимум 50 на режим)
@@ -794,18 +1111,28 @@ export class RegimeSpaceRenderer {
             return
           }
           
-          // Каждый узел - это вектор x_t = (r_t, σ_t, v_t)
-          // r_t - доходность (return), σ_t - волатильность (volatility), v_t - объём/ликвидность (liquidity)
-          // Учитываем диагональное отражение: X и Z поменяны местами
-          // Гарантируем только положительные значения для видимости
-          let nodeX = point.liquidity !== undefined ? point.liquidity * 35 : 0  // v_t идет на X (было Z)
-          let nodeY = point.volatility !== undefined ? point.volatility : 0     // σ_t идет на Y
-          let nodeZ = point.return !== undefined ? point.return : 0             // r_t идет на Z (было X)
+          // Узлы должны быть ВНУТРИ сферы текущего режима
+          const maxRadius = sphereRadius * 0.6
           
-          // Гарантируем положительные значения (смещаем отрицательные в положительную область)
-          nodeX = Math.max(0, nodeX)
-          nodeY = Math.max(0, nodeY)
-          nodeZ = Math.max(0, nodeZ)
+          // Вычисляем ненормализованные смещения
+          let offsetX = (point.liquidity - 0.5) * 2
+          let offsetY = (point.volatility / 60 - 0.5) * 2
+          let offsetZ = (point.return * 2.5)
+          
+          // Нормализуем вектор смещения
+          const offsetLength = Math.sqrt(offsetX * offsetX + offsetY * offsetY + offsetZ * offsetZ)
+          if (offsetLength > 0) {
+            const scale = Math.min(1, 1 / offsetLength) * maxRadius
+            offsetX *= scale
+            offsetY *= scale
+            offsetZ *= scale
+          }
+          
+          // x и z - это позиции сферы режима (уже установлены выше)
+          // Ограничиваем координаты границами сетки
+          const nodeX = Math.max(5, Math.min(115, x + offsetX))
+          const nodeY = Math.max(5, Math.min(75, y + offsetY))
+          const nodeZ = Math.max(5, Math.min(115, z + offsetZ))
           
           // Определяем цвет узла по наиболее вероятному режиму
           // Используем regime из point (результат Viterbi-декодирования или сглаживания)
@@ -848,10 +1175,12 @@ export class RegimeSpaceRenderer {
       }
       
       const group = new THREE.Group()
+      group.userData = { regimeId, config } // Сохраняем regimeId для getHoverInfo
       group.add(ellipsoid)
       group.add(wireframe)
       if (label) group.add(label)
       // Добавляем все маленькие узлы траектории (наблюдения) в группу
+      // (hover обрабатывается отдельно через поиск в группах эллипсоидов)
       regimePoints.forEach(point => group.add(point))
       
       this.regimeEllipsoids.push(group)
@@ -903,6 +1232,8 @@ export class RegimeSpaceRenderer {
   private createRegimeCentroids() {
     if (!this.showCentroids || !this.hmmModel) return
 
+    console.log('createRegimeCentroids called, showCentroids:', this.showCentroids)
+
     const means = this.hmmModel.getEmissionMeans()
 
     means.forEach((mean, regimeId) => {
@@ -916,37 +1247,57 @@ export class RegimeSpaceRenderer {
       const volatility = mean[1] !== undefined ? mean[1] : 0
       const regimeColor = this.getRegimeColorByVolatility(volatility)
 
-      const geometry = new THREE.SphereGeometry(1.5, 16, 16)
+      // Получаем радиус сферы для этого режима - ядро будет 25% от радиуса
+      // Минимальный размер ядра = 3 единицы для видимости
+      const sphereRadius = this.regimeSphereRadii.get(regimeId) || 10
+      const coreRadius = Math.max(3, sphereRadius * 0.25)
+      const glowRadius = Math.max(5, sphereRadius * 0.4)
+      
+      console.log('Creating centroid for regime', regimeId, 'sphereRadius:', sphereRadius, 'coreRadius:', coreRadius)
+
+      // Ядро сферы - яркое и светящееся
+      const geometry = new THREE.SphereGeometry(coreRadius, 24, 24)
       const material = new THREE.MeshPhongMaterial({
-        color: new THREE.Color(regimeColor),
+        color: new THREE.Color(0xffffff), // Белое ядро
         emissive: new THREE.Color(regimeColor),
-        emissiveIntensity: 0.8,
+        emissiveIntensity: 1.5,
         transparent: true,
-        opacity: 0.9
+        opacity: 1.0,
+        shininess: 200,
+        depthTest: false // Рендерится поверх других объектов
       })
 
       const centroid = new THREE.Mesh(geometry, material)
-      // Используем реальные позиции режимов в 3D пространстве
-      // Переворачиваем диагонально: X и Z меняются местами
-      // Только положительное пространство: Y должен быть >= 0
+      centroid.renderOrder = 100 // Рендерится после эллипсоидов
+      // Позиция в центре сферы
       const x = this.getRegimeZPosition(regimeId)
-      const y = Math.max(0, mean[1] !== undefined ? mean[1] : 0) // Гарантируем положительное значение
+      const y = Math.max(0, mean[1] !== undefined ? mean[1] : 0)
       const z = this.getRegimeXPosition(regimeId)
       centroid.position.set(x, y, z)
-      centroid.userData = { regimeId, config, pulsePhase: Math.random() * Math.PI * 2 }
+      centroid.userData = { 
+        regimeId, 
+        config, 
+        pulsePhase: Math.random() * Math.PI * 2,
+        baseRadius: coreRadius
+      }
 
-      // Glow effect с пульсацией - светящийся и пульсирующий центр
-      const glowGeometry = new THREE.SphereGeometry(2, 16, 16)
+      // Glow effect - внешнее свечение ядра
+      const glowGeometry = new THREE.SphereGeometry(glowRadius, 24, 24)
       const glowMaterial = new THREE.MeshBasicMaterial({
         color: new THREE.Color(regimeColor),
         transparent: true,
         opacity: 0.4,
-        emissive: new THREE.Color(regimeColor),
-        emissiveIntensity: 0.8
+        depthTest: false // Рендерится поверх
       })
       const glow = new THREE.Mesh(glowGeometry, glowMaterial)
+      glow.renderOrder = 99 // Рендерится перед ядром но после эллипсоидов
       glow.position.copy(centroid.position)
-      glow.userData = { baseScale: 1, baseOpacity: 0.4, pulsePhase: Math.random() * Math.PI * 2 }
+      glow.userData = { 
+        baseScale: 1, 
+        baseOpacity: 0.3, 
+        pulsePhase: Math.random() * Math.PI * 2,
+        baseRadius: glowRadius
+      }
 
       const group = new THREE.Group()
       group.add(centroid)
@@ -962,36 +1313,63 @@ export class RegimeSpaceRenderer {
    * Показывает путь рынка через пространство режимов и переходы s_t−1 → s_t
    */
   private createTrajectory() {
+    console.log('createTrajectory called, marketData.length:', this.marketData.length, 'showTrajectory:', this.showTrajectory)
+    
     if (this.marketData.length === 0) return
 
-    // Создаем массив точек для кривой из всех наблюдений
+    // Создаем массив точек для кривой из ВСЕХ наблюдений
     const points: THREE.Vector3[] = []
     const pointColors: THREE.Color[] = []
     const pointRegimes: number[] = []
 
-    // Проходим по всем наблюдениям и создаем точки траектории
-    this.marketData.slice(0, this.currentTimeIndex + 1).forEach((point, i) => {
+    // Проходим по ВСЕМ наблюдениям и создаем точки траектории
+    // Узлы должны быть ВНУТРИ сфер соответствующих режимов
+    this.marketData.forEach((point, i) => {
       // Проверяем, что все значения определены
       if (point.return === undefined || point.volatility === undefined || point.liquidity === undefined) {
         return
       }
       
-      // Каждый узел - это вектор x_t = (r_t, σ_t, v_t)
-      // Учитываем диагональное отражение: X и Z поменяны местами
-      // Гарантируем только положительные значения для видимости
-      let x = point.liquidity !== undefined ? point.liquidity * 35 : 0  // v_t идет на X (было Z)
-      let y = point.volatility !== undefined ? point.volatility : 0     // σ_t идет на Y
-      let z = point.return !== undefined ? point.return : 0             // r_t идет на Z (было X)
+      // Получаем позицию сферы режима для этого наблюдения
+      const regimeId = point.regime || 0
+      const regimeX = this.getRegimeZPosition(regimeId)
+      const regimeZ = this.getRegimeXPosition(regimeId)
       
-      // Гарантируем положительные значения (смещаем отрицательные в положительную область)
-      x = Math.max(0, x)
-      y = Math.max(0, y)
-      z = Math.max(0, z)
+      // Получаем Y позицию из волатильности режима
+      let regimeY = 15
+      if (this.hmmModel) {
+        const means = this.hmmModel.getEmissionMeans()
+        if (means && means[regimeId] && means[regimeId][1] !== undefined) {
+          regimeY = means[regimeId][1]
+        }
+      }
+      
+      // Смещения пропорциональны радиусу сферы
+      const sphereRadius = this.regimeSphereRadii.get(regimeId) || 10
+      const maxRadius = sphereRadius * 0.6 // 60% от радиуса для гарантии нахождения внутри
+      
+      // Вычисляем ненормализованные смещения
+      let offsetX = (point.liquidity - 0.5) * 2
+      let offsetY = (point.volatility / 60 - 0.5) * 2
+      let offsetZ = (point.return * 2.5)
+      
+      // Нормализуем вектор смещения, чтобы не выходить за радиус
+      const offsetLength = Math.sqrt(offsetX * offsetX + offsetY * offsetY + offsetZ * offsetZ)
+      if (offsetLength > 0) {
+        const scale = Math.min(1, 1 / offsetLength) * maxRadius
+        offsetX *= scale
+        offsetY *= scale
+        offsetZ *= scale
+      }
+      
+      // Ограничиваем координаты границами сетки (0-115 по XZ, 5-75 по Y)
+      const x = Math.max(5, Math.min(115, regimeX + offsetX))
+      const y = Math.max(5, Math.min(75, regimeY + offsetY))
+      const z = Math.max(5, Math.min(115, regimeZ + offsetZ))
 
       points.push(new THREE.Vector3(x, y, z))
 
-      // Определяем цвет по наиболее вероятному режиму в момент t
-      const regimeId = point.regime || 0
+      // Цвет и режим (regimeId уже определён выше)
       pointRegimes.push(regimeId)
       
       // Получаем волатильность из mean режима или из самого point
@@ -1007,6 +1385,11 @@ export class RegimeSpaceRenderer {
       const color = new THREE.Color(regimeColor)
       pointColors.push(color)
     })
+
+    console.log('Trajectory points created:', points.length, 'showTrajectory:', this.showTrajectory)
+    if (points.length > 0) {
+      console.log('Sample point coordinates:', points[0], points[points.length - 1])
+    }
 
     // Trajectory line - используем кривые вместо прямых линий
     // Соединяем последовательные наблюдения, показывая путь рынка через пространство режимов
@@ -1080,14 +1463,42 @@ export class RegimeSpaceRenderer {
           return
         }
         
-        // Используем те же координаты что и траектория
-        let x = point.liquidity !== undefined ? point.liquidity * 35 : 0
-        let y = point.volatility !== undefined ? point.volatility : 0
-        let z = point.return !== undefined ? point.return : 0
+        // Узлы должны быть внутри сфер режимов - используем позиции сфер
+        const nodeRegimeId = point.regime || 0
+        const regimeX = this.getRegimeZPosition(nodeRegimeId)
+        const regimeZ = this.getRegimeXPosition(nodeRegimeId)
         
-        x = Math.max(0, x)
-        y = Math.max(0, y)
-        z = Math.max(0, z)
+        // Получаем Y позицию из волатильности режима
+        let regimeY = 15
+        if (this.hmmModel) {
+          const means = this.hmmModel.getEmissionMeans()
+          if (means && means[nodeRegimeId] && means[nodeRegimeId][1] !== undefined) {
+            regimeY = means[nodeRegimeId][1]
+          }
+        }
+        
+        // Смещения пропорциональны радиусу сферы
+        const sphereRadius = this.regimeSphereRadii.get(nodeRegimeId) || 10
+        const maxRadius = sphereRadius * 0.6
+        
+        // Вычисляем ненормализованные смещения
+        let offsetX = (point.liquidity - 0.5) * 2
+        let offsetY = (point.volatility / 60 - 0.5) * 2
+        let offsetZ = (point.return * 2.5)
+        
+        // Нормализуем вектор смещения
+        const offsetLength = Math.sqrt(offsetX * offsetX + offsetY * offsetY + offsetZ * offsetZ)
+        if (offsetLength > 0) {
+          const scale = Math.min(1, 1 / offsetLength) * maxRadius
+          offsetX *= scale
+          offsetY *= scale
+          offsetZ *= scale
+        }
+        
+        // Ограничиваем координаты границами сетки
+        const x = Math.max(5, Math.min(115, regimeX + offsetX))
+        const y = Math.max(5, Math.min(75, regimeY + offsetY))
+        const z = Math.max(5, Math.min(115, regimeZ + offsetZ))
         
         // Создаем маленькую белую сферу для узла (как на картинке)
         const nodeGeometry = new THREE.SphereGeometry(0.6, 12, 12)
@@ -1110,16 +1521,23 @@ export class RegimeSpaceRenderer {
           regimeId: point.regime || 0
         }
         
-        // Начально скрываем узлы для анимации (будут появляться постепенно)
-        node.visible = false
+        // Узлы видны по умолчанию
+        node.visible = true
         
         this.trajectoryNodes.push(node)
         this.scene.add(node)
       })
       
-      // Анимация будет запущена автоматически после загрузки данных в setData()
-      // Не запускаем здесь, чтобы избежать двойного запуска
+      console.log('Trajectory nodes created:', this.trajectoryNodes.length)
     }
+    
+    // Устанавливаем currentTimeIndex на конец данных
+    this.currentTimeIndex = this.marketData.length - 1
+    
+    console.log('createTrajectory finished:', {
+      trajectoryLineExists: !!this.trajectoryLine,
+      trajectoryNodesCount: this.trajectoryNodes.length
+    })
   }
   
   /**
@@ -1350,31 +1768,52 @@ export class RegimeSpaceRenderer {
     const points: THREE.Vector3[] = []
     const pointColors: THREE.Color[] = []
     
-    this.marketData.slice(0, this.currentTimeIndex + 1).forEach((point, i) => {
+    // Используем ВСЕ данные для линии траектории
+    this.marketData.forEach((point, i) => {
       if (point.return === undefined || point.volatility === undefined || point.liquidity === undefined) {
         return
       }
       
-      let x = point.liquidity !== undefined ? point.liquidity * 35 : 0
-      let y = point.volatility !== undefined ? point.volatility : 0
-      let z = point.return !== undefined ? point.return : 0
+      // Узлы траектории внутри сфер режимов
+      const lineRegimeId = point.regime || 0
+      const regimeX = this.getRegimeZPosition(lineRegimeId)
+      const regimeZ = this.getRegimeXPosition(lineRegimeId)
       
-      x = Math.max(0, x)
-      y = Math.max(0, y)
-      z = Math.max(0, z)
-      
-      points.push(new THREE.Vector3(x, y, z))
-      
-      const regimeId = point.regime || 0
-      let volatility = point.volatility
+      let regimeY = 15
       if (this.hmmModel) {
         const means = this.hmmModel.getEmissionMeans()
-        if (means && means[regimeId] && Array.isArray(means[regimeId]) && means[regimeId][1] !== undefined) {
-          volatility = means[regimeId][1]
+        if (means && means[lineRegimeId] && means[lineRegimeId][1] !== undefined) {
+          regimeY = means[lineRegimeId][1]
         }
       }
       
-      const regimeColor = this.getRegimeColorByVolatility(volatility)
+      // Смещения пропорциональны радиусу сферы
+      const sphereRadius = this.regimeSphereRadii.get(lineRegimeId) || 10
+      const maxRadius = sphereRadius * 0.6
+      
+      // Вычисляем ненормализованные смещения
+      let offsetX = (point.liquidity - 0.5) * 2
+      let offsetY = (point.volatility / 60 - 0.5) * 2
+      let offsetZ = (point.return * 2.5)
+      
+      // Нормализуем вектор смещения
+      const offsetLength = Math.sqrt(offsetX * offsetX + offsetY * offsetY + offsetZ * offsetZ)
+      if (offsetLength > 0) {
+        const scale = Math.min(1, 1 / offsetLength) * maxRadius
+        offsetX *= scale
+        offsetY *= scale
+        offsetZ *= scale
+      }
+      
+      // Ограничиваем координаты границами сетки
+      const x = Math.max(5, Math.min(115, regimeX + offsetX))
+      const y = Math.max(5, Math.min(75, regimeY + offsetY))
+      const z = Math.max(5, Math.min(115, regimeZ + offsetZ))
+      
+      points.push(new THREE.Vector3(x, y, z))
+      
+      // regimeId уже определён выше
+      const regimeColor = this.getRegimeColorByVolatility(point.volatility)
       pointColors.push(new THREE.Color(regimeColor))
     })
     
@@ -1509,6 +1948,11 @@ export class RegimeSpaceRenderer {
       this.controls.update()
     }
     
+    // Обновление hover интерактивности
+    if (this.raycaster) {
+      this.updateHover()
+    }
+    
     // Обновление автоматической анимации траектории
     if (this.autoAnimationPlaying) {
       this.updateAutoAnimation()
@@ -1519,33 +1963,39 @@ export class RegimeSpaceRenderer {
       // Already handled by OrbitControls
     }
     
-    // Пульсирующие и светящиеся центроиды
+    // Пульсирующие ядра сфер (центроиды)
     const time = Date.now() * 0.001
     this.regimeCentroids.forEach((centroid, idx) => {
       if (!centroid || !centroid.parent) return
       
-      // Пульсация размера центроида
+      // Усиленная пульсация ядра - быстрее и заметнее
       if (centroid.userData.pulsePhase !== undefined) {
-        const pulse = Math.sin(time * 2 + centroid.userData.pulsePhase) * 0.2 + 1 // От 0.8 до 1.2
+        // Пульсация размера: от 0.7 до 1.3 (±30%)
+        const pulse = Math.sin(time * 3 + centroid.userData.pulsePhase) * 0.3 + 1
         centroid.scale.setScalar(pulse)
         
-        // Пульсация свечения материала
+        // Пульсация свечения - яркий эффект "биения сердца"
         if (centroid.material instanceof THREE.MeshPhongMaterial) {
-          centroid.material.emissiveIntensity = 0.7 + Math.sin(time * 3 + centroid.userData.pulsePhase) * 0.3
+          const intensity = 0.8 + Math.sin(time * 4 + centroid.userData.pulsePhase) * 0.5
+          centroid.material.emissiveIntensity = intensity
+          // Пульсация яркости цвета
+          centroid.material.opacity = 0.8 + Math.sin(time * 3 + centroid.userData.pulsePhase) * 0.15
         }
       }
       
-      // Пульсация glow эффекта (если есть)
+      // Пульсация glow эффекта - расширяющееся свечение
       const glow = centroid.parent.children.find(child => child !== centroid && child.type === 'Mesh') as THREE.Mesh | undefined
       if (glow && glow.userData.pulsePhase !== undefined) {
-        const glowPulse = Math.sin(time * 2 + glow.userData.pulsePhase) * 0.4 + 1 // От 0.6 до 1.4
+        // Более сильная пульсация свечения: от 0.5 до 1.5
+        const glowPulse = Math.sin(time * 2.5 + glow.userData.pulsePhase + Math.PI/4) * 0.5 + 1
         const baseScale = glow.userData.baseScale || 1
         glow.scale.setScalar(baseScale * glowPulse)
         
         if (glow.material instanceof THREE.MeshBasicMaterial) {
-          const opacityPulse = Math.sin(time * 2 + glow.userData.pulsePhase) * 0.2 + glow.userData.baseOpacity
-          glow.material.opacity = Math.max(0.2, Math.min(0.8, opacityPulse))
-          glow.material.emissiveIntensity = 0.8 + Math.sin(time * 3 + glow.userData.pulsePhase) * 0.2
+          // Пульсация прозрачности свечения
+          const baseOpacity = glow.userData.baseOpacity || 0.3
+          const opacityPulse = Math.sin(time * 2.5 + glow.userData.pulsePhase) * 0.15 + baseOpacity
+          glow.material.opacity = Math.max(0.15, Math.min(0.6, opacityPulse))
         }
       }
     })

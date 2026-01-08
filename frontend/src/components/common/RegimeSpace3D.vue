@@ -90,10 +90,6 @@
               <input type="checkbox" v-model="showGrid" @change="onVisibilityChange" />
               <span>Сетка</span>
             </label>
-            <label class="checkbox-label">
-              <input type="checkbox" v-model="showTransitionArrows" @change="onTransitionArrowsChange" />
-              <span>Стрелки переходов</span>
-            </label>
           </div>
 
           <!-- Camera Presets -->
@@ -261,6 +257,31 @@
             <div class="spinner-large"></div>
             <p>Инициализация 3D пространства...</p>
           </div>
+          
+          <!-- Hover Info Tooltip (для ядер и эллипсоидов - вверху, для узлов траектории тоже вверху, но детализация внизу) -->
+          <div 
+            v-if="hoverInfo" 
+            class="hover-tooltip"
+            :style="{ 
+              left: hoverPosition.x + 'px', 
+              top: hoverPosition.y + 'px'
+            }"
+          >
+            <div class="tooltip-header">
+              <h4 class="tooltip-title">{{ hoverInfo.title }}</h4>
+              <span class="tooltip-type">{{ hoverInfo.type }}</span>
+            </div>
+            <div class="tooltip-body">
+              <div 
+                v-for="(value, key) in filteredHoverData" 
+                :key="key"
+                class="tooltip-row"
+              >
+                <span class="tooltip-key">{{ key }}:</span>
+                <span class="tooltip-value">{{ value }}</span>
+              </div>
+            </div>
+          </div>
         </div>
 
         <!-- Bottom Panel: Statistics -->
@@ -297,6 +318,46 @@
                 <span class="duration-dot" :style="{ backgroundColor: regimeConfigs[i]?.color || '#888' }"></span>
                 <span class="duration-name">{{ regimeConfigs[i]?.name || `Режим ${i}` }}</span>
                 <span class="duration-value">{{ duration.toFixed(1) }} дней</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Hovered Trajectory Node Details -->
+          <div class="stats-card trajectory-node-details" v-if="hoveredTrajectoryNode">
+            <h4>Детализация узла траектории</h4>
+            <p class="info-hint">Информация о наведенном наблюдении</p>
+            <div class="trajectory-node-data">
+              <div class="data-row">
+                <span class="data-label">Индекс:</span>
+                <span class="data-value">{{ hoveredTrajectoryNode.timeIndex }}</span>
+              </div>
+              <div class="data-row">
+                <span class="data-label">Дата:</span>
+                <span class="data-value">{{ hoveredTrajectoryNode.point.date || 'N/A' }}</span>
+              </div>
+              <div class="data-row">
+                <span class="data-label">Режим:</span>
+                <span class="data-value" :style="{ color: regimeConfigs[hoveredTrajectoryNode.regimeId]?.color || '#fff' }">
+                  {{ regimeConfigs[hoveredTrajectoryNode.regimeId]?.name || `Режим ${hoveredTrajectoryNode.regimeId}` }}
+                </span>
+              </div>
+              <div class="data-row">
+                <span class="data-label">Доходность:</span>
+                <span class="data-value" :class="hoveredTrajectoryNode.point.return && hoveredTrajectoryNode.point.return >= 0 ? 'text-green' : 'text-red'">
+                  {{ hoveredTrajectoryNode.point.return !== undefined ? (hoveredTrajectoryNode.point.return * 100).toFixed(2) + '%' : 'N/A' }}
+                </span>
+              </div>
+              <div class="data-row">
+                <span class="data-label">Волатильность:</span>
+                <span class="data-value">{{ hoveredTrajectoryNode.point.volatility !== undefined ? hoveredTrajectoryNode.point.volatility.toFixed(2) + '%' : 'N/A' }}</span>
+              </div>
+              <div class="data-row">
+                <span class="data-label">Ликвидность:</span>
+                <span class="data-value">{{ hoveredTrajectoryNode.point.liquidity !== undefined ? hoveredTrajectoryNode.point.liquidity.toFixed(3) : 'N/A' }}</span>
+              </div>
+              <div class="data-row" v-if="hoveredTrajectoryNode.point.probability">
+                <span class="data-label">Вероятность режима:</span>
+                <span class="data-value">{{ (hoveredTrajectoryNode.point.probability[hoveredTrajectoryNode.regimeId] * 100).toFixed(1) + '%' }}</span>
               </div>
             </div>
           </div>
@@ -346,7 +407,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { HMMModel, generateMockMarketData, type MarketPoint } from '@/composables/useHMMModel'
-import { RegimeSpaceRenderer, type RegimeConfig, type CameraPreset } from '@/composables/useRegimeSpace3D'
+import { RegimeSpaceRenderer, type RegimeConfig, type CameraPreset, type HoverInfo } from '@/composables/useRegimeSpace3D'
 import ScrubInput from './ScrubInput.vue'
 
 // Props
@@ -376,6 +437,11 @@ const showCentroids = ref(false)
 const showGrid = ref(true)
 const showTransitionArrows = ref(false)
 const showRenaissanceInsights = ref(false)
+
+// Hover интерактивность
+const hoverInfo = ref<HoverInfo | null>(null)
+const hoverPosition = ref({ x: 0, y: 0 })
+const hoveredTrajectoryNode = ref<{ point: MarketPoint; timeIndex: number; regimeId: number } | null>(null)
 
 // Data
 const allMarketData = ref<MarketPoint[]>([])
@@ -481,6 +547,26 @@ const currentRegimeInfo = computed(() => {
     meanReturn: mean[0] || 0,
     meanVolatility: mean[1] || 0
   }
+})
+
+// Фильтрованные данные для hover tooltip (исключаем объекты и служебные поля)
+const filteredHoverData = computed(() => {
+  if (!hoverInfo.value || !hoverInfo.value.data) return {}
+  
+  const filtered: Record<string, string> = {}
+  for (const [key, value] of Object.entries(hoverInfo.value.data)) {
+    // Исключаем объекты, служебные поля и ID
+    if (
+      typeof value !== 'object' && 
+      value !== null &&
+      key !== 'point' && 
+      key !== 'Индекс' && 
+      key !== 'Режим ID'
+    ) {
+      filtered[key] = String(value)
+    }
+  }
+  return filtered
 })
 
 // Helper function to get regime configs safely
@@ -618,6 +704,50 @@ const runAnalysis = async () => {
       }
       
       renderer = new RegimeSpaceRenderer(canvasContainer.value)
+      
+      // Устанавливаем обработчик hover событий
+      renderer.setOnHover((info) => {
+        hoverInfo.value = info
+        
+        // Разделяем логику для узлов траектории и ядер/эллипсоидов
+        if (info && info.type === 'trajectory-node') {
+          // Для узлов траектории: показываем tooltip вверху И детализацию внизу
+          hoverInfo.value = info
+          const point = info.data['point'] as MarketPoint | undefined
+          if (point) {
+            hoveredTrajectoryNode.value = {
+              point: point,
+              timeIndex: parseInt(info.data['Индекс'] || '0'),
+              regimeId: parseInt(info.data['Режим ID'] || '0')
+            }
+          }
+        } else if (info && (info.type === 'centroid' || info.type === 'ellipsoid')) {
+          // Для ядер и эллипсоидов: показываем только tooltip вверху
+          hoverInfo.value = info
+          hoveredTrajectoryNode.value = null
+        } else {
+          // Если нет hover или другой тип, очищаем всё
+          hoverInfo.value = null
+          hoveredTrajectoryNode.value = null
+        }
+      })
+      
+      // Обработчик движения мыши для позиции tooltip
+      const handleMouseMove = (event: MouseEvent) => {
+        if (canvasContainer.value && hoverInfo.value) {
+          const rect = canvasContainer.value.getBoundingClientRect()
+          hoverPosition.value = {
+            x: event.clientX - rect.left,
+            y: event.clientY - rect.top
+          }
+        }
+      }
+      canvasContainer.value.addEventListener('mousemove', handleMouseMove)
+      onUnmounted(() => {
+        if (canvasContainer.value) {
+          canvasContainer.value.removeEventListener('mousemove', handleMouseMove)
+        }
+      })
       
       // Handle window resize
       const handleResize = () => {
@@ -1607,6 +1737,59 @@ onUnmounted(() => {
   font-size: 11px;
 }
 
+/* Trajectory Node Details Styles */
+.trajectory-node-details {
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(96, 165, 250, 0.1));
+  border: 1px solid rgba(96, 165, 250, 0.3);
+  animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.trajectory-node-data {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.data-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+  transition: all 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.data-row:hover {
+  background: rgba(255, 255, 255, 0.08);
+  transform: translateX(4px);
+}
+
+.data-label {
+  color: rgba(255, 255, 255, 0.7);
+  font-weight: 500;
+  font-size: 12px;
+}
+
+.data-value {
+  color: #fff;
+  font-weight: 700;
+  font-family: "SF Mono", monospace;
+  font-size: 12px;
+}
+
 .export-section {
   display: flex;
   flex-direction: column;
@@ -1848,5 +2031,90 @@ onUnmounted(() => {
   .stats-panel {
     grid-template-columns: 1fr;
   }
+}
+
+/* Hover Tooltip Styles */
+.hover-tooltip {
+  position: absolute;
+  z-index: 1000;
+  pointer-events: none;
+  min-width: 240px;
+  max-width: 320px;
+  background: rgba(15, 23, 42, 0.95);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 12px;
+  padding: 12px 16px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.1);
+  animation: tooltipFadeIn 0.2s ease-out;
+  transform: translateX(15px) translateY(-50%);
+}
+
+@keyframes tooltipFadeIn {
+  from {
+    opacity: 0;
+    transform: translateX(25px) translateY(-50%);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(15px) translateY(-50%);
+  }
+}
+
+.tooltip-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.tooltip-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: #fff;
+  margin: 0;
+}
+
+.tooltip-type {
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.6);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 2px 8px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+}
+
+.tooltip-body {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.tooltip-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.tooltip-key {
+  color: rgba(255, 255, 255, 0.7);
+  font-weight: 500;
+  flex-shrink: 0;
+  min-width: 100px;
+}
+
+.tooltip-value {
+  color: #fff;
+  font-weight: 600;
+  font-family: "SF Mono", monospace;
+  text-align: right;
+  word-break: break-word;
 }
 </style>
