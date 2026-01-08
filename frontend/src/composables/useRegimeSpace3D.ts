@@ -213,6 +213,74 @@ export class RegimeSpaceRenderer {
   }
 
   /**
+   * Получение X-позиции режима, распределенной равномерно вдоль оси Return
+   */
+  private getRegimeXPosition(regimeId: number): number {
+    if (!this.hmmModel) return 0
+    const means = this.hmmModel.getEmissionMeans()
+    if (!means || !Array.isArray(means)) return 0
+    
+    // Подсчитываем количество валидных режимов
+    let regimeCount = 0
+    const validRegimeIds: number[] = []
+    means.forEach((mean, id) => {
+      if (mean && Array.isArray(mean) && mean.length >= 3) {
+        validRegimeIds.push(id)
+        regimeCount++
+      }
+    })
+    
+    if (regimeCount === 0) return 0
+    
+    // Находим индекс текущего режима среди валидных
+    const indexInValid = validRegimeIds.indexOf(regimeId)
+    if (indexInValid === -1) return 0
+    
+    // Распределяем режимы равномерно вдоль оси X с большими интервалами
+    // От -30 до 30 с шагом, зависящим от количества режимов
+    const minX = -30
+    const maxX = 30
+    const spacing = regimeCount > 1 ? (maxX - minX) / (regimeCount - 1) : 0
+    const x = minX + (indexInValid * spacing)
+    
+    return x
+  }
+
+  /**
+   * Получение Z-позиции режима, распределенной равномерно вдоль оси Liquidity
+   */
+  private getRegimeZPosition(regimeId: number): number {
+    if (!this.hmmModel) return 0
+    const means = this.hmmModel.getEmissionMeans()
+    if (!means || !Array.isArray(means)) return 0
+    
+    // Подсчитываем количество валидных режимов
+    let regimeCount = 0
+    const validRegimeIds: number[] = []
+    means.forEach((mean, id) => {
+      if (mean && Array.isArray(mean) && mean.length >= 3) {
+        validRegimeIds.push(id)
+        regimeCount++
+      }
+    })
+    
+    if (regimeCount === 0) return 0
+    
+    // Находим индекс текущего режима среди валидных
+    const indexInValid = validRegimeIds.indexOf(regimeId)
+    if (indexInValid === -1) return 0
+    
+    // Распределяем режимы равномерно вдоль оси Z с интервалами
+    // От 5 до 45 (только положительная область Liquidity)
+    const minZ = 5
+    const maxZ = 45
+    const spacing = regimeCount > 1 ? (maxZ - minZ) / (regimeCount - 1) : 0
+    const z = minZ + (indexInValid * spacing)
+    
+    return z
+  }
+
+  /**
    * Получение позиции режима в 3D пространстве
    */
   private getRegimePosition(regimeId: number): THREE.Vector3 {
@@ -223,10 +291,10 @@ export class RegimeSpaceRenderer {
     }
     const mean = means[regimeId]
     // mean[0] = Return, mean[1] = Volatility, mean[2] = Liquidity
-    // Смещаем на +3 по оси Return
-    const x = mean[0] !== undefined ? mean[0] + 3 : 3
+    // Распределяем равномерно вдоль осей Return и Liquidity
+    const x = this.getRegimeXPosition(regimeId)
     const y = mean[1] !== undefined ? mean[1] : 0
-    const z = mean[2] !== undefined ? mean[2] * 35 : 0
+    const z = this.getRegimeZPosition(regimeId)
     return new THREE.Vector3(x, y, z)
   }
 
@@ -637,23 +705,62 @@ export class RegimeSpaceRenderer {
       ellipsoid.scale.set(sphereRadius, sphereRadius, sphereRadius)
       // Используем реальные позиции режимов в 3D пространстве
       // mean[0] = Return, mean[1] = Volatility, mean[2] = Liquidity
-      // Смещаем на +3 по оси Return
-      const x = mean[0] !== undefined ? mean[0] + 3 : 3
+      // Распределяем равномерно вдоль осей Return и Liquidity
+      const x = this.getRegimeXPosition(regimeId)
       const y = mean[1] !== undefined ? mean[1] : 0
-      const z = mean[2] !== undefined ? mean[2] * 35 : 0
+      const z = this.getRegimeZPosition(regimeId)
       ellipsoid.position.set(x, y, z)
       
-      // Wireframe
-      const wireframe = new THREE.LineSegments(
-        new THREE.EdgesGeometry(geometry),
-        new THREE.LineBasicMaterial({ 
-          color: new THREE.Color(regimeColor), 
-          opacity: 0.7, 
-          transparent: true 
+      // Контур сферы - простая обводка без сетки
+      // Создаем только основные контурные линии (вертикальные и горизонтальные сечения)
+      const contourGroup = new THREE.Group()
+      
+      // Горизонтальные контурные линии (кольца)
+      const horizontalRings = 4
+      for (let i = 1; i < horizontalRings; i++) {
+        const yOffset = ((i / horizontalRings) - 0.5) * 2 * sphereRadius
+        const ringRadius = Math.sqrt(sphereRadius * sphereRadius - yOffset * yOffset)
+        
+        if (ringRadius > 0.1) {
+          const ringGeometry = new THREE.RingGeometry(ringRadius * 0.995, ringRadius, 64)
+          const ringMaterial = new THREE.MeshBasicMaterial({
+            color: new THREE.Color(regimeColor),
+            transparent: true,
+            opacity: 0.9,
+            side: THREE.DoubleSide
+          })
+          const ring = new THREE.Mesh(ringGeometry, ringMaterial)
+          ring.rotation.x = Math.PI / 2
+          ring.position.set(0, yOffset, 0)
+          contourGroup.add(ring)
+        }
+      }
+      
+      // Вертикальные контурные линии (меридианы)
+      const verticalMeridians = 8
+      for (let i = 0; i < verticalMeridians; i++) {
+        const angle = (i / verticalMeridians) * Math.PI * 2
+        const points: THREE.Vector3[] = []
+        const segments = 30
+        for (let j = 0; j <= segments; j++) {
+          const phi = (j / segments) * Math.PI
+          const x = Math.sin(phi) * Math.cos(angle) * sphereRadius
+          const y = Math.cos(phi) * sphereRadius
+          const z = Math.sin(phi) * Math.sin(angle) * sphereRadius
+          points.push(new THREE.Vector3(x, y, z))
+        }
+        const lineGeometry = new THREE.BufferGeometry().setFromPoints(points)
+        const lineMaterial = new THREE.LineBasicMaterial({
+          color: new THREE.Color(regimeColor),
+          transparent: true,
+          opacity: 0.9
         })
-      )
-      wireframe.scale.copy(ellipsoid.scale)
-      wireframe.position.copy(ellipsoid.position)
+        const line = new THREE.Line(lineGeometry, lineMaterial)
+        contourGroup.add(line)
+      }
+      
+      contourGroup.position.copy(ellipsoid.position)
+      const wireframe = contourGroup
       
       // Добавляем текстовую метку над режимом
       const labelPosition = new THREE.Vector3(x, y + sphereRadius + 3, z)
@@ -781,10 +888,10 @@ export class RegimeSpaceRenderer {
 
       const centroid = new THREE.Mesh(geometry, material)
       // Используем реальные позиции режимов в 3D пространстве
-      // Смещаем на +3 по оси Return
-      const x = mean[0] !== undefined ? mean[0] + 3 : 3
+      // Распределяем равномерно вдоль осей Return и Liquidity
+      const x = this.getRegimeXPosition(regimeId)
       const y = mean[1] !== undefined ? mean[1] : 0
-      const z = mean[2] !== undefined ? mean[2] * 35 : 0
+      const z = this.getRegimeZPosition(regimeId)
       centroid.position.set(x, y, z)
       centroid.userData = { regimeId, config }
 
@@ -1433,8 +1540,10 @@ export class RegimeSpaceRenderer {
         
         const sphere = new THREE.Mesh(geometry, material)
         // Используем реальные позиции режимов
-        // Смещаем на +3 по оси Return
-        sphere.position.set(mean[0] + 3, mean[1], mean[2] * 35)
+        // Распределяем равномерно вдоль осей Return и Liquidity
+        const x = this.getRegimeXPosition(regimeId)
+        const z = this.getRegimeZPosition(regimeId)
+        sphere.position.set(x, mean[1], z)
         
         // Анимация пульсации
         sphere.userData = { pulse: 0 }
@@ -1614,8 +1723,10 @@ export class RegimeSpaceRenderer {
         
         const wave = new THREE.Mesh(geometry, material)
         // Используем реальные позиции режимов
-        // Смещаем на +3 по оси Return
-        wave.position.set(mean[0] + 3, mean[1], mean[2] * 35)
+        // Распределяем равномерно вдоль осей Return и Liquidity
+        const x = this.getRegimeXPosition(regimeId)
+        const z = this.getRegimeZPosition(regimeId)
+        wave.position.set(x, mean[1], z)
         wave.rotation.x = Math.PI / 2
         
         wave.userData = { baseOpacity: 0.3 / ring, ring }
@@ -1697,8 +1808,10 @@ export class RegimeSpaceRenderer {
       })
       
       const plane = new THREE.Mesh(geometry, material)
-      // Смещаем на +3 по оси Return
-      plane.position.set(mean[0] + 3, mean[1] - 5, mean[2] * 35)
+      // Распределяем равномерно вдоль осей Return и Liquidity
+      const x = this.getRegimeXPosition(regimeId)
+      const z = this.getRegimeZPosition(regimeId)
+      plane.position.set(x, mean[1] - 5, z)
       plane.rotation.x = -Math.PI / 2
       
       group.add(plane)
