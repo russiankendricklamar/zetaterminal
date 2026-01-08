@@ -207,6 +207,18 @@ export class RegimeSpaceRenderer {
   }
 
   /**
+   * Получение позиции режима вдоль оси X
+   */
+  private getRegimeXPosition(regimeId: number): number {
+    if (!this.hmmModel) return 0
+    const means = this.hmmModel.getEmissionMeans()
+    const numRegimes = means.length
+    const xSpacing = 40 / Math.max(1, numRegimes - 1)
+    const xStart = -20
+    return numRegimes === 1 ? 0 : xStart + regimeId * xSpacing
+  }
+
+  /**
    * Создание стрелок вероятностей переходов
    */
   private createTransitionArrows() {
@@ -220,11 +232,10 @@ export class RegimeSpaceRenderer {
     const currentConfig = this.regimeConfigs.find(r => r.id === currentRegime)
     if (!currentConfig) return
     
-    const means = this.hmmModel.getEmissionMeans()
     const currentPos = new THREE.Vector3(
-      means[currentRegime][0],
-      means[currentRegime][1],
-      means[currentRegime][2] * 35
+      this.getRegimeXPosition(currentRegime),
+      0,
+      0
     )
     
     // Создаем стрелки для вероятных переходов (>0.1)
@@ -235,9 +246,9 @@ export class RegimeSpaceRenderer {
       if (!targetConfig) return
       
       const targetPos = new THREE.Vector3(
-        means[targetRegime][0],
-        means[targetRegime][1],
-        means[targetRegime][2] * 35
+        this.getRegimeXPosition(targetRegime),
+        0,
+        0
       )
       
       const direction = new THREE.Vector3()
@@ -277,8 +288,9 @@ export class RegimeSpaceRenderer {
     const axesGroup = new THREE.Group()
     
     // X-axis (Return) - Muted Cyan
+    // Направлена к камере (положительное направление от пользователя)
     const xAxis = new THREE.ArrowHelper(
-      new THREE.Vector3(1, 0, 0),
+      new THREE.Vector3(-1, 0, 0),
       new THREE.Vector3(0, 0, 0),
       35,
       0x60a5fa,
@@ -310,7 +322,7 @@ export class RegimeSpaceRenderer {
     axesGroup.add(zAxis)
     
     // Add axis labels using sprites
-    this.addAxisLabel('Return (%)', new THREE.Vector3(38, 0, 0), 0x60a5fa, axesGroup)
+    this.addAxisLabel('Return (%)', new THREE.Vector3(-38, 0, 0), 0x60a5fa, axesGroup)
     this.addAxisLabel('Volatility (%)', new THREE.Vector3(0, 38, 0), 0xa78bfa, axesGroup)
     this.addAxisLabel('Liquidity', new THREE.Vector3(0, 0, 38), 0x4ade80, axesGroup)
     
@@ -362,6 +374,11 @@ export class RegimeSpaceRenderer {
     const means = this.hmmModel.getEmissionMeans()
     const covariances = this.hmmModel.getEmissionCovariances()
 
+    // Распределяем режимы равномерно вдоль оси X
+    const numRegimes = means.length
+    const xSpacing = 40 / Math.max(1, numRegimes - 1) // От -20 до 20
+    const xStart = -20
+
     means.forEach((mean, regimeId) => {
       const config = this.regimeConfigs.find(r => r.id === regimeId)
       if (!config) return
@@ -387,7 +404,9 @@ export class RegimeSpaceRenderer {
       const scaleZ = Math.sqrt(cov[2][2]) * 2
       
       ellipsoid.scale.set(scaleX, scaleY, scaleZ)
-      ellipsoid.position.set(mean[0], mean[1], mean[2] * 35) // Scale liquidity
+      // Распределяем вдоль оси X, Y и Z остаются на 0
+      const xPos = numRegimes === 1 ? 0 : xStart + regimeId * xSpacing
+      ellipsoid.position.set(xPos, 0, 0)
       
       // Wireframe
       const wireframe = new THREE.LineSegments(
@@ -418,6 +437,11 @@ export class RegimeSpaceRenderer {
 
     const means = this.hmmModel.getEmissionMeans()
 
+    // Распределяем режимы равномерно вдоль оси X
+    const numRegimes = means.length
+    const xSpacing = 40 / Math.max(1, numRegimes - 1) // От -20 до 20
+    const xStart = -20
+
     means.forEach((mean, regimeId) => {
       const config = this.regimeConfigs.find(r => r.id === regimeId)
       if (!config) return
@@ -432,7 +456,9 @@ export class RegimeSpaceRenderer {
       })
 
       const centroid = new THREE.Mesh(geometry, material)
-      centroid.position.set(mean[0], mean[1], mean[2] * 35)
+      // Распределяем вдоль оси X, Y и Z остаются на 0
+      const xPos = numRegimes === 1 ? 0 : xStart + regimeId * xSpacing
+      centroid.position.set(xPos, 0, 0)
       centroid.userData = { regimeId, config }
 
       // Glow effect
@@ -851,6 +877,9 @@ export class RegimeSpaceRenderer {
   private createArbitrageZones(marketData: MarketPoint[], hmmModel: HMMModel, regimeConfigs: RegimeConfig[]) {
     const means = hmmModel.getEmissionMeans()
     const transitionMatrix = hmmModel.getTransitionMatrix()
+    const numRegimes = means.length
+    const xSpacing = 40 / Math.max(1, numRegimes - 1)
+    const xStart = -20
     
     // Зоны с высокой предсказуемостью переходов
     means.forEach((mean, regimeId) => {
@@ -870,7 +899,8 @@ export class RegimeSpaceRenderer {
         })
         
         const sphere = new THREE.Mesh(geometry, material)
-        sphere.position.set(mean[0], mean[1], mean[2] * 35)
+        const xPos = numRegimes === 1 ? 0 : xStart + regimeId * xSpacing
+        sphere.position.set(xPos, 0, 0)
         
         // Анимация пульсации
         sphere.userData = { pulse: 0 }
@@ -886,12 +916,17 @@ export class RegimeSpaceRenderer {
    */
   private createMeanReversionBands(marketData: MarketPoint[], hmmModel: HMMModel, regimeConfigs: RegimeConfig[]) {
     const means = hmmModel.getEmissionMeans()
+    const numRegimes = means.length
+    const xSpacing = 40 / Math.max(1, numRegimes - 1)
+    const xStart = -20
     
     // Создаем bands между соседними режимами
     for (let i = 0; i < means.length; i++) {
       for (let j = i + 1; j < means.length; j++) {
-        const mean1 = new THREE.Vector3(means[i][0], means[i][1], means[i][2] * 35)
-        const mean2 = new THREE.Vector3(means[j][0], means[j][1], means[j][2] * 35)
+        const xPos1 = numRegimes === 1 ? 0 : xStart + i * xSpacing
+        const xPos2 = numRegimes === 1 ? 0 : xStart + j * xSpacing
+        const mean1 = new THREE.Vector3(xPos1, 0, 0)
+        const mean2 = new THREE.Vector3(xPos2, 0, 0)
         
         const midPoint = new THREE.Vector3().addVectors(mean1, mean2).multiplyScalar(0.5)
         const direction = new THREE.Vector3().subVectors(mean2, mean1).normalize()
@@ -1028,6 +1063,9 @@ export class RegimeSpaceRenderer {
    */
   private createProbabilityWaves(hmmModel: HMMModel, regimeConfigs: RegimeConfig[]) {
     const means = hmmModel.getEmissionMeans()
+    const numRegimes = means.length
+    const xSpacing = 40 / Math.max(1, numRegimes - 1)
+    const xStart = -20
     
     means.forEach((mean, regimeId) => {
       const config = regimeConfigs.find(r => r.id === regimeId)
@@ -1044,7 +1082,8 @@ export class RegimeSpaceRenderer {
         })
         
         const wave = new THREE.Mesh(geometry, material)
-        wave.position.set(mean[0], mean[1], mean[2] * 35)
+        const xPos = numRegimes === 1 ? 0 : xStart + regimeId * xSpacing
+        wave.position.set(xPos, 0, 0)
         wave.rotation.x = Math.PI / 2
         
         wave.userData = { baseOpacity: 0.3 / ring, ring }
