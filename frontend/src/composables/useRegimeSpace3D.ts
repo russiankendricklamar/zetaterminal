@@ -223,7 +223,8 @@ export class RegimeSpaceRenderer {
     }
     const mean = means[regimeId]
     // mean[0] = Return, mean[1] = Volatility, mean[2] = Liquidity
-    const x = mean[0] !== undefined ? mean[0] : 0
+    // Смещаем на +3 по оси Return
+    const x = mean[0] !== undefined ? mean[0] + 3 : 3
     const y = mean[1] !== undefined ? mean[1] : 0
     const z = mean[2] !== undefined ? mean[2] * 35 : 0
     return new THREE.Vector3(x, y, z)
@@ -358,8 +359,8 @@ export class RegimeSpaceRenderer {
     const horizontalGridSize = 100
     const horizontalStep = horizontalGridSize / horizontalDivisions
     
-    // Линии параллельные оси X (Liquidity)
-    for (let i = -horizontalDivisions/2; i <= horizontalDivisions/2; i++) {
+    // Линии параллельные оси X (Liquidity) — только положительная Liquidity
+    for (let i = 0; i <= horizontalDivisions/2; i++) {
       const z = i * horizontalStep
       const geometry = new THREE.BufferGeometry()
       const positions = new Float32Array([
@@ -372,12 +373,12 @@ export class RegimeSpaceRenderer {
       gridGroup.add(line)
     }
     
-    // Линии параллельные оси Z (Return)
+    // Линии параллельные оси Z (Return) — только положительная Liquidity
     for (let i = -horizontalDivisions/2; i <= horizontalDivisions/2; i++) {
       const x = i * horizontalStep
       const geometry = new THREE.BufferGeometry()
       const positions = new Float32Array([
-        x, 0, -50,
+        x, 0, 0,
         x, 0, 50
       ])
       geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3))
@@ -391,9 +392,9 @@ export class RegimeSpaceRenderer {
     const verticalDivisions = 10
     const verticalStep = verticalGridSize / verticalDivisions
     
-    // Вертикальные линии (параллельны Y)
+    // Вертикальные линии (параллельны Y) — только положительная Liquidity
     for (let i = 0; i <= verticalDivisions; i++) {
-      const z = -50 + (i * (100 / verticalDivisions))
+      const z = i * (50 / verticalDivisions)
       const geometry = new THREE.BufferGeometry()
       const positions = new Float32Array([
         -50, 0, z,
@@ -404,12 +405,12 @@ export class RegimeSpaceRenderer {
       gridGroup.add(line)
     }
     
-    // Горизонтальные линии (параллельны Z)
+    // Горизонтальные линии (параллельны Z) — только положительная Liquidity
     for (let i = 0; i <= verticalDivisions; i++) {
       const y = i * verticalStep
       const geometry = new THREE.BufferGeometry()
       const positions = new Float32Array([
-        -50, y, -50,
+        -50, y, 0,
         -50, y, 50
       ])
       geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3))
@@ -636,7 +637,8 @@ export class RegimeSpaceRenderer {
       ellipsoid.scale.set(sphereRadius, sphereRadius, sphereRadius)
       // Используем реальные позиции режимов в 3D пространстве
       // mean[0] = Return, mean[1] = Volatility, mean[2] = Liquidity
-      const x = mean[0] !== undefined ? mean[0] : 0
+      // Смещаем на +3 по оси Return
+      const x = mean[0] !== undefined ? mean[0] + 3 : 3
       const y = mean[1] !== undefined ? mean[1] : 0
       const z = mean[2] !== undefined ? mean[2] * 35 : 0
       ellipsoid.position.set(x, y, z)
@@ -779,7 +781,8 @@ export class RegimeSpaceRenderer {
 
       const centroid = new THREE.Mesh(geometry, material)
       // Используем реальные позиции режимов в 3D пространстве
-      const x = mean[0] !== undefined ? mean[0] : 0
+      // Смещаем на +3 по оси Return
+      const x = mean[0] !== undefined ? mean[0] + 3 : 3
       const y = mean[1] !== undefined ? mean[1] : 0
       const z = mean[2] !== undefined ? mean[2] * 35 : 0
       centroid.position.set(x, y, z)
@@ -1430,7 +1433,8 @@ export class RegimeSpaceRenderer {
         
         const sphere = new THREE.Mesh(geometry, material)
         // Используем реальные позиции режимов
-        sphere.position.set(mean[0], mean[1], mean[2] * 35)
+        // Смещаем на +3 по оси Return
+        sphere.position.set(mean[0] + 3, mean[1], mean[2] * 35)
         
         // Анимация пульсации
         sphere.userData = { pulse: 0 }
@@ -1610,7 +1614,8 @@ export class RegimeSpaceRenderer {
         
         const wave = new THREE.Mesh(geometry, material)
         // Используем реальные позиции режимов
-        wave.position.set(mean[0], mean[1], mean[2] * 35)
+        // Смещаем на +3 по оси Return
+        wave.position.set(mean[0] + 3, mean[1], mean[2] * 35)
         wave.rotation.x = Math.PI / 2
         
         wave.userData = { baseOpacity: 0.3 / ring, ring }
@@ -1692,7 +1697,8 @@ export class RegimeSpaceRenderer {
       })
       
       const plane = new THREE.Mesh(geometry, material)
-      plane.position.set(mean[0], mean[1] - 5, mean[2] * 35)
+      // Смещаем на +3 по оси Return
+      plane.position.set(mean[0] + 3, mean[1] - 5, mean[2] * 35)
       plane.rotation.x = -Math.PI / 2
       
       group.add(plane)
