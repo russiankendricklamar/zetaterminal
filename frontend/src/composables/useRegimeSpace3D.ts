@@ -42,6 +42,7 @@ export class RegimeSpaceRenderer {
   private trajectoryLine: THREE.Line | null = null
   private trajectoryPoints: THREE.Points | null = null
   private trajectoryNodes: THREE.Mesh[] = [] // Узлы траектории (маленькие кружки)
+  private transitionMarkers: THREE.Mesh[] = [] // Шарики переходов между режимами
   private regimeEllipsoids: THREE.Group[] = []
   private regimeCentroids: THREE.Mesh[] = []
   private axesHelper: THREE.Group | null = null
@@ -193,6 +194,7 @@ export class RegimeSpaceRenderer {
     if (this.trajectoryLine) this.scene.remove(this.trajectoryLine)
     if (this.trajectoryPoints) this.scene.remove(this.trajectoryPoints)
     this.trajectoryNodes.forEach(node => this.scene.remove(node))
+    this.transitionMarkers.forEach(marker => this.scene.remove(marker))
     if (this.axesHelper) this.scene.remove(this.axesHelper)
     if (this.gridHelper) this.scene.remove(this.gridHelper)
     
@@ -206,19 +208,19 @@ export class RegimeSpaceRenderer {
     this.regimeEllipsoids = []
     this.regimeCentroids = []
     this.transitionArrows = []
+    this.transitionMarkers = []
   }
 
   /**
-   * Получение позиции режима вдоль оси X
+   * Получение позиции режима в 3D пространстве
    */
-  private getRegimeXPosition(regimeId: number): number {
-    if (!this.hmmModel) return 0
+  private getRegimePosition(regimeId: number): THREE.Vector3 {
+    if (!this.hmmModel) return new THREE.Vector3(0, 0, 0)
     const means = this.hmmModel.getEmissionMeans()
-    const numRegimes = means.length
-    // Уменьшаем расстояние между режимами - от -12 до 12
-    const xSpacing = 24 / Math.max(1, numRegimes - 1)
-    const xStart = -12
-    return numRegimes === 1 ? 0 : xStart + regimeId * xSpacing
+    if (!means[regimeId]) return new THREE.Vector3(0, 0, 0)
+    const mean = means[regimeId]
+    // mean[0] = Return, mean[1] = Volatility, mean[2] = Liquidity
+    return new THREE.Vector3(mean[0], mean[1], mean[2] * 35)
   }
 
   /**
@@ -251,11 +253,7 @@ export class RegimeSpaceRenderer {
     const currentConfig = this.regimeConfigs.find(r => r.id === currentRegime)
     if (!currentConfig) return
     
-    const currentPos = new THREE.Vector3(
-      this.getRegimeXPosition(currentRegime),
-      0,
-      0
-    )
+    const currentPos = this.getRegimePosition(currentRegime)
     
     // Создаем стрелки для вероятных переходов (>0.1)
     transitionMatrix[currentRegime].forEach((prob, targetRegime) => {
@@ -264,11 +262,7 @@ export class RegimeSpaceRenderer {
       const targetConfig = this.regimeConfigs.find(r => r.id === targetRegime)
       if (!targetConfig) return
       
-      const targetPos = new THREE.Vector3(
-        this.getRegimeXPosition(targetRegime),
-        0,
-        0
-      )
+      const targetPos = this.getRegimePosition(targetRegime)
       
       const direction = new THREE.Vector3()
       direction.subVectors(targetPos, currentPos)
@@ -378,37 +372,13 @@ export class RegimeSpaceRenderer {
   private createGrid() {
     if (!this.showGrid) return
     
-    // Создаем сетки на окончаниях осей вместо одной большой сетки
-    const gridGroup = new THREE.Group()
-    
-    // Длина осей
-    const axisLength = 35
-    const gridSize = 15 // Размер сетки на конце оси
-    const gridDivisions = 10 // Количество делений
-    
-    // Сетка на конце оси X (отрицательное направление, так как ось направлена к камере)
-    const xGrid = new THREE.GridHelper(gridSize, gridDivisions, 0x60a5fa, 0x1e3a5f)
-    xGrid.position.set(-axisLength, 0, 0)
-    // Поворачиваем на 90 градусов по часовой стрелке вокруг оси Y (поворот плоскости OXZ)
-    xGrid.rotation.y = -Math.PI / 2
-    xGrid.rotation.x = Math.PI / 2
-    gridGroup.add(xGrid)
-    
-    // Сетка на конце оси Y (положительное направление вверх)
-    const yGrid = new THREE.GridHelper(gridSize, gridDivisions, 0xa78bfa, 0x3d1e5f)
-    yGrid.position.set(0, axisLength, 0)
-    yGrid.rotation.x = Math.PI / 2
-    gridGroup.add(yGrid)
-    
-    // Сетка на конце оси Z (положительное направление)
-    const zGrid = new THREE.GridHelper(gridSize, gridDivisions, 0x4ade80, 0x1e3d1e)
-    zGrid.position.set(0, 0, axisLength)
-    // Поворачиваем на 90 градусов по часовой стрелке вокруг оси Y (поворот плоскости OXZ)
-    zGrid.rotation.y = -Math.PI / 2
-    gridGroup.add(zGrid)
-    
-    this.gridHelper = gridGroup
-    this.scene.add(gridGroup)
+    // Создаем сетку на плоскости Return-Volatility (плоскость XZ)
+    // X = Return, Y = Volatility, Z = Liquidity
+    // Сетка должна быть на плоскости Return-Volatility, т.е. горизонтальная плоскость
+    const grid = new THREE.GridHelper(100, 20, 0x333333, 0x222222)
+    grid.rotation.x = Math.PI / 2 // Поворачиваем на 90 градусов, чтобы сетка была горизонтальной
+    this.gridHelper = grid
+    this.scene.add(grid)
   }
 
   /**
@@ -419,11 +389,6 @@ export class RegimeSpaceRenderer {
 
     const means = this.hmmModel.getEmissionMeans()
     const covariances = this.hmmModel.getEmissionCovariances()
-
-    // Распределяем режимы равномерно вдоль оси X (ближе друг к другу)
-    const numRegimes = means.length
-    const xSpacing = 24 / Math.max(1, numRegimes - 1) // От -12 до 12
-    const xStart = -12
 
     means.forEach((mean, regimeId) => {
       const config = this.regimeConfigs.find(r => r.id === regimeId)
@@ -448,15 +413,15 @@ export class RegimeSpaceRenderer {
 
       const ellipsoid = new THREE.Mesh(geometry, material)
       
-      // Масштабируем по стандартным отклонениям (2 sigma)
-      const scaleX = Math.sqrt(cov[0][0]) * 2
-      const scaleY = Math.sqrt(cov[1][1]) * 2
-      const scaleZ = Math.sqrt(cov[2][2]) * 2
+      // Увеличиваем размер эллипсоидов (увеличиваем множитель с 2 до 4-5)
+      const scaleX = Math.sqrt(cov[0][0]) * 4.5
+      const scaleY = Math.sqrt(cov[1][1]) * 4.5
+      const scaleZ = Math.sqrt(cov[2][2]) * 4.5
       
       ellipsoid.scale.set(scaleX, scaleY, scaleZ)
-      // Распределяем вдоль оси X, Y и Z остаются на 0
-      const xPos = numRegimes === 1 ? 0 : xStart + regimeId * xSpacing
-      ellipsoid.position.set(xPos, 0, 0)
+      // Используем реальные позиции режимов в 3D пространстве
+      // mean[0] = Return, mean[1] = Volatility, mean[2] = Liquidity
+      ellipsoid.position.set(mean[0], mean[1], mean[2] * 35)
       
       // Wireframe
       const wireframe = new THREE.LineSegments(
@@ -471,13 +436,60 @@ export class RegimeSpaceRenderer {
       wireframe.position.copy(ellipsoid.position)
       
       // Добавляем текстовую метку над режимом
-      const labelPosition = new THREE.Vector3(xPos, scaleY + 3, 0)
+      const labelPosition = new THREE.Vector3(mean[0], mean[1] + scaleY + 3, mean[2] * 35)
       const label = this.createRegimeLabel(config.name, labelPosition, regimeColor)
+      
+      // Создаем маленькие кружки внутри эллипсоида для наблюдений этого режима
+      const regimePoints: THREE.Mesh[] = []
+      if (this.marketData.length > 0) {
+        // Находим все точки траектории, принадлежащие этому режиму
+        const regimeObservations = this.marketData
+          .slice(0, this.currentTimeIndex + 1)
+          .filter(point => (point.regime || 0) === regimeId)
+        
+        // Ограничиваем количество точек для производительности (максимум 50 на режим)
+        const maxPoints = 50
+        const step = Math.max(1, Math.floor(regimeObservations.length / maxPoints))
+        
+        regimeObservations.forEach((point, idx) => {
+          // Пропускаем некоторые точки, если их слишком много
+          if (idx % step !== 0 && regimeObservations.length > maxPoints) return
+          
+          const x = point.return
+          const y = point.volatility
+          const z = point.liquidity * 35
+          
+          // Создаем маленькую сферу для наблюдения
+          const pointGeometry = new THREE.SphereGeometry(0.3, 8, 8)
+          const pointMaterial = new THREE.MeshPhongMaterial({
+            color: new THREE.Color(regimeColor),
+            emissive: new THREE.Color(regimeColor),
+            emissiveIntensity: 0.5,
+            transparent: true,
+            opacity: 0.8,
+            shininess: 50
+          })
+          
+          const pointMesh = new THREE.Mesh(pointGeometry, pointMaterial)
+          pointMesh.position.set(x, y, z)
+          
+          // Сохраняем информацию о точке
+          pointMesh.userData = {
+            regimeId: regimeId,
+            point: point,
+            timeIndex: idx
+          }
+          
+          regimePoints.push(pointMesh)
+        })
+      }
       
       const group = new THREE.Group()
       group.add(ellipsoid)
       group.add(wireframe)
       if (label) group.add(label)
+      // Добавляем все маленькие кружки в группу
+      regimePoints.forEach(point => group.add(point))
       
       this.regimeEllipsoids.push(group)
       this.scene.add(group)
@@ -527,11 +539,6 @@ export class RegimeSpaceRenderer {
 
     const means = this.hmmModel.getEmissionMeans()
 
-    // Распределяем режимы равномерно вдоль оси X (ближе друг к другу)
-    const numRegimes = means.length
-    const xSpacing = 24 / Math.max(1, numRegimes - 1) // От -12 до 12
-    const xStart = -12
-
     means.forEach((mean, regimeId) => {
       const config = this.regimeConfigs.find(r => r.id === regimeId)
       if (!config) return
@@ -550,9 +557,8 @@ export class RegimeSpaceRenderer {
       })
 
       const centroid = new THREE.Mesh(geometry, material)
-      // Распределяем вдоль оси X, Y и Z остаются на 0
-      const xPos = numRegimes === 1 ? 0 : xStart + regimeId * xSpacing
-      centroid.position.set(xPos, 0, 0)
+      // Используем реальные позиции режимов в 3D пространстве
+      centroid.position.set(mean[0], mean[1], mean[2] * 35)
       centroid.userData = { regimeId, config }
 
       // Glow effect
@@ -609,11 +615,62 @@ export class RegimeSpaceRenderer {
       colors.push(color.r, color.g, color.b)
     })
 
-    // Trajectory line
+    // Trajectory line - используем кривые вместо прямых линий
     if (this.showTrajectory && positions.length > 1) {
-      const lineGeometry = new THREE.BufferGeometry()
-      lineGeometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3))
-      lineGeometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3))
+      // Создаем массив точек для кривой
+      const points: THREE.Vector3[] = []
+      const pointColors: THREE.Color[] = []
+      
+      for (let i = 0; i < positions.length; i += 3) {
+        points.push(new THREE.Vector3(
+          positions[i],
+          positions[i + 1],
+          positions[i + 2]
+        ))
+        pointColors.push(new THREE.Color(
+          colors[i],
+          colors[i + 1],
+          colors[i + 2]
+        ))
+      }
+      
+      // Создаем кривую Catmull-Rom для плавного соединения точек
+      const curve = new THREE.CatmullRomCurve3(points, false, 'centripetal')
+      
+      // Генерируем точки вдоль кривой (больше точек = более плавная кривая)
+      const curvePoints = curve.getPoints(Math.max(50, points.length * 10))
+      
+      // Создаем цвета для каждой точки кривой (интерполируем между узлами)
+      const curveColors: number[] = []
+      for (let i = 0; i < curvePoints.length; i++) {
+        // Находим ближайшие узлы для интерполяции цвета
+        const t = i / (curvePoints.length - 1)
+        const nodeIndex = Math.min(
+          Math.floor(t * (points.length - 1)),
+          points.length - 2
+        )
+        const nextNodeIndex = Math.min(nodeIndex + 1, points.length - 1)
+        const localT = (t * (points.length - 1)) - nodeIndex
+        
+        // Интерполируем цвет между узлами
+        const color1 = pointColors[nodeIndex]
+        const color2 = pointColors[nextNodeIndex]
+        const interpolatedColor = new THREE.Color().lerpColors(color1, color2, localT)
+        
+        curveColors.push(interpolatedColor.r, interpolatedColor.g, interpolatedColor.b)
+      }
+      
+      // Создаем геометрию для кривой линии
+      const curveGeometry = new THREE.BufferGeometry()
+      const curvePositions = new Float32Array(curvePoints.length * 3)
+      curvePoints.forEach((point, i) => {
+        curvePositions[i * 3] = point.x
+        curvePositions[i * 3 + 1] = point.y
+        curvePositions[i * 3 + 2] = point.z
+      })
+      
+      curveGeometry.setAttribute('position', new THREE.BufferAttribute(curvePositions, 3))
+      curveGeometry.setAttribute('color', new THREE.Float32BufferAttribute(curveColors, 3))
 
       const lineMaterial = new THREE.LineBasicMaterial({
         vertexColors: true,
@@ -622,8 +679,11 @@ export class RegimeSpaceRenderer {
         linewidth: 2
       })
 
-      this.trajectoryLine = new THREE.Line(lineGeometry, lineMaterial)
+      this.trajectoryLine = new THREE.Line(curveGeometry, lineMaterial)
       this.scene.add(this.trajectoryLine)
+      
+      // Создаем шарики переходов между режимами на кривой
+      this.createTransitionMarkers(curve, points)
     }
 
     // Создаем узлы траектории (маленькие кружки) - конкретные наблюдения рынка
@@ -679,6 +739,94 @@ export class RegimeSpaceRenderer {
   }
 
   /**
+   * Создание шариков переходов между режимами на кривой траектории
+   */
+  private createTransitionMarkers(curve: THREE.CatmullRomCurve3, points: THREE.Vector3[]) {
+    if (this.marketData.length < 2 || points.length < 2) return
+    
+    this.transitionMarkers = []
+    const visibleData = this.marketData.slice(0, this.currentTimeIndex + 1)
+    
+    // Находим места, где происходит смена режима
+    for (let i = 1; i < visibleData.length; i++) {
+      const prevPoint = visibleData[i - 1]
+      const currentPoint = visibleData[i]
+      
+      const prevRegime = prevPoint.regime || 0
+      const currentRegime = currentPoint.regime || 0
+      
+      // Если режим изменился, создаем маркер перехода
+      if (prevRegime !== currentRegime) {
+        // Вычисляем позицию на кривой между двумя точками
+        // Используем параметр t кривой, где t = (i-1) / (points.length - 1) для предыдущей точки
+        // и t = i / (points.length - 1) для текущей точки
+        // Маркер размещаем посередине между ними
+        const t1 = Math.max(0, Math.min(1, (i - 1) / Math.max(1, points.length - 1)))
+        const t2 = Math.max(0, Math.min(1, i / Math.max(1, points.length - 1)))
+        const t = (t1 + t2) / 2 // Позиция перехода посередине
+        
+        // Получаем позицию на кривой
+        const transitionPosition = curve.getPoint(t)
+        
+        // Определяем цвета обоих режимов для создания градиента
+        let prevVolatility = prevPoint.volatility
+        let currentVolatility = currentPoint.volatility
+        if (this.hmmModel) {
+          const means = this.hmmModel.getEmissionMeans()
+          if (means[prevRegime] && means[prevRegime][1]) {
+            prevVolatility = means[prevRegime][1]
+          }
+          if (means[currentRegime] && means[currentRegime][1]) {
+            currentVolatility = means[currentRegime][1]
+          }
+        }
+        
+        const prevColor = this.getRegimeColorByVolatility(prevVolatility)
+        const currentColor = this.getRegimeColorByVolatility(currentVolatility)
+        
+        // Создаем шарик перехода (белый или золотой для выделения)
+        const markerGeometry = new THREE.SphereGeometry(0.6, 16, 16)
+        const markerMaterial = new THREE.MeshPhongMaterial({
+          color: 0xffffff, // Белый цвет для выделения
+          emissive: 0xffd700, // Золотое свечение
+          emissiveIntensity: 0.8,
+          transparent: true,
+          opacity: 0.9,
+          shininess: 100
+        })
+        
+        const marker = new THREE.Mesh(markerGeometry, markerMaterial)
+        marker.position.copy(transitionPosition)
+        
+        // Добавляем внешнее свечение (больший полупрозрачный шар)
+        const glowGeometry = new THREE.SphereGeometry(0.9, 16, 16)
+        const glowMaterial = new THREE.MeshBasicMaterial({
+          color: 0xffd700,
+          transparent: true,
+          opacity: 0.3
+        })
+        const glow = new THREE.Mesh(glowGeometry, glowMaterial)
+        glow.position.copy(transitionPosition)
+        
+        const markerGroup = new THREE.Group()
+        markerGroup.add(marker)
+        markerGroup.add(glow)
+        
+        // Сохраняем информацию о переходе
+        markerGroup.userData = {
+          fromRegime: prevRegime,
+          toRegime: currentRegime,
+          timeIndex: i,
+          transitionPoint: transitionPosition
+        }
+        
+        this.transitionMarkers.push(markerGroup as any)
+        this.scene.add(markerGroup)
+      }
+    }
+  }
+
+  /**
    * Установка текущего индекса времени
    */
   setTimeIndex(index: number) {
@@ -693,7 +841,9 @@ export class RegimeSpaceRenderer {
     if (this.trajectoryLine) this.scene.remove(this.trajectoryLine)
     if (this.trajectoryPoints) this.scene.remove(this.trajectoryPoints)
     this.trajectoryNodes.forEach(node => this.scene.remove(node))
+    this.transitionMarkers.forEach(marker => this.scene.remove(marker))
     this.trajectoryNodes = []
+    this.transitionMarkers = []
     this.createTrajectory()
     
     if (this.showTransitionArrows) {
@@ -1010,9 +1160,6 @@ export class RegimeSpaceRenderer {
   private createArbitrageZones(marketData: MarketPoint[], hmmModel: HMMModel, regimeConfigs: RegimeConfig[]) {
     const means = hmmModel.getEmissionMeans()
     const transitionMatrix = hmmModel.getTransitionMatrix()
-    const numRegimes = means.length
-    const xSpacing = 24 / Math.max(1, numRegimes - 1)
-    const xStart = -12
     
     // Зоны с высокой предсказуемостью переходов
     means.forEach((mean, regimeId) => {
@@ -1036,8 +1183,8 @@ export class RegimeSpaceRenderer {
         })
         
         const sphere = new THREE.Mesh(geometry, material)
-        const xPos = numRegimes === 1 ? 0 : xStart + regimeId * xSpacing
-        sphere.position.set(xPos, 0, 0)
+        // Используем реальные позиции режимов
+        sphere.position.set(mean[0], mean[1], mean[2] * 35)
         
         // Анимация пульсации
         sphere.userData = { pulse: 0 }
@@ -1053,17 +1200,13 @@ export class RegimeSpaceRenderer {
    */
   private createMeanReversionBands(marketData: MarketPoint[], hmmModel: HMMModel, regimeConfigs: RegimeConfig[]) {
     const means = hmmModel.getEmissionMeans()
-    const numRegimes = means.length
-    const xSpacing = 24 / Math.max(1, numRegimes - 1)
-    const xStart = -12
     
     // Создаем bands между соседними режимами
     for (let i = 0; i < means.length; i++) {
       for (let j = i + 1; j < means.length; j++) {
-        const xPos1 = numRegimes === 1 ? 0 : xStart + i * xSpacing
-        const xPos2 = numRegimes === 1 ? 0 : xStart + j * xSpacing
-        const mean1 = new THREE.Vector3(xPos1, 0, 0)
-        const mean2 = new THREE.Vector3(xPos2, 0, 0)
+        // Используем реальные позиции режимов
+        const mean1 = new THREE.Vector3(means[i][0], means[i][1], means[i][2] * 35)
+        const mean2 = new THREE.Vector3(means[j][0], means[j][1], means[j][2] * 35)
         
         const midPoint = new THREE.Vector3().addVectors(mean1, mean2).multiplyScalar(0.5)
         const direction = new THREE.Vector3().subVectors(mean2, mean1).normalize()
@@ -1200,9 +1343,6 @@ export class RegimeSpaceRenderer {
    */
   private createProbabilityWaves(hmmModel: HMMModel, regimeConfigs: RegimeConfig[]) {
     const means = hmmModel.getEmissionMeans()
-    const numRegimes = means.length
-    const xSpacing = 24 / Math.max(1, numRegimes - 1)
-    const xStart = -12
     
     means.forEach((mean, regimeId) => {
       const config = regimeConfigs.find(r => r.id === regimeId)
@@ -1223,8 +1363,8 @@ export class RegimeSpaceRenderer {
         })
         
         const wave = new THREE.Mesh(geometry, material)
-        const xPos = numRegimes === 1 ? 0 : xStart + regimeId * xSpacing
-        wave.position.set(xPos, 0, 0)
+        // Используем реальные позиции режимов
+        wave.position.set(mean[0], mean[1], mean[2] * 35)
         wave.rotation.x = Math.PI / 2
         
         wave.userData = { baseOpacity: 0.3 / ring, ring }
