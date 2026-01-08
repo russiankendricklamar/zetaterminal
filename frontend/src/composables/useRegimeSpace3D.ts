@@ -1538,14 +1538,20 @@ export class RegimeSpaceRenderer {
       
       if (regimeStability > 0.8 && predictability > 0.7) {
         // Создаем highlighted сегмент
+        // Учитываем диагональное отражение и гарантируем положительные значения
         const points: THREE.Vector3[] = []
         window.forEach((point, idx) => {
-          points.push(new THREE.Vector3(
-            point.return,
-            point.volatility,
-            point.liquidity * 35
-          ))
+          if (point.return === undefined || point.volatility === undefined || point.liquidity === undefined) {
+            return
+          }
+          // Диагональное отражение: X и Z поменяны местами, только положительные значения
+          const x = Math.max(0, point.liquidity * 35)
+          const y = Math.max(0, point.volatility)
+          const z = Math.max(0, point.return)
+          points.push(new THREE.Vector3(x, y, z))
         })
+        
+        if (points.length < 2) return
         
         const geometry = new THREE.BufferGeometry().setFromPoints(points)
         const material = new THREE.LineBasicMaterial({
@@ -1630,9 +1636,17 @@ export class RegimeSpaceRenderer {
     // Создаем bands между соседними режимами
     for (let i = 0; i < means.length; i++) {
       for (let j = i + 1; j < means.length; j++) {
-        // Используем реальные позиции режимов
-        const mean1 = new THREE.Vector3(means[i][0], means[i][1], means[i][2] * 35)
-        const mean2 = new THREE.Vector3(means[j][0], means[j][1], means[j][2] * 35)
+        // Используем реальные позиции режимов с учетом диагонального отражения
+        // Только положительное пространство
+        const x1 = this.getRegimeZPosition(i)
+        const y1 = Math.max(0, means[i][1] !== undefined ? means[i][1] : 0)
+        const z1 = this.getRegimeXPosition(i)
+        const mean1 = new THREE.Vector3(x1, y1, z1)
+        
+        const x2 = this.getRegimeZPosition(j)
+        const y2 = Math.max(0, means[j][1] !== undefined ? means[j][1] : 0)
+        const z2 = this.getRegimeXPosition(j)
+        const mean2 = new THREE.Vector3(x2, y2, z2)
         
         const midPoint = new THREE.Vector3().addVectors(mean1, mean2).multiplyScalar(0.5)
         const direction = new THREE.Vector3().subVectors(mean2, mean1).normalize()
@@ -1672,17 +1686,25 @@ export class RegimeSpaceRenderer {
         const currentPoint = marketData[i]
         const prevPoint = marketData[i - windowSize]
         
+        if (currentPoint.return === undefined || currentPoint.volatility === undefined || currentPoint.liquidity === undefined) continue
+        if (prevPoint.return === undefined || prevPoint.volatility === undefined || prevPoint.liquidity === undefined) continue
+        
+        // Учитываем диагональное отражение и гарантируем положительные значения
+        const currX = Math.max(0, currentPoint.liquidity * 35)
+        const currY = Math.max(0, currentPoint.volatility)
+        const currZ = Math.max(0, currentPoint.return)
+        
+        const prevX = Math.max(0, prevPoint.liquidity * 35)
+        const prevY = Math.max(0, prevPoint.volatility)
+        const prevZ = Math.max(0, prevPoint.return)
+        
         const direction = new THREE.Vector3(
-          currentPoint.return - prevPoint.return,
-          currentPoint.volatility - prevPoint.volatility,
-          (currentPoint.liquidity - prevPoint.liquidity) * 35
+          currX - prevX,
+          currY - prevY,
+          currZ - prevZ
         ).normalize()
         
-        const position = new THREE.Vector3(
-          currentPoint.return,
-          currentPoint.volatility,
-          currentPoint.liquidity * 35
-        )
+        const position = new THREE.Vector3(currX, currY, currZ)
         
         const color = avgReturn > 0 ? 0x4ade80 : 0xf87171
         
@@ -1720,11 +1742,14 @@ export class RegimeSpaceRenderer {
       const profitProbability = probTransition * (expectedReturn > 0 ? 1 : 0.5)
       
       if (profitProbability > 0.4) {
-        const position = new THREE.Vector3(
-          current.return,
-          current.volatility,
-          current.liquidity * 35
-        )
+        if (current.return === undefined || current.volatility === undefined || current.liquidity === undefined) continue
+        
+        // Учитываем диагональное отражение и гарантируем положительные значения
+        const x = Math.max(0, current.liquidity * 35)
+        const y = Math.max(0, current.volatility)
+        const z = Math.max(0, current.return)
+        
+        const position = new THREE.Vector3(x, y, z)
         
         // Buy signal (green) или Sell signal (red)
         const isBuy = expectedReturn > 0
@@ -1819,12 +1844,19 @@ export class RegimeSpaceRenderer {
     for (let i = 1; i < marketData.length; i++) {
       if (marketData[i].regime !== marketData[i - 1].regime) {
         // Смена режима - добавляем частицы
+        if (marketData[i].return === undefined || marketData[i].volatility === undefined || marketData[i].liquidity === undefined) continue
+        
+        // Учитываем диагональное отражение и гарантируем положительные значения
+        const baseX = Math.max(0, marketData[i].liquidity * 35)
+        const baseY = Math.max(0, marketData[i].volatility)
+        const baseZ = Math.max(0, marketData[i].return)
+        
         for (let j = 0; j < 20; j++) {
-          const x = marketData[i].return + (Math.random() - 0.5) * 10
-          const y = marketData[i].volatility + Math.random() * 5
-          const z = marketData[i].liquidity * 35 + (Math.random() - 0.5) * 5
+          const x = baseX + (Math.random() - 0.5) * 10
+          const y = baseY + Math.random() * 5
+          const z = baseZ + (Math.random() - 0.5) * 5
           
-          particles.push(x, y, z)
+          particles.push(Math.max(0, x), Math.max(0, y), Math.max(0, z))
           colors.push(0, 1, 0) // Green matrix code
         }
       }
@@ -1904,12 +1936,17 @@ export class RegimeSpaceRenderer {
     
     marketData.forEach((point, i) => {
       // Mock benchmark trajectory (в реальности - данные фонда)
-      const benchmarkReturn = point.return * 1.2 // Предполагаем 20% лучше
-      points.push(new THREE.Vector3(
-        benchmarkReturn,
-        point.volatility * 0.9,
-        point.liquidity * 35
-      ))
+      if (point.return === undefined || point.volatility === undefined || point.liquidity === undefined) {
+        return
+      }
+      
+      // Учитываем диагональное отражение и гарантируем положительные значения
+      const benchmarkReturn = Math.max(0, point.return * 1.2) // Предполагаем 20% лучше
+      const x = Math.max(0, point.liquidity * 35)
+      const y = Math.max(0, point.volatility * 0.9)
+      const z = Math.max(0, benchmarkReturn)
+      
+      points.push(new THREE.Vector3(x, y, z))
     })
     
     if (points.length > 1) {

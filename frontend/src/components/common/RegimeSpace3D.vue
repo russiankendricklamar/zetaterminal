@@ -211,7 +211,7 @@
               <h2 class="vis-title">Пространство скрытых состояний</h2>
               <p class="vis-subtitle">
                 3D визуализация рыночных режимов (HMM)
-                <span v-if="showRenaissanceInsights" class="renaissance-badge">✨ Renaissance Mode Active</span>
+                <span v-if="showRenaissanceInsights && hasData" class="renaissance-badge">+ RENAISSANCE MODE ACTIVE</span>
               </p>
             </div>
 
@@ -221,6 +221,7 @@
               @click="togglePlayback" 
               class="btn-play"
               :class="{ active: isPlaying }"
+              :disabled="!hasData || filteredData.length === 0"
             >
               {{ isPlaying ? '⏸' : '▶' }}
             </button>
@@ -229,10 +230,11 @@
               <input 
                 type="range" 
                 :min="0" 
-                :max="filteredData.length - 1" 
+                :max="Math.max(0, (filteredData.length || 1) - 1)" 
                 v-model.number="currentTimeIndex" 
                 @input="onTimelineChange"
                 class="timeline-slider"
+                :disabled="!hasData"
               />
               <div class="timeline-track" :style="{ width: timelineProgress + '%' }"></div>
               <div class="timeline-thumb" :style="{ left: timelineProgress + '%' }"></div>
@@ -245,7 +247,7 @@
               <option value="5">5x</option>
             </select>
 
-            <button @click="resetPlayback" class="btn-reset">↺</button>
+            <button @click="resetPlayback" class="btn-reset" :disabled="!hasData || filteredData.length === 0">↺</button>
 
             <div class="current-date">{{ currentDate }}</div>
           </div>
@@ -786,7 +788,17 @@ const onAutoRotateChange = () => {
 
 const onTimelineChange = () => {
   if (renderer) {
+    // Ограничиваем индекс допустимыми значениями
+    const maxIndex = Math.max(0, (filteredData.value.length || 1) - 1)
+    currentTimeIndex.value = Math.max(0, Math.min(currentTimeIndex.value, maxIndex))
+    
     renderer.setTimeIndex(currentTimeIndex.value)
+    
+    // Обновляем Renaissance Mode элементы при изменении временного индекса
+    if (showRenaissanceInsights.value && hasData.value && hmmModel.value) {
+      renderer.setRenaissanceMode(true, filteredData.value, hmmModel.value, getRegimeConfigs())
+    }
+    
     // Update transition arrows if shown
     if (showTransitionArrows.value) {
       renderer.setShowTransitionArrows(false)
@@ -810,11 +822,21 @@ const togglePlayback = () => {
 const startPlayback = () => {
   stopPlayback()
   
+  if (!hasData.value || filteredData.value.length === 0) {
+    return
+  }
+  
   const step = () => {
-    if (!isPlaying.value) return
+    if (!isPlaying.value || !hasData.value || filteredData.value.length === 0) {
+      stopPlayback()
+      return
+    }
     
     const speed = parseFloat(playbackSpeed.value.toString())
-    currentTimeIndex.value += speed
+    currentTimeIndex.value = Math.min(
+      currentTimeIndex.value + speed,
+      filteredData.value.length - 1
+    )
     
     if (currentTimeIndex.value >= filteredData.value.length - 1) {
       currentTimeIndex.value = filteredData.value.length - 1
@@ -839,8 +861,10 @@ const stopPlayback = () => {
 
 const resetPlayback = () => {
   stopPlayback()
-  currentTimeIndex.value = 0
-  onTimelineChange()
+  if (hasData.value && filteredData.value.length > 0) {
+    currentTimeIndex.value = 0
+    onTimelineChange()
+  }
 }
 
 const exportScreenshot = () => {
@@ -1271,12 +1295,18 @@ onUnmounted(() => {
   box-shadow: 0 4px 12px -4px rgba(0, 0, 0, 0.3);
 }
 
-.btn-play:hover,
-.btn-play.active {
+.btn-play:hover:not(:disabled),
+.btn-play.active:not(:disabled) {
   background: rgba(255, 255, 255, 0.2);
   border-color: rgba(255, 255, 255, 0.3);
   transform: translateY(-1px);
   box-shadow: 0 6px 16px -4px rgba(0, 0, 0, 0.4);
+}
+
+.btn-play:disabled,
+.btn-reset:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
 }
 
 .timeline-wrapper {
@@ -1742,18 +1772,21 @@ onUnmounted(() => {
 }
 
 .renaissance-badge {
-  display: inline-block;
-  margin-left: 12px;
-  padding: 4px 10px;
-  background: linear-gradient(135deg, rgba(255, 215, 0, 0.2), rgba(255, 165, 0, 0.2));
-  border: 1px solid rgba(255, 215, 0, 0.4);
-  border-radius: 12px;
-  font-size: 11px;
+  display: inline-flex;
+  align-items: center;
+  margin-left: 16px;
+  padding: 8px 16px;
+  background: linear-gradient(135deg, rgba(255, 215, 0, 0.3), rgba(255, 165, 0, 0.3));
+  border: 2px solid rgba(255, 215, 0, 0.6);
+  border-radius: 10px;
+  font-size: 13px;
   font-weight: 700;
   color: #ffd700;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.1em;
   animation: pulse-gold 2s ease-in-out infinite;
+  box-shadow: 0 0 20px rgba(255, 215, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
 }
 
 @keyframes pulse-gold {
