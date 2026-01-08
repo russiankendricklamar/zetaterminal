@@ -95,8 +95,9 @@ export class RegimeSpaceRenderer {
    */
   private initScene() {
     this.scene = new THREE.Scene()
-    this.scene.background = new THREE.Color(0x0a0a0f)
-    this.scene.fog = new THREE.FogExp2(0x0a0a0f, 0.01)
+    // Чёрный фон
+    this.scene.background = new THREE.Color(0x000000)
+    this.scene.fog = new THREE.FogExp2(0x000000, 0.008)
   }
 
   /**
@@ -142,21 +143,21 @@ export class RegimeSpaceRenderer {
    * Инициализация освещения
    */
   private initLighting() {
-    // Ambient light
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.4)
+    // Ambient light - увеличиваем для более яркой сцены
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.6)
     this.scene.add(ambientLight)
 
-    // Directional lights - muted colors
-    const light1 = new THREE.DirectionalLight(0x60a5fa, 0.5)
+    // Directional lights - увеличиваем интенсивность
+    const light1 = new THREE.DirectionalLight(0x60a5fa, 0.7)
     light1.position.set(30, 30, 30)
     light1.castShadow = true
     this.scene.add(light1)
 
-    const light2 = new THREE.DirectionalLight(0xa78bfa, 0.3)
+    const light2 = new THREE.DirectionalLight(0xa78bfa, 0.5)
     light2.position.set(-30, 30, -30)
     this.scene.add(light2)
 
-    const light3 = new THREE.DirectionalLight(0x4ade80, 0.2)
+    const light3 = new THREE.DirectionalLight(0x4ade80, 0.4)
     light3.position.set(0, -30, 0)
     this.scene.add(light3)
   }
@@ -300,52 +301,13 @@ export class RegimeSpaceRenderer {
   }
 
   /**
-   * Создание осей координат
+   * Создание осей координат (только подписи, без стрелок)
    */
   private createAxes() {
-    const axesGroup = new THREE.Group()
-    
-    // X-axis (Return) - Muted Cyan
-    // Положительное направление ОТ пользователя (к камере)
-    const xAxis = new THREE.ArrowHelper(
-      new THREE.Vector3(1, 0, 0),
-      new THREE.Vector3(0, 0, 0),
-      35,
-      0x60a5fa,
-      2,
-      1
-    )
-    axesGroup.add(xAxis)
-    
-    // Y-axis (Volatility) - Muted Magenta
-    const yAxis = new THREE.ArrowHelper(
-      new THREE.Vector3(0, 1, 0),
-      new THREE.Vector3(0, 0, 0),
-      35,
-      0xa78bfa,
-      2,
-      1
-    )
-    axesGroup.add(yAxis)
-    
-    // Z-axis (Liquidity) - Muted Green
-    const zAxis = new THREE.ArrowHelper(
-      new THREE.Vector3(0, 0, 1),
-      new THREE.Vector3(0, 0, 0),
-      35,
-      0x4ade80,
-      2,
-      1
-    )
-    axesGroup.add(zAxis)
-    
-    // Add axis labels using sprites
-    this.addAxisLabel('Return (%)', new THREE.Vector3(38, 0, 0), 0x60a5fa, axesGroup)
-    this.addAxisLabel('Volatility (%)', new THREE.Vector3(0, 38, 0), 0xa78bfa, axesGroup)
-    this.addAxisLabel('Liquidity', new THREE.Vector3(0, 0, 38), 0x4ade80, axesGroup)
-    
-    this.axesHelper = axesGroup
-    this.scene.add(axesGroup)
+    // Оси теперь отображаются только через подписи вдоль граней сетки
+    // Стрелки убраны по запросу пользователя
+    this.axesHelper = new THREE.Group()
+    this.scene.add(this.axesHelper)
   }
 
   /**
@@ -377,13 +339,246 @@ export class RegimeSpaceRenderer {
   private createGrid() {
     if (!this.showGrid) return
     
-    // Создаем сетку на плоскости Return-Volatility (плоскость XZ)
-    // X = Return, Y = Volatility, Z = Liquidity
-    // Сетка должна быть на плоскости Return-Volatility, т.е. горизонтальная плоскость
-    const grid = new THREE.GridHelper(100, 20, 0x333333, 0x222222)
-    grid.rotation.x = Math.PI / 2 // Поворачиваем на 90 градусов, чтобы сетка была горизонтальной
-    this.gridHelper = grid
-    this.scene.add(grid)
+    const gridGroup = new THREE.Group()
+    
+    // Материалы для сеток - ярко белые
+    const gridMaterial = new THREE.LineBasicMaterial({ 
+      color: 0xffffff,
+      opacity: 1.0,
+      transparent: false
+    })
+    const gridSecondaryMaterial = new THREE.LineBasicMaterial({ 
+      color: 0xffffff,
+      opacity: 0.7,
+      transparent: true
+    })
+    
+    // Создаем горизонтальную сетку на плоскости XZ (плоскость Liquidity-Return) вручную
+    const horizontalDivisions = 20
+    const horizontalGridSize = 100
+    const horizontalStep = horizontalGridSize / horizontalDivisions
+    
+    // Линии параллельные оси X (Liquidity)
+    for (let i = -horizontalDivisions/2; i <= horizontalDivisions/2; i++) {
+      const z = i * horizontalStep
+      const geometry = new THREE.BufferGeometry()
+      const positions = new Float32Array([
+        -50, 0, z,
+        50, 0, z
+      ])
+      geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3))
+      const isMainLine = i % 5 === 0
+      const line = new THREE.Line(geometry, isMainLine ? gridMaterial : gridSecondaryMaterial)
+      gridGroup.add(line)
+    }
+    
+    // Линии параллельные оси Z (Return)
+    for (let i = -horizontalDivisions/2; i <= horizontalDivisions/2; i++) {
+      const x = i * horizontalStep
+      const geometry = new THREE.BufferGeometry()
+      const positions = new Float32Array([
+        x, 0, -50,
+        x, 0, 50
+      ])
+      geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3))
+      const isMainLine = i % 5 === 0
+      const line = new THREE.Line(geometry, isMainLine ? gridMaterial : gridSecondaryMaterial)
+      gridGroup.add(line)
+    }
+    
+    // Создаем левую вертикальную сетку (плоскость YZ, X = -50) только для положительных Y
+    const verticalGridSize = 50 // Только положительная область
+    const verticalDivisions = 10
+    const verticalStep = verticalGridSize / verticalDivisions
+    
+    // Вертикальные линии (параллельны Y)
+    for (let i = 0; i <= verticalDivisions; i++) {
+      const z = -50 + (i * (100 / verticalDivisions))
+      const geometry = new THREE.BufferGeometry()
+      const positions = new Float32Array([
+        -50, 0, z,
+        -50, verticalGridSize, z
+      ])
+      geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3))
+      const line = new THREE.Line(geometry, i % 5 === 0 ? gridMaterial : gridSecondaryMaterial)
+      gridGroup.add(line)
+    }
+    
+    // Горизонтальные линии (параллельны Z)
+    for (let i = 0; i <= verticalDivisions; i++) {
+      const y = i * verticalStep
+      const geometry = new THREE.BufferGeometry()
+      const positions = new Float32Array([
+        -50, y, -50,
+        -50, y, 50
+      ])
+      geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3))
+      const line = new THREE.Line(geometry, i % 5 === 0 ? gridMaterial : gridSecondaryMaterial)
+      gridGroup.add(line)
+    }
+    
+    // Названия осей на концах осей, ближе к камере (как на втором фото)
+    // Камера находится в (40, 40, 40), поэтому смещаем метки в сторону камеры
+    // Ось X (Return) - на конце положительного направления оси X, смещаем ближе к камере
+    const xAxisLabel = this.createAxisLabelAtEnd('Return', new THREE.Vector3(50, 5, 10), 0x60a5fa)
+    if (xAxisLabel) gridGroup.add(xAxisLabel)
+    
+    // Ось Y (Volatility) - на конце положительного направления оси Y, смещаем ближе к камере
+    const yAxisLabel = this.createAxisLabelAtEnd('Volatility', new THREE.Vector3(5, verticalGridSize, 10), 0xa78bfa)
+    if (yAxisLabel) gridGroup.add(yAxisLabel)
+    
+    // Ось Z (Liquidity) - на конце положительного направления оси Z, смещаем ближе к камере
+    const zAxisLabel = this.createAxisLabelAtEnd('Liquidity', new THREE.Vector3(10, 5, 50), 0x4ade80)
+    if (zAxisLabel) gridGroup.add(zAxisLabel)
+    
+    this.gridHelper = gridGroup
+    this.scene.add(gridGroup)
+  }
+
+  /**
+   * Создание длинного названия оси, растянутого вдоль грани сетки
+   */
+  private createLongAxisLabel(text: string, startPosition: THREE.Vector3, direction: THREE.Vector3, color: number): THREE.Group | null {
+    try {
+      const group = new THREE.Group()
+      const length = direction.length()
+      const normalizedDirection = direction.clone().normalize()
+      
+      // Центральная позиция вдоль грани
+      const centerPosition = startPosition.clone().add(normalizedDirection.clone().multiplyScalar(length / 2))
+      
+      // Создаем большой текст для названия оси
+      const canvas = document.createElement('canvas')
+      canvas.width = 8192
+      canvas.height = 2048
+      const ctx = canvas.getContext('2d')
+      if (!ctx) return null
+      
+      ctx.fillStyle = `#${color.toString(16).padStart(6, '0')}`
+      ctx.font = 'bold 200px Arial' // Увеличиваем размер шрифта
+      ctx.textAlign = 'center'
+      ctx.textBaseline = 'middle'
+      ctx.fillText(text, canvas.width / 2, canvas.height / 2)
+      
+      const texture = new THREE.CanvasTexture(canvas)
+      texture.needsUpdate = true
+      const spriteMaterial = new THREE.SpriteMaterial({ 
+        map: texture,
+        transparent: true,
+        alphaTest: 0.1
+      })
+      
+      // Создаем один большой спрайт, растянутый вдоль грани
+      // Увеличиваем высоту для лучшей видимости с изометрического вида
+      const sprite = new THREE.Sprite(spriteMaterial)
+      sprite.scale.set(length * 0.9, 25, 1) // Увеличиваем высоту с 12 до 25
+      sprite.position.copy(centerPosition)
+      
+      // Поднимаем немного выше для лучшей видимости
+      if (normalizedDirection.y === 0) {
+        sprite.position.y += 2 // Для горизонтальных осей поднимаем выше
+      }
+      
+      // Поворачиваем спрайт вдоль направления
+      if (normalizedDirection.x !== 0 || normalizedDirection.z !== 0) {
+        const angle = Math.atan2(normalizedDirection.x, normalizedDirection.z)
+        sprite.rotation.y = angle
+      } else if (normalizedDirection.y !== 0) {
+        sprite.rotation.x = Math.PI / 2
+      }
+      
+      group.add(sprite)
+      return group
+    } catch (error) {
+      console.error('Error creating long axis label:', error)
+      return null
+    }
+  }
+
+  /**
+   * Создание метки оси на конце оси (ближе к камере)
+   */
+  private createAxisLabelAtEnd(text: string, position: THREE.Vector3, color: number): THREE.Sprite | null {
+    try {
+      const canvas = document.createElement('canvas')
+      canvas.width = 2048
+      canvas.height = 512
+      const ctx = canvas.getContext('2d')
+      if (!ctx) return null
+      
+      ctx.fillStyle = `#${color.toString(16).padStart(6, '0')}`
+      ctx.font = 'bold 120px Arial'
+      ctx.textAlign = 'center'
+      ctx.textBaseline = 'middle'
+      ctx.fillText(text, canvas.width / 2, canvas.height / 2)
+      
+      const texture = new THREE.CanvasTexture(canvas)
+      texture.needsUpdate = true
+      const spriteMaterial = new THREE.SpriteMaterial({ 
+        map: texture,
+        transparent: true,
+        alphaTest: 0.1
+      })
+      const sprite = new THREE.Sprite(spriteMaterial)
+      // Большой размер для видимости с изометрического вида
+      sprite.scale.set(20, 5, 1)
+      sprite.position.copy(position)
+      
+      return sprite
+    } catch (error) {
+      console.error('Error creating axis label at end:', error)
+      return null
+    }
+  }
+
+  /**
+   * Создание текстовой метки для сетки
+   */
+  private createGridLabel(text: string, position: THREE.Vector3, color: number, isTitle: boolean = false, isLarge: boolean = false): THREE.Sprite | null {
+    try {
+      const canvas = document.createElement('canvas')
+      // Увеличиваем размер для больших надписей
+      canvas.width = isTitle ? 1024 : (isLarge ? 512 : 256)
+      canvas.height = isTitle ? 512 : (isLarge ? 256 : 128)
+      const ctx = canvas.getContext('2d')
+      if (!ctx) return null
+      
+      ctx.fillStyle = `#${color.toString(16).padStart(6, '0')}`
+      // Увеличиваем размер шрифта для больших надписей
+      if (isTitle) {
+        ctx.font = 'bold 48px Arial'
+      } else if (isLarge) {
+        ctx.font = 'bold 36px Arial'
+      } else {
+        ctx.font = 'bold 20px Arial'
+      }
+      ctx.textAlign = 'center'
+      ctx.textBaseline = 'middle'
+      ctx.fillText(text, canvas.width / 2, canvas.height / 2)
+      
+      const texture = new THREE.CanvasTexture(canvas)
+      texture.needsUpdate = true
+      const spriteMaterial = new THREE.SpriteMaterial({ 
+        map: texture,
+        transparent: true,
+        alphaTest: 0.1
+      })
+      const sprite = new THREE.Sprite(spriteMaterial)
+      // Увеличиваем масштаб для больших надписей
+      if (isTitle) {
+        sprite.scale.set(16, 8, 1)
+      } else if (isLarge) {
+        sprite.scale.set(8, 4, 1)
+      } else {
+        sprite.scale.set(4, 2, 1)
+      }
+      sprite.position.copy(position)
+      
+      return sprite
+    } catch (error) {
+      console.error('Error creating grid label:', error)
+      return null
+    }
   }
 
   /**
@@ -417,10 +612,10 @@ export class RegimeSpaceRenderer {
       const material = new THREE.MeshPhongMaterial({
         color: new THREE.Color(regimeColor),
         transparent: true,
-        opacity: 0.15,
+        opacity: 0.5,
         side: THREE.DoubleSide,
         emissive: new THREE.Color(regimeColor),
-        emissiveIntensity: 0.1
+        emissiveIntensity: 0.5
       })
 
       const ellipsoid = new THREE.Mesh(geometry, material)
@@ -451,7 +646,7 @@ export class RegimeSpaceRenderer {
         new THREE.EdgesGeometry(geometry),
         new THREE.LineBasicMaterial({ 
           color: new THREE.Color(regimeColor), 
-          opacity: 0.3, 
+          opacity: 0.7, 
           transparent: true 
         })
       )
@@ -459,7 +654,7 @@ export class RegimeSpaceRenderer {
       wireframe.position.copy(ellipsoid.position)
       
       // Добавляем текстовую метку над режимом
-      const labelPosition = new THREE.Vector3(x, y + scaleY + 3, z)
+      const labelPosition = new THREE.Vector3(x, y + sphereRadius + 3, z)
       const label = this.createRegimeLabel(config.name, labelPosition, regimeColor)
       
       // Создаем маленькие кружки внутри эллипсоида для наблюдений этого режима
@@ -732,9 +927,10 @@ export class RegimeSpaceRenderer {
         return
       }
       
-      const x = point.return
+      // Меняем местами X и Z: X теперь Liquidity, Z теперь Return
+      const x = point.liquidity * 35
       const y = point.volatility
-      const z = point.liquidity * 35
+      const z = point.return
 
       // Определяем режим и цвет
       const regimeId = point.regime || 0
