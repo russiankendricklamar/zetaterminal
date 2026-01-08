@@ -369,8 +369,8 @@ const autoRotate = ref(false)
 const selectedTimeframe = ref('daily')
 const signalStats = ref<{ winRate: number; sharpeRatio: number; maxDrawdown: number } | null>(null)
 
-// Visualization toggles - изначально включены только сетка и эллипсоиды
-const showTrajectory = ref(false)
+// Visualization toggles - изначально включены сетка, эллипсоиды и траектория (для автоматической анимации)
+const showTrajectory = ref(true)
 const showEllipsoids = ref(true)
 const showCentroids = ref(false)
 const showGrid = ref(true)

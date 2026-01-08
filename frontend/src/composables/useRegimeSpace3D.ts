@@ -57,9 +57,12 @@ export class RegimeSpaceRenderer {
   private animationId: number | null = null
   private isAnimating = false
   private autoRotate = false
+  private autoAnimationPlaying = false
+  private autoAnimationStartTime = 0
+  private autoAnimationDuration = 5000 // 5 секунд для полной анимации
 
-  // Настройки - изначально включены только сетка и эллипсоиды
-  private showTrajectory = false
+  // Настройки - изначально включены сетка, эллипсоиды и траектория (для анимации)
+  private showTrajectory = true
   private showEllipsoids = true
   private showCentroids = false
   private showGrid = true
@@ -169,7 +172,16 @@ export class RegimeSpaceRenderer {
     this.marketData = marketData
     this.hmmModel = hmmModel
     this.regimeConfigs = regimeConfigs
+    this.autoAnimationPlaying = false // Сбрасываем состояние анимации
     this.updateVisualization()
+    
+    // Автоматически запускаем анимацию после загрузки данных и визуализации
+    // Небольшая задержка, чтобы визуализация успела отрисоваться
+    setTimeout(() => {
+      if (this.showTrajectory && this.marketData.length > 0 && this.trajectoryNodes.length > 0) {
+        this.startAutoAnimation()
+      }
+    }, 300)
   }
 
   /**
@@ -809,16 +821,16 @@ export class RegimeSpaceRenderer {
             }
           }
           
-          // Создаем маленькую сферу для наблюдения (узел траектории)
-          // Увеличиваем размер для лучшей видимости
+          // Создаем маленькую белую сферу для наблюдения (узел траектории)
+          // Белый цвет как на картинке для лучшей видимости внутри сфер
           const pointGeometry = new THREE.SphereGeometry(0.8, 12, 12)
           const pointMaterial = new THREE.MeshPhongMaterial({
-            color: new THREE.Color(nodeColor),
-            emissive: new THREE.Color(nodeColor),
-            emissiveIntensity: 0.8,
+            color: new THREE.Color(0xffffff), // Белый цвет как на картинке
+            emissive: new THREE.Color(0xffffff),
+            emissiveIntensity: 0.6,
             transparent: true,
             opacity: 1.0,
-            shininess: 50
+            shininess: 100
           })
           
           const pointMesh = new THREE.Mesh(pointGeometry, pointMaterial)
@@ -1057,10 +1069,140 @@ export class RegimeSpaceRenderer {
       this.createTransitionMarkers(curve, points)
     }
 
-    // Узлы траектории уже находятся внутри сфер режимов (создаются в createRegimeEllipsoids)
-    // Траектория (кривая линия) соединяет эти узлы, показывая путь рынка через пространство режимов
-    // Поэтому не создаем отдельные узлы здесь - они уже есть внутри сфер
+    // Создаем маленькие белые шарики (узлы) вдоль всей траектории
+    // Они отображают конкретные наблюдения рынка в каждый момент времени
+    // Эти узлы должны быть видны как внутри сфер режимов, так и между ними
     this.trajectoryNodes = []
+    if (this.showTrajectory && points.length > 1) {
+      // Создаем узлы вдоль всей траектории - для каждого наблюдения marketData
+      this.marketData.forEach((point, i) => {
+        if (point.return === undefined || point.volatility === undefined || point.liquidity === undefined) {
+          return
+        }
+        
+        // Используем те же координаты что и траектория
+        let x = point.liquidity !== undefined ? point.liquidity * 35 : 0
+        let y = point.volatility !== undefined ? point.volatility : 0
+        let z = point.return !== undefined ? point.return : 0
+        
+        x = Math.max(0, x)
+        y = Math.max(0, y)
+        z = Math.max(0, z)
+        
+        // Создаем маленькую белую сферу для узла (как на картинке)
+        const nodeGeometry = new THREE.SphereGeometry(0.6, 12, 12)
+        const nodeMaterial = new THREE.MeshPhongMaterial({
+          color: new THREE.Color(0xffffff), // Белый цвет, как на картинке
+          emissive: new THREE.Color(0xffffff),
+          emissiveIntensity: 0.6,
+          transparent: true,
+          opacity: 1.0,
+          shininess: 100
+        })
+        
+        const node = new THREE.Mesh(nodeGeometry, nodeMaterial)
+        node.position.set(x, y, z)
+        
+        // Сохраняем информацию о узле
+        node.userData = {
+          timeIndex: i,
+          point: point,
+          regimeId: point.regime || 0
+        }
+        
+        // Начально скрываем узлы для анимации (будут появляться постепенно)
+        node.visible = false
+        
+        this.trajectoryNodes.push(node)
+        this.scene.add(node)
+      })
+      
+      // Анимация будет запущена автоматически после загрузки данных в setData()
+      // Не запускаем здесь, чтобы избежать двойного запуска
+    }
+  }
+  
+  /**
+   * Запуск автоматической анимации траектории при загрузке страницы
+   * Показывает постепенное появление узлов вдоль траектории
+   */
+  private startAutoAnimation() {
+    if (this.trajectoryNodes.length === 0 || this.autoAnimationPlaying) return
+    
+    this.autoAnimationPlaying = true
+    this.autoAnimationStartTime = Date.now()
+    this.currentTimeIndex = 0
+    
+    // Изначально скрываем все узлы и линию траектории
+    this.trajectoryNodes.forEach(node => {
+      node.visible = false
+    })
+    if (this.trajectoryLine) {
+      this.scene.remove(this.trajectoryLine)
+      this.trajectoryLine = null
+    }
+    
+    // Анимация будет обновляться в методе animate()
+  }
+  
+  /**
+   * Обновление автоматической анимации
+   */
+  private updateAutoAnimation() {
+    if (!this.autoAnimationPlaying || this.trajectoryNodes.length === 0) return
+    
+    const elapsed = Date.now() - this.autoAnimationStartTime
+    const progress = Math.min(1, elapsed / this.autoAnimationDuration)
+    
+    // Вычисляем сколько узлов должно быть видно
+    const totalNodes = this.trajectoryNodes.length
+    const visibleCount = Math.min(totalNodes - 1, Math.floor(progress * totalNodes))
+    
+    // Обновляем видимость узлов
+    this.trajectoryNodes.forEach((node, i) => {
+      const shouldBeVisible = i <= visibleCount
+      node.visible = shouldBeVisible
+      
+      // Добавляем эффект свечения для последнего видимого узла
+      if (shouldBeVisible && node.material instanceof THREE.MeshPhongMaterial) {
+        if (i === visibleCount) {
+          // Активный узел (текущая позиция в анимации) - пульсирует
+          const pulse = Math.sin(Date.now() * 0.01) * 0.3 + 0.7
+          node.material.emissiveIntensity = 0.8 + pulse * 0.4
+          node.scale.setScalar(1 + pulse * 0.3)
+        } else {
+          // Обычные видимые узлы
+          node.material.emissiveIntensity = 0.6
+          node.scale.setScalar(1)
+        }
+      }
+    })
+    
+    // Обновляем текущий индекс времени для траектории
+    const newTimeIndex = Math.min(this.marketData.length - 1, visibleCount)
+    if (newTimeIndex !== this.currentTimeIndex) {
+      this.currentTimeIndex = newTimeIndex
+      // Обновляем видимую часть линии траектории (только если есть узлы)
+      if (visibleCount > 0) {
+        this.createTrajectoryLine()
+      }
+    }
+    
+    // Если анимация завершена, останавливаем её
+    if (progress >= 1 || visibleCount >= totalNodes - 1) {
+      this.autoAnimationPlaying = false
+      // Показываем все узлы после завершения анимации
+      this.trajectoryNodes.forEach(node => {
+        node.visible = true
+        if (node.material instanceof THREE.MeshPhongMaterial) {
+          node.material.emissiveIntensity = 0.6
+          node.scale.setScalar(1)
+        }
+      })
+      this.currentTimeIndex = this.marketData.length - 1
+      // Создаем полную линию траектории
+      this.createTrajectoryLine()
+    }
   }
 
   /**
@@ -1171,6 +1313,19 @@ export class RegimeSpaceRenderer {
    * Обновление только траектории (без пересоздания всей сцены)
    */
   private updateTrajectory() {
+    // Если идет автоматическая анимация, не пересоздаем траекторию полностью
+    // Просто обновляем видимую часть
+    if (this.autoAnimationPlaying) {
+      // Обновляем только видимую часть линии траектории
+      if (this.trajectoryLine) {
+        this.scene.remove(this.trajectoryLine)
+        this.trajectoryLine = null
+      }
+      this.createTrajectoryLine()
+      return
+    }
+    
+    // Полное обновление траектории (когда не идет анимация)
     if (this.trajectoryLine) this.scene.remove(this.trajectoryLine)
     if (this.trajectoryPoints) this.scene.remove(this.trajectoryPoints)
     this.trajectoryNodes.forEach(node => this.scene.remove(node))
@@ -1184,6 +1339,87 @@ export class RegimeSpaceRenderer {
       this.transitionArrows = []
       this.createTransitionArrows()
     }
+  }
+  
+  /**
+   * Создание только линии траектории (без узлов, для анимации)
+   */
+  private createTrajectoryLine() {
+    if (this.marketData.length === 0 || !this.showTrajectory) return
+    
+    const points: THREE.Vector3[] = []
+    const pointColors: THREE.Color[] = []
+    
+    this.marketData.slice(0, this.currentTimeIndex + 1).forEach((point, i) => {
+      if (point.return === undefined || point.volatility === undefined || point.liquidity === undefined) {
+        return
+      }
+      
+      let x = point.liquidity !== undefined ? point.liquidity * 35 : 0
+      let y = point.volatility !== undefined ? point.volatility : 0
+      let z = point.return !== undefined ? point.return : 0
+      
+      x = Math.max(0, x)
+      y = Math.max(0, y)
+      z = Math.max(0, z)
+      
+      points.push(new THREE.Vector3(x, y, z))
+      
+      const regimeId = point.regime || 0
+      let volatility = point.volatility
+      if (this.hmmModel) {
+        const means = this.hmmModel.getEmissionMeans()
+        if (means && means[regimeId] && Array.isArray(means[regimeId]) && means[regimeId][1] !== undefined) {
+          volatility = means[regimeId][1]
+        }
+      }
+      
+      const regimeColor = this.getRegimeColorByVolatility(volatility)
+      pointColors.push(new THREE.Color(regimeColor))
+    })
+    
+    if (points.length < 2) return
+    
+    const curve = new THREE.CatmullRomCurve3(points, false, 'centripetal')
+    const curvePoints = curve.getPoints(Math.max(100, points.length * 15))
+    
+    const curveColors: number[] = []
+    for (let i = 0; i < curvePoints.length; i++) {
+      const t = i / (curvePoints.length - 1)
+      const nodeIndex = Math.min(
+        Math.floor(t * (points.length - 1)),
+        points.length - 2
+      )
+      const nextNodeIndex = Math.min(nodeIndex + 1, points.length - 1)
+      const localT = (t * (points.length - 1)) - nodeIndex
+      
+      const color1 = pointColors[nodeIndex]
+      const color2 = pointColors[nextNodeIndex]
+      const interpolatedColor = new THREE.Color().lerpColors(color1, color2, localT)
+      
+      curveColors.push(interpolatedColor.r, interpolatedColor.g, interpolatedColor.b)
+    }
+    
+    const curveGeometry = new THREE.BufferGeometry()
+    const curvePositions = new Float32Array(curvePoints.length * 3)
+    curvePoints.forEach((point, i) => {
+      curvePositions[i * 3] = point.x
+      curvePositions[i * 3 + 1] = point.y
+      curvePositions[i * 3 + 2] = point.z
+    })
+    
+    curveGeometry.setAttribute('position', new THREE.BufferAttribute(curvePositions, 3))
+    curveGeometry.setAttribute('color', new THREE.Float32BufferAttribute(curveColors, 3))
+    
+    const lineMaterial = new THREE.LineBasicMaterial({
+      vertexColors: true,
+      transparent: true,
+      opacity: 0.9,
+      linewidth: 3
+    })
+    
+    this.trajectoryLine = new THREE.Line(curveGeometry, lineMaterial)
+    this.scene.add(this.trajectoryLine)
   }
 
   /**
@@ -1271,6 +1507,11 @@ export class RegimeSpaceRenderer {
     
     if (this.controls) {
       this.controls.update()
+    }
+    
+    // Обновление автоматической анимации траектории
+    if (this.autoAnimationPlaying) {
+      this.updateAutoAnimation()
     }
     
     // Auto-rotate
