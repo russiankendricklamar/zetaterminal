@@ -399,12 +399,13 @@ const expectedDurations = ref<number[]>([])
 let renderer: RegimeSpaceRenderer | null = null
 
 // Regime Configs
+// Цвета определяются по волатильности: низкая - голубой, средняя - оранжевый, высокая - красный
 const regimeConfigs = ref<RegimeConfig[]>([
-  { id: 0, name: 'Low Vol / Accumulation', color: '#4ade80', mean: [0.15, 8.0, 0.8] },
-  { id: 1, name: 'Normal / Trending', color: '#60a5fa', mean: [0.08, 15.0, 0.6] },
-  { id: 2, name: 'High Vol / Distribution', color: '#a78bfa', mean: [-0.05, 35.0, 0.4] },
-  { id: 3, name: 'Crisis / Panic', color: '#f87171', mean: [-0.20, 60.0, 0.2] },
-  { id: 4, name: 'Recovery', color: '#fbbf24', mean: [0.12, 20.0, 0.5] }
+  { id: 0, name: 'Low Vol / Accumulation', color: '#60a5fa', mean: [0.15, 8.0, 0.8] }, // Голубой
+  { id: 1, name: 'Normal / Trending', color: '#fb923c', mean: [0.08, 15.0, 0.6] }, // Оранжевый
+  { id: 2, name: 'High Vol / Distribution', color: '#ef4444', mean: [-0.05, 35.0, 0.4] }, // Красный
+  { id: 3, name: 'Crisis / Panic', color: '#dc2626', mean: [-0.20, 60.0, 0.2] }, // Темно-красный
+  { id: 4, name: 'Recovery', color: '#fb923c', mean: [0.12, 20.0, 0.5] } // Оранжевый
 ])
 
 // Camera Presets
