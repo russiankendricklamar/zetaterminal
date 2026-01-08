@@ -291,10 +291,10 @@ export class RegimeSpaceRenderer {
     }
     const mean = means[regimeId]
     // mean[0] = Return, mean[1] = Volatility, mean[2] = Liquidity
-    // Распределяем равномерно вдоль осей Return и Liquidity
-    const x = this.getRegimeXPosition(regimeId)
+    // Переворачиваем диагонально: X и Z меняются местами
+    const x = this.getRegimeZPosition(regimeId)
     const y = mean[1] !== undefined ? mean[1] : 0
-    const z = this.getRegimeZPosition(regimeId)
+    const z = this.getRegimeXPosition(regimeId)
     return new THREE.Vector3(x, y, z)
   }
 
@@ -705,10 +705,10 @@ export class RegimeSpaceRenderer {
       ellipsoid.scale.set(sphereRadius, sphereRadius, sphereRadius)
       // Используем реальные позиции режимов в 3D пространстве
       // mean[0] = Return, mean[1] = Volatility, mean[2] = Liquidity
-      // Распределяем равномерно вдоль осей Return и Liquidity
-      const x = this.getRegimeXPosition(regimeId)
+      // Переворачиваем диагонально: X и Z меняются местами
+      const x = this.getRegimeZPosition(regimeId)
       const y = mean[1] !== undefined ? mean[1] : 0
-      const z = this.getRegimeZPosition(regimeId)
+      const z = this.getRegimeXPosition(regimeId)
       ellipsoid.position.set(x, y, z)
       
       // Контур сферы - простая обводка без сетки
@@ -782,27 +782,49 @@ export class RegimeSpaceRenderer {
           // Пропускаем некоторые точки, если их слишком много
           if (idx % step !== 0 && regimeObservations.length > maxPoints) return
           
-          const x = point.return
-          const y = point.volatility
-          const z = point.liquidity * 35
+          // Проверяем, что все значения определены
+          if (point.return === undefined || point.volatility === undefined || point.liquidity === undefined) {
+            return
+          }
           
-          // Создаем маленькую сферу для наблюдения
-          const pointGeometry = new THREE.SphereGeometry(0.3, 8, 8)
+          // Каждый узел - это вектор x_t = (r_t, σ_t, v_t)
+          // r_t - доходность (return), σ_t - волатильность (volatility), v_t - объём/ликвидность (liquidity)
+          // Учитываем диагональное отражение: X и Z поменяны местами
+          const nodeX = point.liquidity * 35  // v_t идет на X (было Z)
+          const nodeY = point.volatility      // σ_t идет на Y
+          const nodeZ = point.return           // r_t идет на Z (было X)
+          
+          // Определяем цвет узла по наиболее вероятному режиму
+          // Используем regime из point (результат Viterbi-декодирования или сглаживания)
+          const nodeRegimeId = point.regime || regimeId
+          const nodeConfig = this.regimeConfigs.find(r => r.id === nodeRegimeId)
+          let nodeColor = regimeColor
+          if (nodeConfig && this.hmmModel) {
+            // Получаем цвет по волатильности режима узла
+            const means = this.hmmModel.getEmissionMeans()
+            if (means && means[nodeRegimeId] && Array.isArray(means[nodeRegimeId])) {
+              const nodeVolatility = means[nodeRegimeId][1] !== undefined ? means[nodeRegimeId][1] : point.volatility
+              nodeColor = this.getRegimeColorByVolatility(nodeVolatility)
+            }
+          }
+          
+          // Создаем маленькую сферу для наблюдения (узел траектории)
+          const pointGeometry = new THREE.SphereGeometry(0.4, 12, 12)
           const pointMaterial = new THREE.MeshPhongMaterial({
-            color: new THREE.Color(regimeColor),
-            emissive: new THREE.Color(regimeColor),
-            emissiveIntensity: 0.5,
+            color: new THREE.Color(nodeColor),
+            emissive: new THREE.Color(nodeColor),
+            emissiveIntensity: 0.6,
             transparent: true,
-            opacity: 0.8,
+            opacity: 0.9,
             shininess: 50
           })
           
           const pointMesh = new THREE.Mesh(pointGeometry, pointMaterial)
-          pointMesh.position.set(x, y, z)
+          pointMesh.position.set(nodeX, nodeY, nodeZ)
           
           // Сохраняем информацию о точке
           pointMesh.userData = {
-            regimeId: regimeId,
+            regimeId: nodeRegimeId,
             point: point,
             timeIndex: idx
           }
@@ -815,7 +837,7 @@ export class RegimeSpaceRenderer {
       group.add(ellipsoid)
       group.add(wireframe)
       if (label) group.add(label)
-      // Добавляем все маленькие кружки в группу
+      // Добавляем все маленькие узлы траектории (наблюдения) в группу
       regimePoints.forEach(point => group.add(point))
       
       this.regimeEllipsoids.push(group)
@@ -888,10 +910,10 @@ export class RegimeSpaceRenderer {
 
       const centroid = new THREE.Mesh(geometry, material)
       // Используем реальные позиции режимов в 3D пространстве
-      // Распределяем равномерно вдоль осей Return и Liquidity
-      const x = this.getRegimeXPosition(regimeId)
+      // Переворачиваем диагонально: X и Z меняются местами
+      const x = this.getRegimeZPosition(regimeId)
       const y = mean[1] !== undefined ? mean[1] : 0
-      const z = this.getRegimeZPosition(regimeId)
+      const z = this.getRegimeXPosition(regimeId)
       centroid.position.set(x, y, z)
       centroid.userData = { regimeId, config }
 
@@ -915,74 +937,66 @@ export class RegimeSpaceRenderer {
   }
 
   /**
-   * Создание траектории рынка
+   * Создание траектории рынка - соединяет последовательные наблюдения кривыми линиями
+   * Показывает путь рынка через пространство режимов и переходы s_t−1 → s_t
    */
   private createTrajectory() {
     if (this.marketData.length === 0) return
 
-    const positions: number[] = []
-    const colors: number[] = []
+    // Создаем массив точек для кривой из всех наблюдений
+    const points: THREE.Vector3[] = []
+    const pointColors: THREE.Color[] = []
+    const pointRegimes: number[] = []
 
-    // Масштабирование: Return (x), Volatility (y), Liquidity * 35 (z)
+    // Проходим по всем наблюдениям и создаем точки траектории
     this.marketData.slice(0, this.currentTimeIndex + 1).forEach((point, i) => {
       // Проверяем, что все значения определены
       if (point.return === undefined || point.volatility === undefined || point.liquidity === undefined) {
         return
       }
       
-      const x = point.return
-      const y = point.volatility
-      const z = point.liquidity * 35
+      // Каждый узел - это вектор x_t = (r_t, σ_t, v_t)
+      // Учитываем диагональное отражение: X и Z поменяны местами
+      const x = point.liquidity * 35  // v_t идет на X (было Z)
+      const y = point.volatility      // σ_t идет на Y
+      const z = point.return           // r_t идет на Z (было X)
 
-      positions.push(x, y, z)
+      points.push(new THREE.Vector3(x, y, z))
 
-      // Определяем цвет по волатильности режима
+      // Определяем цвет по наиболее вероятному режиму в момент t
       const regimeId = point.regime || 0
-      const config = this.regimeConfigs.find(r => r.id === regimeId)
+      pointRegimes.push(regimeId)
       
       // Получаем волатильность из mean режима или из самого point
       let volatility = point.volatility
       if (this.hmmModel) {
         const means = this.hmmModel.getEmissionMeans()
-        if (means[regimeId] && means[regimeId][1]) {
+        if (means && means[regimeId] && Array.isArray(means[regimeId]) && means[regimeId][1] !== undefined) {
           volatility = means[regimeId][1]
         }
       }
       
       const regimeColor = this.getRegimeColorByVolatility(volatility)
       const color = new THREE.Color(regimeColor)
-      colors.push(color.r, color.g, color.b)
+      pointColors.push(color)
     })
 
     // Trajectory line - используем кривые вместо прямых линий
-    if (this.showTrajectory && positions.length > 1) {
-      // Создаем массив точек для кривой
-      const points: THREE.Vector3[] = []
-      const pointColors: THREE.Color[] = []
-      
-      for (let i = 0; i < positions.length; i += 3) {
-        points.push(new THREE.Vector3(
-          positions[i],
-          positions[i + 1],
-          positions[i + 2]
-        ))
-        pointColors.push(new THREE.Color(
-          colors[i],
-          colors[i + 1],
-          colors[i + 2]
-        ))
-      }
-      
+    // Соединяем последовательные наблюдения, показывая путь рынка через пространство режимов
+    if (this.showTrajectory && points.length > 1) {
       // Проверяем, что есть достаточно точек для создания кривой
       if (points.length < 2) return
       
       // Создаем кривую Catmull-Rom для плавного соединения точек
+      // Это создает плавную кривую, проходящую через все узлы (наблюдения)
       const curve = new THREE.CatmullRomCurve3(points, false, 'centripetal')
       
       // Генерируем точки вдоль кривой (больше точек = более плавная кривая)
-      const curvePoints = curve.getPoints(Math.max(50, points.length * 10))
+      // Используем достаточно точек для плавной кривой, показывающей переходы между режимами
+      const curvePoints = curve.getPoints(Math.max(100, points.length * 15))
       
       // Создаем цвета для каждой точки кривой (интерполируем между узлами)
+      // Цвет показывает переход между режимами s_t−1 → s_t
       const curveColors: number[] = []
       for (let i = 0; i < curvePoints.length; i++) {
         // Находим ближайшие узлы для интерполяции цвета
@@ -994,7 +1008,7 @@ export class RegimeSpaceRenderer {
         const nextNodeIndex = Math.min(nodeIndex + 1, points.length - 1)
         const localT = (t * (points.length - 1)) - nodeIndex
         
-        // Интерполируем цвет между узлами
+        // Интерполируем цвет между узлами, показывая переход между режимами
         const color1 = pointColors[nodeIndex]
         const color2 = pointColors[nextNodeIndex]
         const interpolatedColor = new THREE.Color().lerpColors(color1, color2, localT)
@@ -1017,7 +1031,7 @@ export class RegimeSpaceRenderer {
       const lineMaterial = new THREE.LineBasicMaterial({
         vertexColors: true,
         transparent: true,
-        opacity: 0.6,
+        opacity: 0.7,
         linewidth: 2
       })
 
@@ -1540,9 +1554,9 @@ export class RegimeSpaceRenderer {
         
         const sphere = new THREE.Mesh(geometry, material)
         // Используем реальные позиции режимов
-        // Распределяем равномерно вдоль осей Return и Liquidity
-        const x = this.getRegimeXPosition(regimeId)
-        const z = this.getRegimeZPosition(regimeId)
+        // Переворачиваем диагонально: X и Z меняются местами
+        const x = this.getRegimeZPosition(regimeId)
+        const z = this.getRegimeXPosition(regimeId)
         sphere.position.set(x, mean[1], z)
         
         // Анимация пульсации
@@ -1723,9 +1737,9 @@ export class RegimeSpaceRenderer {
         
         const wave = new THREE.Mesh(geometry, material)
         // Используем реальные позиции режимов
-        // Распределяем равномерно вдоль осей Return и Liquidity
-        const x = this.getRegimeXPosition(regimeId)
-        const z = this.getRegimeZPosition(regimeId)
+        // Переворачиваем диагонально: X и Z меняются местами
+        const x = this.getRegimeZPosition(regimeId)
+        const z = this.getRegimeXPosition(regimeId)
         wave.position.set(x, mean[1], z)
         wave.rotation.x = Math.PI / 2
         
@@ -1808,9 +1822,9 @@ export class RegimeSpaceRenderer {
       })
       
       const plane = new THREE.Mesh(geometry, material)
-      // Распределяем равномерно вдоль осей Return и Liquidity
-      const x = this.getRegimeXPosition(regimeId)
-      const z = this.getRegimeZPosition(regimeId)
+      // Переворачиваем диагонально: X и Z меняются местами
+      const x = this.getRegimeZPosition(regimeId)
+      const z = this.getRegimeXPosition(regimeId)
       plane.position.set(x, mean[1] - 5, z)
       plane.rotation.x = -Math.PI / 2
       
