@@ -250,9 +250,9 @@ export class RegimeSpaceRenderer {
     }
     
     // Распределяем режимы равномерно вдоль оси X с большими интервалами
-    // Только положительное пространство: от 5 до 45
-    const minX = 5
-    const maxX = 45
+    // Только положительное пространство с увеличенным масштабом: от 10 до 70
+    const minX = 10
+    const maxX = 70
     const spacing = validRegimes.length > 1 ? (maxX - minX) / (validRegimes.length - 1) : 0
     const x = minX + (positionIndex * spacing)
     
@@ -297,9 +297,9 @@ export class RegimeSpaceRenderer {
     }
     
     // Распределяем режимы равномерно вдоль оси Z с интервалами
-    // От 5 до 45 (только положительная область Liquidity)
-    const minZ = 5
-    const maxZ = 45
+    // Только положительная область с увеличенным масштабом: от 10 до 70
+    const minZ = 10
+    const maxZ = 70
     const spacing = validRegimes.length > 1 ? (maxZ - minZ) / (validRegimes.length - 1) : 0
     const z = minZ + (positionIndex * spacing)
     
@@ -450,17 +450,18 @@ export class RegimeSpaceRenderer {
     })
     
     // Создаем горизонтальную сетку на плоскости XZ (плоскость Liquidity-Return) вручную
+    // Только положительная область с увеличенным масштабом (от 0 до 80)
     const horizontalDivisions = 20
-    const horizontalGridSize = 100
+    const horizontalGridSize = 80
     const horizontalStep = horizontalGridSize / horizontalDivisions
     
-    // Линии параллельные оси X (Liquidity) — вся ось Liquidity (от -50 до 50)
-    for (let i = -horizontalDivisions/2; i <= horizontalDivisions/2; i++) {
+    // Линии параллельные оси X (Liquidity) — только положительная область (от 0 до 80)
+    for (let i = 0; i <= horizontalDivisions; i++) {
       const z = i * horizontalStep
       const geometry = new THREE.BufferGeometry()
       const positions = new Float32Array([
-        -50, 0, z,
-        50, 0, z
+        0, 0, z,
+        80, 0, z
       ])
       geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3))
       const isMainLine = i % 5 === 0
@@ -468,13 +469,13 @@ export class RegimeSpaceRenderer {
       gridGroup.add(line)
     }
     
-    // Линии параллельные оси Z (Return) — вся ось Liquidity (от -50 до 50)
-    for (let i = -horizontalDivisions/2; i <= horizontalDivisions/2; i++) {
+    // Линии параллельные оси Z (Return) — только положительная область (от 0 до 80)
+    for (let i = 0; i <= horizontalDivisions; i++) {
       const x = i * horizontalStep
       const geometry = new THREE.BufferGeometry()
       const positions = new Float32Array([
-        x, 0, -50,
-        x, 0, 50
+        x, 0, 0,
+        x, 0, 80
       ])
       geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3))
       const isMainLine = i % 5 === 0
@@ -482,31 +483,31 @@ export class RegimeSpaceRenderer {
       gridGroup.add(line)
     }
     
-    // Создаем левую вертикальную сетку (плоскость YZ, X = -50) только для положительных Y
+    // Создаем левую вертикальную сетку (плоскость YZ, X = 0) только для положительных Y и Z
     const verticalGridSize = 50 // Только положительная область по Y
     const verticalDivisions = 10
     const verticalStep = verticalGridSize / verticalDivisions
     
-    // Вертикальные линии (параллельны Y) — вся ось Liquidity (от -50 до 50)
-    for (let i = -horizontalDivisions/2; i <= horizontalDivisions/2; i++) {
+    // Вертикальные линии (параллельны Y) — только положительная область Liquidity (от 0 до 80)
+    for (let i = 0; i <= horizontalDivisions; i++) {
       const z = i * horizontalStep
       const geometry = new THREE.BufferGeometry()
       const positions = new Float32Array([
-        -50, 0, z,
-        -50, verticalGridSize, z
+        0, 0, z,
+        0, verticalGridSize, z
       ])
       geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3))
       const line = new THREE.Line(geometry, i % 5 === 0 ? gridMaterial : gridSecondaryMaterial)
       gridGroup.add(line)
     }
     
-    // Горизонтальные линии (параллельны Z) — вся ось Liquidity (от -50 до 50)
+    // Горизонтальные линии (параллельны Z) — только положительная область Liquidity (от 0 до 80)
     for (let i = 0; i <= verticalDivisions; i++) {
       const y = i * verticalStep
       const geometry = new THREE.BufferGeometry()
       const positions = new Float32Array([
-        -50, y, -50,
-        -50, y, 50
+        0, y, 0,
+        0, y, 80
       ])
       geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3))
       const line = new THREE.Line(geometry, i % 5 === 0 ? gridMaterial : gridSecondaryMaterial)
@@ -516,7 +517,7 @@ export class RegimeSpaceRenderer {
     // Названия осей на концах осей, ближе к камере (как на втором фото)
     // Камера находится в (40, 40, 40), поэтому смещаем метки в сторону камеры
     // Ось X (Return) - на конце положительного направления оси X, смещаем ближе к камере
-    const xAxisLabel = this.createAxisLabelAtEnd('Return', new THREE.Vector3(50, 5, 10), 0x60a5fa)
+    const xAxisLabel = this.createAxisLabelAtEnd('Return', new THREE.Vector3(80, 5, 10), 0x60a5fa)
     if (xAxisLabel) gridGroup.add(xAxisLabel)
     
     // Ось Y (Volatility) - на конце положительного направления оси Y, смещаем ближе к камере
@@ -524,7 +525,7 @@ export class RegimeSpaceRenderer {
     if (yAxisLabel) gridGroup.add(yAxisLabel)
     
     // Ось Z (Liquidity) - на конце положительного направления оси Z, смещаем ближе к камере
-    const zAxisLabel = this.createAxisLabelAtEnd('Liquidity', new THREE.Vector3(10, 5, 50), 0x4ade80)
+    const zAxisLabel = this.createAxisLabelAtEnd('Liquidity', new THREE.Vector3(10, 5, 80), 0x4ade80)
     if (zAxisLabel) gridGroup.add(zAxisLabel)
     
     this.gridHelper = gridGroup
@@ -818,9 +819,15 @@ export class RegimeSpaceRenderer {
           // Каждый узел - это вектор x_t = (r_t, σ_t, v_t)
           // r_t - доходность (return), σ_t - волатильность (volatility), v_t - объём/ликвидность (liquidity)
           // Учитываем диагональное отражение: X и Z поменяны местами
-          const nodeX = point.liquidity * 35  // v_t идет на X (было Z)
-          const nodeY = point.volatility      // σ_t идет на Y
-          const nodeZ = point.return           // r_t идет на Z (было X)
+          // Гарантируем только положительные значения для видимости
+          let nodeX = point.liquidity !== undefined ? point.liquidity * 35 : 0  // v_t идет на X (было Z)
+          let nodeY = point.volatility !== undefined ? point.volatility : 0     // σ_t идет на Y
+          let nodeZ = point.return !== undefined ? point.return : 0             // r_t идет на Z (было X)
+          
+          // Гарантируем положительные значения (смещаем отрицательные в положительную область)
+          nodeX = Math.max(0, nodeX)
+          nodeY = Math.max(0, nodeY)
+          nodeZ = Math.max(0, nodeZ)
           
           // Определяем цвет узла по наиболее вероятному режиму
           // Используем regime из point (результат Viterbi-декодирования или сглаживания)
@@ -987,9 +994,15 @@ export class RegimeSpaceRenderer {
       
       // Каждый узел - это вектор x_t = (r_t, σ_t, v_t)
       // Учитываем диагональное отражение: X и Z поменяны местами
-      const x = point.liquidity * 35  // v_t идет на X (было Z)
-      const y = point.volatility      // σ_t идет на Y
-      const z = point.return           // r_t идет на Z (было X)
+      // Гарантируем только положительные значения для видимости
+      let x = point.liquidity !== undefined ? point.liquidity * 35 : 0  // v_t идет на X (было Z)
+      let y = point.volatility !== undefined ? point.volatility : 0     // σ_t идет на Y
+      let z = point.return !== undefined ? point.return : 0             // r_t идет на Z (было X)
+      
+      // Гарантируем положительные значения (смещаем отрицательные в положительную область)
+      x = Math.max(0, x)
+      y = Math.max(0, y)
+      z = Math.max(0, z)
 
       points.push(new THREE.Vector3(x, y, z))
 
@@ -1084,9 +1097,15 @@ export class RegimeSpaceRenderer {
         }
         
         // Учитываем диагональное отражение: X и Z поменяны местами
-        const x = point.liquidity * 35  // v_t идет на X (было Z)
-        const y = point.volatility      // σ_t идет на Y
-        const z = point.return           // r_t идет на Z (было X)
+        // Гарантируем только положительные значения для видимости
+        let x = point.liquidity !== undefined ? point.liquidity * 35 : 0  // v_t идет на X (было Z)
+        let y = point.volatility !== undefined ? point.volatility : 0     // σ_t идет на Y
+        let z = point.return !== undefined ? point.return : 0             // r_t идет на Z (было X)
+        
+        // Гарантируем положительные значения (смещаем отрицательные в положительную область)
+        x = Math.max(0, x)
+        y = Math.max(0, y)
+        z = Math.max(0, z)
 
       // Определяем режим и цвет
       const regimeId = point.regime || 0
