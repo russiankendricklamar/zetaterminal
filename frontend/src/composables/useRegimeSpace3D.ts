@@ -217,10 +217,15 @@ export class RegimeSpaceRenderer {
   private getRegimePosition(regimeId: number): THREE.Vector3 {
     if (!this.hmmModel) return new THREE.Vector3(0, 0, 0)
     const means = this.hmmModel.getEmissionMeans()
-    if (!means[regimeId]) return new THREE.Vector3(0, 0, 0)
+    if (!means || !means[regimeId] || !Array.isArray(means[regimeId])) {
+      return new THREE.Vector3(0, 0, 0)
+    }
     const mean = means[regimeId]
     // mean[0] = Return, mean[1] = Volatility, mean[2] = Liquidity
-    return new THREE.Vector3(mean[0], mean[1], mean[2] * 35)
+    const x = mean[0] !== undefined ? mean[0] : 0
+    const y = mean[1] !== undefined ? mean[1] : 0
+    const z = mean[2] !== undefined ? mean[2] * 35 : 0
+    return new THREE.Vector3(x, y, z)
   }
 
   /**
@@ -301,9 +306,9 @@ export class RegimeSpaceRenderer {
     const axesGroup = new THREE.Group()
     
     // X-axis (Return) - Muted Cyan
-    // Направлена к камере (положительное направление от пользователя)
+    // Положительное направление ОТ пользователя (к камере)
     const xAxis = new THREE.ArrowHelper(
-      new THREE.Vector3(-1, 0, 0),
+      new THREE.Vector3(1, 0, 0),
       new THREE.Vector3(0, 0, 0),
       35,
       0x60a5fa,
@@ -335,7 +340,7 @@ export class RegimeSpaceRenderer {
     axesGroup.add(zAxis)
     
     // Add axis labels using sprites
-    this.addAxisLabel('Return (%)', new THREE.Vector3(-38, 0, 0), 0x60a5fa, axesGroup)
+    this.addAxisLabel('Return (%)', new THREE.Vector3(38, 0, 0), 0x60a5fa, axesGroup)
     this.addAxisLabel('Volatility (%)', new THREE.Vector3(0, 38, 0), 0xa78bfa, axesGroup)
     this.addAxisLabel('Liquidity', new THREE.Vector3(0, 0, 38), 0x4ade80, axesGroup)
     
@@ -394,10 +399,17 @@ export class RegimeSpaceRenderer {
       const config = this.regimeConfigs.find(r => r.id === regimeId)
       if (!config) return
 
+      // Проверяем, что mean и cov определены и являются массивами
+      if (!mean || !Array.isArray(mean) || mean.length < 3) return
+      
       const cov = covariances[regimeId]
+      if (!cov || !Array.isArray(cov) || cov.length < 3) return
+      if (!cov[0] || !Array.isArray(cov[0]) || cov[0].length < 3) return
+      if (!cov[1] || !Array.isArray(cov[1]) || cov[1].length < 3) return
+      if (!cov[2] || !Array.isArray(cov[2]) || cov[2].length < 3) return
       
       // Определяем цвет по волатильности (mean[1] - это волатильность)
-      const volatility = mean[1] || 0
+      const volatility = mean[1] !== undefined ? mean[1] : 0
       const regimeColor = this.getRegimeColorByVolatility(volatility)
       
       // Создаем эллипсоид из сферы с масштабированием
@@ -413,15 +425,26 @@ export class RegimeSpaceRenderer {
 
       const ellipsoid = new THREE.Mesh(geometry, material)
       
-      // Увеличиваем размер эллипсоидов (увеличиваем множитель с 2 до 4-5)
-      const scaleX = Math.sqrt(cov[0][0]) * 4.5
-      const scaleY = Math.sqrt(cov[1][1]) * 4.5
-      const scaleZ = Math.sqrt(cov[2][2]) * 4.5
+      // Делаем каждый режим в виде шара (одинаковый масштаб по всем осям)
+      // Используем среднее значение ковариаций для создания сферы
+      const cov00 = cov[0][0] !== undefined ? cov[0][0] : 1
+      const cov11 = cov[1][1] !== undefined ? cov[1][1] : 1
+      const cov22 = cov[2][2] !== undefined ? cov[2][2] : 1
       
-      ellipsoid.scale.set(scaleX, scaleY, scaleZ)
+      // Вычисляем среднее значение стандартных отклонений для создания шара
+      const avgStdDev = (Math.sqrt(Math.max(0, cov00)) + 
+                         Math.sqrt(Math.max(0, cov11)) + 
+                         Math.sqrt(Math.max(0, cov22))) / 3
+      
+      // Применяем одинаковый масштаб по всем осям (шар)
+      const sphereRadius = avgStdDev * 4.5
+      ellipsoid.scale.set(sphereRadius, sphereRadius, sphereRadius)
       // Используем реальные позиции режимов в 3D пространстве
       // mean[0] = Return, mean[1] = Volatility, mean[2] = Liquidity
-      ellipsoid.position.set(mean[0], mean[1], mean[2] * 35)
+      const x = mean[0] !== undefined ? mean[0] : 0
+      const y = mean[1] !== undefined ? mean[1] : 0
+      const z = mean[2] !== undefined ? mean[2] * 35 : 0
+      ellipsoid.position.set(x, y, z)
       
       // Wireframe
       const wireframe = new THREE.LineSegments(
@@ -436,7 +459,7 @@ export class RegimeSpaceRenderer {
       wireframe.position.copy(ellipsoid.position)
       
       // Добавляем текстовую метку над режимом
-      const labelPosition = new THREE.Vector3(mean[0], mean[1] + scaleY + 3, mean[2] * 35)
+      const labelPosition = new THREE.Vector3(x, y + scaleY + 3, z)
       const label = this.createRegimeLabel(config.name, labelPosition, regimeColor)
       
       // Создаем маленькие кружки внутри эллипсоида для наблюдений этого режима
@@ -543,8 +566,11 @@ export class RegimeSpaceRenderer {
       const config = this.regimeConfigs.find(r => r.id === regimeId)
       if (!config) return
 
+      // Проверяем, что mean определен и является массивом
+      if (!mean || !Array.isArray(mean) || mean.length < 3) return
+
       // Определяем цвет по волатильности
-      const volatility = mean[1] || 0
+      const volatility = mean[1] !== undefined ? mean[1] : 0
       const regimeColor = this.getRegimeColorByVolatility(volatility)
 
       const geometry = new THREE.SphereGeometry(1.5, 16, 16)
@@ -558,7 +584,10 @@ export class RegimeSpaceRenderer {
 
       const centroid = new THREE.Mesh(geometry, material)
       // Используем реальные позиции режимов в 3D пространстве
-      centroid.position.set(mean[0], mean[1], mean[2] * 35)
+      const x = mean[0] !== undefined ? mean[0] : 0
+      const y = mean[1] !== undefined ? mean[1] : 0
+      const z = mean[2] !== undefined ? mean[2] * 35 : 0
+      centroid.position.set(x, y, z)
       centroid.userData = { regimeId, config }
 
       // Glow effect
@@ -591,6 +620,11 @@ export class RegimeSpaceRenderer {
 
     // Масштабирование: Return (x), Volatility (y), Liquidity * 35 (z)
     this.marketData.slice(0, this.currentTimeIndex + 1).forEach((point, i) => {
+      // Проверяем, что все значения определены
+      if (point.return === undefined || point.volatility === undefined || point.liquidity === undefined) {
+        return
+      }
+      
       const x = point.return
       const y = point.volatility
       const z = point.liquidity * 35
@@ -633,6 +667,9 @@ export class RegimeSpaceRenderer {
           colors[i + 2]
         ))
       }
+      
+      // Проверяем, что есть достаточно точек для создания кривой
+      if (points.length < 2) return
       
       // Создаем кривую Catmull-Rom для плавного соединения точек
       const curve = new THREE.CatmullRomCurve3(points, false, 'centripetal')
@@ -690,6 +727,11 @@ export class RegimeSpaceRenderer {
     // Каждый узел - это вектор x_t = (r_t, σ_t, v_t)
     this.trajectoryNodes = []
     this.marketData.slice(0, this.currentTimeIndex + 1).forEach((point, i) => {
+      // Проверяем, что все значения определены
+      if (point.return === undefined || point.volatility === undefined || point.liquidity === undefined) {
+        return
+      }
+      
       const x = point.return
       const y = point.volatility
       const z = point.liquidity * 35
@@ -767,6 +809,14 @@ export class RegimeSpaceRenderer {
         
         // Получаем позицию на кривой
         const transitionPosition = curve.getPoint(t)
+        
+        // Проверяем, что позиция валидна
+        if (!transitionPosition || 
+            transitionPosition.x === undefined || 
+            transitionPosition.y === undefined || 
+            transitionPosition.z === undefined) {
+          continue
+        }
         
         // Определяем цвета обоих режимов для создания градиента
         let prevVolatility = prevPoint.volatility
