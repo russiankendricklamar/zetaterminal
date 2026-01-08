@@ -214,68 +214,94 @@ export class RegimeSpaceRenderer {
 
   /**
    * Получение X-позиции режима, распределенной равномерно вдоль оси Return
+   * Порядок: синий и оранжевый остаются на местах, красный перемещается за синий
    */
   private getRegimeXPosition(regimeId: number): number {
     if (!this.hmmModel) return 0
     const means = this.hmmModel.getEmissionMeans()
     if (!means || !Array.isArray(means)) return 0
     
-    // Подсчитываем количество валидных режимов
-    let regimeCount = 0
-    const validRegimeIds: number[] = []
+    // Подсчитываем количество валидных режимов и сортируем по волатильности
+    const validRegimes: Array<{ id: number, volatility: number }> = []
     means.forEach((mean, id) => {
       if (mean && Array.isArray(mean) && mean.length >= 3) {
-        validRegimeIds.push(id)
-        regimeCount++
+        const volatility = mean[1] !== undefined ? mean[1] : 0
+        validRegimes.push({ id, volatility })
       }
     })
     
-    if (regimeCount === 0) return 0
+    if (validRegimes.length === 0) return 0
     
-    // Находим индекс текущего режима среди валидных
-    const indexInValid = validRegimeIds.indexOf(regimeId)
-    if (indexInValid === -1) return 0
+    // Сортируем по волатильности (от низкой к высокой)
+    validRegimes.sort((a, b) => a.volatility - b.volatility)
+    
+    // Определяем порядок: синий (низкая) -> красный (высокая) -> оранжевый (средняя)
+    // То есть: индекс 0 (низкая) -> индекс 2 (высокая) -> индекс 1 (средняя)
+    const sortedIds = validRegimes.map(r => r.id)
+    let positionIndex = sortedIds.indexOf(regimeId)
+    
+    // Переставляем: красный (высокая волатильность, последний) идет за синий (низкая, первый)
+    if (validRegimes.length === 3 && positionIndex === 2) {
+      // Красный (высокая волатильность) идет на позицию 1 (за синим)
+      positionIndex = 1
+    } else if (validRegimes.length === 3 && positionIndex === 1) {
+      // Оранжевый (средняя волатильность) идет на позицию 2
+      positionIndex = 2
+    }
     
     // Распределяем режимы равномерно вдоль оси X с большими интервалами
     // Только положительное пространство: от 5 до 45
     const minX = 5
     const maxX = 45
-    const spacing = regimeCount > 1 ? (maxX - minX) / (regimeCount - 1) : 0
-    const x = minX + (indexInValid * spacing)
+    const spacing = validRegimes.length > 1 ? (maxX - minX) / (validRegimes.length - 1) : 0
+    const x = minX + (positionIndex * spacing)
     
     return x
   }
 
   /**
    * Получение Z-позиции режима, распределенной равномерно вдоль оси Liquidity
+   * Порядок: синий и оранжевый остаются на местах, красный перемещается за синий
    */
   private getRegimeZPosition(regimeId: number): number {
     if (!this.hmmModel) return 0
     const means = this.hmmModel.getEmissionMeans()
     if (!means || !Array.isArray(means)) return 0
     
-    // Подсчитываем количество валидных режимов
-    let regimeCount = 0
-    const validRegimeIds: number[] = []
+    // Подсчитываем количество валидных режимов и сортируем по волатильности
+    const validRegimes: Array<{ id: number, volatility: number }> = []
     means.forEach((mean, id) => {
       if (mean && Array.isArray(mean) && mean.length >= 3) {
-        validRegimeIds.push(id)
-        regimeCount++
+        const volatility = mean[1] !== undefined ? mean[1] : 0
+        validRegimes.push({ id, volatility })
       }
     })
     
-    if (regimeCount === 0) return 0
+    if (validRegimes.length === 0) return 0
     
-    // Находим индекс текущего режима среди валидных
-    const indexInValid = validRegimeIds.indexOf(regimeId)
-    if (indexInValid === -1) return 0
+    // Сортируем по волатильности (от низкой к высокой)
+    validRegimes.sort((a, b) => a.volatility - b.volatility)
+    
+    // Определяем порядок: синий (низкая) -> красный (высокая) -> оранжевый (средняя)
+    // То есть: индекс 0 (низкая) -> индекс 2 (высокая) -> индекс 1 (средняя)
+    const sortedIds = validRegimes.map(r => r.id)
+    let positionIndex = sortedIds.indexOf(regimeId)
+    
+    // Переставляем: красный (высокая волатильность, последний) идет за синий (низкая, первый)
+    if (validRegimes.length === 3 && positionIndex === 2) {
+      // Красный (высокая волатильность) идет на позицию 1 (за синим)
+      positionIndex = 1
+    } else if (validRegimes.length === 3 && positionIndex === 1) {
+      // Оранжевый (средняя волатильность) идет на позицию 2
+      positionIndex = 2
+    }
     
     // Распределяем режимы равномерно вдоль оси Z с интервалами
     // От 5 до 45 (только положительная область Liquidity)
     const minZ = 5
     const maxZ = 45
-    const spacing = regimeCount > 1 ? (maxZ - minZ) / (regimeCount - 1) : 0
-    const z = minZ + (indexInValid * spacing)
+    const spacing = validRegimes.length > 1 ? (maxZ - minZ) / (validRegimes.length - 1) : 0
+    const z = minZ + (positionIndex * spacing)
     
     return z
   }
@@ -811,13 +837,14 @@ export class RegimeSpaceRenderer {
           }
           
           // Создаем маленькую сферу для наблюдения (узел траектории)
-          const pointGeometry = new THREE.SphereGeometry(0.4, 12, 12)
+          // Увеличиваем размер для лучшей видимости
+          const pointGeometry = new THREE.SphereGeometry(0.8, 12, 12)
           const pointMaterial = new THREE.MeshPhongMaterial({
             color: new THREE.Color(nodeColor),
             emissive: new THREE.Color(nodeColor),
-            emissiveIntensity: 0.6,
+            emissiveIntensity: 0.8,
             transparent: true,
-            opacity: 0.9,
+            opacity: 1.0,
             shininess: 50
           })
           
@@ -1034,8 +1061,8 @@ export class RegimeSpaceRenderer {
       const lineMaterial = new THREE.LineBasicMaterial({
         vertexColors: true,
         transparent: true,
-        opacity: 0.7,
-        linewidth: 2
+        opacity: 0.9,
+        linewidth: 3
       })
 
       this.trajectoryLine = new THREE.Line(curveGeometry, lineMaterial)
@@ -1047,17 +1074,19 @@ export class RegimeSpaceRenderer {
 
     // Создаем узлы траектории (маленькие кружки) - конкретные наблюдения рынка
     // Каждый узел - это вектор x_t = (r_t, σ_t, v_t)
+    // Эти узлы отображаются отдельно от узлов внутри сфер режимов
     this.trajectoryNodes = []
-    this.marketData.slice(0, this.currentTimeIndex + 1).forEach((point, i) => {
-      // Проверяем, что все значения определены
-      if (point.return === undefined || point.volatility === undefined || point.liquidity === undefined) {
-        return
-      }
-      
-      // Меняем местами X и Z: X теперь Liquidity, Z теперь Return
-      const x = point.liquidity * 35
-      const y = point.volatility
-      const z = point.return
+    if (this.showTrajectory && this.marketData.length > 0) {
+      this.marketData.slice(0, this.currentTimeIndex + 1).forEach((point, i) => {
+        // Проверяем, что все значения определены
+        if (point.return === undefined || point.volatility === undefined || point.liquidity === undefined) {
+          return
+        }
+        
+        // Учитываем диагональное отражение: X и Z поменяны местами
+        const x = point.liquidity * 35  // v_t идет на X (было Z)
+        const y = point.volatility      // σ_t идет на Y
+        const z = point.return           // r_t идет на Z (было X)
 
       // Определяем режим и цвет
       const regimeId = point.regime || 0
@@ -1076,15 +1105,15 @@ export class RegimeSpaceRenderer {
         ? point.probability[regimeId] 
         : (point.probability ? Math.max(...point.probability) : 0.5)
 
-      // Создаем маленькую сферу для узла
-      const nodeGeometry = new THREE.SphereGeometry(0.4, 12, 12)
+      // Создаем маленькую сферу для узла (увеличиваем размер для видимости)
+      const nodeGeometry = new THREE.SphereGeometry(0.6, 12, 12)
       const nodeMaterial = new THREE.MeshPhongMaterial({
         color: new THREE.Color(regimeColor),
         emissive: new THREE.Color(regimeColor),
-        emissiveIntensity: 0.3,
+        emissiveIntensity: 0.8,
         transparent: true,
-        opacity: 0.7 + prob * 0.3, // Прозрачность зависит от вероятности
-        shininess: 30
+        opacity: 1.0,
+        shininess: 50
       })
 
       const node = new THREE.Mesh(nodeGeometry, nodeMaterial)
@@ -1100,8 +1129,10 @@ export class RegimeSpaceRenderer {
 
       this.trajectoryNodes.push(node)
       this.scene.add(node)
-    })
+      })
+    }
   }
+    })
 
   /**
    * Создание шариков переходов между режимами на кривой траектории
