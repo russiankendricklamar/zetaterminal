@@ -918,7 +918,6 @@ onUnmounted(() => {
   min-height: 100%;
   display: flex;
   flex-direction: column;
-  background: #000;
 }
 
 .main-layout {
