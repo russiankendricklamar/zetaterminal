@@ -204,8 +204,8 @@
 
       <!-- Dynamic View Content (Multi-Window Support) -->
       <div class="flex-1 relative overflow-hidden">
-        <div 
-          v-for="window in windows" 
+        <div
+          v-for="window in windows"
           :key="window.id"
           v-show="activeWindowId === window.id"
           class="absolute inset-0"
