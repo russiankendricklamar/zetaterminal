@@ -1540,6 +1540,8 @@ const scrollToContent = () => {
   overflow-x: hidden;
   background: radial-gradient(circle at top, #050816 0%, #020308 45%, #000 100%);
   color: #f9fafb;
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
 }
 
 /* Красивый скроллбар по всей странице */
@@ -1549,16 +1551,24 @@ const scrollToContent = () => {
 
 .docs-root::-webkit-scrollbar-track {
   background: transparent;
+  border-radius: 10px;
 }
 
 .docs-root::-webkit-scrollbar-thumb {
   background: rgba(34, 211, 238, 0.3);
-  border-radius: 4px;
+  border-radius: 10px;
+  transition: background 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   border: 2px solid rgba(15, 23, 42, 0.6);
+  background-clip: padding-box;
 }
 
 .docs-root::-webkit-scrollbar-thumb:hover {
   background: rgba(34, 211, 238, 0.5);
+  border-color: rgba(34, 211, 238, 0.3);
+}
+
+.docs-root::-webkit-scrollbar-thumb:active {
+  background: rgba(34, 211, 238, 0.6);
 }
 
 .docs-wrapper {

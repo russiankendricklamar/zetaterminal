@@ -1,11 +1,16 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
 /* ============================================
    APPLE VISION PRO "GLASS" (True Glass) - REFACTORED
    ============================================ */
 
 :root {
   /* Typography */
-  --font-family-base: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Helvetica Neue", sans-serif;
-  --font-family-mono: "SF Mono", "Menlo", monospace;
+  --font-family-base: "Inter", -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", sans-serif;
+  --font-family-mono: "JetBrains Mono", "SF Mono", "Menlo", monospace;
+  --font-family-tech: "JetBrains Mono", monospace;
 
   /* Radius */
   --radius-sm: 8px;
@@ -40,6 +45,11 @@
 }
 
 /* Base Reset */
+html {
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+}
+
 html, body {
   height: 100%;
   margin: 0;
@@ -56,6 +66,20 @@ body {
   overflow-x: hidden;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
+  scroll-behavior: smooth;
+}
+
+/* Technical headings font */
+.font-tech,
+.tech-heading {
+  font-family: var(--font-family-tech);
+}
+
+/* Ensure mono uses JetBrains Mono */
+.font-mono,
+code,
+pre {
+  font-family: var(--font-family-mono);
 }
 
 @media (max-width: 768px) {
@@ -93,7 +117,7 @@ body {
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
   
-  transition: all 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .form-control:focus {
@@ -122,7 +146,7 @@ input {
   align-items: center;
   justify-content: center;
   gap: 8px;
-  transition: all 0.2s ease;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   user-select: none;
 }
 
@@ -176,20 +200,77 @@ h3 { font-size: 14px; letter-spacing: 0.01em; text-transform: uppercase; color: 
   -webkit-text-fill-color: transparent;
 }
 
-/* Scrollbar (Global) */
+/* Scrollbar (Global) - Terminal design */
+* {
+  scroll-behavior: smooth;
+}
+
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
 }
+
 ::-webkit-scrollbar-track {
   background: transparent;
+  border-radius: 10px;
 }
+
 ::-webkit-scrollbar-thumb {
   background: rgba(255,255,255,0.15);
   border-radius: 10px;
+  transition: background 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  border: 1px solid transparent;
+  background-clip: padding-box;
 }
+
 ::-webkit-scrollbar-thumb:hover {
   background: rgba(255,255,255,0.25);
+  border: 1px solid rgba(255,255,255,0.1);
+}
+
+::-webkit-scrollbar-thumb:active {
+  background: rgba(255,255,255,0.35);
+}
+
+/* Firefox */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255,255,255,0.15) transparent;
+}
+
+/* Custom Scrollbar Class - для компонентов терминала */
+.custom-scrollbar {
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255,255,255,0.15) transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+  border-radius: 10px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(255,255,255,0.15);
+  border-radius: 10px;
+  transition: background 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  border: 1px solid transparent;
+  background-clip: padding-box;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(255,255,255,0.25);
+  border: 1px solid rgba(255,255,255,0.1);
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:active {
+  background: rgba(255,255,255,0.35);
 }
 
 /* ============================================
@@ -206,7 +287,7 @@ h3 { font-size: 14px; letter-spacing: 0.01em; text-transform: uppercase; color: 
   box-shadow: 
     0 20px 40px -10px rgba(0, 0, 0, 0.4),
     inset 0 1px 0 rgba(255, 255, 255, 0.1);
-  transition: all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .glass-card:hover {
@@ -217,16 +298,13 @@ h3 { font-size: 14px; letter-spacing: 0.01em; text-transform: uppercase; color: 
     inset 0 1px 0 rgba(255, 255, 255, 0.15);
 }
 
-/* Glass Panel - для больших блоков */
+/* Glass Panel - для больших блоков (Terminal design) */
 .glass-panel {
-  background: rgba(20, 22, 28, 0.6);
-  backdrop-filter: blur(50px) saturate(200%);
-  -webkit-backdrop-filter: blur(50px) saturate(200%);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: var(--radius-lg);
-  box-shadow: 
-    0 30px 60px -15px rgba(0, 0, 0, 0.5),
-    inset 0 1px 0 rgba(255, 255, 255, 0.12);
+  background: rgba(30, 30, 40, 0.4);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
 }
 
 /* Glass Button */
@@ -241,7 +319,7 @@ h3 { font-size: 14px; letter-spacing: 0.01em; text-transform: uppercase; color: 
   font-size: 13px;
   font-weight: 500;
   cursor: pointer;
-  transition: all 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   display: inline-flex;
   align-items: center;
   gap: 8px;
@@ -277,7 +355,7 @@ h3 { font-size: 14px; letter-spacing: 0.01em; text-transform: uppercase; color: 
   padding: 10px 14px;
   color: var(--text-primary);
   font-size: 13px;
-  transition: all 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   width: 100%;
   box-sizing: border-box;
 }
@@ -360,6 +438,8 @@ h3 { font-size: 14px; letter-spacing: 0.01em; text-transform: uppercase; color: 
   overflow-x: hidden;
   width: 100%;
   box-sizing: border-box;
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
 }
 
 /* Section Header - единый стиль заголовков */

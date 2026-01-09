@@ -63,16 +63,16 @@
       </router-link>
 
       <router-link
-        to="/data"
+        to="/terminal"
         class="data-entry"
-        :class="{ active: isActive('/data') }"
+        :class="{ active: isActive('/terminal') }"
         @click="closeSidebar"
       >
         <div class="data-icon">
-          <div class="supernova-home"></div>
+          <span class="zeta-logo">ζ</span>
         </div>
         <div class="data-info">
-          <div class="data-title">Терминал</div>
+          <div class="data-title">Дзета-Терминал</div>
           <div class="data-subtitle">Потоковые данные в реальном времени</div>
         </div>
       </router-link>
@@ -859,7 +859,8 @@ onUnmounted(() => clearInterval(timer))
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: transform 0.3s ease, opacity 0.3s ease;
+  transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  will-change: transform, opacity;
   backface-visibility: hidden;
   touch-action: manipulation;
 }
@@ -886,7 +887,7 @@ onUnmounted(() => clearInterval(timer))
   height: 2px;
   background: #00d9ff;
   border-radius: 2px;
-  transition: background 0.2s ease;
+  transition: background 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   backface-visibility: hidden;
 }
 
@@ -900,7 +901,7 @@ onUnmounted(() => clearInterval(timer))
   background: rgba(0, 0, 0, 0.6);
   z-index: 1105;
   backdrop-filter: blur(2px);
-  animation: fade-in 0.2s ease-out;
+  animation: fade-in 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   backface-visibility: hidden;
 }
 
@@ -922,7 +923,8 @@ onUnmounted(() => clearInterval(timer))
   display: flex;
   flex-direction: column;
   transform: translateX(-100%);
-  transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  will-change: transform;
   box-shadow: 20px 0 50px rgba(0, 0, 0, 0.5);
   overflow: hidden;
   backface-visibility: hidden;
@@ -961,7 +963,7 @@ onUnmounted(() => clearInterval(timer))
   color: rgba(255, 255, 255, 0.5);
   font-size: 18px;
   cursor: pointer;
-  transition: color 0.2s ease;
+  transition: color 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   padding: 4px;
   backface-visibility: hidden;
 }
@@ -988,26 +990,36 @@ onUnmounted(() => clearInterval(timer))
 
 .custom-scroll {
   scrollbar-width: thin;
-  scrollbar-color: rgba(255, 255, 255, 0.1) transparent;
+  scrollbar-color: rgba(255, 255, 255, 0.15) transparent;
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
 }
 
 .custom-scroll::-webkit-scrollbar {
-  width: 4px;
+  width: 6px;
 }
 
 .custom-scroll::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 2px;
-  transition: background 0.2s ease;
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 10px;
+  transition: background 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   backface-visibility: hidden;
+  border: 1px solid transparent;
+  background-clip: padding-box;
 }
 
 .custom-scroll::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.25);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.custom-scroll::-webkit-scrollbar-thumb:active {
+  background: rgba(255, 255, 255, 0.35);
 }
 
 .custom-scroll::-webkit-scrollbar-track {
   background: transparent;
+  border-radius: 10px;
 }
 
 /* HOME ENTRY */
@@ -1022,7 +1034,7 @@ onUnmounted(() => clearInterval(timer))
   text-decoration: none;
   color: #e5e7eb;
   box-shadow: 0 16px 40px rgba(15, 23, 42, 0.9);
-  transition: all 0.2s ease;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   margin-bottom: 8px;
   backface-visibility: hidden;
 }
@@ -1080,7 +1092,7 @@ onUnmounted(() => clearInterval(timer))
   text-decoration: none;
   color: #e5e7eb;
   box-shadow: 0 16px 40px rgba(34, 197, 94, 0.2);
-  transition: all 0.2s ease;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   margin-bottom: 8px;
   backface-visibility: hidden;
 }
@@ -1158,7 +1170,7 @@ onUnmounted(() => clearInterval(timer))
   text-decoration: none;
   color: #e5e7eb;
   box-shadow: 0 16px 40px rgba(15, 23, 42, 0.9);
-  transition: all 0.2s ease;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   margin-bottom: 8px;
   backface-visibility: hidden;
 }
@@ -1190,9 +1202,18 @@ onUnmounted(() => clearInterval(timer))
   backface-visibility: hidden;
 }
 
+.zeta-logo {
+  font-size: 20px;
+  font-weight: bold;
+  font-family: 'Inter', sans-serif;
+  line-height: 1;
+  color: #fff;
+  z-index: 2;
+  position: relative;
+}
+
 .data-entry .supernova-home {
-  background: linear-gradient(135deg, #f87171, #ef4444, #b91c1c);
-  box-shadow: 0 0 15px rgba(239, 68, 68, 0.9);
+  display: none;
 }
 
 .data-entry:hover .data-icon {
@@ -1226,7 +1247,7 @@ onUnmounted(() => clearInterval(timer))
   border-radius: 12px;
   border: 1px solid rgba(255, 255, 255, 0.05);
   overflow: hidden;
-  transition: background 0.2s ease, border-color 0.2s ease;
+  transition: background 0.3s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   flex-shrink: 0;
   backface-visibility: hidden;
 }
@@ -1245,7 +1266,7 @@ onUnmounted(() => clearInterval(timer))
   border: none;
   cursor: pointer;
   text-align: left;
-  transition: background 0.2s ease;
+  transition: background 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   backface-visibility: hidden;
 }
 
@@ -1293,7 +1314,7 @@ onUnmounted(() => clearInterval(timer))
 }
 
 .tool-content-wrapper {
-  transition: max-height 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.2s ease;
+  transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   overflow: hidden;
   backface-visibility: hidden;
 }
@@ -1316,7 +1337,7 @@ onUnmounted(() => clearInterval(timer))
   color: rgba(255, 255, 255, 0.7);
   text-decoration: none;
   font-size: 12px;
-  transition: all 0.2s ease;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   backface-visibility: hidden;
 }
 
@@ -1362,7 +1383,7 @@ onUnmounted(() => clearInterval(timer))
   border: 1px solid rgba(236, 72, 153, 0.2);
   text-decoration: none;
   color: rgba(255, 255, 255, 0.8);
-  transition: all 0.2s ease;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
   z-index: 10;
   border-radius: 0;

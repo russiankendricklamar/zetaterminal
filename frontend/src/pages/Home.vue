@@ -48,16 +48,13 @@
         </div>
 
         <!-- Terminal Block -->
-        <router-link to="/data" class="terminal-block-link">
+        <router-link to="/terminal" class="terminal-block-link">
           <div class="terminal-block">
             <div class="terminal-block-icon">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <rect x="2" y="4" width="20" height="16" rx="2"/>
-                <path d="M6 8h12M6 12h8M6 16h4"/>
-              </svg>
+              <span class="zeta-logo">ζ</span>
             </div>
             <div class="terminal-block-content">
-              <div class="terminal-block-title">Терминал</div>
+              <div class="terminal-block-title">Дзета-Терминал</div>
               <div class="terminal-block-desc">Потоковые данные в реальном времени</div>
             </div>
             <div class="terminal-block-arrow">
@@ -324,7 +321,7 @@ const triggerExplosion = (path: string) => {
   
   setTimeout(() => {
     router.push(path)
-  }, 350)
+  }, 600)
 }
 </script>
 
@@ -337,7 +334,8 @@ const triggerExplosion = (path: string) => {
   border-color: rgba(255, 255, 255, 0.8);
   background: rgba(15, 23, 42, 1);
   transform: scale(1.02);
-  animation: shockwave 0.3s linear;
+  animation: shockwave 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  will-change: transform;
 }
 
 .tool-card.is-exploding .tool-icon {
@@ -352,7 +350,8 @@ const triggerExplosion = (path: string) => {
 }
 
 .tool-card.is-exploding .supernova {
-  animation: big-bang 0.5s cubic-bezier(0.1, 0, 0, 1) forwards !important;
+  animation: big-bang 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards !important;
+  will-change: transform, opacity, box-shadow;
 }
 
 @keyframes big-bang {
@@ -360,10 +359,27 @@ const triggerExplosion = (path: string) => {
     transform: scale(1);
     opacity: 1;
     background: #fff;
+    box-shadow: 0 0 12px 2px rgba(255, 255, 255, 0.8);
   }
-  30% {
-    transform: scale(8);
-    box-shadow: 0 0 100px 50px rgba(255, 255, 255, 1);
+  20% {
+    transform: scale(3);
+    opacity: 1;
+    box-shadow: 0 0 40px 20px rgba(255, 255, 255, 0.9);
+  }
+  40% {
+    transform: scale(12);
+    opacity: 0.95;
+    box-shadow: 0 0 150px 80px rgba(255, 255, 255, 0.95);
+  }
+  60% {
+    transform: scale(35);
+    opacity: 0.9;
+    box-shadow: 0 0 300px 150px rgba(255, 255, 255, 0.9);
+  }
+  80% {
+    transform: scale(80);
+    opacity: 0.85;
+    box-shadow: 0 0 600px 300px rgba(255, 255, 255, 0.85);
   }
   100% {
     transform: scale(200);
@@ -374,17 +390,27 @@ const triggerExplosion = (path: string) => {
 }
 
 @keyframes shockwave {
-  0% { transform: scale(1); }
-  50% { transform: scale(0.96); }
-  100% { transform: scale(1.02); }
+  0% { 
+    transform: scale(1);
+  }
+  30% { 
+    transform: scale(0.98);
+  }
+  60% { 
+    transform: scale(1.01);
+  }
+  100% { 
+    transform: scale(1.02);
+  }
 }
 
 .tool-card.is-faded {
   opacity: 0;
   pointer-events: none;
-  transform: scale(0.9);
-  filter: blur(4px);
-  transition: all 0.3s ease;
+  transform: scale(0.95);
+  filter: blur(3px);
+  transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  will-change: opacity, transform, filter;
 }
 
 .flash-overlay {
@@ -394,10 +420,11 @@ const triggerExplosion = (path: string) => {
   z-index: 9998;
   opacity: 0;
   pointer-events: none;
-  transition: opacity 0.1s ease;
+  transition: opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  will-change: opacity;
 }
 .flash-overlay.active {
-  transition-delay: 0.25s;
+  transition-delay: 0.4s;
   opacity: 1;
 }
 
@@ -586,8 +613,9 @@ const triggerExplosion = (path: string) => {
   font-weight: 600;
   text-decoration: none;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   border: 1px solid transparent;
+  will-change: transform, box-shadow;
 }
 
 .btn.primary {
@@ -631,11 +659,12 @@ const triggerExplosion = (path: string) => {
   backdrop-filter: blur(20px);
   border: 1.5px solid rgba(34, 211, 238, 0.25);
   border-radius: 16px;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
   box-shadow: 
     0 0 30px rgba(34, 211, 238, 0.12),
     inset 0 1px 20px rgba(34, 211, 238, 0.08),
     0 20px 60px rgba(15, 23, 42, 0.8);
+  will-change: transform, border-color, background, box-shadow;
 }
 
 .terminal-block:hover {
@@ -659,7 +688,15 @@ const triggerExplosion = (path: string) => {
   border-radius: 12px;
   color: #22d3ee;
   flex-shrink: 0;
-  transition: all 0.3s ease;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  will-change: transform, background, border-color;
+}
+
+.zeta-logo {
+  font-size: 28px;
+  font-weight: bold;
+  font-family: 'Inter', sans-serif;
+  line-height: 1;
 }
 
 .terminal-block:hover .terminal-block-icon {
@@ -691,8 +728,9 @@ const triggerExplosion = (path: string) => {
 
 .terminal-block-arrow {
   color: rgba(148, 163, 184, 0.4);
-  transition: all 0.3s ease;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
   flex-shrink: 0;
+  will-change: transform, color;
 }
 
 .terminal-block:hover .terminal-block-arrow {
@@ -718,6 +756,8 @@ const triggerExplosion = (path: string) => {
   gap: 16px;
   max-height: calc(100vh - 160px);
   overflow-y: auto;
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
 }
 
 /* Стилизованный скроллбар */
@@ -727,15 +767,24 @@ const triggerExplosion = (path: string) => {
 
 .tool-grid::-webkit-scrollbar-track {
   background: transparent;
+  border-radius: 10px;
 }
 
 .tool-grid::-webkit-scrollbar-thumb {
   background: rgba(34, 211, 238, 0.2);
-  border-radius: 3px;
+  border-radius: 10px;
+  transition: background 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  border: 1px solid transparent;
+  background-clip: padding-box;
 }
 
 .tool-grid::-webkit-scrollbar-thumb:hover {
   background: rgba(34, 211, 238, 0.4);
+  border: 1px solid rgba(34, 211, 238, 0.2);
+}
+
+.tool-grid::-webkit-scrollbar-thumb:active {
+  background: rgba(34, 211, 238, 0.5);
 }
 
 .tools-header {
@@ -786,7 +835,8 @@ const triggerExplosion = (path: string) => {
   background: rgba(255, 255, 255, 0.02);
   border: 1px solid rgba(148, 163, 184, 0.15);
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  will-change: transform, border-color, background;
 }
 
 .tool-card:hover {
@@ -811,7 +861,8 @@ const triggerExplosion = (path: string) => {
   position: relative;
   overflow: hidden;
   border: 1px solid rgba(255, 255, 255, 0.08);
-  transition: all 0.2s;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  will-change: transform, border-color, box-shadow;
 }
 
 .tool-icon.blue { background: rgba(56, 189, 248, 0.12); }
@@ -832,8 +883,9 @@ const triggerExplosion = (path: string) => {
   transform: scale(0);
   opacity: 0;
   pointer-events: none;
-  transition: opacity 0.4s ease;
+  transition: opacity 0.5s cubic-bezier(0.4, 0, 0.2, 1), transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
   z-index: 1;
+  will-change: opacity, transform;
 }
 
 .tool-card:hover .tool-icon::after {
@@ -850,8 +902,9 @@ const triggerExplosion = (path: string) => {
   background-size: 200% 200%;
   position: relative;
   z-index: 2;
-  transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+  transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
   animation: star-pulse 3s infinite ease-in-out, shimmer 3s infinite linear;
+  will-change: transform, box-shadow;
 }
 
 .supernova.blue { box-shadow: 0 0 12px 2px rgba(59, 130, 246, 0.6); }
@@ -909,8 +962,9 @@ const triggerExplosion = (path: string) => {
 
 .tool-arrow {
   color: rgba(148, 163, 184, 0.4);
-  transition: all 0.2s ease;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   flex-shrink: 0;
+  will-change: transform, color;
 }
 
 .tool-card:hover .tool-arrow {
@@ -922,19 +976,35 @@ const triggerExplosion = (path: string) => {
    ANIMATIONS
    ============================================ */
 @keyframes star-pulse {
-  0%, 100% { opacity: 0.85; transform: scale(1); }
-  50% { opacity: 1; transform: scale(1.05); }
+  0%, 100% { 
+    opacity: 0.85; 
+    transform: scale(1); 
+  }
+  50% { 
+    opacity: 1; 
+    transform: scale(1.05); 
+  }
 }
 
 @keyframes shimmer {
-  0% { background-position: 0% 50%; }
-  100% { background-position: 200% 50%; }
+  0% { 
+    background-position: 0% 50%; 
+  }
+  100% { 
+    background-position: 200% 50%; 
+  }
 }
 
 @keyframes beam-wobble {
-  0% { transform: translate(0, 0) scale(1); }
-  50% { transform: translate(2px, -2px) scale(1.1); }
-  100% { transform: translate(0, 0) scale(1); }
+  0% { 
+    transform: translate(0, 0) scale(1); 
+  }
+  50% { 
+    transform: translate(2px, -2px) scale(1.05); 
+  }
+  100% { 
+    transform: translate(0, 0) scale(1); 
+  }
 }
 
 @keyframes blobOrbit1 {

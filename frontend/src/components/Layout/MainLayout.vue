@@ -370,8 +370,14 @@ onMounted(() => {
 .notif-time { font-size: 10px; color: rgba(255,255,255,0.3); margin-left: auto; white-space: nowrap; font-variant-numeric: tabular-nums; }
 
 /* Transitions */
-.drawer-enter-active, .drawer-leave-active { transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1); }
-.drawer-enter-from, .drawer-leave-to { opacity: 0; transform: translateY(-10px) scale(0.95); }
+.drawer-enter-active, .drawer-leave-active { 
+  transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1); 
+  will-change: opacity, transform;
+}
+.drawer-enter-from, .drawer-leave-to { 
+  opacity: 0; 
+  transform: translateY(-8px) scale(0.98); 
+}
 
 /* Scrollbar & Content */
 .window-content { 
@@ -381,15 +387,38 @@ onMounted(() => {
   position: relative; 
   padding: 0; /* Контент сам делает отступы */
   -webkit-overflow-scrolling: touch;
+  scroll-behavior: smooth;
 }
 /* Стеклянный скроллбар */
-.window-content::-webkit-scrollbar { width: 6px; }
-.window-content::-webkit-scrollbar-track { background: transparent; }
-.window-content::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 99px; }
-.window-content::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.25); }
+.window-content::-webkit-scrollbar { 
+  width: 6px; 
+}
+.window-content::-webkit-scrollbar-track { 
+  background: transparent; 
+  border-radius: 10px;
+}
+.window-content::-webkit-scrollbar-thumb { 
+  background: rgba(255,255,255,0.15); 
+  border-radius: 10px;
+  transition: background 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  border: 1px solid transparent;
+  background-clip: padding-box;
+}
+.window-content::-webkit-scrollbar-thumb:hover { 
+  background: rgba(255,255,255,0.25);
+  border: 1px solid rgba(255,255,255,0.1);
+}
+.window-content::-webkit-scrollbar-thumb:active { 
+  background: rgba(255,255,255,0.35);
+}
 
-.fade-enter-active, .fade-leave-active { transition: opacity 0.25s ease; }
-.fade-enter-from, .fade-leave-to { opacity: 0; }
+.fade-enter-active, .fade-leave-active { 
+  transition: opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1); 
+  will-change: opacity;
+}
+.fade-enter-from, .fade-leave-to { 
+  opacity: 0; 
+}
 
 @media (max-width: 768px) {
   .app-root {

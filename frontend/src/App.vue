@@ -1,19 +1,24 @@
 <!-- src/App.vue -->
 <template>
-  <!-- Глобальная Command Palette (вызывается Cmd+K) -->
-  <CommandPalette />
+  <!-- Глобальная Command Palette (вызывается Cmd+K) - скрыта на странице терминала -->
+  <CommandPalette v-if="!isTerminalPage" />
 
   <!-- Основной роутер -->
   <router-view />
 </template>
 
 <script setup lang="ts">
-import { onMounted } from 'vue'
+import { onMounted, computed } from 'vue'
+import { useRoute } from 'vue-router'
 import { useThemeStore } from '@/stores'
-import CommandPalette from '@/components/common/CommandPalette.vue' // <-- Новый импорт
+import CommandPalette from '@/components/common/CommandPalette.vue'
 import TaskContainer from '@/components/common/TaskContainer.vue'
 
+const route = useRoute()
 const themeStore = useThemeStore()
+
+// Скрываем глобальную Command Palette на странице терминала (там своя)
+const isTerminalPage = computed(() => route.path === '/terminal')
 
 onMounted(() => {
   themeStore.initTheme()
