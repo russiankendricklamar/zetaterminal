@@ -6,23 +6,12 @@
         <h2 class="text-xl font-bold text-white tracking-tight">Главная панель</h2>
         <p class="text-xs text-gray-400">Настраиваемая рабочая область</p>
       </div>
-      <button 
-        @click="isEditMode = !isEditMode"
-        :class="`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
-          isEditMode 
-            ? 'bg-indigo-500 text-white' 
-            : 'bg-white/10 text-gray-300 hover:text-white'
-        }`"
-      >
-        {{ isEditMode ? 'Сохранить' : 'Редактировать' }}
-      </button>
     </div>
 
     <!-- Dashboard Grid -->
     <div 
       ref="gridRef"
       class="flex-1 p-4 overflow-auto custom-scrollbar"
-      :class="{ 'cursor-move': isEditMode }"
     >
       <div 
         class="dashboard-grid"
@@ -35,10 +24,8 @@
           v-bind="widget.props"
           :width="widget.width"
           :height="widget.height"
-          :resizable="isEditMode"
-          @remove="removeWidget(widget.id)"
-          @resize="(w, h) => resizeWidget(widget.id, w, h)"
-          @settings="editWidget(widget.id)"
+          :resizable="false"
+          :show-controls="false"
           :style="{ gridColumn: `span ${widget.width}`, gridRow: `span ${widget.height}` }"
         />
       </div>
@@ -55,6 +42,7 @@ import AIWidget from './widgets/AIWidget.vue';
 import FooterWidget from './widgets/FooterWidget.vue';
 import MarketsWidget from './widgets/MarketsWidget.vue';
 import AnalyticsWidget from './widgets/AnalyticsWidget.vue';
+import QuantitativeToolWidget from './widgets/QuantitativeToolWidget.vue';
 import { Candle } from '@/types/terminal';
 
 const widgetComponents: Record<string, any> = {
@@ -65,6 +53,38 @@ const widgetComponents: Record<string, any> = {
   Footer: FooterWidget,
   Markets: MarketsWidget,
   Analytics: AnalyticsWidget,
+  // Quantitative Analysis Tools
+  VOL: QuantitativeToolWidget,
+  VOLG: QuantitativeToolWidget,
+  CZF: QuantitativeToolWidget,
+  CVRC: QuantitativeToolWidget,
+  PSR: QuantitativeToolWidget,
+  LVM: QuantitativeToolWidget,
+  MVS: QuantitativeToolWidget,
+  LIQ: QuantitativeToolWidget,
+  HMM: QuantitativeToolWidget,
+  TSIG: QuantitativeToolWidget,
+  CORR: QuantitativeToolWidget,
+  HMMD: QuantitativeToolWidget,
+  ZSCR: QuantitativeToolWidget,
+  OBHM: QuantitativeToolWidget,
+  ENSD: QuantitativeToolWidget,
+  FEAT: QuantitativeToolWidget,
+  DDSH: QuantitativeToolWidget,
+  EXEC: QuantitativeToolWidget,
+  EXPO: QuantitativeToolWidget,
+  OB3D: QuantitativeToolWidget,
+  TVCN: QuantitativeToolWidget,
+  CTENSOR: QuantitativeToolWidget,
+  HELIX: QuantitativeToolWidget,
+  HYPERCUBE: QuantitativeToolWidget,
+  VORTEX: QuantitativeToolWidget,
+  PLASMA: QuantitativeToolWidget,
+  LATTICE: QuantitativeToolWidget,
+  TICKCORE: QuantitativeToolWidget,
+  GREEKS3D: QuantitativeToolWidget,
+  REGNET: QuantitativeToolWidget,
+  TAILCUBE: QuantitativeToolWidget,
 };
 
 interface Widget {
@@ -92,10 +112,8 @@ const props = withDefaults(defineProps<Props>(), {
   symbol: 'BTC/USDT',
 });
 
-const isEditMode = ref(false);
 const gridRef = ref<HTMLElement | null>(null);
 const gridColumns = ref(12);
-const draggedWidgetId = ref<string | null>(null);
 
 // Загружаем виджеты из localStorage или используем дефолтные
 const loadWidgets = (): Widget[] => {
@@ -103,11 +121,34 @@ const loadWidgets = (): Widget[] => {
   if (saved) {
     try {
       const savedWidgets = JSON.parse(saved);
-      return savedWidgets.map((w: any) => ({
-        ...w,
-        component: widgetComponents[w.type],
-        props: getWidgetProps(w.type),
-      }));
+      return savedWidgets
+        .filter((w: any) => widgetComponents[w.type]) // Фильтруем только существующие компоненты
+        .map((w: any) => {
+          const component = widgetComponents[w.type];
+          // Для инструментов количественного анализа передаем все метаданные
+          if (component === QuantitativeToolWidget) {
+            return {
+              ...w,
+              component,
+              props: {
+                type: w.type,
+                title: w.title || w.type,
+                description: w.description || '',
+                icon: w.icon || 'ActivityIcon',
+                iconBg: w.iconBg || 'bg-emerald-500/20',
+                iconColor: w.iconColor || 'text-emerald-400',
+                code: w.code || w.type,
+                selectedAsset: '',
+              },
+            };
+          }
+          // Для обычных виджетов используем стандартные props
+          return {
+            ...w,
+            component,
+            props: getWidgetProps(w.type),
+          };
+        });
     } catch (e) {
       console.error('Failed to load widgets:', e);
     }
@@ -182,29 +223,27 @@ const removeWidget = (id: string) => {
   saveWidgets();
 };
 
+let saveTimeout: ReturnType<typeof setTimeout> | null = null;
+
 const resizeWidget = (id: string, width: number, height: number) => {
   const widget = widgets.value.find(w => w.id === id);
   if (widget) {
+    // Плавное обновление размеров
     widget.width = width;
     widget.height = height;
-    saveWidgets();
+    // Сохраняем с небольшой задержкой для плавности
+    if (saveTimeout) {
+      clearTimeout(saveTimeout);
+    }
+    saveTimeout = setTimeout(() => {
+      saveWidgets();
+    }, 300);
   }
 };
 
 const editWidget = (id: string) => {
   // Открыть настройки виджета
   console.log('Edit widget:', id);
-};
-
-const startDrag = (e: DragEvent, id: string) => {
-  draggedWidgetId.value = id;
-  if (e.dataTransfer) {
-    e.dataTransfer.effectAllowed = 'move';
-  }
-};
-
-const endDrag = () => {
-  draggedWidgetId.value = null;
 };
 
 watch(() => props.orderBook, () => {
@@ -238,5 +277,19 @@ onMounted(() => {
   display: grid;
   gap: 1rem;
   grid-auto-rows: minmax(100px, auto);
+}
+
+/* Плавная анимация изменения размера виджетов */
+.dashboard-grid > * {
+  transition: 
+    grid-column 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+    grid-row 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+    transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+    opacity 0.3s ease-out;
+  will-change: grid-column, grid-row, transform;
+}
+
+.dashboard-grid > *:hover {
+  transition-duration: 0.2s;
 }
 </style>

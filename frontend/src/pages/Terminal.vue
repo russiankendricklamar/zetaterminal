@@ -18,6 +18,40 @@
 
     <!-- Main Content -->
     <div class="relative z-10 flex flex-col h-full p-4 gap-4">
+      <!-- Windows Tabs Bar -->
+      <div class="flex items-center gap-2 overflow-x-auto custom-scrollbar pb-2 flex-shrink-0">
+        <div 
+          v-for="window in windows" 
+          :key="window.id"
+          @click="setActiveWindow(window.id)"
+          :class="`flex items-center gap-2 px-3 py-1.5 rounded-lg border transition-all cursor-pointer group flex-shrink-0 ${
+            activeWindowId === window.id 
+              ? 'bg-indigo-500/20 border-indigo-500/30 text-indigo-300' 
+              : 'bg-white/5 border-white/10 text-gray-400 hover:text-white hover:bg-white/10'
+          }`"
+        >
+          <component :is="getWindowIcon(window.view)" :class="`w-3.5 h-3.5 ${activeWindowId === window.id ? 'text-indigo-400' : 'text-gray-500 group-hover:text-white'}`" />
+          <span class="text-xs font-medium whitespace-nowrap">{{ getWindowTitle(window.view) }}</span>
+          <button 
+            v-if="windows.length > 1"
+            @click.stop="closeWindow(window.id)"
+            :class="`ml-1 p-0.5 rounded hover:bg-white/10 transition-colors ${
+              activeWindowId === window.id ? 'text-indigo-400 hover:text-indigo-300' : 'text-gray-500 hover:text-gray-300'
+            }`"
+          >
+            <XIcon class="w-3 h-3" />
+          </button>
+        </div>
+        <button 
+          @click="() => openNewWindow()"
+          class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-white/10 bg-white/5 text-gray-400 hover:text-white hover:bg-white/10 transition-all flex-shrink-0"
+          title="Открыть новое окно"
+        >
+          <PlusIcon class="w-3.5 h-3.5" />
+          <span class="text-xs font-medium">Новое окно</span>
+        </button>
+      </div>
+
       <!-- Header -->
       <header class="h-10 glass-panel rounded-xl flex items-center justify-between px-4 flex-shrink-0 transition-all duration-300 z-50">
         <div class="flex items-center gap-4 overflow-visible relative">
@@ -168,178 +202,179 @@
         </div>
       </header>
 
-      <!-- Dynamic View Content -->
-      <DashboardPage 
-        v-if="view === 'Main'"
-        :orderBook="orderBook"
-        :currentPrice="currentPrice"
-        :chartData="data"
-        :symbol="activeSymbol"
-      />
+      <!-- Dynamic View Content (Multi-Window Support) -->
+      <div class="flex-1 relative overflow-hidden">
+        <div 
+          v-for="window in windows" 
+          :key="window.id"
+          v-show="activeWindowId === window.id"
+          class="absolute inset-0"
+        >
+          <DashboardPage 
+            v-if="window.view === 'Main'"
+            :orderBook="orderBook"
+            :currentPrice="currentPrice"
+            :chartData="data"
+            :symbol="activeSymbol"
+          />
 
-      <!-- Markets Page (Stocks) -->
-      <MarketsPage 
-        v-else-if="view === 'Markets'" 
-        :category="marketCategory"
-        @navigate="setView"
-        @assetClick="handleAssetClick"
-      />
+          <!-- Markets Page (Stocks) -->
+          <MarketsPage 
+            v-else-if="window.view === 'Markets'" 
+            :category="marketCategory"
+            @navigate="(v) => { const w = windows.find(win => win.id === window.id); if (w) { w.view = v; w.title = getWindowTitle(v); } setView(v); }"
+            @assetClick="handleAssetClick"
+          />
 
-      <!-- Crypto Page -->
-      <CryptoPage 
-        v-else-if="view === 'Crypto'" 
-        @navigate="setView"
-        @assetClick="handleAssetClick"
-      />
+          <!-- Crypto Page -->
+          <CryptoPage 
+            v-else-if="window.view === 'Crypto'" 
+            @navigate="(v) => { const w = windows.find(win => win.id === window.id); if (w) { w.view = v; w.title = getWindowTitle(v); } setView(v); }"
+            @assetClick="handleAssetClick"
+          />
 
-      <!-- News Page -->
-      <NewsPage 
-        v-else-if="view === 'News'" 
-        :activeSection="newsSection"
-      />
+          <!-- News Page -->
+          <NewsPage 
+            v-else-if="window.view === 'News'" 
+            :activeSection="newsSection"
+          />
 
-      <!-- Analytics Page -->
-      <AnalyticsPage 
-        v-else-if="view === 'Analytics'" 
-        :activeSection="analyticsSection"
-      />
+          <!-- Analytics Page -->
+          <AnalyticsPage 
+            v-else-if="window.view === 'Analytics'" 
+            :activeSection="analyticsSection"
+          />
 
-      <!-- Screening Page -->
-      <ScreeningPage 
-        v-else-if="view === 'Screening'" 
-        :symbol="activeSymbol"
-        :activeSection="screeningSection"
-      />
+          <!-- Screening Page -->
+          <ScreeningPage 
+            v-else-if="window.view === 'Screening'" 
+            :symbol="activeSymbol"
+            :activeSection="screeningSection"
+          />
 
-      <!-- Fundamental Analysis Page -->
-      <FundamentalAnalysisPage 
-        v-else-if="view === 'Fundamental'" 
-        :symbol="activeSymbol"
-        :activeSection="fundamentalSection"
-      />
+          <!-- Fundamental Analysis Page -->
+          <FundamentalAnalysisPage 
+            v-else-if="window.view === 'Fundamental'" 
+            :symbol="activeSymbol"
+            :activeSection="fundamentalSection"
+          />
 
-      <!-- Price Analysis Page -->
-      <PriceAnalysisPage 
-        v-else-if="view === 'PriceAnalysis'" 
-        :symbol="activeSymbol"
-        :activeSection="priceAnalysisSection"
-      />
+          <!-- Price Analysis Page -->
+          <PriceAnalysisPage 
+            v-else-if="window.view === 'PriceAnalysis'" 
+            :symbol="activeSymbol"
+            :activeSection="priceAnalysisSection"
+          />
 
-      <!-- FX Page -->
-      <FXPage 
-        v-else-if="view === 'FX'" 
-        :symbol="activeSymbol"
-        :activeSection="fxSection"
-      />
+          <!-- FX Page -->
+          <FXPage 
+            v-else-if="window.view === 'FX'" 
+            :symbol="activeSymbol"
+            :activeSection="fxSection"
+          />
 
-      <!-- Settings Page -->
-      <SettingsPage 
-        v-else-if="view === 'Settings'" 
-        :activeSection="settingsSection"
-      />
+          <!-- Settings Page -->
+          <SettingsPage 
+            v-else-if="window.view === 'Settings'" 
+            :activeSection="settingsSection"
+          />
 
-      <!-- Bond Market Page -->
-      <BondMarketPage 
-        v-else-if="view === 'Bonds'" 
-        :activeSection="bondsSection"
-      />
+          <!-- Bond Market Page -->
+          <BondMarketPage 
+            v-else-if="window.view === 'Bonds'" 
+            :activeSection="bondsSection"
+          />
 
-      <!-- Central Banks Page -->
-      <CentralBanksPage 
-        v-else-if="view === 'CentralBanks'" 
-        :activeSection="centralBanksSection"
-      />
+          <!-- Central Banks Page -->
+          <CentralBanksPage 
+            v-else-if="window.view === 'CentralBanks'" 
+            :activeSection="centralBanksSection"
+          />
 
-      <!-- Commodities Page -->
-      <CommoditiesPage 
-        v-else-if="view === 'Commodities'" 
-        :symbol="activeSymbol"
-        :activeSection="commoditiesSection"
-      />
+          <!-- Commodities Page -->
+          <CommoditiesPage 
+            v-else-if="window.view === 'Commodities'" 
+            :symbol="activeSymbol"
+            :activeSection="commoditiesSection"
+          />
 
-      <!-- Credit Risk Page -->
-      <CreditRiskPage 
-        v-else-if="view === 'CreditRisk'" 
-        :symbol="activeSymbol"
-        :activeSection="creditRiskSection"
-      />
+          <!-- Credit Risk Page -->
+          <CreditRiskPage 
+            v-else-if="window.view === 'CreditRisk'" 
+            :symbol="activeSymbol"
+            :activeSection="creditRiskSection"
+          />
 
-      <!-- Earn Page -->
-      <EarnPage 
-        v-else-if="view === 'Earn'" 
-        :activeSection="earnSection"
-      />
+          <!-- Earn Page -->
+          <EarnPage 
+            v-else-if="window.view === 'Earn'" 
+            :activeSection="earnSection"
+          />
 
-      <!-- Event Driven Page -->
-      <EventDrivenPage 
-        v-else-if="view === 'EventDriven'" 
-        :symbol="activeSymbol"
-        :activeSection="eventDrivenSection"
-      />
+          <!-- Event Driven Page -->
+          <EventDrivenPage 
+            v-else-if="window.view === 'EventDriven'" 
+            :symbol="activeSymbol"
+            :activeSection="eventDrivenSection"
+          />
 
-      <!-- Finance Page -->
-      <FinancePage 
-        v-else-if="view === 'Finance'" 
-        @asset-click="handleAssetClick"
-      />
+          <!-- Finance Page -->
+          <FinancePage 
+            v-else-if="window.view === 'Finance'" 
+            @asset-click="handleAssetClick"
+          />
 
-      <!-- Fixed Income Page -->
-      <FixedIncomePage 
-        v-else-if="view === 'FixedIncome'" 
-        :activeSection="fixedIncomeSection"
-      />
+          <!-- Fixed Income Page -->
+          <FixedIncomePage 
+            v-else-if="window.view === 'FixedIncome'" 
+            :activeSection="fixedIncomeSection"
+          />
 
-      <!-- Futures Page -->
-      <FuturesPage 
-        v-else-if="view === 'Futures'" 
-        :symbol="activeSymbol"
-        :activeSection="futuresSection"
-      />
+          <!-- Futures Page -->
+          <FuturesPage 
+            v-else-if="window.view === 'Futures'" 
+            :symbol="activeSymbol"
+            :activeSection="futuresSection"
+          />
 
-      <!-- Indices Page -->
-      <IndicesPage 
-        v-else-if="view === 'Indices'" 
-        :activeSection="indicesSection"
-      />
+          <!-- Indices Page -->
+          <IndicesPage 
+            v-else-if="window.view === 'Indices'" 
+            :activeSection="indicesSection"
+          />
 
-      <!-- Macroeconomics Page -->
-      <MacroeconomicsPage 
-        v-else-if="view === 'Macro'" 
-        :activeSection="macroSection"
-      />
+          <!-- Macroeconomics Page -->
+          <MacroeconomicsPage 
+            v-else-if="window.view === 'Macro'" 
+            :activeSection="macroSection"
+          />
 
-      <!-- Options Page -->
-      <OptionsPage 
-        v-else-if="view === 'Options'" 
-        :symbol="activeSymbol"
-        :activeSection="optionsSection"
-      />
+          <!-- Options Page -->
+          <OptionsPage 
+            v-else-if="window.view === 'Options'" 
+            :symbol="activeSymbol"
+            :activeSection="optionsSection"
+          />
 
-      <!-- Research Page -->
-      <ResearchPage 
-        v-else-if="view === 'Research'" 
-        :symbol="activeSymbol"
-        :activeSection="researchSection"
-      />
+          <!-- Research Page -->
+          <ResearchPage 
+            v-else-if="window.view === 'Research'" 
+            :symbol="activeSymbol"
+            :activeSection="researchSection"
+          />
 
-      <!-- Resources Page -->
-      <ResourcesPage 
-        v-else-if="view === 'Resources'" 
-        :activeSection="resourcesSection"
-      />
+          <!-- Resources Page -->
+          <ResourcesPage 
+            v-else-if="window.view === 'Resources'" 
+            :activeSection="resourcesSection"
+          />
 
-      <!-- Swaps Page -->
-      <SwapsPage 
-        v-else-if="view === 'Swaps'" 
-        :symbol="activeSymbol"
-        :activeSection="swapsSection"
-      />
-
-      <!-- Default placeholder -->
-      <div v-else class="flex-1 flex items-center justify-center glass-panel rounded-3xl">
-        <div class="text-center">
-          <h2 class="text-2xl font-bold text-white mb-2">{{ view }} View</h2>
-          <p class="text-gray-400">Этот раздел будет реализован в ближайшее время</p>
+          <!-- Swaps Page -->
+          <SwapsPage 
+            v-else-if="window.view === 'Swaps'" 
+            :symbol="activeSymbol"
+            :activeSection="swapsSection"
+          />
         </div>
       </div>
     </div>
@@ -396,6 +431,20 @@ const data = ref<Candle[]>([]);
 const currentPrice = ref(INITIAL_PRICE);
 const orderBook = ref<{ bids: OrderBookItem[], asks: OrderBookItem[] }>({ bids: [], asks: [] });
 const isAiOpen = ref(true);
+// Multi-window system
+interface TerminalWindow {
+  id: string;
+  view: string;
+  title?: string;
+  symbol?: string;
+  activeSection?: string;
+}
+
+const windows = ref<TerminalWindow[]>([
+  { id: 'main-1', view: 'Main', title: 'Главная' }
+]);
+
+const activeWindowId = ref('main-1');
 const view = ref('Main');
 const history = ref<string[]>(['Main']);
 const isNavOpen = ref(false);
@@ -489,6 +538,38 @@ const systemCommands: SearchResult[] = [
   { id: 'FLDS', label: 'Ресурсы', code: 'FLDS', type: 'command', description: 'Справочник данных и помощь' },
   { id: 'SWPM', label: 'Свопы', code: 'SWPM', type: 'command', description: 'Ценообразование IRS и CDS' },
   { id: 'SET', label: 'Настройки', code: 'SET', type: 'command', description: 'Настройка терминала' },
+  // Quantitative Analysis Tools Commands
+  { id: 'VOL', label: 'Поверхность волатильности', code: 'VOL', type: 'command', description: '3D визуализация волатильности по страйкам и экспирациям' },
+  { id: 'VOLG', label: 'Поверхность волатильности (по грекам)', code: 'VOLG', type: 'command', description: '3D визуализация волатильности по страйкам и экспирациям на основе греков' },
+  { id: 'CZF', label: 'Citadel Zeta Field', code: 'CZF', type: 'command', description: 'Анализ поля дзета-параметров Citadel' },
+  { id: 'CVRC', label: 'Convolutional Volatility Resolution Clustering', code: 'CVRC', type: 'command', description: 'Кластеризация волатильности с использованием сверточных нейросетей' },
+  { id: 'PSR', label: 'Phase Space Reconstruction', code: 'PSR', type: 'command', description: 'Реконструкция фазового пространства для анализа динамики' },
+  { id: 'LVM', label: 'Latent Volatility model', code: 'LVM', type: 'command', description: 'Модель скрытой волатильности' },
+  { id: 'MVS', label: 'Momentum-Volatility Surface', code: 'MVS', type: 'command', description: 'Поверхность волатильности с учетом импульса' },
+  { id: 'LIQ', label: 'Liquidity Model', code: 'LIQ', type: 'command', description: 'Модель ликвидности рынка' },
+  { id: 'HMM', label: 'HMM regime model visualization', code: 'HMM', type: 'command', description: 'Визуализация режимов скрытой марковской модели' },
+  { id: 'TSIG', label: 'Time series с сигналами', code: 'TSIG', type: 'command', description: 'Линейный/бар чарт цены + наложение флагов buy/sell' },
+  { id: 'CORR', label: 'Correlation heatmap', code: 'CORR', type: 'command', description: 'Цветная матрица корреляций' },
+  { id: 'HMMD', label: 'HMM state diagram', code: 'HMMD', type: 'command', description: 'Граф состояний + timeline colors' },
+  { id: 'ZSCR', label: 'Z‑score residuals', code: 'ZSCR', type: 'command', description: 'Линейный график отклонений' },
+  { id: 'OBHM', label: 'Order book heatmap', code: 'OBHM', type: 'command', description: 'Цветная карта глубины стакана' },
+  { id: 'ENSD', label: 'Ensemble signal distribution', code: 'ENSD', type: 'command', description: 'Гистограмма/confidence bands' },
+  { id: 'FEAT', label: 'Feature importance bar chart', code: 'FEAT', type: 'command', description: 'Столбцы значимости факторов' },
+  { id: 'DDSH', label: 'Drawdown/Sharpe timeline', code: 'DDSH', type: 'command', description: 'Накопленный график + метрики' },
+  { id: 'EXEC', label: 'Latency/slippage scatter', code: 'EXEC', type: 'command', description: 'Точечный график execution metrics' },
+  { id: 'EXPO', label: 'Turnover/exposure matrix', code: 'EXPO', type: 'command', description: 'Heatmap позиций по активам' },
+  { id: 'OB3D', label: 'Объёмная карта ордербука (3D Depth Map)', code: 'OB3D', type: 'command', description: 'Трёхмерная визуализация глубины стакана' },
+  { id: 'TVCN', label: 'Динамическая корреляционная сеть (Time‑Varying Correlation Network)', code: 'TVCN', type: 'command', description: 'Сетевая визуализация корреляций во времени' },
+  { id: 'CTENSOR', label: 'Ковариационный куб (Covariance Tensor Cube)', code: 'CTENSOR', type: 'command', description: 'Трёхмерное представление ковариационной матрицы' },
+  { id: 'HELIX', label: 'Объёмно‑временная спираль ликвидности (Liquidity Helix)', code: 'HELIX', type: 'command', description: 'Спиральная визуализация ликвидности во времени' },
+  { id: 'HYPERCUBE', label: 'Пространство корреляций во времени (Correlation Hypercube)', code: 'HYPERCUBE', type: 'command', description: 'Гиперкубическое представление корреляций' },
+  { id: 'VORTEX', label: 'Вихрь рыночных настроений (Sentiment Vortex)', code: 'VORTEX', type: 'command', description: 'Вихревая визуализация рыночных настроений' },
+  { id: 'PLASMA', label: '«Плазма» потока опционных сделок', code: 'PLASMA', type: 'command', description: 'Визуализация в реальном времени потока опционных сделок как заряженных частиц в магнитном поле' },
+  { id: 'LATTICE', label: '«Кристаллическая решетка аукциона» (Auction Lattice)', code: 'LATTICE', type: 'command', description: '3D-структура, показывающая историю и текущее состояние аукциона (открытия/закрытия на бирже, аукциона MOC)' },
+  { id: 'TICKCORE', label: '«Тактовый сердечник» процессора исполнения', code: 'TICKCORE', type: 'command', description: 'Метафора процессора, где каждый такт — это пакет рыночных данных (тик). Визуализация нагрузки и задержек в обработке' },
+  { id: 'GREEKS3D', label: '3D Greeks Tensor (Delta-Gamma-Vega landscape)', code: 'GREEKS3D', type: 'command', description: 'Для портфеля опционов/структурных продуктов показывай греки как трёхмерный тензор' },
+  { id: 'REGNET', label: 'Regime Correlation Network (HMM‑driven)', code: 'REGNET', type: 'command', description: '3D‑граф корреляций, где высота узлов пропорциональна posterior probability текущего режима (из HMM)' },
+  { id: 'TAILCUBE', label: 'Tail Risk Cube (EVT Stress Scenarios)', code: 'TAILCUBE', type: 'command', description: 'Куб, где каждый слой — сценарий стресса (GPD fits для tails), вокселы — P&L портфеля при quantile α' },
 ];
 
 // Assets
@@ -505,8 +586,58 @@ const searchItems = computed(() => [
 
 const setView = (newView: string) => {
   history.value = [newView, ...history.value].slice(0, 9);
+  const activeWindow = windows.value.find(w => w.id === activeWindowId.value);
+  if (activeWindow) {
+    activeWindow.view = newView;
+    activeWindow.title = getWindowTitle(newView);
+  }
   view.value = newView;
   isNavOpen.value = false; // Закрываем меню при переключении страницы
+};
+
+// Multi-window functions
+const setActiveWindow = (windowId: string) => {
+  activeWindowId.value = windowId;
+  const window = windows.value.find(w => w.id === windowId);
+  if (window) {
+    view.value = window.view;
+  }
+};
+
+const openNewWindow = (viewType: string = 'Main') => {
+  const newWindow: TerminalWindow = {
+    id: `window-${Date.now()}`,
+    view: viewType,
+    title: getWindowTitle(viewType),
+  };
+  windows.value.push(newWindow);
+  setActiveWindow(newWindow.id);
+};
+
+const closeWindow = (windowId: string) => {
+  if (windows.value.length <= 1) {
+    // Не позволяем закрыть последнее окно
+    return;
+  }
+  const index = windows.value.findIndex(w => w.id === windowId);
+  if (index !== -1) {
+    windows.value.splice(index, 1);
+    // Если закрыли активное окно, переключаемся на другое
+    if (activeWindowId.value === windowId) {
+      const newActiveIndex = index > 0 ? index - 1 : 0;
+      setActiveWindow(windows.value[newActiveIndex].id);
+    }
+  }
+};
+
+const getWindowTitle = (viewType: string): string => {
+  const item = navItems.find(i => i.id === viewType);
+  return item?.label || viewType;
+};
+
+const getWindowIcon = (viewType: string): any => {
+  const item = navItems.find(i => i.id === viewType);
+  return item?.icon || 'ActivityIcon';
 };
 
 const setActiveSymbol = (symbol: string) => {
@@ -518,31 +649,41 @@ const setActiveSymbol = (symbol: string) => {
 const handleCommandSelect = (item: SearchResult) => {
   if (item.type === 'command') {
     const code = item.code || '';
-    if (code === 'HOME') { setView('Main'); isSearchOpen.value = false; return; }
-    if (code === 'TOP') { setView('News'); isSearchOpen.value = false; return; }
-    if (code === 'GP') { setView('PriceAnalysis'); isSearchOpen.value = false; return; }
-    if (code === 'EQS') { setView('Screening'); isSearchOpen.value = false; return; }
-    if (code === 'QUA') { setView('Analytics'); isSearchOpen.value = false; return; }
-    if (code === 'EE') { setView('Fundamental'); isSearchOpen.value = false; return; }
-    if (code === 'FX') { setView('FX'); isSearchOpen.value = false; return; }
-    if (code === 'SET') { setView('Settings'); isSearchOpen.value = false; return; }
-    if (code === 'MKT') { setView('Markets'); isSearchOpen.value = false; return; }
-    if (code === 'CRYPTO') { setView('Crypto'); isSearchOpen.value = false; return; }
-    if (code === 'GOVT') { setView('Bonds'); isSearchOpen.value = false; return; }
-    if (code === 'FOMC') { setView('CentralBanks'); isSearchOpen.value = false; return; }
-    if (code === 'CMDX') { setView('Commodities'); isSearchOpen.value = false; return; }
-    if (code === 'SRSK') { setView('CreditRisk'); isSearchOpen.value = false; return; }
-    if (code === 'EARN') { setView('Earn'); isSearchOpen.value = false; return; }
-    if (code === 'IPO') { setView('EventDriven'); isSearchOpen.value = false; return; }
-    if (code === 'PORT') { setView('Finance'); isSearchOpen.value = false; return; }
-    if (code === 'YAS') { setView('FixedIncome'); isSearchOpen.value = false; return; }
-    if (code === 'CTRK') { setView('Futures'); isSearchOpen.value = false; return; }
-    if (code === 'WEI') { setView('Indices'); isSearchOpen.value = false; return; }
-    if (code === 'ECOD') { setView('Macro'); isSearchOpen.value = false; return; }
-    if (code === 'OMON') { setView('Options'); isSearchOpen.value = false; return; }
-    if (code === 'RES') { setView('Research'); isSearchOpen.value = false; return; }
-    if (code === 'FLDS') { setView('Resources'); isSearchOpen.value = false; return; }
-    if (code === 'SWPM') { setView('Swaps'); isSearchOpen.value = false; return; }
+    // Определяем view по коду команды
+    let targetView = 'Main';
+    if (code === 'HOME') targetView = 'Main';
+    else if (code === 'TOP') targetView = 'News';
+    else if (code === 'GP') targetView = 'PriceAnalysis';
+    else if (code === 'EQS') targetView = 'Screening';
+    else if (code === 'QUA') targetView = 'Analytics';
+    else if (code === 'EE') targetView = 'Fundamental';
+    else if (code === 'FX') targetView = 'FX';
+    else if (code === 'SET') targetView = 'Settings';
+    else if (code === 'MKT') targetView = 'Markets';
+    else if (code === 'CRYPTO') targetView = 'Crypto';
+    else if (code === 'GOVT') targetView = 'Bonds';
+    else if (code === 'FOMC') targetView = 'CentralBanks';
+    else if (code === 'CMDX') targetView = 'Commodities';
+    else if (code === 'SRSK') targetView = 'CreditRisk';
+    else if (code === 'EARN') targetView = 'Earn';
+    else if (code === 'IPO') targetView = 'EventDriven';
+    else if (code === 'PORT') targetView = 'Finance';
+    else if (code === 'YAS') targetView = 'FixedIncome';
+    else if (code === 'CTRK') targetView = 'Futures';
+    else if (code === 'WEI') targetView = 'Indices';
+    else if (code === 'ECOD') targetView = 'Macro';
+    else if (code === 'OMON') targetView = 'Options';
+    else if (code === 'RES') targetView = 'Research';
+    else if (code === 'FLDS') targetView = 'Resources';
+    else if (code === 'SWPM') targetView = 'Swaps';
+    else if (['VOL', 'VOLG', 'CZF', 'CVRC', 'PSR', 'LVM', 'MVS', 'LIQ', 'HMM', 'TSIG', 'CORR', 'HMMD', 'ZSCR', 'OBHM', 'ENSD', 'FEAT', 'DDSH', 'EXEC', 'EXPO', 'OB3D', 'TVCN', 'CTENSOR', 'HELIX', 'HYPERCUBE', 'VORTEX', 'PLASMA', 'LATTICE', 'TICKCORE', 'GREEKS3D', 'REGNET', 'TAILCUBE'].includes(code)) {
+      targetView = 'Analytics';
+      analyticsSection.value = 'Quant';
+    }
+    
+    // Открываем новое окно с выбранным view
+    openNewWindow(targetView);
+    isSearchOpen.value = false;
   }
 };
 
@@ -635,6 +776,8 @@ const TrendingUpIcon = { template: '<svg viewBox="0 0 24 24" fill="none" stroke=
 const FilterIcon = { template: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>' };
 const PieChartIcon = { template: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg>' };
 const WifiIcon = { template: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12.55a11 11 0 0 1 14.08 0"/><path d="M1.42 9a16 16 0 0 1 21.16 0"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><line x1="12" y1="20" x2="12.01" y2="20"/></svg>' };
+const PlusIcon = { template: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>' };
+const XIcon = { template: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>' };
 const SettingsIcon = { template: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 1v6m0 6v6m9-9h-6m-6 0H3m15.364 6.364l-4.243-4.243m-4.242 0L5.636 18.364m12.728 0l-4.243-4.243m-4.242 0L5.636 5.636"/></svg>' };
 const HelpCircleIcon = { template: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>' };
 const DatabaseIcon = { template: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>' };

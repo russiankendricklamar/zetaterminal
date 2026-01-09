@@ -92,46 +92,40 @@
           </div>
         </div>
 
-        <!-- Active Widgets -->
+        <!-- Active Widgets Preview -->
         <div>
           <div class="flex justify-between items-center mb-4">
-            <h4 class="text-lg font-bold text-white">Активные виджеты</h4>
+            <h4 class="text-lg font-bold text-white">Предпросмотр экрана</h4>
             <span class="text-xs text-gray-500">{{ activeWidgets.length }} виджетов</span>
           </div>
-          <div class="space-y-2">
-            <div
-              v-for="widget in activeWidgets"
-              :key="widget.id"
-              class="flex items-center justify-between p-4 rounded-xl bg-white/5 border border-white/5 hover:bg-white/10 transition-colors"
-            >
-              <div class="flex items-center gap-3">
-                <div :class="`p-2 rounded-lg ${widget.iconBg}`">
-                  <component :is="widget.icon" :class="`w-4 h-4 ${widget.iconColor}`" />
-                </div>
-                <div>
-                  <div class="text-sm font-bold text-white">{{ widget.title }}</div>
-                  <div class="text-xs text-gray-500">Размер: {{ widget.width }}×{{ widget.height }}</div>
-                </div>
-              </div>
-              <div class="flex items-center gap-2">
-                <button
-                  @click.stop="editWidgetSize(widget)"
-                  class="p-2 rounded-lg hover:bg-white/10 text-gray-400 hover:text-white transition-colors"
-                  title="Изменить размер"
-                >
-                  <SlidersIcon class="w-4 h-4" />
-                </button>
-                <button
-                  @click.stop="removeWidget(widget.id)"
-                  class="p-2 rounded-lg hover:bg-rose-500/20 text-gray-400 hover:text-rose-400 transition-colors"
-                  title="Удалить"
-                >
-                  <XIcon class="w-4 h-4" />
-                </button>
+          
+          <!-- Visual Constructor Grid -->
+          <div class="bg-black/20 rounded-2xl border border-white/10 p-6 min-h-[500px] relative">
+            <div v-if="activeWidgets.length === 0" class="flex items-center justify-center h-[400px] text-center">
+              <div>
+                <div class="text-gray-500 text-sm mb-2">Нет активных виджетов</div>
+                <div class="text-xs text-gray-600 mb-4">Добавьте виджеты из списка выше</div>
+                <div class="text-xs text-gray-700">Кликните на любой виджет из списка "Доступные виджеты"</div>
               </div>
             </div>
-            <div v-if="activeWidgets.length === 0" class="text-center py-8 text-gray-500 text-sm">
-              Нет активных виджетов. Добавьте виджеты из списка выше.
+            <div 
+              v-else
+              class="dashboard-preview-grid"
+              :style="{ gridTemplateColumns: `repeat(12, 1fr)` }"
+            >
+              <component
+                v-for="widget in activeWidgets"
+                :key="widget.id"
+                :is="getWidgetComponent(widget.type)"
+                v-bind="getWidgetProps(widget)"
+                :width="widget.width"
+                :height="widget.height"
+                :resizable="true"
+                :show-controls="true"
+                @remove="removeWidget(widget.id)"
+                @resize="(w, h) => resizeWidgetInSettings(widget.id, w, h)"
+                :style="{ gridColumn: `span ${widget.width}`, gridRow: `span ${widget.height}` }"
+              />
             </div>
           </div>
         </div>
@@ -291,6 +285,14 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue';
 import { defineComponent, h } from 'vue';
+import OrderBookWidget from './widgets/OrderBookWidget.vue';
+import ChartWidgetWrapper from './widgets/ChartWidgetWrapper.vue';
+import NewsWidget from './widgets/NewsWidget.vue';
+import AIWidget from './widgets/AIWidget.vue';
+import FooterWidget from './widgets/FooterWidget.vue';
+import MarketsWidget from './widgets/MarketsWidget.vue';
+import AnalyticsWidget from './widgets/AnalyticsWidget.vue';
+import QuantitativeToolWidget from './widgets/QuantitativeToolWidget.vue';
 
 interface Props {
   activeSection: string;
@@ -405,6 +407,317 @@ const availableWidgets = [
     defaultWidth: 2,
     defaultHeight: 2,
   },
+  // Quantitative Analysis Tools
+  {
+    type: 'VOL',
+    title: 'Поверхность волатильности',
+    description: '3D визуализация волатильности по страйкам и экспирациям',
+    icon: 'LayersIcon',
+    iconBg: 'bg-emerald-500/20',
+    iconColor: 'text-emerald-400',
+    defaultWidth: 4,
+    defaultHeight: 3,
+  },
+  {
+    type: 'VOLG',
+    title: 'Поверхность волатильности (по грекам)',
+    description: '3D визуализация волатильности по страйкам и экспирациям на основе греков',
+    icon: 'LayersIcon',
+    iconBg: 'bg-emerald-500/20',
+    iconColor: 'text-emerald-400',
+    defaultWidth: 4,
+    defaultHeight: 3,
+  },
+  {
+    type: 'CZF',
+    title: 'Citadel Zeta Field',
+    description: 'Анализ поля дзета-параметров Citadel',
+    icon: 'TargetIcon',
+    iconBg: 'bg-indigo-500/20',
+    iconColor: 'text-indigo-400',
+    defaultWidth: 3,
+    defaultHeight: 3,
+  },
+  {
+    type: 'CVRC',
+    title: 'Convolutional Volatility Resolution Clustering',
+    description: 'Кластеризация волатильности с использованием сверточных нейросетей',
+    icon: 'ActivityIcon',
+    iconBg: 'bg-purple-500/20',
+    iconColor: 'text-purple-400',
+    defaultWidth: 3,
+    defaultHeight: 3,
+  },
+  {
+    type: 'PSR',
+    title: 'Phase Space Reconstruction',
+    description: 'Реконструкция фазового пространства для анализа динамики',
+    icon: 'BarChart2Icon',
+    iconBg: 'bg-blue-500/20',
+    iconColor: 'text-blue-400',
+    defaultWidth: 3,
+    defaultHeight: 3,
+  },
+  {
+    type: 'LVM',
+    title: 'Latent Volatility model',
+    description: 'Модель скрытой волатильности',
+    icon: 'LayersIcon',
+    iconBg: 'bg-cyan-500/20',
+    iconColor: 'text-cyan-400',
+    defaultWidth: 3,
+    defaultHeight: 3,
+  },
+  {
+    type: 'MVS',
+    title: 'Momentum-Volatility Surface',
+    description: 'Поверхность волатильности с учетом импульса',
+    icon: 'TrendingUpIcon',
+    iconBg: 'bg-green-500/20',
+    iconColor: 'text-green-400',
+    defaultWidth: 3,
+    defaultHeight: 3,
+  },
+  {
+    type: 'LIQ',
+    title: 'Liquidity Model',
+    description: 'Модель ликвидности рынка',
+    icon: 'ActivityIcon',
+    iconBg: 'bg-teal-500/20',
+    iconColor: 'text-teal-400',
+    defaultWidth: 3,
+    defaultHeight: 3,
+  },
+  {
+    type: 'HMM',
+    title: 'HMM regime model visualization',
+    description: 'Визуализация режимов скрытой марковской модели',
+    icon: 'PieChartIcon',
+    iconBg: 'bg-pink-500/20',
+    iconColor: 'text-pink-400',
+    defaultWidth: 3,
+    defaultHeight: 3,
+  },
+  {
+    type: 'TSIG',
+    title: 'Time series с сигналами',
+    description: 'Линейный/бар чарт цены + наложение флагов buy/sell',
+    icon: 'ChartBarIcon',
+    iconBg: 'bg-yellow-500/20',
+    iconColor: 'text-yellow-400',
+    defaultWidth: 4,
+    defaultHeight: 3,
+  },
+  {
+    type: 'CORR',
+    title: 'Correlation heatmap',
+    description: 'Цветная матрица корреляций',
+    icon: 'TableCellsIcon',
+    iconBg: 'bg-orange-500/20',
+    iconColor: 'text-orange-400',
+    defaultWidth: 3,
+    defaultHeight: 3,
+  },
+  {
+    type: 'HMMD',
+    title: 'HMM state diagram',
+    description: 'Граф состояний + timeline colors',
+    icon: 'ShareIcon',
+    iconBg: 'bg-violet-500/20',
+    iconColor: 'text-violet-400',
+    defaultWidth: 3,
+    defaultHeight: 3,
+  },
+  {
+    type: 'ZSCR',
+    title: 'Z‑score residuals',
+    description: 'Линейный график отклонений',
+    icon: 'TrendingDownIcon',
+    iconBg: 'bg-red-500/20',
+    iconColor: 'text-red-400',
+    defaultWidth: 3,
+    defaultHeight: 2,
+  },
+  {
+    type: 'OBHM',
+    title: 'Order book heatmap',
+    description: 'Цветная карта глубины стакана',
+    icon: 'Squares2X2Icon',
+    iconBg: 'bg-amber-500/20',
+    iconColor: 'text-amber-400',
+    defaultWidth: 3,
+    defaultHeight: 3,
+  },
+  {
+    type: 'ENSD',
+    title: 'Ensemble signal distribution',
+    description: 'Гистограмма/confidence bands',
+    icon: 'Bars3Icon',
+    iconBg: 'bg-lime-500/20',
+    iconColor: 'text-lime-400',
+    defaultWidth: 3,
+    defaultHeight: 2,
+  },
+  {
+    type: 'FEAT',
+    title: 'Feature importance bar chart',
+    description: 'Столбцы значимости факторов',
+    icon: 'BarChart3Icon',
+    iconBg: 'bg-sky-500/20',
+    iconColor: 'text-sky-400',
+    defaultWidth: 3,
+    defaultHeight: 2,
+  },
+  {
+    type: 'DDSH',
+    title: 'Drawdown/Sharpe timeline',
+    description: 'Накопленный график + метрики',
+    icon: 'LineChartIcon',
+    iconBg: 'bg-rose-500/20',
+    iconColor: 'text-rose-400',
+    defaultWidth: 4,
+    defaultHeight: 2,
+  },
+  {
+    type: 'EXEC',
+    title: 'Latency/slippage scatter',
+    description: 'Точечный график execution metrics',
+    icon: 'ScatterIcon',
+    iconBg: 'bg-fuchsia-500/20',
+    iconColor: 'text-fuchsia-400',
+    defaultWidth: 3,
+    defaultHeight: 3,
+  },
+  {
+    type: 'EXPO',
+    title: 'Turnover/exposure matrix',
+    description: 'Heatmap позиций по активам',
+    icon: 'TableCellsIcon',
+    iconBg: 'bg-emerald-500/20',
+    iconColor: 'text-emerald-400',
+    defaultWidth: 3,
+    defaultHeight: 3,
+  },
+  {
+    type: 'OB3D',
+    title: 'Объёмная карта ордербука (3D Depth Map)',
+    description: 'Трёхмерная визуализация глубины стакана',
+    icon: 'LayersIcon',
+    iconBg: 'bg-blue-500/20',
+    iconColor: 'text-blue-400',
+    defaultWidth: 4,
+    defaultHeight: 3,
+  },
+  {
+    type: 'TVCN',
+    title: 'Динамическая корреляционная сеть',
+    description: 'Сетевая визуализация корреляций во времени',
+    icon: 'ShareIcon',
+    iconBg: 'bg-indigo-500/20',
+    iconColor: 'text-indigo-400',
+    defaultWidth: 3,
+    defaultHeight: 3,
+  },
+  {
+    type: 'CTENSOR',
+    title: 'Ковариационный куб',
+    description: 'Трёхмерное представление ковариационной матрицы',
+    icon: 'Squares2X2Icon',
+    iconBg: 'bg-purple-500/20',
+    iconColor: 'text-purple-400',
+    defaultWidth: 3,
+    defaultHeight: 3,
+  },
+  {
+    type: 'HELIX',
+    title: 'Объёмно‑временная спираль ликвидности',
+    description: 'Спиральная визуализация ликвидности во времени',
+    icon: 'ActivityIcon',
+    iconBg: 'bg-cyan-500/20',
+    iconColor: 'text-cyan-400',
+    defaultWidth: 3,
+    defaultHeight: 3,
+  },
+  {
+    type: 'HYPERCUBE',
+    title: 'Пространство корреляций во времени',
+    description: 'Гиперкубическое представление корреляций',
+    icon: 'Squares2X2Icon',
+    iconBg: 'bg-teal-500/20',
+    iconColor: 'text-teal-400',
+    defaultWidth: 3,
+    defaultHeight: 3,
+  },
+  {
+    type: 'VORTEX',
+    title: 'Вихрь рыночных настроений',
+    description: 'Вихревая визуализация рыночных настроений',
+    icon: 'ActivityIcon',
+    iconBg: 'bg-pink-500/20',
+    iconColor: 'text-pink-400',
+    defaultWidth: 3,
+    defaultHeight: 3,
+  },
+  {
+    type: 'PLASMA',
+    title: '«Плазма» потока опционных сделок',
+    description: 'Визуализация потока опционных сделок как заряженных частиц',
+    icon: 'ActivityIcon',
+    iconBg: 'bg-yellow-500/20',
+    iconColor: 'text-yellow-400',
+    defaultWidth: 4,
+    defaultHeight: 3,
+  },
+  {
+    type: 'LATTICE',
+    title: '«Кристаллическая решетка аукциона»',
+    description: '3D-структура истории и текущего состояния аукциона',
+    icon: 'Squares2X2Icon',
+    iconBg: 'bg-orange-500/20',
+    iconColor: 'text-orange-400',
+    defaultWidth: 3,
+    defaultHeight: 3,
+  },
+  {
+    type: 'TICKCORE',
+    title: '«Тактовый сердечник» процессора исполнения',
+    description: 'Визуализация нагрузки и задержек в обработке рыночных данных',
+    icon: 'ActivityIcon',
+    iconBg: 'bg-violet-500/20',
+    iconColor: 'text-violet-400',
+    defaultWidth: 3,
+    defaultHeight: 3,
+  },
+  {
+    type: 'GREEKS3D',
+    title: '3D Greeks Tensor',
+    description: 'Трёхмерный тензор греков для портфеля опционов',
+    icon: 'LayersIcon',
+    iconBg: 'bg-red-500/20',
+    iconColor: 'text-red-400',
+    defaultWidth: 4,
+    defaultHeight: 3,
+  },
+  {
+    type: 'REGNET',
+    title: 'Regime Correlation Network',
+    description: '3D‑граф корреляций с HMM режимами',
+    icon: 'ShareIcon',
+    iconBg: 'bg-amber-500/20',
+    iconColor: 'text-amber-400',
+    defaultWidth: 3,
+    defaultHeight: 3,
+  },
+  {
+    type: 'TAILCUBE',
+    title: 'Tail Risk Cube',
+    description: 'Куб стресс-сценариев с EVT для tails',
+    icon: 'Squares2X2Icon',
+    iconBg: 'bg-lime-500/20',
+    iconColor: 'text-lime-400',
+    defaultWidth: 3,
+    defaultHeight: 3,
+  },
 ];
 
 const loadActiveWidgets = () => {
@@ -416,10 +729,12 @@ const loadActiveWidgets = () => {
         const template = availableWidgets.find(aw => aw.type === w.type);
         return {
           ...w,
-          title: template?.title || w.type,
-          icon: template?.icon || 'LayoutIcon',
-          iconBg: template?.iconBg || 'bg-gray-500/20',
-          iconColor: template?.iconColor || 'text-gray-400',
+          title: w.title || template?.title || w.type,
+          description: w.description || template?.description || '',
+          icon: w.icon || template?.icon || 'LayoutIcon',
+          iconBg: w.iconBg || template?.iconBg || 'bg-gray-500/20',
+          iconColor: w.iconColor || template?.iconColor || 'text-gray-400',
+          code: w.code || w.type,
         };
       });
     } catch (e) {
@@ -431,14 +746,24 @@ const loadActiveWidgets = () => {
 
 const activeWidgets = ref(loadActiveWidgets());
 
+// Отладочная информация
+watch(() => activeWidgets.value.length, (newLength) => {
+  console.log('Active widgets count:', newLength);
+  if (newLength > 0) {
+    console.log('Widgets:', activeWidgets.value);
+  }
+}, { immediate: true });
+
 const addWidget = (widget: typeof availableWidgets[0]) => {
   const newWidget = {
     id: `${widget.type}-${Date.now()}`,
     type: widget.type,
     title: widget.title,
+    description: widget.description,
     icon: widget.icon,
     iconBg: widget.iconBg,
     iconColor: widget.iconColor,
+    code: widget.type, // Используем type как code для инструментов
     width: widget.defaultWidth,
     height: widget.defaultHeight,
   };
@@ -448,8 +773,13 @@ const addWidget = (widget: typeof availableWidgets[0]) => {
 };
 
 const removeWidget = (id: string) => {
-  activeWidgets.value = activeWidgets.value.filter(w => w.id !== id);
-  saveWidgets();
+  const widget = activeWidgets.value.find(w => w.id === id);
+  if (widget) {
+    if (confirm(`Удалить виджет "${widget.title}"?`)) {
+      activeWidgets.value = activeWidgets.value.filter(w => w.id !== id);
+      saveWidgets();
+    }
+  }
 };
 
 const editWidgetSize = (widget: any) => {
@@ -467,10 +797,104 @@ const editWidgetSize = (widget: any) => {
   }
 };
 
+const resizeWidgetInSettings = (id: string, width: number, height: number) => {
+  const widget = activeWidgets.value.find(w => w.id === id);
+  if (widget) {
+    widget.width = width;
+    widget.height = height;
+    saveWidgets();
+  }
+};
+
+const widgetComponentsMap: Record<string, any> = {
+  OrderBook: OrderBookWidget,
+  Chart: ChartWidgetWrapper,
+  News: NewsWidget,
+  AI: AIWidget,
+  Footer: FooterWidget,
+  Markets: MarketsWidget,
+  Analytics: AnalyticsWidget,
+  VOL: QuantitativeToolWidget,
+  VOLG: QuantitativeToolWidget,
+  CZF: QuantitativeToolWidget,
+  CVRC: QuantitativeToolWidget,
+  PSR: QuantitativeToolWidget,
+  LVM: QuantitativeToolWidget,
+  MVS: QuantitativeToolWidget,
+  LIQ: QuantitativeToolWidget,
+  HMM: QuantitativeToolWidget,
+  TSIG: QuantitativeToolWidget,
+  CORR: QuantitativeToolWidget,
+  HMMD: QuantitativeToolWidget,
+  ZSCR: QuantitativeToolWidget,
+  OBHM: QuantitativeToolWidget,
+  ENSD: QuantitativeToolWidget,
+  FEAT: QuantitativeToolWidget,
+  DDSH: QuantitativeToolWidget,
+  EXEC: QuantitativeToolWidget,
+  EXPO: QuantitativeToolWidget,
+  OB3D: QuantitativeToolWidget,
+  TVCN: QuantitativeToolWidget,
+  CTENSOR: QuantitativeToolWidget,
+  HELIX: QuantitativeToolWidget,
+  HYPERCUBE: QuantitativeToolWidget,
+  VORTEX: QuantitativeToolWidget,
+  PLASMA: QuantitativeToolWidget,
+  LATTICE: QuantitativeToolWidget,
+  TICKCORE: QuantitativeToolWidget,
+  GREEKS3D: QuantitativeToolWidget,
+  REGNET: QuantitativeToolWidget,
+  TAILCUBE: QuantitativeToolWidget,
+};
+
+const getWidgetComponent = (type: string) => {
+  const component = widgetComponentsMap[type];
+  if (!component) {
+    console.warn(`Widget component not found for type: ${type}, using QuantitativeToolWidget`);
+    return QuantitativeToolWidget;
+  }
+  return component;
+};
+
+const getWidgetProps = (widget: any) => {
+  const template = availableWidgets.find(aw => aw.type === widget.type);
+  const component = widgetComponentsMap[widget.type];
+  
+  // Для инструментов количественного анализа
+  if (component === QuantitativeToolWidget) {
+    return {
+      type: widget.type,
+      title: widget.title || template?.title || widget.type,
+      description: widget.description || template?.description || '',
+      icon: widget.icon || template?.icon || 'ActivityIcon',
+      iconBg: widget.iconBg || template?.iconBg || 'bg-emerald-500/20',
+      iconColor: widget.iconColor || template?.iconColor || 'text-emerald-400',
+      code: widget.code || widget.type,
+      selectedAsset: '',
+    };
+  }
+  
+  // Для обычных виджетов возвращаем базовые props
+  // Они могут иметь свои специфичные props, но для предпросмотра достаточно базовых
+  return {
+    bids: [],
+    asks: [],
+    currentPrice: 0,
+    data: [],
+    symbol: 'BTC/USDT',
+  };
+};
+
 const saveWidgets = () => {
   const widgetsToSave = activeWidgets.value.map(w => ({
     id: w.id,
     type: w.type,
+    title: w.title,
+    description: w.description || '',
+    icon: w.icon,
+    iconBg: w.iconBg,
+    iconColor: w.iconColor,
+    code: w.code || w.type,
     width: w.width,
     height: w.height,
   }));
@@ -487,6 +911,19 @@ const BrainIcon = { template: '<svg viewBox="0 0 24 24" fill="none" stroke="curr
 const ListIcon = { template: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>' };
 const TrendingUpIcon = { template: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>' };
 const BarChartIcon = { template: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>' };
+const TargetIcon = { template: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>' };
+const ActivityIcon = { template: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>' };
+const BarChart2Icon = { template: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>' };
+const PieChartIcon = { template: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg>' };
+const ChartBarIcon = { template: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="20" x2="12" y2="10"/><line x1="18" y1="20" x2="18" y2="4"/><line x1="6" y1="20" x2="6" y2="16"/></svg>' };
+const TableCellsIcon = { template: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3h18v18H3z"/><path d="M3 9h18M3 15h18M9 3v18M15 3v18"/></svg>' };
+const ShareIcon = { template: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>' };
+const TrendingDownIcon = { template: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 18 13.5 8.5 8.5 13.5 1 6"/><polyline points="17 18 23 18 23 12"/></svg>' };
+const Squares2X2Icon = { template: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>' };
+const Bars3Icon = { template: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>' };
+const BarChart3Icon = { template: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="20" x2="12" y2="10"/><line x1="18" y1="20" x2="18" y2="4"/><line x1="6" y1="20" x2="6" y2="16"/><line x1="3" y1="20" x2="21" y2="20"/></svg>' };
+const ScatterIcon = { template: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="7" cy="7" r="2"/><circle cx="17" cy="7" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="7" cy="17" r="2"/><circle cx="17" cy="17" r="2"/></svg>' };
+const LayersIcon = { template: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>' };
 
 // Icon components
 const MonitorIcon = { template: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>' };
@@ -502,3 +939,19 @@ const MoonIcon = { template: '<svg viewBox="0 0 24 24" fill="none" stroke="curre
 const SunIcon = { template: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>' };
 const XIcon = defineComponent({ render: () => h('svg', { viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', 'stroke-width': '2' }, [h('line', { x1: '18', y1: '6', x2: '6', y2: '18' }), h('line', { x1: '6', y1: '6', x2: '18', y2: '18' })]) });
 </script>
+
+<style scoped>
+.dashboard-preview-grid {
+  display: grid;
+  gap: 1rem;
+  grid-auto-rows: minmax(80px, auto);
+}
+
+.dashboard-preview-grid > * {
+  transition: 
+    grid-column 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+    grid-row 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+    transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  will-change: grid-column, grid-row, transform;
+}
+</style>
