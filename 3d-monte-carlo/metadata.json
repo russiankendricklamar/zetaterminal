@@ -1,0 +1,5 @@
+{
+  "name": "QuantFlow 3D Monte Carlo",
+  "description": "A high-fidelity 3D visualization of Monte Carlo simulations for financial price trajectories. Features stochastic evolution modeling with dynamic color gradients, interactive 3D controls, and a high-tech scientific UI.",
+  "requestFramePermissions": []
+}

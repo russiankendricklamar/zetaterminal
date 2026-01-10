@@ -1,0 +1,5 @@
+{
+  "name": "CVRC Visualizer",
+  "description": "A 3D visualization of the Convolutional Volatility Resolution Clustering model, analyzing financial asset volatility across time and frequency domains.",
+  "requestFramePermissions": []
+}

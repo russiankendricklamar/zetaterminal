@@ -650,10 +650,8 @@ const toggleTool = (id: keyof typeof expandedTools) => {
 }
 
 const portfolioItems = [
-  { path: '/dashboard', label: 'Главная' },
-  { path: '/portfolio', label: 'Оптимизация портфеля' },
-  { path: '/CCMVoptimization', label: 'CCMV оптимизация' },
-  { path: '/monte-carlo', label: 'Симуляция Монте-Карло' },
+  { path: '/portfolio', label: 'Состав портфеля' },
+  { path: '/CCMVoptimization', label: 'Оптимизация портфеля' },
   { path: '/greeks', label: 'Риск-метрики' },
   { path: '/reports', label: 'Отчёты' },
 ]

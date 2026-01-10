@@ -1,14 +1,611 @@
 <!-- src/views/CCMVOptimizationPage.vue -->
 <template>
   <div class="ccmv-page">
-    <!-- Hero Section -->
+    <!-- Method Selector Tabs -->
+    <div class="method-selector">
+      <button
+        :class="['method-tab', { active: activeMethod === 'hjb' }]"
+        @click="activeMethod = 'hjb'"
+      >
+        <div class="method-icon hjb">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+          </svg>
+        </div>
+        <div class="method-info">
+          <span class="method-title">HJB-стратегия</span>
+          <span class="method-subtitle">Стохастическое оптимизирование</span>
+        </div>
+      </button>
+      <button
+        :class="['method-tab', { active: activeMethod === 'ccmv' }]"
+        @click="activeMethod = 'ccmv'"
+      >
+        <div class="method-icon ccmv">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"/>
+            <path d="M12 6v6l4 2"/>
+          </svg>
+        </div>
+        <div class="method-info">
+          <span class="method-title">CCMV модель</span>
+          <span class="method-subtitle">Кластерная оптимизация</span>
+        </div>
+      </button>
+    </div>
+
+    <!-- HJB Strategy Section -->
+    <template v-if="activeMethod === 'hjb'">
+      <!-- Hero Section HJB -->
+      <div class="hero-section">
+        <div class="hero-left">
+          <h1>Стохастическое оптимизирование (HJB)</h1>
+          <div class="hero-meta">
+            <span class="glass-pill">Стратегия: <strong>Hamilton-Jacobi-Bellman</strong></span>
+            <span class="glass-pill">Горизонт: <strong>{{ hjbParams.horizon }} мес.</strong></span>
+            <span class="glass-pill">Банк: <strong>{{ selectedBank.name }}</strong></span>
+            <span class="glass-pill">Активов: <strong>{{ portfolioPositions.length }}</strong></span>
+          </div>
+        </div>
+        <div class="hero-actions">
+          <button class="btn-glass primary" @click="runHJBOptimization" :disabled="isComputing">
+            <svg v-if="!isComputing" width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+            </svg>
+            <span v-else class="spinner"></span>
+            {{ isComputing ? 'Расчёт...' : 'Запустить оптимизацию' }}
+          </button>
+        </div>
+      </div>
+
+      <!-- HJB Parameters Row (Top) -->
+      <div class="glass-panel hjb-params-row">
+        <div class="panel-header">
+          <h3>Параметры HJB модели</h3>
+        </div>
+        <div class="panel-body params-row-body">
+          <div class="param-group-horizontal">
+            <label>Коэффициент неприятия риска (γ)</label>
+            <div class="param-input-group">
+              <input
+                type="number"
+                v-model.number="hjbParams.gamma"
+                min="0.1"
+                max="20"
+                step="0.1"
+              />
+            </div>
+          </div>
+
+          <div class="param-group-horizontal">
+            <label>Инвестиционный горизонт (T), лет</label>
+            <div class="param-input-group">
+              <input
+                type="number"
+                v-model.number="hjbParams.horizon"
+                min="0.1"
+                max="50"
+                step="0.1"
+              />
+            </div>
+          </div>
+
+          <div class="param-group-horizontal">
+            <label>Безрисковая ставка (r)</label>
+            <div class="param-input-group">
+              <input
+                type="number"
+                v-model.number="hjbParams.riskFreeRate"
+                min="0"
+                max="0.2"
+                step="0.001"
+              />
+            </div>
+          </div>
+
+          <div class="param-group-horizontal">
+            <label>Волатильность рынка (σ)</label>
+            <div class="param-input-group">
+              <input
+                type="number"
+                v-model.number="hjbParams.marketVol"
+                min="0.05"
+                max="0.8"
+                step="0.01"
+              />
+            </div>
+          </div>
+
+          <div class="param-group-horizontal">
+            <label>Ожидаемая доходность (μ)</label>
+            <div class="param-input-group">
+              <input
+                type="number"
+                v-model.number="hjbParams.expectedReturn"
+                min="0"
+                max="0.5"
+                step="0.01"
+              />
+            </div>
+          </div>
+
+          <div class="param-group-horizontal">
+            <label>Количество траекторий Монте-Карло</label>
+            <div class="param-input-group">
+              <input
+                type="number"
+                v-model.number="hjbParams.monteCarloTrajectories"
+                min="100"
+                max="100000"
+                step="100"
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- HJB Main Grid -->
+      <div class="dashboard-grid hjb-grid">
+        <!-- LEFT: Portfolio Composition (spans 2 columns) -->
+        <div class="col-portfolio-wide">
+          <!-- Portfolio Composition -->
+          <div class="glass-panel portfolio-composition-panel">
+            <div class="panel-header">
+              <h3>Состав портфеля</h3>
+            </div>
+            <div class="panel-body">
+              <div class="portfolio-table-container">
+                <div class="portfolio-table-wrapper">
+                  <table class="portfolio-table">
+                    <thead>
+                      <tr>
+                        <th>Инструмент</th>
+                        <th class="text-right">Цена</th>
+                        <th class="text-right">День %</th>
+                        <th class="text-right">Позиция</th>
+                        <th class="text-right">Вес</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr v-for="pos in portfolioPositions" :key="pos.symbol">
+                        <td>
+                          <div class="asset-cell">
+                            <div class="asset-icon" :style="{ background: pos.color }">{{ pos.symbol[0] }}</div>
+                            <div class="asset-info">
+                              <span class="symbol">{{ pos.symbol }}</span>
+                              <span class="name">{{ pos.name }}</span>
+                            </div>
+                          </div>
+                        </td>
+                        <td class="text-right mono">₽{{ pos.price }}</td>
+                        <td class="text-right mono">
+                          <span :class="['change-pill', pos.dayChange > 0 ? 'text-green' : 'text-red']">
+                            {{ pos.dayChange > 0 ? '+' : '' }}{{ pos.dayChange }}%
+                          </span>
+                        </td>
+                        <td class="text-right mono opacity-80">₽{{ (pos.notional / 1000).toFixed(1) }}k</td>
+                        <td class="text-right mono font-bold">{{ pos.allocation }}%</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+                <div class="portfolio-table-footer">
+                  <span>Всего позиций: <strong>{{ portfolioPositions.length }}</strong></span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- RIGHT: 3D Heatmap (1 column) -->
+        <div class="col-3d-right">
+          <!-- 3D Correlation Heatmap -->
+          <div class="glass-panel correlation-3d-panel">
+            <div class="panel-header">
+              <h3>3D Тепловая карта активов</h3>
+            </div>
+            <div class="panel-body correlation-3d-body">
+              <div id="correlation-3d-heatmap" class="static-3d-plot" style="width:100%; height:500px; position: relative; min-height: 500px; background: transparent; border-radius: 8px;"></div>
+              <div v-if="hoveredAsset" class="asset-tooltip-3d">
+                <div class="tooltip-header">
+                  <div class="asset-icon" :style="{ background: hoveredAsset.color }">{{ hoveredAsset.symbol[0] }}</div>
+                  <div>
+                    <div class="tooltip-symbol">{{ hoveredAsset.symbol }}</div>
+                    <div class="tooltip-name">{{ hoveredAsset.name }}</div>
+                  </div>
+                </div>
+                <div class="tooltip-details">
+                  <div class="tooltip-row">
+                    <span>Тип:</span>
+                    <strong>{{ (hoveredAsset.symbol.includes('SU') || hoveredAsset.symbol.includes('RU000')) ? 'Облигация' : 'Акция' }}</strong>
+                  </div>
+                  <div class="tooltip-row" v-if="hoveredAsset.volatility !== undefined">
+                    <span>Волатильность:</span>
+                    <strong>{{ hoveredAsset.volatility?.toFixed(1) || 'N/A' }}%</strong>
+                  </div>
+                  <div class="tooltip-row" v-if="hoveredAsset.avgCorrelation !== undefined">
+                    <span>Ср. корреляция:</span>
+                    <strong>{{ hoveredAsset.avgCorrelation?.toFixed(2) || 'N/A' }}</strong>
+                  </div>
+                  <div class="tooltip-row">
+                    <span>Вес в портфеле:</span>
+                    <strong>{{ hoveredAsset.allocation?.toFixed(2) || hoveredAsset.allocation }}%</strong>
+                  </div>
+                  <div class="tooltip-row">
+                    <span>Цена:</span>
+                    <strong>{{ hoveredAsset.price?.toLocaleString('ru-RU') || hoveredAsset.price }} ₽</strong>
+                  </div>
+                  <div class="tooltip-row">
+                    <span>Дневное изм.:</span>
+                    <strong :class="hoveredAsset.dayChange >= 0 ? 'text-green' : 'text-red'">
+                      {{ hoveredAsset.dayChange >= 0 ? '+' : '' }}{{ hoveredAsset.dayChange?.toFixed(2) || hoveredAsset.dayChange }}%
+                    </strong>
+                  </div>
+                  <div class="tooltip-row" v-if="hoveredAsset.notional">
+                    <span>Позиция:</span>
+                    <strong>₽{{ (hoveredAsset.notional / 1000).toFixed(1) }}k</strong>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- GARCH Volatility Modeling - Full Width -->
+      <div class="garch-full-width">
+        <div class="glass-panel">
+          <div class="panel-header">
+            <h3>Моделирование волатильности (GARCH)</h3>
+          </div>
+          <div class="panel-body">
+            <div class="garch-container-full">
+              <div class="garch-chart-placeholder-full">
+                <canvas ref="garchChart" id="garch-chart"></canvas>
+              </div>
+              <div class="garch-params-full">
+                <div class="garch-param-row">
+                  <span class="param-name">GARCH(1,1):</span>
+                  <span class="param-value">σ²<sub>t</sub> = ω + αε²<sub>t-1</sub> + βσ²<sub>t-1</sub></span>
+                </div>
+                <div class="garch-stats">
+                  <div class="garch-stat">
+                    <span class="stat-label">α (ARCH)</span>
+                    <span class="stat-val">0.082</span>
+                  </div>
+                  <div class="garch-stat">
+                    <span class="stat-label">β (GARCH)</span>
+                    <span class="stat-val">0.893</span>
+                  </div>
+                  <div class="garch-stat">
+                    <span class="stat-label">ω</span>
+                    <span class="stat-val">0.000025</span>
+                  </div>
+                  <div class="garch-stat">
+                    <span class="stat-label">Long-term Vol</span>
+                    <span class="stat-val">18.2%</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Reports Row: GARCH Filtering and Yield Report in 2 columns -->
+      <div class="dashboard-grid hjb-reports-grid">
+        <!-- LEFT: GARCH Filtering Report -->
+        <div class="col-report-left">
+          <div class="glass-panel report-panel">
+            <div class="panel-header">
+              <h3>Фильтрация активов по GARCH</h3>
+            </div>
+            <div class="panel-body">
+              <div class="filtering-report">
+                <div class="report-summary">
+                  <div class="summary-item">
+                    <span class="summary-label">Всего активов</span>
+                    <span class="summary-value">{{ portfolioPositions.length }}</span>
+                  </div>
+                  <div class="summary-item">
+                    <span class="summary-label">Прошли фильтр</span>
+                    <span class="summary-value text-green">{{ garchFilteredCount }}</span>
+                  </div>
+                  <div class="summary-item">
+                    <span class="summary-label">Отклонены</span>
+                    <span class="summary-value text-red">{{ portfolioPositions.length - garchFilteredCount }}</span>
+                  </div>
+                </div>
+                <div class="filtering-criteria">
+                  <div class="criteria-title">Критерии фильтрации:</div>
+                  <div class="criteria-list">
+                    <div class="criteria-item">
+                      <span class="criteria-check">✓</span>
+                      <span>GARCH волатильность ≤ 30%</span>
+                    </div>
+                    <div class="criteria-item">
+                      <span class="criteria-check">✓</span>
+                      <span>Стабильность параметров (α + β < 1)</span>
+                    </div>
+                    <div class="criteria-item">
+                      <span class="criteria-check">✓</span>
+                      <span>Достаточная ликвидность</span>
+                    </div>
+                  </div>
+                </div>
+                <div class="filtered-assets">
+                  <div class="filtered-title">Прошедшие фильтр (топ-10):</div>
+                  <div class="filtered-list">
+                    <div v-for="(asset, idx) in garchFilteredAssets.slice(0, 10)" :key="idx" class="filtered-asset">
+                      <span class="asset-symbol">{{ asset.symbol }}</span>
+                      <span class="asset-garch">{{ asset.garchVol }}%</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- RIGHT: Historical & Dividend Yield Report -->
+        <div class="col-report-right">
+          <div class="glass-panel report-panel">
+            <div class="panel-header">
+              <h3>Историческая и дивидендная доходность</h3>
+            </div>
+            <div class="panel-body">
+              <div class="yield-report">
+                <table class="yield-table">
+                  <thead>
+                    <tr>
+                      <th>Актив</th>
+                      <th class="text-right">Историческая</th>
+                      <th class="text-right">Дивидендная</th>
+                      <th class="text-right">Итого</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr v-for="(asset, idx) in yieldReportData.slice(0, 10)" :key="idx">
+                      <td class="yield-asset">{{ asset.symbol }}</td>
+                      <td class="text-right mono">{{ (asset.historicalYield * 100).toFixed(2) }}%</td>
+                      <td class="text-right mono">{{ (asset.dividendYield * 100).toFixed(2) }}%</td>
+                      <td class="text-right mono font-bold text-green">{{ (asset.totalYield * 100).toFixed(2) }}%</td>
+                    </tr>
+                  </tbody>
+                </table>
+                <div class="yield-summary">
+                  <div class="yield-summary-item">
+                    <span class="summary-label">Средняя историческая доходность</span>
+                    <span class="summary-value">{{ (avgHistoricalYield * 100).toFixed(2) }}%</span>
+                  </div>
+                  <div class="yield-summary-item">
+                    <span class="summary-label">Средняя дивидендная доходность</span>
+                    <span class="summary-value">{{ (avgDividendYield * 100).toFixed(2) }}%</span>
+                  </div>
+                  <div class="yield-summary-item">
+                    <span class="summary-label">Средняя общая доходность</span>
+                    <span class="summary-value text-green font-bold">{{ (avgTotalYield * 100).toFixed(2) }}%</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Monte Carlo Trajectories Visualization -->
+      <div class="glass-panel trajectories-panel">
+        <div class="panel-header">
+          <div class="trajectories-header-left">
+            <h3>Траектории симуляции методом Монте-Карло</h3>
+            <span v-if="isPlayingTrajectories" class="live-badge">● LIVE</span>
+          </div>
+          
+          <!-- Playback Controls -->
+          <div class="playback-controls" v-if="trajectoriesData.paths.length">
+            <button class="icon-btn" @click="togglePlayTrajectories" title="Play/Pause">
+              <span v-if="isPlayingTrajectories">⏸</span>
+              <span v-else>▶</span>
+            </button>
+            
+            <div class="timeline-wrapper">
+              <input 
+                type="range" 
+                min="0" 
+                :max="trajectoriesDays" 
+                v-model.number="playbackStepTrajectories"
+                @input="stopPlayTrajectories"
+                class="timeline-slider"
+              />
+              <div class="timeline-track" :style="{ width: (playbackStepTrajectories / trajectoriesDays * 100) + '%' }"></div>
+            </div>
+
+            <div class="playback-day-info">
+              День: <span class="mono">{{ playbackStepTrajectories }}</span> / <span class="mono">{{ trajectoriesDays }}</span>
+            </div>
+
+            <button class="icon-btn" @click="resetPlaybackTrajectories" title="Reset">↺</button>
+          </div>
+        </div>
+        
+        <div class="panel-body">
+          <div class="trajectories-chart-container" ref="trajectoriesChartContainer">
+            <svg v-if="trajectoriesData.paths.length > 0" viewBox="0 0 1000 400" preserveAspectRatio="none" class="trajectories-svg">
+              <!-- Grid Lines -->
+              <line x1="0" y1="350" x2="1000" y2="350" stroke="rgba(255,255,255,0.05)" />
+              <line x1="0" y1="200" x2="1000" y2="200" stroke="rgba(255,255,255,0.05)" />
+              <line x1="0" y1="50" x2="1000" y2="50" stroke="rgba(255,255,255,0.05)" />
+
+              <!-- Start Price Line -->
+              <line 
+                x1="0" 
+                :y1="scaleYTrajectories(initialPrice)" 
+                x2="1000" 
+                :y2="scaleYTrajectories(initialPrice)" 
+                stroke="rgba(255,255,255,0.2)" 
+                stroke-dasharray="4" 
+              />
+
+              <!-- Paths -->
+              <path 
+                v-for="(path, i) in trajectoriesData.displayPaths" 
+                :key="`trajectory-path-${i}`"
+                :d="generatePathDTrajectories(path, playbackStepTrajectories)"
+                fill="none" 
+                stroke="rgba(59, 130, 246, 0.2)" 
+                stroke-width="1" 
+              />
+
+              <!-- Confidence Area -->
+              <path 
+                :d="generateAreaDTrajectories(trajectoriesData.q05, trajectoriesData.q95, playbackStepTrajectories)"
+                fill="rgba(59, 130, 246, 0.1)" 
+                stroke="none" 
+              />
+
+              <!-- Median Path -->
+              <path 
+                :d="generatePathDTrajectories(trajectoriesData.medianPath, playbackStepTrajectories)"
+                fill="none" 
+                stroke="#3b82f6" 
+                stroke-width="2.5" 
+              />
+                
+              <!-- Quantile Lines -->
+              <path 
+                :d="generatePathDTrajectories(trajectoriesData.q05, playbackStepTrajectories)" 
+                fill="none" 
+                stroke="#f87171" 
+                stroke-width="1.5" 
+                stroke-dasharray="4"
+              />
+              <path 
+                :d="generatePathDTrajectories(trajectoriesData.q95, playbackStepTrajectories)" 
+                fill="none" 
+                stroke="#34d399" 
+                stroke-width="1.5" 
+                stroke-dasharray="4"
+              />
+              
+              <!-- Current Time Marker -->
+              <line 
+                v-if="playbackStepTrajectories > 0"
+                :x1="scaleXTrajectories(playbackStepTrajectories)" 
+                y1="0" 
+                :x2="scaleXTrajectories(playbackStepTrajectories)" 
+                y2="400" 
+                stroke="rgba(255,255,255,0.4)" 
+                stroke-dasharray="2" 
+              />
+            </svg>
+
+            <div v-else class="trajectories-empty-state">
+              <span>Генерация траекторий на основе параметров HJB модели</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 3D Trajectories Visualization -->
+      <div class="glass-panel trajectories-3d-panel">
+        <div class="panel-header">
+          <div class="trajectories-3d-header-left">
+            <h3>3D визуализация траекторий</h3>
+            <span v-if="isPlaying3D" class="live-badge">● LIVE</span>
+          </div>
+          
+          <!-- Playback Controls -->
+          <div class="playback-controls" v-if="simulationResult3D && simulationResult3D.paths.length">
+            <button class="icon-btn" @click="togglePlay3D" title="Play/Pause">
+              <span v-if="isPlaying3D">⏸</span>
+              <span v-else>▶</span>
+            </button>
+            
+            <div class="timeline-wrapper">
+              <input 
+                type="range" 
+                min="0" 
+                :max="maxStep3D" 
+                v-model.number="playbackStep3D"
+                @input="stopPlay3D"
+                class="timeline-slider"
+              />
+              <div class="timeline-track" :style="{ width: (maxStep3D > 0 ? (playbackStep3D / maxStep3D * 100) : 0) + '%' }"></div>
+            </div>
+
+            <div class="playback-day-info">
+              Шаг: <span class="mono">{{ playbackStep3D }}</span> / <span class="mono">{{ maxStep3D }}</span>
+            </div>
+
+            <button class="icon-btn" @click="resetPlayback3D" title="Reset">↺</button>
+          </div>
+        </div>
+        <div class="panel-body">
+          <div class="trajectories-3d-container">
+            <canvas ref="trajectories3DCanvas" class="trajectories-3d-canvas"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- Simulation Metrics Summary -->
+      <div class="glass-panel metrics-summary-panel" v-if="simulationResult3D && simulationResult3D.paths.length">
+        <div class="panel-header">
+          <h3>Итоги симуляций</h3>
+        </div>
+        <div class="panel-body">
+          <div class="metrics-grid">
+            <div class="metric-card">
+              <div class="metric-label">Средняя доходность портфеля</div>
+              <div class="metric-value" :class="averageReturn >= 0 ? 'text-green' : 'text-red'">
+                {{ formatPercent(averageReturn) }}
+              </div>
+            </div>
+            <div class="metric-card">
+              <div class="metric-label">Медианная доходность портфеля</div>
+              <div class="metric-value" :class="medianReturn >= 0 ? 'text-green' : 'text-red'">
+                {{ formatPercent(medianReturn) }}
+              </div>
+            </div>
+            <div class="metric-card">
+              <div class="metric-label">Sharpe Ratio</div>
+              <div class="metric-value" :class="sharpeRatio >= 0 ? 'text-green' : 'text-red'">
+                {{ sharpeRatio.toFixed(2) }}
+              </div>
+            </div>
+            <div class="metric-card">
+              <div class="metric-label">VaR (95%)</div>
+              <div class="metric-value text-red">
+                {{ formatPercent(var95) }}
+              </div>
+            </div>
+            <div class="metric-card">
+              <div class="metric-label">CVaR (95%)</div>
+              <div class="metric-value text-red">
+                {{ formatPercent(cvar95) }}
+              </div>
+            </div>
+            <div class="metric-card">
+              <div class="metric-label">Средний MDD</div>
+              <div class="metric-value text-red">
+                {{ formatPercent(averageMDD) }}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </template>
+
+    <!-- CCMV Section (original content) -->
+    <template v-else>
+      <!-- Hero Section CCMV -->
     <div class="hero-section">
       <div class="hero-left">
         <h1>CCMV Optimization</h1>
         <div class="hero-meta">
           <span class="glass-pill">Метод: <strong>{{ params.method === 'delta' ? 'Δ-CCMV' : 'α-CCMV' }}</strong></span>
           <span class="glass-pill">Кластеров: <strong>{{ clusteringResult.numClusters }}</strong></span>
-          <span class="glass-pill">Активов: <strong>{{ clusteringResult.numAssets }}</strong></span>
+          <span class="glass-pill">Активов: <strong>{{ portfolioPositions.length }}</strong></span>
         </div>
       </div>
       <div class="hero-actions">
@@ -22,11 +619,264 @@
       </div>
     </div>
 
-    <!-- Main Grid -->
-    <div class="dashboard-grid">
-      <!-- LEFT COLUMN -->
-      <div class="col-main">
-        <!-- Clustering Info -->
+    <!-- Portfolio Composition -->
+    <div class="dashboard-grid hjb-grid">
+      <div class="col-portfolio-wide">
+        <div class="glass-panel portfolio-composition-panel">
+          <div class="panel-header">
+            <h3>Состав портфеля</h3>
+          </div>
+          <div class="panel-body">
+            <div class="portfolio-table-container">
+              <div class="portfolio-table-wrapper">
+                <table class="portfolio-table">
+                  <thead>
+                    <tr>
+                      <th>Инструмент</th>
+                      <th class="text-right">Цена</th>
+                      <th class="text-right">День %</th>
+                      <th class="text-right">Позиция</th>
+                      <th class="text-right">Вес</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr v-for="pos in portfolioPositions" :key="pos.symbol">
+                      <td>
+                        <div class="asset-cell">
+                          <div class="asset-icon" :style="{ background: pos.color }">{{ pos.symbol[0] }}</div>
+                          <div class="asset-info">
+                            <span class="symbol">{{ pos.symbol }}</span>
+                            <span class="name">{{ pos.name }}</span>
+                          </div>
+                        </div>
+                      </td>
+                      <td class="text-right mono">₽{{ pos.price }}</td>
+                      <td class="text-right mono">
+                        <span :class="['change-pill', pos.dayChange > 0 ? 'text-green' : 'text-red']">
+                          {{ pos.dayChange > 0 ? '+' : '' }}{{ pos.dayChange }}%
+                        </span>
+                      </td>
+                      <td class="text-right mono opacity-80">₽{{ (pos.notional / 1000).toFixed(1) }}k</td>
+                      <td class="text-right mono font-bold">{{ pos.allocation }}%</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+              <div class="portfolio-table-footer">
+                <span>Всего позиций: <strong>{{ portfolioPositions.length }}</strong></span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- RIGHT: Optimization Parameters -->
+      <div class="col-3d-right">
+        <div class="glass-panel">
+          <div class="panel-header">
+            <h3>Параметры оптимизации</h3>
+            <div class="header-tabs">
+              <button
+                :class="['tab-btn', { active: paramsTab === 'basic' }]"
+                @click="paramsTab = 'basic'"
+              >
+                Основные
+              </button>
+              <button
+                :class="['tab-btn', { active: paramsTab === 'methodology' }]"
+                @click="paramsTab = 'methodology'"
+              >
+                Методология
+              </button>
+            </div>
+          </div>
+          <div class="panel-body params-body">
+            <div v-if="paramsTab === 'basic'">
+              <div class="param-group">
+                <label>Максимум активов (Δ)</label>
+                <div class="param-input-group">
+                  <input
+                    type="number"
+                    v-model.number="params.Delta"
+                    min="1"
+                    :max="clusteringResult.numAssets"
+                    @input="recomputeOptimization"
+                  />
+                  <span class="param-hint">из {{ clusteringResult.numAssets }}</span>
+                </div>
+              </div>
+
+              <div class="param-group">
+                <label>Макс. вес на актив (w̄)</label>
+                <div class="param-input-group">
+                  <input
+                    type="number"
+                    v-model.number="params.bar_w"
+                    min="0.01"
+                    max="1"
+                    step="0.01"
+                    @input="recomputeOptimization"
+                  />
+                  <span class="param-hint">{{ (params.bar_w * 100).toFixed(1) }}%</span>
+                </div>
+              </div>
+
+              <div class="param-group">
+                <label>Коэффициент неприятия риска (γ)</label>
+                <div class="param-input-group">
+                  <input
+                    type="number"
+                    v-model.number="params.gamma"
+                    min="0.1"
+                    max="10"
+                    step="0.1"
+                    @input="recomputeOptimization"
+                  />
+                  <span class="param-hint">выше = консервативнее</span>
+                </div>
+              </div>
+            </div>
+
+            <div v-if="paramsTab === 'methodology'">
+              <div class="param-group">
+                <label>Методология</label>
+                <div class="radio-group">
+                  <label class="radio-item">
+                    <input
+                      type="radio"
+                      v-model="params.method"
+                      value="delta"
+                      @change="recomputeOptimization"
+                    />
+                    <span>Δ-CCMV (по количеству активов)</span>
+                  </label>
+                  <label class="radio-item">
+                    <input
+                      type="radio"
+                      v-model="params.method"
+                      value="alpha"
+                      @change="recomputeOptimization"
+                    />
+                    <span>α-CCMV (по распределению)</span>
+                  </label>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Objective Function Value -->
+        <div class="glass-panel metrics-card">
+          <div class="panel-header">
+            <h3>Целевая функция</h3>
+          </div>
+          <div class="panel-body metrics-value">
+            <div class="obj-value">
+              <span class="label">f*(Δ, α) =</span>
+              <span class="value">{{ objectiveValue.toFixed(6) }}</span>
+            </div>
+            <div class="obj-components">
+              <div class="component">
+                <span class="comp-label">Риск</span>
+                <span class="comp-value text-red">{{ (objectiveComponents.variance).toFixed(6) }}</span>
+              </div>
+              <div class="component">
+                <span class="comp-label">Возврат</span>
+                <span class="comp-value text-green">{{ (objectiveComponents.return * params.gamma).toFixed(6) }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Weights Comparison and Clustering -->
+    <div class="dashboard-grid hjb-grid">
+      <div class="col-portfolio-wide">
+        <!-- Weights Comparison -->
+        <div class="glass-panel">
+          <div class="panel-header">
+            <h3>Сравнение весов</h3>
+            <div class="header-tabs">
+              <button
+                :class="['tab-btn', { active: weightsTab === 'comparison' }]"
+                @click="weightsTab = 'comparison'"
+              >
+                Сравнение
+              </button>
+              <button
+                :class="['tab-btn', { active: weightsTab === 'optimal' }]"
+                @click="weightsTab = 'optimal'"
+              >
+                Оптимальные
+              </button>
+            </div>
+          </div>
+          <div class="panel-body weights-body">
+            <div v-if="weightsTab === 'comparison'" class="weights-comparison">
+              <div class="weights-table-container">
+                <table class="weights-table">
+                  <thead>
+                    <tr>
+                      <th>Инструмент</th>
+                      <th class="text-right">Текущий вес</th>
+                      <th class="text-right">Оптимальный вес</th>
+                      <th class="text-right">Изменение</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr v-for="pos in portfolioPositions" :key="pos.symbol">
+                      <td>
+                        <div class="asset-cell">
+                          <div class="asset-icon" :style="{ background: pos.color }">{{ pos.symbol[0] }}</div>
+                          <div class="asset-info">
+                            <span class="symbol">{{ pos.symbol }}</span>
+                            <span class="name">{{ pos.name }}</span>
+                          </div>
+                        </div>
+                      </td>
+                      <td class="text-right mono">{{ pos.allocation }}%</td>
+                      <td class="text-right mono font-bold">
+                        {{ getOptimalWeight(pos.symbol).toFixed(1) }}%
+                      </td>
+                      <td class="text-right mono">
+                        <span :class="['change-pill', getDeltaClass(getWeightDelta(pos))]">
+                          {{ getWeightDelta(pos) > 0 ? '+' : '' }}{{ getWeightDelta(pos).toFixed(1) }}%
+                        </span>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <div v-if="weightsTab === 'optimal'" class="weights-optimal">
+              <div class="weight-chart">
+                <div
+                  v-for="pos in portfolioPositions"
+                  :key="pos.symbol"
+                  class="weight-bar-container"
+                >
+                  <div class="weight-bar-info">
+                    <div class="asset-icon-small" :style="{ background: pos.color }">{{ pos.symbol[0] }}</div>
+                    <div class="weight-bar-label">{{ pos.symbol }}</div>
+                  </div>
+                  <div class="weight-bar-bg">
+                    <div
+                      class="weight-bar-fill"
+                      :style="{ width: getOptimalWeight(pos.symbol) + '%', background: pos.color }"
+                    />
+                  </div>
+                  <div class="weight-bar-value mono">{{ getOptimalWeight(pos.symbol).toFixed(1) }}%</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- RIGHT: Clustering Info -->
+      <div class="col-3d-right">
         <div class="glass-panel">
           <div class="panel-header">
             <h3>Иерархическая кластеризация</h3>
@@ -39,109 +889,47 @@
               </div>
               <div class="info-row">
                 <span class="label">Активов в портфеле:</span>
-                <span class="value mono">{{ clusteringResult.numAssets }}</span>
+                <span class="value mono">{{ portfolioPositions.length }}</span>
               </div>
               <div class="info-row">
                 <span class="label">Метрика расстояния:</span>
                 <span class="value mono">1 - ρ (корреляция)</span>
+              </div>
+              <div class="info-row">
+                <span class="label">Метод кластеризации:</span>
+                <span class="value mono">Иерархическая (Ward)</span>
               </div>
             </div>
 
             <!-- Clusters breakdown -->
             <div class="clusters-list">
               <div class="cluster-row" v-for="(cluster, idx) in clusteringResult.clusters" :key="idx">
-                <div class="cluster-badge" :style="{ background: clusterColors[idx] }">
+                <div class="cluster-badge" :style="{ background: clusterColors[idx % clusterColors.length] }">
                   C{{ idx + 1 }}
                 </div>
                 <div class="cluster-detail">
                   <div class="cluster-label">Кластер {{ idx + 1 }}</div>
-                  <div class="cluster-assets">{{ cluster.assets.join(', ') }}</div>
+                  <div class="cluster-assets">
+                    <div class="asset-tag" v-for="symbol in cluster.assets" :key="symbol">
+                      <span class="asset-tag-symbol">{{ symbol }}</span>
+                      <span class="asset-tag-weight" v-if="getAssetAllocation(symbol)">
+                        {{ getAssetAllocation(symbol) }}%
+                      </span>
+                    </div>
+                  </div>
                 </div>
-                <div class="cluster-count">{{ cluster.assets.length }} активов</div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Optimization Parameters -->
-        <div class="glass-panel">
-          <div class="panel-header">
-            <h3>Параметры оптимизации</h3>
-          </div>
-          <div class="panel-body params-body">
-            <div class="param-group">
-              <label>Максимум активов (Δ)</label>
-              <div class="param-input-group">
-                <input
-                  type="number"
-                  v-model.number="params.Delta"
-                  min="1"
-                  :max="clusteringResult.numAssets"
-                  @input="recomputeOptimization"
-                />
-                <span class="param-hint">из {{ clusteringResult.numAssets }}</span>
-              </div>
-            </div>
-
-            <div class="param-group">
-              <label>Макс. вес на актив (w̄)</label>
-              <div class="param-input-group">
-                <input
-                  type="number"
-                  v-model.number="params.bar_w"
-                  min="0.01"
-                  max="1"
-                  step="0.01"
-                  @input="recomputeOptimization"
-                />
-                <span class="param-hint">{{ (params.bar_w * 100).toFixed(1) }}%</span>
-              </div>
-            </div>
-
-            <div class="param-group">
-              <label>Коэффициент неприятия риска (γ)</label>
-              <div class="param-input-group">
-                <input
-                  type="number"
-                  v-model.number="params.gamma"
-                  min="0.1"
-                  max="10"
-                  step="0.1"
-                  @input="recomputeOptimization"
-                />
-                <span class="param-hint">выше = консервативнее</span>
-              </div>
-            </div>
-
-            <div class="param-group">
-              <label>Методология</label>
-              <div class="radio-group">
-                <label class="radio-item">
-                  <input
-                    type="radio"
-                    v-model="params.method"
-                    value="delta"
-                    @change="recomputeOptimization"
-                  />
-                  <span>Δ-CCMV (по количеству активов)</span>
-                </label>
-                <label class="radio-item">
-                  <input
-                    type="radio"
-                    v-model="params.method"
-                    value="alpha"
-                    @change="recomputeOptimization"
-                  />
-                  <span>α-CCMV (по распределению)</span>
-                </label>
+                <div class="cluster-count">{{ cluster.assets.length }} {{ cluster.assets.length === 1 ? 'актив' : cluster.assets.length < 5 ? 'актива' : 'активов' }}</div>
               </div>
             </div>
           </div>
         </div>
       </div>
+    </div>
 
-      <!-- CENTER: Cluster Metrics -->
-      <div class="col-center">
+    <!-- Main Grid -->
+    <div class="dashboard-grid">
+      <!-- Cluster Metrics -->
+      <div class="col-grid">
         <div class="glass-panel">
           <div class="panel-header">
             <h3>Метрики по кластерам</h3>
@@ -176,121 +964,10 @@
             </table>
           </div>
         </div>
-
-        <!-- Objective Function Value -->
-        <div class="glass-panel metrics-card">
-          <div class="panel-header">
-            <h3>Целевая функция</h3>
-          </div>
-          <div class="panel-body metrics-value">
-            <div class="obj-value">
-              <span class="label">f*(Δ, α) =</span>
-              <span class="value">{{ objectiveValue.toFixed(6) }}</span>
-            </div>
-            <div class="obj-components">
-              <div class="component">
-                <span class="comp-label">Риск</span>
-                <span class="comp-value text-red">{{ (objectiveComponents.variance).toFixed(6) }}</span>
-              </div>
-              <div class="component">
-                <span class="comp-label">Возврат</span>
-                <span class="comp-value text-green">{{ (objectiveComponents.return * params.gamma).toFixed(6) }}</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Portfolio Statistics -->
-        <div class="glass-panel metrics-card">
-          <div class="panel-header">
-            <h3>Статистика портфеля</h3>
-          </div>
-          <div class="panel-body">
-            <div class="stat-row">
-              <span class="stat-label">Expected Return</span>
-              <span class="stat-val text-green">{{ (portfolioStats.expectedReturn * 100).toFixed(2) }}%</span>
-            </div>
-            <div class="stat-row">
-              <span class="stat-label">Volatility</span>
-              <span class="stat-val">{{ (portfolioStats.volatility * 100).toFixed(2) }}%</span>
-            </div>
-            <div class="stat-row">
-              <span class="stat-label">Sharpe Ratio</span>
-              <span class="stat-val">{{ portfolioStats.sharpeRatio.toFixed(3) }}</span>
-            </div>
-            <div class="stat-row">
-              <span class="stat-label">Кол-во позиций</span>
-              <span class="stat-val mono">{{ portfolioStats.numPositions }}</span>
-            </div>
-          </div>
-        </div>
       </div>
 
-      <!-- RIGHT COLUMN -->
-      <aside class="col-side-flex">
-        <!-- Weights Comparison -->
-        <div class="glass-panel">
-          <div class="panel-header">
-            <h3>Сравнение весов</h3>
-            <div class="header-tabs">
-              <button
-                :class="['tab-btn', { active: weightsTab === 'comparison' }]"
-                @click="weightsTab = 'comparison'"
-              >
-                Сравнение
-              </button>
-              <button
-                :class="['tab-btn', { active: weightsTab === 'optimal' }]"
-                @click="weightsTab = 'optimal'"
-              >
-                Оптимальные
-              </button>
-            </div>
-          </div>
-          <div class="panel-body weights-body">
-            <div v-if="weightsTab === 'comparison'" class="weights-comparison">
-              <div class="comp-header">
-                <span class="col-label">Актив</span>
-                <span class="col-label">Текущий</span>
-                <span class="col-label">Оптимальный</span>
-                <span class="col-label">Дельта</span>
-              </div>
-              <div
-                v-for="(weight, symbol) in optimizationResult.weights"
-                :key="symbol"
-                class="weight-row"
-              >
-                <span class="asset-label">{{ symbol }}</span>
-                <span class="weight-cell mono">{{ (currentWeights[symbol] * 100).toFixed(1) }}%</span>
-                <span class="weight-cell mono font-bold">{{ (weight * 100).toFixed(1) }}%</span>
-                <span class="weight-cell delta mono" :class="getDeltaClass(currentWeights[symbol] - weight)">
-                  {{ ((currentWeights[symbol] - weight) * 100).toFixed(1) }}%
-                </span>
-              </div>
-            </div>
-
-            <div v-if="weightsTab === 'optimal'" class="weights-optimal">
-              <div class="weight-chart">
-                <div
-                  v-for="(weight, symbol) in optimizationResult.weights"
-                  :key="symbol"
-                  class="weight-bar-container"
-                >
-                  <div class="weight-bar-label">{{ symbol }}</div>
-                  <div class="weight-bar-bg">
-                    <div
-                      class="weight-bar-fill"
-                      :style="{ width: (weight * 100) + '%' }"
-                    />
-                  </div>
-                  <div class="weight-bar-value">{{ (weight * 100).toFixed(1) }}%</div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Cluster Allocation -->
+      <!-- Cluster Allocation -->
+      <div class="col-grid">
         <div class="glass-panel">
           <div class="panel-header">
             <h3>Распределение по кластерам</h3>
@@ -320,8 +997,37 @@
             </div>
           </div>
         </div>
-      </aside>
+      </div>
+
+      <!-- Portfolio Statistics -->
+      <div class="col-grid">
+        <div class="glass-panel metrics-card">
+          <div class="panel-header">
+            <h3>Статистика портфеля</h3>
+          </div>
+          <div class="panel-body">
+            <div class="stat-row">
+              <span class="stat-label">Expected Return</span>
+              <span class="stat-val text-green">{{ (portfolioStats.expectedReturn * 100).toFixed(2) }}%</span>
+            </div>
+            <div class="stat-row">
+              <span class="stat-label">Volatility</span>
+              <span class="stat-val">{{ (portfolioStats.volatility * 100).toFixed(2) }}%</span>
+            </div>
+            <div class="stat-row">
+              <span class="stat-label">Sharpe Ratio</span>
+              <span class="stat-val">{{ portfolioStats.sharpeRatio.toFixed(3) }}</span>
+            </div>
+            <div class="stat-row">
+              <span class="stat-label">Кол-во позиций</span>
+              <span class="stat-val mono">{{ portfolioStats.numPositions }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
+
+    </template>
 
     <!-- Toast -->
     <transition name="slide-up">
@@ -337,7 +1043,71 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch, reactive } from 'vue'
+import { usePortfolioStore } from '../stores/portfolio'
+import * as THREE from 'three'
+import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
+
+// Динамический импорт Plotly
+let Plotly: any = null
+let plotlyLoadPromise: Promise<any> | null = null
+
+const loadPlotly = async () => {
+  if (typeof window !== 'undefined') {
+    const win = window as any
+    
+    // Если Plotly уже загружен
+    if (win.Plotly) {
+      Plotly = win.Plotly
+      return Plotly
+    }
+    
+    // Если уже идёт загрузка, ждём её завершения
+    if (plotlyLoadPromise) {
+      return plotlyLoadPromise
+    }
+    
+    // Проверяем, есть ли уже скрипт на странице
+    const existingScript = document.querySelector('script[src*="plotly"]')
+    if (existingScript) {
+      // Ждём загрузки существующего скрипта
+      plotlyLoadPromise = new Promise((resolve) => {
+        const checkInterval = setInterval(() => {
+          if (win.Plotly) {
+            clearInterval(checkInterval)
+            Plotly = win.Plotly
+            resolve(Plotly)
+          }
+        }, 100)
+        // Timeout после 10 секунд
+        setTimeout(() => {
+          clearInterval(checkInterval)
+          resolve(null)
+        }, 10000)
+      })
+      return plotlyLoadPromise
+    }
+    
+    // Загружаем новый скрипт
+    plotlyLoadPromise = new Promise((resolve) => {
+      const script = document.createElement('script')
+      script.src = 'https://cdn.plot.ly/plotly-2.27.0.min.js'
+      script.async = true
+      script.onload = () => {
+        Plotly = win.Plotly
+        resolve(Plotly)
+      }
+      script.onerror = () => {
+        console.error('Failed to load Plotly')
+        resolve(null)
+      }
+      document.head.appendChild(script)
+    })
+    
+    return plotlyLoadPromise
+  }
+  return null
+}
 
 interface Cluster {
   assets: string[]
@@ -351,8 +1121,1756 @@ interface ClusterMetric {
   alphaK: number
 }
 
+// Portfolio store
+const portfolioStore = usePortfolioStore()
+
+// Method selector
+const activeMethod = ref<'hjb' | 'ccmv'>('hjb')
+
 const isComputing = ref(false)
 const weightsTab = ref<'comparison' | 'optimal'>('comparison')
+const paramsTab = ref<'basic' | 'methodology'>('basic')
+
+// Portfolio composition from store
+const portfolioPositions = computed(() => portfolioStore.positions)
+const correlationMatrix = computed(() => portfolioStore.correlationMatrix)
+const selectedBank = computed(() => portfolioStore.selectedBank)
+const hoveredAsset = ref<any>(null)
+
+// ==================== HJB PARAMETERS ====================
+const hjbParams = ref({
+  gamma: 2.0,           // Risk aversion coefficient
+  horizon: 1.0,         // Investment horizon (years)
+  riskFreeRate: 0.045,  // Risk-free rate
+  marketVol: 0.18,      // Market volatility
+  expectedReturn: 0.10, // Expected return
+  monteCarloTrajectories: 10000 // Number of Monte Carlo trajectories
+})
+
+// HJB Optimal allocation (Merton's formula)
+const hjbOptimalAllocation = computed(() => {
+  const { expectedReturn, riskFreeRate, gamma, marketVol } = hjbParams.value
+  const excessReturn = expectedReturn - riskFreeRate
+  const allocation = excessReturn / (gamma * marketVol * marketVol)
+  return Math.max(0, Math.min(allocation, 2)) // Capped between 0 and 200%
+})
+
+// Portfolio expected return
+const hjbExpectedPortfolioReturn = computed(() => {
+  const pi = hjbOptimalAllocation.value
+  const { expectedReturn, riskFreeRate } = hjbParams.value
+  return riskFreeRate + pi * (expectedReturn - riskFreeRate)
+})
+
+// Portfolio volatility
+const hjbPortfolioVol = computed(() => {
+  const pi = hjbOptimalAllocation.value
+  return pi * hjbParams.value.marketVol
+})
+
+// Sharpe ratio
+const hjbSharpeRatio = computed(() => {
+  const { expectedReturn, riskFreeRate, marketVol } = hjbParams.value
+  return (expectedReturn - riskFreeRate) / marketVol
+})
+
+// Certainty equivalent
+const hjbCertaintyEquivalent = computed(() => {
+  const { gamma } = hjbParams.value
+  const excessReturn = hjbExpectedPortfolioReturn.value - hjbParams.value.riskFreeRate
+  const variance = hjbPortfolioVol.value * hjbPortfolioVol.value
+  return hjbParams.value.riskFreeRate + excessReturn - 0.5 * gamma * variance
+})
+
+// ==================== MONTE CARLO TRAJECTORIES ====================
+const playbackStepTrajectories = ref(0)
+const isPlayingTrajectories = ref(false)
+let animationFrameTrajectories: number | null = null
+const trajectoriesChartContainer = ref<HTMLElement | null>(null)
+const initialPrice = ref(100)
+
+// Convert horizon from years to days (252 trading days per year)
+const trajectoriesDays = computed(() => {
+  return Math.round(hjbParams.value.horizon * 252)
+})
+
+const trajectoriesData = reactive({
+  paths: [] as number[][],       
+  displayPaths: [] as number[][],
+  medianPath: [] as number[],
+  q05: [] as number[],
+  q95: [] as number[],
+  minY: 0,
+  maxY: 200
+})
+
+// Watch hjbParams to regenerate trajectories when parameters change
+watch(() => [
+  hjbParams.value.monteCarloTrajectories,
+  hjbParams.value.horizon,
+  hjbParams.value.expectedReturn,
+  hjbParams.value.marketVol,
+  hjbParams.value.riskFreeRate
+], () => {
+  generateTrajectories()
+}, { deep: true })
+
+// Generate trajectories based on HJB parameters
+const generateTrajectories = () => {
+  const { horizon, expectedReturn, marketVol, riskFreeRate, monteCarloTrajectories } = hjbParams.value
+  const days = trajectoriesDays.value // Convert years to days
+  const dt = 1 / 252
+  const mu = expectedReturn
+  const sigma = marketVol
+  
+  const newPaths: number[][] = []
+  
+  for (let i = 0; i < monteCarloTrajectories; i++) {
+    const path = [initialPrice.value]
+    let currentPrice = initialPrice.value
+    
+    for (let t = 1; t <= days; t++) {
+      const Z = boxMullerRandomTrajectories()
+      const driftTerm = (mu - 0.5 * sigma * sigma) * dt
+      const shockTerm = sigma * Math.sqrt(dt) * Z
+      currentPrice = currentPrice * Math.exp(driftTerm + shockTerm)
+      path.push(currentPrice)
+    }
+    newPaths.push(path)
+  }
+  
+  // Calculate quantiles
+  const steps = days + 1
+  const medianPath: number[] = []
+  const q05Path: number[] = []
+  const q95Path: number[] = []
+  let globalMin = initialPrice.value
+  let globalMax = initialPrice.value
+
+  for (let t = 0; t < steps; t++) {
+    const pricesAtT = newPaths.map(p => p[t]).sort((a, b) => a - b)
+    const med = pricesAtT[Math.floor(monteCarloTrajectories * 0.5)]
+    const q05 = pricesAtT[Math.floor(monteCarloTrajectories * 0.05)]
+    const q95 = pricesAtT[Math.floor(monteCarloTrajectories * 0.95)]
+    
+    medianPath.push(med)
+    q05Path.push(q05)
+    q95Path.push(q95)
+
+    if (q05 < globalMin) globalMin = q05
+    if (q95 > globalMax) globalMax = q95
+  }
+
+  trajectoriesData.paths = newPaths
+  trajectoriesData.displayPaths = newPaths.slice(0, 50) 
+  trajectoriesData.medianPath = medianPath
+  trajectoriesData.q05 = q05Path
+  trajectoriesData.q95 = q95Path
+  trajectoriesData.minY = globalMin * 0.9
+  trajectoriesData.maxY = globalMax * 1.1
+  
+  if (!isPlayingTrajectories.value) {
+    playbackStepTrajectories.value = days
+  }
+}
+
+// Playback controls
+const togglePlayTrajectories = () => {
+  if (isPlayingTrajectories.value) {
+    stopPlayTrajectories()
+  } else {
+    if (playbackStepTrajectories.value >= trajectoriesDays.value) {
+      playbackStepTrajectories.value = 0
+    }
+    isPlayingTrajectories.value = true
+    animateTrajectories()
+  }
+}
+
+const stopPlayTrajectories = () => {
+  isPlayingTrajectories.value = false
+  if (animationFrameTrajectories) {
+    cancelAnimationFrame(animationFrameTrajectories)
+  }
+}
+
+const resetPlaybackTrajectories = () => {
+  stopPlayTrajectories()
+  playbackStepTrajectories.value = 0
+}
+
+const animateTrajectories = () => {
+  if (!isPlayingTrajectories.value) return
+  
+  const days = trajectoriesDays.value
+  const nextStep = playbackStepTrajectories.value + Math.max(1, Math.floor(days / 100))
+  
+  if (nextStep >= days) {
+    playbackStepTrajectories.value = days
+    stopPlayTrajectories()
+  } else {
+    playbackStepTrajectories.value = nextStep
+    animationFrameTrajectories = requestAnimationFrame(animateTrajectories)
+  }
+}
+
+// ==================== 3D TRAJECTORIES VISUALIZATION ====================
+interface PathPoint3D {
+  x: number // Time
+  y: number // Price/Value
+  z: number // Simulation Index
+  isJump?: boolean
+}
+
+interface SimulationResult3D {
+  paths: PathPoint3D[][]
+  jumps: PathPoint3D[]
+  stats: {
+    meanFinalPrice: number
+    maxPrice: number
+    minPrice: number
+    stdDev: number
+  }
+}
+
+interface SimulationConfig3D {
+  initialPrice: number
+  drift: number
+  volatility: number
+  timeSteps: number
+  numPaths: number
+  dt: number
+  jumpIntensity: number
+  jumpMean: number
+  jumpSd: number
+}
+
+const trajectories3DCanvas = ref<HTMLCanvasElement | null>(null)
+let scene3D: THREE.Scene | null = null
+let camera3D: THREE.PerspectiveCamera | null = null
+let renderer3D: THREE.WebGLRenderer | null = null
+let controls3D: any = null
+let animationId3D: number | null = null
+let currentStep3D = ref(0)
+let cameraPositioned = false
+const simulationResult3D = ref<SimulationResult3D | null>(null)
+const trajectories3DLines: THREE.Line[] = []
+let lastUpdateTime = 0
+const UPDATE_THROTTLE_MS = 100 // Update trajectories max once per 100ms
+let cachedScaleParams: { scaleX: number; scaleY: number; scaleZ: number; stats: any; boxWidth: number; boxDepth: number } | null = null
+
+// 3D Playback controls
+const isPlaying3D = ref(false)
+const playbackStep3D = ref(0)
+let animationFrame3D: number | null = null
+
+// Computed max step for 3D
+const maxStep3D = computed(() => {
+  if (!simulationResult3D.value || !simulationResult3D.value.paths.length) return 0
+  return simulationResult3D.value.paths[0].length - 1
+})
+
+// Helper function to format percentage
+const formatPercent = (value: number): string => {
+  return (value * 100).toFixed(2) + '%'
+}
+
+// Calculate portfolio returns from simulation paths
+const getPortfolioReturns = (): number[] => {
+  if (!simulationResult3D.value || !simulationResult3D.value.paths.length) return []
+  
+  const paths = simulationResult3D.value.paths
+  const returns: number[] = []
+  
+  // Find initial price from first point of first path
+  const initialPrice = paths[0]?.[0]?.y || 1000000
+  
+  // Calculate return for each path (final price / initial price - 1)
+  for (const path of paths) {
+    if (path.length > 0) {
+      const finalPrice = path[path.length - 1].y
+      const return_ = (finalPrice / initialPrice) - 1
+      returns.push(return_)
+    }
+  }
+  
+  return returns
+}
+
+// Average return
+const averageReturn = computed(() => {
+  const returns = getPortfolioReturns()
+  if (returns.length === 0) return 0
+  return returns.reduce((sum, r) => sum + r, 0) / returns.length
+})
+
+// Median return
+const medianReturn = computed(() => {
+  const returns = getPortfolioReturns()
+  if (returns.length === 0) return 0
+  const sorted = [...returns].sort((a, b) => a - b)
+  const mid = Math.floor(sorted.length / 2)
+  return sorted.length % 2 === 0
+    ? (sorted[mid - 1] + sorted[mid]) / 2
+    : sorted[mid]
+})
+
+// Sharpe Ratio (assuming risk-free rate = 0)
+const sharpeRatio = computed(() => {
+  const returns = getPortfolioReturns()
+  if (returns.length === 0) return 0
+  
+  const mean = averageReturn.value
+  const variance = returns.reduce((sum, r) => sum + Math.pow(r - mean, 2), 0) / returns.length
+  const stdDev = Math.sqrt(variance)
+  
+  // Annualize based on simulation period
+  const simulationDays = trajectoriesDays.value || 252
+  const years = simulationDays / 252
+  const annualMean = mean / years
+  const annualStdDev = stdDev / Math.sqrt(years)
+  
+  if (annualStdDev === 0) return 0
+  return annualMean / annualStdDev
+})
+
+// VaR (95%) - Value at Risk
+const var95 = computed(() => {
+  const returns = getPortfolioReturns()
+  if (returns.length === 0) return 0
+  
+  const sorted = [...returns].sort((a, b) => a - b)
+  const index = Math.floor(sorted.length * 0.05) // 5th percentile (worst 5%)
+  return sorted[index] || 0
+})
+
+// CVaR (95%) - Conditional Value at Risk (Expected Shortfall)
+const cvar95 = computed(() => {
+  const returns = getPortfolioReturns()
+  if (returns.length === 0) return 0
+  
+  const sorted = [...returns].sort((a, b) => a - b)
+  const varIndex = Math.floor(sorted.length * 0.05)
+  const tailReturns = sorted.slice(0, varIndex + 1)
+  
+  if (tailReturns.length === 0) return 0
+  return tailReturns.reduce((sum, r) => sum + r, 0) / tailReturns.length
+})
+
+// Average Maximum Drawdown (MDD)
+const averageMDD = computed(() => {
+  if (!simulationResult3D.value || !simulationResult3D.value.paths.length) return 0
+  
+  const paths = simulationResult3D.value.paths
+  const mddValues: number[] = []
+  
+  for (const path of paths) {
+    if (path.length === 0) continue
+    
+    let peak = path[0].y
+    let maxDrawdown = 0
+    
+    for (const point of path) {
+      if (point.y > peak) {
+        peak = point.y
+      }
+      const drawdown = (peak - point.y) / peak
+      if (drawdown > maxDrawdown) {
+        maxDrawdown = drawdown
+      }
+    }
+    
+    mddValues.push(maxDrawdown)
+  }
+  
+  if (mddValues.length === 0) return 0
+  return mddValues.reduce((sum, mdd) => sum + mdd, 0) / mddValues.length
+})
+
+// 3D Playback functions
+const togglePlay3D = () => {
+  if (isPlaying3D.value) {
+    stopPlay3D()
+  } else {
+    if (playbackStep3D.value >= maxStep3D.value) {
+      playbackStep3D.value = 0
+    }
+    isPlaying3D.value = true
+    animate3D()
+  }
+}
+
+const stopPlay3D = () => {
+  isPlaying3D.value = false
+  if (animationFrame3D) {
+    cancelAnimationFrame(animationFrame3D)
+    animationFrame3D = null
+  }
+}
+
+const resetPlayback3D = () => {
+  stopPlay3D()
+  playbackStep3D.value = 0
+  currentStep3D.value = 0
+  update3DTrajectories()
+}
+
+const animate3D = () => {
+  if (!isPlaying3D.value) return
+  
+  const maxStep = maxStep3D.value
+  const nextStep = playbackStep3D.value + Math.max(1, Math.floor(maxStep / 100))
+  
+  if (nextStep >= maxStep) {
+    playbackStep3D.value = maxStep
+    currentStep3D.value = maxStep
+    stopPlay3D()
+    update3DTrajectories()
+  } else {
+    playbackStep3D.value = nextStep
+    currentStep3D.value = nextStep
+    update3DTrajectories()
+    animationFrame3D = requestAnimationFrame(animate3D)
+  }
+}
+
+// Watch playback step changes from slider
+watch(playbackStep3D, (newStep) => {
+  if (!isPlaying3D.value) {
+    currentStep3D.value = newStep
+    update3DTrajectories()
+  }
+})
+
+const runMonteCarlo3D = (config: SimulationConfig3D): SimulationResult3D => {
+  const { 
+    initialPrice, drift, volatility, timeSteps, numPaths, dt,
+    jumpIntensity, jumpMean, jumpSd 
+  } = config
+  
+  const paths: PathPoint3D[][] = []
+  const allJumps: PathPoint3D[] = []
+  
+  let totalFinalPrice = 0
+  let maxPrice = -Infinity
+  let minPrice = Infinity
+  const finalPrices: number[] = []
+
+  for (let i = 0; i < numPaths; i++) {
+    const path: PathPoint3D[] = []
+    let currentPrice = initialPrice
+    
+    // Start at t=0
+    path.push({ x: 0, y: currentPrice, z: i })
+
+    for (let t = 1; t <= timeSteps; t++) {
+      // 1. Standard Geometric Brownian Motion Component
+      const u1 = Math.random()
+      const u2 = Math.random()
+      const z = Math.sqrt(-2.0 * Math.log(u1)) * Math.cos(2.0 * Math.PI * u2)
+      
+      let diffusion = (drift - 0.5 * volatility * volatility) * dt + volatility * Math.sqrt(dt) * z
+
+      // 2. Jump Component (Poisson Process)
+      let jumpMultiplier = 1
+      let isJumpStep = false
+
+      // Poisson check: does a jump occur?
+      if (Math.random() < jumpIntensity * dt) {
+        isJumpStep = true
+        // Generate jump size (Log-normal distribution)
+        const jU1 = Math.random()
+        const jU2 = Math.random()
+        const jZ = Math.sqrt(-2.0 * Math.log(jU1)) * Math.cos(2.0 * Math.PI * jU2)
+        
+        // Jump magnitude
+        const jumpMagnitude = jumpMean + jumpSd * jZ
+        jumpMultiplier = Math.exp(jumpMagnitude)
+      }
+
+      // Calculate new price
+      // S(t) = S(t-1) * exp(diffusion) * jumpMultiplier
+      currentPrice = currentPrice * Math.exp(diffusion) * jumpMultiplier
+      
+      const point: PathPoint3D = { x: t, y: currentPrice, z: i, isJump: isJumpStep }
+      path.push(point)
+
+      if (isJumpStep) {
+        allJumps.push(point)
+      }
+      
+      maxPrice = Math.max(maxPrice, currentPrice)
+      minPrice = Math.min(minPrice, currentPrice)
+    }
+    
+    paths.push(path)
+    totalFinalPrice += currentPrice
+    finalPrices.push(currentPrice)
+  }
+
+  const meanFinalPrice = totalFinalPrice / numPaths
+  const variance = finalPrices.reduce((acc, p) => acc + Math.pow(p - meanFinalPrice, 2), 0) / numPaths
+  const stdDev = Math.sqrt(variance)
+
+  return {
+    paths,
+    jumps: allJumps,
+    stats: {
+      meanFinalPrice,
+      maxPrice,
+      minPrice,
+      stdDev
+    }
+  }
+}
+
+const init3DTrajectories = async () => {
+  if (!trajectories3DCanvas.value || activeMethod.value !== 'hjb') {
+    console.log('3D init skipped:', { canvas: !!trajectories3DCanvas.value, method: activeMethod.value })
+    return
+  }
+  
+  // Cleanup existing scene if any
+  if (renderer3D) {
+    renderer3D.dispose()
+    renderer3D = null
+  }
+  if (animationId3D) {
+    cancelAnimationFrame(animationId3D)
+    animationId3D = null
+  }
+    cameraPositioned = false // Reset camera positioning flag
+    cachedScaleParams = null // Clear cache
+    lastUpdateTime = 0
+  
+  const container = trajectories3DCanvas.value.parentElement as HTMLElement
+  if (!container) {
+    console.error('3D container not found')
+    return
+  }
+  
+  const width = container.clientWidth || 800
+  const height = container.clientHeight || 600
+  
+  if (width === 0 || height === 0) {
+    console.warn('3D container has zero dimensions, retrying...')
+    setTimeout(() => {
+      if (activeMethod.value === 'hjb' && trajectories3DCanvas.value) {
+        init3DTrajectories()
+      }
+    }, 500)
+    return
+  }
+  
+  console.log('Initializing 3D trajectories:', { width, height })
+
+  // Scene
+  scene3D = new THREE.Scene()
+  scene3D.background = null // Transparent background
+
+  // Camera
+  camera3D = new THREE.PerspectiveCamera(45, width / height, 0.1, 50000)
+  
+  // Renderer
+  renderer3D = new THREE.WebGLRenderer({ 
+    canvas: trajectories3DCanvas.value,
+    antialias: true, 
+    alpha: true 
+  })
+  renderer3D.setSize(width, height)
+  renderer3D.setPixelRatio(window.devicePixelRatio)
+
+  // Orbit Controls
+  controls3D = new OrbitControls(camera3D, renderer3D.domElement)
+  controls3D.enableDamping = true
+  controls3D.dampingFactor = 0.1
+  controls3D.rotateSpeed = 0.5
+
+  // Lighting
+  const ambientLight = new THREE.AmbientLight(0xffffff, 3)
+  scene3D.add(ambientLight)
+
+  // Generate initial simulation
+  // Use higher initial price for better visualization (scale 1M like in original)
+  const basePrice = initialPrice.value * 10000 // Scale to 1M range for better 3D visualization
+  const config: SimulationConfig3D = {
+    initialPrice: basePrice,
+    drift: hjbParams.value.expectedReturn,
+    volatility: hjbParams.value.marketVol,
+    timeSteps: trajectoriesDays.value,
+    numPaths: Math.min(hjbParams.value.monteCarloTrajectories, 50), // Reduced for better performance
+    dt: 1 / 252,
+    jumpIntensity: 2.0,
+    jumpMean: 0.05,
+    jumpSd: 0.15
+  }
+
+  simulationResult3D.value = runMonteCarlo3D(config)
+  console.log('3D simulation generated:', {
+    paths: simulationResult3D.value.paths.length,
+    stats: simulationResult3D.value.stats,
+    firstPathLength: simulationResult3D.value.paths[0]?.length
+  })
+  
+  // Initialize current step and playback step to show all trajectories
+  const maxStep = simulationResult3D.value.paths[0]?.length || 0
+  currentStep3D.value = maxStep
+  playbackStep3D.value = maxStep
+  
+  update3DTrajectories()
+
+  // Initial camera position - set after trajectories are created
+  // Will be set in update3DTrajectories after first render
+
+  // Animation loop - render only (playback controlled by user)
+  const animate = () => {
+    animationId3D = requestAnimationFrame(animate)
+    
+    // Always update controls and render
+    if (controls3D) controls3D.update()
+    if (renderer3D && scene3D && camera3D) {
+      renderer3D.render(scene3D, camera3D)
+    }
+  }
+  
+  animate()
+
+  // Handle resize
+  const handleResize = () => {
+    if (!container || !camera3D || !renderer3D) return
+    const newWidth = container.clientWidth
+    const newHeight = container.clientHeight || 500
+    
+    camera3D.aspect = newWidth / newHeight
+    camera3D.updateProjectionMatrix()
+    renderer3D.setSize(newWidth, newHeight)
+  }
+  
+  window.addEventListener('resize', handleResize)
+  
+  // Cleanup on unmount
+  onUnmounted(() => {
+    window.removeEventListener('resize', handleResize)
+    if (animationId3D) {
+      cancelAnimationFrame(animationId3D)
+    }
+    if (renderer3D) {
+      renderer3D.dispose()
+    }
+  })
+}
+
+const update3DTrajectories = () => {
+  if (!scene3D || !simulationResult3D.value) return
+
+  // Clear existing lines
+  trajectories3DLines.forEach(line => {
+    scene3D?.remove(line)
+    line.geometry.dispose()
+    if ((line.material as THREE.Material).dispose) {
+      (line.material as THREE.Material).dispose()
+    }
+  })
+  trajectories3DLines.length = 0
+
+  const { paths, stats } = simulationResult3D.value
+  // Cache scale parameters if not cached
+  if (!cachedScaleParams || cachedScaleParams.stats !== stats) {
+    const scaleX = 3.0
+    const scaleZ = 8.0 // Increased for better Z-axis visibility
+    const targetVisualHeight = 300 // Increased for better Y-axis visibility
+    const priceRange = stats.maxPrice - stats.minPrice
+    const safeRange = Math.max(priceRange, stats.meanFinalPrice * 0.05, 1.0)
+    const scaleY = targetVisualHeight / safeRange // Increased scale for Y-axis
+    
+    const boxWidth = paths[0].length * scaleX
+    const boxDepth = paths.length * scaleZ
+    
+    cachedScaleParams = { scaleX, scaleY, scaleZ, stats, boxWidth, boxDepth }
+  }
+  
+  const { scaleX, scaleY, scaleZ, boxWidth, boxDepth } = cachedScaleParams
+  
+  // Start from zero - no negative offsets
+  const dataOffsetX = 0
+  const dataOffsetZ = 0
+  
+  // Y starts from zero (minPrice maps to 0)
+  const maxY = (stats.maxPrice - stats.minPrice) * scaleY
+  const targetY = maxY / 2 // Center of Y range
+  const boxCenterX = boxWidth / 2 // Center of X range
+  const boxCenterZ = boxDepth / 2 // Center of Z range
+  
+  // Update camera position to view the data (only once)
+  if (camera3D && controls3D && !cameraPositioned) {
+    const cameraDistance = Math.max(boxWidth, boxDepth, maxY) * 0.8
+    camera3D.position.set(cameraDistance, targetY + cameraDistance * 0.5, cameraDistance)
+    controls3D.target.set(boxCenterX, targetY, boxCenterZ)
+    controls3D.update()
+    cameraPositioned = true
+    console.log('Camera positioned:', {
+      position: camera3D.position.toArray(),
+      target: [boxCenterX, targetY, boxCenterZ],
+      distance: cameraDistance
+    })
+  }
+  
+  // Cache materials for reuse
+  const primaryMaterial = new THREE.LineBasicMaterial({ 
+    color: 0x00f0ff, 
+    transparent: true, 
+    opacity: 0.6,
+    linewidth: 1.5
+  })
+  const whiteMaterial = new THREE.LineBasicMaterial({ 
+    color: 0xffffff, 
+    transparent: true, 
+    opacity: 1.0,
+    linewidth: 2.5
+  })
+
+  // Clear existing lines only if count changed
+  if (trajectories3DLines.length !== paths.length) {
+    trajectories3DLines.forEach(line => {
+      scene3D?.remove(line)
+      line.geometry.dispose()
+    })
+    trajectories3DLines.length = 0
+  }
+
+  paths.forEach((path, idx) => {
+    const finalVal = path[path.length - 1].y
+    const isOutlier = Math.abs(finalVal - paths[0][0].y) > (stats.stdDev * 1.5)
+    const material = isOutlier ? whiteMaterial : primaryMaterial
+
+    // Limit to current step
+    const limit = Math.max(2, Math.min(path.length, currentStep3D.value))
+    const activePoints = path.slice(0, limit)
+    
+    if (activePoints.length < 2) return
+
+    // Reuse existing line or create new one
+    let line = trajectories3DLines[idx]
+    if (!line) {
+      const points: THREE.Vector3[] = activePoints.map(p => {
+        return new THREE.Vector3(
+          (p.x * scaleX) + dataOffsetX,
+          (p.y - stats.minPrice) * scaleY, // Start Y from 0
+          (p.z * scaleZ) + dataOffsetZ
+        )
+      })
+      const geometry = new THREE.BufferGeometry().setFromPoints(points)
+      line = new THREE.Line(geometry, material)
+      if (scene3D) {
+        scene3D.add(line)
+        trajectories3DLines[idx] = line
+      }
+    } else {
+      // Update existing geometry instead of recreating
+      const positions: number[] = []
+      activePoints.forEach(p => {
+        positions.push(
+          (p.x * scaleX) + dataOffsetX,
+          (p.y - stats.minPrice) * scaleY,
+          (p.z * scaleZ) + dataOffsetZ
+        )
+      })
+      line.geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3))
+      line.geometry.setDrawRange(0, activePoints.length)
+      // Update material if outlier status changed
+      const finalVal = path[path.length - 1].y
+      const isOutlier = Math.abs(finalVal - paths[0][0].y) > (stats.stdDev * 1.5)
+      line.material = isOutlier ? whiteMaterial : primaryMaterial
+    }
+  })
+  
+  // Remove excess lines if paths count decreased
+  while (trajectories3DLines.length > paths.length) {
+    const line = trajectories3DLines.pop()
+    if (line && scene3D) {
+      scene3D.remove(line)
+      line.geometry.dispose()
+    }
+  }
+
+  // Update grids if needed
+  update3DGrids(stats, scaleX, scaleY, scaleZ, boxWidth, boxDepth)
+  
+  // Force render
+  if (renderer3D && scene3D && camera3D) {
+    renderer3D.render(scene3D, camera3D)
+  }
+}
+
+let gridObjects: THREE.Group[] = []
+let axisLabels: THREE.Sprite[] = []
+
+// Helper function to create axis label sprite
+const createAxisLabelSprite = (text: string, position: THREE.Vector3, size: number = 8): THREE.Sprite => {
+  const canvas = document.createElement('canvas')
+  canvas.width = 6144
+  canvas.height = 3072
+  const ctx = canvas.getContext('2d')!
+  ctx.fillStyle = '#ffffff'
+  ctx.strokeStyle = '#000000'
+  ctx.lineWidth = 24
+  ctx.font = `bold ${600}px Arial`
+  ctx.textAlign = 'center'
+  ctx.textBaseline = 'middle'
+  // Draw text with stroke for better visibility
+  ctx.strokeText(text, 3072, 1536)
+  ctx.fillText(text, 3072, 1536)
+  
+  const texture = new THREE.CanvasTexture(canvas)
+  const spriteMaterial = new THREE.SpriteMaterial({ map: texture })
+  const sprite = new THREE.Sprite(spriteMaterial)
+  sprite.scale.set(size, size / 2, 1)
+  sprite.position.copy(position)
+  return sprite
+}
+
+const update3DGrids = (stats: any, scaleX: number, scaleY: number, scaleZ: number, boxWidth: number, boxDepth: number) => {
+  // Remove old grids
+  if (!scene3D) return
+  gridObjects.forEach(grid => {
+    if (scene3D) {
+      scene3D.remove(grid)
+    }
+    grid.traverse((child) => {
+      if (child instanceof THREE.Mesh) {
+        child.geometry.dispose()
+        if (child.material instanceof THREE.Material) {
+          child.material.dispose()
+        }
+      }
+    })
+  })
+  gridObjects.length = 0
+
+  // Remove old axis labels
+  axisLabels.forEach(sprite => {
+    if (scene3D) {
+      scene3D.remove(sprite)
+    }
+    if (sprite.material instanceof THREE.SpriteMaterial) {
+      sprite.material.map?.dispose()
+      sprite.material.dispose()
+    }
+  })
+  axisLabels.length = 0
+
+  if (!scene3D) return
+
+  // All axes start from zero
+  const boxHeight = (stats.maxPrice - stats.minPrice) * scaleY * 1.2
+  const targetY = boxHeight / 2 // Center of Y range (starts from 0)
+  
+  const gridGroup = new THREE.Group()
+  
+  // Helper function to create positive-only grid (starts from 0,0)
+  const createPositiveGrid = (width: number, height: number, color: number = 0x0088aa, sectionColor: number = 0x003344) => {
+    const gridGroup = new THREE.Group()
+    const cellSize = 50
+    const sectionSize = 250
+    
+    // Create grid lines only in positive quadrant
+    const lineMaterial = new THREE.LineBasicMaterial({ color: color, opacity: 0.3, transparent: true })
+    const sectionMaterial = new THREE.LineBasicMaterial({ color: sectionColor, opacity: 0.5, transparent: true })
+    
+    // Vertical lines (along width)
+    for (let i = 0; i <= width; i += cellSize) {
+      const isSection = i % sectionSize === 0
+      const material = isSection ? sectionMaterial : lineMaterial
+      const geometry = new THREE.BufferGeometry().setFromPoints([
+        new THREE.Vector3(i, 0, 0),
+        new THREE.Vector3(i, 0, height)
+      ])
+      const line = new THREE.Line(geometry, material)
+      gridGroup.add(line)
+    }
+    
+    // Horizontal lines (along height)
+    for (let i = 0; i <= height; i += cellSize) {
+      const isSection = i % sectionSize === 0
+      const material = isSection ? sectionMaterial : lineMaterial
+      const geometry = new THREE.BufferGeometry().setFromPoints([
+        new THREE.Vector3(0, 0, i),
+        new THREE.Vector3(width, 0, i)
+      ])
+      const line = new THREE.Line(geometry, material)
+      gridGroup.add(line)
+    }
+    
+    return gridGroup
+  }
+
+  // Helper function to create grid for YZ plane (height x depth)
+  // YZ plane is vertical, lines are in YZ plane (parallel to Y and Z axes)
+  const createYZGrid = (height: number, depth: number, color: number = 0x0088aa, sectionColor: number = 0x003344) => {
+    const gridGroup = new THREE.Group()
+    const cellSize = 50
+    const sectionSize = 250
+    
+    const lineMaterial = new THREE.LineBasicMaterial({ color: color, opacity: 0.3, transparent: true })
+    const sectionMaterial = new THREE.LineBasicMaterial({ color: sectionColor, opacity: 0.5, transparent: true })
+    
+    // Lines parallel to Y-axis (vertical in YZ plane) - along Z
+    for (let z = 0; z <= depth; z += cellSize) {
+      const isSection = z % sectionSize === 0
+      const material = isSection ? sectionMaterial : lineMaterial
+      const geometry = new THREE.BufferGeometry().setFromPoints([
+        new THREE.Vector3(0, 0, z),
+        new THREE.Vector3(0, height, z)
+      ])
+      const line = new THREE.Line(geometry, material)
+      gridGroup.add(line)
+    }
+    
+    // Lines parallel to Z-axis (horizontal in YZ plane) - along Y
+    for (let y = 0; y <= height; y += cellSize) {
+      const isSection = y % sectionSize === 0
+      const material = isSection ? sectionMaterial : lineMaterial
+      const geometry = new THREE.BufferGeometry().setFromPoints([
+        new THREE.Vector3(0, y, 0),
+        new THREE.Vector3(0, y, depth)
+      ])
+      const line = new THREE.Line(geometry, material)
+      gridGroup.add(line)
+    }
+    
+    return gridGroup
+  }
+
+  // Helper function to create grid for XY plane (width x height)
+  // XY plane is vertical, lines are in XY plane (parallel to X and Y axes)
+  const createXYGrid = (width: number, height: number, color: number = 0x0088aa, sectionColor: number = 0x003344) => {
+    const gridGroup = new THREE.Group()
+    const cellSize = 50
+    const sectionSize = 250
+    
+    const lineMaterial = new THREE.LineBasicMaterial({ color: color, opacity: 0.3, transparent: true })
+    const sectionMaterial = new THREE.LineBasicMaterial({ color: sectionColor, opacity: 0.5, transparent: true })
+    
+    // Lines parallel to Y-axis (vertical in XY plane) - along X
+    for (let x = 0; x <= width; x += cellSize) {
+      const isSection = x % sectionSize === 0
+      const material = isSection ? sectionMaterial : lineMaterial
+      const geometry = new THREE.BufferGeometry().setFromPoints([
+        new THREE.Vector3(x, 0, 0),
+        new THREE.Vector3(x, height, 0)
+      ])
+      const line = new THREE.Line(geometry, material)
+      gridGroup.add(line)
+    }
+    
+    // Lines parallel to X-axis (horizontal in XY plane) - along Y
+    for (let y = 0; y <= height; y += cellSize) {
+      const isSection = y % sectionSize === 0
+      const material = isSection ? sectionMaterial : lineMaterial
+      const geometry = new THREE.BufferGeometry().setFromPoints([
+        new THREE.Vector3(0, y, 0),
+        new THREE.Vector3(width, y, 0)
+      ])
+      const line = new THREE.Line(geometry, material)
+      gridGroup.add(line)
+    }
+    
+    return gridGroup
+  }
+
+  // Floor Grid (XZ plane) - starts at y=0, only positive quadrant (X and Z from 0)
+  // This grid is horizontal, parallel to XZ plane
+  const floorGrid = createPositiveGrid(boxWidth, boxDepth)
+  floorGrid.position.set(0, 0, 0) // Start from origin (0,0,0)
+  gridGroup.add(floorGrid)
+
+  // Back Wall Grid (XY plane) - starts at z=0, only positive quadrant (X and Y from 0)
+  // XY plane is vertical, perpendicular to Z axis
+  // Lines are already in XY plane (x varies, y varies, z=0), no rotation needed
+  const backGrid = createXYGrid(boxWidth, boxHeight)
+  backGrid.position.set(0, 0, 0) // Start from origin (0,0,0)
+  gridGroup.add(backGrid)
+
+  // Side Wall Grid (YZ plane) - starts at x=0, only positive quadrant (Y and Z from 0)
+  // YZ plane is vertical, perpendicular to X axis
+  // Lines are already in YZ plane (x=0, y varies, z varies), no rotation needed
+  const sideGrid = createYZGrid(boxHeight, boxDepth)
+  sideGrid.position.set(0, 0, 0) // Start from origin (0,0,0)
+  gridGroup.add(sideGrid)
+
+  // Create visible axes with grid ticks
+  const axesLength = Math.max(boxWidth, boxDepth, boxHeight)
+  const lineWidth = 3
+  const axesColor = 0xffffff
+  const axesMaterial = new THREE.LineBasicMaterial({ color: axesColor, linewidth: lineWidth })
+  const tickMaterial = new THREE.LineBasicMaterial({ color: 0xaaaaaa, opacity: 0.8, transparent: true })
+  const tickSize = axesLength * 0.03
+  const cellSize = 50
+  const sectionSize = 250
+  
+  // X-axis (red) - along width (time)
+  const xAxisGeometry = new THREE.BufferGeometry().setFromPoints([
+    new THREE.Vector3(0, 0, 0),
+    new THREE.Vector3(boxWidth, 0, 0)
+  ])
+  const xAxisLine = new THREE.Line(xAxisGeometry, axesMaterial)
+  gridGroup.add(xAxisLine)
+  
+  // X-axis ticks (grid marks along X axis)
+  for (let x = 0; x <= boxWidth; x += cellSize) {
+    const isSection = x % sectionSize === 0
+    const material = isSection ? axesMaterial : tickMaterial
+    const tickLength = isSection ? tickSize * 1.5 : tickSize
+    const geometry = new THREE.BufferGeometry().setFromPoints([
+      new THREE.Vector3(x, -tickLength, 0),
+      new THREE.Vector3(x, tickLength, 0)
+    ])
+    const tick = new THREE.Line(geometry, material)
+    gridGroup.add(tick)
+  }
+
+  // Y-axis (green) - along height (capital)
+  const yAxisGeometry = new THREE.BufferGeometry().setFromPoints([
+    new THREE.Vector3(0, 0, 0),
+    new THREE.Vector3(0, boxHeight, 0)
+  ])
+  const yAxisLine = new THREE.Line(yAxisGeometry, axesMaterial)
+  gridGroup.add(yAxisLine)
+  
+  // Y-axis ticks (grid marks along Y axis)
+  for (let y = 0; y <= boxHeight; y += cellSize) {
+    const isSection = y % sectionSize === 0
+    const material = isSection ? axesMaterial : tickMaterial
+    const tickLength = isSection ? tickSize * 1.5 : tickSize
+    const geometry = new THREE.BufferGeometry().setFromPoints([
+      new THREE.Vector3(-tickLength, y, 0),
+      new THREE.Vector3(tickLength, y, 0)
+    ])
+    const tick = new THREE.Line(geometry, material)
+    gridGroup.add(tick)
+  }
+
+  // Z-axis (blue) - along depth (paths)
+  const zAxisGeometry = new THREE.BufferGeometry().setFromPoints([
+    new THREE.Vector3(0, 0, 0),
+    new THREE.Vector3(0, 0, boxDepth)
+  ])
+  const zAxisLine = new THREE.Line(zAxisGeometry, axesMaterial)
+  gridGroup.add(zAxisLine)
+  
+  // Z-axis ticks (grid marks along Z axis)
+  for (let z = 0; z <= boxDepth; z += cellSize) {
+    const isSection = z % sectionSize === 0
+    const material = isSection ? axesMaterial : tickMaterial
+    const tickLength = isSection ? tickSize * 1.5 : tickSize
+    const geometry = new THREE.BufferGeometry().setFromPoints([
+      new THREE.Vector3(-tickLength, 0, z),
+      new THREE.Vector3(tickLength, 0, z)
+    ])
+    const tick = new THREE.Line(geometry, material)
+    gridGroup.add(tick)
+  }
+
+  // Add axis labels - positioned at the middle of each axis (large and visible)
+  // X-axis label (TIME) - at the middle of X axis, close to the axis
+  const xLabel = createAxisLabelSprite('ВРЕМЯ (t)', new THREE.Vector3(boxWidth / 2, -120, 0), 150)
+  axisLabels.push(xLabel)
+  scene3D.add(xLabel)
+
+  // Y-axis label (CAPITAL) - at the middle of Y axis, close to the axis
+  const yLabel = createAxisLabelSprite('Капитал', new THREE.Vector3(-150, boxHeight / 2, 0), 150)
+  axisLabels.push(yLabel)
+  scene3D.add(yLabel)
+
+  // Z-axis label (PATHS) - at the middle of Z axis, close to the axis
+  const zLabel = createAxisLabelSprite('ТРАЕКТОРИИ (N)', new THREE.Vector3(-120, -120, boxDepth / 2), 150)
+  axisLabels.push(zLabel)
+  scene3D.add(zLabel)
+
+  if (scene3D) {
+    scene3D.add(gridGroup)
+    gridObjects.push(gridGroup)
+  }
+}
+
+// Watch for trajectory data changes to update 3D visualization
+watch([trajectoriesData, hjbParams], () => {
+  if (activeMethod.value === 'hjb' && trajectories3DCanvas.value && renderer3D) {
+    // Regenerate 3D simulation when parameters change
+    const basePrice = initialPrice.value * 10000
+    const config: SimulationConfig3D = {
+      initialPrice: basePrice,
+      drift: hjbParams.value.expectedReturn,
+      volatility: hjbParams.value.marketVol,
+      timeSteps: trajectoriesDays.value,
+      numPaths: Math.min(hjbParams.value.monteCarloTrajectories, 50),
+      dt: 1 / 252,
+      jumpIntensity: 2.0,
+      jumpMean: 0.05,
+      jumpSd: 0.15
+    }
+    
+    simulationResult3D.value = runMonteCarlo3D(config)
+    const maxStep = simulationResult3D.value.paths[0]?.length || 0
+    currentStep3D.value = maxStep
+    playbackStep3D.value = maxStep
+    cameraPositioned = false // Reset camera positioning
+    stopPlay3D() // Stop any ongoing playback
+    update3DTrajectories()
+  }
+}, { deep: true })
+
+// Initialize 3D when switching to HJB method and canvas is ready
+watch([activeMethod, trajectories3DCanvas], ([method, canvas]) => {
+  if (method === 'hjb' && canvas) {
+    // Wait for DOM to be ready
+    setTimeout(() => {
+      const container = canvas.parentElement as HTMLElement
+      if (container && container.clientWidth > 0 && container.clientHeight > 0) {
+        init3DTrajectories()
+      } else {
+        // Retry if container not ready
+        setTimeout(() => {
+          if (activeMethod.value === 'hjb' && trajectories3DCanvas.value) {
+            init3DTrajectories()
+          }
+        }, 500)
+      }
+    }, 200)
+  } else {
+    // Cleanup when switching away
+    if (animationId3D) {
+      cancelAnimationFrame(animationId3D)
+      animationId3D = null
+    }
+    if (renderer3D) {
+      renderer3D.dispose()
+      renderer3D = null
+    }
+    scene3D = null
+    camera3D = null
+    controls3D = null
+    trajectories3DLines.length = 0
+    gridObjects.length = 0
+    // Cleanup axis labels
+    axisLabels.forEach(sprite => {
+      if (sprite.material instanceof THREE.SpriteMaterial) {
+        sprite.material.map?.dispose()
+        sprite.material.dispose()
+      }
+    })
+    axisLabels.length = 0
+  }
+}, { immediate: true })
+
+// Helper functions
+const boxMullerRandomTrajectories = (): number => {
+  let u = 0, v = 0;
+  while(u === 0) u = Math.random();
+  while(v === 0) v = Math.random();
+  return Math.sqrt(-2.0 * Math.log(u)) * Math.cos(2.0 * Math.PI * v);
+}
+
+const scaleXTrajectories = (t: number): number => {
+  const days = trajectoriesDays.value
+  return (t / days) * 1000
+}
+
+const scaleYTrajectories = (price: number): number => {
+  const range = trajectoriesData.maxY - trajectoriesData.minY
+  const normalized = (price - trajectoriesData.minY) / range
+  return 400 - normalized * 400
+}
+
+const generatePathDTrajectories = (path: number[], limit: number): string => {
+  if (!path.length) return ''
+  const sliced = path.slice(0, limit + 1)
+  return 'M ' + sliced.map((p, i) => `${scaleXTrajectories(i).toFixed(1)},${scaleYTrajectories(p).toFixed(1)}`).join(' L ')
+}
+
+const generateAreaDTrajectories = (lower: number[], upper: number[], limit: number): string => {
+  if (!lower.length) return ''
+  const lSliced = lower.slice(0, limit + 1)
+  const uSliced = upper.slice(0, limit + 1)
+  
+  let d = 'M ' + lSliced.map((p, i) => `${scaleXTrajectories(i).toFixed(1)},${scaleYTrajectories(p).toFixed(1)}`).join(' L ')
+  for (let i = uSliced.length - 1; i >= 0; i--) {
+    d += ` L ${scaleXTrajectories(i).toFixed(1)},${scaleYTrajectories(uSliced[i]).toFixed(1)}`
+  }
+  d += ' Z'
+  return d
+}
+
+
+const runHJBOptimization = async () => {
+  isComputing.value = true
+  await new Promise(r => setTimeout(r, 800))
+  isComputing.value = false
+  showToast(`HJB оптимизация завершена: π* = ${(hjbOptimalAllocation.value * 100).toFixed(1)}%`, 'success')
+}
+
+// ==================== GARCH FILTERING ====================
+const garchFilteredAssets = computed(() => {
+  return portfolioPositions.value
+    .map(asset => ({
+      symbol: asset.symbol,
+      name: asset.name,
+      garchVol: 15 + Math.random() * 20, // Mock GARCH volatility
+      passed: true
+    }))
+    .filter(asset => asset.garchVol <= 30)
+    .sort((a, b) => a.garchVol - b.garchVol)
+})
+
+const garchFilteredCount = computed(() => garchFilteredAssets.value.length)
+
+// ==================== YIELD REPORT ====================
+const yieldReportData = computed(() => {
+  return portfolioPositions.value.map(asset => {
+    const historicalYield = 0.05 + Math.random() * 0.15 // 5-20%
+    const dividendYield = 0.02 + Math.random() * 0.08  // 2-10%
+    return {
+      symbol: asset.symbol,
+      historicalYield,
+      dividendYield,
+      totalYield: historicalYield + dividendYield
+    }
+  }).sort((a, b) => b.totalYield - a.totalYield)
+})
+
+const avgHistoricalYield = computed(() => {
+  if (yieldReportData.value.length === 0) return 0
+  return yieldReportData.value.reduce((sum, a) => sum + a.historicalYield, 0) / yieldReportData.value.length
+})
+
+const avgDividendYield = computed(() => {
+  if (yieldReportData.value.length === 0) return 0
+  return yieldReportData.value.reduce((sum, a) => sum + a.dividendYield, 0) / yieldReportData.value.length
+})
+
+const avgTotalYield = computed(() => {
+  if (yieldReportData.value.length === 0) return 0
+  return yieldReportData.value.reduce((sum, a) => sum + a.totalYield, 0) / yieldReportData.value.length
+})
+
+// ==================== 3D CORRELATION HEATMAP ====================
+const initCorrelation3DHeatmap = async () => {
+  try {
+    // Проверяем, что активен метод HJB
+    if (activeMethod.value !== 'hjb') {
+      console.log('Not HJB method, skipping 3D init')
+      return
+    }
+    
+    await loadPlotly()
+    if (!Plotly) {
+      console.error('Plotly not loaded')
+      return
+    }
+    
+    const container = document.getElementById('correlation-3d-heatmap')
+    if (!container) {
+      console.error('Container correlation-3d-heatmap not found')
+      return
+    }
+    
+    // Берем все активы для визуализации (акции и облигации)
+    const allAssets = [...portfolioPositions.value]
+    
+    if (allAssets.length === 0) return
+    
+    // Получаем матрицу корреляций для этих активов
+    const matrix = correlationMatrix.value
+    
+    // Вычисляем 3D координаты на основе метрик (Волатильность, Средняя корреляция, Вес)
+    const calculate3DPositions = (assets: any[], corrMatrix: any[]) => {
+      return assets.map((asset) => {
+        // Определяем тип актива
+        const isBond = asset.symbol.includes('SU') || asset.symbol.includes('RU000')
+        
+        // Цвет: Акции - зеленый (#10b981), Облигации - синий (#3b82f6)
+        const assetColor = isBond ? '#3b82f6' : '#10b981'
+        
+        // X: Волатильность (берем из объекта актива, если нет - генерируем на основе типа)
+        const volatility = isBond ? (3 + Math.random() * 4) : (15 + Math.random() * 20)
+        
+        // Y: Коррелятивная связь (средняя корреляция со всеми активами в матрице)
+        const matrixIndex = corrMatrix.findIndex(row => row.label === asset.symbol)
+        let avgCorrelation = 0
+        if (matrixIndex !== -1) {
+          const values = corrMatrix[matrixIndex].values
+          avgCorrelation = values.reduce((a: number, b: number) => a + b, 0) / values.length
+        }
+        
+        // Z: Вес в портфеле (allocation)
+        const weight = asset.allocation
+        
+        return { 
+          x: volatility, 
+          y: avgCorrelation, 
+          z: weight, 
+          asset: { ...asset, color: assetColor } 
+        }
+      })
+    }
+    
+    const positions3D = calculate3DPositions(allAssets, matrix)
+    
+    if (positions3D.length === 0) {
+      console.error('No 3D positions calculated')
+      return
+    }
+    
+    // Нормализуем данные в диапазон 0-10 для равномерного масштаба осей
+    const xValues = positions3D.map(p => p.x)
+    const yValues = positions3D.map(p => p.y)
+    const zValues = positions3D.map(p => p.z)
+    
+    const xMin = Math.min(...xValues), xMax = Math.max(...xValues)
+    const yMin = Math.min(...yValues), yMax = Math.max(...yValues)
+    const zMin = Math.min(...zValues), zMax = Math.max(...zValues)
+    
+    const normalize = (val: number, min: number, max: number) => {
+      if (max === min) return 5
+      return ((val - min) / (max - min)) * 10
+    }
+    
+    // Нормализованные позиции
+    const normalizedPositions = positions3D.map(p => ({
+      ...p,
+      nx: normalize(p.x, xMin, xMax),
+      ny: normalize(p.y, yMin, yMax),
+      nz: normalize(p.z, zMin, zMax)
+    }))
+    
+    // Функция генерации сферы (теперь с одинаковым радиусом по всем осям)
+    const createSphere = (cx: number, cy: number, cz: number, r: number, color: string, asset: any) => {
+      const x: number[] = []
+      const y: number[] = []
+      const z: number[] = []
+      
+      const steps = 16 // Детализация сферы
+      
+      for (let i = 0; i < steps; i++) {
+        const t = (i / (steps - 1)) * Math.PI
+        for (let j = 0; j < steps; j++) {
+          const p = (j / (steps - 1)) * 2 * Math.PI
+          
+          // Одинаковый радиус по всем осям = идеальная сфера
+          x.push(cx + r * Math.sin(t) * Math.cos(p))
+          y.push(cy + r * Math.sin(t) * Math.sin(p))
+          z.push(cz + r * Math.cos(t))
+        }
+      }
+      
+      return {
+        type: 'mesh3d',
+      x: x,
+      y: y,
+      z: z,
+        color: color,
+        alphahull: 0,
+        opacity: 1,
+        flatshading: false,
+      lighting: {
+        ambient: 0.6,
+          diffuse: 0.9,
+          specular: 1.0,
+          roughness: 0.1,
+          fresnel: 0.8
+        },
+        lightposition: {
+          x: 10,
+          y: 10,
+          z: 20
+        },
+        hoverinfo: 'none', // Отключаем стандартный Plotly tooltip, используем кастомный
+        customdata: asset, // Добавляем данные актива для обработки hover (не массив)
+        name: asset.symbol
+      }
+    }
+
+    // Создаем trace-сферу для каждого актива + scatter для hover
+    const traces: any[] = []
+    
+    // 1. Добавляем сферы
+    normalizedPositions.forEach((pos) => {
+      const asset = pos.asset
+      const size = 0.3 + (asset.allocation / 25) // Радиус пропорционален весу
+      
+      traces.push(createSphere(pos.nx, pos.ny, pos.nz, size, asset.color, asset))
+    })
+    
+    // 2. Добавляем точки для hover с детализированным tooltip (ВАЖНО: этот trace должен быть последним!)
+    traces.push({
+      x: normalizedPositions.map(p => p.nx),
+      y: normalizedPositions.map(p => p.ny),
+      z: normalizedPositions.map(p => p.nz),
+      mode: 'markers',
+      type: 'scatter3d',
+      marker: {
+        size: normalizedPositions.map(p => Math.max(40, (0.3 + p.asset.allocation/25) * 40)), // Размер для перехвата событий
+        color: 'rgba(255,255,255,0)', // Полностью прозрачный
+        opacity: 0, // Полностью невидимый
+        line: {
+          width: 0
+        }
+      },
+      hoverinfo: 'skip', // Полностью отключаем стандартный Plotly tooltip
+      customdata: normalizedPositions.map(p => p.asset)
+    })
+
+    const layout = {
+      showlegend: false,
+      hovermode: 'closest', // Включаем hover для перехвата событий (стандартный tooltip отключен через hoverinfo)
+      scene: {
+        xaxis: { 
+          title: 'РИСК (Волатильность %)',
+          backgroundcolor: 'rgba(20, 22, 28, 0.8)',
+          gridcolor: 'rgba(255,255,255,0.08)',
+          zeroline: false,
+          showbackground: true,
+          titlefont: { color: '#ffffff', size: 12, weight: 'bold' },
+          tickfont: { size: 9, color: 'rgba(255,255,255,0.6)' },
+          tickvals: [0, 2.5, 5, 7.5, 10],
+          ticktext: [
+            xMin.toFixed(0) + '%',
+            ((xMin + xMax) / 4 * 1 + xMin * 3/4).toFixed(0) + '%',
+            ((xMin + xMax) / 2).toFixed(0) + '%',
+            ((xMin + xMax) / 4 * 3 + xMax * 1/4).toFixed(0) + '%',
+            xMax.toFixed(0) + '%'
+          ],
+          showspikes: false
+        },
+        yaxis: { 
+          title: 'СВЯЗЬ (Корреляция)',
+          backgroundcolor: 'rgba(30, 32, 38, 0.6)',
+          gridcolor: 'rgba(255,255,255,0.08)',
+          zeroline: false,
+          showbackground: true,
+          titlefont: { color: '#ffffff', size: 12, weight: 'bold' },
+          tickfont: { size: 9, color: 'rgba(255,255,255,0.6)' },
+          tickvals: [0, 2.5, 5, 7.5, 10],
+          ticktext: [
+            yMin.toFixed(2),
+            ((yMin + yMax) / 4 * 1 + yMin * 3/4).toFixed(2),
+            ((yMin + yMax) / 2).toFixed(2),
+            ((yMin + yMax) / 4 * 3 + yMax * 1/4).toFixed(2),
+            yMax.toFixed(2)
+          ],
+          showspikes: false
+        },
+        zaxis: { 
+          title: 'ДОЛЯ (Вес %)',
+          backgroundcolor: 'rgba(20, 22, 28, 0.8)',
+          gridcolor: 'rgba(255,255,255,0.08)',
+          zeroline: false,
+          showbackground: true,
+          titlefont: { color: '#ffffff', size: 12, weight: 'bold' },
+          tickfont: { size: 9, color: 'rgba(255,255,255,0.6)' },
+          tickvals: [0, 2.5, 5, 7.5, 10],
+          ticktext: [
+            zMin.toFixed(1) + '%',
+            ((zMin + zMax) / 4 * 1 + zMin * 3/4).toFixed(1) + '%',
+            ((zMin + zMax) / 2).toFixed(1) + '%',
+            ((zMin + zMax) / 4 * 3 + zMax * 1/4).toFixed(1) + '%',
+            zMax.toFixed(1) + '%'
+          ],
+          showspikes: false
+        },
+        bgcolor: 'rgba(0,0,0,0)',
+        camera: {
+          eye: { x: 1.8, y: 1.8, z: 1.2 },
+          center: { x: 0, y: 0, z: 0 },
+          up: { x: 0, y: 0, z: 1 }
+        },
+        aspectmode: 'cube'
+      },
+      paper_bgcolor: 'transparent',
+      plot_bgcolor: 'transparent',
+      font: { color: '#fff', family: 'system-ui' },
+      margin: { l: 0, r: 0, b: 0, t: 0 },
+      autosize: true
+    }
+
+    const config = {
+      responsive: true,
+      displayModeBar: false,
+      staticPlot: false,
+      displaylogo: false
+    }
+
+    Plotly.newPlot(container, traces, layout, config)
+    
+    // Обработчик hover для кастомного tooltip в правом нижнем углу
+    const plotlyContainer = container as any
+    
+    plotlyContainer.on('plotly_hover', (data: any) => {
+      if (data && data.points && data.points.length > 0) {
+        for (const point of data.points) {
+          if (point.customdata) {
+            const asset = Array.isArray(point.customdata) ? point.customdata[0] : point.customdata
+            if (asset) {
+              hoveredAsset.value = asset
+              return
+            }
+          }
+          
+          const scatterTraceIndex = traces.length - 1
+          if (point.curveNumber === scatterTraceIndex && point.pointNumber !== undefined) {
+            const index = point.pointNumber
+            if (index >= 0 && index < normalizedPositions.length && normalizedPositions[index]) {
+              hoveredAsset.value = normalizedPositions[index].asset
+              return
+            }
+          }
+          
+          if (point.curveNumber < scatterTraceIndex && point.curveNumber < normalizedPositions.length) {
+            const index = point.curveNumber
+            if (normalizedPositions[index]) {
+              hoveredAsset.value = normalizedPositions[index].asset
+              return
+            }
+          }
+        }
+      }
+    })
+    
+    plotlyContainer.on('plotly_unhover', () => {
+      hoveredAsset.value = null
+    })
+    
+  } catch (err) {
+    console.error('Error initializing 3D Correlation Heatmap:', err)
+  }
+}
+
+// Обновляем график при изменении портфеля или метода
+watch([portfolioPositions, selectedBank, activeMethod], () => {
+  if (activeMethod.value === 'hjb') {
+    // Очищаем старый observer
+    if (resizeObserver) {
+      resizeObserver.disconnect()
+      resizeObserver = null
+    }
+    
+    if (portfolioPositions.value.length > 0) {
+      setTimeout(() => {
+        syncPanelHeights()
+        setupResizeObserver()
+      }, 400)
+    }
+  } else {
+    // Очищаем observer при переключении на другой метод
+    if (resizeObserver) {
+      resizeObserver.disconnect()
+      resizeObserver = null
+    }
+  }
+}, { deep: false })
+
+// ==================== GARCH CHART ====================
+const garchChart = ref<HTMLCanvasElement | null>(null)
+
+let resizeObserver: ResizeObserver | null = null
+
+const syncPanelHeights = () => {
+  if (activeMethod.value !== 'hjb') return
+  
+  setTimeout(() => {
+    const portfolioPanel = document.querySelector('.portfolio-composition-panel') as HTMLElement
+    const correlationPanel = document.querySelector('.correlation-3d-panel') as HTMLElement
+    
+    if (portfolioPanel && correlationPanel) {
+      // Получаем реальные высоты панелей
+      const portfolioHeight = portfolioPanel.offsetHeight || portfolioPanel.scrollHeight
+      const correlationHeight = correlationPanel.offsetHeight || correlationPanel.scrollHeight
+      
+      // Используем максимальную высоту, но не больше 500px
+      const targetHeight = Math.min(Math.max(portfolioHeight, correlationHeight, 450), 500)
+      
+      // Устанавливаем одинаковую высоту
+      portfolioPanel.style.height = targetHeight + 'px'
+      correlationPanel.style.height = targetHeight + 'px'
+      
+      // Пересчитываем высоту 3D контейнера после синхронизации
+      setTimeout(() => {
+        initCorrelation3DHeatmap()
+      }, 200)
+    }
+    
+    // Синхронизируем высоты блоков отчетов
+    const reportPanels = document.querySelectorAll('.report-panel') as NodeListOf<HTMLElement>
+    if (reportPanels.length >= 2) {
+      const leftPanel = reportPanels[0]
+      const rightPanel = reportPanels[1]
+      
+      if (leftPanel && rightPanel) {
+        const leftHeight = leftPanel.offsetHeight || leftPanel.scrollHeight
+        const rightHeight = rightPanel.offsetHeight || rightPanel.scrollHeight
+        const targetReportHeight = Math.max(leftHeight, rightHeight)
+        
+        leftPanel.style.height = targetReportHeight + 'px'
+        rightPanel.style.height = targetReportHeight + 'px'
+      }
+    }
+  }, 100)
+}
+
+// Создаем ResizeObserver для автоматической синхронизации
+const setupResizeObserver = () => {
+  if (typeof ResizeObserver === 'undefined') return
+  
+  const portfolioPanel = document.querySelector('.portfolio-composition-panel') as HTMLElement
+  const correlationPanel = document.querySelector('.correlation-3d-panel') as HTMLElement
+  const reportPanels = document.querySelectorAll('.report-panel') as NodeListOf<HTMLElement>
+  
+  if (portfolioPanel && correlationPanel) {
+    resizeObserver = new ResizeObserver(() => {
+      syncPanelHeights()
+    })
+    
+    resizeObserver.observe(portfolioPanel)
+    resizeObserver.observe(correlationPanel)
+    
+    // Отслеживаем изменения высоты блоков отчетов
+    reportPanels.forEach(panel => {
+      resizeObserver?.observe(panel)
+    })
+  }
+}
+
+onMounted(() => {
+  // Generate initial trajectories
+  generateTrajectories()
+  
+  setTimeout(() => {
+    if (garchChart.value) {
+      initGARCHChart()
+      // Добавляем обработчик изменения размера для перерисовки графика
+      const resizeObserver = new ResizeObserver(() => {
+        if (garchChart.value) {
+          initGARCHChart()
+        }
+      })
+      if (garchChart.value.parentElement) {
+        resizeObserver.observe(garchChart.value.parentElement)
+      }
+    }
+    // Синхронизируем высоты панелей
+    syncPanelHeights()
+    // Настраиваем ResizeObserver для автоматической синхронизации
+    setupResizeObserver()
+    // Инициализируем 3D график только для HJB метода
+    if (activeMethod.value === 'hjb') {
+      console.log('Initializing 3D chart for HJB method...')
+      setTimeout(() => {
+        initCorrelation3DHeatmap()
+      }, 1000)
+      
+      // Initialize 3D trajectories visualization
+      setTimeout(() => {
+        if (trajectories3DCanvas.value && activeMethod.value === 'hjb') {
+          console.log('Initializing 3D trajectories visualization...')
+          init3DTrajectories()
+        }
+      }, 1500)
+    }
+  }, 500)
+})
+
+onUnmounted(() => {
+  if (resizeObserver) {
+    resizeObserver.disconnect()
+    resizeObserver = null
+  }
+  if (animationFrameTrajectories) {
+    cancelAnimationFrame(animationFrameTrajectories)
+  }
+})
+
+const initGARCHChart = () => {
+  const canvas = document.getElementById('garch-chart') as HTMLCanvasElement
+  if (!canvas) return
+  
+  const ctx = canvas.getContext('2d')
+  if (!ctx) return
+  
+  const width = canvas.offsetWidth || 1200
+  const height = 200
+  canvas.width = width
+  canvas.height = height
+  
+  // Генерируем данные шума (noise) - случайные колебания
+  const dataPoints = 500
+  let currentValue = 0
+  const data = Array.from({ length: dataPoints }, (_, i) => {
+    // Генерируем случайный шум с некоторой автокорреляцией
+    const noise = (Math.random() - 0.5) * 0.3
+    currentValue = currentValue * 0.7 + noise
+    return {
+      x: i,
+      y: currentValue
+    }
+  })
+  
+  // Очищаем canvas
+  ctx.fillStyle = 'rgba(20, 22, 28, 0.5)'
+  ctx.fillRect(0, 0, width, height)
+  
+  // Рисуем центральную линию (ноль)
+  ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)'
+  ctx.lineWidth = 1
+  ctx.setLineDash([5, 5])
+  ctx.beginPath()
+  ctx.moveTo(0, height / 2)
+  ctx.lineTo(width, height / 2)
+  ctx.stroke()
+  ctx.setLineDash([])
+  
+  // Рисуем график шума
+  ctx.strokeStyle = '#60a5fa'
+  ctx.lineWidth = 1.5
+  ctx.beginPath()
+  
+  const maxY = Math.max(...data.map(d => Math.abs(d.y))) * 1.2
+  const minY = -maxY
+  const rangeY = maxY - minY
+  
+  data.forEach((point, i) => {
+    const x = (i / (data.length - 1)) * width
+    const y = height / 2 - (point.y / rangeY) * (height * 0.8)
+    
+    if (i === 0) {
+      ctx.moveTo(x, y)
+    } else {
+      ctx.lineTo(x, y)
+    }
+  })
+  
+  ctx.stroke()
+  
+  // Добавляем заливку под графиком
+  ctx.fillStyle = 'rgba(96, 165, 250, 0.1)'
+  ctx.lineTo(width, height / 2)
+  ctx.lineTo(0, height / 2)
+  ctx.closePath()
+  ctx.fill()
+  
+  // Рисуем точки данных
+  ctx.fillStyle = '#60a5fa'
+  data.forEach((point, i) => {
+    if (i % 10 === 0) { // Рисуем каждую 10-ю точку для производительности
+      const x = (i / (data.length - 1)) * width
+      const y = height / 2 - (point.y / rangeY) * (height * 0.8)
+      ctx.beginPath()
+      ctx.arc(x, y, 1.5, 0, Math.PI * 2)
+      ctx.fill()
+    }
+  })
+}
+
+// ==================== CCMV PARAMETERS ====================
 
 const toast = ref<{ show: boolean; message: string; type: 'success' | 'error' | 'info' }>({
   show: false,
@@ -361,14 +2879,33 @@ const toast = ref<{ show: boolean; message: string; type: 'success' | 'error' | 
 })
 
 // Clustering result (mock from notebook)
-const clusteringResult = ref({
-  numClusters: 3,
-  numAssets: 5,
-  clusters: [
-    { assets: ['SPY', 'QQQ'] },
-    { assets: ['TLT', 'BND'] },
-    { assets: ['GLD', 'DXY'] }
-  ] as Cluster[]
+// Computed clustering result based on portfolio
+const clusteringResult = computed(() => {
+  const positions = portfolioPositions.value
+  const numAssets = positions.length
+  
+  // Group assets into clusters (simple heuristic: by type or by allocation size)
+  // For now, create 3 clusters based on allocation quartiles
+  const sorted = [...positions].sort((a, b) => b.allocation - a.allocation)
+  const clusterSize = Math.ceil(sorted.length / 3)
+  
+  const clusters: Cluster[] = []
+  for (let i = 0; i < sorted.length; i += clusterSize) {
+    const clusterAssets = sorted.slice(i, i + clusterSize).map(p => p.symbol)
+    if (clusterAssets.length > 0) {
+      clusters.push({ assets: clusterAssets })
+    }
+  }
+  
+  return {
+    numClusters: clusters.length || 3,
+    numAssets: numAssets,
+    clusters: clusters.length > 0 ? clusters : [
+      { assets: sorted.slice(0, Math.ceil(sorted.length / 3)).map(p => p.symbol) },
+      { assets: sorted.slice(Math.ceil(sorted.length / 3), Math.ceil(sorted.length * 2 / 3)).map(p => p.symbol) },
+      { assets: sorted.slice(Math.ceil(sorted.length * 2 / 3)).map(p => p.symbol) }
+    ].filter(c => c.assets.length > 0) as Cluster[]
+  }
 })
 
 const clusterColors = [
@@ -425,16 +2962,27 @@ const clusterMetrics = computed<ClusterMetric[]>(() => {
 
 // Optimization result (mock CCMV solution)
 const optimizationResult = computed(() => {
-  const baseWeights = {
-    SPY: 0.38,
-    QQQ: 0.10,
-    TLT: 0.27,
-    BND: 0.0,
-    GLD: 0.15,
-    DXY: 0.10
+  // Build weights object from portfolio positions
+  const weights: Record<string, number> = {}
+  portfolioPositions.value.forEach(pos => {
+    // Calculate optimal weight based on current allocation and optimization
+    const baseWeight = pos.allocation / 100
+    // Simple optimization: adjust based on performance and risk
+    const performanceFactor = pos.dayChange > 0 ? 1.02 : 0.98
+    const optimalWeight = baseWeight * performanceFactor
+    weights[pos.symbol] = Math.max(0, Math.min(1, optimalWeight))
+  })
+  
+  // Normalize weights to sum to 1
+  const totalWeight = Object.values(weights).reduce((sum, w) => sum + w, 0)
+  if (totalWeight > 0) {
+    Object.keys(weights).forEach(symbol => {
+      weights[symbol] = weights[symbol] / totalWeight
+    })
   }
+  
   return {
-    weights: baseWeights,
+    weights: weights,
     method: params.value.method
   }
 })
@@ -465,9 +3013,34 @@ const clusterAllocations = computed(() => {
   return alloc.map(a => ({ percentage: a * 100 }))
 })
 
-const getDeltaClass = (delta: number) => {
-  if (Math.abs(delta) < 0.001) return 'neutral'
+const getDeltaClass = (delta: number): string => {
+  if (Math.abs(delta) < 0.1) return 'neutral'
   return delta > 0 ? 'positive' : 'negative'
+}
+
+// Get optimal weight for an asset
+const getOptimalWeight = (symbol: string): number => {
+  // Get from optimizationResult (now computed from portfolioPositions)
+  const weights = optimizationResult.value.weights as Record<string, number>
+  const optWeight = weights[symbol]
+  if (optWeight !== undefined && optWeight !== null) {
+    return optWeight * 100
+  }
+  // Fallback: use current allocation if optimization result not available
+  const currentPos = portfolioPositions.value.find(p => p.symbol === symbol)
+  return currentPos?.allocation || 0
+}
+
+// Get weight delta (optimal - current)
+const getWeightDelta = (pos: any): number => {
+  const optimal = getOptimalWeight(pos.symbol)
+  return optimal - pos.allocation
+}
+
+// Get asset allocation percentage
+const getAssetAllocation = (symbol: string): number | null => {
+  const pos = portfolioPositions.value.find(p => p.symbol === symbol)
+  return pos?.allocation || null
 }
 
 const recomputeOptimization = async () => {
@@ -493,7 +3066,7 @@ const showToast = (message: string, type: 'success' | 'error' | 'info' = 'succes
   margin: 0 auto;
   display: flex;
   flex-direction: column;
-  gap: 28px;
+  gap: 8px;
   min-height: 100vh;
 }
 
@@ -589,17 +3162,31 @@ const showToast = (message: string, type: 'success' | 'error' | 'info' = 'succes
 /* MAIN GRID */
 .dashboard-grid {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr) minmax(0, 1.2fr);
-  gap: 24px;
-  align-items: flex-start;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+  align-items: stretch;
+  width: 100%;
 }
 
-.col-main,
-.col-center,
-.col-side-flex {
+.col-grid {
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  min-width: 0;
+}
+
+.col-grid .glass-panel {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  height: 100%;
+}
+
+.col-grid .glass-panel .panel-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
 }
 
 /* GLASS PANEL */
@@ -773,11 +3360,35 @@ const showToast = (message: string, type: 'success' | 'error' | 'info' = 'succes
 }
 
 .cluster-assets {
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.7);
+  line-height: 1.6;
+  word-break: break-word;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.asset-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
   font-size: 9px;
+}
+
+.asset-tag-symbol {
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.asset-tag-weight {
   color: rgba(255, 255, 255, 0.5);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  font-size: 8px;
 }
 
 .cluster-count {
@@ -992,66 +3603,117 @@ const showToast = (message: string, type: 'success' | 'error' | 'info' = 'succes
 
 /* WEIGHTS */
 .weights-comparison {
-  max-height: 400px;
-  overflow-y: auto;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
 }
 
-.comp-header {
-  display: grid;
-  grid-template-columns: 1fr 1fr 1fr 1fr;
-  gap: 8px;
-  padding: 8px 12px;
-  background: rgba(255, 255, 255, 0.03);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-  font-size: 9px;
-  font-weight: 600;
-  color: rgba(255, 255, 255, 0.6);
+.weights-table-container {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
+}
+
+.weights-table-container::-webkit-scrollbar {
+  width: 6px;
+}
+
+.weights-table-container::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.weights-table-container::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 3px;
+}
+
+.weights-table-container::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.weights-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 11px;
+}
+
+.weights-table thead {
   position: sticky;
   top: 0;
-  text-transform: uppercase;
+  z-index: 10;
+  background: rgba(20, 22, 28, 0.98);
+  backdrop-filter: blur(10px);
 }
 
-.col-label {
+.weights-table th {
+  padding: 10px 8px;
+  text-align: left;
+  background: rgba(255, 255, 255, 0.03);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.6);
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: 9px;
+  letter-spacing: 0.05em;
+}
+
+.weights-table th.text-right {
   text-align: right;
 }
 
-.weight-row {
-  display: grid;
-  grid-template-columns: 1fr 1fr 1fr 1fr;
-  gap: 8px;
-  padding: 6px 12px;
+.weights-table tbody tr {
   border-bottom: 1px solid rgba(255, 255, 255, 0.04);
-  font-size: 11px;
-  align-items: center;
+  transition: background 0.15s;
 }
 
-.weight-row:hover {
+.weights-table tbody tr:hover {
   background: rgba(255, 255, 255, 0.02);
 }
 
-.asset-label {
+.weights-table td {
+  padding: 8px;
   color: rgba(255, 255, 255, 0.9);
-  font-weight: 600;
+  vertical-align: middle;
 }
 
-.weight-cell {
+.weights-table td.text-right {
   text-align: right;
-  color: rgba(255, 255, 255, 0.8);
 }
 
-.weight-cell.delta {
+.weights-table .change-pill {
+  display: inline-block;
+  padding: 3px 8px;
+  border-radius: 6px;
   font-weight: 600;
+  font-size: 10px;
 }
 
-.weight-cell.delta.neutral {
-  color: rgba(255, 255, 255, 0.4);
+.weights-table .change-pill.text-green {
+  background: rgba(52, 211, 153, 0.15);
+  color: #34d399;
 }
 
-.weight-cell.delta.positive {
-  color: #4ade80;
+.weights-table .change-pill.text-red {
+  background: rgba(248, 113, 113, 0.15);
+  color: #f87171;
 }
 
-.weight-cell.delta.negative {
+.weights-table .change-pill.neutral {
+  background: rgba(255, 255, 255, 0.05);
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.weights-table .change-pill.positive {
+  background: rgba(52, 211, 153, 0.15);
+  color: #34d399;
+}
+
+.weights-table .change-pill.negative {
+  background: rgba(248, 113, 113, 0.15);
   color: #f87171;
 }
 
@@ -1068,15 +3730,34 @@ const showToast = (message: string, type: 'success' | 'error' | 'info' = 'succes
 .weight-bar-container {
   display: flex;
   align-items: center;
+  gap: 12px;
+  padding: 8px 0;
+}
+
+.weight-bar-info {
+  display: flex;
+  align-items: center;
   gap: 8px;
+  min-width: 100px;
+}
+
+.asset-icon-small {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.9);
+  flex-shrink: 0;
 }
 
 .weight-bar-label {
-  width: 40px;
-  text-align: right;
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 600;
-  color: rgba(255, 255, 255, 0.8);
+  color: rgba(255, 255, 255, 0.9);
 }
 
 .weight-bar-bg {
@@ -1091,7 +3772,17 @@ const showToast = (message: string, type: 'success' | 'error' | 'info' = 'succes
 .weight-bar-fill {
   height: 100%;
   background: linear-gradient(90deg, rgba(59, 130, 246, 0.8), #3b82f6);
+  border-radius: 4px;
   transition: width 0.3s ease;
+  min-width: 2px;
+}
+
+.weight-bar-value {
+  min-width: 50px;
+  text-align: right;
+  font-size: 11px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.9);
 }
 
 .weight-bar-value {
@@ -1213,10 +3904,1287 @@ const showToast = (message: string, type: 'success' | 'error' | 'info' = 'succes
   opacity: 0;
 }
 
+/* ==================== METHOD SELECTOR ==================== */
+.method-selector {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 8px;
+}
+
+.method-tab {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 20px 24px;
+  background: rgba(20, 22, 28, 0.5);
+  backdrop-filter: blur(30px);
+  border: 2px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+  text-align: left;
+}
+
+.method-tab:hover {
+  background: rgba(30, 32, 40, 0.6);
+  border-color: rgba(255, 255, 255, 0.15);
+  transform: translateY(-2px);
+}
+
+.method-tab.active {
+  background: rgba(59, 130, 246, 0.15);
+  border-color: rgba(59, 130, 246, 0.5);
+  box-shadow: 0 8px 32px rgba(59, 130, 246, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+.method-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: all 0.3s;
+}
+
+.method-icon.hjb {
+  background: rgba(59, 130, 246, 0.2);
+  border: 1px solid rgba(59, 130, 246, 0.4);
+  color: #60a5fa;
+}
+
+.method-icon.ccmv {
+  background: rgba(34, 197, 94, 0.2);
+  border: 1px solid rgba(34, 197, 94, 0.4);
+  color: #4ade80;
+}
+
+.method-tab.active .method-icon.hjb {
+  background: rgba(59, 130, 246, 0.3);
+  box-shadow: 0 0 20px rgba(59, 130, 246, 0.3);
+}
+
+.method-tab.active .method-icon.ccmv {
+  background: rgba(34, 197, 94, 0.3);
+  box-shadow: 0 0 20px rgba(34, 197, 94, 0.3);
+}
+
+.method-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.method-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.method-subtitle {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.method-tab.active .method-title {
+  color: #fff;
+}
+
+.method-tab.active .method-subtitle {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+/* ==================== HJB SPECIFIC STYLES ==================== */
+.hjb-grid {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr);
+  align-items: stretch;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.hjb-reports-grid {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  align-items: stretch;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.hjb-grid-bottom {
+  grid-template-columns: minmax(0, 1fr);
+  align-items: stretch;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.col-report-left,
+.col-report-right {
+  display: flex;
+  flex-direction: column;
+}
+
+.report-panel {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+
+.col-portfolio-wide {
+  grid-column: 1 / 3;
+  display: flex;
+  flex-direction: column;
+  height: 450px;
+}
+
+.col-3d-right {
+  grid-column: 3;
+  display: flex;
+  flex-direction: column;
+  height: 450px;
+  gap: 16px;
+  justify-content: flex-start;
+}
+
+.col-3d-right .glass-panel {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.col-3d-right .glass-panel:first-child {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.col-3d-right .glass-panel:last-child {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.col-3d-right .glass-panel:only-child {
+  flex: 1 1 auto;
+  height: 100%;
+}
+
+.col-3d-right .glass-panel:only-child .panel-body {
+  flex: 1;
+}
+
+.col-3d-right .glass-panel:last-child:not(:only-child) .panel-body {
+  flex: 0 0 auto;
+}
+
+.col-3d-right .glass-panel .panel-body {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.col-3d-right .glass-panel:first-child .panel-body {
+  flex: 1;
+  overflow: visible;
+}
+
+.col-3d-right .glass-panel .panel-body.params-body {
+  overflow: visible;
+  gap: 14px;
+}
+
+.col-3d-right .glass-panel .panel-body:not(.params-body) {
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
+}
+
+.col-3d-right .glass-panel .panel-body:not(.params-body)::-webkit-scrollbar {
+  width: 6px;
+}
+
+.col-3d-right .glass-panel .panel-body:not(.params-body)::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.col-3d-right .glass-panel .panel-body:not(.params-body)::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 3px;
+}
+
+.col-3d-right .glass-panel .panel-body:not(.params-body)::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.portfolio-composition-panel {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+
+.col-portfolio-wide > .glass-panel:not(.portfolio-composition-panel) {
+  height: 100%;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.correlation-3d-panel {
+  display: flex;
+  flex-direction: column;
+  height: 450px;
+  margin-bottom: 8px;
+}
+
+.col-left-bottom,
+.col-right-bottom {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.portfolio-composition-panel .panel-body,
+.correlation-3d-panel .panel-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.correlation-3d-body {
+  padding: 8px 10px 0 10px !important;
+  position: relative;
+  margin-bottom: 0;
+}
+
+.static-3d-plot {
+  width: 100% !important;
+  flex: 1 !important;
+  min-height: 500px !important;
+  height: 500px !important;
+  background: transparent;
+  border-radius: 8px;
+  margin-bottom: 0;
+}
+
+/* HJB Parameters Row (Horizontal) */
+.hjb-params-row {
+  margin-bottom: 8px;
+}
+
+.hjb-params-row .panel-body {
+  flex-direction: row !important;
+}
+
+.params-row-body {
+  padding: 16px 20px;
+  display: flex !important;
+  flex-direction: row !important;
+  gap: 16px;
+  align-items: flex-start;
+  flex-wrap: nowrap;
+}
+
+.param-group-horizontal {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex: 1;
+  min-width: 0;
+}
+
+.param-group-horizontal label {
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.7);
+  font-weight: 500;
+  white-space: nowrap;
+  line-height: 1.2;
+}
+
+.param-group-horizontal .param-input-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.param-group-horizontal .param-input-group input {
+  flex: 1;
+  min-width: 70px;
+  width: 100%;
+  height: 32px;
+  padding: 0 8px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  color: #fff;
+  font-size: 11px;
+  font-family: 'SF Mono', monospace;
+  outline: none;
+  transition: all 0.2s;
+}
+
+.param-group-horizontal .param-input-group input:focus {
+  border-color: rgba(59, 130, 246, 0.5);
+  background: rgba(255, 255, 255, 0.06);
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
+}
+
+.param-group-horizontal .param-hint {
+  font-size: 9px;
+  color: rgba(255, 255, 255, 0.5);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.theory-panel .panel-body {
+  padding: 20px;
+}
+
+.theory-content {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.theory-text {
+  font-size: 12px;
+  line-height: 1.6;
+  color: rgba(255, 255, 255, 0.7);
+  margin: 0;
+}
+
+.theory-text strong {
+  color: #60a5fa;
+}
+
+.formula-box {
+  padding: 16px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+}
+
+.formula-box.highlight {
+  background: rgba(59, 130, 246, 0.1);
+  border-color: rgba(59, 130, 246, 0.3);
+}
+
+.formula-label {
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.5);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 8px;
+  display: block;
+}
+
+.formula {
+  font-size: 18px;
+  font-family: 'Times New Roman', serif;
+  font-style: italic;
+  color: #fff;
+  text-align: center;
+}
+
+.formula-box.highlight .formula {
+  color: #93c5fd;
+}
+
+/* HJB Result Card */
+.hjb-result-card {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.result-main {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px;
+  background: rgba(59, 130, 246, 0.1);
+  border: 1px solid rgba(59, 130, 246, 0.3);
+  border-radius: 14px;
+}
+
+.result-label {
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.7);
+  font-weight: 500;
+}
+
+.result-value {
+  font-size: 32px;
+  font-weight: 700;
+  color: #60a5fa;
+  font-family: 'SF Mono', monospace;
+}
+
+.result-breakdown {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.breakdown-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.breakdown-label {
+  width: 120px;
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.6);
+  flex-shrink: 0;
+}
+
+.breakdown-bar {
+  flex: 1;
+  height: 24px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 6px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.bar-fill {
+  height: 100%;
+  transition: width 0.5s ease;
+}
+
+.bar-fill.risky {
+  background: linear-gradient(90deg, rgba(59, 130, 246, 0.8), #3b82f6);
+}
+
+.bar-fill.safe {
+  background: linear-gradient(90deg, rgba(34, 197, 94, 0.8), #4ade80);
+}
+
+.breakdown-value {
+  width: 60px;
+  text-align: right;
+  font-size: 12px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.9);
+  font-family: 'SF Mono', monospace;
+}
+
+/* Sensitivity Chart */
+.sensitivity-chart {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  height: 120px;
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.sensitivity-bar {
+  flex: 1;
+  background: linear-gradient(180deg, rgba(59, 130, 246, 0.8), rgba(59, 130, 246, 0.3));
+  border-radius: 4px 4px 0 0;
+  min-height: 8px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  transition: all 0.3s;
+  cursor: pointer;
+}
+
+.sensitivity-bar:hover {
+  background: linear-gradient(180deg, #3b82f6, rgba(59, 130, 246, 0.5));
+}
+
+.sensitivity-label {
+  font-size: 9px;
+  color: rgba(255, 255, 255, 0.7);
+  padding-bottom: 4px;
+  font-weight: 600;
+}
+
+.sensitivity-legend {
+  text-align: center;
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.4);
+  margin-top: 8px;
+}
+
+/* Strategy Info */
+.strategy-info {
+  margin-bottom: 16px;
+}
+
+.info-note {
+  font-size: 11px;
+  line-height: 1.6;
+  color: rgba(255, 255, 255, 0.6);
+  margin: 0;
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 8px;
+  border-left: 3px solid rgba(168, 85, 247, 0.5);
+}
+
+.info-note strong {
+  color: #60a5fa;
+}
+
+/* Timeline */
+.timeline-visualization {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  padding-left: 12px;
+  border-left: 2px solid rgba(59, 130, 246, 0.3);
+}
+
+.timeline-point {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 0;
+  position: relative;
+}
+
+.point-marker {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #3b82f6;
+  position: absolute;
+  left: -18px;
+  box-shadow: 0 0 10px rgba(59, 130, 246, 0.5);
+}
+
+.point-info {
+  display: flex;
+  justify-content: space-between;
+  flex: 1;
+  font-size: 11px;
+}
+
+.point-time {
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.point-value {
+  color: #60a5fa;
+  font-weight: 600;
+  font-family: 'SF Mono', monospace;
+}
+
+/* Constraints */
+.constraints-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.constraint-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.7);
+  line-height: 1.4;
+}
+
+.constraint-icon {
+  width: 20px;
+  height: 20px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  flex-shrink: 0;
+}
+
+.constraint-icon.warning {
+  background: rgba(251, 191, 36, 0.2);
+  color: #fbbf24;
+}
+
+.constraint-icon.info {
+  background: rgba(96, 165, 250, 0.2);
+  color: #60a5fa;
+}
+
+.constraint-icon.success {
+  background: rgba(74, 222, 128, 0.2);
+  color: #4ade80;
+}
+
+/* ==================== PORTFOLIO TABLE ==================== */
+.portfolio-table-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+  position: relative;
+  height: 100%;
+}
+
+.portfolio-table-wrapper {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  overflow-x: hidden;
+  min-height: 200px;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
+}
+
+.portfolio-table-wrapper::-webkit-scrollbar {
+  width: 6px;
+}
+
+.portfolio-table-wrapper::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.portfolio-table-wrapper::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 3px;
+}
+
+.portfolio-table-wrapper::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.portfolio-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 11px;
+}
+
+.portfolio-table thead {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: rgba(20, 22, 28, 0.98);
+  backdrop-filter: blur(10px);
+}
+
+.portfolio-table th {
+  text-align: left;
+  padding: 10px 8px;
+  background: rgba(255, 255, 255, 0.03);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.6);
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: 9px;
+  letter-spacing: 0.05em;
+}
+
+.portfolio-table td {
+  padding: 8px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.portfolio-table tbody tr:hover {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.asset-cell {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.asset-icon {
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 10px;
+  color: #fff;
+  flex-shrink: 0;
+}
+
+.asset-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.symbol {
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 11px;
+}
+
+.name {
+  font-size: 9px;
+  color: rgba(255, 255, 255, 0.5);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.change-pill {
+  display: inline-block;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.portfolio-table-footer {
+  padding: 12px;
+  text-align: center;
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.6);
+  background: rgba(20, 22, 28, 0.95);
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  position: sticky;
+  bottom: 0;
+  z-index: 10;
+  backdrop-filter: blur(10px);
+  flex-shrink: 0;
+}
+
+.portfolio-table-footer strong {
+  color: #fff;
+  font-weight: 600;
+}
+
+.opacity-80 {
+  opacity: 0.8;
+}
+
+/* ==================== CONSTRAINTS TABLE ==================== */
+.constraints-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.constraints-table td {
+  padding: 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.constraint-name {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.8);
+  font-weight: 500;
+}
+
+.constraint-value {
+  text-align: right;
+}
+
+.constraint-badge {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  font-family: 'SF Mono', monospace;
+  background: rgba(59, 130, 246, 0.15);
+  color: #60a5fa;
+  border: 1px solid rgba(59, 130, 246, 0.3);
+}
+
+.constraint-badge.active {
+  background: rgba(34, 197, 94, 0.15);
+  color: #4ade80;
+  border-color: rgba(34, 197, 94, 0.3);
+}
+
+/* ==================== 3D CORRELATION HEATMAP ==================== */
+.panel-badge {
+  font-size: 9px;
+  padding: 2px 8px;
+  border-radius: 4px;
+  background: rgba(59, 130, 246, 0.2);
+  color: #60a5fa;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.section-description {
+  font-size: 11px;
+  line-height: 1.4;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+/* 3D Correlation Heatmap - Static Plot */
+.static-3d-plot {
+  width: 100% !important;
+  height: 100% !important;
+  min-height: 500px !important;
+  min-width: 300px !important;
+  position: relative;
+  display: block;
+}
+
+.static-3d-plot .plotly {
+  cursor: default !important;
+  width: 100% !important;
+  height: 100% !important;
+}
+
+.static-3d-plot .plotly .modebar {
+  display: none !important;
+}
+
+.static-3d-plot .plotly .scene-container {
+  pointer-events: auto !important;
+  touch-action: none !important;
+  width: 100% !important;
+  height: 100% !important;
+}
+
+.static-3d-plot .plotly .scene {
+  width: 100% !important;
+  height: 100% !important;
+}
+
+.static-3d-plot .plotly .scene .scene-controls {
+  display: none !important;
+}
+
+.correlation-3d-body {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+/* 3D Correlation Heatmap Tooltip */
+.asset-tooltip-3d {
+  position: absolute;
+  bottom: 20px;
+  right: 20px;
+  background: rgba(0, 0, 0, 0.85);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 12px;
+  padding: 16px;
+  min-width: 240px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+  z-index: 100;
+  animation: fadeIn 0.2s ease-out;
+  pointer-events: none;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.tooltip-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.tooltip-symbol {
+  font-size: 16px;
+  font-weight: 700;
+  color: #fff;
+  margin-bottom: 2px;
+}
+
+.tooltip-name {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.6);
+  line-height: 1.3;
+}
+
+.tooltip-details {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.tooltip-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 12px;
+}
+
+.tooltip-row span {
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.tooltip-row strong {
+  color: #fff;
+  font-weight: 600;
+}
+
+/* ==================== GARCH CHART ==================== */
+.garch-full-width {
+  width: 100%;
+  margin-top: 8px;
+  margin-bottom: 8px;
+}
+
+.garch-container-full {
+  display: flex;
+  flex-direction: row;
+  gap: 24px;
+  align-items: flex-start;
+}
+
+.garch-chart-placeholder-full {
+  flex: 1;
+  height: 200px;
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+  min-width: 0;
+}
+
+.garch-params-full {
+  flex-shrink: 0;
+  width: 300px;
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.garch-container {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.garch-chart-placeholder {
+  height: 200px;
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+}
+
+#garch-chart {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.garch-params {
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.garch-param-row {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.7);
+  margin-bottom: 12px;
+  font-family: 'SF Mono', monospace;
+}
+
+.param-name {
+  color: rgba(255, 255, 255, 0.5);
+  margin-right: 8px;
+}
+
+.garch-stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.garch-stat {
+  display: flex;
+  justify-content: space-between;
+  padding: 6px;
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 4px;
+  font-size: 10px;
+}
+
+.stat-label {
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.stat-val {
+  color: #fff;
+  font-weight: 600;
+  font-family: 'SF Mono', monospace;
+}
+
+/* ==================== FILTERING REPORT ==================== */
+.filtering-report {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.report-summary {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.summary-item {
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.summary-label {
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.summary-value {
+  font-size: 18px;
+  font-weight: 700;
+  color: #fff;
+  font-family: 'SF Mono', monospace;
+}
+
+.filtering-criteria {
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.criteria-title {
+  font-size: 11px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.8);
+  margin-bottom: 8px;
+}
+
+.criteria-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.criteria-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.criteria-check {
+  color: #4ade80;
+  font-weight: 700;
+}
+
+.filtered-assets {
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.filtered-title {
+  font-size: 11px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.8);
+  margin-bottom: 8px;
+}
+
+.filtered-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-height: 150px;
+  overflow-y: auto;
+}
+
+.filtered-asset {
+  display: flex;
+  justify-content: space-between;
+  padding: 6px 8px;
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 4px;
+  font-size: 10px;
+}
+
+.asset-symbol {
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.asset-garch {
+  color: rgba(255, 255, 255, 0.6);
+  font-family: 'SF Mono', monospace;
+}
+
+/* ==================== YIELD REPORT ==================== */
+.yield-report {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.yield-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 10px;
+}
+
+.yield-table th {
+  text-align: left;
+  padding: 8px 6px;
+  background: rgba(255, 255, 255, 0.03);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.6);
+  font-weight: 600;
+  font-size: 9px;
+}
+
+.yield-table td {
+  padding: 6px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.yield-table tbody tr:hover {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.yield-asset {
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.yield-summary {
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.yield-summary-item {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+}
+
+/* METRICS SUMMARY */
+.metrics-summary-panel {
+  margin-top: 24px;
+}
+
+.metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+
+.metric-card {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  transition: all 0.2s;
+}
+
+.metric-card:hover {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.12);
+  transform: translateY(-2px);
+}
+
+.metric-label {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.6);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: 500;
+}
+
+.metric-value {
+  font-size: 20px;
+  font-weight: 700;
+  font-family: 'SF Mono', 'Monaco', 'Menlo', monospace;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.metric-value.text-green {
+  color: #34d399;
+}
+
+.metric-value.text-red {
+  color: #f87171;
+}
+
 /* RESPONSIVE */
 @media (max-width: 1400px) {
   .dashboard-grid {
     grid-template-columns: 1fr;
+  }
+  
+  .hjb-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .hjb-grid-bottom {
+    grid-template-columns: 1fr;
+  }
+  
+  .hjb-reports-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .col-portfolio-wide,
+  .col-3d-right,
+  .col-report-left,
+  .col-report-right,
+  .col-grid {
+    grid-column: 1;
+  }
+  
+  .method-selector {
+    flex-direction: column;
+  }
+  
+  .metrics-grid {
+    grid-template-columns: repeat(2, 1fr);
   }
 }
 
@@ -1235,5 +5203,191 @@ const showToast = (message: string, type: 'success' | 'error' | 'info' = 'succes
   .dashboard-grid {
     grid-template-columns: 1fr;
   }
+  
+  .method-tab {
+    padding: 16px;
+  }
+  
+  .method-icon {
+    width: 40px;
+    height: 40px;
+  }
+  
+  .method-title {
+    font-size: 14px;
+  }
+
+  .params-row-body {
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .param-group-horizontal {
+    min-width: 100%;
+  }
+
+  .garch-container-full {
+    flex-direction: column;
+  }
+
+  .garch-params-full {
+    width: 100%;
+  }
+  
+  .metrics-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .metric-value {
+    font-size: 18px;
+  }
+}
+
+/* ==================== MONTE CARLO TRAJECTORIES ==================== */
+.trajectories-panel {
+  margin-top: 16px;
+}
+
+.trajectories-header-left,
+.trajectories-3d-header-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.trajectories-header-left h3 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: #fff;
+}
+
+.live-badge {
+  font-size: 10px;
+  color: #ef4444;
+  font-weight: 700;
+  animation: blink 1.5s infinite;
+}
+
+@keyframes blink {
+  50% {
+    opacity: 0.5;
+  }
+}
+
+.playback-controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: rgba(0, 0, 0, 0.3);
+  padding: 4px 12px;
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.icon-btn {
+  background: none;
+  border: none;
+  color: #fff;
+  cursor: pointer;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  border-radius: 50%;
+  transition: 0.2s;
+}
+
+.icon-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.timeline-wrapper {
+  position: relative;
+  width: 140px;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 2px;
+  display: flex;
+  align-items: center;
+}
+
+.timeline-slider {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+  z-index: 2;
+  margin: 0;
+}
+
+.timeline-track {
+  height: 100%;
+  background: #3b82f6;
+  border-radius: 2px;
+  pointer-events: none;
+}
+
+.playback-day-info {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.7);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+}
+
+.playback-day-info .mono {
+  font-family: "SF Mono", monospace;
+  color: #60a5fa;
+  font-weight: 600;
+}
+
+.trajectories-chart-container {
+  position: relative;
+  width: 100%;
+  height: 400px;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.trajectories-svg {
+  width: 100%;
+  height: 100%;
+}
+
+.trajectories-3d-container {
+  position: relative;
+  width: 100%;
+  height: 600px;
+  min-height: 600px;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.trajectories-3d-canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+  cursor: grab;
+}
+
+.trajectories-3d-canvas:active {
+  cursor: grabbing;
+}
+
+.trajectories-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: rgba(255, 255, 255, 0.3);
+  font-size: 13px;
 }
 </style>

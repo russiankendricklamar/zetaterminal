@@ -753,7 +753,7 @@ const updatePlot = async () => {
         } : undefined,
         text: regularIndices.map(i => texts[i]),
         hovertemplate: '<b>%{text}</b><extra></extra>',
-        showlegend: true
+        showlegend: false
       })
     }
 
@@ -780,7 +780,7 @@ const updatePlot = async () => {
           },
           text: outlierIndices.map(i => texts[i]),
           hovertemplate: '<b>%{text}</b><br><b>OUTLIER</b><extra></extra>',
-          showlegend: true
+          showlegend: false
         })
       }
     }
@@ -920,17 +920,8 @@ const updatePlot = async () => {
     paper_bgcolor: 'transparent',
     plot_bgcolor: 'transparent',
     font: { color: '#fff', family: 'system-ui' },
-    margin: { l: 0, r: 50, t: 30, b: 50 },
-    showlegend: true,
-    legend: {
-      bgcolor: 'rgba(0,0,0,0.3)',
-      bordercolor: 'rgba(255,255,255,0.1)',
-      borderwidth: 1,
-      font: { color: '#fff', size: 10 },
-      x: 0.98,
-      y: 1,
-      xanchor: 'right'
-    },
+    margin: { l: 50, r: 20, t: 20, b: 40 }, // Центрируем график
+    showlegend: false, // Убираем легенду из сцены
     autosize: true,
     height: undefined // Let it fill container
   }
@@ -963,11 +954,12 @@ const updatePlot = async () => {
       },
       bgcolor: 'rgba(0,0,0,0)',
       camera: {
-        eye: { x: 1.8, y: 1.8, z: 1.4 },
+        eye: { x: 1.6, y: 1.6, z: 1.2 }, // Немного ближе для лучшего центрирования
         center: { x: 0, y: 0, z: 0 },
         up: { x: 0, y: 0, z: 1 }
       },
-      aspectratio: { x: 1, y: 1, z: 1 }
+      aspectratio: { x: 1, y: 1, z: 1 },
+      aspectmode: 'cube' // Равномерное масштабирование
     }
   } else {
     layout.xaxis = {
@@ -989,15 +981,14 @@ const updatePlot = async () => {
     displayModeBar: true,
     displaylogo: false,
     modeBarButtonsToRemove: ['lasso2d', 'select2d'],
+    modeBarButtonsToAdd: [],
     toImageButtonOptions: {
       format: 'png',
       filename: 'correlation_scatter',
       height: 800,
       width: 1200,
       scale: 2
-    },
-    fillFrame: true,
-    frameMargins: 0
+    }
   }
 
   await Plotly.value.newPlot(plotContainer.value, traces, layout, config)
@@ -1069,7 +1060,7 @@ const resetView = () => {
   }
   updateTimeRange()
   Plotly.value.relayout(plotContainer.value, {
-    'scene.camera.eye': { x: 1.8, y: 1.8, z: 1.4 },
+    'scene.camera.eye': { x: 1.6, y: 1.6, z: 1.2 },
     'scene.camera.center': { x: 0, y: 0, z: 0 }
   })
 }
@@ -1534,6 +1525,30 @@ declare global {
   border: 1px solid rgba(255, 255, 255, 0.1);
   overflow: hidden;
   box-sizing: border-box;
+}
+
+/* Фиксируем позицию Plotly toolbar */
+.plot-container :deep(.modebar) {
+  position: absolute !important;
+  top: 8px !important;
+  right: 8px !important;
+  left: auto !important;
+  background: rgba(0, 0, 0, 0.5) !important;
+  border-radius: 6px !important;
+  padding: 4px !important;
+}
+
+.plot-container :deep(.modebar-btn) {
+  color: rgba(255, 255, 255, 0.7) !important;
+}
+
+.plot-container :deep(.modebar-btn:hover) {
+  color: #fff !important;
+}
+
+.plot-container :deep(.modebar-group) {
+  display: flex !important;
+  flex-direction: row !important;
 }
 
 .stats-panel {

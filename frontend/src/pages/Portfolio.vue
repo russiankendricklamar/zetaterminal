@@ -2,24 +2,58 @@
 <template>
   <div class="portfolio-page">
     
-    <!-- ⚠️  LATENT VOLATILITY SHIFT ALERT BANNER -->
-    <transition name="slide-down">
-      <div v-if="latentVolAlert.isActive" class="alert-banner" :class="'alert-' + latentVolAlert.severity">
-        <div class="alert-content">
-          <span class="alert-icon">{{ latentVolAlert.severity === 'warning' ? '⚠️ ' : '🔴 ' }}</span>
-          <div class="alert-text">
-            <p class="alert-title">{{ latentVolAlert.title }}</p>
-            <p class="alert-message">{{ latentVolAlert.message }}</p>
-          </div>
-        </div>
-        <button class="alert-close" @click="latentVolAlert.isActive = false">×</button>
-      </div>
-    </transition>
-
     <!-- Hero Section -->
     <div class="hero-section">
       <div class="hero-left">
-        <h1>Управление портфелем</h1>
+        <div class="hero-title-row">
+          <h1>Управление портфелем ценных бумаг банка: <span class="bank-selector-inline-wrapper">
+            <div class="bank-selector-wrapper">
+              <div class="bank-selector" :class="{ 'is-open': isBankMenuOpen }" @click="toggleBankMenu">
+                <div class="bank-selector-content">
+                  <span class="bank-selector-name">{{ selectedBank.name }}</span>
+                  <span class="bank-selector-reg">№ {{ selectedBank.regNumber }}</span>
+          </div>
+                <svg class="bank-selector-chevron" width="12" height="8" viewBox="0 0 12 8" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M1 1L6 6L11 1"/>
+                </svg>
+        </div>
+              <transition name="dropdown-fade">
+                <div v-if="isBankMenuOpen" class="bank-dropdown">
+                  <div class="bank-dropdown-search">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <circle cx="11" cy="11" r="8"/>
+                      <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                    </svg>
+                    <input 
+                      type="text" 
+                      v-model="bankSearchQuery" 
+                      placeholder="Поиск банка..."
+                      class="bank-search-input"
+                      @click.stop
+                    />
+                  </div>
+                  <div class="bank-dropdown-list">
+                    <div 
+                      v-for="bank in filteredBanks" 
+                      :key="bank.regNumber"
+                      class="bank-dropdown-item"
+                      :class="{ 'is-selected': bank.regNumber === selectedBank.regNumber }"
+                      @click="selectBank(bank)"
+                    >
+                      <div class="bank-item-content">
+                        <span class="bank-item-name">{{ bank.name }}</span>
+                        <span class="bank-item-reg">№ {{ bank.regNumber }}</span>
+                      </div>
+                      <svg v-if="bank.regNumber === selectedBank.regNumber" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                        <polyline points="20 6 9 17 4 12"></polyline>
+                      </svg>
+                    </div>
+                  </div>
+      </div>
+    </transition>
+            </div>
+          </span></h1>
+        </div>
         <div class="hero-meta">
           <span class="glass-pill">Стратегия: <strong>Multi-Asset</strong></span>
           <span class="glass-pill">Ребалансировка: <strong>Monthly</strong></span>
@@ -94,19 +128,6 @@
       </div>
     </div>
 
-    <!-- WAVE_σ.9 REGIME INDICATOR -->
-    <div class="regime-indicator-compact">
-      <div class="regime-badge" :class="'regime-' + waveRegime.currentRegime.toLowerCase()">
-        <span class="regime-dot"></span>
-        <span class="regime-text">{{ waveRegime.currentRegime }}</span>
-      </div>
-      <div class="regime-details">
-        <span>Position Size: <strong>{{ waveRegime.positionSize }}%</strong></span>
-        <span>λ (Risk Aversion): <strong>{{ waveRegime.lambda }}</strong></span>
-        <span>Jaggedness: <strong>{{ waveRegime.jaggedness.toFixed(2) }}</strong></span>
-      </div>
-    </div>
-
     <!-- Main Dashboard Grid -->
     <div class="dashboard-grid">
       
@@ -116,10 +137,21 @@
         <!-- Positions Table -->
         <div class="glass-panel">
           <div class="panel-header">
+            <div>
             <h3>Открытые позиции</h3>
-            <div class="search-sm">
-               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-               <input type="text" placeholder="Фильтр..." class="input-reset" @input="filterPositions">
+              <span class="panel-subtitle">Топ-5 по весу в портфеле</span>
+            </div>
+            <div class="panel-header-actions">
+              <button class="btn-glass outline compact" @click="openPortfolioDetails">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                  <polyline points="14 2 14 8 20 8"></polyline>
+                  <line x1="16" y1="13" x2="8" y2="13"></line>
+                  <line x1="16" y1="17" x2="8" y2="17"></line>
+                  <polyline points="10 9 9 9 8 9"></polyline>
+                </svg>
+                Детализация
+              </button>
             </div>
           </div>
           <div class="panel-body p-0">
@@ -138,7 +170,7 @@
                  </thead>
                  <tbody>
                    <tr 
-                      v-for="pos in filteredPositions" 
+                      v-for="pos in top5Positions" 
                       :key="pos.symbol"
                       @click="selectAsset(pos)"
                       :class="{ active: selectedAsset?.symbol === pos.symbol }"
@@ -169,8 +201,6 @@
           </div>
         </div>
 
-        <!-- Charts Row -->
-        <div class="charts-row-two-col">
             <!-- Correlation Matrix -->
             <div class="glass-panel">
                <div class="panel-header">
@@ -180,42 +210,75 @@
                   <div class="heatmap-wrapper">
                      <div class="heatmap-header-row">
                         <div class="heatmap-empty"></div>
-                        <div v-for="col in correlationMatrix" :key="col.label" class="heatmap-th">{{ col.label }}</div>
+                    <div v-for="col in correlationMatrix.slice(0, 10)" :key="col.label" class="heatmap-th">{{ col.label }}</div>
                      </div>
-                     <div class="heatmap-row" v-for="(row, r) in correlationMatrix" :key="r">
+                 <div class="heatmap-row" v-for="(row, r) in correlationMatrix.slice(0, 10)" :key="r">
                         <div class="heatmap-rh">{{ row.label }}</div>
                         <div 
                           class="heatmap-cell" 
-                          v-for="(val, c) in row.values" 
+                      v-for="(val, c) in row.values.slice(0, 10)" 
                           :key="c"
                           :style="{ backgroundColor: getHeatmapColor(val) }"
                         >
                           {{ val === 1 ? '1.0' : val.toFixed(2) }}
-                        </div>
                      </div>
                   </div>
                </div>
             </div>
         </div>
 
-        <!-- Heatmap - Full Width -->
-        <div class="glass-panel heatmap-panel">
+        <!-- 3D Correlation Heatmap - Full Width -->
+        <div class="glass-panel heatmap-panel" style="margin-bottom: 0;">
            <div class="panel-header">
-              <h3>Тепловая карта</h3>
+              <h3>3D Тепловая карта активов</h3>
+              <span class="panel-badge">Интерактивная визуализация</span>
            </div>
-           <div class="panel-body" style="padding: 0;">
-              <div class="treemap-tall">
-                 <div 
-                    v-for="pos in positions" 
-                    :key="pos.symbol"
-                    class="treemap-item"
-                    :style="{ 
-                       flexGrow: pos.allocation, 
-                       backgroundColor: pos.dayChange > 0 ? 'rgba(16, 185, 129, 0.4)' : 'rgba(239, 68, 68, 0.4)'
-                    }"
-                 >
-                    <span class="tm-symbol">{{ pos.symbol }}</span>
-                    <span class="tm-val">{{ pos.dayChange > 0 ? '+' : '' }}{{ pos.dayChange }}%</span>
+           <div class="panel-body" style="padding: 8px 10px 0 10px; position: relative; margin-bottom: 0;">
+              <p class="section-description" style="margin-bottom: 8px; padding: 6px 10px; border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; background: rgba(0,0,0,0.2); font-size: 11px; line-height: 1.4;">
+                 Каждый актив представлен шариком. Размер = вес в портфеле, цвет = цвет актива. 
+                 Позиция в 3D пространстве основана на корреляциях между активами.
+                 <br><strong>Наведите на шарик</strong> для детализации позиции.
+              </p>
+              <div id="correlation-3d-heatmap" style="width:100%; height:500px; position: relative; min-height: 500px; background: transparent; border-radius: 8px; margin-bottom: 0;"></div>
+              <div v-if="hoveredAsset" class="asset-tooltip-3d">
+                 <div class="tooltip-header">
+                    <div class="asset-icon" :style="{ background: hoveredAsset.color }">{{ hoveredAsset.symbol[0] }}</div>
+                    <div>
+                       <div class="tooltip-symbol">{{ hoveredAsset.symbol }}</div>
+                       <div class="tooltip-name">{{ hoveredAsset.name }}</div>
+                 </div>
+              </div>
+                 <div class="tooltip-details">
+                    <div class="tooltip-row">
+                       <span>Тип:</span>
+                       <strong>{{ (hoveredAsset.symbol.includes('ОФЗ') || hoveredAsset.symbol.includes('Облигац')) ? 'Облигация' : 'Акция' }}</strong>
+                    </div>
+                    <div class="tooltip-row" v-if="hoveredAsset.volatility !== undefined">
+                       <span>Волатильность:</span>
+                       <strong>{{ hoveredAsset.volatility?.toFixed(1) || 'N/A' }}%</strong>
+                    </div>
+                    <div class="tooltip-row" v-if="hoveredAsset.avgCorrelation !== undefined">
+                       <span>Ср. корреляция:</span>
+                       <strong>{{ hoveredAsset.avgCorrelation?.toFixed(2) || 'N/A' }}</strong>
+                    </div>
+                    <div class="tooltip-row">
+                       <span>Вес в портфеле:</span>
+                       <strong>{{ hoveredAsset.allocation?.toFixed(2) || hoveredAsset.allocation }}%</strong>
+                    </div>
+                    <div class="tooltip-row">
+                       <span>Цена:</span>
+                       <strong>{{ hoveredAsset.price?.toLocaleString('ru-RU') || hoveredAsset.price }} ₽</strong>
+                    </div>
+                    <div class="tooltip-row">
+                       <span>Дневное изм.:</span>
+                       <strong :class="hoveredAsset.dayChange >= 0 ? 'text-green' : 'text-red'">
+                          {{ hoveredAsset.dayChange >= 0 ? '+' : '' }}{{ hoveredAsset.dayChange?.toFixed(2) || hoveredAsset.dayChange }}%
+                       </strong>
+                    </div>
+                    <div class="tooltip-row" v-if="hoveredAsset.notional">
+                       <span>Позиция:</span>
+                       <strong>${{ (hoveredAsset.notional / 1000).toFixed(1) }}k</strong>
+                    </div>
                  </div>
               </div>
            </div>
@@ -294,105 +357,39 @@
         </div>
         </transition>
 
-        <!-- REGIME-AWARE OPTIMIZER -->
-        <div class="glass-panel optimizer-card">
-           <div class="panel-header">
-              <h3>⚙️ Оптимизатор (Regime-Aware)</h3>
-              <button class="btn-icon-xs" @click="resetOptimizer" title="Сброс">↺</button>
+        <!-- CCMV OPTIMIZATION LINK -->
+        <div class="glass-panel optimizer-link-card">
+           <div class="optimizer-link-content">
+              <div class="optimizer-link-icon">
+                 <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                    <path d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+                 </svg>
            </div>
-           <div class="panel-body-optimizer">
-              
-              <!-- Regime Info -->
-              <div class="regime-info-box" :class="'regime-' + waveRegime.currentRegime.toLowerCase()">
-                 <p class="regime-info-label">Текущий режим</p>
-                 <p class="regime-info-value">{{ waveRegime.currentRegime }}</p>
-                 <p class="regime-info-sub">λ автоматически: {{ waveRegime.lambda }}</p>
+              <h3 class="optimizer-link-title">Оптимизация портфеля</h3>
+              <p class="optimizer-link-description">
+                 Стохастическое оптимизирование с HJB-стратегией и CCMV модель оптимизации
+              </p>
+              <div class="optimizer-link-features">
+                 <span class="feature-tag">HJB-стратегия</span>
+                 <span class="feature-tag">CCMV</span>
               </div>
-
-              <div class="control-group compact">
-                 <label>Модель</label>
-                 <div class="custom-select">
-                    <select v-model="optimizer.model">
-                       <option>Mean-Variance</option>
-                       <option>Black-Litterman</option>
-                       <option>Risk Parity</option>
-                    </select>
-                    <svg class="chevron" width="10" height="6" viewBox="0 0 10 6" fill="none" stroke="currentColor"><path d="M1 1L5 5L9 1" stroke-width="1.5"/></svg>
+              <router-link to="/CCMVoptimization" class="btn-glass primary w-full optimizer-link-btn">
+                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M9 5l7 7-7 7"/>
+                 </svg>
+                 Перейти к оптимизации
+              </router-link>
                  </div>
               </div>
               
-              <div class="control-group compact">
-                 <div class="flex justify-between mb-1">
-                    <label>Веса (%)</label>
-                 </div>
-                 <div class="range-inputs-row">
-                    <div class="glass-input-wrapper">
-                       <input type="number" v-model.number="optimizer.minWeight" @change="validateWeights">
-                       <span>%</span>
-                    </div>
-                    <div class="dash">-</div>
-                    <div class="glass-input-wrapper">
-                       <input type="number" v-model.number="optimizer.maxWeight" @change="validateWeights">
-                       <span>%</span>
-                    </div>
-                 </div>
-              </div>
-
-              <div class="control-group compact">
-                 <div class="flex justify-between mb-1">
-                    <label>Target Vol</label>
-                    <span class="val-highlight">{{ optimizer.targetVol }}%</span>
-                 </div>
-                 <input type="range" class="ios-slider-sm" min="5" max="30" v-model.number="optimizer.targetVol">
-              </div>
-              
-              <div class="control-group toggle-row compact">
-                 <label style="margin: 0; flex: 1;">Ребалансировка</label>
-                 <label class="ios-toggle-sm" style="margin: 0; flex-shrink: 0;">
-                    <input type="checkbox" v-model="optimizer.rebalance">
-                    <span class="slider"></span>
-                 </label>
-              </div>
-
-              <div class="flex-spacer"></div>
-
-              <button class="btn-glass primary w-full compact" @click="calculateOptimization" :disabled="isOptimizing">
-                <span v-if="!isOptimizing">Рассчитать</span>
-                <span v-else class="flex-center"><span class="spinner-sm"></span> Расчет...</span>
-              </button>
-
-              <!-- Info -->
-              <div style="font-size: 10px; color: rgba(255,255,255,0.4); margin-top: 8px; text-align: center; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 8px;">
-                 Веса автоматически подстраиваются на основе {{ waveRegime.currentRegime === 'TRENDING' ? 'тренда' : 'боковика' }}
-              </div>
-           </div>
-        </div>
-
-        <!-- Combined Metrics with Tournament Tab -->
+        <!-- Риск и Статистика (объединенный блок) -->
         <div class="glass-panel combined-metrics metrics-panel">
-           <div class="combined-tabs">
-              <button 
-                 :class="['tab-button', { active: activeMetricsTab === 'risk' }]"
-                 @click="activeMetricsTab = 'risk'"
-              >
-                 Риск
-              </button>
-              <button 
-                 :class="['tab-button', { active: activeMetricsTab === 'stats' }]"
-                 @click="activeMetricsTab = 'stats'"
-              >
-                 Статистика
-              </button>
-              <button 
-                 :class="['tab-button', { active: activeMetricsTab === 'tournament' }]"
-                 @click="activeMetricsTab = 'tournament'"
-              >
-                 🏆 Турнир
-              </button>
+           <div class="panel-header-mini">
+              <span class="panel-title-mini">Риск и Статистика</span>
            </div>
 
-           <!-- Risk Tab -->
-           <div class="tab-content" v-show="activeMetricsTab === 'risk'">
+           <!-- Все метрики в виде строк -->
+           <div class="metrics-section">
               <div class="metric-row">
                  <div class="metric-label">
                     <span>Expected Shortfall</span>
@@ -421,47 +418,92 @@
                  </div>
                  <div class="metric-value text-white">12.8%</div>
               </div>
+              <div class="metric-row">
+                 <div class="metric-label">
+                    <span>YTD Return</span>
+                    <span class="meta-hint">Year-to-Date</span>
            </div>
-
-           <!-- Stats Tab -->
-           <div class="tab-content" v-show="activeMetricsTab === 'stats'">
-              <div class="stats-grid">
-                 <div class="stat-item">
-                    <span class="stat-label">YTD Return</span>
-                    <span class="stat-value text-green">+8.42%</span>
+                 <div class="metric-value text-green">+8.42%</div>
                  </div>
-                 <div class="stat-item">
-                    <span class="stat-label">Win Rate</span>
-                    <span class="stat-value text-green">58.3%</span>
+              <div class="metric-row">
+                 <div class="metric-label">
+                    <span>Win Rate</span>
+                    <span class="meta-hint">% Profitable</span>
                  </div>
-                 <div class="stat-item">
-                    <span class="stat-label">Profit Factor</span>
-                    <span class="stat-value text-white">1.87x</span>
+                 <div class="metric-value text-green">58.3%</div>
                  </div>
-                 <div class="stat-item">
-                    <span class="stat-label">Avg Trade</span>
-                    <span class="stat-value text-white">+0.34%</span>
+              <div class="metric-row">
+                 <div class="metric-label">
+                    <span>Profit Factor</span>
+                    <span class="meta-hint">Gross P / Gross L</span>
                  </div>
+                 <div class="metric-value text-white">1.87x</div>
               </div>
+              <div class="metric-row">
+                 <div class="metric-label">
+                    <span>Avg Trade</span>
+                    <span class="meta-hint">Mean Return</span>
            </div>
-
-           <!-- Tournament Tab -->
-           <div class="tab-content" v-show="activeMetricsTab === 'tournament'">
-              <div class="tournament-mini">
-                 <div style="font-size: 10px; color: rgba(255,255,255,0.5); margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid rgba(255,255,255,0.1);">
-                    Рейтинг моделей (20-летний бэктест)
+                 <div class="metric-value text-white">+0.34%</div>
                  </div>
-                 <div v-for="(model, i) in tournamentResults" :key="i" class="tournament-row">
-                    <span class="tournament-rank">{{ i + 1 }}</span>
-                    <span class="tournament-name">{{ model.name }}</span>
-                    <span class="tournament-sharpe">{{ model.sharpe.toFixed(2) }}</span>
+              <div class="metric-row">
+                 <div class="metric-label">
+                    <span>Sharpe Ratio</span>
+                    <span class="meta-hint">Risk-Adjusted</span>
                  </div>
+                 <div class="metric-value text-green">1.52</div>
               </div>
-              <router-link to="/tournament" class="btn-glass primary w-full mt-3" style="text-decoration: none; text-align: center; display: inline-flex; align-items: center; justify-content: center;">
-                 Открыть полный турнир →
-              </router-link>
+              <div class="metric-row">
+                 <div class="metric-label">
+                    <span>Sortino Ratio</span>
+                    <span class="meta-hint">Downside Risk</span>
            </div>
+                 <div class="metric-value text-green">2.14</div>
         </div>
+              <div class="metric-row">
+                 <div class="metric-label">
+                    <span>Beta</span>
+                    <span class="meta-hint">vs Benchmark</span>
+    </div>
+                 <div class="metric-value text-white">0.87</div>
+      </div>
+              <div class="metric-row">
+                 <div class="metric-label">
+                    <span>Alpha</span>
+                    <span class="meta-hint">Excess Return</span>
+      </div>
+                 <div class="metric-value text-green">+2.31%</div>
+    </div>
+              <div class="metric-row">
+                 <div class="metric-label">
+                    <span>VaR (95%)</span>
+                    <span class="meta-hint">Daily</span>
+       </div>
+                 <div class="metric-value text-red">-2.15%</div>
+             </div>
+              <div class="metric-row">
+                 <div class="metric-label">
+                    <span>Information Ratio</span>
+                    <span class="meta-hint">Active Return / TE</span>
+             </div>
+                 <div class="metric-value text-green">0.94</div>
+             </div>
+              <div class="metric-row">
+                 <div class="metric-label">
+                    <span>Treynor Ratio</span>
+                    <span class="meta-hint">Return / Beta</span>
+             </div>
+                 <div class="metric-value text-white">9.67%</div>
+          </div>
+              <div class="metric-row">
+                 <div class="metric-label">
+                    <span>Tracking Error</span>
+                    <span class="meta-hint">vs Index</span>
+                </div>
+                 <div class="metric-value text-white">3.42%</div>
+             </div>
+          </div>
+       </div>
 
       </aside>
     </div>
@@ -473,67 +515,14 @@
         <span class="panel-badge">Интерактивный анализ</span>
       </div>
       <div class="panel-body scatter-3d-body">
-        <CorrelationScatter3D :available-assets="['SPY', 'TLT', 'GLD', 'QQQ', 'BTC']" />
+        <CorrelationScatter3D :available-assets="topAssetsFor3D" />
       </div>
     </div>
 
-    <!-- 3️⃣ WAVE_σ.9 SURFACE -->
-    <div class="glass-panel">
-       <div class="panel-header">
-          <h3>🌊 WAVE_σ.9 Momentum-Volatility Surface</h3>
-          <span class="panel-badge">Режимная индикация</span>
-       </div>
-       <div class="panel-body" style="padding-top: 16px;">
-          <p class="section-description" style="margin-bottom: 0; padding: 8px 12px; border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; background: rgba(0,0,0,0.2); font-size: 12px; line-height: 1.5;">
-             3D поверхность показывает взаимосвязь между импульсом (Momentum), волатильностью (Volatility) и неровностью (Jaggedness). 
-             <br><strong>Цветовая карта:</strong> 
-             <span style="color: #3b82f6;">🔵 Синий</span> = низкий риск (безопасная зона), 
-             <span style="color: #10b981;">🟢 Зеленый</span> = норма (торгуемый импульс), 
-             <span style="color: #fbbf24;">🟡 Желтый</span> = внимание (повышенная волатильность), 
-             <span style="color: #f97316;">🟠 Оранжевый</span> = предупреждение (высокий риск), 
-             <span style="color: #ef4444;">🔴 Красный</span> = экстремальный риск (шум, не торгуемо).
-             <br>Используется для динамической подстройки размера позиции на основе режима рынка.
-          </p>
-          
-          <!-- 3D Surface Plotly -->
-          <div id="wave-surface-3d" style="width:100%; height:750px; margin-bottom: 16px; margin-top: -30px;"></div>
-
-          <!-- Regime Metrics -->
-          <div class="wave-metrics-row">
-             <div class="wave-metric">
-                <p class="metric-label">Текущее состояние</p>
-                <p class="metric-value" :class="'text-' + (waveRegime.currentRegime === 'TRENDING' ? 'green' : 'red')">
-                   {{ waveRegime.currentRegime }}
-                </p>
-             </div>
-             <div class="wave-metric">
-                <p class="metric-label">Jaggedness Score</p>
-                <p class="metric-value">{{ waveRegime.jaggedness.toFixed(3) }}</p>
-             </div>
-             <div class="wave-metric">
-                <p class="metric-label">% Time CHOPPY (30d)</p>
-                <p class="metric-value">{{ waveRegime.pctChoppy }}%</p>
-             </div>
-             <div class="wave-metric">
-                <p class="metric-label">Vol Ratio (Choppy/Trend)</p>
-                <p class="metric-value">{{ waveRegime.volRatio.toFixed(2) }}x</p>
-             </div>
-          </div>
-
-          <!-- Regime History -->
-          <div class="regime-history-chart">
-             <div class="chart-title">Режим за последние 20 дней</div>
-             <div class="chart-bars-horizontal">
-                <div v-for="(regime, i) in waveRegime.history" :key="i" 
-                     :class="['regime-bar', 'regime-' + regime.toLowerCase()]"
-                     :title="regime">
-                </div>
-             </div>
-          </div>
-       </div>
-    </div>
 
     <!-- 4️⃣ LATENT VOLATILITY SECTION - 3D SURFACE -->
+    <!-- ЗАКОММЕНТИРОВАНО: Может понадобиться позже -->
+    <!--
     <div class="glass-panel">
       <div class="panel-header">
         <h3>🤯 INSANE Quant Latent Volatility Model</h3>
@@ -559,11 +548,9 @@
           </div>
         </div>
 
-        <!-- 3D Latent Vol Surface -->
         <div id="latent-vol-surface-3d"
              style="width:100%; height:800px; margin: -20px; margin-bottom: 16px; margin-top: -15px;"></div>
 
-        <!-- Legend -->
         <div class="latent-vol-legend">
           <div class="legend-item">
             <span class="legend-color" style="background: #7f1d1d;"></span>
@@ -591,7 +578,6 @@
           </div>
         </div>
 
-        <!-- Metrics -->
         <div class="latent-vol-metrics" style="margin-top: 16px;">
           <div class="metric">
             <p class="metric-label">Alert Precision</p>
@@ -611,7 +597,6 @@
           </div>
         </div>
 
-        <!-- Alert History -->
         <div class="alert-history-table" style="margin-top: 16px;">
           <div style="font-size: 11px; font-weight: 600; color: rgba(255,255,255,0.6); margin-bottom: 8px;">Alert History (Last 10 Days)</div>
           <div style="max-height: 150px; overflow-y: auto;">
@@ -626,6 +611,87 @@
         </div>
       </div>
     </div>
+    -->
+
+    <!-- Portfolio Details Modal -->
+    <transition name="modal-fade">
+      <div v-if="isPortfolioDetailsOpen" class="modal-overlay" @click="closePortfolioDetails">
+        <div class="modal-container" :class="{ 'modal-compact': portfolioDetailsFiltered.length <= 20 }" @click.stop>
+          <div class="modal-header">
+            <h2>Детализация портфеля ценных бумаг</h2>
+            <button class="modal-close" @click="closePortfolioDetails">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
+              </svg>
+            </button>
+          </div>
+          <div class="modal-body">
+            <div class="modal-search">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="11" cy="11" r="8"/>
+                <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+              </svg>
+              <input 
+                type="text" 
+                v-model="portfolioDetailsSearch" 
+                placeholder="Поиск по инструменту или названию..."
+                class="modal-search-input"
+              />
+            </div>
+            <div class="modal-table-container">
+              <table class="glass-table modal-table">
+                <thead>
+                  <tr>
+                    <th>Инструмент</th>
+                    <th class="text-right">Цена</th>
+                    <th class="text-right">День %</th>
+                    <th class="text-right">Позиция</th>
+                    <th class="text-right">Вес</th>
+                    <th class="text-right">Таргет</th>
+                    <th class="text-right">Дрифт</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr 
+                    v-for="pos in portfolioDetailsFiltered" 
+                    :key="pos.symbol"
+                    @click="selectAsset(pos); closePortfolioDetails()"
+                    :class="{ active: selectedAsset?.symbol === pos.symbol }"
+                  >
+                    <td>
+                      <div class="asset-cell">
+                        <div class="asset-icon" :style="{ background: pos.color }">{{ pos.symbol[0] }}</div>
+                        <div class="asset-info">
+                          <span class="symbol">{{ pos.symbol }}</span>
+                          <span class="name">{{ pos.name }}</span>
+                        </div>
+                      </div>
+                    </td>
+                    <td class="text-right mono">${{ pos.price }}</td>
+                    <td class="text-right mono">
+                      <span :class="['change-pill', pos.dayChange > 0 ? 'text-green' : 'text-red']">{{ pos.dayChange > 0 ? '+' : '' }}{{ pos.dayChange }}%</span>
+                    </td>
+                    <td class="text-right mono opacity-80">${{ (pos.notional / 1000).toFixed(1) }}k</td>
+                    <td class="text-right mono font-bold">{{ pos.allocation }}%</td>
+                    <td class="text-right mono opacity-50">{{ pos.targetAllocation }}%</td>
+                    <td class="text-right">
+                      <div :class="['drift-val', getDriftClass(pos)]">{{ (pos.allocation - pos.targetAllocation).toFixed(1) }}%</div>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="modal-footer">
+              <div class="modal-stats">
+                <span>Всего позиций: <strong>{{ positions.length }}</strong></span>
+                <span>Отображается: <strong>{{ portfolioDetailsFiltered.length }}</strong></span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </transition>
 
     <!-- Toast -->
     <transition name="slide-up">
@@ -698,41 +764,561 @@ const latentVolMetrics = ref({
 })
 
 // ============================================================================
-// TOURNAMENT
-// ============================================================================
-const tournamentResults = ref([
-  { name: 'WAVE_σ.9', sharpe: 1.35 },
-  { name: 'Latent Vol', sharpe: 1.22 },
-  { name: 'Buy & Hold', sharpe: 1.15 }
-])
-
 // ============================================================================
 // EXISTING STATE
 // ============================================================================
-const positions = ref([
-  { symbol: 'SPY', name: 'S&P 500 ETF', price: '142.50', dayChange: 1.24, notional: 850000, allocation: 35, targetAllocation: 30, color: '#3b82f6' },
-  { symbol: 'TLT', name: 'US Bonds 20Y', price: '87.30', dayChange: -0.48, notional: 620000, allocation: 25, targetAllocation: 28, color: '#10b981' },
-  { symbol: 'GLD', name: 'Gold ETF', price: '198.75', dayChange: 0.92, notional: 450000, allocation: 18, targetAllocation: 15, color: '#fbbf24' },
-  { symbol: 'DXY', name: 'US Dollar Idx', price: '104.20', dayChange: -0.15, notional: 380000, allocation: 15, targetAllocation: 17, color: '#8b5cf6' },
-  { symbol: 'QQQ', name: 'Nasdaq 100', price: '325.48', dayChange: 2.15, notional: 310000, allocation: 12, targetAllocation: 10, color: '#ec4899' }
-])
+// ============================================================================
+// PORTFOLIOS DATA - 5 разных портфелей по 25 активов
+// ============================================================================
+const portfolioTemplates = {
+  portfolio1: [
+    // Российские акции
+    { symbol: 'SBER', name: 'Сбербанк', price: '285.50', dayChange: 1.24, notional: 850000, allocation: 12, targetAllocation: 10, color: '#3b82f6' },
+    { symbol: 'GAZP', name: 'Газпром', price: '187.30', dayChange: -0.48, notional: 720000, allocation: 10, targetAllocation: 12, color: '#10b981' },
+    { symbol: 'LKOH', name: 'Лукойл', price: '7456.75', dayChange: 0.92, notional: 650000, allocation: 9, targetAllocation: 8, color: '#fbbf24' },
+    { symbol: 'GMKN', name: 'Норникель', price: '18420.20', dayChange: -0.15, notional: 580000, allocation: 8, targetAllocation: 9, color: '#8b5cf6' },
+    { symbol: 'YNDX', name: 'Яндекс', price: '3254.48', dayChange: 2.15, notional: 510000, allocation: 7, targetAllocation: 6, color: '#ec4899' },
+    { symbol: 'ROSN', name: 'Роснефть', price: '456.80', dayChange: 1.05, notional: 480000, allocation: 6, targetAllocation: 7, color: '#ef4444' },
+    { symbol: 'NVTK', name: 'Новатэк', price: '1234.50', dayChange: -0.32, notional: 450000, allocation: 6, targetAllocation: 5, color: '#06b6d4' },
+    { symbol: 'TATN', name: 'Татнефть', price: '567.90', dayChange: 0.78, notional: 420000, allocation: 5, targetAllocation: 6, color: '#84cc16' },
+    { symbol: 'ALRS', name: 'Алроса', price: '89.45', dayChange: -0.12, notional: 380000, allocation: 5, targetAllocation: 4, color: '#f97316' },
+    { symbol: 'MGNT', name: 'Магнит', price: '6789.00', dayChange: 1.45, notional: 350000, allocation: 4, targetAllocation: 5, color: '#a855f7' },
+    { symbol: 'MOEX', name: 'Московская биржа', price: '234.56', dayChange: 0.67, notional: 320000, allocation: 4, targetAllocation: 4, color: '#14b8a6' },
+    { symbol: 'POLY', name: 'Полиметалл', price: '456.78', dayChange: -0.89, notional: 300000, allocation: 4, targetAllocation: 3, color: '#eab308' },
+    { symbol: 'CHMF', name: 'Северсталь', price: '1234.56', dayChange: 1.23, notional: 280000, allocation: 3, targetAllocation: 4, color: '#22c55e' },
+    { symbol: 'PLZL', name: 'Полюс', price: '9876.54', dayChange: -0.45, notional: 260000, allocation: 3, targetAllocation: 3, color: '#3b82f6' },
+    { symbol: 'VTBR', name: 'ВТБ', price: '0.0234', dayChange: 0.12, notional: 240000, allocation: 3, targetAllocation: 2, color: '#10b981' },
+    // Российские облигации
+    { symbol: 'SU26238', name: 'ОФЗ 26238', price: '98.50', dayChange: 0.15, notional: 220000, allocation: 3, targetAllocation: 3, color: '#6366f1' },
+    { symbol: 'SU26239', name: 'ОФЗ 26239', price: '99.20', dayChange: 0.08, notional: 200000, allocation: 2, targetAllocation: 3, color: '#8b5cf6' },
+    { symbol: 'SU26240', name: 'ОФЗ 26240', price: '97.80', dayChange: -0.05, notional: 180000, allocation: 2, targetAllocation: 2, color: '#a78bfa' },
+    { symbol: 'RU000A0ZZZN2', name: 'Газпром обл', price: '101.50', dayChange: 0.22, notional: 160000, allocation: 2, targetAllocation: 2, color: '#c084fc' },
+    { symbol: 'RU000A0JX0J6', name: 'Роснефть обл', price: '100.30', dayChange: 0.18, notional: 140000, allocation: 2, targetAllocation: 2, color: '#d946ef' },
+    { symbol: 'RU000A0JX0K4', name: 'Лукойл обл', price: '99.90', dayChange: 0.12, notional: 120000, allocation: 1, targetAllocation: 2, color: '#ec4899' },
+    { symbol: 'RU000A0JX0L2', name: 'Сбер обл', price: '102.10', dayChange: 0.25, notional: 100000, allocation: 1, targetAllocation: 1, color: '#f472b6' },
+    { symbol: 'RU000A0JX0M0', name: 'ВТБ обл', price: '98.70', dayChange: 0.10, notional: 90000, allocation: 1, targetAllocation: 1, color: '#fb7185' },
+    { symbol: 'RU000A0JX0N8', name: 'Альфа обл', price: '100.50', dayChange: 0.20, notional: 80000, allocation: 1, targetAllocation: 1, color: '#fda4af' },
+    { symbol: 'RU000A0JX0P3', name: 'Россельхоз обл', price: '99.40', dayChange: 0.15, notional: 70000, allocation: 1, targetAllocation: 1, color: '#fecdd3' }
+  ],
+  portfolio2: [
+    // Российские акции
+    { symbol: 'SBER', name: 'Сбербанк', price: '285.50', dayChange: 1.24, notional: 920000, allocation: 13, targetAllocation: 11, color: '#3b82f6' },
+    { symbol: 'NLMK', name: 'НЛМК', price: '145.30', dayChange: -0.28, notional: 680000, allocation: 9, targetAllocation: 10, color: '#10b981' },
+    { symbol: 'RTKM', name: 'Ростелеком', price: '89.45', dayChange: 0.65, notional: 560000, allocation: 8, targetAllocation: 8, color: '#fbbf24' },
+    { symbol: 'AFKS', name: 'АФК Система', price: '12.34', dayChange: -0.45, notional: 480000, allocation: 7, targetAllocation: 7, color: '#8b5cf6' },
+    { symbol: 'FIVE', name: 'X5 Retail', price: '2345.67', dayChange: 1.85, notional: 420000, allocation: 6, targetAllocation: 6, color: '#ec4899' },
+    { symbol: 'PHOR', name: 'ФосАгро', price: '5678.90', dayChange: -0.12, notional: 380000, allocation: 5, targetAllocation: 6, color: '#ef4444' },
+    { symbol: 'HYDR', name: 'РусГидро', price: '0.678', dayChange: 0.34, notional: 340000, allocation: 5, targetAllocation: 5, color: '#06b6d4' },
+    { symbol: 'IRAO', name: 'Интер РАО', price: '3.456', dayChange: -0.23, notional: 300000, allocation: 4, targetAllocation: 4, color: '#84cc16' },
+    { symbol: 'FEES', name: 'ФСК ЕЭС', price: '0.189', dayChange: 0.12, notional: 280000, allocation: 4, targetAllocation: 4, color: '#f97316' },
+    { symbol: 'SNGS', name: 'Сургутнефтегаз', price: '45.67', dayChange: 0.89, notional: 260000, allocation: 4, targetAllocation: 3, color: '#a855f7' },
+    { symbol: 'SNGSP', name: 'Сургутнефтегаз-п', price: '34.56', dayChange: 0.67, notional: 240000, allocation: 3, targetAllocation: 3, color: '#14b8a6' },
+    { symbol: 'AFLT', name: 'Аэрофлот', price: '56.78', dayChange: -1.23, notional: 220000, allocation: 3, targetAllocation: 3, color: '#eab308' },
+    { symbol: 'PIKK', name: 'ПИК', price: '890.12', dayChange: 0.45, notional: 200000, allocation: 3, targetAllocation: 2, color: '#22c55e' },
+    { symbol: 'LSRG', name: 'ЛСР', price: '456.78', dayChange: -0.34, notional: 180000, allocation: 2, targetAllocation: 2, color: '#3b82f6' },
+    { symbol: 'UPRO', name: 'Юнипро', price: '12.34', dayChange: 0.56, notional: 160000, allocation: 2, targetAllocation: 2, color: '#10b981' },
+    // Российские облигации
+    { symbol: 'SU26241', name: 'ОФЗ 26241', price: '98.90', dayChange: 0.18, notional: 140000, allocation: 2, targetAllocation: 2, color: '#6366f1' },
+    { symbol: 'SU26242', name: 'ОФЗ 26242', price: '99.60', dayChange: 0.12, notional: 120000, allocation: 2, targetAllocation: 2, color: '#8b5cf6' },
+    { symbol: 'SU26243', name: 'ОФЗ 26243', price: '97.50', dayChange: -0.08, notional: 100000, allocation: 1, targetAllocation: 2, color: '#a78bfa' },
+    { symbol: 'RU000A0ZZZN3', name: 'Газпром обл', price: '101.80', dayChange: 0.28, notional: 90000, allocation: 1, targetAllocation: 1, color: '#c084fc' },
+    { symbol: 'RU000A0JX0J7', name: 'Роснефть обл', price: '100.60', dayChange: 0.22, notional: 80000, allocation: 1, targetAllocation: 1, color: '#d946ef' },
+    { symbol: 'RU000A0JX0K5', name: 'Лукойл обл', price: '100.20', dayChange: 0.15, notional: 70000, allocation: 1, targetAllocation: 1, color: '#ec4899' },
+    { symbol: 'RU000A0JX0L3', name: 'Сбер обл', price: '102.40', dayChange: 0.30, notional: 60000, allocation: 1, targetAllocation: 1, color: '#f472b6' },
+    { symbol: 'RU000A0JX0M1', name: 'ВТБ обл', price: '99.00', dayChange: 0.12, notional: 50000, allocation: 1, targetAllocation: 1, color: '#fb7185' },
+    { symbol: 'RU000A0JX0N9', name: 'Альфа обл', price: '100.80', dayChange: 0.25, notional: 45000, allocation: 1, targetAllocation: 1, color: '#fda4af' },
+    { symbol: 'RU000A0JX0P4', name: 'Россельхоз обл', price: '99.70', dayChange: 0.18, notional: 40000, allocation: 1, targetAllocation: 1, color: '#fecdd3' }
+  ],
+  portfolio3: [
+    // Российские акции
+    { symbol: 'GAZP', name: 'Газпром', price: '187.30', dayChange: -0.48, notional: 980000, allocation: 14, targetAllocation: 12, color: '#10b981' },
+    { symbol: 'LKOH', name: 'Лукойл', price: '7456.75', dayChange: 0.92, notional: 780000, allocation: 11, targetAllocation: 11, color: '#fbbf24' },
+    { symbol: 'GMKN', name: 'Норникель', price: '18420.20', dayChange: -0.15, notional: 640000, allocation: 9, targetAllocation: 9, color: '#8b5cf6' },
+    { symbol: 'YNDX', name: 'Яндекс', price: '3254.48', dayChange: 2.15, notional: 520000, allocation: 7, targetAllocation: 7, color: '#ec4899' },
+    { symbol: 'ROSN', name: 'Роснефть', price: '456.80', dayChange: 1.05, notional: 460000, allocation: 6, targetAllocation: 6, color: '#ef4444' },
+    { symbol: 'NVTK', name: 'Новатэк', price: '1234.50', dayChange: -0.32, notional: 400000, allocation: 6, targetAllocation: 5, color: '#06b6d4' },
+    { symbol: 'TATN', name: 'Татнефть', price: '567.90', dayChange: 0.78, notional: 360000, allocation: 5, targetAllocation: 5, color: '#84cc16' },
+    { symbol: 'ALRS', name: 'Алроса', price: '89.45', dayChange: -0.12, notional: 320000, allocation: 4, targetAllocation: 4, color: '#f97316' },
+    { symbol: 'MGNT', name: 'Магнит', price: '6789.00', dayChange: 1.45, notional: 300000, allocation: 4, targetAllocation: 4, color: '#a855f7' },
+    { symbol: 'MOEX', name: 'Московская биржа', price: '234.56', dayChange: 0.67, notional: 280000, allocation: 4, targetAllocation: 3, color: '#14b8a6' },
+    { symbol: 'POLY', name: 'Полиметалл', price: '456.78', dayChange: -0.89, notional: 260000, allocation: 4, targetAllocation: 3, color: '#eab308' },
+    { symbol: 'CHMF', name: 'Северсталь', price: '1234.56', dayChange: 1.23, notional: 240000, allocation: 3, targetAllocation: 3, color: '#22c55e' },
+    { symbol: 'PLZL', name: 'Полюс', price: '9876.54', dayChange: -0.45, notional: 220000, allocation: 3, targetAllocation: 3, color: '#3b82f6' },
+    { symbol: 'VTBR', name: 'ВТБ', price: '0.0234', dayChange: 0.12, notional: 200000, allocation: 3, targetAllocation: 2, color: '#10b981' },
+    { symbol: 'NLMK', name: 'НЛМК', price: '145.30', dayChange: -0.28, notional: 180000, allocation: 2, targetAllocation: 2, color: '#6366f1' },
+    // Российские облигации
+    { symbol: 'SU26244', name: 'ОФЗ 26244', price: '98.30', dayChange: 0.20, notional: 160000, allocation: 2, targetAllocation: 2, color: '#8b5cf6' },
+    { symbol: 'SU26245', name: 'ОФЗ 26245', price: '99.10', dayChange: 0.14, notional: 140000, allocation: 2, targetAllocation: 2, color: '#a78bfa' },
+    { symbol: 'SU26246', name: 'ОФЗ 26246', price: '97.20', dayChange: -0.10, notional: 120000, allocation: 2, targetAllocation: 2, color: '#c084fc' },
+    { symbol: 'RU000A0ZZZN4', name: 'Газпром обл', price: '102.10', dayChange: 0.32, notional: 100000, allocation: 1, targetAllocation: 2, color: '#d946ef' },
+    { symbol: 'RU000A0JX0J8', name: 'Роснефть обл', price: '100.90', dayChange: 0.26, notional: 90000, allocation: 1, targetAllocation: 1, color: '#ec4899' },
+    { symbol: 'RU000A0JX0K6', name: 'Лукойл обл', price: '100.50', dayChange: 0.18, notional: 80000, allocation: 1, targetAllocation: 1, color: '#f472b6' },
+    { symbol: 'RU000A0JX0L4', name: 'Сбер обл', price: '102.70', dayChange: 0.35, notional: 70000, allocation: 1, targetAllocation: 1, color: '#fb7185' },
+    { symbol: 'RU000A0JX0M2', name: 'ВТБ обл', price: '99.30', dayChange: 0.14, notional: 60000, allocation: 1, targetAllocation: 1, color: '#fda4af' },
+    { symbol: 'RU000A0JX0N0', name: 'Альфа обл', price: '101.10', dayChange: 0.28, notional: 50000, allocation: 1, targetAllocation: 1, color: '#fecdd3' },
+    { symbol: 'RU000A0JX0P5', name: 'Россельхоз обл', price: '100.00', dayChange: 0.20, notional: 45000, allocation: 1, targetAllocation: 1, color: '#fbbf24' }
+  ],
+  portfolio4: [
+    // Российские акции
+    { symbol: 'SBER', name: 'Сбербанк', price: '285.50', dayChange: 1.24, notional: 1100000, allocation: 15, targetAllocation: 13, color: '#3b82f6' },
+    { symbol: 'RTKM', name: 'Ростелеком', price: '89.45', dayChange: 0.65, notional: 720000, allocation: 10, targetAllocation: 10, color: '#fbbf24' },
+    { symbol: 'AFKS', name: 'АФК Система', price: '12.34', dayChange: -0.45, notional: 580000, allocation: 8, targetAllocation: 8, color: '#8b5cf6' },
+    { symbol: 'FIVE', name: 'X5 Retail', price: '2345.67', dayChange: 1.85, notional: 500000, allocation: 7, targetAllocation: 7, color: '#ec4899' },
+    { symbol: 'PHOR', name: 'ФосАгро', price: '5678.90', dayChange: -0.12, notional: 440000, allocation: 6, targetAllocation: 6, color: '#ef4444' },
+    { symbol: 'HYDR', name: 'РусГидро', price: '0.678', dayChange: 0.34, notional: 400000, allocation: 6, targetAllocation: 5, color: '#06b6d4' },
+    { symbol: 'IRAO', name: 'Интер РАО', price: '3.456', dayChange: -0.23, notional: 360000, allocation: 5, targetAllocation: 5, color: '#84cc16' },
+    { symbol: 'FEES', name: 'ФСК ЕЭС', price: '0.189', dayChange: 0.12, notional: 320000, allocation: 4, targetAllocation: 4, color: '#f97316' },
+    { symbol: 'SNGS', name: 'Сургутнефтегаз', price: '45.67', dayChange: 0.89, notional: 300000, allocation: 4, targetAllocation: 4, color: '#a855f7' },
+    { symbol: 'SNGSP', name: 'Сургутнефтегаз-п', price: '34.56', dayChange: 0.67, notional: 280000, allocation: 4, targetAllocation: 3, color: '#14b8a6' },
+    { symbol: 'AFLT', name: 'Аэрофлот', price: '56.78', dayChange: -1.23, notional: 260000, allocation: 4, targetAllocation: 3, color: '#eab308' },
+    { symbol: 'PIKK', name: 'ПИК', price: '890.12', dayChange: 0.45, notional: 240000, allocation: 3, targetAllocation: 3, color: '#22c55e' },
+    { symbol: 'LSRG', name: 'ЛСР', price: '456.78', dayChange: -0.34, notional: 220000, allocation: 3, targetAllocation: 2, color: '#3b82f6' },
+    { symbol: 'UPRO', name: 'Юнипро', price: '12.34', dayChange: 0.56, notional: 200000, allocation: 3, targetAllocation: 2, color: '#10b981' },
+    { symbol: 'MAGN', name: 'ММК', price: '45.67', dayChange: 0.23, notional: 180000, allocation: 2, targetAllocation: 2, color: '#6366f1' },
+    // Российские облигации
+    { symbol: 'SU26247', name: 'ОФЗ 26247', price: '98.70', dayChange: 0.22, notional: 160000, allocation: 2, targetAllocation: 2, color: '#8b5cf6' },
+    { symbol: 'SU26248', name: 'ОФЗ 26248', price: '99.50', dayChange: 0.16, notional: 140000, allocation: 2, targetAllocation: 2, color: '#a78bfa' },
+    { symbol: 'SU26249', name: 'ОФЗ 26249', price: '97.00', dayChange: -0.12, notional: 120000, allocation: 2, targetAllocation: 2, color: '#c084fc' },
+    { symbol: 'RU000A0ZZZN5', name: 'Газпром обл', price: '102.40', dayChange: 0.36, notional: 100000, allocation: 1, targetAllocation: 2, color: '#d946ef' },
+    { symbol: 'RU000A0JX0J9', name: 'Роснефть обл', price: '101.20', dayChange: 0.30, notional: 90000, allocation: 1, targetAllocation: 1, color: '#ec4899' },
+    { symbol: 'RU000A0JX0K7', name: 'Лукойл обл', price: '100.80', dayChange: 0.22, notional: 80000, allocation: 1, targetAllocation: 1, color: '#f472b6' },
+    { symbol: 'RU000A0JX0L5', name: 'Сбер обл', price: '103.00', dayChange: 0.40, notional: 70000, allocation: 1, targetAllocation: 1, color: '#fb7185' },
+    { symbol: 'RU000A0JX0M3', name: 'ВТБ обл', price: '99.60', dayChange: 0.16, notional: 60000, allocation: 1, targetAllocation: 1, color: '#fda4af' },
+    { symbol: 'RU000A0JX0N1', name: 'Альфа обл', price: '101.40', dayChange: 0.30, notional: 50000, allocation: 1, targetAllocation: 1, color: '#fecdd3' },
+    { symbol: 'RU000A0JX0P6', name: 'Россельхоз обл', price: '100.30', dayChange: 0.22, notional: 45000, allocation: 1, targetAllocation: 1, color: '#fbbf24' }
+  ],
+  portfolio5: [
+    // Российские акции
+    { symbol: 'LKOH', name: 'Лукойл', price: '7456.75', dayChange: 0.92, notional: 1200000, allocation: 16, targetAllocation: 14, color: '#fbbf24' },
+    { symbol: 'GMKN', name: 'Норникель', price: '18420.20', dayChange: -0.15, notional: 840000, allocation: 12, targetAllocation: 12, color: '#8b5cf6' },
+    { symbol: 'YNDX', name: 'Яндекс', price: '3254.48', dayChange: 2.15, notional: 640000, allocation: 9, targetAllocation: 9, color: '#ec4899' },
+    { symbol: 'ROSN', name: 'Роснефть', price: '456.80', dayChange: 1.05, notional: 560000, allocation: 8, targetAllocation: 8, color: '#ef4444' },
+    { symbol: 'NVTK', name: 'Новатэк', price: '1234.50', dayChange: -0.32, notional: 480000, allocation: 7, targetAllocation: 6, color: '#06b6d4' },
+    { symbol: 'TATN', name: 'Татнефть', price: '567.90', dayChange: 0.78, notional: 420000, allocation: 6, targetAllocation: 6, color: '#84cc16' },
+    { symbol: 'ALRS', name: 'Алроса', price: '89.45', dayChange: -0.12, notional: 380000, allocation: 5, targetAllocation: 5, color: '#f97316' },
+    { symbol: 'MGNT', name: 'Магнит', price: '6789.00', dayChange: 1.45, notional: 340000, allocation: 5, targetAllocation: 4, color: '#a855f7' },
+    { symbol: 'MOEX', name: 'Московская биржа', price: '234.56', dayChange: 0.67, notional: 300000, allocation: 4, targetAllocation: 4, color: '#14b8a6' },
+    { symbol: 'POLY', name: 'Полиметалл', price: '456.78', dayChange: -0.89, notional: 280000, allocation: 4, targetAllocation: 4, color: '#eab308' },
+    { symbol: 'CHMF', name: 'Северсталь', price: '1234.56', dayChange: 1.23, notional: 260000, allocation: 4, targetAllocation: 3, color: '#22c55e' },
+    { symbol: 'PLZL', name: 'Полюс', price: '9876.54', dayChange: -0.45, notional: 240000, allocation: 3, targetAllocation: 3, color: '#3b82f6' },
+    { symbol: 'VTBR', name: 'ВТБ', price: '0.0234', dayChange: 0.12, notional: 220000, allocation: 3, targetAllocation: 3, color: '#10b981' },
+    { symbol: 'NLMK', name: 'НЛМК', price: '145.30', dayChange: -0.28, notional: 200000, allocation: 3, targetAllocation: 2, color: '#6366f1' },
+    { symbol: 'RTKM', name: 'Ростелеком', price: '89.45', dayChange: 0.65, notional: 180000, allocation: 2, targetAllocation: 2, color: '#fbbf24' },
+    // Российские облигации
+    { symbol: 'SU26250', name: 'ОФЗ 26250', price: '98.10', dayChange: 0.24, notional: 160000, allocation: 2, targetAllocation: 2, color: '#8b5cf6' },
+    { symbol: 'SU26251', name: 'ОФЗ 26251', price: '99.00', dayChange: 0.18, notional: 140000, allocation: 2, targetAllocation: 2, color: '#a78bfa' },
+    { symbol: 'SU26252', name: 'ОФЗ 26252', price: '96.80', dayChange: -0.14, notional: 120000, allocation: 2, targetAllocation: 2, color: '#c084fc' },
+    { symbol: 'RU000A0ZZZN6', name: 'Газпром обл', price: '102.70', dayChange: 0.40, notional: 100000, allocation: 1, targetAllocation: 2, color: '#d946ef' },
+    { symbol: 'RU000A0JX0J0', name: 'Роснефть обл', price: '101.50', dayChange: 0.34, notional: 90000, allocation: 1, targetAllocation: 1, color: '#ec4899' },
+    { symbol: 'RU000A0JX0K8', name: 'Лукойл обл', price: '101.10', dayChange: 0.25, notional: 80000, allocation: 1, targetAllocation: 1, color: '#f472b6' },
+    { symbol: 'RU000A0JX0L6', name: 'Сбер обл', price: '103.30', dayChange: 0.45, notional: 70000, allocation: 1, targetAllocation: 1, color: '#fb7185' },
+    { symbol: 'RU000A0JX0M4', name: 'ВТБ обл', price: '99.90', dayChange: 0.18, notional: 60000, allocation: 1, targetAllocation: 1, color: '#fda4af' },
+    { symbol: 'RU000A0JX0N2', name: 'Альфа обл', price: '101.70', dayChange: 0.35, notional: 50000, allocation: 1, targetAllocation: 1, color: '#fecdd3' },
+    { symbol: 'RU000A0JX0P7', name: 'Россельхоз обл', price: '100.60', dayChange: 0.25, notional: 45000, allocation: 1, targetAllocation: 1, color: '#fbbf24' }
+  ]
+}
 
-const selectedAsset = ref(positions.value[0])
+// Функция для получения портфеля по банку (распределение по остатку от деления regNumber на 5)
+const getPortfolioByBank = (bankRegNumber: string): string => {
+  const num = parseInt(bankRegNumber) % 5
+  const portfolios = ['portfolio1', 'portfolio2', 'portfolio3', 'portfolio4', 'portfolio5']
+  return portfolios[num]
+}
+
 const lastUpdate = ref(new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}))
 const isRecalcing = ref(false)
-const isOptimizing = ref(false)
 const searchFilter = ref('')
-const activeMetricsTab = ref('risk')
 const toast = ref({ show: false, message: '', type: 'success' })
 
-const optimizer = ref({
-  model: 'Mean-Variance',
-  minWeight: 0,
-  maxWeight: 25,
-  targetVol: 15,
-  rebalance: true
+// ============================================================================
+// BANK SELECTOR
+// ============================================================================
+const banks = ref([
+  { name: 'АО ЮниКредит Банк', regNumber: '1' },
+  { name: 'АО «КАБ „Викинг"', regNumber: '2' },
+  { name: 'ПАО Банк «АЛЕКСАНДРОВСКИЙ»', regNumber: '5' },
+  { name: 'ОАО КБ «Стройкредит»', regNumber: '18' },
+  { name: 'ООО «Примтеркомбанк»', regNumber: '21' },
+  { name: 'ПАО Банк «АЛЕКСАНДРОВСКИЙ»', regNumber: '53' },
+  { name: 'ПАО МАБ «Темпбанк»', regNumber: '55' },
+  { name: 'МОРСКОЙ БАНК (АО)', regNumber: '77' },
+  { name: 'АО КБ «САММИТ БАНК»', regNumber: '85' },
+  { name: 'АО «Кемсоцинбанк»', regNumber: '96' },
+  { name: 'ОАО «БАНК РОССИЙСКИЙ КРЕДИТ»', regNumber: '101' },
+  { name: 'АКБ «Инвестбанк» (ОАО)', regNumber: '107' },
+  { name: 'АО АКБ «ЦентроКредит»', regNumber: '121' },
+  { name: 'АО «Рускобанк»', regNumber: '138' },
+  { name: 'Авто Финанс Банк', regNumber: '170' },
+  { name: 'Банк МБСП (АО)', regNumber: '197' },
+  { name: 'КБ «Экспресс-кредит» (АО)', regNumber: '210' },
+  { name: 'ООО «СПЕЦСТРОЙБАНК»', regNumber: '236' },
+  { name: 'АО КБ «Хлынов»', regNumber: '254' },
+  { name: 'АО «ГУТА-БАНК»', regNumber: '256' },
+  { name: 'ОАО «БАНК РОССИЙСКИЙ КРЕДИТ»', regNumber: '324' },
+  { name: 'АО «АБ „РОССИЯ"', regNumber: '328' },
+  { name: 'Банк ГПБ (АО)', regNumber: '354' },
+  { name: 'АО «Витабанк»', regNumber: '356' },
+  { name: 'АКБ «СЛАВЯНСКИЙ БАНК» (ЗАО)', regNumber: '383' },
+  { name: 'Банк Аверс', regNumber: '415' },
+  { name: 'ПАО «ИДЕЯ Банк»', regNumber: '430' },
+  { name: 'ПАО «СПБ Банк»', regNumber: '435' },
+  { name: 'ПАО «Банк „Санкт-Петербург"', regNumber: '436' },
+  { name: 'БАЛАКОВО-БАНК', regNumber: '444' },
+  { name: 'АКБ «Крыловский» (АО)', regNumber: '456' },
+  { name: 'ООО КБ «Новопокровский»', regNumber: '467' },
+  { name: 'АКБ «ЕНИСЕЙ» (ПАО)', regNumber: '474' },
+  { name: 'АО «Кубаньторгбанк»', regNumber: '478' },
+  { name: 'ООО КБ «РостФинанс»', regNumber: '481' },
+  { name: 'Банк «Первомайский» (ПАО)', regNumber: '518' },
+  { name: 'АО Банк «Советский»', regNumber: '554' },
+  { name: 'АО Банк «Советский»', regNumber: '558' },
+  { name: 'Банк «Уссури» (АО)', regNumber: '596' },
+  { name: 'Банк ИПБ (АО)', regNumber: '600' },
+  { name: 'АО «Первый Инвестиционный Банк»', regNumber: '604' },
+  { name: 'КБ «Гагаринский» (АО)', regNumber: '606' },
+  { name: 'Банк Кузнецкий', regNumber: '609' },
+  { name: 'Банк — Т (ОАО)', regNumber: '625' },
+  { name: 'АО «Почта Банк»', regNumber: '650' },
+  { name: 'АО «Банк Воронеж»', regNumber: '654' },
+  { name: 'ООО КБ «Аксонбанк»', regNumber: '680' },
+  { name: 'Банк Синара', regNumber: '705' },
+  { name: 'Банк Казани', regNumber: '708' },
+  { name: 'ПАО «Выборг-банк»', regNumber: '720' },
+  { name: 'АО КБ «Ассоциация»', regNumber: '732' },
+  { name: 'АО УКБ «Белгородсоцбанк»', regNumber: '760' },
+  { name: 'ООО «РУСБС»', regNumber: '779' },
+  { name: 'АО «Роял Кредит Банк»', regNumber: '783' },
+  { name: 'ООО «КБ „Тальменка-банк"', regNumber: '826' },
+  { name: 'АО «Дальневосточный банк»', regNumber: '843' },
+  { name: 'КБ «Канский» ООО', regNumber: '860' },
+  { name: 'ООО «Владпромбанк»', regNumber: '870' },
+  { name: 'ПАО «Норвик Банк»', regNumber: '902' },
+  { name: 'АО «ВЛАДБИЗНЕСБАНК»', regNumber: '903' },
+  { name: 'АКБ «Акция» ОАО', regNumber: '927' },
+  { name: 'АО «Банк „Торжок"', regNumber: '933' },
+  { name: 'ЗАО «М БАНК»', regNumber: '948' },
+  { name: 'ПАО «Совкомбанк»', regNumber: '963' },
+  { name: 'ПАО АКБ «Балтика»', regNumber: '967' },
+  { name: 'ООО КБ «Конфидэнс Банк»', regNumber: '970' },
+  { name: 'АО «Вологдабанк»', regNumber: '992' },
+  { name: 'АО Комсоцбанк «Бумеранг»', regNumber: '1002' },
+  { name: 'ПАО Сбербанк', regNumber: '1027' },
+  { name: 'ООО КБ «Гефест»', regNumber: '1046' },
+  { name: 'АО «ТелеПорт Банк»', regNumber: '1052' },
+  { name: 'АО «БайкалИнвестБанк»', regNumber: '1067' },
+  { name: 'АО «РЕАЛИСТ БАНК»', regNumber: '1067' },
+  { name: 'БАНК РСБ 24 (АО)', regNumber: '1073' },
+  { name: 'АО Банк «ККБ»', regNumber: '1087' },
+  { name: 'ПАО Комбанк «Химик»', regNumber: '1114' },
+  { name: 'ООО «Костромаселькомбанк»', regNumber: '1115' },
+  { name: 'ПАО «О.К. Банк»', regNumber: '1118' },
+  { name: 'АКБ «Русский Трастовый Банк» (АО)', regNumber: '1139' },
+  { name: '«Братский АНКБ» АО', regNumber: '1144' },
+  { name: 'ООО КБ «Калуга»', regNumber: '1151' },
+  { name: 'ОАО «ВКБ»', regNumber: '1153' },
+  { name: 'АО «Кузнецкбизнесбанк»', regNumber: '1158' },
+  { name: 'ПАО НКБ «РАДИОТЕХБАНК»', regNumber: '1166' },
+  { name: 'АО «ГринКомБанк»', regNumber: '1184' },
+  { name: 'ВЛБАНК (АО)', regNumber: '1222' },
+  { name: 'Банк «Богородский» (ООО)', regNumber: '1277' },
+  { name: 'АО комбанк «Арзамас»', regNumber: '1281' },
+  { name: 'ПАО «Банк Ставр»', regNumber: '1288' },
+  { name: 'КБ «ЭНЕРГОТРАНСБАНК» (АО)', regNumber: '1307' },
+  { name: 'АО «АЛЬФА-БАНК»', regNumber: '1326' },
+  { name: 'АО «Солид Банк»', regNumber: '1329' },
+  { name: 'ООО банк «Элита»', regNumber: '1399' },
+  { name: 'ПАО АРКБ «Росбизнесбанк»', regNumber: '1405' },
+  { name: 'ПАО М2М Прайвет Банк', regNumber: '1414' },
+  { name: 'Автоградбанк', regNumber: '1455' },
+  { name: 'ПАО Сбербанк', regNumber: '1481' },
+  { name: 'АКИБ «ОБРАЗОВАНИЕ» (АО)', regNumber: '1521' },
+  { name: 'Банк «Солидарность» АО', regNumber: '1555' },
+  { name: 'ПАО «РосДорБанк»', regNumber: '1573' },
+  { name: 'ОАО АКБ «Лесбанк»', regNumber: '1598' },
+  { name: '«СДМ-Банк» (ПАО)', regNumber: '1637' },
+  { name: 'КБ «Метрополь» ООО', regNumber: '1639' },
+  { name: 'ОАО МКБ «Замоскворецкий»', regNumber: '1640' },
+  { name: 'КБ «ИНТЕРКОММЕРЦ» (ООО)', regNumber: '1657' },
+  { name: 'ООО Банк Оранжевый', regNumber: '1659' },
+  { name: 'ООО КБ «Нэклис-Банк»', regNumber: '1671' },
+  { name: 'АБ «БПФ» (ЗАО)', regNumber: '1677' },
+  { name: 'Креди Агриколь КИБ АО', regNumber: '1680' },
+  { name: 'ОАО «ПРБ»', regNumber: '1730' },
+  { name: 'ООО КБ «Жилкредит»', regNumber: '1736' },
+  { name: 'ООО «НОВОКИБ»', regNumber: '1747' },
+  { name: 'АО КБ «ИВАНОВО»', regNumber: '1763' },
+  { name: 'АО ЕАТПБанк', regNumber: '1765' },
+  { name: 'АО КИБ «ЕВРОАЛЬЯНС»', regNumber: '1781' },
+  { name: '«Азиатско-Тихоокеанский Банк» (АО)', regNumber: '1810' },
+  { name: 'ПАО КБ «ЕвроситиБанк»', regNumber: '1869' },
+  { name: 'АКБ «ФОРА-БАНК» (АО)', regNumber: '1885' },
+  { name: 'АО «Банк „Вологжанин"', regNumber: '1896' },
+  { name: 'АКБ «Ланта-Банк» (АО)', regNumber: '1920' },
+  { name: 'АО КБ «Модульбанк»', regNumber: '1927' },
+  { name: 'ООО КБ «Ренессанс»', regNumber: '1939' },
+  { name: 'ПАО АГРОИНКОМБАНК', regNumber: '1946' },
+  { name: 'АО «Банк ДАЛЕНА»', regNumber: '1948' },
+  { name: 'АО БАНК НБС', regNumber: '1949' },
+  { name: 'ООО «Витас Банк»', regNumber: '1955' },
+  { name: 'ПАО «НБД-Банк»', regNumber: '1966' },
+  { name: 'ООО КБ «Монолит»', regNumber: '1967' },
+  { name: 'АвтоКредитБанк', regNumber: '1973' },
+  { name: 'ПАО «МОСКОВСКИЙ КРЕДИТНЫЙ БАНК»', regNumber: '1978' },
+  { name: 'АО КБ «БТФ»', regNumber: '1982' },
+  { name: 'ЗАО «МАБ»', regNumber: '1987' },
+  { name: '«СИБСОЦБАНК» ООО', regNumber: '2015' },
+  { name: 'АО БАНК «РСКБ»', regNumber: '2050' },
+  { name: 'ЗАО «Международный Промышленный Банк»', regNumber: '2056' },
+  { name: 'АЛТЫНБАНК', regNumber: '2070' },
+  { name: 'КМ «Профильный Банк» (АО)', regNumber: '2103' },
+  { name: 'КБ «Транснациональный банк» (ООО)', regNumber: '2108' },
+  { name: 'АКБ «ПЕРЕСВЕТ» (ПАО)', regNumber: '2110' },
+  { name: 'Алеф-Банк', regNumber: '2119' },
+  { name: 'АКБ «ФИНПРОМБАНК» (ПАО)', regNumber: '2157' },
+  { name: 'АКБ «НРБанк» (АО)', regNumber: '2170' },
+  { name: '«Мастер-Банк» (ОАО)', regNumber: '2176' },
+  { name: 'КБ «Рублевский» ООО', regNumber: '2192' },
+  { name: 'ТКБ БАНК ПАО', regNumber: '2210' },
+  { name: 'АО «Банк Интеза»', regNumber: '2216' },
+  { name: 'АО АКБ «Констанс-Банк»', regNumber: '2228' },
+  { name: 'АО КБ «КОСМОС»', regNumber: '2245' },
+  { name: 'АКБ «ТЕНДЕР-БАНК» (АО)', regNumber: '2252' },
+  { name: 'ПАО «МТС-Банк»', regNumber: '2268' },
+  { name: 'ПАО «ОФК Банк»', regNumber: '2270' },
+  { name: 'ООО КБ «Банк БФТ»', regNumber: '2273' },
+  { name: 'Банк УРАЛСИБ', regNumber: '2275' },
+  { name: 'АО «Банк Русский Стандарт»', regNumber: '2289' },
+  { name: 'АКБ «ВЕК» (АО)', regNumber: '2299' },
+  { name: 'Таврический Банк (АО)', regNumber: '2304' },
+  { name: 'АКБ «Абсолют Банк» (ПАО)', regNumber: '2306' },
+  { name: 'АО Банк Инго', regNumber: '2307' },
+  { name: 'АКБ «БЭНК ОФ ЧАЙНА» (АО)', regNumber: '2309' },
+  { name: 'АО «Банк ДОМ.РФ»', regNumber: '2312' },
+  { name: 'АО АКБ «ГАЗБАНК»', regNumber: '2316' },
+  { name: 'Банк «Клиентский» (АО)', regNumber: '2324' },
+  { name: 'ООО КБ «ОГНИ МОСКВЫ»', regNumber: '2328' },
+  { name: 'АО «Зернобанк»', regNumber: '2337' },
+  { name: 'ООО КБ «ПЛАТИНА»', regNumber: '2347' },
+  { name: 'АО «НДБанк»', regNumber: '2374' },
+  { name: 'АО КБ «Северный Кредит»', regNumber: '2398' },
+  { name: 'АО АКБ «ЕВРОФИНАНС МОСНАРБАНК»', regNumber: '2402' },
+  { name: 'АКБ «АПАБАНК» (АО)', regNumber: '2404' },
+  { name: 'ПАО КБ «ПФС-БАНК»', regNumber: '2410' },
+  { name: 'ОАО АКБ «Пробизнесбанк»', regNumber: '2412' },
+  { name: 'АКБ «ПРОМИНВЕСТБАНК» (ПАО)', regNumber: '2433' },
+  { name: 'Банк Глобус (АО)', regNumber: '2438' },
+  { name: 'ПАО АКБ «Металлинвестбанк»', regNumber: '2440' },
+  { name: 'Банк «Навигатор» (ОАО)', regNumber: '2469' },
+  { name: 'АКБ «БНКВ» (АО)', regNumber: '2472' },
+  { name: 'АО «ГЕНБАНК»', regNumber: '2490' },
+  { name: 'ООО «КБ „МЕЖТРАСТБАНК"', regNumber: '2493' },
+  { name: 'АО «Банк Кредит Свисс (Москва)»', regNumber: '2494' },
+  { name: 'ИНГ БАНК (ЕВРАЗИЯ) АО', regNumber: '2495' },
+  { name: 'ООО «Крона-Банк»', regNumber: '2499' },
+  { name: 'АКБ «ЕИБ» ЗАО', regNumber: '2503' },
+  { name: 'ООО «банк Раунд»', regNumber: '2506' },
+  { name: 'АО «Тольяттихимбанк»', regNumber: '2507' },
+  { name: 'КБ «Кубань Кредит» ООО', regNumber: '2518' },
+  { name: 'ЭКСИ-Банк (АО)', regNumber: '2530' },
+  { name: 'КБ «ПРИСКО КАПИТАЛ БАНК», АО', regNumber: '2537' },
+  { name: 'АО «ФИА-БАНК»', regNumber: '2542' },
+  { name: 'АО АКБ «НОВИКОМБАНК»', regNumber: '2546' },
+  { name: 'АО «МЕТРОБАНК»', regNumber: '2548' },
+  { name: 'АО Банк «ПСКБ»', regNumber: '2551' },
+  { name: 'АО КБ «Ситибанк»', regNumber: '2557' },
+  { name: '«ЗИРААТ БАНК (МОСКВА)» (АО)', regNumber: '2559' },
+  { name: 'ООО БАНК «КУРГАН»', regNumber: '2568' },
+  { name: 'Банк РМП (АО)', regNumber: '2574' },
+  { name: 'КБ «Гарант-Инвест» (АО)', regNumber: '2576' },
+  { name: 'ЗАО «С банк»', regNumber: '2581' },
+  { name: 'ОАО «ЮНИКОРБАНК»', regNumber: '2586' },
+  { name: 'АКИБАНК', regNumber: '2587' },
+  { name: 'АК БАРС Банк', regNumber: '2590' },
+  { name: 'ОАО Банк «Западный»', regNumber: '2598' },
+  { name: 'Алмазэргиэнбанк', regNumber: '2602' },
+  { name: 'АО «Кросна-Банк»', regNumber: '2607' },
+  { name: 'АО Банк «Объединенный капитал»', regNumber: '2611' },
+  { name: 'АО АКБ «МЕЖДУНАРОДНЫЙ ФИНАНСОВЫЙ КЛУБ»', regNumber: '2618' },
+  { name: 'АО КБ «МБР-банк»', regNumber: '2620' },
+  { name: 'АКБ «ОБПИ» (ПАО)', regNumber: '2626' },
+  { name: 'КБ «Дж.П. Морган Банк Интернешнл» (ООО)', regNumber: '2629' },
+  { name: 'АО АИКБ «Енисейский объединенный банк»', regNumber: '2645' },
+  { name: 'КБ «Унифин» АО', regNumber: '2654' },
+  { name: 'ООО ПИР Банк', regNumber: '2655' },
+  { name: 'ООО КБ «Алтайкапиталбанк»', regNumber: '2659' },
+  { name: 'АКБ «СЛАВИЯ» (АО)', regNumber: '2664' },
+  { name: 'ЗАО КБ «ЛАДА-КРЕДИТ»', regNumber: '2668' },
+  { name: 'ООО КБ «Центрально-Европейский Банк»', regNumber: '2670' },
+  { name: 'АО «ТБанк»', regNumber: '2673' },
+  { name: 'КБ «Крокус-Банк» (ООО)', regNumber: '2682' },
+  { name: 'ООО «Банк БКФ»', regNumber: '2684' },
+  { name: 'АКБ «ИНКАРОБАНК» (АО)', regNumber: '2696' },
+  { name: 'КБ «Международный Банк Развития» (АО)', regNumber: '2704' },
+  { name: 'КБ «ЛОКО-Банк» (АО)', regNumber: '2707' },
+  { name: 'АО «Гринфилдбанк»', regNumber: '2711' },
+  { name: 'АО «ТУСАРБАНК»', regNumber: '2712' },
+  { name: 'АО «Промэнергобанк»', regNumber: '2728' },
+  { name: 'АО «ВостСибтранскомбанк»', regNumber: '2731' },
+  { name: 'ПАО СКБ Приморья «Примсоцбанк»', regNumber: '2733' },
+  { name: 'ООО КБ «ОПМ-Банк»', regNumber: '2734' },
+  { name: 'АКБ «Держава» ПАО', regNumber: '2738' },
+  { name: 'ООО КБ «Инстройбанк»', regNumber: '2743' },
+  { name: 'АО «БМ-Банк»', regNumber: '2748' },
+  { name: 'АО «НК Банк»', regNumber: '2755' },
+  { name: 'Банк «Прайм Финанс» (АО)', regNumber: '2758' },
+  { name: 'ИНВЕСТТОРГБАНК АО', regNumber: '2763' },
+  { name: 'АО «ТЭМБР-БАНК»', regNumber: '2764' },
+  { name: 'АО «ОТП Банк»', regNumber: '2766' },
+  { name: 'ООО КБ «РОСАВТОБАНК»', regNumber: '2767' },
+  { name: 'АКБ «СВА» (АО)', regNumber: '2768' },
+  { name: 'ЮГ-Инвестбанк (ПАО)', regNumber: '2772' },
+  { name: 'ООО «АТБ» Банк', regNumber: '2776' },
+  { name: 'АО МС Банк Рус', regNumber: '2789' },
+  { name: 'АО РОСЭКСИМБАНК', regNumber: '2790' },
+  { name: 'ЗАО «ИпоТек Банк»', regNumber: '2794' },
+  { name: 'ОАО «НББ»', regNumber: '2795' },
+  { name: 'Банк Экономический Союз (АО)', regNumber: '2798' },
+  { name: 'АО «Банк ФИНАМ»', regNumber: '2799' },
+  { name: 'АКБ «СТРАТЕГИЯ» (ПАО)', regNumber: '2801' },
+  { name: 'АКБ «Трансстройбанк» (АО)', regNumber: '2807' },
+  { name: 'АО «БАНК СГБ»', regNumber: '2816' },
+  { name: 'АО «РУНЭТБАНК»', regNumber: '2829' },
+  { name: 'АО КБ «Соколовский»', regNumber: '2830' },
+  { name: 'ООО КБ «СИНКО-БАНК»', regNumber: '2838' },
+  { name: 'КБ «РТБК» (ООО)', regNumber: '2842' },
+  { name: 'АКБ «КРОССИНВЕСТБАНК» (ОАО)', regNumber: '2849' },
+  { name: 'ООО КБ «ЭРГОБАНК»', regNumber: '2856' },
+  { name: 'КБ «КЛИРИНГДОМ»', regNumber: '2859' },
+  { name: 'ОАО КБ «МВКБ»', regNumber: '2863' },
+  { name: 'АКБ НМБ ОАО', regNumber: '2865' },
+  { name: 'АО «ИШБАНК»', regNumber: '2867' },
+  { name: 'АКБ «Кузбассхимбанк» (ПАО)', regNumber: '2868' },
+  { name: 'ПАО АКБ «АВАНГАРД»', regNumber: '2879' },
+  { name: 'Банк «АГРОПРОМКРЕДИТ»', regNumber: '2880' },
+  { name: '«СОЦИУМ-БАНК» (ООО)', regNumber: '2881' },
+  { name: '«БСТ-БАНК» АО', regNumber: '2883' },
+  { name: 'КБ «Кубанский универсальный банк» (ООО)', regNumber: '2898' },
+  { name: 'ООО «Земский банк»', regNumber: '2900' },
+  { name: '«Банк Кремлевский» ООО', regNumber: '2905' },
+  { name: 'АРЕСБАНК', regNumber: '2914' },
+  { name: 'ББР Банк (АО)', regNumber: '2929' },
+  { name: 'КБ «НМБ» ООО', regNumber: '2932' },
+  { name: 'ПАО «Межтопэнергобанк»', regNumber: '2956' },
+  { name: 'КБ «ЕВРОТРАСТ» (ЗАО)', regNumber: '2968' },
+  { name: 'БАНК «СОФРИНО» (ЗАО)', regNumber: '2972' },
+  { name: 'АО «ГОРБАНК»', regNumber: '2982' },
+  { name: 'КБ «Байкалкредобанк» (АО)', regNumber: '2990' },
+  { name: 'АО «Углеметбанк»', regNumber: '2997' },
+  { name: 'КБ «Арсенал» ООО', regNumber: '3000' },
+  { name: 'ПАО АКБ «Приморье»', regNumber: '3001' },
+  { name: 'ООО КБ «Пульс Столицы»', regNumber: '3002' },
+  { name: 'АО «АК Банк»', regNumber: '3006' },
+  { name: 'АО Банк «Развитие-Столица»', regNumber: '3013' },
+  { name: 'АО «Яндекс Банк»', regNumber: '3027' },
+  { name: 'Банк АМБ', regNumber: '3036' },
+  { name: 'КБ «Интеркредит» (АО)', regNumber: '3047' },
+  { name: 'Банк «ВПБ» (АО)', regNumber: '3065' },
+  { name: 'КБ «БФГ-Кредит» (ООО)', regNumber: '3068' },
+  { name: 'АКБ «МИРЪ» (АО)', regNumber: '3089' },
+  { name: 'АО «Банк БЖФ»', regNumber: '3138' },
+  { name: 'КБ «МФБанк» ООО', regNumber: '3163' },
+  { name: 'АО «МОСКОМБАНК»', regNumber: '3172' },
+  { name: 'АО КБ «ИС Банк»', regNumber: '3175' },
+  { name: 'ПАО «БАЛТИНВЕСТБАНК»', regNumber: '3176' },
+  { name: 'ООО КБ «Лайтбанк»', regNumber: '3177' },
+  { name: 'АО БАНК «ТГБ»', regNumber: '3180' },
+  { name: 'Эс-Би-Ай Банк ООО', regNumber: '3185' },
+  { name: 'АО «Сити Инвест Банк»', regNumber: '3194' },
+  { name: 'КБ «МИКО-БАНК» ООО', regNumber: '3195' },
+  { name: 'АО НОКССБАНК', regNumber: '3202' },
+  { name: 'АО «РУССТРОЙБАНК»', regNumber: '3205' },
+  { name: 'АО «РУНА-БАНК»', regNumber: '3207' },
+  { name: 'Банк АГОРА', regNumber: '3231' },
+  { name: 'АО «СЭБ Банк»', regNumber: '3235' },
+  { name: 'ООО КБ «СОЮЗНЫЙ»', regNumber: '3236' },
+  { name: 'ПАО ФИНСТАР БАНК', regNumber: '3245' },
+  { name: 'АО БАНК «МОСКВА-СИТИ»', regNumber: '3247' },
+  { name: 'ПАО «Банк ПСБ»', regNumber: '3251' },
+  { name: 'АО «Газэнергобанк»', regNumber: '3252' },
+  { name: 'ООО «Внешпромбанк»', regNumber: '3261' },
+  { name: 'ОАО КБ «МАСТ-Банк»', regNumber: '3267' },
+  { name: 'Банк Оренбург', regNumber: '3271' },
+  { name: 'АО «Первый Дортрансбанк»', regNumber: '3272' },
+  { name: 'Коммерческий банк «СДБ» (ООО)', regNumber: '3279' },
+  { name: 'Банк «ТРАСТ» (ПАО)', regNumber: '3300' },
+  { name: 'АО «КОШЕЛЕВ-БАНК»', regNumber: '3303' },
+  { name: 'Азия-Инвест Банк', regNumber: '3388' },
+  { name: 'Банк Финсервис', regNumber: '3415' },
+  { name: 'Банк РСИ', regNumber: '3468' },
+  { name: 'Санкт-Петербургский банк инвестиций (АО)', regNumber: '3475' },
+  { name: 'АйСиБиСи Банк', regNumber: '3505' },
+  { name: 'Банк Берейт', regNumber: '3538' },
+  { name: 'Банк 131', regNumber: '3543' },
+  { name: 'Банк Пэйджин', regNumber: '3543' }
+])
+
+const selectedBank = ref(banks.value[0])
+const isBankMenuOpen = ref(false)
+const bankSearchQuery = ref('')
+
+// Позиции зависят от выбранного банка (определяем после selectedBank)
+const positions = computed(() => {
+  if (!selectedBank.value) return portfolioTemplates.portfolio1
+  const portfolioKey = getPortfolioByBank(selectedBank.value.regNumber)
+  return portfolioTemplates[portfolioKey as keyof typeof portfolioTemplates] || portfolioTemplates.portfolio1
 })
 
+const selectedAsset = ref<any>(null)
+const hoveredAsset = ref<any>(null)
+
+// Обновляем selectedAsset при изменении портфеля
+watch(positions, (newPositions) => {
+  if (newPositions.length > 0 && (!selectedAsset.value || !newPositions.find(p => p.symbol === selectedAsset.value?.symbol))) {
+    selectedAsset.value = newPositions[0]
+  }
+}, { immediate: true })
+
+const filteredBanks = computed(() => {
+  if (!bankSearchQuery.value.trim()) {
+    return banks.value
+  }
+  const query = bankSearchQuery.value.toLowerCase().trim()
+  return banks.value.filter(bank => 
+    bank.name.toLowerCase().includes(query) || 
+    bank.regNumber.includes(query)
+  )
+})
+
+const toggleBankMenu = () => {
+  isBankMenuOpen.value = !isBankMenuOpen.value
+  if (isBankMenuOpen.value) {
+    bankSearchQuery.value = ''
+  }
+}
+
+const selectBank = (bank: { name: string; regNumber: string }) => {
+  selectedBank.value = bank
+  isBankMenuOpen.value = false
+  bankSearchQuery.value = ''
+  showToast(`Выбран банк: ${bank.name} (№ ${bank.regNumber})`, 'info')
+}
+
+// Закрытие меню при клике вне его
+const handleClickOutside = (event: MouseEvent) => {
+  const target = event.target as HTMLElement
+  if (!target.closest('.bank-selector-wrapper')) {
+    isBankMenuOpen.value = false
+  }
+}
+
+// Топ-5 позиций по весу для основного блока
+const top5Positions = computed(() => {
+  return [...positions.value]
+    .sort((a, b) => b.allocation - a.allocation)
+    .slice(0, 5)
+})
+
+// Полный список для модального окна
 const filteredPositions = computed(() => {
   if (!searchFilter.value) return positions.value
   const query = searchFilter.value.toLowerCase()
@@ -741,18 +1327,115 @@ const filteredPositions = computed(() => {
   )
 })
 
-const correlationMatrix = [
-   { label: 'SPY', values: [1.0, 0.6, 0.3, -0.2, 0.8] },
-   { label: 'TLT', values: [0.6, 1.0, 0.1, 0.4, 0.5] },
-   { label: 'GLD', values: [0.3, 0.1, 1.0, 0.2, 0.3] },
-   { label: 'DXY', values: [-0.2, 0.4, 0.2, 1.0, -0.1] },
-   { label: 'QQQ', values: [0.8, 0.5, 0.3, -0.1, 1.0] },
-]
+// Состояние модального окна детализации
+const isPortfolioDetailsOpen = ref(false)
+const portfolioDetailsSearch = ref('')
+
+const portfolioDetailsFiltered = computed(() => {
+  if (!portfolioDetailsSearch.value) return positions.value
+  const query = portfolioDetailsSearch.value.toLowerCase()
+  return positions.value.filter(p => 
+    p.symbol.toLowerCase().includes(query) || p.name.toLowerCase().includes(query)
+  )
+})
+
+const openPortfolioDetails = () => {
+  isPortfolioDetailsOpen.value = true
+  portfolioDetailsSearch.value = ''
+  // Блокируем прокрутку body при открытии модального окна
+  if (typeof document !== 'undefined') {
+    document.body.style.overflow = 'hidden'
+  }
+}
+
+const closePortfolioDetails = () => {
+  isPortfolioDetailsOpen.value = false
+  // Разблокируем прокрутку body при закрытии модального окна
+  if (typeof document !== 'undefined') {
+    document.body.style.overflow = ''
+  }
+}
+
+// Генерация детерминированной матрицы корреляций на основе текущего портфеля (все 25 активов)
+const correlationMatrix = computed(() => {
+  // Берем все активы портфеля для полной картины корреляций
+  const allAssets = [...positions.value]
+  
+  // Функция для получения детерминированного значения корреляции на основе символов
+  const getCorrelation = (symbol1: string, symbol2: string): number => {
+    if (symbol1 === symbol2) return 1.0
+    
+    // Определяем тип актива
+    const isBond1 = symbol1.includes('SU') || symbol1.includes('RU000')
+    const isBond2 = symbol2.includes('SU') || symbol2.includes('RU000')
+    
+    // Простая хеш-функция для детерминированных значений
+    const hash = (str: string) => {
+      let hash = 0
+      for (let i = 0; i < str.length; i++) {
+        hash = ((hash << 5) - hash) + str.charCodeAt(i)
+        hash = hash & hash
+      }
+      return Math.abs(hash)
+    }
+    
+    // Корреляция между облигациями выше
+    if (isBond1 && isBond2) {
+      const seed = hash(symbol1 + symbol2) % 100
+      return 0.7 + (seed / 100) * 0.2 // 0.7-0.9
+    }
+    
+    // Корреляция между акциями
+    if (!isBond1 && !isBond2) {
+      // Акции одного сектора имеют более высокую корреляцию
+      const sameSector = 
+        (symbol1.includes('SBER') && symbol2.includes('VTBR')) ||
+        (symbol1.includes('VTBR') && symbol2.includes('SBER')) ||
+        (symbol1.includes('GAZP') && symbol2.includes('ROSN')) ||
+        (symbol1.includes('ROSN') && symbol2.includes('GAZP')) ||
+        (symbol1.includes('LKOH') && symbol2.includes('TATN')) ||
+        (symbol1.includes('TATN') && symbol2.includes('LKOH')) ||
+        (symbol1.includes('NVTK') && symbol2.includes('GAZP')) ||
+        (symbol1.includes('GAZP') && symbol2.includes('NVTK'))
+      
+      if (sameSector) {
+        const seed = hash(symbol1 + symbol2) % 100
+        return 0.6 + (seed / 100) * 0.3 // 0.6-0.9
+      }
+      const seed = hash(symbol1 + symbol2) % 100
+      return 0.3 + (seed / 100) * 0.4 // 0.3-0.7
+    }
+    
+    // Корреляция между акциями и облигациями (обычно низкая или отрицательная)
+    const seed = hash(symbol1 + symbol2) % 100
+    return -0.1 + (seed / 100) * 0.3 // -0.1 до 0.2
+  }
+  
+  // Генерируем матрицу корреляций для активов портфеля
+  return allAssets.map((asset) => {
+    const values = allAssets.map((otherAsset) => {
+      return getCorrelation(asset.symbol, otherAsset.symbol)
+    })
+    
+    return {
+      label: asset.symbol,
+      values: values
+    }
+  })
+})
+
+// Получаем топ-10 активов для 3D визуализации (по весу)
+const topAssetsFor3D = computed(() => {
+  return [...positions.value]
+    .sort((a, b) => b.allocation - a.allocation)
+    .slice(0, 10)
+    .map(asset => asset.symbol)
+})
 
 // ============================================================================
-// 3D WAVE VISUALIZATION
+// 3D CORRELATION HEATMAP
 // ============================================================================
-const initWave3D = async () => {
+const initCorrelation3DHeatmap = async () => {
   try {
     await loadPlotly()
     if (!Plotly) {
@@ -760,153 +1443,229 @@ const initWave3D = async () => {
       return
     }
     
-    const container = document.getElementById('wave-surface-3d')
+    const container = document.getElementById('correlation-3d-heatmap')
     if (!container) {
-      console.error('Container wave-surface-3d not found')
+      console.error('Container correlation-3d-heatmap not found')
       return
     }
     
-    console.log('Initializing WAVE_σ.9 graph')
-
-    const generateSurface = (offset: number) => {
-      const n = 50
-      const x = Array.from({length: n}, (_, i) => i / (n - 1))
-      const y = Array.from({length: n}, (_, i) => i / (n - 1))
-      
-      const isChoppy = waveRegime.value.currentRegime === 'CHOPPY'
-      const z = Array.from({length: n}, (_, i) => {
-        return Array.from({length: n}, (_, j) => {
-          const base = Math.sin((i + offset) / 5) * Math.cos((j + offset) / 5)
-          const roughness = isChoppy ? 
-            Math.sin((i + offset) / 2) * Math.sin((j + offset) / 2) * 0.5 : 
-            Math.sin((i + offset) / 8) * 0.15
-          return base + roughness + waveRegime.value.jaggedness * 0.8
-        })
-      })
-      return { x, y, z }
-    }
-
-    const { x, y, z } = generateSurface(0)
+    // Берем все активы для визуализации (акции и облигации)
+    const allAssets = [...positions.value]
     
-    // Вычисляем min и max для нормализации цветов
-    const zFlat = z.flat()
-    const zMin = Math.min(...zFlat)
-    const zMax = Math.max(...zFlat)
-    const zRange = zMax - zMin
-
-    // Красочная цветовая карта с градиентом от синего (низкие) к красному (высокие)
-    // Показывает разные уровни риска/волатильности
-    const colorscale = [
-      [0.0, '#1e3a8a'],      // Темно-синий - очень низкие значения (безопасная зона)
-      [0.2, '#3b82f6'],      // Синий - низкие значения
-      [0.35, '#22d3ee'],     // Голубой - умеренно низкие
-      [0.5, '#10b981'],      // Зеленый - средние значения (нормальная зона)
-      [0.65, '#84cc16'],     // Лайм - умеренно высокие
-      [0.8, '#fbbf24'],      // Желтый - высокие значения (внимание)
-      [0.9, '#f97316'],      // Оранжевый - очень высокие (предупреждение)
-      [1.0, '#ef4444']       // Красный - экстремальные значения (опасная зона)
-    ]
-
-    const trace = {
+    if (allAssets.length === 0) return
+    
+    // Получаем матрицу корреляций для этих активов
+    const matrix = correlationMatrix.value
+    
+    // Вычисляем 3D координаты на основе метрик (Волатильность, Средняя корреляция, Вес)
+    const calculate3DPositions = (assets: any[], corrMatrix: any[]) => {
+      return assets.map((asset) => {
+        // Определяем тип актива
+        const isBond = asset.symbol.includes('SU') || asset.symbol.includes('RU000')
+        
+        // Цвет: Акции - зеленый (#10b981), Облигации - синий (#3b82f6)
+        const assetColor = isBond ? '#3b82f6' : '#10b981'
+        
+        // X: Волатильность (берем из объекта актива, если нет - генерируем на основе типа)
+        const volatility = isBond ? (3 + Math.random() * 4) : (15 + Math.random() * 20)
+        
+        // Y: Коррелятивная связь (средняя корреляция со всеми активами в матрице)
+        const matrixIndex = corrMatrix.findIndex(row => row.label === asset.symbol)
+        let avgCorrelation = 0
+        if (matrixIndex !== -1) {
+          const values = corrMatrix[matrixIndex].values
+          avgCorrelation = values.reduce((a: number, b: number) => a + b, 0) / values.length
+        }
+        
+        // Z: Вес в портфеле (allocation)
+        const weight = asset.allocation
+        
+        return { 
+          x: volatility, 
+          y: avgCorrelation, 
+          z: weight, 
+          asset: { ...asset, color: assetColor } 
+        }
+      })
+    }
+    
+    const positions3D = calculate3DPositions(allAssets, matrix)
+    
+    if (positions3D.length === 0) {
+      console.error('No 3D positions calculated')
+      return
+    }
+    
+    // Нормализуем данные в диапазон 0-10 для равномерного масштаба осей
+    const xValues = positions3D.map(p => p.x)
+    const yValues = positions3D.map(p => p.y)
+    const zValues = positions3D.map(p => p.z)
+    
+    const xMin = Math.min(...xValues), xMax = Math.max(...xValues)
+    const yMin = Math.min(...yValues), yMax = Math.max(...yValues)
+    const zMin = Math.min(...zValues), zMax = Math.max(...zValues)
+    
+    const normalize = (val: number, min: number, max: number) => {
+      if (max === min) return 5
+      return ((val - min) / (max - min)) * 10
+    }
+    
+    // Нормализованные позиции
+    const normalizedPositions = positions3D.map(p => ({
+      ...p,
+      nx: normalize(p.x, xMin, xMax),
+      ny: normalize(p.y, yMin, yMax),
+      nz: normalize(p.z, zMin, zMax)
+    }))
+    
+    // Функция генерации сферы (теперь с одинаковым радиусом по всем осям)
+    const createSphere = (cx: number, cy: number, cz: number, r: number, color: string, asset: any) => {
+      const x: number[] = []
+      const y: number[] = []
+      const z: number[] = []
+      
+      const steps = 16 // Детализация сферы
+      
+      for (let i = 0; i < steps; i++) {
+        const t = (i / (steps - 1)) * Math.PI
+        for (let j = 0; j < steps; j++) {
+          const p = (j / (steps - 1)) * 2 * Math.PI
+          
+          // Одинаковый радиус по всем осям = идеальная сфера
+          x.push(cx + r * Math.sin(t) * Math.cos(p))
+          y.push(cy + r * Math.sin(t) * Math.sin(p))
+          z.push(cz + r * Math.cos(t))
+        }
+      }
+      
+      return {
+        type: 'mesh3d',
       x: x,
       y: y,
       z: z,
-      type: 'surface',
-      colorscale: colorscale,
-      showscale: true,
-      colorbar: {
-        title: {
-          text: 'Уровень риска',
-          font: { color: 'rgba(255,255,255,0.9)', size: 12 }
-        },
-        tickfont: { color: 'rgba(255,255,255,0.7)', size: 10 },
-        tickmode: 'array',
-        tickvals: [0, 0.25, 0.5, 0.75, 1],
-        ticktext: ['Низкий', 'Умеренный', 'Средний', 'Высокий', 'Экстремальный'],
-        len: 0.6,
-        thickness: 15,
-        x: 1.02,
-        xpad: 10
-      },
-      contours: {
-        z: {
-          show: true,
-          usecolorscale: true,
-          project: { z: true },
-          width: 2,
-          color: 'rgba(255,255,255,0.3)'
-        },
-        x: {
-          show: true,
-          highlight: true,
-          highlightcolor: 'rgba(255,255,255,0.5)',
-          highlightwidth: 2
-        },
-        y: {
-          show: true,
-          highlight: true,
-          highlightcolor: 'rgba(255,255,255,0.5)',
-          highlightwidth: 2
-        }
-      },
+        color: color,
+        alphahull: 0,
+        opacity: 1,
+        flatshading: false,
       lighting: {
         ambient: 0.6,
-        diffuse: 0.8,
-        specular: 0.3,
-        roughness: 0.5,
-        fresnel: 0.2
-      },
-      lightposition: { x: 100, y: 100, z: 100 }
+          diffuse: 0.9,
+          specular: 1.0,
+          roughness: 0.1,
+          fresnel: 0.8
+        },
+        lightposition: {
+          x: 10,
+          y: 10,
+          z: 20
+        },
+        hoverinfo: 'none', // Отключаем стандартный Plotly tooltip, используем кастомный
+        customdata: asset, // Добавляем данные актива для обработки hover (не массив)
+        name: asset.symbol
+      }
     }
 
+    // Создаем trace-сферу для каждого актива + scatter для hover
+    const traces: any[] = []
+    
+    // 1. Добавляем сферы
+    normalizedPositions.forEach((pos) => {
+      const asset = pos.asset
+      const size = 0.3 + (asset.allocation / 25) // Радиус пропорционален весу
+      
+      traces.push(createSphere(pos.nx, pos.ny, pos.nz, size, asset.color, asset))
+    })
+    
+    // 2. Добавляем точки для hover с детализированным tooltip (ВАЖНО: этот trace должен быть последним!)
+    traces.push({
+      x: normalizedPositions.map(p => p.nx),
+      y: normalizedPositions.map(p => p.ny),
+      z: normalizedPositions.map(p => p.nz),
+      mode: 'markers',
+      type: 'scatter3d',
+      marker: {
+        size: normalizedPositions.map(p => Math.max(40, (0.3 + p.asset.allocation/25) * 40)), // Размер для перехвата событий
+        color: 'rgba(255,255,255,0)', // Полностью прозрачный
+        opacity: 0, // Полностью невидимый
+        line: {
+          width: 0
+        }
+      },
+      hoverinfo: 'skip', // Полностью отключаем стандартный Plotly tooltip
+      customdata: normalizedPositions.map(p => p.asset)
+    })
+
     const layout = {
+      showlegend: false,
+      hovermode: 'closest', // Включаем hover для перехвата событий (стандартный tooltip отключен через hoverinfo)
       scene: {
         xaxis: { 
-          title: 'Momentum (Импульс)',
-          backgroundcolor: 'rgba(0,0,0,0)',
-          gridcolor: 'rgba(255,255,255,0.15)',
+          title: 'РИСК (Волатильность %)',
+          backgroundcolor: 'rgba(20, 22, 28, 0.8)',
+          gridcolor: 'rgba(255,255,255,0.08)',
+          zeroline: false,
           showbackground: true,
-          titlefont: { color: 'rgba(255,255,255,0.9)', size: 14, family: 'system-ui' },
-          tickfont: { size: 11, color: 'rgba(255,255,255,0.6)' }
+          titlefont: { color: '#ffffff', size: 12, weight: 'bold' },
+          tickfont: { size: 9, color: 'rgba(255,255,255,0.6)' },
+          tickvals: [0, 2.5, 5, 7.5, 10],
+          ticktext: [
+            xMin.toFixed(0) + '%',
+            ((xMin + xMax) / 4 * 1 + xMin * 3/4).toFixed(0) + '%',
+            ((xMin + xMax) / 2).toFixed(0) + '%',
+            ((xMin + xMax) / 4 * 3 + xMax * 1/4).toFixed(0) + '%',
+            xMax.toFixed(0) + '%'
+          ],
+          showspikes: false
         },
         yaxis: { 
-          title: 'Volatility (Волатильность)',
-          backgroundcolor: 'rgba(0,0,0,0)',
-          gridcolor: 'rgba(255,255,255,0.15)',
+          title: 'СВЯЗЬ (Корреляция)',
+          backgroundcolor: 'rgba(30, 32, 38, 0.6)',
+          gridcolor: 'rgba(255,255,255,0.08)',
+          zeroline: false,
           showbackground: true,
-          titlefont: { color: 'rgba(255,255,255,0.9)', size: 14, family: 'system-ui' },
-          tickfont: { size: 11, color: 'rgba(255,255,255,0.6)' }
+          titlefont: { color: '#ffffff', size: 12, weight: 'bold' },
+          tickfont: { size: 9, color: 'rgba(255,255,255,0.6)' },
+          tickvals: [0, 2.5, 5, 7.5, 10],
+          ticktext: [
+            yMin.toFixed(2),
+            ((yMin + yMax) / 4 * 1 + yMin * 3/4).toFixed(2),
+            ((yMin + yMax) / 2).toFixed(2),
+            ((yMin + yMax) / 4 * 3 + yMax * 1/4).toFixed(2),
+            yMax.toFixed(2)
+          ],
+          showspikes: false
         },
         zaxis: { 
-          title: 'Jaggedness (Неровность)',
-          backgroundcolor: 'rgba(0,0,0,0)',
-          gridcolor: 'rgba(255,255,255,0.15)',
+          title: 'ДОЛЯ (Вес %)',
+          backgroundcolor: 'rgba(20, 22, 28, 0.8)',
+          gridcolor: 'rgba(255,255,255,0.08)',
+          zeroline: false,
           showbackground: true,
-          titlefont: { color: 'rgba(255,255,255,0.9)', size: 14, family: 'system-ui' },
-          tickfont: { size: 11, color: 'rgba(255,255,255,0.6)' }
+          titlefont: { color: '#ffffff', size: 12, weight: 'bold' },
+          tickfont: { size: 9, color: 'rgba(255,255,255,0.6)' },
+          tickvals: [0, 2.5, 5, 7.5, 10],
+          ticktext: [
+            zMin.toFixed(1) + '%',
+            ((zMin + zMax) / 4 * 1 + zMin * 3/4).toFixed(1) + '%',
+            ((zMin + zMax) / 2).toFixed(1) + '%',
+            ((zMin + zMax) / 4 * 3 + zMax * 1/4).toFixed(1) + '%',
+            zMax.toFixed(1) + '%'
+          ],
+          showspikes: false
         },
         bgcolor: 'rgba(0,0,0,0)',
         camera: {
-          eye: { x: 2.5, y: 2.5, z: 2.0 },
-          center: { x: 0.5, y: 0.5, z: 0.5 },
+          eye: { x: 1.8, y: 1.8, z: 1.2 },
+          center: { x: 0, y: 0, z: 0 },
           up: { x: 0, y: 0, z: 1 }
         },
-        aspectratio: { x: 3.0, y: 2.0, z: 1.5 },
+        aspectmode: 'cube'
       },
       paper_bgcolor: 'transparent',
       plot_bgcolor: 'transparent',
       font: { color: '#fff', family: 'system-ui' },
-      margin: { l: 0, r: 80, b: 0, t: 30 },
-      showlegend: false,
-      autosize: true,
-      title: {
-        text: 'Цветовая карта: от синего (низкий риск) до красного (высокий риск)',
-        font: { color: 'rgba(255,255,255,0.7)', size: 11 },
-        x: 0.5,
-        xanchor: 'center',
-        y: 0.98,
-        yanchor: 'top'
-      }
+      margin: { l: 0, r: 0, b: 0, t: 0 },
+      autosize: true
     }
 
     const config = {
@@ -916,187 +1675,71 @@ const initWave3D = async () => {
       displaylogo: false
     }
 
-    Plotly.newPlot(container, [trace], layout, config)
-
-    // ===== АНИМАЦИЯ ВОЛНЫ =====
-    let frame = 0
-    const waveInterval = setInterval(() => {
-      frame += 12.5
-      const { x: newX, y: newY, z: newZ } = generateSurface(frame)
-      
-      Plotly.restyle(container, { 
-        z: [newZ],
-        x: [newX],
-        y: [newY]
-      })
-    }, 10)
-
-    // ===== УПРАВЛЕНИЕ МЫШКОЙ ОТКЛЮЧЕНО - СТАТИЧНАЯ КАМЕРА =====
-    // setupWaveControls(container)
-
-    return () => {
-      clearInterval(waveInterval)
-    }
+    Plotly.newPlot(container, traces, layout, config)
+    
+    // Обработчик hover для кастомного tooltip в правом нижнем углу
+    const plotlyContainer = container as any
+    
+    plotlyContainer.on('plotly_hover', (data: any) => {
+      if (data && data.points && data.points.length > 0) {
+        // Обрабатываем все точки - ищем customdata или актив по индексу
+        for (const point of data.points) {
+          // Проверяем customdata (может быть в mesh3d или scatter)
+          if (point.customdata) {
+            // customdata в mesh3d это массив с одним элементом
+            const asset = Array.isArray(point.customdata) ? point.customdata[0] : point.customdata
+            if (asset) {
+              hoveredAsset.value = asset
+              return
+            }
+          }
+          
+          // Если это scatter3d trace (последний в массиве), используем индекс
+          const scatterTraceIndex = traces.length - 1
+          if (point.curveNumber === scatterTraceIndex && point.pointNumber !== undefined) {
+            const index = point.pointNumber
+            if (index >= 0 && index < normalizedPositions.length && normalizedPositions[index]) {
+              hoveredAsset.value = normalizedPositions[index].asset
+              return
+            }
+          }
+          
+          // Если это mesh3d trace, находим по индексу trace
+          if (point.curveNumber < scatterTraceIndex && point.curveNumber < normalizedPositions.length) {
+            const index = point.curveNumber
+            if (normalizedPositions[index]) {
+              hoveredAsset.value = normalizedPositions[index].asset
+              return
+            }
+          }
+        }
+      }
+    })
+    
+    plotlyContainer.on('plotly_unhover', () => {
+      hoveredAsset.value = null
+    })
+    
   } catch (err) {
-    console.error('Error:', err)
+    console.error('Error initializing 3D Correlation Heatmap:', err)
   }
 }
 
-// Функция управления (Three.js стиль) - улучшенная версия
-const setupWaveControls = (container: HTMLElement) => {
-  let isDragging = false
-  let previousMousePosition = { x: 0, y: 0 }
-  let rotation = { x: 0, y: 0 }
-  let cameraDistance = 2.0
-  let animationFrameId: number | null = null
-  let pendingEye: { x: number; y: number; z: number } | null = null
-
-  // Визуальная обратная связь
-  container.style.cursor = 'grab'
-  container.style.userSelect = 'none'
-
-  const updateCamera = () => {
-    if (pendingEye) {
-      Plotly.relayout(container, {
-        'scene.camera.eye': pendingEye
-      })
-      pendingEye = null
-    }
-    animationFrameId = null
+// Обновляем график при изменении портфеля (только при смене банка)
+watch([positions, selectedBank], () => {
+  if (positions.value.length > 0) {
+    setTimeout(() => {
+      initCorrelation3DHeatmap()
+    }, 200)
   }
+}, { deep: false })
 
-  const scheduleCameraUpdate = (eye: { x: number; y: number; z: number }) => {
-    pendingEye = eye
-    if (!animationFrameId && typeof window !== 'undefined') {
-      animationFrameId = window.requestAnimationFrame(updateCamera)
-    }
-  }
-
-  container.addEventListener('mousedown', (e) => {
-    isDragging = true
-    container.style.cursor = 'grabbing'
-    previousMousePosition = { x: e.clientX, y: e.clientY }
-    e.preventDefault()
-  })
-
-  container.addEventListener('mouseup', () => {
-    isDragging = false
-    container.style.cursor = 'grab'
-  })
-
-  container.addEventListener('mouseleave', () => {
-    isDragging = false
-    container.style.cursor = 'grab'
-  })
-
-  container.addEventListener('mousemove', (e) => {
-    if (isDragging) {
-      const deltaX = e.clientX - previousMousePosition.x
-      const deltaY = e.clientY - previousMousePosition.y
-
-      // Улучшенная чувствительность с учетом размера контейнера
-      const sensitivity = 0.008
-      rotation.y += deltaX * sensitivity
-      rotation.x += deltaY * sensitivity
-      rotation.x = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, rotation.x))
-
-      const eye = {
-        x: cameraDistance * Math.sin(rotation.y) * Math.cos(rotation.x),
-        y: cameraDistance * Math.sin(rotation.x),
-        z: cameraDistance * Math.cos(rotation.y) * Math.cos(rotation.x)
-      }
-
-      scheduleCameraUpdate(eye)
-      previousMousePosition = { x: e.clientX, y: e.clientY }
-    }
-  })
-
-  container.addEventListener('wheel', (e) => {
-    e.preventDefault()
-    // Более плавный зум с учетом направления
-    const zoomSpeed = 0.05
-    const zoomDelta = e.deltaY > 0 ? zoomSpeed : -zoomSpeed
-    cameraDistance = Math.max(1.2, Math.min(4, cameraDistance + zoomDelta))
-
-    const eye = {
-      x: cameraDistance * Math.sin(rotation.y) * Math.cos(rotation.x),
-      y: cameraDistance * Math.sin(rotation.x),
-      z: cameraDistance * Math.cos(rotation.y) * Math.cos(rotation.x)
-    }
-
-    scheduleCameraUpdate(eye)
-  })
-
-  // Поддержка touch-событий для мобильных устройств
-  let touchStartDistance = 0
-  let touchStartRotation = { x: rotation.x, y: rotation.y }
-
-  container.addEventListener('touchstart', (e) => {
-    if (e.touches.length === 1) {
-      isDragging = true
-      const touch = e.touches[0]
-      previousMousePosition = { x: touch.clientX, y: touch.clientY }
-      touchStartRotation = { x: rotation.x, y: rotation.y }
-    } else if (e.touches.length === 2) {
-      const touch1 = e.touches[0]
-      const touch2 = e.touches[1]
-      touchStartDistance = Math.hypot(
-        touch2.clientX - touch1.clientX,
-        touch2.clientY - touch1.clientY
-      )
-    }
-    e.preventDefault()
-  })
-
-  container.addEventListener('touchmove', (e) => {
-    if (e.touches.length === 1 && isDragging) {
-      const touch = e.touches[0]
-      const deltaX = touch.clientX - previousMousePosition.x
-      const deltaY = touch.clientY - previousMousePosition.y
-
-      const sensitivity = 0.01
-      rotation.y = touchStartRotation.y + deltaX * sensitivity
-      rotation.x = touchStartRotation.x + deltaY * sensitivity
-      rotation.x = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, rotation.x))
-
-      const eye = {
-        x: cameraDistance * Math.sin(rotation.y) * Math.cos(rotation.x),
-        y: cameraDistance * Math.sin(rotation.x),
-        z: cameraDistance * Math.cos(rotation.y) * Math.cos(rotation.x)
-      }
-
-      scheduleCameraUpdate(eye)
-      previousMousePosition = { x: touch.clientX, y: touch.clientY }
-    } else if (e.touches.length === 2) {
-      const touch1 = e.touches[0]
-      const touch2 = e.touches[1]
-      const currentDistance = Math.hypot(
-        touch2.clientX - touch1.clientX,
-        touch2.clientY - touch1.clientY
-      )
-      const zoomDelta = (touchStartDistance - currentDistance) * 0.01
-      cameraDistance = Math.max(1.2, Math.min(4, cameraDistance + zoomDelta))
-      touchStartDistance = currentDistance
-
-      const eye = {
-        x: cameraDistance * Math.sin(rotation.y) * Math.cos(rotation.x),
-        y: cameraDistance * Math.sin(rotation.x),
-        z: cameraDistance * Math.cos(rotation.y) * Math.cos(rotation.x)
-      }
-
-      scheduleCameraUpdate(eye)
-    }
-    e.preventDefault()
-  })
-
-  container.addEventListener('touchend', () => {
-    isDragging = false
-  })
-}
 
 // ============================================================================
 // LATENT VOL 3D SURFACE
 // ============================================================================
+// ЗАКОММЕНТИРОВАНО: Может понадобиться позже
+/*
 const initLatentVol3D = async () => {
   try {
     await loadPlotly()
@@ -1267,59 +1910,63 @@ const initLatentVol3D = async () => {
     console.error('Error initializing Latent Vol graph:', err)
   }
 }
+*/
 
-// Обновляем график при изменении режима
-watch(() => waveRegime.value.currentRegime, () => {
-  initWave3D()
-})
 
-// Sync heights of heatmap and metrics panels
+// Sync heights of metrics panels
 const syncPanelHeights = () => {
   if (typeof window === 'undefined') return
   
   setTimeout(() => {
-    const heatmapPanel = document.querySelector('.heatmap-panel') as HTMLElement
+    // Больше не синхронизируем heatmap-panel, чтобы она не растягивалась под правую колонку
     const metricsPanel = document.querySelector('.metrics-panel') as HTMLElement
-    
-    if (heatmapPanel && metricsPanel) {
-      const maxHeight = Math.max(heatmapPanel.offsetHeight, metricsPanel.offsetHeight)
-      if (maxHeight > 400) {
-        heatmapPanel.style.minHeight = `${maxHeight}px`
-        metricsPanel.style.minHeight = `${maxHeight}px`
-      }
-    }
+    // Можно добавить синхронизацию других панелей здесь, если нужно
   }, 100)
 }
 
 onMounted(async () => {
-  if (positions.value?.length > 0) selectedAsset.value = positions.value[0]
+  if (positions.value?.length > 0 && !selectedAsset.value) {
+    selectedAsset.value = positions.value[0]
+  }
   
   // Sync panel heights
   syncPanelHeights()
   
-  // Инициализируем графики последовательно с задержкой
+  // Инициализируем 3D тепловую карту корреляций
   setTimeout(async () => {
-    await initWave3D()
+    try {
+      await initCorrelation3DHeatmap()
+      console.log('3D Correlation Heatmap initialized')
+    } catch (err) {
+      console.error('Failed to initialize 3D Correlation Heatmap:', err)
+    }
   }, 500)
   
-  setTimeout(async () => {
-    await initLatentVol3D()
-  }, 800)
+  // Инициализируем графики последовательно с задержкой
+  // ЗАКОММЕНТИРОВАНО: Latent Vol график отключен
+  // setTimeout(async () => {
+  //   await initLatentVol3D()
+  // }, 500)
   
-  setTimeout(() => {
-    latentVolAlert.value.isActive = true
-    latentVolAlert.value.severity = 'warning'
-    latentVolMetrics.value.currentZscore = 2.15
-    // Re-sync heights after content loads
-    syncPanelHeights()
-  }, 2000)
+  // ЗАКОММЕНТИРОВАНО: Latent Vol alert отключен
+  // setTimeout(() => {
+  //   latentVolAlert.value.isActive = true
+  //   latentVolAlert.value.severity = 'warning'
+  //   latentVolMetrics.value.currentZscore = 2.15
+  //   // Re-sync heights after content loads
+  //   syncPanelHeights()
+  // }, 2000)
   
   // Re-sync on window resize
   window.addEventListener('resize', syncPanelHeights)
+  
+  // Обработчик клика вне меню банков
+  document.addEventListener('click', handleClickOutside)
 })
 
 onUnmounted(() => {
   window.removeEventListener('resize', syncPanelHeights)
+  document.removeEventListener('click', handleClickOutside)
 })
 
 const selectAsset = (pos: any) => selectedAsset.value = pos
@@ -1339,7 +1986,7 @@ const recalcPortfolio = async () => {
   await new Promise(resolve => setTimeout(resolve, 1500))
   lastUpdate.value = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})
   isRecalcing.value = false
-  showToast('Портфель пересчитан (WAVE_σ.9 + Latent Vol обновлены)', 'success')
+  showToast('Портфель пересчитан (Latent Vol обновлен)', 'success')
 }
 
 const exportPdf = () => {
@@ -1356,31 +2003,6 @@ const filterPositions = (e: any) => {
 const openAnalysis = () => {
   if (selectedAsset.value) {
     showToast(`Открыт анализ ${selectedAsset.value.symbol}`, 'info')
-  }
-}
-
-const calculateOptimization = async () => {
-  isOptimizing.value = true
-  const regimeAdjustment = waveRegime.value.currentRegime === 'CHOPPY' ? ' (режим: консервативный)' : ' (режим: стандартный)'
-  await new Promise(resolve => setTimeout(resolve, 2000))
-  isOptimizing.value = false
-  showToast(`Оптимизация завершена (λ=${waveRegime.value.lambda}${regimeAdjustment})`, 'success')
-}
-
-const resetOptimizer = () => {
-  optimizer.value = {
-    model: 'Mean-Variance',
-    minWeight: 0,
-    maxWeight: 25,
-    targetVol: 15,
-    rebalance: true
-  }
-  showToast('Оптимизатор сброшен', 'info')
-}
-
-const validateWeights = () => {
-  if (optimizer.value.minWeight > optimizer.value.maxWeight) {
-    optimizer.value.maxWeight = optimizer.value.minWeight + 5
   }
 }
 
@@ -1418,14 +2040,14 @@ const getMockHistogram = (symbol: string) => {
 
 /* Heatmap Panel - Full Width */
 .heatmap-panel {
-  display: flex;
-  flex-direction: column;
+  display: block;
   width: 100%;
-  min-height: 400px;
+  min-height: auto;
+  height: auto;
 }
 
 .heatmap-panel .panel-body {
-  flex: 1;
+  flex: 0 0 auto;
   display: flex;
   flex-direction: column;
   min-height: 0;
@@ -1442,7 +2064,8 @@ const getMockHistogram = (symbol: string) => {
   display: flex;
   flex-direction: column;
   flex: 1;
-  min-height: 400px;
+  min-height: auto;
+  padding: 16px;
 }
 
 .metrics-panel .panel-body {
@@ -1450,6 +2073,32 @@ const getMockHistogram = (symbol: string) => {
   display: flex;
   flex-direction: column;
   min-height: 0;
+}
+
+.panel-header-mini {
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.panel-title-mini {
+  font-size: 12px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.7);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.metrics-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.metrics-divider {
+  height: 1px;
+  background: rgba(255, 255, 255, 0.1);
+  margin: 16px 0;
 }
 
 /* 3D Scatter Panel - optimized space */
@@ -1569,8 +2218,218 @@ const getMockHistogram = (symbol: string) => {
 
 /* Hero & KPI */
 .hero-section { display: flex; justify-content: space-between; align-items: flex-end; padding-bottom: 8px; }
-.hero-left h1 { font-size: 28px; font-weight: 700; color: #fff; margin: 0 0 16px 0; letter-spacing: -0.01em; }
+.hero-title-row { margin-bottom: 16px; }
+.hero-left h1 { font-size: 28px; font-weight: 700; color: #fff; margin: 0; letter-spacing: -0.01em; display: flex; align-items: center; flex-wrap: nowrap; gap: 12px; white-space: nowrap; }
 .hero-meta { display: flex; gap: 10px; }
+
+/* Bank Selector */
+.bank-selector-inline-wrapper { display: inline-flex; align-items: center; vertical-align: middle; }
+.bank-selector-wrapper { position: relative; z-index: 10; display: inline-block; }
+.bank-selector {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 16px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  user-select: none;
+  min-width: 280px;
+}
+.bank-selector:hover {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.25);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+.bank-selector.is-open {
+  background: rgba(255, 255, 255, 0.15);
+  border-color: rgba(255, 255, 255, 0.3);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+}
+.bank-selector-content {
+  flex: 1;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-width: 0;
+}
+.bank-selector-name {
+  flex: 1;
+  font-size: 13px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.95);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.2;
+  min-width: 0;
+}
+.bank-selector-reg {
+  flex-shrink: 0;
+  font-size: 11px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.5);
+  font-family: "SF Mono", monospace;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+.bank-selector-chevron {
+  flex-shrink: 0;
+  color: rgba(255, 255, 255, 0.6);
+  transition: transform 0.2s;
+}
+.bank-selector.is-open .bank-selector-chevron {
+  transform: rotate(180deg);
+}
+
+.bank-dropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  right: 0;
+  background: rgba(20, 22, 28, 0.95);
+  backdrop-filter: blur(40px) saturate(200%);
+  -webkit-backdrop-filter: blur(40px) saturate(200%);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 12px;
+  box-shadow: 
+    0 20px 40px -10px rgba(0, 0, 0, 0.6),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  overflow: hidden;
+  z-index: 1000;
+  min-width: 400px;
+}
+
+.bank-dropdown-search {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  background: rgba(0, 0, 0, 0.2);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+.bank-dropdown-search svg {
+  flex-shrink: 0;
+  color: rgba(255, 255, 255, 0.4);
+  width: 14px;
+  height: 14px;
+}
+.bank-search-input {
+  flex: 1;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  padding: 8px 12px;
+  color: #fff;
+  font-size: 12px;
+  font-family: inherit;
+  outline: none;
+  transition: all 0.2s;
+}
+.bank-search-input:focus {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+.bank-search-input::placeholder {
+  color: rgba(255, 255, 255, 0.3);
+}
+
+.bank-dropdown-list {
+  max-height: 400px;
+  overflow-y: auto;
+}
+.bank-dropdown-list::-webkit-scrollbar {
+  width: 6px;
+}
+.bank-dropdown-list::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 3px;
+}
+.bank-dropdown-list::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 3px;
+}
+.bank-dropdown-list::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.bank-dropdown-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  cursor: pointer;
+  transition: all 0.15s;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+.bank-dropdown-item:last-child {
+  border-bottom: none;
+}
+.bank-dropdown-item:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+.bank-dropdown-item.is-selected {
+  background: rgba(59, 130, 246, 0.15);
+}
+.bank-dropdown-item.is-selected svg {
+  color: #60a5fa;
+  flex-shrink: 0;
+}
+
+.bank-item-content {
+  flex: 1;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-width: 0;
+}
+.bank-item-name {
+  flex: 1;
+  font-size: 13px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.9);
+  line-height: 1.3;
+  word-break: break-word;
+  min-width: 0;
+}
+.bank-dropdown-item.is-selected .bank-item-name {
+  color: #60a5fa;
+  font-weight: 600;
+}
+.bank-item-reg {
+  flex-shrink: 0;
+  font-size: 11px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.5);
+  font-family: "SF Mono", monospace;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+.bank-dropdown-item.is-selected .bank-item-reg {
+  color: rgba(96, 165, 250, 0.8);
+}
+
+.dropdown-fade-enter-active,
+.dropdown-fade-leave-active {
+  transition: all 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.dropdown-fade-enter-from {
+  opacity: 0;
+  transform: translateY(-8px);
+}
+.dropdown-fade-leave-to {
+  opacity: 0;
+  transform: translateY(-8px);
+}
 .glass-pill { font-size: 12px; padding: 6px 12px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); border-radius: 99px; color: rgba(255,255,255,0.8); display: flex; align-items: center; gap: 6px; backdrop-filter: blur(4px); }
 .glass-pill strong { color: #fff; font-weight: 600; }
 .risk-aggressive { background: rgba(251, 191, 36, 0.1); border-color: rgba(251, 191, 36, 0.2); color: #fbbf24; }
@@ -1645,10 +2504,89 @@ const getMockHistogram = (symbol: string) => {
 }
 .panel-header { padding: 16px 20px; border-bottom: 1px solid rgba(255,255,255,0.05); display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.02); flex-shrink: 0; }
 .panel-header h3 { font-size: 13px; font-weight: 600; color: rgba(255,255,255,0.9); margin: 0; text-transform: uppercase; letter-spacing: 0.05em; }
+.panel-subtitle { font-size: 10px; color: rgba(255,255,255,0.4); margin-top: 2px; display: block; }
+.panel-header-actions { display: flex; gap: 8px; align-items: center; }
 .panel-body { padding: 16px 20px; overflow: hidden; }
 .panel-body.p-0 { padding: 0; }
 .heatmap-body { min-height: 380px !important; padding: 24px 20px !important; }
 .panel-body-optimizer { padding: 16px 20px; flex: 1; display: flex; flex-direction: column; gap: 12px; overflow: hidden; }
+
+/* Optimizer Link Card */
+.optimizer-link-card {
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+  overflow: hidden;
+}
+
+.optimizer-link-content {
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 16px;
+}
+
+.optimizer-link-icon {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.2) 0%, rgba(59, 130, 246, 0.2) 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #10b981;
+}
+
+.optimizer-link-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #fff;
+  margin: 0;
+}
+
+.optimizer-link-description {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.5);
+  line-height: 1.5;
+  margin: 0;
+  max-width: 280px;
+}
+
+.optimizer-link-features {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+}
+
+.feature-tag {
+  padding: 4px 10px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.6);
+  font-weight: 500;
+}
+
+.optimizer-link-btn {
+  margin-top: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  text-decoration: none;
+}
+
+.optimizer-link-btn svg {
+  transition: transform 0.2s;
+}
+
+.optimizer-link-btn:hover svg {
+  transform: translateX(4px);
+}
 
 /* Search */
 .search-sm { position: relative; width: 140px; }
@@ -1784,6 +2722,92 @@ input:checked + .slider:before { transform: translateX(12px); }
 .toast-error { background: rgba(248, 113, 113, 0.2); color: #f87171; border-color: rgba(248, 113, 113, 0.3); }
 .toast-info { background: rgba(96, 165, 250, 0.2); color: #60a5fa; border-color: rgba(96, 165, 250, 0.3); }
 
+/* 3D Correlation Heatmap Tooltip */
+.asset-tooltip-3d {
+  position: absolute;
+  bottom: 20px;
+  right: 20px;
+  background: rgba(0, 0, 0, 0.85);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 12px;
+  padding: 16px;
+  min-width: 240px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+  z-index: 100;
+  animation: fadeIn 0.2s ease-out;
+  pointer-events: none;
+}
+
+.tooltip-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.asset-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 16px;
+  color: #fff;
+  flex-shrink: 0;
+}
+
+.tooltip-symbol {
+  font-size: 16px;
+  font-weight: 700;
+  color: #fff;
+  margin-bottom: 2px;
+}
+
+.tooltip-name {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.6);
+  line-height: 1.3;
+}
+
+.tooltip-details {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.tooltip-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 12px;
+}
+
+.tooltip-row span {
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.tooltip-row strong {
+  color: #fff;
+  font-weight: 600;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 /* Utilities */
 .text-right { text-align: right; }
 .text-gradient-green { background: linear-gradient(to right, #4ade80, #22c55e); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
@@ -1800,6 +2824,174 @@ input:checked + .slider:before { transform: translateX(12px); }
 .flex-center { display: flex; align-items: center; gap: 4px; }
 .justify-between { justify-content: space-between; }
 .val-highlight { color: #3b82f6; font-weight: 600; font-size: 9px; }
+
+/* Modal */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  z-index: 2000;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 20px;
+  padding-top: 80px;
+  overflow: hidden;
+}
+
+.modal-container {
+  background: rgba(20, 22, 28, 0.95);
+  backdrop-filter: blur(50px) saturate(200%);
+  -webkit-backdrop-filter: blur(50px) saturate(200%);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 20px;
+  box-shadow: 
+    0 30px 60px -15px rgba(0, 0, 0, 0.8),
+    inset 0 1px 0 rgba(255, 255, 255, 0.12);
+  width: 100%;
+  max-width: 1200px;
+  max-height: calc(100vh - 100px);
+  height: auto;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  position: relative;
+}
+
+.modal-container.modal-compact {
+  max-height: fit-content;
+  height: auto;
+}
+
+.modal-header {
+  padding: 20px 24px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.02);
+  flex-shrink: 0;
+}
+
+.modal-header h2 {
+  font-size: 18px;
+  font-weight: 700;
+  color: #fff;
+  margin: 0;
+  letter-spacing: -0.01em;
+}
+
+.modal-close {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.7);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.modal-close:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.2);
+  color: #fff;
+}
+
+.modal-body {
+  padding: 24px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-height: 0;
+}
+
+.modal-search {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+}
+
+.modal-search svg {
+  flex-shrink: 0;
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.modal-search-input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: #fff;
+  font-size: 13px;
+  outline: none;
+  font-family: inherit;
+}
+
+.modal-search-input::placeholder {
+  color: rgba(255, 255, 255, 0.3);
+}
+
+.modal-table-container {
+  flex: 1;
+  overflow-y: auto;
+  border-radius: 12px;
+  background: rgba(0, 0, 0, 0.2);
+}
+
+.modal-table {
+  width: 100%;
+}
+
+.modal-table tbody tr {
+  cursor: pointer;
+}
+
+.modal-footer {
+  padding-top: 16px;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.modal-stats {
+  display: flex;
+  gap: 24px;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.modal-stats strong {
+  color: rgba(255, 255, 255, 0.9);
+  font-weight: 600;
+}
+
+.modal-fade-enter-active,
+.modal-fade-leave-active {
+  transition: all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.modal-fade-enter-from,
+.modal-fade-leave-to {
+  opacity: 0;
+}
+
+.modal-fade-enter-from .modal-container,
+.modal-fade-leave-to .modal-container {
+  transform: scale(0.95) translateY(20px);
+}
 
 /* Transitions */
 .fade-enter-active, .fade-leave-active { transition: opacity 0.3s; }
