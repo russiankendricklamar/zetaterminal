@@ -153,10 +153,10 @@
             <div class="panel-header">
               <h3>Состав портфеля</h3>
             </div>
-            <div class="panel-body">
-              <div class="portfolio-table-container">
-                <div class="portfolio-table-wrapper">
-                  <table class="portfolio-table">
+            <div class="panel-body weights-body">
+              <div class="weights-comparison">
+                <div class="weights-table-container">
+                  <table class="weights-table">
                     <thead>
                       <tr>
                         <th>Инструмент</th>
@@ -188,9 +188,6 @@
                       </tr>
                     </tbody>
                   </table>
-                </div>
-                <div class="portfolio-table-footer">
-                  <span>Всего позиций: <strong>{{ portfolioPositions.length }}</strong></span>
                 </div>
               </div>
             </div>
@@ -627,10 +624,10 @@
           <div class="panel-header">
             <h3>Состав портфеля</h3>
           </div>
-          <div class="panel-body">
-            <div class="portfolio-table-container">
-              <div class="portfolio-table-wrapper">
-                <table class="portfolio-table">
+          <div class="panel-body weights-body">
+            <div class="weights-comparison">
+              <div class="weights-table-container">
+                <table class="weights-table">
                   <thead>
                     <tr>
                       <th>Инструмент</th>
@@ -662,9 +659,6 @@
                     </tr>
                   </tbody>
                 </table>
-              </div>
-              <div class="portfolio-table-footer">
-                <span>Всего позиций: <strong>{{ portfolioPositions.length }}</strong></span>
               </div>
             </div>
           </div>
