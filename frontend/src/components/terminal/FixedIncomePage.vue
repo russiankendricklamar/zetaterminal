@@ -6,8 +6,8 @@
           <ActivityIcon class="w-6 h-6" />
         </div>
         <div>
-          <h2 class="text-2xl font-bold text-white tracking-tight">Fixed Income Analysis</h2>
-          <p class="text-xs text-gray-400">Advanced Yield Analytics & Pricing Models</p>
+          <h2 class="text-2xl font-bold text-white tracking-tight">Анализ облигаций</h2>
+          <p class="text-xs text-gray-400">Продвинутая доходная аналитика и модели ценообразования</p>
         </div>
       </div>
       <div class="flex bg-black/40 rounded-xl p-1 border border-white/5 overflow-x-auto max-w-full custom-scrollbar">
@@ -37,11 +37,11 @@ const section = ref(props.activeSection || 'YAS');
 watch(() => props.activeSection, (v) => { if (v) section.value = v; });
 
 const tabs = [
-  { id: 'YAS', label: 'Yield & Spread' },
-  { id: 'YCRV', label: 'Yield Curve' },
-  { id: 'YA', label: 'Yield Analysis' },
-  { id: 'OAS1', label: 'OAS Calc' },
-  { id: 'BB', label: 'Bond Pricing' },
+  { id: 'YAS', label: 'Доходности и спреды' },
+  { id: 'YCRV', label: 'Кривая доходности' },
+  { id: 'YA', label: 'Анализ доходности' },
+  { id: 'OAS1', label: 'Калькулятор OAS' },
+  { id: 'BB', label: 'Оценка облигаций' },
 ];
 
 const YieldAndSpread = defineComponent({

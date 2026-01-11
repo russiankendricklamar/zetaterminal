@@ -7,8 +7,8 @@
           <GitCommitIcon class="w-6 h-6" />
         </div>
         <div>
-          <h2 class="text-2xl font-bold text-white tracking-tight">Futures Market</h2>
-          <p class="text-xs text-gray-400">Contracts, Spreads & Forward Curves</p>
+          <h2 class="text-2xl font-bold text-white tracking-tight">Фьючерсы</h2>
+          <p class="text-xs text-gray-400">Контракты, спреды и форвардные кривые</p>
         </div>
       </div>
 
@@ -58,8 +58,8 @@ watch(() => props.activeSection, (newVal) => {
 });
 
 const tabs = [
-  { id: 'FUT', label: 'Futures Contracts', icon: LayersIcon },
-  { id: 'FWCV', label: 'Forward Curves', icon: TrendingUpIcon },
+  { id: 'FUT', label: 'Фьючерсы'},
+  { id: 'FWCV', label: 'Форвардные кривые'},
 ];
 
 const FuturesContracts = defineComponent({

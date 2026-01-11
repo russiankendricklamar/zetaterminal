@@ -26,7 +26,9 @@
     <div class="kpi-cards-grid">
       <div class="glass-card kpi-card">
         <div class="kpi-label">Total Return</div>
-        <div class="kpi-value text-gradient-green">+24.5%</div>
+        <div class="kpi-value text-gradient-green">
+          {{ backtestResults?.metrics ? (backtestResults.metrics.total_return * 100).toFixed(1) + '%' : '+24.5%' }}
+        </div>
         <div class="kpi-change text-green">
            <span class="icon-up">↑</span> vs SPY: +6.2%
         </div>
@@ -34,19 +36,25 @@
 
       <div class="glass-card kpi-card">
         <div class="kpi-label">CAGR (Годовая)</div>
-        <div class="kpi-value text-white">18.2%</div>
+        <div class="kpi-value text-white">
+          {{ backtestResults?.metrics ? (backtestResults.metrics.cagr * 100).toFixed(1) + '%' : '18.2%' }}
+        </div>
         <div class="kpi-change text-muted">Risk-free: 5.0%</div>
       </div>
 
       <div class="glass-card kpi-card">
         <div class="kpi-label">Коэф. Шарпа</div>
-        <div class="kpi-value text-gradient-blue">1.58</div>
+        <div class="kpi-value text-gradient-blue">
+          {{ backtestResults?.metrics ? backtestResults.metrics.sharpe_ratio.toFixed(2) : '1.58' }}
+        </div>
         <div class="kpi-change text-blue">Top 15%</div>
       </div>
 
       <div class="glass-card kpi-card">
         <div class="kpi-label">Макс. Просадка</div>
-        <div class="kpi-value text-red">-14.2%</div>
+        <div class="kpi-value text-red">
+          {{ backtestResults?.metrics ? (backtestResults.metrics.max_drawdown * 100).toFixed(1) + '%' : '-14.2%' }}
+        </div>
         <div class="kpi-change text-red">High Risk</div>
       </div>
     </div>
@@ -79,15 +87,15 @@
               <line x1="0" y1="200" x2="1000" y2="200" stroke="rgba(255,255,255,0.05)" />
 
               <!-- Benchmark (Dashed) -->
-              <path d="M0,220 Q150,210 300,190 T600,160 T1000,120" fill="none" stroke="rgba(255,255,255,0.2)" stroke-width="2" stroke-dasharray="6,4"/>
+              <path :d="generateBenchmarkPath()" fill="none" stroke="rgba(255,255,255,0.2)" stroke-width="2" stroke-dasharray="6,4"/>
               
               <!-- Strategy Area -->
-              <path d="M0,220 Q150,200 300,150 T600,100 T1000,40 V250 H0 Z" fill="url(#grad-green)" stroke="none"/>
+              <path :d="generateStrategyAreaPath()" fill="url(#grad-green)" stroke="none"/>
               <!-- Strategy Line -->
-              <path d="M0,220 Q150,200 300,150 T600,100 T1000,40" fill="none" stroke="#4ade80" stroke-width="3" stroke-linecap="round"/>
+              <path :d="generateStrategyPath()" fill="none" stroke="#4ade80" stroke-width="3" stroke-linecap="round"/>
               
               <!-- Max Drawdown Marker -->
-              <circle cx="600" cy="100" r="4" fill="#1e293b" stroke="#f87171" stroke-width="2" />
+              <circle v-if="maxDrawdownMarker" :cx="maxDrawdownMarker.x" :cy="maxDrawdownMarker.y" r="4" fill="#1e293b" stroke="#f87171" stroke-width="2" />
          </svg>
       </div>
     </div>
@@ -106,15 +114,15 @@
               <thead>
                 <tr>
                   <th class="col-month"></th>
-                  <th v-for="year in years" :key="year" class="col-year">{{ year }}</th>
+                  <th v-for="year in computedYears" :key="year" class="col-year">{{ year }}</th>
                 </tr>
               </thead>
               <tbody>
                 <tr v-for="(month, idx) in months" :key="month">
                   <td class="col-month">{{ month }}</td>
-                  <td v-for="year in years" :key="`${month}-${year}`" class="col-val">
-                    <div class="val-pill" :class="getReturnClass(monthlyReturns[idx][year])">
-                      {{ monthlyReturns[idx][year] }}%
+                  <td v-for="year in computedYears" :key="`${month}-${year}`" class="col-val">
+                    <div class="val-pill" :class="getReturnClass(computedMonthlyReturns[idx]?.[year] || '0.0')">
+                      {{ computedMonthlyReturns[idx]?.[year] || '0.0' }}%
                     </div>
                   </td>
                 </tr>
@@ -141,27 +149,27 @@
           <div class="stats-grid-mini">
              <div class="stat-box">
                 <span class="lbl">Всего сделок</span>
-                <span class="val">243</span>
+                <span class="val">{{ backtestResults?.metrics?.total_trades || 243 }}</span>
              </div>
              <div class="stat-box">
                 <span class="lbl">Win Rate</span>
-                <span class="val text-green">64.2%</span>
+                <span class="val text-green">{{ backtestResults?.metrics ? (backtestResults.metrics.win_rate * 100).toFixed(1) + '%' : '64.2%' }}</span>
              </div>
              <div class="stat-box">
                 <span class="lbl">Profit Factor</span>
-                <span class="val text-green">2.34</span>
+                <span class="val text-green">{{ backtestResults?.metrics ? backtestResults.metrics.profit_factor.toFixed(2) : '2.34' }}</span>
              </div>
              <div class="stat-box">
                 <span class="lbl">Avg Profit</span>
-                <span class="val text-green">+$245</span>
+                <span class="val text-green">{{ backtestResults?.metrics ? '+' + backtestResults.metrics.avg_profit.toFixed(0) : '+$245' }}</span>
              </div>
              <div class="stat-box">
                 <span class="lbl">Avg Loss</span>
-                <span class="val text-red">-$145</span>
+                <span class="val text-red">{{ backtestResults?.metrics ? '-' + backtestResults.metrics.avg_loss.toFixed(0) : '-$145' }}</span>
              </div>
              <div class="stat-box">
                 <span class="lbl">Hold Time</span>
-                <span class="val">8.4d</span>
+                <span class="val">{{ backtestResults?.metrics ? backtestResults.metrics.hold_time.toFixed(1) + 'd' : '8.4d' }}</span>
              </div>
           </div>
         </div>
@@ -172,13 +180,13 @@
             <h3>Топ 3 просадки</h3>
           </div>
           <div class="drawdown-list">
-             <div v-for="(dd, idx) in drawdowns" :key="idx" class="dd-item">
+             <div v-for="(dd, idx) in (backtestResults?.metrics?.drawdowns || drawdowns)" :key="idx" class="dd-item">
                 <div class="dd-info">
                    <span class="dd-period">{{ dd.period }}</span>
                    <span class="dd-rec">Recovery: {{ dd.recovery }}</span>
                 </div>
                 <div class="dd-right">
-                    <span class="dd-val text-red">{{ dd.amount }}%</span>
+                    <span class="dd-val text-red">{{ dd.amount.toFixed(1) }}%</span>
                     <div class="dd-bar-bg">
                         <div class="dd-bar-fill" :style="{ width: Math.abs(dd.amount) * 3 + 'px' }"></div>
                     </div>
@@ -194,10 +202,16 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, computed, onMounted } from 'vue'
+import { runPortfolioBacktest, type BacktestResponse } from '@/services/backtestService'
+import { usePortfolioStore } from '@/stores/portfolio'
+
+const portfolioStore = usePortfolioStore()
 
 const periods = ref(['1M', '3M', '6M', 'YTD', '1Y', 'All'])
 const selectedPeriod = ref('YTD')
+const isRunning = ref(false)
+const backtestResults = ref<BacktestResponse | null>(null)
 
 const years = ref(['2024', '2025'])
 const months = ref(['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'])
@@ -227,14 +241,210 @@ const drawdowns = [
   { period: 'Feb 24 — Mar 24', amount: -5.3, recovery: '2 mo' },
 ]
 
-const getReturnClass = (returnValue: string) => {
-  const value = parseFloat(returnValue)
+const getReturnClass = (returnValue: string | number) => {
+  const value = typeof returnValue === 'string' ? parseFloat(returnValue) : returnValue
   if (value >= 3) return 'bg-green-strong'
   if (value > 0) return 'bg-green-soft'
   if (value === 0) return 'bg-neutral'
   if (value > -2) return 'bg-red-soft'
   return 'bg-red-strong'
 }
+
+// Computed для месячной доходности
+const computedMonthlyReturns = computed(() => {
+  if (!backtestResults.value?.metrics?.monthly_returns) {
+    return monthlyReturns.value
+  }
+  
+  const apiReturns = backtestResults.value.metrics.monthly_returns
+  const result: MonthlyData[] = []
+  
+  // Преобразуем данные из API в формат для отображения
+  const monthNames = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC']
+  const apiYears = Object.keys(apiReturns).sort()
+  
+  for (let monthIdx = 0; monthIdx < 12; monthIdx++) {
+    const monthData: MonthlyData = {}
+    for (const year of apiYears) {
+      const monthValue = apiReturns[year]?.[monthIdx + 1]
+      if (monthValue !== undefined) {
+        monthData[year] = monthValue > 0 ? '+' + monthValue.toFixed(1) : monthValue.toFixed(1)
+      } else {
+        monthData[year] = '0.0'
+      }
+    }
+    result.push(monthData)
+  }
+  
+  return result
+})
+
+const computedYears = computed(() => {
+  if (!backtestResults.value?.metrics?.monthly_returns) {
+    return years.value
+  }
+  return Object.keys(backtestResults.value.metrics.monthly_returns).sort()
+})
+
+// Функция для запуска бэктеста
+const runBacktest = async () => {
+  if (isRunning.value) return
+  isRunning.value = true
+  
+  try {
+    // Генерируем mock данные для mu и cov_matrix
+    const nAssets = portfolioStore.positions.length || 23
+    const assetNames = portfolioStore.positions.map(p => p.symbol)
+    
+    // Mock ожидаемые доходности (5-15% годовых)
+    const mu = Array.from({ length: nAssets }, () => 0.05 + Math.random() * 0.10)
+    
+    // Mock ковариационная матрица
+    const correlationMatrix = portfolioStore.correlationMatrix
+    const volatilities = Array.from({ length: nAssets }, () => 0.15 + Math.random() * 0.15)
+    
+    const covMatrix: number[][] = []
+    for (let i = 0; i < nAssets; i++) {
+      const row: number[] = []
+      for (let j = 0; j < nAssets; j++) {
+        let correlation = 0.3
+        if (correlationMatrix.length > i && correlationMatrix[i]?.values?.[j] !== undefined) {
+          correlation = correlationMatrix[i].values[j]
+        } else if (i === j) {
+          correlation = 1.0
+        }
+        row.push(correlation * volatilities[i] * volatilities[j])
+      }
+      covMatrix.push(row)
+    }
+    
+    const response = await runPortfolioBacktest({
+      mu,
+      cov_matrix: covMatrix,
+      initial_capital: 1000000,
+      risk_free_rate: 0.1394, // 13.94% безрисковая ставка
+      gamma: 3.0,
+      horizon_years: 1.0,
+      n_steps: 252,
+      asset_names: assetNames,
+      n_paths: 1000,
+      seed: 42
+    })
+    
+    backtestResults.value = response
+  } catch (e) {
+    console.error('Ошибка бэктестинга:', e)
+  } finally {
+    isRunning.value = false
+  }
+}
+
+// Функции для генерации путей SVG
+const generateStrategyPath = () => {
+  if (!backtestResults.value?.equity_curve || backtestResults.value.equity_curve.length === 0) {
+    return "M0,220 Q150,200 300,150 T600,100 T1000,40"
+  }
+  
+  const curve = backtestResults.value.equity_curve
+  const minValue = Math.min(...curve)
+  const maxValue = Math.max(...curve)
+  const range = maxValue - minValue || 1
+  const height = 250
+  const width = 1000
+  const steps = curve.length
+  
+  let path = ""
+  for (let i = 0; i < steps; i++) {
+    const x = (i / (steps - 1)) * width
+    const y = height - ((curve[i] - minValue) / range) * (height - 50) - 25
+    if (i === 0) {
+      path += `M${x},${y}`
+    } else {
+      path += ` L${x},${y}`
+    }
+  }
+  
+  return path
+}
+
+const generateBenchmarkPath = () => {
+  if (!backtestResults.value?.benchmark_curve || backtestResults.value.benchmark_curve.length === 0) {
+    return "M0,220 Q150,210 300,190 T600,160 T1000,120"
+  }
+  
+  const curve = backtestResults.value.benchmark_curve
+  const minValue = Math.min(...backtestResults.value.equity_curve || [0], ...curve)
+  const maxValue = Math.max(...backtestResults.value.equity_curve || [0], ...curve)
+  const range = maxValue - minValue || 1
+  const height = 250
+  const width = 1000
+  const steps = curve.length
+  
+  let path = ""
+  for (let i = 0; i < steps; i++) {
+    const x = (i / (steps - 1)) * width
+    const y = height - ((curve[i] - minValue) / range) * (height - 50) - 25
+    if (i === 0) {
+      path += `M${x},${y}`
+    } else {
+      path += ` L${x},${y}`
+    }
+  }
+  
+  return path
+}
+
+const generateStrategyAreaPath = () => {
+  const strategyPath = generateStrategyPath()
+  if (!strategyPath || strategyPath === "M0,220 Q150,200 300,150 T600,100 T1000,40") {
+    return "M0,220 Q150,200 300,150 T600,100 T1000,40 V250 H0 Z"
+  }
+  
+  // Добавляем нижнюю границу для area chart
+  const bottomY = 250
+  const width = 1000
+  
+  // Извлекаем последнюю точку из пути
+  const lastMatch = strategyPath.match(/L([0-9.]+),([0-9.]+)$/)
+  if (lastMatch) {
+    return strategyPath + ` L${lastMatch[1]},${bottomY} L0,${bottomY} Z`
+  }
+  
+  return strategyPath + ` V250 H0 Z`
+}
+
+const maxDrawdownMarker = computed(() => {
+  if (!backtestResults.value?.metrics?.drawdowns || backtestResults.value.metrics.drawdowns.length === 0) {
+    return null
+  }
+  
+  const largestDD = backtestResults.value.metrics.drawdowns[0]
+  const curve = backtestResults.value.equity_curve
+  if (!curve || curve.length === 0) return null
+  
+  // Находим индекс максимальной просадки (упрощенно)
+  const minValue = Math.min(...curve)
+  const minIndex = curve.indexOf(minValue)
+  
+  if (minIndex === -1) return null
+  
+  const minVal = Math.min(...curve)
+  const maxVal = Math.max(...curve)
+  const range = maxVal - minVal || 1
+  const height = 250
+  const width = 1000
+  const steps = curve.length
+  
+  const x = (minIndex / (steps - 1)) * width
+  const y = height - ((minVal - minVal) / range) * (height - 50) - 25
+  
+  return { x, y }
+})
+
+// Запускаем бэктест при монтировании компонента
+onMounted(() => {
+  runBacktest()
+})
 </script>
 
 <style scoped>

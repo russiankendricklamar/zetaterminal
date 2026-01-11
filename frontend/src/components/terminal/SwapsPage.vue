@@ -6,8 +6,8 @@
           <ArrowLeftRightIcon class="w-6 h-6" />
         </div>
         <div>
-          <h2 class="text-2xl font-bold text-white tracking-tight">Swaps Analysis</h2>
-          <p class="text-xs text-gray-400">Pricing, Valuation & Curve Monitoring</p>
+          <h2 class="text-2xl font-bold text-white tracking-tight">СВОПы</h2>
+          <p class="text-xs text-gray-400">Ценообразование, оценка и кривые</p>
         </div>
       </div>
       <div class="flex bg-black/40 rounded-xl p-1 border border-white/5 overflow-x-auto max-w-full custom-scrollbar">
@@ -41,9 +41,9 @@ const section = ref(props.activeSection || 'SWPM');
 watch(() => props.activeSection, (v) => { if (v) section.value = v; });
 
 const tabs = [
-  { id: 'SWPM', label: 'Pricing Model' },
+  { id: 'SWPM', label: 'Модель ценообразования' },
   { id: 'IRSB', label: 'Rate Basics' },
-  { id: 'IRSM', label: 'Swap Monitor' },
+  { id: 'IRSM', label: 'Монитор' },
   { id: 'ASW', label: 'Asset Swap' },
 ];
 

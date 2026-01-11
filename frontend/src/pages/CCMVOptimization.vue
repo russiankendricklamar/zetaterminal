@@ -1045,6 +1045,9 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted, watch, reactive } from 'vue'
 import { usePortfolioStore } from '../stores/portfolio'
+import { useRiskMetricsStore } from '../stores/riskMetrics'
+import { optimizeHJBPortfolio, type HJBResponse } from '../services/hjbService'
+import { optimizeCCMVPortfolio, type CCMVResponse, type CCMVCluster } from '../services/ccmvService'
 import * as THREE from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 
@@ -1121,8 +1124,9 @@ interface ClusterMetric {
   alphaK: number
 }
 
-// Portfolio store
+// Stores
 const portfolioStore = usePortfolioStore()
+const riskMetricsStore = useRiskMetricsStore()
 
 // Method selector
 const activeMethod = ref<'hjb' | 'ccmv'>('hjb')
@@ -2302,11 +2306,128 @@ const generateAreaDTrajectories = (lower: number[], upper: number[], limit: numb
 }
 
 
+// HJB Optimization Result
+const hjbOptimizationResult = ref<HJBResponse | null>(null)
+
 const runHJBOptimization = async () => {
   isComputing.value = true
-  await new Promise(r => setTimeout(r, 800))
+  try {
+    // Вычисляем mu и cov_matrix из portfolio данных
+    const positions = portfolioPositions.value
+    const n = positions.length
+    
+    // Ожидаемые доходности (используем dayChange как приближение)
+    // В реальном приложении это должны быть исторические доходности
+    const mu = positions.map(pos => {
+      // Преобразуем dayChange из процентов в доли и добавляем базовую доходность
+      const dailyReturn = pos.dayChange / 100
+      const annualReturn = dailyReturn * 252 // Упрощенное преобразование
+      return Math.max(0.01, 0.05 + annualReturn) // Минимум 1% годовых
+    })
+    
+    // Ковариационная матрица из корреляционной матрицы
+    const corrMatrix = correlationMatrix.value
+    const covMatrix: number[][] = []
+    
+    // Для упрощения используем фиксированную волатильность
+    const volatilities = positions.map(() => 0.2) // 20% волатильность
+    
+    for (let i = 0; i < n; i++) {
+      const row: number[] = []
+      for (let j = 0; j < n; j++) {
+        const corr = corrMatrix[i]?.values[j] || (i === j ? 1 : 0)
+        const cov = corr * volatilities[i] * volatilities[j]
+        row.push(cov)
+      }
+      covMatrix.push(row)
+    }
+    
+    // Параметры Монте-Карло
+    const monteCarloParams = {
+      initial_capital: 1000000,
+      horizon_years: hjbParams.value.horizon,
+      n_paths: hjbParams.value.monteCarloTrajectories,
+      n_steps: trajectoriesDays.value,
+      random_seed: 42
+    }
+    
+    // Вызов API
+    const result = await optimizeHJBPortfolio({
+      mu,
+      cov_matrix: covMatrix,
+      risk_free_rate: hjbParams.value.riskFreeRate,
+      gamma: hjbParams.value.gamma,
+      asset_names: positions.map(p => p.symbol),
+      monte_carlo: monteCarloParams
+    })
+    
+    hjbOptimizationResult.value = result
+    
+    // Обновляем траектории если есть результаты Монте-Карло
+    if (result.monte_carlo) {
+      trajectoriesData.paths = result.monte_carlo.paths
+      trajectoriesData.displayPaths = result.monte_carlo.paths.slice(0, 50)
+      trajectoriesData.medianPath = result.monte_carlo.median_path
+      trajectoriesData.q05 = result.monte_carlo.q05_path
+      trajectoriesData.q95 = result.monte_carlo.q95_path
+      
+      // Обновляем масштаб Y
+      const allValues = [
+        ...result.monte_carlo.q05_path,
+        ...result.monte_carlo.q95_path
+      ]
+      trajectoriesData.minY = Math.min(...allValues) * 0.9
+      trajectoriesData.maxY = Math.max(...allValues) * 1.1
+      
+      playbackStepTrajectories.value = trajectoriesDays.value
+    }
+    
+    // Обновляем риск-метрики в store для использования в GreekParameters
+    const portfolioValue = 2400000 // Базовая стоимость портфеля
+    const stats = result.portfolio_stats
+    const varMetrics = riskMetricsStore.calculateVaR(portfolioValue, stats.volatility, 0.95, 1)
+    const var99Metrics = riskMetricsStore.calculateVaR(portfolioValue, stats.volatility, 0.99, 1)
+    
+    // Вычисляем Risk Contributions
+    const riskContributions = riskMetricsStore.calculateRiskContributions(
+      positions.map(p => ({
+        symbol: p.symbol,
+        allocation: p.allocation,
+        notional: p.notional,
+        color: p.color
+      })),
+      stats.volatility,
+      correlationMatrix.value,
+      portfolioValue
+    )
+    
+    // Обновляем метрики в store
+    riskMetricsStore.updateMetrics({
+      var95: varMetrics.var,
+      var99: var99Metrics.var,
+      cvar95: varMetrics.cvar,
+      cvar99: var99Metrics.cvar,
+      expectedReturn: stats.expected_return,
+      volatility: stats.volatility,
+      sharpeRatio: stats.sharpe_ratio,
+      portfolioBeta: 0.85, // Можно вычислить из беты активов
+      riskContributions: riskContributions,
+      maxDrawdown: result.monte_carlo?.stats?.mean_max_drawdown || averageMDD.value || 0.124
+    })
+    
+    showToast(
+      `HJB оптимизация завершена: Sharpe = ${result.portfolio_stats.sharpe_ratio.toFixed(2)}`,
+      'success'
+    )
+  } catch (error) {
+    console.error('HJB Optimization Error:', error)
+    showToast(
+      `Ошибка оптимизации: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      'error'
+    )
+  } finally {
   isComputing.value = false
-  showToast(`HJB оптимизация завершена: π* = ${(hjbOptimalAllocation.value * 100).toFixed(1)}%`, 'success')
+  }
 }
 
 // ==================== GARCH FILTERING ====================
@@ -2878,14 +2999,12 @@ const toast = ref<{ show: boolean; message: string; type: 'success' | 'error' | 
   type: 'success'
 })
 
-// Clustering result (mock from notebook)
-// Computed clustering result based on portfolio
+// Clustering result from API
 const clusteringResult = computed(() => {
+  if (!ccmvOptimizationResult.value) {
+    // Fallback to mock data if no result yet
   const positions = portfolioPositions.value
   const numAssets = positions.length
-  
-  // Group assets into clusters (simple heuristic: by type or by allocation size)
-  // For now, create 3 clusters based on allocation quartiles
   const sorted = [...positions].sort((a, b) => b.allocation - a.allocation)
   const clusterSize = Math.ceil(sorted.length / 3)
   
@@ -2905,6 +3024,15 @@ const clusteringResult = computed(() => {
       { assets: sorted.slice(Math.ceil(sorted.length / 3), Math.ceil(sorted.length * 2 / 3)).map(p => p.symbol) },
       { assets: sorted.slice(Math.ceil(sorted.length * 2 / 3)).map(p => p.symbol) }
     ].filter(c => c.assets.length > 0) as Cluster[]
+    }
+  }
+  
+  // Use results from API
+  const result = ccmvOptimizationResult.value
+  return {
+    numClusters: result.clusters.length,
+    numAssets: result.optimal_weights.length,
+    clusters: result.clusters.map(c => ({ assets: c.assets })) as Cluster[]
   }
 })
 
@@ -2932,9 +3060,11 @@ const currentWeights = ref({
   DXY: 0.15
 })
 
-// Cluster metrics
+// Cluster metrics from API
 const clusterMetrics = computed<ClusterMetric[]>(() => {
-  const mockMetrics: ClusterMetric[] = [
+  if (!ccmvOptimizationResult.value) {
+    // Fallback to mock data
+    return [
     {
       expectedReturn: 0.085,
       volatility: 0.18,
@@ -2957,60 +3087,126 @@ const clusterMetrics = computed<ClusterMetric[]>(() => {
       alphaK: params.value.method === 'delta' ? 0.34 : 0.35
     }
   ]
-  return mockMetrics
+  }
+  
+  // Compute metrics from API results
+  const result = ccmvOptimizationResult.value
+  const corrMatrix = correlationMatrix.value
+  
+  return result.clusters.map(cluster => {
+    // Вычисляем среднюю корреляцию для кластера
+    let avgCorr = 0
+    let corrCount = 0
+    for (let i = 0; i < cluster.asset_indices.length; i++) {
+      for (let j = i + 1; j < cluster.asset_indices.length; j++) {
+        const idx1 = cluster.asset_indices[i]
+        const idx2 = cluster.asset_indices[j]
+        const corr = corrMatrix[idx1]?.values[idx2] || 0
+        avgCorr += corr
+        corrCount++
+      }
+    }
+    avgCorr = corrCount > 0 ? avgCorr / corrCount : 0
+    
+    // Используем веса кластера для вычисления доходности и волатильности
+    // Упрощенный расчет - в реальном приложении нужно использовать mu и Sigma
+    const expectedReturn = 0.06  // Примерное значение
+    const volatility = 0.15  // Примерное значение
+    
+    return {
+      expectedReturn,
+      volatility,
+      avgCorrelation: avgCorr,
+      deltaK: cluster.delta_k,
+      alphaK: cluster.alpha_k
+    }
+  })
 })
 
-// Optimization result (mock CCMV solution)
+// Optimization result from API
 const optimizationResult = computed(() => {
-  // Build weights object from portfolio positions
+  if (!ccmvOptimizationResult.value) {
+    // Fallback to current allocation
   const weights: Record<string, number> = {}
   portfolioPositions.value.forEach(pos => {
-    // Calculate optimal weight based on current allocation and optimization
-    const baseWeight = pos.allocation / 100
-    // Simple optimization: adjust based on performance and risk
-    const performanceFactor = pos.dayChange > 0 ? 1.02 : 0.98
-    const optimalWeight = baseWeight * performanceFactor
-    weights[pos.symbol] = Math.max(0, Math.min(1, optimalWeight))
-  })
-  
-  // Normalize weights to sum to 1
-  const totalWeight = Object.values(weights).reduce((sum, w) => sum + w, 0)
-  if (totalWeight > 0) {
-    Object.keys(weights).forEach(symbol => {
-      weights[symbol] = weights[symbol] / totalWeight
+      weights[pos.symbol] = pos.allocation / 100
     })
+    return {
+      weights: weights,
+      method: params.value.method
+    }
   }
+  
+  // Use results from API
+  const result = ccmvOptimizationResult.value
+  const weights: Record<string, number> = {}
+  
+  result.optimal_weights.forEach((weight, idx) => {
+    const symbol = portfolioPositions.value[idx]?.symbol
+    if (symbol) {
+      weights[symbol] = weight
+    }
+  })
   
   return {
     weights: weights,
-    method: params.value.method
+    method: result.method
   }
 })
 
-// Objective function
+// Objective function from API
 const objectiveValue = computed(() => {
-  const variance = 0.0185
-  const expectedReturn = 0.0625
-  return variance - params.value.gamma * expectedReturn
+  if (!ccmvOptimizationResult.value) {
+    return 0.0185 - params.value.gamma * 0.0625
+  }
+  return ccmvOptimizationResult.value.portfolio_stats.objective_value
 })
 
-const objectiveComponents = computed(() => ({
+const objectiveComponents = computed(() => {
+  if (!ccmvOptimizationResult.value) {
+    return {
   variance: 0.0185,
   return: 0.0625
-}))
+    }
+  }
+  const stats = ccmvOptimizationResult.value.portfolio_stats
+  return {
+    variance: stats.volatility * stats.volatility,
+    return: stats.expected_return
+  }
+})
 
-// Portfolio statistics
-const portfolioStats = computed(() => ({
+// Portfolio statistics from API
+const portfolioStats = computed(() => {
+  if (!ccmvOptimizationResult.value) {
+    return {
   expectedReturn: 0.0625,
   volatility: 0.136,
   sharpeRatio: (0.0625 - 0.042) / 0.136,
   numPositions: Object.values(optimizationResult.value.weights).filter(w => w > 0.001).length
-}))
+    }
+  }
+  
+  const result = ccmvOptimizationResult.value
+  const stats = result.portfolio_stats
+  return {
+    expectedReturn: stats.expected_return,
+    volatility: stats.volatility,
+    sharpeRatio: stats.sharpe_ratio,
+    numPositions: result.optimal_weights.filter((w: number) => w > 0.001).length
+  }
+})
 
-// Cluster allocations
+// Cluster allocations from API
 const clusterAllocations = computed(() => {
+  if (!ccmvOptimizationResult.value) {
   const alloc = clusterMetrics.value.map(m => m.alphaK)
   return alloc.map(a => ({ percentage: a * 100 }))
+  }
+  
+  return ccmvOptimizationResult.value.clusters.map(c => ({
+    percentage: c.alpha_k * 100
+  }))
 })
 
 const getDeltaClass = (delta: number): string => {
@@ -3037,17 +3233,137 @@ const getWeightDelta = (pos: any): number => {
   return optimal - pos.allocation
 }
 
-// Get asset allocation percentage
+// Get asset allocation percentage (from API results or current allocation)
 const getAssetAllocation = (symbol: string): number | null => {
+  // Use optimal weight from API if available
+  if (ccmvOptimizationResult.value) {
+    const idx = portfolioPositions.value.findIndex(p => p.symbol === symbol)
+    if (idx >= 0 && idx < ccmvOptimizationResult.value.optimal_weights.length) {
+      const weight = ccmvOptimizationResult.value.optimal_weights[idx]
+      return weight > 0.001 ? weight * 100 : null
+    }
+  }
+  
+  // Fallback to current allocation
   const pos = portfolioPositions.value.find(p => p.symbol === symbol)
   return pos?.allocation || null
 }
 
+// CCMV Optimization Result
+const ccmvOptimizationResult = ref<CCMVResponse | null>(null)
+
 const recomputeOptimization = async () => {
   isComputing.value = true
-  await new Promise(r => setTimeout(r, 1200))
+  try {
+    const positions = portfolioPositions.value
+    const n = positions.length
+    
+    if (n === 0) {
+      throw new Error('Портфель пуст')
+    }
+    
+    // Генерируем матрицу доходностей R (time_steps x num_assets)
+    // Для простоты используем симуляцию на основе текущих данных
+    const timeSteps = 252  // Один год торговых дней
+    const R: number[][] = []
+    
+    for (let t = 0; t < timeSteps; t++) {
+      const row: number[] = []
+      positions.forEach(pos => {
+        // Генерируем доходность на основе dayChange (волатильности)
+        const dailyReturn = (pos.dayChange / 100) / 252 + (Math.random() - 0.5) * (pos.dayChange / 100) / 10
+        row.push(dailyReturn)
+      })
+      R.push(row)
+    }
+    
+    // Вычисляем mu из позиций
+    const mu = positions.map(pos => {
+      const dailyReturn = pos.dayChange / 100
+      const annualReturn = dailyReturn * 252  // Упрощенное преобразование
+      return Math.max(0.01, 0.05 + annualReturn)  // Минимум 1% годовых
+    })
+    
+    // Вычисляем ковариационную матрицу из корреляционной матрицы
+    const corrMatrix = correlationMatrix.value
+    const volatilities = positions.map(() => 0.2)  // 20% волатильность
+    
+    const covMatrix: number[][] = []
+    for (let i = 0; i < n; i++) {
+      const row: number[] = []
+      for (let j = 0; j < n; j++) {
+        const corr = corrMatrix[i]?.values[j] || (i === j ? 1 : 0)
+        const cov = corr * volatilities[i] * volatilities[j]
+        row.push(cov)
+      }
+      covMatrix.push(row)
+    }
+    
+    // Вызов API
+    const result = await optimizeCCMVPortfolio({
+      R,
+      mu,
+      cov_matrix: covMatrix,
+      Delta: params.value.Delta,
+      bar_w: params.value.bar_w,
+      gamma: params.value.gamma,
+      method: params.value.method,
+      asset_names: positions.map(p => p.symbol)
+    })
+    
+    ccmvOptimizationResult.value = result
+    
+    // Обновляем риск-метрики в store для использования в GreekParameters
+    const portfolioValue = 2400000 // Базовая стоимость портфеля
+    const stats = result.portfolio_stats
+    const varMetrics = riskMetricsStore.calculateVaR(portfolioValue, stats.volatility, 0.95, 1)
+    const var99Metrics = riskMetricsStore.calculateVaR(portfolioValue, stats.volatility, 0.99, 1)
+    
+    // Вычисляем Risk Contributions на основе оптимальных весов
+    const optimizedPositions = positions.map((pos, idx) => {
+      const optimalWeight = result.optimal_weights[idx] || 0
+      return {
+        symbol: pos.symbol,
+        allocation: optimalWeight * 100,
+        notional: portfolioValue * optimalWeight,
+        color: pos.color
+      }
+    })
+    
+    const riskContributions = riskMetricsStore.calculateRiskContributions(
+      optimizedPositions,
+      stats.volatility,
+      correlationMatrix.value,
+      portfolioValue
+    )
+    
+    // Обновляем метрики в store
+    riskMetricsStore.updateMetrics({
+      var95: varMetrics.var,
+      var99: var99Metrics.var,
+      cvar95: varMetrics.cvar,
+      cvar99: var99Metrics.cvar,
+      expectedReturn: stats.expected_return,
+      volatility: stats.volatility,
+      sharpeRatio: stats.sharpe_ratio,
+      portfolioBeta: 0.85, // Можно вычислить из беты активов
+      riskContributions: riskContributions,
+      maxDrawdown: 0.124 // 12.4% - примерное значение
+    })
+    
+    showToast(
+      `Оптимизация завершена (${params.value.method === 'delta' ? 'Δ-CCMV' : 'α-CCMV'}). Sharpe = ${result.portfolio_stats.sharpe_ratio.toFixed(2)}`,
+      'success'
+    )
+  } catch (error) {
+    console.error('CCMV Optimization Error:', error)
+    showToast(
+      `Ошибка оптимизации: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      'error'
+    )
+  } finally {
   isComputing.value = false
-  showToast(`Оптимизация завершена (${params.value.method === 'delta' ? 'Δ-CCMV' : 'α-CCMV'})`, 'success')
+  }
 }
 
 const showToast = (message: string, type: 'success' | 'error' | 'info' = 'success') => {

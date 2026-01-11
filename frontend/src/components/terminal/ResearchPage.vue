@@ -6,7 +6,7 @@
           <BookOpenIcon class="w-6 h-6" />
         </div>
         <div>
-          <h2 class="text-2xl font-bold text-white tracking-tight">Investment Research</h2>
+          <h2 class="text-2xl font-bold text-white tracking-tight">Исследования</h2>
           <p class="text-xs text-gray-400">Institutional Grade Analysis & Insights</p>
         </div>
       </div>
@@ -37,7 +37,7 @@ const symbol = ref(props.symbol || 'NVDA');
 watch(() => props.activeSection, (v) => { if (v) section.value = v; });
 
 const tabs = [
-  { id: 'RES', label: 'Research Hub' },
+  { id: 'RES', label: 'Исследовательский хаб' },
   { id: 'BICO', label: 'Company Primer' },
   { id: 'BIP', label: 'Industry Primer' },
   { id: 'ECT', label: 'Transcripts' },

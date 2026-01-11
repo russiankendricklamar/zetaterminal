@@ -52,8 +52,8 @@
         </div>
         <p class="sc-desc">{{ scenario.description }}</p>
         <div class="sc-footer">
-            <span class="sc-impact" :class="getImpact(scenario.pnlImpact) < 0 ? 'text-red' : 'text-green'">
-                {{ formatCurrencyCompact(getImpact(scenario.pnlImpact)) }}
+            <span class="sc-impact" :class="getScenarioPnLImpact(scenario) < 0 ? 'text-red' : 'text-green'">
+                {{ formatCurrencyCompact(getScenarioPnLImpact(scenario)) }}
             </span>
             <span class="sc-prob">Вероятность: {{ (scenario.probability * 100).toFixed(0) }}%</span>
         </div>
@@ -75,12 +75,12 @@
                 <div class="impact-metrics-grid">
                     <div class="metric-box">
                         <span class="lbl">P&L Impact</span>
-                        <span class="val text-red">{{ formatCurrency(getImpact(selectedScenario.pnlImpact)) }}</span>
+                        <span class="val text-red">{{ formatCurrency(getScenarioPnLImpact(selectedScenario)) }}</span>
                     </div>
                     <div class="metric-box">
                         <span class="lbl">VaR Change</span>
-                        <span class="val" :class="selectedScenario.varChange < 0 ? 'text-red' : 'text-green'">
-                            {{ (selectedScenario.varChange * shockMultiplier).toFixed(1) }}%
+                        <span class="val" :class="getScenarioVaRChange(selectedScenario) < 0 ? 'text-red' : 'text-green'">
+                            {{ getScenarioVaRChange(selectedScenario).toFixed(1) }}%
                         </span>
                     </div>
                     <div class="metric-box">
@@ -184,11 +184,11 @@
               <td class="col-left pl-4">
                 <span class="sc-name-sm">{{ scenario.name }}</span>
               </td>
-              <td :class="scenario.pnlImpact < 0 ? 'text-red' : 'text-green'">
-                {{ formatCurrency(getImpact(scenario.pnlImpact)) }}
+              <td :class="getScenarioPnLImpact(scenario) < 0 ? 'text-red' : 'text-green'">
+                {{ formatCurrency(getScenarioPnLImpact(scenario)) }}
               </td>
-              <td :class="scenario.varChange < 0 ? 'text-red' : 'text-green'">
-                {{ (scenario.varChange * shockMultiplier).toFixed(1) }}%
+              <td :class="getScenarioVaRChange(scenario) < 0 ? 'text-red' : 'text-green'">
+                {{ getScenarioVaRChange(scenario).toFixed(1) }}%
               </td>
               <td class="text-muted">{{ scenario.duration }}</td>
               <td class="text-orange">{{ (scenario.probability * 100).toFixed(1) }}%</td>
@@ -210,9 +210,20 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue'
+import { runStressTests, type StressScenario, type StressTestResponse } from '@/services/stressService'
+import { usePortfolioStore } from '@/stores/portfolio'
+
+const portfolioStore = usePortfolioStore()
 
 const isRunning = ref(false)
 const shockMultiplier = ref(1.0)
+const stressTestResults = ref<StressTestResponse | null>(null)
+
+// Helper function for toast notifications
+const showToast = (message: string, type: 'success' | 'error' | 'info' = 'success') => {
+  console.log(`[${type.toUpperCase()}] ${message}`)
+  // TODO: Integrate with toast notification system if available
+}
 
 const scenarios = ref([
   {
@@ -225,7 +236,10 @@ const scenarios = ref([
     probability: 0.01,
     severity: 'critical',
     marketChanges: { 'Волатильность': '+25%', 'Bonds Yield': '+150 bps', 'Correlation': '+0.50', 'Spreads': '+100 bps' },
-    assetImpact: { 'Акции': -35, 'Облигации': -12, 'Товары': -25, 'Валюта': -8 }
+    assetImpact: { 'Акции': -35, 'Облигации': -12, 'Товары': -25, 'Валюта': -8 },
+    key: 'black_swan',
+    type: 'return_shock' as const,
+    return_multiplier: 0.5
   },
   {
     id: 2,
@@ -237,7 +251,10 @@ const scenarios = ref([
     probability: 0.05,
     severity: 'high',
     marketChanges: { 'VIX': '+20 pts', 'Range': '+15%', 'Liquidity': '-10%' },
-    assetImpact: { 'Акции': -18, 'Облигации': -5, 'Опционы': -40, 'Валюта': -3 }
+    assetImpact: { 'Акции': -18, 'Облигации': -5, 'Опционы': -40, 'Валюта': -3 },
+    key: 'volatility_spike',
+    type: 'volatility_shock' as const,
+    volatility_multiplier: 1.5
   },
   {
     id: 3,
@@ -249,7 +266,10 @@ const scenarios = ref([
     probability: 0.15,
     severity: 'high',
     marketChanges: { 'Key Rate': '+100 bps', 'Spreads': '+50 bps', 'FX Rate': '-5%' },
-    assetImpact: { 'Акции': -12, 'Облигации': -22, 'Недвижимость': -15, 'Валюта': -6 }
+    assetImpact: { 'Акции': -12, 'Облигации': -22, 'Недвижимость': -15, 'Валюта': -6 },
+    key: 'rate_hike',
+    type: 'return_shock' as const,
+    return_multiplier: 0.7
   },
   {
     id: 4,
@@ -261,7 +281,10 @@ const scenarios = ref([
     probability: 0.35,
     severity: 'medium',
     marketChanges: { 'Index': '-8%', 'Volatility': '+10%', 'Spreads': '+20 bps' },
-    assetImpact: { 'Акции': -8, 'Облигации': 2, 'Товары': -5, 'Валюта': -2 }
+    assetImpact: { 'Акции': -8, 'Облигации': 2, 'Товары': -5, 'Валюта': -2 },
+    key: 'correction',
+    type: 'correlation_shock' as const,
+    correlation_multiplier: 1.3
   }
 ])
 
@@ -274,20 +297,136 @@ const formatCurrency = (val: number) => new Intl.NumberFormat('en-US', { style: 
 const formatCurrencyCompact = (val: number) => '$' + (val / 1000).toFixed(0) + 'k'
 const formatLabel = (key: string) => key.charAt(0).toUpperCase() + key.slice(1)
 
-const avgLoss = computed(() => scenarios.value.reduce((sum, s) => sum + s.pnlImpact, 0) / scenarios.value.length)
-const maxLoss = computed(() => Math.min(...scenarios.value.map(s => s.pnlImpact)))
-const expectedLoss = computed(() => scenarios.value.reduce((sum, s) => sum + s.pnlImpact * s.probability, 0))
+// Computed properties для отображения данных из API результатов
+const getScenarioMetrics = (scenarioKey: string) => {
+  if (!stressTestResults.value || !stressTestResults.value.results[scenarioKey]) {
+    return null
+  }
+  return stressTestResults.value.results[scenarioKey].metrics
+}
+
+const getScenarioPnLImpact = (scenario: any) => {
+  const metrics = getScenarioMetrics(scenario.key)
+  if (metrics) {
+    // Вычисляем P&L Impact из метрик
+    const baselineCapital = stressTestResults.value?.baseline.initial_capital || 1000000
+    return -(baselineCapital - metrics.mean_final) * shockMultiplier.value
+  }
+  return scenario.pnlImpact * shockMultiplier.value
+}
+
+const getScenarioVaRChange = (scenario: any) => {
+  const metrics = getScenarioMetrics(scenario.key)
+  if (metrics) {
+    const baselineCapital = stressTestResults.value?.baseline.initial_capital || 1000000
+    const varChange = ((baselineCapital - metrics.var_95) / baselineCapital) * 100
+    return varChange * shockMultiplier.value
+  }
+  return scenario.varChange * shockMultiplier.value
+}
+
+const avgLoss = computed(() => {
+  if (stressTestResults.value) {
+    const losses = Object.values(stressTestResults.value.results).map(r => 
+      -(stressTestResults.value!.baseline.initial_capital - r.metrics.mean_final)
+    )
+    return losses.reduce((sum, l) => sum + l, 0) / losses.length * shockMultiplier.value
+  }
+  return scenarios.value.reduce((sum, s) => sum + s.pnlImpact, 0) / scenarios.value.length * shockMultiplier.value
+})
+
+const maxLoss = computed(() => {
+  if (stressTestResults.value) {
+    const losses = Object.values(stressTestResults.value.results).map(r => 
+      -(stressTestResults.value!.baseline.initial_capital - r.metrics.mean_final)
+    )
+    return Math.min(...losses) * shockMultiplier.value
+  }
+  return Math.min(...scenarios.value.map(s => s.pnlImpact)) * shockMultiplier.value
+})
+
+const expectedLoss = computed(() => {
+  if (stressTestResults.value) {
+    return Object.values(stressTestResults.value.results).reduce((sum, r, idx) => {
+      const scenario = scenarios.value[idx]
+      const loss = -(stressTestResults.value!.baseline.initial_capital - r.metrics.mean_final)
+      return sum + loss * (scenario?.probability || 0)
+    }, 0) * shockMultiplier.value
+  }
+  return scenarios.value.reduce((sum, s) => sum + s.pnlImpact * s.probability, 0) * shockMultiplier.value
+})
 
 const runAllStressTests = async () => {
   if (isRunning.value) return
   isRunning.value = true
   
   try {
-    for (let i = 0; i <= 100; i += 20) {
-      await new Promise(r => setTimeout(r, 250))
+    // Генерируем mock данные для mu и cov_matrix
+    const nAssets = portfolioStore.positions.length || 23
+    const assetNames = portfolioStore.positions.map(p => p.symbol)
+    
+    // Mock ожидаемые доходности (5-15% годовых)
+    const mu = Array.from({ length: nAssets }, () => 0.05 + Math.random() * 0.10)
+    
+    // Mock ковариационная матрица (на основе корреляционной матрицы)
+    const correlationMatrix = portfolioStore.correlationMatrix
+    const volatilities = Array.from({ length: nAssets }, () => 0.15 + Math.random() * 0.15) // 15-30% волатильность
+    
+    const covMatrix: number[][] = []
+    for (let i = 0; i < nAssets; i++) {
+      const row: number[] = []
+      for (let j = 0; j < nAssets; j++) {
+        let correlation = 0.3
+        if (correlationMatrix.length > i && correlationMatrix[i]?.values?.[j] !== undefined) {
+          correlation = correlationMatrix[i].values[j]
+        } else if (i === j) {
+          correlation = 1.0
+        }
+        row.push(correlation * volatilities[i] * volatilities[j])
+      }
+      covMatrix.push(row)
     }
+    
+    // Преобразуем сценарии в формат API
+    const apiScenarios: StressScenario[] = scenarios.value.map(s => ({
+      name: s.name,
+      key: s.key,
+      type: s.type,
+      return_multiplier: s.return_multiplier,
+      volatility_multiplier: s.volatility_multiplier,
+      correlation_multiplier: s.correlation_multiplier,
+      seed: 42
+    }))
+    
+    // Вызываем API
+    const response = await runStressTests({
+      mu,
+      cov_matrix: covMatrix,
+      initial_capital: 1000000,
+      risk_free_rate: 0.1394, // 13.94% безрисковая ставка
+      gamma: 3.0,
+      scenarios: apiScenarios,
+      asset_names: assetNames,
+      n_paths: 1000,
+      seed: 42
+    })
+    
+    stressTestResults.value = response
+    
+    // Обновляем данные сценариев с результатами API
+    scenarios.value.forEach(scenario => {
+      const result = response.results[scenario.key]
+      if (result) {
+        const baselineCapital = response.baseline.initial_capital
+        scenario.pnlImpact = -(baselineCapital - result.metrics.mean_final)
+        scenario.varChange = ((baselineCapital - result.metrics.var_95) / baselineCapital) * 100
+      }
+    })
+    
+    showToast('Стресс-тестирование завершено', 'success')
   } catch (e) {
-    console.error(e)
+    console.error('Ошибка стресс-тестирования:', e)
+    showToast('Ошибка при выполнении стресс-тестирования', 'error')
   } finally {
     isRunning.value = false
   }

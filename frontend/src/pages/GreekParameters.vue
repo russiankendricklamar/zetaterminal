@@ -48,28 +48,28 @@
         <div class="kpi-label">VaR {{ confidenceLevel }}% (Value at Risk)</div>
         <div class="kpi-value text-red">{{ formatCurrency(adjustedVaR) }}</div>
         <div class="kpi-sub">
-           <span class="text-muted">Risk/Equity:</span> <span class="text-white font-bold">{{ (Math.abs(adjustedVaR)/2400000*100).toFixed(2) }}%</span>
+           <span class="text-muted">Risk/Equity:</span> <span class="text-white font-bold">{{ (Math.abs(adjustedVaR)/riskMetricsStore.totalEquity*100).toFixed(2) }}%</span>
         </div>
       </div>
       <div class="glass-card kpi-card">
         <div class="kpi-label">Expected Shortfall (CVaR)</div>
-        <div class="kpi-value text-orange">{{ formatCurrency(adjustedVaR * 1.25) }}</div>
+        <div class="kpi-value text-orange">{{ formatCurrency(confidenceLevel >= 99 ? riskMetricsStore.cvar99 : riskMetricsStore.cvar95) }}</div>
         <div class="kpi-sub">
            <span class="text-muted">Tail Avg Loss</span>
         </div>
       </div>
       <div class="glass-card kpi-card">
         <div class="kpi-label">Бэта портфеля (β)</div>
-        <div class="kpi-value text-gradient-blue">0.85</div>
+        <div class="kpi-value text-gradient-blue">{{ riskMetricsStore.portfolioBeta.toFixed(2) }}</div>
         <div class="kpi-sub">
            <span class="text-muted">vs IMOEX</span>
         </div>
       </div>
       <div class="glass-card kpi-card">
         <div class="kpi-label">Коэффициент Шарпа</div>
-        <div class="kpi-value text-gradient-green">1.42</div>
+        <div class="kpi-value text-gradient-green">{{ riskMetricsStore.sharpeRatio.toFixed(2) }}</div>
         <div class="kpi-sub">
-           <span class="text-muted">Sortino:</span> <span class="text-white">2.15</span>
+           <span class="text-muted">Sortino:</span> <span class="text-white">{{ riskMetricsStore.calculateSortinoRatio(riskMetricsStore.expectedReturn, riskMetricsStore.volatility).toFixed(2) }}</span>
         </div>
       </div>
     </div>
@@ -211,7 +211,7 @@
              </div>
              <div class="kv-row">
                 <span class="k">Макс. просадка</span>
-                <span class="v text-red font-bold">-12.40%</span>
+                <span class="v text-red font-bold">{{ (riskMetricsStore.maxDrawdown * 100).toFixed(2) }}%</span>
              </div>
              <div class="kv-row">
                 <span class="k">Дней в просадке</span>
@@ -248,10 +248,14 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { useTaskStore } from '@/stores/tasks'
+import { useRiskMetricsStore } from '@/stores/riskMetrics'
+import { usePortfolioStore } from '@/stores/portfolio'
 
 const taskStore = useTaskStore()
+const riskMetricsStore = useRiskMetricsStore()
+const portfolioStore = usePortfolioStore()
 
 const selectedTimeframe = ref('1d')
 const isLoading = ref(false)
@@ -259,21 +263,44 @@ const isStressTesting = ref(false)
 const lastUpdate = ref(new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}))
 const confidenceLevel = ref(99.0)
 
-// Base VaR at 99%
-const baseVaR = -67500
-
+// VaR из store, с адаптацией под уровень доверия
 const adjustedVaR = computed(() => {
-    // Approx scaling: Z(99%) ~ 2.33, Z(95%) ~ 1.645
+  const var99 = riskMetricsStore.var99
+  const var95 = riskMetricsStore.var95
+  
+  if (var99 === 0 && var95 === 0) {
+    // Fallback если метрики еще не вычислены
+    const baseVaR = -67500
     const zScore = 1.645 + ((confidenceLevel.value - 95) / (99-95)) * (2.33 - 1.645)
     return baseVaR * (zScore / 2.33)
+  }
+  
+  // Интерполяция между 95% и 99%
+  if (confidenceLevel.value <= 95) {
+    return var95
+  } else if (confidenceLevel.value >= 99) {
+    return var99
+  } else {
+    // Линейная интерполяция
+    const ratio = (confidenceLevel.value - 95) / (99 - 95)
+    return var95 + (var99 - var95) * ratio
+  }
 })
 
-const riskContribution = ref([
-   { symbol: 'SPY', weight: 40, contribution: 27000, percentRisk: 45, color: '#3b82f6' },
-   { symbol: 'QQQ', weight: 30, contribution: 21000, percentRisk: 35, color: '#8b5cf6' },
-   { symbol: 'GLD', weight: 15, contribution: 4500, percentRisk: 7.5, color: '#fbbf24' },
-   { symbol: 'TLT', weight: 15, contribution: 7500, percentRisk: 12.5, color: '#ef4444' },
-])
+// Risk Contribution из store
+const riskContribution = computed(() => {
+  const contributions = riskMetricsStore.riskContributions
+  if (contributions.length > 0) {
+    return contributions
+  }
+  // Fallback данные
+  return [
+    { symbol: 'SPY', weight: 40, contribution: 27000, percentRisk: 45, color: '#3b82f6' },
+    { symbol: 'QQQ', weight: 30, contribution: 21000, percentRisk: 35, color: '#8b5cf6' },
+    { symbol: 'GLD', weight: 15, contribution: 4500, percentRisk: 7.5, color: '#fbbf24' },
+    { symbol: 'TLT', weight: 15, contribution: 7500, percentRisk: 12.5, color: '#ef4444' },
+  ]
+})
 
 const stressScenarios = ref([
   { id: 1, name: 'Финансовый Кризис 2008', description: 'Рыночный крах (повтор)', impact: -452000, impactPct: -0.25 },
@@ -282,22 +309,37 @@ const stressScenarios = ref([
   { id: 4, name: 'Рост Волатильности', description: 'VIX > 40', impact: -85000, impactPct: -0.045 }
 ])
 
-const factors = ref([
-   { name: 'Market Risk', index: 'S&P 500', beta: 0.85 },
-   { name: 'Interest Rates', index: 'US 10Y Treasury', beta: -0.42 },
-   { name: 'Momentum', index: 'MTUM ETF', beta: 0.25 },
-   { name: 'Volatility', index: 'VIX Index', beta: -0.65 },
-   { name: 'Commodities', index: 'BCOM Index', beta: 0.12 },
-])
+// Factors из store (пока используем фиксированные, можно расширить позже)
+const factors = computed(() => {
+  const beta = riskMetricsStore.portfolioBeta
+  return [
+    { name: 'Market Risk', index: 'IMOEX', beta: beta },
+    { name: 'Interest Rates', index: 'RU 10Y', beta: -0.42 },
+    { name: 'Momentum', index: 'MTUM ETF', beta: 0.25 },
+    { name: 'Volatility', index: 'RTSVIX', beta: -0.65 },
+    { name: 'Commodities', index: 'BCOM Index', beta: 0.12 },
+  ]
+})
 
-const correlationLabels = ref(['SPY', 'QQQ', 'TLT', 'GLD', 'BTC'])
-const correlationData = ref([
-  [1.0, 0.92, -0.35, 0.15, 0.45],
-  [0.92, 1.0, -0.42, 0.10, 0.55],
-  [-0.35, -0.42, 1.0, 0.25, -0.15],
-  [0.15, 0.10, 0.25, 1.0, 0.20],
-  [0.45, 0.55, -0.15, 0.20, 1.0]
-])
+// Correlation matrix из portfolio store
+const correlationLabels = computed(() => {
+  return portfolioStore.positions.map(p => p.symbol)
+})
+
+const correlationData = computed(() => {
+  const matrix = portfolioStore.correlationMatrix
+  if (!matrix || matrix.length === 0) {
+    // Fallback данные
+    return [
+      [1.0, 0.92, -0.35, 0.15, 0.45],
+      [0.92, 1.0, -0.42, 0.10, 0.55],
+      [-0.35, -0.42, 1.0, 0.25, -0.15],
+      [0.15, 0.10, 0.25, 1.0, 0.20],
+      [0.45, 0.55, -0.15, 0.20, 1.0]
+    ]
+  }
+  return matrix.map(row => row.values)
+})
 
 // Helpers
 const formatCurrency = (val: number) => '$' + Math.abs(val).toLocaleString('en-US', {maximumFractionDigits: 0})

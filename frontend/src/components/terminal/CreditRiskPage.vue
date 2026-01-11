@@ -6,8 +6,8 @@
           <ShieldAlertIcon class="w-6 h-6" />
         </div>
         <div>
-          <h2 class="text-2xl font-bold text-white tracking-tight">Credit Risk Analysis</h2>
-          <p class="text-xs text-gray-400">Ratings, Default Risk & Debt Structure</p>
+          <h2 class="text-2xl font-bold text-white tracking-tight">Анализ кредитных рисков</h2>
+          <p class="text-xs text-gray-400">Рейтинги, риск дефолта и долговая структура</p>
         </div>
       </div>
       <div class="flex bg-black/40 rounded-xl p-1 border border-white/5 overflow-x-auto max-w-full custom-scrollbar">
@@ -37,10 +37,10 @@ const symbol = ref(props.symbol || 'AAPL');
 watch(() => props.activeSection, (v) => { if (v) section.value = v; });
 
 const tabs = [
-  { id: 'RATC', label: 'Credit Ratings' },
-  { id: 'GCDS', label: 'CDS Spreads' },
-  { id: 'SRSK', label: 'Prob. of Default' },
-  { id: 'DDIS', label: 'Debt Dist.' },
+  { id: 'RATC', label: 'Кредитные рейтинги' },
+  { id: 'GCDS', label: 'CDS спреды' },
+  { id: 'SRSK', label: 'Вероятность дефолта' },
+  { id: 'DDIS', label: 'Долговой отчет' },
 ];
 
 const CreditRatings = defineComponent({

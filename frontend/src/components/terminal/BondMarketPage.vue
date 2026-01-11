@@ -7,8 +7,8 @@
           <LayersIcon class="w-6 h-6" />
         </div>
         <div>
-          <h2 class="text-2xl font-bold text-white tracking-tight">Bond Market Data</h2>
-          <p class="text-xs text-gray-400">Global Government & Corporate Debt Markets</p>
+          <h2 class="text-2xl font-bold text-white tracking-tight">Облигации</h2>
+          <p class="text-xs text-gray-400">Федеральные и корпоративные долговые рынки</p>
         </div>
       </div>
 
@@ -63,11 +63,11 @@ watch(() => props.activeSection, (newVal) => {
 });
 
 const tabs = [
-  { id: 'BBT', label: 'Federal Bonds', icon: ShieldCheckIcon },
-  { id: 'ALLQ', label: 'All Quotes', icon: ListIcon },
-  { id: 'PICK', label: 'Bond Picks', icon: AwardIcon },
-  { id: 'WB', label: 'Sovereign Monitor', icon: GlobeIcon },
-  { id: 'NIM', label: 'New Issues', icon: CalendarIcon },
+  { id: 'BBT', label: 'ОФЗ'},
+  { id: 'ALLQ', label: 'Все виды облигаций'},
+  { id: 'PICK', label: 'Bond Picks'},
+  { id: 'WB', label: 'Монитор'},
+  { id: 'NIM', label: 'Новые выпуски'},
 ];
 
 // Sub-components

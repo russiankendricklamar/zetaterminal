@@ -6,8 +6,8 @@
           <BuildingIcon class="w-6 h-6" />
         </div>
         <div>
-          <h2 class="text-2xl font-bold text-white tracking-tight">Central Banks</h2>
-          <p class="text-xs text-gray-400">Monetary Policy, Rates & Liquidity</p>
+          <h2 class="text-2xl font-bold text-white tracking-tight">Центральные банки</h2>
+          <p class="text-xs text-gray-400">Денежно-кредитная политика, ставки, ликвидность</p>
         </div>
       </div>
       <div class="flex bg-black/40 rounded-xl p-1 border border-white/5 overflow-x-auto max-w-full custom-scrollbar">
@@ -36,10 +36,10 @@ const section = ref(props.activeSection || 'CBR');
 watch(() => props.activeSection, (v) => { if (v) section.value = v; });
 
 const tabs = [
-  { id: 'CBR', label: 'Bank of Russia' },
-  { id: 'FED', label: 'Federal Reserve' },
-  { id: 'CENB', label: 'Global CBs' },
-  { id: 'FOMC', label: 'FOMC Center' },
+  { id: 'CBR', label: 'Банк России' },
+  { id: 'FED', label: 'ФРС' },
+  { id: 'CENB', label: 'Международные ЦБ' },
+  { id: 'FOMC', label: 'Расшифровки совещаний' },
 ];
 
 const BankOfRussia = defineComponent({

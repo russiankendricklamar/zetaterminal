@@ -5,7 +5,7 @@
     <!-- Header Section -->
     <div class="page-header">
       <div class="header-left">
-        <h1 class="page-title">Forward Valuation</h1>
+        <h1 class="page-title">Оценка форвардов</h1>
         <p class="page-subtitle">Справедливая стоимость и анализ форвардных контрактов</p>
       </div>
       
@@ -14,11 +14,11 @@
         <div class="control-group">
           <label class="control-label">Тип форварда:</label>
           <select v-model="selectedForwardType" class="forward-type-select" @change="updateValuation">
-            <option value="bond">Bond Forward</option>
-            <option value="fx">FX Forward</option>
+            <option value="bond">Форвард на облигацию</option>
+            <option value="fx">Валютный форвард</option>
             <option value="commodity">Commodity Forward</option>
-            <option value="equity">Equity Forward</option>
-            <option value="rate">Interest Rate Forward</option>
+            <option value="equity">Форвард на акцию</option>
+            <option value="rate">Форвард на ставку</option>
           </select>
         </div>
 
@@ -28,7 +28,7 @@
           class="btn-primary"
           :disabled="calculating"
         >
-          <span v-if="!calculating">📊 Пересчитать</span>
+          <span v-if="!calculating">Пересчитать</span>
           <span v-else>⟳ Считаю...</span>
         </button>
       </div>
@@ -92,7 +92,7 @@
       <!-- Forward Price (Theoretical) -->
       <div class="metric-card">
         <div class="metric-header">
-          <h3>Fair Forward Price</h3>
+          <h3>Справедливая стоимость форвардного контракта</h3>
           <span class="metric-unit">Справедливая цена</span>
         </div>
         <div class="metric-value accent">
@@ -107,7 +107,7 @@
       <!-- Market Price -->
       <div class="metric-card">
         <div class="metric-header">
-          <h3>Market Forward Price</h3>
+          <h3>Рыночная цена форвардного контракта</h3>
           <span class="metric-unit">Рыночная цена</span>
         </div>
         <div class="metric-value blue">
@@ -115,14 +115,14 @@
         </div>
         <div class="metric-detail">
           <span class="detail-label">Источник:</span>
-          <span class="detail-value">Market Data</span>
+          <span class="detail-value">Рыночные данные</span>
         </div>
       </div>
 
       <!-- Forward Value (Per Unit) -->
       <div class="metric-card">
         <div class="metric-header">
-          <h3>Forward Value</h3>
+          <h3>Стоимость форвардного контракта</h3>
           <span class="metric-unit">По единице</span>
         </div>
         <div class="metric-value" :class="valuationResults.forwardValue >= 0 ? 'positive' : 'negative'">
@@ -139,11 +139,10 @@
     <div class="card full-width">
       <div class="card-header">
         <h3>Cost-of-Carry Модель</h3>
-        <span class="card-subtitle">F = S₀ × e^[(r + c - d - y) × T]</span>
       </div>
       <div class="carry-breakdown">
         <div class="carry-item">
-          <span class="carry-label">Спот цена (S₀)</span>
+          <span class="carry-label">Спот цена актива (S₀)</span>
           <span class="carry-value accent">{{ formatCurrency(params.spotPrice) }}</span>
         </div>
         <div class="carry-item">
@@ -169,7 +168,7 @@
           </span>
         </div>
         <div class="carry-item final">
-          <span class="carry-label">= Fair Forward Price F</span>
+          <span class="carry-label">= Справедливая стоимость форварда F</span>
           <span class="carry-value" :class="valuationResults.fairForwardPrice >= params.spotPrice ? 'positive' : 'negative'">
             {{ formatCurrency(valuationResults.fairForwardPrice) }}
           </span>
@@ -364,77 +363,6 @@
             <span class="label">Текущая ставка</span>
             <span class="value cyan">{{ (params.riskFreeRate).toFixed(3) }}%</span>
           </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Arbitrage Opportunities -->
-    <div class="card full-width">
-      <div class="card-header">
-        <h3>Арбитраж & Mispricing</h3>
-        <span class="card-subtitle">Возможности арбитража при отклонении от справедливой стоимости</span>
-      </div>
-      <div class="arbitrage-analysis">
-        <div class="arb-section">
-          <h4>Если Forward Overpriced (F > Fair F)</h4>
-          <div class="arb-strategy">
-            <span class="strategy-label">Cash-and-Carry Arbitrage:</span>
-            <ol class="strategy-steps">
-              <li>Купить базовый актив за спот цену S₀</li>
-              <li>Финансировать по ставке r (репо)</li>
-              <li>Продать форвард по рыночной цене F</li>
-              <li>Прибыль = F - S₀ × e^[(r+c-d-y)T]</li>
-            </ol>
-            <span class="profit-value positive">
-              Profit: {{ formatCompactCurrency(Math.max(0, params.marketForwardPrice - valuationResults.fairForwardPrice) * params.contractSize) }}
-            </span>
-          </div>
-        </div>
-
-        <div class="arb-section">
-          <h4>Если Forward Underpriced (F < Fair F)</h4>
-          <div class="arb-strategy">
-            <span class="strategy-label">Reverse Cash-and-Carry:</span>
-            <ol class="strategy-steps">
-              <li>Шортить базовый актив</li>
-              <li>Занять по ставке r</li>
-              <li>Купить форвард по рыночной цене F</li>
-              <li>Прибыль = S₀ × e^[(r+c-d-y)T] - F</li>
-            </ol>
-            <span class="profit-value positive">
-              Profit: {{ formatCompactCurrency(Math.max(0, valuationResults.fairForwardPrice - params.marketForwardPrice) * params.contractSize) }}
-            </span>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Forward Types Reference -->
-    <div class="card full-width">
-      <div class="card-header">
-        <h3>Forward Valuation Formulas</h3>
-        <span class="card-subtitle">По типам форвардов</span>
-      </div>
-      <div class="formulas-grid">
-        <div class="formula-card">
-          <h4>Bond Forward</h4>
-          <span class="formula">F = (S₀ + PV(coupons)) × e^(r×T) - Accrued</span>
-          <span class="description">Включает купоны, начисленный процент, репо ставку</span>
-        </div>
-        <div class="formula-card">
-          <h4>FX Forward</h4>
-          <span class="formula">F = S₀ × e^((r_d - r_f)×T)</span>
-          <span class="description">Паритет процентных ставок (Interest Rate Parity)</span>
-        </div>
-        <div class="formula-card">
-          <h4>Commodity Forward</h4>
-          <span class="formula">F = S₀ × e^((r + u - y)×T)</span>
-          <span class="description">u = storage, y = convenience yield</span>
-        </div>
-        <div class="formula-card">
-          <h4>Equity Forward</h4>
-          <span class="formula">F = S₀ × e^((r - q)×T)</span>
-          <span class="description">q = dividend yield</span>
         </div>
       </div>
     </div>

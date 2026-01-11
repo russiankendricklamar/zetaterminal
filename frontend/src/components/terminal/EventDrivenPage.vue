@@ -6,7 +6,7 @@
           <RadioIcon class="w-6 h-6" />
         </div>
         <div>
-          <h2 class="text-2xl font-bold text-white tracking-tight">Event-Driven Analysis</h2>
+          <h2 class="text-2xl font-bold text-white tracking-tight">Ивент-анализ</h2>
           <p class="text-xs text-gray-400">Catalysts, Corporate Actions & Market Moving Events</p>
         </div>
       </div>
@@ -37,10 +37,10 @@ const symbol = ref(props.symbol || 'NVDA');
 watch(() => props.activeSection, (v) => { if (v) section.value = v; });
 
 const tabs = [
-  { id: 'IPO', label: 'IPO Monitor' },
-  { id: 'CACS', label: 'Corporate Events' },
+  { id: 'IPO', label: 'Монитор IPO' },
+  { id: 'CACS', label: 'Корпоративные события' },
   { id: 'QUIC', label: 'QuickTakes' },
-  { id: 'CM', label: 'Key Events' },
+  { id: 'CM', label: 'Ключевые события' },
 ];
 
 const IPOMonitor = defineComponent({

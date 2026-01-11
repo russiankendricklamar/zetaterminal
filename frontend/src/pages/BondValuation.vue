@@ -275,7 +275,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref } from 'vue'
+import { valuateBond, type BondValuationResponse } from '@/services/bondService'
 
 // --- Types ---
 interface CashFlow {
@@ -326,134 +327,40 @@ const error = ref('')
 
 // --- Methods ---
 
-// Helper: Calculate scenario with given yield
-const calculateScenario = (yield_: number, baseCF: any[], accruedInterest: number, faceValue: number): ScenarioResults => {
-  let totalPV = 0
-  const r = yield_ / 100
-  
-  baseCF.forEach(cf => {
-    const t = cf.t
-    const df = Math.exp(-r * t)
-    const pv = cf.cf * df
-    totalPV += pv
-  })
-
-  const cleanPrice = totalPV - accruedInterest
-  const pricePercent = (cleanPrice / faceValue) * 100
-
-  // Macaulay Duration
-  let weightedTime = 0
-  baseCF.forEach(cf => {
-    const t = cf.t
-    const df = Math.exp(-r * t)
-    const pv = cf.cf * df
-    weightedTime += t * pv
-  })
-  const duration = weightedTime / totalPV
-
-  return {
-    dirtyPrice: totalPV,
-    cleanPrice: cleanPrice,
-    pricePercent: pricePercent,
-    duration: duration
-  }
-}
-
-// Helper: Generate base cash flows (used for both scenarios)
-const generateBaseCashFlows = (startDate: Date): any[] => {
-  const cfs = []
-  const baseDate = new Date(startDate)
-  
-  for (let i = 1; i <= 6; i++) {
-    const cfDate = new Date(baseDate)
-    cfDate.setMonth(cfDate.getMonth() + i * 6)
-    
-    const t = i * 0.5 // 6-month intervals
-    const cf = i === 6 ? 1045 : 45 // Last includes face value
-    
-    cfs.push({
-      date: cfDate.toISOString(),
-      t: t,
-      cf: cf
-    })
-  }
-  
-  return cfs
-}
-
-// Helper: Add discount factors and PV to cash flows
-const calculateCashFlowsWithDF = (baseCF: any[], yield_: number): CashFlow[] => {
-  const r = yield_ / 100
-  return baseCF.map(cf => ({
-    date: cf.date,
-    t: cf.t,
-    cf: cf.cf,
-    df: Math.exp(-r * cf.t),
-    pv: cf.cf * Math.exp(-r * cf.t)
-  }))
-}
-
 const calculateBond = async () => {
   loading.value = true
   error.value = ''
   results.value = null
 
   // Validation
+  if (!params.value.secid || !params.value.secid.trim()) {
+    error.value = 'Введите ISIN облигации'
+    loading.value = false
+    return
+  }
+
   if (!params.value.discountYield1 || !params.value.discountYield2) {
     error.value = 'Заполните обе ставки дисконтирования'
     loading.value = false
     return
   }
 
-  setTimeout(() => {
-    try {
-      const faceValue = 1000
-      const accruedInterest = 15.5
-      const startDate = new Date()
-
-      // Generate base cash flows
-      const baseCF = generateBaseCashFlows(startDate)
-
-      // Calculate both scenarios
-      const scenario1 = calculateScenario(params.value.discountYield1, baseCF, accruedInterest, faceValue)
-      const scenario2 = calculateScenario(params.value.discountYield2, baseCF, accruedInterest, faceValue)
-
-      // Generate cash flows with DFs for both scenarios
-      const cashFlows1 = calculateCashFlowsWithDF(baseCF, params.value.discountYield1)
-      const cashFlows2 = calculateCashFlowsWithDF(baseCF, params.value.discountYield2)
-
-      // Mock Schedule
-      const coupons = []
-      for (let i = 0; i < 10; i++) {
-        const couponDate = new Date()
-        couponDate.setMonth(couponDate.getMonth() - (4 - i) * 6)
-        coupons.push({
-          date: couponDate.toISOString(),
-          value: 45.0,
-          isPaid: i < 4
-        })
-      }
-
-      results.value = {
-        secid: params.value.secid,
-        faceValue: faceValue,
-        couponPercent: 9.0,
-        issueDate: '2023-01-01',
-        maturityDate: '2028-01-01',
-        paymentsPerYear: 2,
-        accruedInterest: accruedInterest,
-        scenario1: scenario1,
-        scenario2: scenario2,
-        cashFlows1: cashFlows1,
-        cashFlows2: cashFlows2,
-        allCoupons: coupons
-      }
-      loading.value = false
-    } catch (e) {
-      error.value = 'Ошибка соединения с API'
-      loading.value = false
-    }
-  }, 1200)
+  try {
+    const response = await valuateBond({
+      secid: params.value.secid.trim(),
+      valuationDate: params.value.valuationDate,
+      discountYield1: params.value.discountYield1,
+      discountYield2: params.value.discountYield2,
+      dayCount: params.value.dayCount
+    })
+    
+    results.value = response
+  } catch (e: any) {
+    console.error('Ошибка оценки облигации:', e)
+    error.value = e.message || 'Ошибка соединения с API или получения данных облигации'
+  } finally {
+    loading.value = false
+  }
 }
 
 // --- Formatters ---

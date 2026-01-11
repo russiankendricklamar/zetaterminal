@@ -6,8 +6,8 @@
           <BoxIcon class="w-6 h-6" />
         </div>
         <div>
-          <h2 class="text-2xl font-bold text-white tracking-tight">Commodities</h2>
-          <p class="text-xs text-gray-400">Energy, Metals, Agriculture & Weather</p>
+          <h2 class="text-2xl font-bold text-white tracking-tight">Сырьё</h2>
+          <p class="text-xs text-gray-400">Энергоресурсы, металлы, агрокомплекс и погода</p>
         </div>
       </div>
       <div class="flex bg-black/40 rounded-xl p-1 border border-white/5 overflow-x-auto max-w-full custom-scrollbar">
@@ -37,11 +37,11 @@ const section = ref(props.activeSection || 'GLCO');
 watch(() => props.activeSection, (v) => { if (v) section.value = v; });
 
 const tabs = [
-  { id: 'GLCO', label: 'Global Commodities' },
-  { id: 'NRG', label: 'Energy Markets' },
-  { id: 'NGAS', label: 'Natural Gas' },
+  { id: 'GLCO', label: 'Международное сырьё' },
+  { id: 'NRG', label: 'Рынок энергоресурсов' },
+  { id: 'NGAS', label: 'Газ' },
   { id: 'FDM', label: 'Fundamentals' },
-  { id: 'CPF', label: 'Price Forecasts' },
+  { id: 'CPF', label: 'Прогнозы' },
 ];
 
 const GlobalCommodities = defineComponent({

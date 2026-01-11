@@ -7,8 +7,8 @@
           <SigmaIcon class="w-6 h-6" />
         </div>
         <div>
-          <h2 class="text-2xl font-bold text-white tracking-tight">Options Analytics</h2>
-          <p class="text-xs text-gray-400">Derivatives Pricing & Volatility Analysis</p>
+          <h2 class="text-2xl font-bold text-white tracking-tight">Опционы</h2>
+          <p class="text-xs text-gray-400">Ценообразование и анализ волатильности</p>
         </div>
       </div>
 
@@ -62,10 +62,10 @@ watch(() => props.activeSection, (newVal) => {
 });
 
 const tabs = [
-  { id: 'OVML', label: 'Option Analytics', icon: CalculatorIcon },
-  { id: 'VOL', label: 'Volatility Surface', icon: ActivityIcon },
-  { id: 'OCRN', label: 'Option Screening', icon: FilterIcon },
-  { id: 'VARL', label: 'Imp. vs Realized', icon: TrendingUpIcon },
+  { id: 'OVML', label: 'Аналитика'},
+  { id: 'VOL', label: 'Поверхность волатильности'},
+  { id: 'OCRN', label: 'Скрининг опционов'},
+  { id: 'VARL', label: 'Имплицитная vs реализованная '},
 ];
 
 const OptionAnalytics = defineComponent({

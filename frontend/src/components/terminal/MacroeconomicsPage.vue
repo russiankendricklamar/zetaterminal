@@ -6,8 +6,8 @@
           <GlobeIcon class="w-6 h-6" />
         </div>
         <div>
-          <h2 class="text-2xl font-bold text-white tracking-tight">Macroeconomics</h2>
-          <p class="text-xs text-gray-400">Global Indicators, Releases & Policy</p>
+          <h2 class="text-2xl font-bold text-white tracking-tight">Макроэкономика</h2>
+          <p class="text-xs text-gray-400">Индикаторы, релизы и экономическая политика</p>
         </div>
       </div>
       <div class="flex bg-black/40 rounded-xl p-1 border border-white/5 overflow-x-auto max-w-full custom-scrollbar">
@@ -36,9 +36,9 @@ const section = ref(props.activeSection || 'ECO');
 watch(() => props.activeSection, (v) => { if (v) section.value = v; });
 
 const tabs = [
-  { id: 'ECO', label: 'Economic Calendar' },
-  { id: 'ECST', label: 'Economic Data' },
-  { id: 'ECFC', label: 'Forecasts' },
+  { id: 'ECO', label: 'Экономический календарь' },
+  { id: 'ECST', label: 'Макроэкономические данные' },
+  { id: 'ECFC', label: 'Прогнозы' },
   { id: 'ECWB', label: 'Workbench' },
 ];
 

@@ -5,7 +5,7 @@
     <!-- Header Section -->
     <div class="page-header">
       <div class="header-left">
-        <h1 class="page-title">Forward Curve Builder</h1>
+        <h1 class="page-title">Построение форвардной кривой</h1>
         <p class="page-subtitle">Построение форвардной кривой и анализ структуры сроков</p>
       </div>
       
@@ -14,11 +14,11 @@
         <div class="control-group">
           <label class="control-label">Инструмент:</label>
           <select v-model="selectedInstrument" class="instrument-select" @change="updateCurve">
-            <option value="bonds">Bond Forward Curve</option>
-            <option value="fx">FX Forward Curve</option>
-            <option value="rates">Interest Rate Forwards</option>
+            <option value="bonds">Кривая по форварду на облигацию</option>
+            <option value="fx">Валютная форвардная кривая</option>
+            <option value="rates">Кривая форварда на процентную ставку</option>
             <option value="commodities">Commodity Forward Curve</option>
-            <option value="equity">Equity Forward Curve</option>
+            <option value="equity">Кривая форварда на акицю</option>
           </select>
         </div>
 
@@ -26,15 +26,15 @@
         <div class="control-group">
           <label class="control-label">Тип кривой:</label>
           <select v-model="selectedCurveType" class="curve-type-select" @change="updateCurve">
-            <option value="spot">Spot Curve</option>
-            <option value="forward">Forward Curve</option>
+            <option value="spot">Спот-кривая</option>
+            <option value="forward">Фовардная кривая</option>
             <option value="implicit">Implicit Forward Curve</option>
           </select>
         </div>
 
         <!-- Export Button -->
         <button @click="exportCurve" class="btn-secondary">
-          📥 Экспортировать
+          Экспортировать
         </button>
       </div>
     </div>
@@ -52,9 +52,8 @@
               <tr>
                 <th class="col-tenor">Tenor</th>
                 <th class="col-price">Спот / Цена</th>
-                <th class="col-yield">Yield (%)</th>
-                <th class="col-forward">Forward Rate</th>
-                <th class="col-action">Действие</th>
+                <th class="col-yield">Доходность (%)</th>
+                <th class="col-forward">Форвардная ставка</th>
               </tr>
             </thead>
             <tbody>
@@ -83,7 +82,7 @@
       <!-- Main Curve Chart -->
       <div class="card">
         <div class="chart-header">
-          <h3>Forward Curve</h3>
+          <h3>Форвардная кривая</h3>
           <span class="chart-subtitle">Структура сроков</span>
         </div>
         <div class="chart-container">
@@ -94,8 +93,8 @@
       <!-- Curve Metrics -->
       <div class="card">
         <div class="chart-header">
-          <h3>Forward Rates vs Spot</h3>
-          <span class="chart-subtitle">Разница между форвардными и спот ставками</span>
+          <h3>Форвардные ставки vs спот</h3>
+
         </div>
         <div class="chart-container">
           <canvas ref="spreadChartRef"></canvas>
@@ -123,7 +122,7 @@
       <!-- Average Forward Rate -->
       <div class="metric-card">
         <div class="metric-header">
-          <h3>Average Forward Rate</h3>
+          <h3>Средняя форвардная ставка</h3>
           <span class="metric-unit">Средняя ставка</span>
         </div>
         <div class="metric-value accent">
