@@ -5,7 +5,7 @@
     <!-- Header Section -->
     <div class="page-header">
       <div class="header-left">
-        <h1 class="page-title">Swap Valuation</h1>
+        <h1 class="page-title">Оценка свопов</h1>
         <p class="page-subtitle">Справедливая стоимость и анализ IRS, CDS, Basis Swaps</p>
       </div>
       
@@ -27,8 +27,8 @@
           class="btn-primary"
           :disabled="calculating"
         >
-          <span v-if="!calculating">📊 Пересчитать</span>
-          <span v-else>⟳ Считаю...</span>
+          <span v-if="!calculating">Пересчитать</span>
+          <span v-else>↺ Считаю...</span>
         </button>
       </div>
     </div>
@@ -57,8 +57,8 @@
             <label>Купонов в год</label>
             <select v-model.number="params.couponsPerYear" class="param-input" @change="updateValuation">
               <option value="1">1</option>
-              <option value="2">2 (Semi-annual)</option>
-              <option value="4">4 (Quarterly)</option>
+              <option value="2">2 (Раз в полгода)</option>
+              <option value="4">4 (Ежеквартально)</option>
             </select>
           </div>
         </div>
@@ -71,7 +71,7 @@
         </div>
         <div class="parameter-group">
           <div class="param-row">
-            <label>Floating Rate Index (%)</label>
+            <label>Индекс плавающей ставки (%)</label>
             <input v-model.number="params.floatingRate" type="number" class="param-input" step="0.01" @change="updateValuation" />
           </div>
           <div class="param-row">
@@ -95,7 +95,7 @@
       <!-- PV Fixed Leg -->
       <div class="metric-card">
         <div class="metric-header">
-          <h3>PV Fixed Leg</h3>
+          <h3>PV фиксированной ноги</h3>
           <span class="metric-unit">млн USD</span>
         </div>
         <div class="metric-value accent">
@@ -110,7 +110,7 @@
       <!-- PV Floating Leg -->
       <div class="metric-card">
         <div class="metric-header">
-          <h3>PV Floating Leg</h3>
+          <h3>PV плавающей ноги</h3>
           <span class="metric-unit">млн USD</span>
         </div>
         <div class="metric-value blue">
@@ -125,7 +125,7 @@
       <!-- Swap Value -->
       <div class="metric-card">
         <div class="metric-header">
-          <h3>Swap Value (Payer)</h3>
+          <h3>Стоимость свопа (Payer)</h3>
           <span class="metric-unit">млн USD</span>
         </div>
         <div class="metric-value" :class="valuationResults.swapValue >= 0 ? 'positive' : 'negative'">
@@ -143,7 +143,7 @@
       <!-- Duration -->
       <div class="card">
         <div class="card-header">
-          <h3>Duration анализ</h3>
+          <h3>Анализ Duration</h3>
         </div>
         <div class="metrics-list">
           <div class="metric-item">
@@ -210,7 +210,7 @@
     <div class="card full-width">
       <div class="card-header">
         <h3>График денежных потоков</h3>
-        <span class="card-subtitle">Fixed vs Floating legs comparison</span>
+        <span class="card-subtitle">Сравнение фиксированной и плавающей ног</span>
       </div>
       <div class="cashflow-table-container">
         <table class="cashflow-table">
@@ -245,7 +245,7 @@
       <!-- PV Profile -->
       <div class="card">
         <div class="chart-header">
-          <h3>Swap Value vs Fixed Rate</h3>
+          <h3>Стоимость свопа vs Фиксированная ставка</h3>
           <span class="chart-subtitle">Чувствительность к изменению фиксированной ставки</span>
         </div>
         <div class="chart-container">
@@ -256,7 +256,7 @@
       <!-- DV01 Profile -->
       <div class="card">
         <div class="chart-header">
-          <h3>DV01 vs Tenor</h3>
+          <h3>DV01 vs Срок</h3>
           <span class="chart-subtitle">Риск по различным срокам</span>
         </div>
         <div class="chart-container">
@@ -307,8 +307,8 @@
     <div class="grid-3">
       <div class="risk-card risk-high">
         <div class="risk-header">
-          <span class="risk-icon">🎯</span>
-          <h3>Duration Risk</h3>
+          <span class="risk-icon"></span>
+          <h3>Риск Duration</h3>
         </div>
         <div class="risk-value">{{ valuationResults.duration.toFixed(2) }} y</div>
         <div class="risk-detail">ΔPV / 100bp: {{ formatCompactCurrency(valuationResults.dv01) }}</div>
@@ -316,8 +316,8 @@
 
       <div class="risk-card risk-medium">
         <div class="risk-header">
-          <span class="risk-icon">📊</span>
-          <h3>Spread Risk</h3>
+          <span class="risk-icon"></span>
+          <h3>Риск спреда</h3>
         </div>
         <div class="risk-value">{{ params.spread }} bp</div>
         <div class="risk-detail">Spread DV01: {{ formatCompactCurrency(valuationResults.spreadDv01) }}</div>
@@ -325,11 +325,11 @@
 
       <div class="risk-card risk-low">
         <div class="risk-header">
-          <span class="risk-icon">⚡</span>
-          <h3>Convexity Risk</h3>
+          <span class="risk-icon"></span>
+          <h3>Риск Convexity</h3>
         </div>
         <div class="risk-value">{{ valuationResults.convexity.toFixed(2) }}</div>
-        <div class="risk-detail">Низкий риск для ваниллы</div>
+        <div class="risk-detail">Низкий риск для vanilla</div>
       </div>
     </div>
 

@@ -53,7 +53,7 @@
 
                     <!-- Time to Maturity -->
                     <div class="input-group">
-                        <label class="lbl">T (Time), years</label>
+                        <label class="lbl">T (Time), лет</label>
                         <input v-model.number="params.T" type="number" step="0.01" min="0.001" class="glass-input" @change="calculateGreeks" />
                     </div>
 
@@ -186,7 +186,7 @@
                                 <th>ΔS (руб.)</th>
                                 <th>σ - 2%</th>
                                 <th>σ - 1%</th>
-                                <th>σ базовая</th>
+                                <th>σ базовое</th>
                                 <th>σ + 1%</th>
                                 <th>σ + 2%</th>
                             </tr>

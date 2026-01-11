@@ -6,7 +6,7 @@
     <div class="section-header">
       <div class="header-left">
         <h1 class="section-title">Портфель опционов</h1>
-        <p class="section-subtitle">Агрегированный риск-анализ, grec портфеля, сценарное моделирование</p>
+        <p class="section-subtitle">Агрегированный риск-анализ, греки портфеля, сценарное моделирование</p>
       </div>
       
       <div class="header-actions">
@@ -60,7 +60,7 @@
                                 <span>{{ pos.strike }}</span>
                             </div>
                             <div class="pos-row">
-                                <span>Qty:</span>
+                                <span>Кол-во:</span>
                                 <input v-model.number="pos.quantity" type="number" min="0" @change="calculatePortfolio" class="pos-input" />
                             </div>
                             <div class="pos-row">
@@ -125,7 +125,7 @@
                     </div>
 
                     <div class="greek-card">
-                        <div class="greek-icon">📊</div>
+                        <div class="greek-icon"></div>
                         <div class="greek-title">Риск</div>
                         <div class="greek-value">{{ Math.abs(maxLoss).toFixed(2) }}</div>
                         <div class="greek-info">Максимальный убыток</div>
@@ -197,7 +197,7 @@
                                 <th>Спот / Vol</th>
                                 <th>Vol -2%</th>
                                 <th>Vol -1%</th>
-                                <th>Vol базовая</th>
+                                <th>Vol базовое</th>
                                 <th>Vol +1%</th>
                                 <th>Vol +2%</th>
                             </tr>
@@ -222,25 +222,25 @@
 
                 <div class="metrics-grid">
                     <div class="metric-item">
-                        <div class="metric-label">Max Gain</div>
+                        <div class="metric-label">Макс. прибыль</div>
                         <div class="metric-value text-green">{{ maxGain.toFixed(2) }}</div>
                         <div class="metric-info">Максимальный выигрыш</div>
                     </div>
 
                     <div class="metric-item">
-                        <div class="metric-label">Max Loss</div>
+                        <div class="metric-label">Макс. убыток</div>
                         <div class="metric-value text-red">{{ maxLoss.toFixed(2) }}</div>
                         <div class="metric-info">Максимальный убыток</div>
                     </div>
 
                     <div class="metric-item">
-                        <div class="metric-label">Breakeven</div>
+                        <div class="metric-label">Точка безубыточности</div>
                         <div class="metric-value">{{ breakeven.toFixed(2) }}</div>
                         <div class="metric-info">Точка безубыточности</div>
                     </div>
 
                     <div class="metric-item">
-                        <div class="metric-label">Risk/Reward</div>
+                        <div class="metric-label">Риск/Доходность</div>
                         <div class="metric-value">{{ (Math.abs(maxLoss) / Math.abs(maxGain) || 0).toFixed(2) }}</div>
                         <div class="metric-info">Соотношение риска</div>
                     </div>

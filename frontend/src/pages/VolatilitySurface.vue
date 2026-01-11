@@ -5,8 +5,8 @@
     <!-- Header Section -->
     <div class="page-header">
       <div class="header-left">
-        <h1 class="page-title">Volatility Surface</h1>
-        <p class="page-subtitle">3D поверхность волатильности: Моненость × Срок × IV</p>
+        <h1 class="page-title">Поверхность волатильности</h1>
+        <p class="page-subtitle">3D поверхность волатильности: Moneyness × Срок × IV</p>
       </div>
       
       <div class="header-right">
@@ -24,13 +24,13 @@
         <!-- Show Grid -->
         <div class="control-group checkbox">
           <input type="checkbox" v-model="showGrid" @change="updateSurface" id="grid-check" />
-          <label for="grid-check">Grid</label>
+          <label for="grid-check">Сетка</label>
         </div>
 
         <!-- Show Wireframe -->
         <div class="control-group checkbox">
           <input type="checkbox" v-model="showWireframe" @change="updateSurface" id="wire-check" />
-          <label for="wire-check">Wireframe</label>
+          <label for="wire-check">Каркас</label>
         </div>
 
         <!-- Animation Toggle -->
@@ -39,7 +39,7 @@
         </button>
 
         <!-- Reset View -->
-        <button @click="resetCamera" class="btn-secondary">🔄 Reset</button>
+        <button @click="resetCamera" class="btn-secondary">↺ Сброс</button>
       </div>
     </div>
 
@@ -48,7 +48,7 @@
       <canvas ref="threeCanvas" class="three-canvas"></canvas>
       <div class="controls-overlay">
         <div class="controls-hint">
-          <p>🖱 Drag to rotate | Scroll to zoom | Right-click to pan</p>
+          <p>Перетащите для вращения | Прокрутка для масштаба | ПКМ для перемещения</p>
         </div>
       </div>
     </div>
@@ -103,7 +103,7 @@
         </div>
         <div class="stat-value green">{{ (volOfVol * 100).toFixed(2) }}%</div>
         <div class="stat-detail">
-          <span class="label">Realized</span>
+          <span class="label">Реализованная</span>
           <span class="value">{{ (realizedVolOfVol * 100).toFixed(2) }}%</span>
         </div>
       </div>
@@ -119,7 +119,7 @@
         <table class="surface-matrix-table">
           <thead>
             <tr>
-              <th class="header-label">Strike / Term</th>
+              <th class="header-label">Strike / Срок</th>
               <th v-for="tenor in tenors" :key="tenor">{{ tenor }}</th>
             </tr>
           </thead>
@@ -145,7 +145,7 @@
       <!-- Smile by Term -->
       <div class="card">
         <div class="chart-header">
-          <h3>Volatility Smile (by Tenor)</h3>
+          <h3>Volatility Smile (по срокам)</h3>
           <span class="chart-subtitle">Кривая улыбки для разных сроков</span>
         </div>
         <div class="chart-container">
@@ -156,7 +156,7 @@
       <!-- Term Structure -->
       <div class="card">
         <div class="chart-header">
-          <h3>Term Structure (by Moneyness)</h3>
+          <h3>Term Structure (по Moneyness)</h3>
           <span class="chart-subtitle">Временная структура для разных страйков</span>
         </div>
         <div class="chart-container">
@@ -168,7 +168,7 @@
     <!-- 2D Heatmap -->
     <div class="card full-width">
       <div class="chart-header">
-        <h3>2D Heatmap: Strike × Tenor</h3>
+        <h3>2D Heatmap: Strike × Срок</h3>
         <span class="chart-subtitle">Тепловая карта волатильности</span>
       </div>
       <div class="chart-container tall">
@@ -181,7 +181,7 @@
       <!-- Vega Surface -->
       <div class="card">
         <div class="chart-header">
-          <h3>Vega (by Strike & Tenor)</h3>
+          <h3>Vega (по Strike и сроку)</h3>
           <span class="chart-subtitle">Чувствительность к волатильности</span>
         </div>
         <div class="chart-container">
@@ -192,7 +192,7 @@
       <!-- Vol Convexity -->
       <div class="card">
         <div class="chart-header">
-          <h3>Volatility Convexity</h3>
+          <h3>Выпуклость волатильности</h3>
           <span class="chart-subtitle">Кривизна поверхности</span>
         </div>
         <div class="chart-container">
@@ -204,24 +204,24 @@
     <!-- Info Panel -->
     <div class="card full-width">
       <div class="card-header">
-        <h3>Surface Model Details</h3>
+        <h3>Параметры модели поверхности</h3>
         <span class="card-subtitle">Технические параметры модели</span>
       </div>
       <div class="info-grid">
         <div class="info-item">
-          <span class="label">Model Type</span>
+          <span class="label">Тип модели</span>
           <span class="value">SABR + Local Vol</span>
         </div>
         <div class="info-item">
-          <span class="label">Calibration</span>
+          <span class="label">Калибровка</span>
           <span class="value">Least Squares + Regularization</span>
         </div>
         <div class="info-item">
-          <span class="label">Last Updated</span>
+          <span class="label">Последнее обновление</span>
           <span class="value">{{ updateTime }}</span>
         </div>
         <div class="info-item">
-          <span class="label">Market Close</span>
+          <span class="label">Статус рынка</span>
           <span class="value">{{ marketStatus }}</span>
         </div>
         <div class="info-item">
@@ -229,11 +229,11 @@
           <span class="value mono">{{ spotPrice }}</span>
         </div>
         <div class="info-item">
-          <span class="label">Risk-free Rate</span>
+          <span class="label">Безрисковая ставка</span>
           <span class="value mono">{{ (riskFreeRate * 100).toFixed(2) }}%</span>
         </div>
         <div class="info-item">
-          <span class="label">Dividend Yield</span>
+          <span class="label">Див. доходность</span>
           <span class="value mono">{{ (dividendYield * 100).toFixed(2) }}%</span>
         </div>
         <div class="info-item">
@@ -245,9 +245,9 @@
 
     <!-- Footer -->
     <div class="page-footer">
-      <span>• Source: Bloomberg Terminal / Broker Data</span>
-      <span>• Frequency: Real-time Updates</span>
-      <span>• Last Sync: 15s ago</span>
+      <span>• Источник: Bloomberg Terminal / Broker Data</span>
+      <span>• Частота: Обновления в реальном времени</span>
+      <span>• Последняя синхронизация: 15с назад</span>
     </div>
 
   </div>

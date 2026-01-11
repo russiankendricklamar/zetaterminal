@@ -5,7 +5,7 @@
     <!-- Header Section -->
     <div class="page-header">
       <div class="header-left">
-        <h1 class="page-title">Basis Analysis</h1>
+        <h1 class="page-title">Анализ базиса</h1>
         <p class="page-subtitle">Анализ спот-форвард базиса и стоимости переноса позиций</p>
       </div>
       
@@ -14,10 +14,10 @@
         <div class="control-group">
           <label class="control-label">Инструмент:</label>
           <select v-model="selectedInstrument" class="instrument-select" @change="updateAnalysis">
-            <option value="bonds">Bond Basis</option>
-            <option value="fx">FX Basis</option>
-            <option value="equity">Equity Basis</option>
-            <option value="commodities">Commodity Basis</option>
+            <option value="bonds">Базис облигаций</option>
+            <option value="fx">Валютный базис</option>
+            <option value="equity">Базис акций</option>
+            <option value="commodities">Базис товаров</option>
           </select>
         </div>
 
@@ -25,18 +25,18 @@
         <div class="control-group">
           <label class="control-label">Период:</label>
           <select v-model="selectedPeriod" class="period-select" @change="updateAnalysis">
-            <option value="1m">1 Month</option>
-            <option value="3m">3 Months</option>
-            <option value="6m">6 Months</option>
-            <option value="1y">1 Year</option>
-            <option value="2y">2 Years</option>
+            <option value="1m">1 месяц</option>
+            <option value="3m">3 месяца</option>
+            <option value="6m">6 месяцев</option>
+            <option value="1y">1 год</option>
+            <option value="2y">2 года</option>
           </select>
         </div>
 
         <!-- Update Button -->
         <button @click="updateAnalysis" class="btn-primary" :disabled="calculating">
-          <span v-if="!calculating">🔄 Обновить</span>
-          <span v-else>⟳ Считаю...</span>
+          <span v-if="!calculating">Обновить</span>
+          <span v-else>↺ Считаю...</span>
         </button>
       </div>
     </div>
@@ -46,14 +46,14 @@
       <!-- Spot Price -->
       <div class="metric-card">
         <div class="metric-header">
-          <h3>Spot Price</h3>
+          <h3>Спот цена</h3>
           <span class="metric-unit">Текущая цена</span>
         </div>
         <div class="metric-value accent">
           {{ formatCurrency(basisData.spotPrice) }}
         </div>
         <div class="metric-detail">
-          <span class="label">Change (1D)</span>
+          <span class="label">Изменение (1Д)</span>
           <span class="value" :class="basisData.spotChange >= 0 ? 'positive' : 'negative'">
             {{ basisData.spotChange >= 0 ? '+' : '' }}{{ basisData.spotChange.toFixed(3) }}%
           </span>
@@ -63,7 +63,7 @@
       <!-- Forward Price -->
       <div class="metric-card">
         <div class="metric-header">
-          <h3>Forward Price</h3>
+          <h3>Форвардная цена</h3>
           <span class="metric-unit">Форвардная цена</span>
         </div>
         <div class="metric-value blue">
@@ -78,14 +78,14 @@
       <!-- Basis -->
       <div class="metric-card">
         <div class="metric-header">
-          <h3>Basis (Points)</h3>
+          <h3>Базис (пункты)</h3>
           <span class="metric-unit">F - S</span>
         </div>
         <div class="metric-value cyan">
           {{ basisData.basis.toFixed(4) }}
         </div>
         <div class="metric-detail">
-          <span class="label">% of Spot</span>
+          <span class="label">% от спота</span>
           <span class="value">{{ ((basisData.basis / basisData.spotPrice) * 100).toFixed(3) }}%</span>
         </div>
       </div>
@@ -93,14 +93,14 @@
       <!-- Annualized Carry -->
       <div class="metric-card">
         <div class="metric-header">
-          <h3>Annualized Carry</h3>
+          <h3>Годовая стоимость переноса</h3>
           <span class="metric-unit">Годовая стоимость</span>
         </div>
         <div class="metric-value" :class="basisData.annualizedCarry >= 0 ? 'positive' : 'negative'">
           {{ basisData.annualizedCarry >= 0 ? '+' : '' }}{{ basisData.annualizedCarry.toFixed(2) }}%
         </div>
         <div class="metric-detail">
-          <span class="label">Term</span>
+          <span class="label">Срок</span>
           <span class="value">{{ basisData.termLength.toFixed(2) }}M</span>
         </div>
       </div>
@@ -111,32 +111,32 @@
       <!-- Cost of Carry Breakdown -->
       <div class="card">
         <div class="card-header">
-          <h3>Cost of Carry Decomposition</h3>
+          <h3>Разложение стоимости переноса</h3>
           <span class="card-subtitle">Что составляет базис</span>
         </div>
         <div class="carry-breakdown">
           <div class="carry-item">
-            <span class="label">Risk-free Rate (r)</span>
+            <span class="label">Безрисковая ставка (r)</span>
             <span class="value positive">{{ basisData.carryComponents.riskFreeRate.toFixed(3) }}%</span>
           </div>
           <div class="carry-item">
-            <span class="label">Storage Cost (u)</span>
+            <span class="label">Стоимость хранения (u)</span>
             <span class="value positive">{{ basisData.carryComponents.storageCost.toFixed(3) }}%</span>
           </div>
           <div class="carry-item">
-            <span class="label">Financing Cost (f)</span>
+            <span class="label">Стоимость финансирования (f)</span>
             <span class="value positive">{{ basisData.carryComponents.financingCost.toFixed(3) }}%</span>
           </div>
           <div class="carry-item">
-            <span class="label">- Dividend Yield (d)</span>
+            <span class="label">- Дивидендная доходность (d)</span>
             <span class="value negative">{{ basisData.carryComponents.dividendYield.toFixed(3) }}%</span>
           </div>
           <div class="carry-item">
-            <span class="label">- Convenience Yield (y)</span>
+            <span class="label">- Удобство владения (y)</span>
             <span class="value negative">{{ basisData.carryComponents.convenienceYield.toFixed(3) }}%</span>
           </div>
           <div class="carry-item total">
-            <span class="label">= Net Carry (Basis)</span>
+            <span class="label">= Чистый Carry (Базис)</span>
             <span class="value cyan">{{ basisData.annualizedCarry.toFixed(3) }}%</span>
           </div>
         </div>
@@ -145,7 +145,7 @@
       <!-- Basis vs Carry Chart -->
       <div class="card">
         <div class="chart-header">
-          <h3>Theoretical vs Actual Basis</h3>
+          <h3>Теоретический vs фактический базис</h3>
           <span class="chart-subtitle">F_fair vs F_market</span>
         </div>
         <div class="chart-container">
@@ -157,7 +157,7 @@
     <!-- Basis Term Structure -->
     <div class="card full-width">
       <div class="chart-header">
-        <h3>Basis Term Structure</h3>
+        <h3>Структура базиса по срокам</h3>
         <span class="chart-subtitle">Как базис меняется по срокам</span>
       </div>
       <div class="chart-container tall">
@@ -176,14 +176,14 @@
           <thead>
             <tr>
               <th>Tenor</th>
-              <th>Spot Price</th>
-              <th>Forward Price</th>
-              <th>Basis (Pts)</th>
-              <th>Basis (%)</th>
-              <th>Fair Basis</th>
-              <th>Basis Variance</th>
-              <th>Carry Ann.</th>
-              <th>Opportunity</th>
+              <th>Спот цена</th>
+              <th>Форвардная цена</th>
+              <th>Базис (пт)</th>
+              <th>Базис (%)</th>
+              <th>Справедливый базис</th>
+              <th>Отклонение базиса</th>
+              <th>Carry (год.)</th>
+              <th>Возможность</th>
             </tr>
           </thead>
           <tbody>
@@ -217,27 +217,27 @@
         </div>
         <div class="roll-analysis">
           <div class="roll-item">
-            <span class="label">Current Contract</span>
+            <span class="label">Текущий контракт</span>
             <span class="value">{{ basisData.currentTenor }}</span>
           </div>
           <div class="roll-item">
-            <span class="label">Next Contract</span>
+            <span class="label">Следующий контракт</span>
             <span class="value">{{ basisData.nextTenor }}</span>
           </div>
           <div class="roll-item">
-            <span class="label">Basis Change</span>
+            <span class="label">Изменение базиса</span>
             <span class="value cyan mono">
               {{ basisData.rollYield >= 0 ? '+' : '' }}{{ basisData.rollYield.toFixed(4) }}
             </span>
           </div>
           <div class="roll-item">
-            <span class="label">Roll Yield (Ann.)</span>
+            <span class="label">Roll Yield (год.)</span>
             <span class="value" :class="basisData.rollYieldAnnual >= 0 ? 'positive' : 'negative'">
               {{ basisData.rollYieldAnnual >= 0 ? '+' : '' }}{{ basisData.rollYieldAnnual.toFixed(2) }}%
             </span>
           </div>
           <div class="roll-item total">
-            <span class="label">Total Return</span>
+            <span class="label">Общая доходность</span>
             <span class="value accent">
               {{ basisData.totalReturn >= 0 ? '+' : '' }}{{ basisData.totalReturn.toFixed(2) }}%
             </span>
@@ -248,7 +248,7 @@
       <!-- Carry Roll Strategy -->
       <div class="card">
         <div class="chart-header">
-          <h3>Carry Roll Strategy</h3>
+          <h3>Стратегия Carry Roll</h3>
           <span class="chart-subtitle">Стратегия "buy and carry"</span>
         </div>
         <div class="strategy-analysis">
@@ -257,19 +257,19 @@
             <span class="value">{{ formatCurrency(basisData.spotPrice) }}</span>
           </div>
           <div class="strategy-item">
-            <span class="label">Finance @ </span>
+            <span class="label">Финансировать @ </span>
             <span class="value">{{ basisData.carryComponents.riskFreeRate.toFixed(2) }}%</span>
           </div>
           <div class="strategy-item">
-            <span class="label">Hold Cost @ </span>
+            <span class="label">Стоимость удержания @ </span>
             <span class="value">{{ (basisData.carryComponents.storageCost + basisData.carryComponents.financingCost).toFixed(2) }}%</span>
           </div>
           <div class="strategy-item">
-            <span class="label">Sell Forward @ </span>
+            <span class="label">Продать форвард @ </span>
             <span class="value">{{ formatCurrency(basisData.forwardPrice) }}</span>
           </div>
           <div class="strategy-item total">
-            <span class="label">Arbitrage Profit</span>
+            <span class="label">Арбитражная прибыль</span>
             <span class="value positive">
               {{ formatCompactCurrency(basisData.arbitrageProfit) }}
             </span>
@@ -294,28 +294,28 @@
       <!-- Basis Volatility -->
       <div class="card">
         <div class="chart-header">
-          <h3>Basis Volatility</h3>
+          <h3>Волатильность базиса</h3>
           <span class="chart-subtitle">Историческая волатильность базиса</span>
         </div>
         <div class="volatility-metrics">
           <div class="vol-item">
-            <span class="label">Current Basis Vol</span>
+            <span class="label">Текущая волатильность базиса</span>
             <span class="value accent">{{ basisData.basisVolatility.current.toFixed(2) }}%</span>
           </div>
           <div class="vol-item">
-            <span class="label">20D Historical</span>
+            <span class="label">20Д историческая</span>
             <span class="value blue">{{ basisData.basisVolatility.vol20d.toFixed(2) }}%</span>
           </div>
           <div class="vol-item">
-            <span class="label">60D Historical</span>
+            <span class="label">60Д историческая</span>
             <span class="value">{{ basisData.basisVolatility.vol60d.toFixed(2) }}%</span>
           </div>
           <div class="vol-item">
-            <span class="label">1Y Historical</span>
+            <span class="label">1Г историческая</span>
             <span class="value">{{ basisData.basisVolatility.vol1y.toFixed(2) }}%</span>
           </div>
           <div class="vol-item total">
-            <span class="label">Basis Range (1Y)</span>
+            <span class="label">Диапазон базиса (1Г)</span>
             <span class="value cyan">
               {{ basisData.basisVolatility.minBasis.toFixed(4) }} - {{ basisData.basisVolatility.maxBasis.toFixed(4) }}
             </span>
@@ -327,7 +327,7 @@
     <!-- Historical Basis Trend -->
     <div class="card full-width">
       <div class="chart-header">
-        <h3>Historical Basis Trend</h3>
+        <h3>Историческая динамика базиса</h3>
         <span class="chart-subtitle">Изменение базиса и carry за последний год</span>
       </div>
       <div class="chart-container tall">
@@ -340,7 +340,7 @@
       <!-- Key Drivers -->
       <div class="card">
         <div class="card-header">
-          <h3>Key Drivers of Basis</h3>
+          <h3>Ключевые драйверы базиса</h3>
         </div>
         <div class="drivers-list">
           <div v-for="driver in basisDrivers" :key="driver.name" class="driver-item">
@@ -356,27 +356,27 @@
       <!-- Basis Forecast -->
       <div class="card">
         <div class="card-header">
-          <h3>Basis Forecast (90D)</h3>
+          <h3>Прогноз базиса (90Д)</h3>
         </div>
         <div class="forecast-metrics">
           <div class="forecast-item">
-            <span class="label">Current Basis</span>
+            <span class="label">Текущий базис</span>
             <span class="value">{{ basisData.basis.toFixed(4) }}</span>
           </div>
           <div class="forecast-item">
-            <span class="label">Forecast Basis (30D)</span>
+            <span class="label">Прогноз базиса (30Д)</span>
             <span class="value cyan">{{ (basisData.basis * 0.85).toFixed(4) }}</span>
           </div>
           <div class="forecast-item">
-            <span class="label">Forecast Basis (60D)</span>
+            <span class="label">Прогноз базиса (60Д)</span>
             <span class="value cyan">{{ (basisData.basis * 0.65).toFixed(4) }}</span>
           </div>
           <div class="forecast-item">
-            <span class="label">Forecast Basis (90D)</span>
+            <span class="label">Прогноз базиса (90Д)</span>
             <span class="value cyan">{{ (basisData.basis * 0.4).toFixed(4) }}</span>
           </div>
           <div class="forecast-item total">
-            <span class="label">Expected Carry</span>
+            <span class="label">Ожидаемый Carry</span>
             <span class="value positive">
               {{ (basisData.annualizedCarry * 0.75).toFixed(2) }}%
             </span>
@@ -388,7 +388,7 @@
     <!-- Cash-and-Carry Arbitrage Opportunities -->
     <div class="card full-width">
       <div class="card-header">
-        <h3>Cash-and-Carry Arbitrage Opportunities</h3>
+        <h3>Арбитражные возможности Cash-and-Carry</h3>
         <span class="card-subtitle">Прибыльные позиции при отклонении от справедливого базиса</span>
       </div>
       <div class="opportunities-table-container">
@@ -396,13 +396,13 @@
           <thead>
             <tr>
               <th>Tenor</th>
-              <th>Spot Price</th>
-              <th>Forward Price</th>
-              <th>Fair Basis</th>
-              <th>Market Basis</th>
-              <th>Mispricing</th>
-              <th>Strategy</th>
-              <th>Profit Potential</th>
+              <th>Спот цена</th>
+              <th>Форвардная цена</th>
+              <th>Справедливый базис</th>
+              <th>Рыночный базис</th>
+              <th>Неправильная оценка</th>
+              <th>Стратегия</th>
+              <th>Потенциальная прибыль</th>
             </tr>
           </thead>
           <tbody>
@@ -430,7 +430,7 @@
     <!-- Basis Risk Summary -->
     <div class="card full-width">
       <div class="card-header">
-        <h3>Basis Risk Summary</h3>
+        <h3>Резюме рисков базиса</h3>
         <span class="card-subtitle">Риски, связанные с движением базиса</span>
       </div>
       <div class="risk-summary">
@@ -450,8 +450,8 @@
 
         <div class="risk-item">
           <div class="risk-header">
-            <span class="risk-type">Carry Roll Risk</span>
-            <span class="risk-level medium">MEDIUM</span>
+            <span class="risk-type">Риск Carry Roll</span>
+            <span class="risk-level medium">СРЕДНИЙ</span>
           </div>
           <div class="risk-description">
             Базис следующего контракта может отличаться. Roll yield может быть хуже ожиданий.
@@ -466,14 +466,14 @@
 
         <div class="risk-item">
           <div class="risk-header">
-            <span class="risk-type">Funding Cost Risk</span>
-            <span class="risk-level medium">MEDIUM</span>
+            <span class="risk-type">Риск стоимости финансирования</span>
+            <span class="risk-level medium">СРЕДНИЙ</span>
           </div>
           <div class="risk-description">
             Стоимость финансирования может вырасти, уменьшив доходность carry стратегии.
           </div>
           <div class="risk-metric">
-            <span>+50bp Rate Impact:</span>
+            <span>Влияние ставки +50bp:</span>
             <span class="value negative">{{ formatCompactCurrency(-basisData.contractSize * basisData.termLength * 50 / 365 / 10000) }}</span>
           </div>
         </div>
@@ -483,8 +483,8 @@
     <!-- Footer -->
     <div class="page-footer">
       <span>• Модель: Cost-of-Carry with convenience yield</span>
-      <span>• Частотность: Daily</span>
-      <span>• Обновление: EOD</span>
+      <span>• Частота: Ежедневно</span>
+      <span>• Обновление: Конец дня</span>
     </div>
 
   </div>

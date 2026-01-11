@@ -5,7 +5,7 @@
     <!-- Header Section -->
     <div class="page-header">
       <div class="header-left">
-        <h1 class="page-title">Arbitrage Scanner</h1>
+        <h1 class="page-title">Сканер арбитража</h1>
         <p class="page-subtitle">Поиск и анализ возможностей арбитража на рынке форвардов</p>
       </div>
       
@@ -14,23 +14,23 @@
         <div class="control-group">
           <label class="control-label">Инструмент:</label>
           <select v-model="selectedInstrument" class="instrument-select" @change="scanArbitrage">
-            <option value="bonds">Bond Forward Arbitrage</option>
-            <option value="fx">FX Forward Arbitrage</option>
-            <option value="equity">Equity Forward Arbitrage</option>
-            <option value="commodities">Commodity Forward Arbitrage</option>
+            <option value="bonds">Арбитраж форварда на облигацию</option>
+            <option value="fx">Арбитраж валютного форварда</option>
+            <option value="equity">Арбитраж форварда на акцию</option>
+            <option value="commodities">Арбитраж форварда на товар</option>
           </select>
         </div>
 
         <!-- Min Profit Threshold -->
         <div class="control-group">
-          <label class="control-label">Min Profit (bp):</label>
+          <label class="control-label">Мин. прибыль (bp):</label>
           <input v-model.number="minProfitThreshold" type="number" class="threshold-input" step="1" @change="scanArbitrage" />
         </div>
 
         <!-- Scan Button -->
         <button @click="scanArbitrage" class="btn-primary" :disabled="scanning">
-          <span v-if="!scanning">🔍 Сканировать</span>
-          <span v-else>⟳ Сканирую...</span>
+          <span v-if="!scanning">Сканировать</span>
+          <span v-else>↺ Сканирую...</span>
         </button>
       </div>
     </div>
@@ -40,12 +40,12 @@
       <!-- Total Opportunities -->
       <div class="status-card">
         <div class="status-header">
-          <h3>Total Opportunities</h3>
+          <h3>Всего возможностей</h3>
           <span class="status-unit">Всего арбитражей</span>
         </div>
         <div class="status-value accent">{{ arbitrageOpportunities.length }}</div>
         <div class="status-detail">
-          <span class="label">Last Scan</span>
+          <span class="label">Последнее сканирование</span>
           <span class="value">{{ lastScanTime }}</span>
         </div>
       </div>
@@ -53,14 +53,14 @@
       <!-- Profitable Arbitrages -->
       <div class="status-card">
         <div class="status-header">
-          <h3>Profitable</h3>
+          <h3>Прибыльные</h3>
           <span class="status-unit">С положительным P&L</span>
         </div>
         <div class="status-value positive">
           {{ profitableCount }}
         </div>
         <div class="status-detail">
-          <span class="label">Avg Profit</span>
+          <span class="label">Средняя прибыль</span>
           <span class="value">{{ avgProfit.toFixed(1) }}bp</span>
         </div>
       </div>
@@ -68,14 +68,14 @@
       <!-- Total Potential P&L -->
       <div class="status-card">
         <div class="status-header">
-          <h3>Total Potential</h3>
+          <h3>Общий потенциал</h3>
           <span class="status-unit">Суммарный P&L</span>
         </div>
         <div class="status-value green">
           {{ formatCompactCurrency(totalPotentialPnL) }}
         </div>
         <div class="status-detail">
-          <span class="label">Position Size</span>
+          <span class="label">Размер позиции</span>
           <span class="value">{{ formatCompactCurrency(defaultPositionSize) }}</span>
         </div>
       </div>
@@ -83,14 +83,14 @@
       <!-- Execution Feasibility -->
       <div class="status-card">
         <div class="status-header">
-          <h3>Feasible</h3>
+          <h3>Исполнимые</h3>
           <span class="status-unit">Технически исполнимые</span>
         </div>
         <div class="status-value cyan">
           {{ feasibleCount }}
         </div>
         <div class="status-detail">
-          <span class="label">Liquidity Ok</span>
+          <span class="label">Ликвидность OK</span>
           <span class="value">{{ (feasibilityRate * 100).toFixed(0) }}%</span>
         </div>
       </div>
@@ -99,7 +99,7 @@
     <!-- Active Arbitrage Opportunities -->
     <div class="card full-width">
       <div class="card-header">
-        <h3>Active Arbitrage Opportunities</h3>
+        <h3>Активные возможности арбитража</h3>
         <span class="card-subtitle">Сортировка по потенциальному профиту</span>
       </div>
       <div class="opportunities-controls">
@@ -128,7 +128,7 @@
               <th class="col-spot">Спот</th>
               <th class="col-forward">Форвард</th>
               <th class="col-fair">Fair Forward</th>
-              <th class="col-mispricing">Mispricing (bp)</th>
+              <th class="col-mispricing">Неправильная оценка (б.п.)</th>
               <th class="col-profit">Profit Potential</th>
               <th class="col-liquidity">Liquidity</th>
               <th class="col-execution">Execution</th>
@@ -176,31 +176,31 @@
       <!-- Cash-and-Carry Strategy -->
       <div class="card">
         <div class="card-header">
-          <h3>Cash-and-Carry Strategy</h3>
-          <span class="card-subtitle">Buy Spot + Sell Forward</span>
+          <h3>Стратегия Cash-and-Carry</h3>
+          <span class="card-subtitle">Купить Spot + Продать Forward</span>
         </div>
         <div class="strategy-details">
           <div v-for="strategy in cashAndCarryStrategies" :key="strategy.id" class="strategy-item">
             <span class="strategy-title">{{ strategy.name }}</span>
             <div class="strategy-breakdown">
               <div class="breakdown-row">
-                <span class="label">Buy Spot @</span>
+                <span class="label">Купить Spot @</span>
                 <span class="value">{{ formatCurrency(strategy.spotPrice) }}</span>
               </div>
               <div class="breakdown-row">
-                <span class="label">Sell Forward @</span>
+                <span class="label">Продать Forward @</span>
                 <span class="value">{{ formatCurrency(strategy.forwardPrice) }}</span>
               </div>
               <div class="breakdown-row">
-                <span class="label">Financing Cost</span>
+                <span class="label">Стоимость финансирования</span>
                 <span class="value negative">{{ formatCompactCurrency(strategy.financingCost) }}</span>
               </div>
               <div class="breakdown-row">
-                <span class="label">Storage Cost</span>
+                <span class="label">Стоимость хранения</span>
                 <span class="value negative">{{ formatCompactCurrency(strategy.storageCost) }}</span>
               </div>
               <div class="breakdown-row total">
-                <span class="label">Net Arbitrage Profit</span>
+                <span class="label">Чистая прибыль арбитража</span>
                 <span class="value positive">{{ formatCompactCurrency(strategy.netProfit) }}</span>
               </div>
             </div>
@@ -211,31 +211,31 @@
       <!-- Reverse Cash-and-Carry Strategy -->
       <div class="card">
         <div class="card-header">
-          <h3>Reverse Cash-and-Carry</h3>
-          <span class="card-subtitle">Short Spot + Buy Forward</span>
+          <h3>Обратный Cash-and-Carry</h3>
+          <span class="card-subtitle">Продать Spot + Купить Forward</span>
         </div>
         <div class="strategy-details">
           <div v-for="strategy in reverseCashAndCarryStrategies" :key="strategy.id" class="strategy-item">
             <span class="strategy-title">{{ strategy.name }}</span>
             <div class="strategy-breakdown">
               <div class="breakdown-row">
-                <span class="label">Short Spot @</span>
+                <span class="label">Продать Spot @</span>
                 <span class="value">{{ formatCurrency(strategy.spotPrice) }}</span>
               </div>
               <div class="breakdown-row">
-                <span class="label">Buy Forward @</span>
+                <span class="label">Купить Forward @</span>
                 <span class="value">{{ formatCurrency(strategy.forwardPrice) }}</span>
               </div>
               <div class="breakdown-row">
-                <span class="label">Borrow Cost</span>
+                <span class="label">Стоимость займа</span>
                 <span class="value negative">{{ formatCompactCurrency(strategy.borrowCost) }}</span>
               </div>
               <div class="breakdown-row">
-                <span class="label">Convenience Yield</span>
+                <span class="label">Удобство владения</span>
                 <span class="value positive">{{ formatCompactCurrency(strategy.convenienceYield) }}</span>
               </div>
               <div class="breakdown-row total">
-                <span class="label">Net Arbitrage Profit</span>
+                <span class="label">Чистая прибыль арбитража</span>
                 <span class="value positive">{{ formatCompactCurrency(strategy.netProfit) }}</span>
               </div>
             </div>
@@ -247,7 +247,7 @@
     <!-- Arbitrage Calendar -->
     <div class="card full-width">
       <div class="chart-header">
-        <h3>Arbitrage Opportunities by Tenor & Time</h3>
+        <h3>Возможности арбитража по сроку и времени</h3>
         <span class="chart-subtitle">Тепловая карта возможностей</span>
       </div>
       <div class="chart-container tall">
@@ -260,40 +260,40 @@
       <!-- Execution Risk -->
       <div class="card">
         <div class="card-header">
-          <h3>Execution Risk Assessment</h3>
+          <h3>Оценка риска исполнения</h3>
           <span class="card-subtitle">Риски при исполнении стратегии</span>
         </div>
         <div class="risk-assessment">
           <div class="risk-factor">
-            <span class="factor-name">Bid-Ask Spread Impact</span>
+            <span class="factor-name">Влияние спреда Bid-Ask</span>
             <div class="factor-bar">
               <div class="bar-fill" style="width: 35%;"></div>
             </div>
             <span class="factor-value">35bp</span>
           </div>
           <div class="risk-factor">
-            <span class="factor-name">Market Impact</span>
+            <span class="factor-name">Влияние на рынок</span>
             <div class="factor-bar">
               <div class="bar-fill" style="width: 22%;"></div>
             </div>
             <span class="factor-value">22bp</span>
           </div>
           <div class="risk-factor">
-            <span class="factor-name">Execution Timing</span>
+            <span class="factor-name">Время исполнения</span>
             <div class="factor-bar">
               <div class="bar-fill" style="width: 18%;"></div>
             </div>
             <span class="factor-value">18bp</span>
           </div>
           <div class="risk-factor">
-            <span class="factor-name">Liquidity Risk</span>
+            <span class="factor-name">Риск ликвидности</span>
             <div class="factor-bar">
               <div class="bar-fill" style="width: 12%;"></div>
             </div>
             <span class="factor-value">12bp</span>
           </div>
           <div class="risk-factor">
-            <span class="factor-name">Funding Risk</span>
+            <span class="factor-name">Риск финансирования</span>
             <div class="factor-bar">
               <div class="bar-fill" style="width: 8%;"></div>
             </div>
@@ -305,7 +305,7 @@
       <!-- Profitability Distribution -->
       <div class="card">
         <div class="chart-header">
-          <h3>Profit Distribution</h3>
+          <h3>Распределение прибыли</h3>
           <span class="chart-subtitle">Распределение потенциального профита</span>
         </div>
         <div class="chart-container">
@@ -319,12 +319,12 @@
       <!-- Avg Mispricing -->
       <div class="stat-card">
         <div class="stat-header">
-          <h3>Average Mispricing</h3>
+          <h3>Средняя неправильная оценка</h3>
           <span class="stat-unit">Средний размер</span>
         </div>
         <div class="stat-value accent">{{ avgMispricing.toFixed(1) }}bp</div>
         <div class="stat-detail">
-          <span class="label">Range</span>
+          <span class="label">Диапазон</span>
           <span class="value">{{ minMispricing.toFixed(1) }} - {{ maxMispricing.toFixed(1) }}bp</span>
         </div>
       </div>
@@ -332,12 +332,12 @@
       <!-- Success Rate -->
       <div class="stat-card">
         <div class="stat-header">
-          <h3>Historical Success Rate</h3>
+          <h3>Историческая частота успеха</h3>
           <span class="stat-unit">Реализация возможностей</span>
         </div>
         <div class="stat-value green">{{ (successRate * 100).toFixed(1) }}%</div>
         <div class="stat-detail">
-          <span class="label">Out of last 100 scans</span>
+          <span class="label">Из последних 100 сканирований</span>
           <span class="value">{{ Math.round(successRate * 100) }} арбитражей</span>
         </div>
       </div>
@@ -345,12 +345,12 @@
       <!-- Avg Execution Time -->
       <div class="stat-card">
         <div class="stat-header">
-          <h3>Avg Execution Time</h3>
+          <h3>Среднее время исполнения</h3>
           <span class="stat-unit">Среднее время</span>
         </div>
         <div class="stat-value cyan">{{ avgExecutionTime.toFixed(1) }}ms</div>
         <div class="stat-detail">
-          <span class="label">From scan to fill</span>
+          <span class="label">От сканирования до исполнения</span>
           <span class="value">{{ minExecutionTime }} - {{ maxExecutionTime }}ms</span>
         </div>
       </div>
@@ -359,19 +359,19 @@
     <!-- Arbitrage Watchlist -->
     <div class="card full-width">
       <div class="card-header">
-        <h3>Watchlist</h3>
+        <h3>Список наблюдения</h3>
         <span class="card-subtitle">Отслеживаемые возможности</span>
       </div>
       <div class="watchlist-container">
         <table class="watchlist-table">
           <thead>
             <tr>
-              <th>Instrument</th>
-              <th>Current Mispricing</th>
-              <th>Trend</th>
-              <th>Alert Level</th>
-              <th>Added</th>
-              <th>Action</th>
+              <th>Инструмент</th>
+              <th>Текущая неправильная оценка</th>
+              <th>Тренд</th>
+              <th>Уровень оповещения</th>
+              <th>Добавлено</th>
+              <th>Действие</th>
             </tr>
           </thead>
           <tbody>
@@ -381,10 +381,10 @@
                 {{ item.mispricing >= 0 ? '+' : '' }}{{ item.mispricing.toFixed(1) }}bp
               </td>
               <td class="trend">
-                <span class="trend-badge" :class="item.trend">{{ item.trend }}</span>
+                <span class="trend-badge" :class="item.trend">{{ item.trendDisplay }}</span>
               </td>
               <td class="alert">
-                <span class="alert-badge" :class="item.alertLevel.toLowerCase()">{{ item.alertLevel }}</span>
+                <span class="alert-badge" :class="item.alertLevel.toLowerCase()">{{ item.alertLevelDisplay }}</span>
               </td>
               <td class="time">{{ item.addedTime }}</td>
               <td class="action">
@@ -399,7 +399,7 @@
     <!-- Alerts & Notifications -->
     <div class="card full-width">
       <div class="card-header">
-        <h3>Recent Alerts</h3>
+        <h3>Последние оповещения</h3>
         <span class="card-subtitle">Последние обнаруженные возможности</span>
       </div>
       <div class="alerts-container">
@@ -417,7 +417,7 @@
     <!-- Footer -->
     <div class="page-footer">
       <span>• Алгоритм: Cost-of-Carry + Convenience Yield</span>
-      <span>• Частотность: Real-time Updates</span>
+      <span>• Частота: Обновления в реальном времени</span>
       <span>• Обновление: Каждую сек</span>
     </div>
 
@@ -432,7 +432,7 @@ const selectedInstrument = ref('bonds')
 const selectedArbitrageType = ref<string | null>(null)
 const minProfitThreshold = ref(5)
 const scanning = ref(false)
-const lastScanTime = ref('Just now')
+const lastScanTime = ref('Только что')
 const defaultPositionSize = 1_000_000
 
 // Arbitrage Opportunities
@@ -556,25 +556,31 @@ const watchlist = ref([
     id: 1,
     instrument: 'US Treasury 10Y',
     mispricing: 40,
-    trend: '↑ Increasing',
+    trend: 'Increasing',
+    trendDisplay: '↑ Растет',
     alertLevel: 'High',
-    addedTime: '2 hours ago'
+    alertLevelDisplay: 'Высокий',
+    addedTime: '2 часа назад'
   },
   {
     id: 2,
     instrument: 'EUR/USD Spot',
     mispricing: 60,
-    trend: '→ Stable',
+    trend: 'Stable',
+    trendDisplay: '→ Стабильно',
     alertLevel: 'Critical',
-    addedTime: '15 mins ago'
+    alertLevelDisplay: 'Критический',
+    addedTime: '15 мин назад'
   },
   {
     id: 3,
     instrument: 'S&P 500 Index',
     mispricing: 33,
-    trend: '↓ Decreasing',
+    trend: 'Decreasing',
+    trendDisplay: '↓ Снижается',
     alertLevel: 'Medium',
-    addedTime: '1 hour ago'
+    alertLevelDisplay: 'Средний',
+    addedTime: '1 час назад'
   }
 ])
 
@@ -583,34 +589,34 @@ const recentAlerts = ref([
   {
     id: 1,
     type: 'Opportunity',
-    icon: '💰',
-    title: 'High Profit Opportunity Detected',
-    message: 'EUR/USD Forward mispricing: 60bp, Profit potential: $6,000',
-    time: '2 sec ago'
+    icon: '',
+    title: 'Обнаружена возможность высокой прибыли',
+    message: 'EUR/USD Forward: неправильная оценка 60б.п., Потенциальная прибыль: $6,000',
+    time: '2 сек назад'
   },
   {
     id: 2,
     type: 'Warning',
-    icon: '⚠️',
-    title: 'Liquidity Concern',
-    message: 'Corporate Bond Forward: Bid-Ask spread widened to 25bp',
-    time: '45 sec ago'
+    icon: '',
+    title: 'Проблема ликвидности',
+    message: 'Corporate Bond Forward: спред Bid-Ask расширился до 25б.п.',
+    time: '45 сек назад'
   },
   {
     id: 3,
     type: 'Opportunity',
-    icon: '💰',
-    title: 'Mispricing Changed',
-    message: 'US Treasury 10Y: Mispricing increased from 32bp to 40bp',
-    time: '1 min ago'
+    icon: '',
+    title: 'Неправильная оценка изменилась',
+    message: 'US Treasury 10Y: неправильная оценка увеличилась с 32б.п. до 40б.п.',
+    time: '1 мин назад'
   },
   {
     id: 4,
     type: 'Execution',
     icon: '✓',
-    title: 'Arbitrage Executed',
-    message: 'Oil Futures: Reverse Carry executed, Profit: $870',
-    time: '3 mins ago'
+    title: 'Арбитраж исполнен',
+    message: 'Oil Futures: Reverse Carry исполнен, Прибыль: $870',
+    time: '3 мин назад'
   }
 ])
 
@@ -694,7 +700,7 @@ const scanArbitrage = async () => {
   scanning.value = true
   try {
     await new Promise(r => setTimeout(r, 800))
-    lastScanTime.ref = 'Just now'
+    lastScanTime.value = 'Только что'
     initCharts()
   } finally {
     scanning.value = false
@@ -771,7 +777,7 @@ const initCharts = () => {
       data: {
         labels: ['0-10bp', '10-25bp', '25-50bp', '50-100bp', '100+bp'],
         datasets: [{
-          label: 'Count',
+          label: 'Количество',
           data: [2, 5, 8, 6, 3],
           backgroundColor: [
             'rgba(168, 85, 247, 0.6)',

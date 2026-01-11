@@ -5,7 +5,7 @@
     <!-- Header Section -->
     <div class="page-header">
       <div class="header-left">
-        <h1 class="page-title">Greeks Dashboard</h1>
+        <h1 class="page-title">Панель греков</h1>
         <p class="page-subtitle">Анализ чувствительности форвардных позиций</p>
       </div>
       
@@ -14,11 +14,11 @@
         <div class="control-group">
           <label class="control-label">Позиция:</label>
           <select v-model="selectedPosition" class="position-select" @change="updateGreeks">
-            <option value="long-bond">Long Bond Forward</option>
-            <option value="short-bond">Short Bond Forward</option>
-            <option value="long-fx">Long FX Forward</option>
-            <option value="short-fx">Short FX Forward</option>
-            <option value="long-commodity">Long Commodity Forward</option>
+            <option value="long-bond">Long форвард на облигацию</option>
+            <option value="short-bond">Short форвард на облигацию</option>
+            <option value="long-fx">Long валютный форвард</option>
+            <option value="short-fx">Short валютный форвард</option>
+            <option value="long-commodity">Long форвард на товар</option>
           </select>
         </div>
 
@@ -26,16 +26,16 @@
         <div class="control-group">
           <label class="control-label">Вид:</label>
           <select v-model="selectedViewType" class="view-select" @change="updateGreeks">
-            <option value="summary">Summary</option>
-            <option value="detailed">Detailed Greeks</option>
-            <option value="sensitivity">Sensitivity Charts</option>
+            <option value="summary">Резюме</option>
+            <option value="detailed">Детальные греки</option>
+            <option value="sensitivity">Графики чувствительности</option>
           </select>
         </div>
 
         <!-- Update Button -->
         <button @click="updateGreeks" class="btn-primary" :disabled="calculating">
-          <span v-if="!calculating">🔄 Обновить</span>
-          <span v-else>⟳ Считаю...</span>
+          <span v-if="!calculating">Обновить</span>
+          <span v-else>↺ Считаю...</span>
         </button>
       </div>
     </div>
@@ -99,7 +99,7 @@
             <span class="value">{{ formatCompactCurrency(pnlMetrics.thetaPerDay) }}</span>
           </div>
           <div class="detail">
-            <span class="label">Хроповой декай</span>
+            <span class="label">Годовая</span>
             <span class="value">{{ (greeksValues.theta * 252).toFixed(2) }}/год</span>
           </div>
         </div>
@@ -118,7 +118,7 @@
             <span class="value">{{ formatCompactCurrency(pnlMetrics.rhoP1pct) }}</span>
           </div>
           <div class="detail">
-            <span class="label">Розус (кривизна)</span>
+            <span class="label">Rogas (кривизна)</span>
             <span class="value" :class="greeksValues.rogas >= 0 ? 'positive' : 'negative'">
               {{ greeksValues.rogas >= 0 ? '+' : '' }}{{ greeksValues.rogas.toFixed(6) }}
             </span>
@@ -132,7 +132,7 @@
       <!-- Delta vs Spot -->
       <div class="card">
         <div class="chart-header">
-          <h3>Delta: Sensitivity to Spot Price</h3>
+          <h3>Delta: Чувствительность к спот цене</h3>
           <span class="chart-subtitle">∂F/∂S — как меняется стоимость форварда</span>
         </div>
         <div class="chart-container">
@@ -143,7 +143,7 @@
       <!-- Gamma vs Spot -->
       <div class="card">
         <div class="chart-header">
-          <h3>Gamma: Delta Convexity</h3>
+          <h3>Gamma: Выпуклость Delta</h3>
           <span class="chart-subtitle">∂²F/∂S² — как меняется дельта</span>
         </div>
         <div class="chart-container">
@@ -157,7 +157,7 @@
       <!-- Vega vs Vol -->
       <div class="card">
         <div class="chart-header">
-          <h3>Vega: Volatility Sensitivity</h3>
+          <h3>Vega: Чувствительность к волатильности</h3>
           <span class="chart-subtitle">∂F/∂σ — как меняется стоимость с волатильностью</span>
         </div>
         <div class="chart-container">
@@ -168,7 +168,7 @@
       <!-- Vega vs Tenor -->
       <div class="card">
         <div class="chart-header">
-          <h3>Vega Decomposition by Tenor</h3>
+          <h3>Разложение Vega по срокам</h3>
           <span class="chart-subtitle">Вклад каждого срока в итоговый vega</span>
         </div>
         <div class="chart-container">
@@ -182,7 +182,7 @@
       <!-- Theta vs Time -->
       <div class="card">
         <div class="chart-header">
-          <h3>Theta: Time Decay</h3>
+          <h3>Theta: Временное затухание</h3>
           <span class="chart-subtitle">∂F/∂t — P&L от изменения времени</span>
         </div>
         <div class="chart-container">
@@ -193,7 +193,7 @@
       <!-- Cross Gamma (Spot vs Vol) -->
       <div class="card">
         <div class="chart-header">
-          <h3>Cross Gamma: Spot × Vol</h3>
+          <h3>Cross Gamma: Спот × Vol</h3>
           <span class="chart-subtitle">∂²F/∂S∂σ — взаимодействие факторов</span>
         </div>
         <div class="chart-container">
@@ -216,14 +216,14 @@
               <th class="col-symbol">Символ</th>
               <th class="col-value">Значение</th>
               <th class="col-meaning">Интерпретация</th>
-              <th class="col-impact">Impact @ 1%</th>
+              <th class="col-impact">Влияние @ 1%</th>
               <th class="col-order">Порядок</th>
             </tr>
           </thead>
           <tbody>
             <!-- First-order Greeks -->
             <tr class="section-header">
-              <td colspan="6">FIRST-ORDER GREEKS</td>
+              <td colspan="6">ГРЕКИ ПЕРВОГО ПОРЯДКА</td>
             </tr>
             <tr>
               <td class="greek-name">Delta</td>
@@ -262,7 +262,7 @@
 
             <!-- Second-order Greeks -->
             <tr class="section-header">
-              <td colspan="6">SECOND-ORDER GREEKS</td>
+              <td colspan="6">ГРЕКИ ВТОРОГО ПОРЯДКА</td>
             </tr>
             <tr>
               <td class="greek-name">Gamma</td>
@@ -322,7 +322,7 @@
     <!-- Greeks Risk Heatmap -->
     <div class="card full-width">
       <div class="card-header">
-        <h3>Greeks Risk Heatmap</h3>
+        <h3>Тепловая карта риска греков</h3>
         <span class="card-subtitle">Тепловая карта по движениям рынка</span>
       </div>
       <div class="heatmap-container">
@@ -335,7 +335,7 @@
       <!-- Greeks P&L Contribution -->
       <div class="card">
         <div class="chart-header">
-          <h3>P&L Attribution by Greeks</h3>
+          <h3>Атрибуция P&L по грекам</h3>
           <span class="chart-subtitle">Вклад каждого грека в общий P&L</span>
         </div>
         <div class="chart-container">
@@ -346,42 +346,42 @@
       <!-- Greeks Contribution Table -->
       <div class="card">
         <div class="chart-header">
-          <h3>Greeks P&L Summary</h3>
+          <h3>Резюме P&L греков</h3>
           <span class="chart-subtitle">Эффект каждого фактора</span>
         </div>
         <div class="greeks-pnl-summary">
           <div class="pnl-item">
-            <span class="factor-label">Delta P&L (Spot move)</span>
+            <span class="factor-label">Delta P&L (Движение спота)</span>
             <span class="factor-value" :class="greeksValues.delta >= 0 ? 'positive' : 'negative'">
               {{ greeksValues.delta >= 0 ? '+' : '' }}{{ formatCompactCurrency(pnlMetrics.deltaPnL) }}
             </span>
           </div>
           <div class="pnl-item">
-            <span class="factor-label">Gamma P&L (Convexity)</span>
+            <span class="factor-label">Gamma P&L (Выпуклость)</span>
             <span class="factor-value" :class="greeksValues.gamma >= 0 ? 'positive' : 'negative'">
               {{ greeksValues.gamma >= 0 ? '+' : '' }}{{ formatCompactCurrency(pnlMetrics.gammaPnL) }}
             </span>
           </div>
           <div class="pnl-item">
-            <span class="factor-label">Vega P&L (Vol move)</span>
+            <span class="factor-label">Vega P&L (Движение Vol)</span>
             <span class="factor-value" :class="greeksValues.vega >= 0 ? 'positive' : 'negative'">
               {{ greeksValues.vega >= 0 ? '+' : '' }}{{ formatCompactCurrency(pnlMetrics.vegaPnL) }}
             </span>
           </div>
           <div class="pnl-item">
-            <span class="factor-label">Theta P&L (Time decay)</span>
+            <span class="factor-label">Theta P&L (Временное затухание)</span>
             <span class="factor-value" :class="greeksValues.theta >= 0 ? 'positive' : 'negative'">
               {{ greeksValues.theta >= 0 ? '+' : '' }}{{ formatCompactCurrency(pnlMetrics.thetaPnL) }}
             </span>
           </div>
           <div class="pnl-item">
-            <span class="factor-label">Rho P&L (Rate move)</span>
+            <span class="factor-label">Rho P&L (Движение ставки)</span>
             <span class="factor-value" :class="greeksValues.rho >= 0 ? 'positive' : 'negative'">
               {{ greeksValues.rho >= 0 ? '+' : '' }}{{ formatCompactCurrency(pnlMetrics.rhoPnL) }}
             </span>
           </div>
           <div class="pnl-item total">
-            <span class="factor-label"><strong>Total P&L</strong></span>
+            <span class="factor-label"><strong>Общий P&L</strong></span>
             <span class="factor-value accent">
               <strong>{{ formatCompactCurrency(pnlMetrics.totalPnL) }}</strong>
             </span>
@@ -401,11 +401,11 @@
           <thead>
             <tr>
               <th>Greeks</th>
-              <th>Current</th>
-              <th>Limit</th>
-              <th>Utilization</th>
-              <th>Status</th>
-              <th>Action</th>
+              <th>Текущее</th>
+              <th>Лимит</th>
+              <th>Использование</th>
+              <th>Статус</th>
+              <th>Действие</th>
             </tr>
           </thead>
           <tbody>
@@ -423,8 +423,8 @@
                 {{ limit.status }}
               </td>
               <td class="action">
-                <button v-if="limit.status === 'Warning'" class="btn-action warning">Reduce</button>
-                <button v-else-if="limit.status === 'Critical'" class="btn-action critical">Hedge!</button>
+                <button v-if="limit.status === 'Warning'" class="btn-action warning">Уменьшить</button>
+                <button v-else-if="limit.status === 'Critical'" class="btn-action critical">Хеджировать!</button>
                 <span v-else class="btn-action ok">OK</span>
               </td>
             </tr>
@@ -436,7 +436,7 @@
     <!-- Greeks Scenarios -->
     <div class="card full-width">
       <div class="chart-header">
-        <h3>P&L in Market Scenarios</h3>
+        <h3>P&L в рыночных сценариях</h3>
         <span class="chart-subtitle">Как меняется P&L при различных комбинациях движений</span>
       </div>
       <div class="chart-container tall">
@@ -447,8 +447,8 @@
     <!-- Footer -->
     <div class="page-footer">
       <span>• Модель: Black-Scholes (для форвардов)</span>
-      <span>• Частотность: Continuous</span>
-      <span>• Обновление: Real-time</span>
+      <span>• Частота: Непрерывная</span>
+      <span>• Обновление: В реальном времени</span>
     </div>
 
   </div>

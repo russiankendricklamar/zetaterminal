@@ -5,7 +5,7 @@
     <!-- Header Section -->
     <div class="page-header">
       <div class="header-left">
-        <h1 class="page-title">Hedging Assistant</h1>
+        <h1 class="page-title">Помощник по хеджированию</h1>
         <p class="page-subtitle">Репликация и хеджирование портфеля инструментами</p>
       </div>
       
@@ -14,10 +14,10 @@
         <div class="control-group">
           <label class="control-label">Позиция:</label>
           <select v-model="selectedPosition" class="position-select" @change="updateHedge">
-            <option value="long-bond">Long Bond Position</option>
-            <option value="long-stock">Long Stock Position</option>
+            <option value="long-bond">Long позиция в облигациях</option>
+            <option value="long-stock">Long позиция в акциях</option>
             <option value="long-swap">Long Interest Rate Swap</option>
-            <option value="long-credit">Long Credit Exposure</option>
+            <option value="long-credit">Long кредитная экспозиция</option>
           </select>
         </div>
 
@@ -25,17 +25,17 @@
         <div class="control-group">
           <label class="control-label">Стратегия:</label>
           <select v-model="selectedStrategy" class="strategy-select" @change="updateHedge">
-            <option value="delta">Delta Hedge</option>
-            <option value="duration">Duration Match</option>
-            <option value="regression">Regression Hedge</option>
-            <option value="optimal">Optimal Replication</option>
+            <option value="delta">Delta хедж</option>
+            <option value="duration">Совпадение Duration</option>
+            <option value="regression">Регрессионный хедж</option>
+            <option value="optimal">Оптимальная репликация</option>
           </select>
         </div>
 
         <!-- Calculate Button -->
         <button @click="calculateHedge" class="btn-primary" :disabled="calculating">
-          <span v-if="!calculating">🎯 Пересчитать хедж</span>
-          <span v-else>⟳ Считаю...</span>
+          <span v-if="!calculating">Пересчитать хедж</span>
+          <span v-else>↺ Считаю...</span>
         </button>
       </div>
     </div>
@@ -60,7 +60,7 @@
             <span class="value mono">{{ positionInfo.duration.toFixed(2) }}</span>
           </div>
           <div class="metric">
-            <span class="label">Exposure</span>
+            <span class="label">Экспозиция</span>
             <span class="value accent mono">{{ formatCompactCurrency(positionInfo.exposure) }}</span>
           </div>
         </div>
@@ -100,11 +100,11 @@
         </div>
         <div class="overview-metrics">
           <div class="metric">
-            <span class="label">Target DV01</span>
+            <span class="label">Целевой DV01</span>
             <span class="value cyan mono">{{ formatCompactCurrency(hedgeRequirements.targetDv01) }}</span>
           </div>
           <div class="metric">
-            <span class="label">Target Vega</span>
+            <span class="label">Целевая Vega</span>
             <span class="value blue mono">{{ formatCompactCurrency(hedgeRequirements.targetVega) }}</span>
           </div>
           <div class="metric">
@@ -151,7 +151,7 @@
               <span class="value">{{ (instrument.correlation * 100).toFixed(0) }}%</span>
             </div>
             <div class="metric-row">
-              <span class="label">Cost</span>
+              <span class="label">Стоимость</span>
               <span class="value">{{ instrument.cost }}bp</span>
             </div>
           </div>
@@ -267,7 +267,7 @@
         </div>
         <div class="risk-reduction">
           <div class="reduction-item">
-            <span class="risk-type">Directional Risk</span>
+            <span class="risk-type">Направленный риск</span>
             <div class="bar-container">
               <div class="bar-before" style="width: 100%; height: 8px; background: rgba(248, 113, 113, 0.4);"></div>
               <div class="bar-after" style="width: 5%; height: 8px; background: rgba(74, 222, 128, 0.6); position: relative; top: -8px;"></div>
@@ -275,7 +275,7 @@
             <span class="reduction-text">95% снижено</span>
           </div>
           <div class="reduction-item">
-            <span class="risk-type">Duration Risk</span>
+            <span class="risk-type">Риск Duration</span>
             <div class="bar-container">
               <div class="bar-before" style="width: 100%; height: 8px; background: rgba(248, 113, 113, 0.4);"></div>
               <div class="bar-after" style="width: 8%; height: 8px; background: rgba(74, 222, 128, 0.6); position: relative; top: -8px;"></div>
@@ -283,7 +283,7 @@
             <span class="reduction-text">92% снижено</span>
           </div>
           <div class="reduction-item">
-            <span class="risk-type">Vol Risk</span>
+            <span class="risk-type">Риск Vol</span>
             <div class="bar-container">
               <div class="bar-before" style="width: 100%; height: 8px; background: rgba(248, 113, 113, 0.4);"></div>
               <div class="bar-after" style="width: 15%; height: 8px; background: rgba(74, 222, 128, 0.6); position: relative; top: -8px;"></div>
@@ -314,7 +314,7 @@
             <span class="cost-value">{{ hedge.cost }}bp</span>
           </div>
           <div class="cost-item total">
-            <span class="instrument-name"><strong>TOTAL COST</strong></span>
+            <span class="instrument-name"><strong>ОБЩАЯ СТОИМОСТЬ</strong></span>
             <div class="cost-bar-container">
               <div 
                 class="cost-bar"
@@ -346,7 +346,7 @@
             <span class="value mono">{{ (regressionCoefficients.rSquared * 100).toFixed(2) }}%</span>
           </div>
           <div class="regression-item">
-            <span class="variable">Std Error</span>
+            <span class="variable">Станд. ошибка</span>
             <span class="value mono">{{ regressionCoefficients.stdError.toFixed(4) }}</span>
           </div>
           <div class="regression-item">
@@ -360,7 +360,7 @@
     <!-- Scenario Analysis -->
     <div class="card full-width">
       <div class="card-header">
-        <h3>Анализ сценариев: Hedge Performance</h3>
+        <h3>Анализ сценариев: Эффективность хеджа</h3>
         <span class="card-subtitle">P&L позиции с хеджем в различных сценариях</span>
       </div>
       <div class="scenario-table-container">
@@ -368,11 +368,11 @@
           <thead>
             <tr>
               <th>Сценарий</th>
-              <th>Market Move</th>
-              <th>Original P&L</th>
-              <th>Hedge P&L</th>
-              <th>Net P&L</th>
-              <th>Hedge Effectiveness</th>
+              <th>Движение рынка</th>
+              <th>Исходный P&L</th>
+              <th>P&L хеджа</th>
+              <th>Чистый P&L</th>
+              <th>Эффективность хеджа</th>
             </tr>
           </thead>
           <tbody>
@@ -409,7 +409,7 @@
             <span class="instrument-badge" :class="hedge.type">{{ hedge.instrument }}</span>
             <span class="quantity">{{ hedge.quantity.toFixed(2) }} контрактов</span>
             <span class="status" :class="hedge.executed ? 'executed' : 'pending'">
-              {{ hedge.executed ? '✓ Исполнено' : '⏳ Ожидание' }}
+              {{ hedge.executed ? '✓ Исполнено' : 'Ожидание' }}
             </span>
           </div>
           <div class="execution-detail">
@@ -424,7 +424,7 @@
 
     <!-- Footer -->
     <div class="page-footer">
-      <span>• Метод: Regression-based optimal hedging</span>
+      <span>• Метод: Регрессионное оптимальное хеджирование</span>
       <span>• Обновление: В реальном времени</span>
       <span>• Запас прочности: 10% (buffer)</span>
     </div>

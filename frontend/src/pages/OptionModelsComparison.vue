@@ -48,12 +48,12 @@
                     </div>
 
                     <div class="input-group">
-                        <label class="lbl">T (Time), years</label>
+                        <label class="lbl">T (Time), лет</label>
                         <input v-model.number="baseParams.T" type="number" step="0.01" min="0.001" class="glass-input" @change="calculateAllModels" />
                     </div>
 
                     <div class="input-group">
-                        <label class="lbl">q (Div Yield), %</label>
+                        <label class="lbl">q (Див. доходность), %</label>
                         <input v-model.number="baseParams.q" type="number" step="0.01" class="glass-input" @change="calculateAllModels" />
                     </div>
                 </div>
@@ -65,27 +65,27 @@
                 
                 <div class="controls-form">
                     <div class="input-group">
-                        <label class="lbl">v0 (Initial Vol²)</label>
+                        <label class="lbl">v0 (Начальная Vol²)</label>
                         <input v-model.number="hestonParams.v0" type="number" step="0.001" min="0.001" class="glass-input" @change="calculateAllModels" />
                     </div>
                     
                     <div class="input-group">
-                        <label class="lbl">κ (Mean Reversion)</label>
+                        <label class="lbl">κ (Возврат к среднему)</label>
                         <input v-model.number="hestonParams.kappa" type="number" step="0.01" min="0.01" class="glass-input" @change="calculateAllModels" />
                     </div>
 
                     <div class="input-group">
-                        <label class="lbl">θ (Long-term Vol²)</label>
+                        <label class="lbl">θ (Долгосрочная Vol²)</label>
                         <input v-model.number="hestonParams.theta" type="number" step="0.001" min="0.001" class="glass-input" @change="calculateAllModels" />
                     </div>
 
                     <div class="input-group">
-                        <label class="lbl">σ_v (Vol of Vol)</label>
+                        <label class="lbl">σ_v (Волатильность волатильности)</label>
                         <input v-model.number="hestonParams.sigma_v" type="number" step="0.01" min="0.01" class="glass-input" @change="calculateAllModels" />
                     </div>
 
                     <div class="input-group">
-                        <label class="lbl">ρ (Correlation)</label>
+                        <label class="lbl">ρ (Корреляция)</label>
                         <input v-model.number="hestonParams.rho" type="number" step="0.01" min="-1" max="1" class="glass-input" @change="calculateAllModels" />
                     </div>
                 </div>
@@ -97,22 +97,22 @@
                 
                 <div class="controls-form">
                     <div class="input-group">
-                        <label class="lbl">α (Stability)</label>
+                        <label class="lbl">α (Устойчивость)</label>
                         <input v-model.number="levyParams.alpha" type="number" step="0.01" min="0.1" max="2" class="glass-input" @change="calculateAllModels" />
                     </div>
                     
                     <div class="input-group">
-                        <label class="lbl">β (Skewness)</label>
+                        <label class="lbl">β (Асимметрия)</label>
                         <input v-model.number="levyParams.beta" type="number" step="0.01" min="-1" max="1" class="glass-input" @change="calculateAllModels" />
                     </div>
 
                     <div class="input-group">
-                        <label class="lbl">σ (Scale)</label>
+                        <label class="lbl">σ (Масштаб)</label>
                         <input v-model.number="levyParams.sigma" type="number" step="0.001" min="0.001" class="glass-input" @change="calculateAllModels" />
                     </div>
 
                     <div class="input-group">
-                        <label class="lbl">μ (Location)</label>
+                        <label class="lbl">μ (Положение)</label>
                         <input v-model.number="levyParams.mu" type="number" step="0.001" class="glass-input" @change="calculateAllModels" />
                     </div>
                 </div>

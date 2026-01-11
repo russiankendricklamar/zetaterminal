@@ -16,7 +16,7 @@
           <select v-model="selectedForwardType" class="forward-type-select" @change="updateValuation">
             <option value="bond">Форвард на облигацию</option>
             <option value="fx">Валютный форвард</option>
-            <option value="commodity">Commodity Forward</option>
+            <option value="commodity">Форвард на товар</option>
             <option value="equity">Форвард на акцию</option>
             <option value="rate">Форвард на ставку</option>
           </select>
@@ -29,7 +29,7 @@
           :disabled="calculating"
         >
           <span v-if="!calculating">Пересчитать</span>
-          <span v-else>⟳ Считаю...</span>
+          <span v-else>↺ Считаю...</span>
         </button>
       </div>
     </div>
@@ -138,7 +138,7 @@
     <!-- Cost-of-Carry Breakdown -->
     <div class="card full-width">
       <div class="card-header">
-        <h3>Cost-of-Carry Модель</h3>
+        <h3>Модель Cost-of-Carry</h3>
       </div>
       <div class="carry-breakdown">
         <div class="carry-item">
@@ -181,7 +181,7 @@
       <!-- Intrinsic Value -->
       <div class="card">
         <div class="card-header">
-          <h3>Intrinsic Value</h3>
+          <h3>Внутренняя стоимость</h3>
           <span class="card-subtitle">Текущая стоимость позиции</span>
         </div>
         <div class="value-breakdown">
@@ -190,11 +190,11 @@
             <span class="value accent">{{ formatCurrency(params.spotPrice) }}</span>
           </div>
           <div class="item">
-            <span class="label">Striked цена</span>
+            <span class="label">Цена исполнения</span>
             <span class="value blue">{{ formatCurrency(params.marketForwardPrice) }}</span>
           </div>
           <div class="item total">
-            <span class="label">Intrinsic Value</span>
+            <span class="label">Внутренняя стоимость</span>
             <span class="value" :class="valuationResults.intrinsicValue >= 0 ? 'positive' : 'negative'">
               {{ valuationResults.intrinsicValue >= 0 ? '+' : '' }}{{ formatCurrency(valuationResults.intrinsicValue) }}
             </span>
@@ -205,20 +205,20 @@
       <!-- Time Value -->
       <div class="card">
         <div class="card-header">
-          <h3>Time Value</h3>
+          <h3>Временная стоимость</h3>
           <span class="card-subtitle">Временная стоимость</span>
         </div>
         <div class="value-breakdown">
           <div class="item">
-            <span class="label">Fair Forward Price</span>
+            <span class="label">Справедливая форвардная цена</span>
             <span class="value accent">{{ formatCurrency(valuationResults.fairForwardPrice) }}</span>
           </div>
           <div class="item">
-            <span class="label">Striked цена</span>
+            <span class="label">Цена исполнения</span>
             <span class="value blue">{{ formatCurrency(params.marketForwardPrice) }}</span>
           </div>
           <div class="item total">
-            <span class="label">Time Value</span>
+            <span class="label">Временная стоимость</span>
             <span class="value" :class="valuationResults.timeValue >= 0 ? 'positive' : 'negative'">
               {{ valuationResults.timeValue >= 0 ? '+' : '' }}{{ formatCurrency(valuationResults.timeValue) }}
             </span>
@@ -229,24 +229,24 @@
       <!-- Total Value -->
       <div class="card">
         <div class="card-header">
-          <h3>Total Forward Value</h3>
+          <h3>Общая стоимость форварда</h3>
           <span class="card-subtitle">Справедливая стоимость позиции</span>
         </div>
         <div class="value-breakdown">
           <div class="item">
-            <span class="label">Intrinsic Value</span>
+            <span class="label">Внутренняя стоимость</span>
             <span class="value" :class="valuationResults.intrinsicValue >= 0 ? 'positive' : 'negative'">
               {{ valuationResults.intrinsicValue >= 0 ? '+' : '' }}{{ formatCurrency(valuationResults.intrinsicValue) }}
             </span>
           </div>
           <div class="item">
-            <span class="label">Time Value</span>
+            <span class="label">Временная стоимость</span>
             <span class="value" :class="valuationResults.timeValue >= 0 ? 'positive' : 'negative'">
               {{ valuationResults.timeValue >= 0 ? '+' : '' }}{{ formatCurrency(valuationResults.timeValue) }}
             </span>
           </div>
           <div class="item total">
-            <span class="label">Total Value</span>
+            <span class="label">Общая стоимость</span>
             <span class="value accent">
               {{ valuationResults.totalValue >= 0 ? '+' : '' }}{{ formatCurrency(valuationResults.totalValue) }}
             </span>
@@ -260,7 +260,7 @@
       <!-- Price vs Spot -->
       <div class="card">
         <div class="chart-header">
-          <h3>Forward Price Profile</h3>
+          <h3>Профиль форвардной цены</h3>
           <span class="chart-subtitle">F(S) зависимость от спот цены</span>
         </div>
         <div class="chart-container">
@@ -271,7 +271,7 @@
       <!-- Value vs Time -->
       <div class="card">
         <div class="chart-header">
-          <h3>Forward Value vs Time</h3>
+          <h3>Стоимость форварда vs Время</h3>
           <span class="chart-subtitle">Эволюция стоимости по времени</span>
         </div>
         <div class="chart-container">
@@ -284,16 +284,16 @@
     <div class="card full-width">
       <div class="card-header">
         <h3>Анализ сценариев</h3>
-        <span class="card-subtitle">Forward value при различных движениях спота</span>
+        <span class="card-subtitle">Стоимость форварда при различных движениях спота</span>
       </div>
       <div class="scenario-table-container">
         <table class="scenario-table">
           <thead>
             <tr>
               <th>Сценарий</th>
-              <th>Spot Price</th>
-              <th>% Change</th>
-              <th>Forward Value</th>
+              <th>Спот цена</th>
+              <th>% Изменение</th>
+              <th>Стоимость форварда</th>
               <th>P&L (Лонг)</th>
               <th>P&L (Шорт)</th>
             </tr>
@@ -338,7 +338,7 @@
             <span class="value blue">{{ formatCompactCurrency(params.spotPrice * params.contractSize * 0.01 * valuationResults.delta) }}</span>
           </div>
           <div class="sens-item">
-            <span class="label">Break-even цена</span>
+            <span class="label">Цена безубыточности</span>
             <span class="value cyan">{{ formatCurrency(params.marketForwardPrice) }}</span>
           </div>
         </div>
@@ -369,8 +369,8 @@
 
     <!-- Footer -->
     <div class="page-footer">
-      <span>• Модель: Cost-of-Carry (no-arbitrage)</span>
-      <span>• Метод: Continuous compounding</span>
+      <span>• Модель: Cost-of-Carry (без арбитража)</span>
+      <span>• Метод: Непрерывное начисление</span>
       <span>• Обновление: В реальном времени</span>
     </div>
 
@@ -441,7 +441,16 @@ const scenarioAnalysis = computed(() => {
   const r = params.value.riskFreeRate / 100
   const T = params.value.timeToMaturity
 
-  const scenarios = []
+  const scenarios: Array<{
+    id: number
+    name: string
+    spotPrice: number
+    change: number
+    forwardValue: number
+    pnlLong: number
+    pnlShort: number
+    isBase: boolean
+  }> = []
   const spotPrices = [
     baseSpot * 0.8,
     baseSpot * 0.9,

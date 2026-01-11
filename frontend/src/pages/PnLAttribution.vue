@@ -5,7 +5,7 @@
     <!-- Header Section -->
     <div class="page-header">
       <div class="header-left">
-        <h1 class="page-title">P&L Attribution</h1>
+        <h1 class="page-title">Разложение P&L</h1>
         <p class="page-subtitle">Разложение прибыли по источникам и факторам риска</p>
       </div>
       
@@ -26,15 +26,15 @@
         <div class="control-group">
           <label class="control-label">Метод:</label>
           <select v-model="selectedMethod" class="method-select" @change="updateAttribution">
-            <option value="greeks">Greeks Decomposition</option>
-            <option value="riskfactors">Risk Factors</option>
-            <option value="positions">By Position</option>
+            <option value="greeks">Разложение по грекам</option>
+            <option value="riskfactors">Факторы риска</option>
+            <option value="positions">По позициям</option>
           </select>
         </div>
 
         <!-- Export Button -->
         <button @click="exportData" class="btn-secondary">
-          📥 Экспортировать
+          Экспортировать
         </button>
       </div>
     </div>
@@ -42,7 +42,7 @@
     <!-- Total P&L Summary -->
     <div class="pnl-summary">
       <div class="summary-card total">
-        <div class="summary-label">Total P&L</div>
+        <div class="summary-label">Общий P&L</div>
         <div class="summary-value" :class="totalPnL >= 0 ? 'positive' : 'negative'">
           {{ formatCurrency(totalPnL) }}
         </div>
@@ -53,22 +53,22 @@
       </div>
 
       <div class="summary-card">
-        <div class="summary-label">Market P&L</div>
+        <div class="summary-label">Рыночный P&L</div>
         <div class="summary-value accent">
           {{ formatCurrency(pnlComponents.market) }}
         </div>
         <div class="summary-change">
-          {{ (pnlComponents.market / totalPnL * 100).toFixed(1) }}% of total
+          {{ (pnlComponents.market / totalPnL * 100).toFixed(1) }}% от общего
         </div>
       </div>
 
       <div class="summary-card">
-        <div class="summary-label">Theta (Time Decay)</div>
+        <div class="summary-label">Theta (убыль времени)</div>
         <div class="summary-value" :class="pnlComponents.theta >= 0 ? 'positive' : 'negative'">
           {{ formatCurrency(pnlComponents.theta) }}
         </div>
         <div class="summary-change">
-          {{ (pnlComponents.theta / totalPnL * 100).toFixed(1) }}% of total
+          {{ (pnlComponents.theta / totalPnL * 100).toFixed(1) }}% от общего
         </div>
       </div>
 
@@ -78,7 +78,7 @@
           {{ formatCurrency(pnlComponents.gamma) }}
         </div>
         <div class="summary-change">
-          {{ (pnlComponents.gamma / totalPnL * 100).toFixed(1) }}% of total
+          {{ (pnlComponents.gamma / totalPnL * 100).toFixed(1) }}% от общего
         </div>
       </div>
 
@@ -88,7 +88,7 @@
           {{ formatCurrency(pnlComponents.vega) }}
         </div>
         <div class="summary-change">
-          {{ (pnlComponents.vega / totalPnL * 100).toFixed(1) }}% of total
+          {{ (pnlComponents.vega / totalPnL * 100).toFixed(1) }}% от общего
         </div>
       </div>
     </div>
@@ -98,7 +98,7 @@
       <!-- Pie Chart: Composition -->
       <div class="card">
         <div class="chart-header">
-          <h3>P&L Composition</h3>
+          <h3>Состав P&L</h3>
           <span class="chart-subtitle">Доля каждого компонента</span>
         </div>
         <div class="chart-container">
@@ -109,7 +109,7 @@
       <!-- Bar Chart: Components Over Time -->
       <div class="card">
         <div class="chart-header">
-          <h3>Daily P&L Attribution</h3>
+          <h3>Разложение P&L по дням</h3>
           <span class="chart-subtitle">Разложение по дням</span>
         </div>
         <div class="chart-container">
@@ -122,15 +122,15 @@
     <div class="card full-width">
       <div class="card-header">
         <h3>Детальное разложение P&L</h3>
-        <span class="card-subtitle">Greeks & Risk Factor Attribution</span>
+        <span class="card-subtitle">Разложение по грекам и факторам риска</span>
       </div>
       <div class="table-container">
         <table class="attribution-table">
           <thead>
             <tr>
               <th class="col-component">Компонент</th>
-              <th class="col-amount">Amount (М USD)</th>
-              <th class="col-percent">% of Total</th>
+              <th class="col-amount">Сумма (М USD)</th>
+              <th class="col-percent">% от общего</th>
               <th class="col-description">Описание</th>
               <th class="col-bucket">Категория</th>
             </tr>
@@ -170,19 +170,19 @@
         </div>
         <div class="greek-breakdown">
           <div class="breakdown-item">
-            <span class="label">Rate moves</span>
+            <span class="label">Движения ставок</span>
             <span class="value" :class="greeksPnL.delta.rates >= 0 ? 'positive' : 'negative'">
               {{ greeksPnL.delta.rates >= 0 ? '+' : '' }}{{ formatCompactCurrency(greeksPnL.delta.rates) }}
             </span>
           </div>
           <div class="breakdown-item">
-            <span class="label">Curve shift</span>
+            <span class="label">Сдвиг кривой</span>
             <span class="value" :class="greeksPnL.delta.curve >= 0 ? 'positive' : 'negative'">
               {{ greeksPnL.delta.curve >= 0 ? '+' : '' }}{{ formatCompactCurrency(greeksPnL.delta.curve) }}
             </span>
           </div>
           <div class="breakdown-item">
-            <span class="label">Curve twist</span>
+            <span class="label">Скручивание кривой</span>
             <span class="value" :class="greeksPnL.delta.twist >= 0 ? 'positive' : 'negative'">
               {{ greeksPnL.delta.twist >= 0 ? '+' : '' }}{{ formatCompactCurrency(greeksPnL.delta.twist) }}
             </span>
@@ -201,23 +201,23 @@
       <div class="card">
         <div class="card-header">
           <h3>Γ (Gamma) P&L</h3>
-          <span class="card-subtitle">Convexity gains/losses</span>
+          <span class="card-subtitle">Прибыли/убытки от конвергентности</span>
         </div>
         <div class="greek-breakdown">
           <div class="breakdown-item">
-            <span class="label">Price gamma</span>
+            <span class="label">Gamma цены</span>
             <span class="value" :class="greeksPnL.gamma.price >= 0 ? 'positive' : 'negative'">
               {{ greeksPnL.gamma.price >= 0 ? '+' : '' }}{{ formatCompactCurrency(greeksPnL.gamma.price) }}
             </span>
           </div>
           <div class="breakdown-item">
-            <span class="label">Vol gamma</span>
+            <span class="label">Gamma волатильности</span>
             <span class="value" :class="greeksPnL.gamma.vol >= 0 ? 'positive' : 'negative'">
               {{ greeksPnL.gamma.vol >= 0 ? '+' : '' }}{{ formatCompactCurrency(greeksPnL.gamma.vol) }}
             </span>
           </div>
           <div class="breakdown-item">
-            <span class="label">Cross gamma</span>
+            <span class="label">Перекрёстная gamma</span>
             <span class="value" :class="greeksPnL.gamma.cross >= 0 ? 'positive' : 'negative'">
               {{ greeksPnL.gamma.cross >= 0 ? '+' : '' }}{{ formatCompactCurrency(greeksPnL.gamma.cross) }}
             </span>
@@ -236,17 +236,17 @@
       <div class="card">
         <div class="card-header">
           <h3>V (Vega) & Other</h3>
-          <span class="card-subtitle">Vol and residual</span>
+          <span class="card-subtitle">Волатильность и остаточные</span>
         </div>
         <div class="greek-breakdown">
           <div class="breakdown-item">
-            <span class="label">Vega (vol moves)</span>
+            <span class="label">Vega (движения vol)</span>
             <span class="value" :class="greeksPnL.vega >= 0 ? 'positive' : 'negative'">
               {{ greeksPnL.vega >= 0 ? '+' : '' }}{{ formatCompactCurrency(greeksPnL.vega) }}
             </span>
           </div>
           <div class="breakdown-item">
-            <span class="label">Rho (rate/credit)</span>
+            <span class="label">Rho (ставка/кредит)</span>
             <span class="value" :class="greeksPnL.rho >= 0 ? 'positive' : 'negative'">
               {{ greeksPnL.rho >= 0 ? '+' : '' }}{{ formatCompactCurrency(greeksPnL.rho) }}
             </span>
@@ -271,7 +271,7 @@
     <!-- P&L Waterfall Chart -->
     <div class="card full-width">
       <div class="chart-header">
-        <h3>P&L Waterfall</h3>
+          <h3>Водопад P&L</h3>
         <span class="chart-subtitle">Траектория накопления P&L с начала периода</span>
       </div>
       <div class="chart-container tall">
@@ -282,19 +282,19 @@
     <!-- Risk Factor Attribution -->
     <div class="card full-width">
       <div class="card-header">
-        <h3>Risk Factor Attribution</h3>
+        <h3>Разложение по факторам риска</h3>
         <span class="card-subtitle">P&L по экономическим факторам</span>
       </div>
       <div class="table-container">
         <table class="risk-factor-table">
           <thead>
             <tr>
-              <th>Risk Factor</th>
-              <th>Market Move</th>
-              <th>Position Exposure</th>
-              <th>Implied P&L</th>
-              <th>Actual P&L</th>
-              <th>Explained %</th>
+              <th>Фактор риска</th>
+              <th>Движение рынка</th>
+              <th>Экспозиция позиции</th>
+              <th>Подразумеваемый P&L</th>
+              <th>Фактический P&L</th>
+              <th>Объяснено %</th>
             </tr>
           </thead>
           <tbody>
@@ -328,27 +328,27 @@
       <!-- Unexplained Analysis -->
       <div class="card">
         <div class="card-header">
-          <h3>Unexplained P&L</h3>
+          <h3>Необъяснённый P&L</h3>
           <span class="card-subtitle">P&L не объяснённый факторами</span>
         </div>
         <div class="unexplained-metrics">
           <div class="metric-item">
-            <span class="label">Total Unexplained</span>
+            <span class="label">Всего необъяснённого</span>
             <span class="value" :class="unexplainedPnL >= 0 ? 'positive' : 'negative'">
               {{ unexplainedPnL >= 0 ? '+' : '' }}{{ formatCompactCurrency(unexplainedPnL) }}
             </span>
           </div>
           <div class="metric-item">
-            <span class="label">% of Total P&L</span>
+            <span class="label">% от общего P&L</span>
             <span class="value mono">{{ ((Math.abs(unexplainedPnL) / Math.abs(totalPnL)) * 100).toFixed(1) }}%</span>
           </div>
           <div class="metric-item">
-            <span class="label">Likely causes</span>
+            <span class="label">Вероятные причины</span>
             <ul class="causes-list">
-              <li>• Bid-ask spread slippage</li>
-              <li>• Execution timing</li>
-              <li>• Correlation changes</li>
-              <li>• Dividend/coupon accrual</li>
+              <li>• Проскальзывание спреда bid-ask</li>
+              <li>• Время исполнения</li>
+              <li>• Изменения корреляции</li>
+              <li>• Начисление дивидендов/купонов</li>
             </ul>
           </div>
         </div>
@@ -357,7 +357,7 @@
       <!-- Top Positions -->
       <div class="card">
         <div class="card-header">
-          <h3>Top P&L Contributors</h3>
+          <h3>Топ вкладчиков в P&L</h3>
           <span class="card-subtitle">5 позиций с максимальным вкладом</span>
         </div>
         <div class="top-positions">

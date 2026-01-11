@@ -17,8 +17,8 @@
             <option value="bonds">Кривая по форварду на облигацию</option>
             <option value="fx">Валютная форвардная кривая</option>
             <option value="rates">Кривая форварда на процентную ставку</option>
-            <option value="commodities">Commodity Forward Curve</option>
-            <option value="equity">Кривая форварда на акицю</option>
+            <option value="commodities">Форвардная кривая на товар</option>
+            <option value="equity">Кривая форварда на акцию</option>
           </select>
         </div>
 
@@ -27,8 +27,8 @@
           <label class="control-label">Тип кривой:</label>
           <select v-model="selectedCurveType" class="curve-type-select" @change="updateCurve">
             <option value="spot">Спот-кривая</option>
-            <option value="forward">Фовардная кривая</option>
-            <option value="implicit">Implicit Forward Curve</option>
+            <option value="forward">Форвардная кривая</option>
+            <option value="implicit">Неявная форвардная кривая</option>
           </select>
         </div>
 
@@ -107,7 +107,7 @@
       <!-- Curve Slope -->
       <div class="metric-card">
         <div class="metric-header">
-          <h3>Curve Slope</h3>
+          <h3>Наклон кривой</h3>
           <span class="metric-unit">Наклон кривой</span>
         </div>
         <div class="metric-value" :class="curveMetrics.slope >= 0 ? 'positive' : 'negative'">
@@ -137,14 +137,14 @@
       <!-- Curve Convexity -->
       <div class="metric-card">
         <div class="metric-header">
-          <h3>Curve Convexity</h3>
+          <h3>Выпуклость кривой</h3>
           <span class="metric-unit">Выпуклость</span>
         </div>
         <div class="metric-value blue">
           {{ curveMetrics.convexity.toFixed(4) }}
         </div>
         <div class="metric-detail">
-          <span class="detail-label">Shape:</span>
+          <span class="detail-label">Форма:</span>
           <span class="detail-value">{{ getCurveShape() }}</span>
         </div>
       </div>
@@ -164,7 +164,7 @@
               <th>Спот ставка</th>
               <th>Yield (ZC)</th>
               <th>Forward Rate (t, t+1)</th>
-              <th>Implied Rate</th>
+              <th>Подразумеваемая ставка</th>
               <th>Спред (bp)</th>
             </tr>
           </thead>
@@ -228,7 +228,7 @@
             <input v-model.number="curveParams.volatility" type="number" class="param-input" step="0.1" @change="updateCurve" />
           </div>
           <div class="param-item">
-            <span class="label">Mean reversion speed</span>
+            <span class="label">Скорость возврата к среднему</span>
             <input v-model.number="curveParams.meanReversionSpeed" type="number" class="param-input" step="0.01" @change="updateCurve" />
           </div>
         </div>
@@ -240,8 +240,8 @@
       <!-- Level, Slope, Curve -->
       <div class="card">
         <div class="chart-header">
-          <h3>PCA Decomposition</h3>
-          <span class="chart-subtitle">Principal Components Analysis</span>
+          <h3>PCA разложение</h3>
+          <span class="chart-subtitle">Анализ главных компонент</span>
         </div>
         <div class="pca-analysis">
           <div class="pca-component">
@@ -271,20 +271,20 @@
       <!-- Butterfly Analysis -->
       <div class="card">
         <div class="chart-header">
-          <h3>Butterfly Analysis</h3>
+          <h3>Анализ Butterfly</h3>
           <span class="chart-subtitle">2Y-5Y-10Y структура</span>
         </div>
         <div class="butterfly-metrics">
           <div class="butterfly-item">
-            <span class="label">Жом (2Y-5Y)</span>
+            <span class="label">Fly (2Y-5Y)</span>
             <span class="value accent">{{ butterflyMetrics.fly25.toFixed(1) }}bp</span>
           </div>
           <div class="butterfly-item">
-            <span class="label">Жом (5Y-10Y)</span>
+            <span class="label">Fly (5Y-10Y)</span>
             <span class="value accent">{{ butterflyMetrics.fly510.toFixed(1) }}bp</span>
           </div>
           <div class="butterfly-item">
-            <span class="label">Стилок (2Y-10Y)</span>
+            <span class="label">Steep (2Y-10Y)</span>
             <span class="value blue">{{ butterflyMetrics.butterfly.toFixed(1) }}bp</span>
           </div>
           <div class="butterfly-item">
@@ -320,7 +320,7 @@
           <span class="stat-value">{{ fittingQuality.mae.toFixed(4) }}</span>
         </div>
         <div class="stat-item">
-          <span class="stat-label">Max Error</span>
+          <span class="stat-label">Макс. ошибка</span>
           <span class="stat-value">{{ fittingQuality.maxError.toFixed(4) }}</span>
         </div>
       </div>
@@ -329,8 +329,8 @@
     <!-- Scenario Curves -->
     <div class="card full-width">
       <div class="chart-header">
-        <h3>Curve Scenarios</h3>
-        <span class="chart-subtitle">Forward curves при различных сценариях</span>
+        <h3>Сценарии кривой</h3>
+        <span class="chart-subtitle">Кривые форварда при различных сценариях</span>
       </div>
       <div class="chart-container tall">
         <canvas ref="scenarioCurvesRef"></canvas>
@@ -373,7 +373,7 @@
     <!-- Footer -->
     <div class="page-footer">
       <span>• Интерполяция: {{ interpolationMethods.find(m => m.id === selectedInterpolation)?.name }}</span>
-      <span>• Данные: Real-time market</span>
+      <span>• Данные: Рыночные данные в реальном времени</span>
       <span>• Обновление: Каждую минуту</span>
     </div>
 
@@ -532,10 +532,10 @@ let scenarioCurvesChart: Chart | null = null
 // Methods
 const getCurveShape = () => {
   const slope = curveMetrics.value.slope
-  if (slope > 0.5) return 'Steep'
-  if (slope > 0.1) return 'Moderately Steep'
-  if (slope > -0.1) return 'Flat'
-  return 'Inverted'
+  if (slope > 0.5) return 'Крутая'
+  if (slope > 0.1) return 'Умеренно крутая'
+  if (slope > -0.1) return 'Плоская'
+  return 'Инвертированная'
 }
 
 const addDataPoint = () => {

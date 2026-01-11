@@ -5,7 +5,7 @@
     <!-- Header Section -->
     <div class="page-header">
       <div class="header-left">
-        <h1 class="page-title">Margin & Financing</h1>
+        <h1 class="page-title">Маржа и финансирование</h1>
         <p class="page-subtitle">Управление маржой, финансированием и стоимостью позиций</p>
       </div>
       
@@ -14,11 +14,11 @@
         <div class="control-group">
           <label class="control-label">Позиция:</label>
           <select v-model="selectedPosition" class="position-select" @change="updateMargin">
-            <option value="bond-long">Long Bond Future</option>
-            <option value="bond-short">Short Bond Future</option>
-            <option value="equity-long">Long Equity Position</option>
-            <option value="fx-spot">FX Spot</option>
-            <option value="commodity">Commodity Position</option>
+            <option value="bond-long">Long фьючерс на облигацию</option>
+            <option value="bond-short">Short фьючерс на облигацию</option>
+            <option value="equity-long">Long позиция в акциях</option>
+            <option value="fx-spot">Валютный спот</option>
+            <option value="commodity">Позиция в товарах</option>
           </select>
         </div>
 
@@ -26,17 +26,17 @@
         <div class="control-group">
           <label class="control-label">Горизонт:</label>
           <select v-model="selectedHorizon" class="horizon-select" @change="updateMargin">
-            <option value="1d">1 Day</option>
-            <option value="1w">1 Week</option>
-            <option value="1m">1 Month</option>
-            <option value="3m">3 Months</option>
+            <option value="1d">1 день</option>
+            <option value="1w">1 неделя</option>
+            <option value="1m">1 месяц</option>
+            <option value="3m">3 месяца</option>
           </select>
         </div>
 
         <!-- Update Button -->
         <button @click="updateMargin" class="btn-primary" :disabled="calculating">
-          <span v-if="!calculating">🔄 Пересчитать</span>
-          <span v-else>⟳ Считаю...</span>
+          <span v-if="!calculating">Пересчитать</span>
+          <span v-else>↺ Считаю...</span>
         </button>
       </div>
     </div>
@@ -46,7 +46,7 @@
       <!-- Initial Margin -->
       <div class="margin-card">
         <div class="margin-header">
-          <h3>Initial Margin</h3>
+          <h3>Начальная маржа</h3>
           <span class="margin-unit">Начальная маржа</span>
         </div>
         <div class="margin-value accent">
@@ -54,11 +54,11 @@
         </div>
         <div class="margin-details">
           <div class="detail">
-            <span class="label">% Position</span>
+            <span class="label">% позиции</span>
             <span class="value">{{ marginData.initialMarginPct.toFixed(2) }}%</span>
           </div>
           <div class="detail">
-            <span class="label">Per Contract</span>
+            <span class="label">За контракт</span>
             <span class="value">{{ formatCurrency(marginData.initialMarginPerContract) }}</span>
           </div>
         </div>
@@ -67,7 +67,7 @@
       <!-- Maintenance Margin -->
       <div class="margin-card">
         <div class="margin-header">
-          <h3>Maintenance Margin</h3>
+          <h3>Поддерживающая маржа</h3>
           <span class="margin-unit">Поддерживающая маржа</span>
         </div>
         <div class="margin-value blue">
@@ -75,11 +75,11 @@
         </div>
         <div class="margin-details">
           <div class="detail">
-            <span class="label">% Position</span>
+            <span class="label">% позиции</span>
             <span class="value">{{ marginData.maintenanceMarginPct.toFixed(2) }}%</span>
           </div>
           <div class="detail">
-            <span class="label">Cushion</span>
+            <span class="label">Запас</span>
             <span class="value" :class="marginData.marginCushion >= 0 ? 'positive' : 'negative'">
               {{ formatCompactCurrency(marginData.marginCushion) }}
             </span>
@@ -90,7 +90,7 @@
       <!-- Financing Cost -->
       <div class="margin-card">
         <div class="margin-header">
-          <h3>Financing Cost</h3>
+          <h3>Стоимость финансирования</h3>
           <span class="margin-unit">Стоимость финансирования</span>
         </div>
         <div class="margin-value" :class="marginData.financingCost >= 0 ? 'positive' : 'negative'">
@@ -98,11 +98,11 @@
         </div>
         <div class="margin-details">
           <div class="detail">
-            <span class="label">Annual Rate</span>
+            <span class="label">Годовая ставка</span>
             <span class="value">{{ marginData.financingRate.toFixed(2) }}%</span>
           </div>
           <div class="detail">
-            <span class="label">Period</span>
+            <span class="label">Период</span>
             <span class="value">{{ selectedHorizon }}</span>
           </div>
         </div>
@@ -112,7 +112,7 @@
     <!-- Financing Sources -->
     <div class="card full-width">
       <div class="card-header">
-        <h3>Financing Sources & Costs</h3>
+        <h3>Источники и стоимость финансирования</h3>
         <span class="card-subtitle">Сравнение различных источников финансирования</span>
       </div>
       <div class="financing-sources-container">
@@ -161,7 +161,7 @@
       <!-- Margin Requirement Breakdown -->
       <div class="card">
         <div class="card-header">
-          <h3>Margin Requirement Breakdown</h3>
+          <h3>Разложение требования маржи</h3>
           <span class="card-subtitle">Разложение требования маржи</span>
         </div>
         <div class="margin-breakdown">
@@ -170,21 +170,21 @@
             <span class="value accent">{{ formatCompactCurrency(marginData.positionSize) }}</span>
           </div>
           <div class="breakdown-item">
-            <span class="label">Regulatory Requirement</span>
+            <span class="label">Регуляторное требование</span>
             <span class="value blue">{{ marginData.regulatoryMarginPct.toFixed(2) }}%</span>
           </div>
           <div class="breakdown-item">
-            <span class="label">Broker Requirement</span>
+            <span class="label">Требование брокера</span>
             <span class="value blue">{{ marginData.brokerMarginPct.toFixed(2) }}%</span>
           </div>
           <div class="breakdown-item">
-            <span class="label">Risk Adjustment</span>
+            <span class="label">Корректировка риска</span>
             <span class="value" :class="marginData.riskAdjustment >= 0 ? 'positive' : 'negative'">
               {{ marginData.riskAdjustment >= 0 ? '+' : '' }}{{ marginData.riskAdjustment.toFixed(2) }}%
             </span>
           </div>
           <div class="breakdown-item total">
-            <span class="label">Total Required Margin</span>
+            <span class="label">Общая требуемая маржа</span>
             <span class="value accent">{{ marginData.totalRequiredMargin.toFixed(2) }}%</span>
           </div>
         </div>
@@ -193,7 +193,7 @@
       <!-- Financing Cost Breakdown -->
       <div class="card">
         <div class="chart-header">
-          <h3>Financing Cost Breakdown</h3>
+          <h3>Разложение стоимости финансирования</h3>
           <span class="chart-subtitle">Компоненты стоимости финансирования</span>
         </div>
         <div class="chart-container">
@@ -205,7 +205,7 @@
     <!-- Margin Utilization -->
     <div class="card full-width">
       <div class="card-header">
-        <h3>Margin Utilization</h3>
+        <h3>Использование маржи</h3>
         <span class="card-subtitle">Использование доступной маржи</span>
       </div>
       <div class="margin-utilization">
@@ -215,14 +215,14 @@
         </div>
         <div class="utilization-bar-container">
           <div class="utilization-section">
-            <div class="section-name">Used Margin</div>
+            <div class="section-name">Используемая маржа</div>
             <div class="section-bar">
               <div class="bar-fill used" :style="{ width: marginData.usedMarginPct + '%' }"></div>
             </div>
             <span class="section-value">{{ marginData.usedMarginPct.toFixed(1) }}%</span>
           </div>
           <div class="utilization-section">
-            <div class="section-name">Available Margin</div>
+            <div class="section-name">Доступная маржа</div>
             <div class="section-bar">
               <div class="bar-fill available" :style="{ width: marginData.availableMarginPct + '%' }"></div>
             </div>
@@ -231,21 +231,21 @@
         </div>
         <div class="utilization-metrics">
           <div class="metric">
-            <span class="label">Used Margin</span>
+            <span class="label">Используемая маржа</span>
             <span class="value used">{{ formatCompactCurrency(marginData.usedMargin) }}</span>
           </div>
           <div class="metric">
-            <span class="label">Available Margin</span>
+            <span class="label">Доступная маржа</span>
             <span class="value available">{{ formatCompactCurrency(marginData.availableMargin) }}</span>
           </div>
           <div class="metric">
-            <span class="label">Excess Margin</span>
+            <span class="label">Избыточная маржа</span>
             <span class="value" :class="marginData.excessMargin >= 0 ? 'positive' : 'negative'">
               {{ marginData.excessMargin >= 0 ? '+' : '' }}{{ formatCompactCurrency(marginData.excessMargin) }}
             </span>
           </div>
           <div class="metric">
-            <span class="label">Margin Ratio</span>
+            <span class="label">Коэффициент маржи</span>
             <span class="value accent">{{ marginData.marginRatio.toFixed(2) }}</span>
           </div>
         </div>
@@ -257,7 +257,7 @@
       <!-- Repo Market -->
       <div class="card">
         <div class="card-header">
-          <h3>Repo Financing</h3>
+          <h3>Репо финансирование</h3>
           <span class="card-subtitle">Репо ставки по срокам</span>
         </div>
         <div class="chart-container">
@@ -268,7 +268,7 @@
       <!-- Direct Loan Financing -->
       <div class="card">
         <div class="card-header">
-          <h3>Direct Loan Financing</h3>
+          <h3>Прямое кредитное финансирование</h3>
           <span class="card-subtitle">Кредитные ставки по срокам</span>
         </div>
         <div class="chart-container">
@@ -280,19 +280,19 @@
     <!-- Collateral & Haircut -->
     <div class="card full-width">
       <div class="card-header">
-        <h3>Collateral & Haircut Analysis</h3>
+        <h3>Анализ залога и скидок</h3>
         <span class="card-subtitle">Стоимость залога и применяемые скидки</span>
       </div>
       <div class="collateral-table-container">
         <table class="collateral-table">
           <thead>
             <tr>
-              <th>Collateral Type</th>
-              <th>Market Value</th>
-              <th>Haircut (%)</th>
-              <th>Haircut Amount</th>
-              <th>Collateral Value</th>
-              <th>Rating</th>
+              <th>Тип залога</th>
+              <th>Рыночная стоимость</th>
+              <th>Скидка (%)</th>
+              <th>Сумма скидки</th>
+              <th>Стоимость залога</th>
+              <th>Рейтинг</th>
               <th>Duration</th>
             </tr>
           </thead>
@@ -311,7 +311,7 @@
           </tbody>
           <tfoot>
             <tr class="total-row">
-              <td colspan="2"><strong>TOTAL</strong></td>
+              <td colspan="2"><strong>ИТОГО</strong></td>
               <td class="avg mono"><strong>{{ collateralData.reduce((sum, c) => sum + c.haircut, 0) / collateralData.length | 0 }}%</strong></td>
               <td class="value mono"><strong>{{ formatCompactCurrency(collateralData.reduce((sum, c) => sum + c.haircutAmount, 0)) }}</strong></td>
               <td class="accent mono"><strong>{{ formatCompactCurrency(collateralData.reduce((sum, c) => sum + c.collateralValue, 0)) }}</strong></td>
@@ -325,7 +325,7 @@
     <!-- Financing Scenarios -->
     <div class="card full-width">
       <div class="chart-header">
-        <h3>Financing Cost Scenarios</h3>
+        <h3>Сценарии стоимости финансирования</h3>
         <span class="chart-subtitle">Стоимость финансирования при различных ставках</span>
       </div>
       <div class="chart-container tall">
@@ -343,25 +343,25 @@
         </div>
         <div class="margin-call-analysis">
           <div class="risk-item">
-            <span class="label">Current Margin Ratio</span>
+            <span class="label">Текущий коэффициент маржи</span>
             <span class="value accent">{{ marginData.marginRatio.toFixed(2) }}</span>
           </div>
           <div class="risk-item">
-            <span class="label">Minimum Required Ratio</span>
+            <span class="label">Минимально требуемый коэффициент</span>
             <span class="value blue">{{ marginData.minMarginRatio.toFixed(2) }}</span>
           </div>
           <div class="risk-item">
-            <span class="label">Distance to Margin Call</span>
+            <span class="label">Расстояние до margin call</span>
             <span class="value" :class="marginData.distanceToCall >= 0 ? 'positive' : 'negative'">
               {{ marginData.distanceToCall >= 0 ? '+' : '' }}{{ marginData.distanceToCall.toFixed(2) }}%
             </span>
           </div>
           <div class="risk-item">
-            <span class="label">Loss Before Margin Call</span>
+            <span class="label">Убыток до margin call</span>
             <span class="value negative">{{ formatCompactCurrency(marginData.lossPct) }}</span>
           </div>
           <div class="risk-item total">
-            <span class="label">Probability (1W)</span>
+            <span class="label">Вероятность (1Н)</span>
             <span class="value" :class="marginData.marginCallProb >= 0.3 ? 'negative' : 'positive'">
               {{ (marginData.marginCallProb * 100).toFixed(1) }}%
             </span>
@@ -372,7 +372,7 @@
       <!-- Stress Testing -->
       <div class="card">
         <div class="chart-header">
-          <h3>Margin Under Stress</h3>
+          <h3>Маржа при стрессе</h3>
           <span class="chart-subtitle">Маржа при экстремальных сценариях</span>
         </div>
         <div class="chart-container">
@@ -391,14 +391,14 @@
         <table class="optimization-data-table">
           <thead>
             <tr>
-              <th>Strategy</th>
-              <th>Repo %</th>
-              <th>Loan %</th>
-              <th>Avg Rate</th>
-              <th>Monthly Cost</th>
-              <th>Annual Cost</th>
-              <th>Risk Level</th>
-              <th>Recommend</th>
+              <th>Стратегия</th>
+              <th>Репо %</th>
+              <th>Кредит %</th>
+              <th>Средняя ставка</th>
+              <th>Месячная стоимость</th>
+              <th>Годовая стоимость</th>
+              <th>Уровень риска</th>
+              <th>Рекомендация</th>
             </tr>
           </thead>
           <tbody>
@@ -413,7 +413,7 @@
                 <span class="badge" :class="strategy.riskLevel.toLowerCase()">{{ strategy.riskLevel }}</span>
               </td>
               <td class="recommend">
-                <span v-if="strategy.recommended" class="badge recommended">✓ Best</span>
+                <span v-if="strategy.recommended" class="badge recommended">✓ Лучшая</span>
                 <span v-else class="badge">—</span>
               </td>
             </tr>
@@ -425,7 +425,7 @@
     <!-- Real-time Financing Dashboard -->
     <div class="card full-width">
       <div class="card-header">
-        <h3>Real-time Financing Dashboard</h3>
+        <h3>Панель финансирования в реальном времени</h3>
         <span class="card-subtitle">Текущие параметры финансирования</span>
       </div>
       <div class="rt-dashboard">
@@ -438,13 +438,13 @@
           <span class="value accent">{{ marginData.financingRate.toFixed(3) }}%</span>
         </div>
         <div class="rt-item">
-          <span class="label">Daily Financing Cost</span>
+          <span class="label">Ежедневная стоимость финансирования</span>
           <span class="value" :class="marginData.dailyFinancingCost >= 0 ? 'positive' : 'negative'">
             {{ marginData.dailyFinancingCost >= 0 ? '+' : '' }}{{ formatCompactCurrency(marginData.dailyFinancingCost) }}
           </span>
         </div>
         <div class="rt-item">
-          <span class="label">Margin Utilization</span>
+          <span class="label">Использование маржи</span>
           <span class="value">{{ marginData.usedMarginPct.toFixed(1) }}%</span>
         </div>
         <div class="rt-item">
@@ -461,8 +461,8 @@
     <!-- Footer -->
     <div class="page-footer">
       <span>• Модель: Regulatory + Broker Requirements</span>
-      <span>• Частотность: Real-time</span>
-      <span>• Обновление: Continuous</span>
+      <span>• Частота: В реальном времени</span>
+      <span>• Обновление: Непрерывно</span>
     </div>
 
   </div>

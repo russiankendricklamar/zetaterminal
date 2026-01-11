@@ -5,7 +5,7 @@
     <!-- Header Section -->
     <div class="page-header">
       <div class="header-left">
-        <h1 class="page-title">Swap Greeks Dashboard</h1>
+        <h1 class="page-title">Панель греков свопов</h1>
         <p class="page-subtitle">Анализ чувствительности swap-портфеля к рыночным факторам</p>
       </div>
       
@@ -151,7 +151,7 @@
       <!-- Long Positions -->
       <div class="card">
         <div class="card-header">
-          <h3>Long Positions (Payer)</h3>
+          <h3>Long позиции (Payer)</h3>
         </div>
         <div class="swap-positions">
           <div v-for="position in longPositions" :key="position.id" class="swap-item">
@@ -185,7 +185,7 @@
       <!-- Short Positions -->
       <div class="card">
         <div class="card-header">
-          <h3>Short Positions (Receiver)</h3>
+          <h3>Short позиции (Receiver)</h3>
         </div>
         <div class="swap-positions">
           <div v-for="position in shortPositions" :key="position.id" class="swap-item">
@@ -222,7 +222,7 @@
       <!-- Rate Curve -->
       <div class="card">
         <div class="chart-header">
-          <h3>Swap Curve</h3>
+          <h3>Кривая свопов</h3>
         </div>
         <div class="chart-container">
           <canvas ref="curveChartRef"></canvas>
@@ -232,7 +232,7 @@
       <!-- Spread Curve -->
       <div class="card">
         <div class="chart-header">
-          <h3>Spread Curve (Par - Spot)</h3>
+          <h3>Кривая спреда (Par - Spot)</h3>
         </div>
         <div class="chart-container">
           <canvas ref="spreadChartRef"></canvas>
@@ -245,7 +245,7 @@
       <!-- Rate Sensitivity -->
       <div class="card">
         <div class="chart-header">
-          <h3>DV01 Sensitivity (Rate Shock)</h3>
+          <h3>Чувствительность DV01 (Rate Shock)</h3>
         </div>
         <div class="chart-container">
           <canvas ref="rateSensitivityRef"></canvas>
@@ -255,7 +255,7 @@
       <!-- Spread Sensitivity -->
       <div class="card">
         <div class="chart-header">
-          <h3>Spread Sensitivity (Spread Shock)</h3>
+          <h3>Чувствительность спреда (Spread Shock)</h3>
         </div>
         <div class="chart-container">
           <canvas ref="spreadSensitivityRef"></canvas>
@@ -300,12 +300,12 @@
     <!-- Basis Risk Analysis -->
     <div class="card full-width">
       <div class="card-header">
-        <h3>Basis Risk (3M vs 6M LIBOR)</h3>
+        <h3>Риск базиса (3M vs 6M LIBOR)</h3>
         <span class="card-subtitle">Риск от расходимости между индексами</span>
       </div>
       <div class="basis-analysis">
         <div class="basis-item">
-          <span class="basis-label">Current Basis Spread</span>
+          <span class="basis-label">Текущий спред базиса</span>
           <span class="basis-value accent">{{ basisAnalysis.currentSpread }} bp</span>
         </div>
         <div class="basis-item">
@@ -315,7 +315,7 @@
           </span>
         </div>
         <div class="basis-item">
-          <span class="basis-label">Basis Volatility</span>
+          <span class="basis-label">Волатильность базиса</span>
           <span class="basis-value">{{ basisAnalysis.basVol }}%</span>
         </div>
         <div class="basis-item">
@@ -329,7 +329,7 @@
 
     <!-- Footer -->
     <div class="page-footer">
-      <span>• DV01 — Dollar Value of 1 Basis Point</span>
+      <span>• DV01 — стоимость 1 базисного пункта в долларах</span>
       <span>• Spread DV01 — чувствительность к спредам</span>
       <span>• Обновление каждые 5 минут</span>
     </div>
