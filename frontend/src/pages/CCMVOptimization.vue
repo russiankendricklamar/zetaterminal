@@ -350,39 +350,49 @@
             <div class="panel-header">
               <h3>Историческая и дивидендная доходность</h3>
             </div>
-            <div class="panel-body">
-              <div class="yield-report">
-                <table class="yield-table">
-                  <thead>
-                    <tr>
-                      <th>Актив</th>
-                      <th class="text-right">Историческая</th>
-                      <th class="text-right">Дивидендная</th>
-                      <th class="text-right">Итого</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr v-for="(asset, idx) in yieldReportData.slice(0, 10)" :key="idx">
-                      <td class="yield-asset">{{ asset.symbol }}</td>
-                      <td class="text-right mono">{{ (asset.historicalYield * 100).toFixed(2) }}%</td>
-                      <td class="text-right mono">{{ (asset.dividendYield * 100).toFixed(2) }}%</td>
-                      <td class="text-right mono font-bold text-green">{{ (asset.totalYield * 100).toFixed(2) }}%</td>
-                    </tr>
-                  </tbody>
-                </table>
-                <div class="yield-summary">
-                  <div class="yield-summary-item">
-                    <span class="summary-label">Средняя историческая доходность</span>
-                    <span class="summary-value">{{ (avgHistoricalYield * 100).toFixed(2) }}%</span>
-                  </div>
-                  <div class="yield-summary-item">
-                    <span class="summary-label">Средняя дивидендная доходность</span>
-                    <span class="summary-value">{{ (avgDividendYield * 100).toFixed(2) }}%</span>
-                  </div>
-                  <div class="yield-summary-item">
-                    <span class="summary-label">Средняя общая доходность</span>
-                    <span class="summary-value text-green font-bold">{{ (avgTotalYield * 100).toFixed(2) }}%</span>
-                  </div>
+            <div class="panel-body weights-body">
+              <div class="weights-comparison">
+                <div class="weights-table-container">
+                  <table class="weights-table">
+                    <thead>
+                      <tr>
+                        <th>Актив</th>
+                        <th class="text-right">Историческая</th>
+                        <th class="text-right">Дивидендная</th>
+                        <th class="text-right">Итого</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr v-for="(asset, idx) in yieldReportData.slice(0, 10)" :key="idx">
+                        <td>
+                          <div class="asset-cell">
+                            <div class="asset-icon" :style="{ background: asset.color }">{{ asset.symbol[0] }}</div>
+                            <div class="asset-info">
+                              <span class="symbol">{{ asset.symbol }}</span>
+                              <span class="name">{{ asset.name }}</span>
+                            </div>
+                          </div>
+                        </td>
+                        <td class="text-right mono">{{ (asset.historicalYield * 100).toFixed(2) }}%</td>
+                        <td class="text-right mono">{{ (asset.dividendYield * 100).toFixed(2) }}%</td>
+                        <td class="text-right mono font-bold text-green">{{ (asset.totalYield * 100).toFixed(2) }}%</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+              <div class="yield-summary">
+                <div class="yield-summary-item">
+                  <span class="summary-label">Средняя историческая доходность</span>
+                  <span class="summary-value">{{ (avgHistoricalYield * 100).toFixed(2) }}%</span>
+                </div>
+                <div class="yield-summary-item">
+                  <span class="summary-label">Средняя дивидендная доходность</span>
+                  <span class="summary-value">{{ (avgDividendYield * 100).toFixed(2) }}%</span>
+                </div>
+                <div class="yield-summary-item">
+                  <span class="summary-label">Средняя общая доходность</span>
+                  <span class="summary-value text-green font-bold">{{ (avgTotalYield * 100).toFixed(2) }}%</span>
                 </div>
               </div>
             </div>
@@ -671,13 +681,16 @@
           <div class="panel-header">
             <h3>Параметры оптимизации</h3>
             <div class="header-tabs">
+              <div class="tab-slider" :style="paramsTabSliderStyle"></div>
               <button
+                ref="el => paramsTabButtons.basic = el"
                 :class="['tab-btn', { active: paramsTab === 'basic' }]"
                 @click="paramsTab = 'basic'"
               >
                 Основные
               </button>
               <button
+                ref="el => paramsTabButtons.methodology = el"
                 :class="['tab-btn', { active: paramsTab === 'methodology' }]"
                 @click="paramsTab = 'methodology'"
               >
@@ -793,13 +806,16 @@
           <div class="panel-header">
             <h3>Сравнение весов</h3>
             <div class="header-tabs">
+              <div class="tab-slider" :style="weightsTabSliderStyle"></div>
               <button
+                ref="el => weightsTabButtons.comparison = el"
                 :class="['tab-btn', { active: weightsTab === 'comparison' }]"
                 @click="weightsTab = 'comparison'"
               >
                 Сравнение
               </button>
               <button
+                ref="el => weightsTabButtons.optimal = el"
                 :class="['tab-btn', { active: weightsTab === 'optimal' }]"
                 @click="weightsTab = 'optimal'"
               >
@@ -1038,7 +1054,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted, watch, reactive } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch, reactive, nextTick } from 'vue'
 import { usePortfolioStore } from '../stores/portfolio'
 import { useRiskMetricsStore } from '../stores/riskMetrics'
 import { optimizeHJBPortfolio, type HJBResponse } from '../services/hjbService'
@@ -1130,6 +1146,50 @@ const isComputing = ref(false)
 const weightsTab = ref<'comparison' | 'optimal'>('comparison')
 const paramsTab = ref<'basic' | 'methodology'>('basic')
 
+// Refs for tab buttons to calculate slider position
+const paramsTabButtons = ref<{ basic: HTMLElement | null; methodology: HTMLElement | null }>({
+  basic: null,
+  methodology: null
+})
+const weightsTabButtons = ref<{ comparison: HTMLElement | null; optimal: HTMLElement | null }>({
+  comparison: null,
+  optimal: null
+})
+
+// Computed slider styles for params tabs
+const paramsTabSliderStyle = computed(() => {
+  const activeTab = paramsTab.value
+  const button = paramsTabButtons.value[activeTab]
+  if (!button) return { width: '0px', left: '0px', opacity: 0 }
+  
+  // Use offsetLeft and offsetWidth for more reliable positioning
+  const left = button.offsetLeft
+  const width = button.offsetWidth
+  
+  return {
+    width: `${width}px`,
+    left: `${left}px`,
+    opacity: 1
+  }
+})
+
+// Computed slider styles for weights tabs
+const weightsTabSliderStyle = computed(() => {
+  const activeTab = weightsTab.value
+  const button = weightsTabButtons.value[activeTab]
+  if (!button) return { width: '0px', left: '0px', opacity: 0 }
+  
+  // Use offsetLeft and offsetWidth for more reliable positioning
+  const left = button.offsetLeft
+  const width = button.offsetWidth
+  
+  return {
+    width: `${width}px`,
+    left: `${left}px`,
+    opacity: 1
+  }
+})
+
 // Portfolio composition from store
 const portfolioPositions = computed(() => portfolioStore.positions)
 const correlationMatrix = computed(() => portfolioStore.correlationMatrix)
@@ -1203,15 +1263,59 @@ const trajectoriesData = reactive({
   maxY: 200
 })
 
+// Watch monteCarloTrajectories to update display paths
+watch(() => hjbParams.value.monteCarloTrajectories, () => {
+  // If we have backend data, just update display paths and 3D visualization
+  if (hjbOptimizationResult.value?.monte_carlo) {
+    // Update display paths from backend data
+    if (trajectoriesData.paths.length > 0) {
+      updateDisplayPaths()
+    }
+    // Update 3D visualization with new path count
+    if (activeMethod.value === 'hjb') {
+      update3DVisualizationFromBackend(hjbOptimizationResult.value.monte_carlo)
+    }
+  } else {
+    // If no backend data, regenerate trajectories locally
+    generateTrajectories()
+    // Also regenerate 3D if initialized
+    if (activeMethod.value === 'hjb' && trajectories3DCanvas.value && renderer3D) {
+      const basePrice = initialPrice.value * 10000
+      // Используем значение из параметра без ограничений
+      const config: SimulationConfig3D = {
+        initialPrice: basePrice,
+        drift: hjbParams.value.expectedReturn,
+        volatility: hjbParams.value.marketVol,
+        timeSteps: trajectoriesDays.value,
+        numPaths: hjbParams.value.monteCarloTrajectories,
+        dt: 1 / 252,
+        jumpIntensity: 2.0,
+        jumpMean: 0.05,
+        jumpSd: 0.15
+      }
+      simulationResult3D.value = runMonteCarlo3D(config)
+      const maxStep = simulationResult3D.value.paths[0]?.length || 0
+      currentStep3D.value = maxStep
+      playbackStep3D.value = maxStep
+      cameraPositioned = false
+      stopPlay3D()
+      update3DTrajectories()
+    }
+  }
+})
+
 // Watch hjbParams to regenerate trajectories when parameters change
+// Only generate locally if we don't have backend data
 watch(() => [
-  hjbParams.value.monteCarloTrajectories,
   hjbParams.value.horizon,
   hjbParams.value.expectedReturn,
   hjbParams.value.marketVol,
   hjbParams.value.riskFreeRate
 ], () => {
-  generateTrajectories()
+  // Only generate locally if we don't have backend results
+  if (!hjbOptimizationResult.value?.monte_carlo) {
+    generateTrajectories()
+  }
 }, { deep: true })
 
 // Generate trajectories based on HJB parameters
@@ -1261,7 +1365,8 @@ const generateTrajectories = () => {
   }
 
   trajectoriesData.paths = newPaths
-  trajectoriesData.displayPaths = newPaths.slice(0, 50) 
+  // Обновляем displayPaths на основе текущего значения monteCarloTrajectories
+  updateDisplayPaths()
   trajectoriesData.medianPath = medianPath
   trajectoriesData.q05 = q05Path
   trajectoriesData.q95 = q95Path
@@ -1271,6 +1376,18 @@ const generateTrajectories = () => {
   if (!isPlayingTrajectories.value) {
     playbackStepTrajectories.value = days
   }
+}
+
+// Function to update displayPaths based on monteCarloTrajectories parameter
+const updateDisplayPaths = () => {
+  if (!trajectoriesData.paths.length) return
+  
+  // Используем все доступные траектории или количество из параметра
+  const numPaths = Math.min(
+    hjbParams.value.monteCarloTrajectories,
+    trajectoriesData.paths.length
+  )
+  trajectoriesData.displayPaths = trajectoriesData.paths.slice(0, numPaths)
 }
 
 // Playback controls
@@ -1689,34 +1806,45 @@ const init3DTrajectories = async () => {
   const ambientLight = new THREE.AmbientLight(0xffffff, 3)
   scene3D.add(ambientLight)
 
-  // Generate initial simulation
-  // Use higher initial price for better visualization (scale 1M like in original)
-  const basePrice = initialPrice.value * 10000 // Scale to 1M range for better 3D visualization
-  const config: SimulationConfig3D = {
-    initialPrice: basePrice,
-    drift: hjbParams.value.expectedReturn,
-    volatility: hjbParams.value.marketVol,
-    timeSteps: trajectoriesDays.value,
-    numPaths: Math.min(hjbParams.value.monteCarloTrajectories, 50), // Reduced for better performance
-    dt: 1 / 252,
-    jumpIntensity: 2.0,
-    jumpMean: 0.05,
-    jumpSd: 0.15
-  }
+  // Use backend data if available, otherwise generate locally
+  if (hjbOptimizationResult.value?.monte_carlo) {
+    // Use backend Monte Carlo data
+    update3DVisualizationFromBackend(hjbOptimizationResult.value.monte_carlo)
+    console.log('3D visualization updated from backend:', {
+      paths: simulationResult3D.value?.paths.length,
+      stats: simulationResult3D.value?.stats
+    })
+  } else {
+    // Generate initial simulation locally
+    // Use higher initial price for better visualization (scale 1M like in original)
+    const basePrice = initialPrice.value * 10000 // Scale to 1M range for better 3D visualization
+    // Используем значение из параметра без ограничений
+    const config: SimulationConfig3D = {
+      initialPrice: basePrice,
+      drift: hjbParams.value.expectedReturn,
+      volatility: hjbParams.value.marketVol,
+      timeSteps: trajectoriesDays.value,
+      numPaths: hjbParams.value.monteCarloTrajectories,
+      dt: 1 / 252,
+      jumpIntensity: 2.0,
+      jumpMean: 0.05,
+      jumpSd: 0.15
+    }
 
-  simulationResult3D.value = runMonteCarlo3D(config)
-  console.log('3D simulation generated:', {
-    paths: simulationResult3D.value.paths.length,
-    stats: simulationResult3D.value.stats,
-    firstPathLength: simulationResult3D.value.paths[0]?.length
-  })
-  
-  // Initialize current step and playback step to show all trajectories
-  const maxStep = simulationResult3D.value.paths[0]?.length || 0
-  currentStep3D.value = maxStep
-  playbackStep3D.value = maxStep
-  
-  update3DTrajectories()
+    simulationResult3D.value = runMonteCarlo3D(config)
+    console.log('3D simulation generated locally:', {
+      paths: simulationResult3D.value.paths.length,
+      stats: simulationResult3D.value.stats,
+      firstPathLength: simulationResult3D.value.paths[0]?.length
+    })
+    
+    // Initialize current step and playback step to show all trajectories
+    const maxStep = simulationResult3D.value.paths[0]?.length || 0
+    currentStep3D.value = maxStep
+    playbackStep3D.value = maxStep
+    
+    update3DTrajectories()
+  }
 
   // Initial camera position - set after trajectories are created
   // Will be set in update3DTrajectories after first render
@@ -2192,17 +2320,102 @@ const update3DGrids = (stats: any, scaleX: number, scaleY: number, scaleZ: numbe
   }
 }
 
+// Function to convert backend Monte Carlo data to 3D format
+const update3DVisualizationFromBackend = (monteCarloData: NonNullable<HJBResponse['monte_carlo']>) => {
+  if (!monteCarloData || !monteCarloData.paths.length) return
+  
+  const paths3D: PathPoint3D[][] = []
+  const tGrid = monteCarloData.t_grid || monteCarloData.paths[0].map((_, i) => i)
+  
+  // Convert each path from backend to 3D format
+  // Используем значение из параметра monteCarloTrajectories или все доступные траектории
+  const numPaths = Math.min(
+    hjbParams.value.monteCarloTrajectories,
+    monteCarloData.paths.length
+  )
+  
+  for (let i = 0; i < numPaths; i++) {
+    const path = monteCarloData.paths[i]
+    const path3D: PathPoint3D[] = []
+    
+    for (let t = 0; t < path.length; t++) {
+      path3D.push({
+        x: tGrid[t] || t, // Time step
+        y: path[t],       // Capital value
+        z: i              // Path index
+      })
+    }
+    
+    paths3D.push(path3D)
+  }
+  
+  // Calculate stats from backend data
+  const finalPrices = monteCarloData.paths.map(path => path[path.length - 1])
+  const stats = {
+    meanFinalPrice: monteCarloData.stats.mean_final || finalPrices.reduce((a, b) => a + b, 0) / finalPrices.length,
+    maxPrice: monteCarloData.stats.max_final || Math.max(...finalPrices),
+    minPrice: monteCarloData.stats.min_final || Math.min(...finalPrices),
+    stdDev: monteCarloData.stats.std_final || 0
+  }
+  
+  // Update 3D simulation result
+  simulationResult3D.value = {
+    paths: paths3D,
+    jumps: [], // Backend doesn't provide jump data separately
+    stats
+  }
+  
+  // Update playback controls
+  if (paths3D.length > 0 && paths3D[0].length > 0) {
+    const maxStep = paths3D[0].length - 1
+    currentStep3D.value = maxStep
+    playbackStep3D.value = maxStep
+    cameraPositioned = false // Reset camera positioning
+    stopPlay3D() // Stop any ongoing playback
+    
+    // Initialize 3D visualization if not already initialized
+    if (activeMethod.value === 'hjb' && trajectories3DCanvas.value) {
+      if (!renderer3D) {
+        // Initialize 3D if not already done
+        init3DTrajectories().then(() => {
+          // After initialization, update with backend data if available
+          if (renderer3D) {
+            update3DTrajectories()
+          }
+        })
+      } else {
+        // Update 3D visualization if already initialized
+        update3DTrajectories()
+      }
+    }
+  }
+}
+
+// Watch for backend optimization results to update 3D visualization
+watch(() => hjbOptimizationResult.value?.monte_carlo, (monteCarloData) => {
+  if (monteCarloData && activeMethod.value === 'hjb') {
+    update3DVisualizationFromBackend(monteCarloData)
+  }
+}, { deep: true })
+
 // Watch for trajectory data changes to update 3D visualization
+// Only regenerate locally if we don't have backend data
 watch([trajectoriesData, hjbParams], () => {
+  // Skip local generation if we have backend data
+  if (hjbOptimizationResult.value?.monte_carlo) {
+    return
+  }
+  
   if (activeMethod.value === 'hjb' && trajectories3DCanvas.value && renderer3D) {
-    // Regenerate 3D simulation when parameters change
+    // Regenerate 3D simulation when parameters change (only if no backend data)
     const basePrice = initialPrice.value * 10000
+    // Используем значение из параметра без ограничений
     const config: SimulationConfig3D = {
       initialPrice: basePrice,
       drift: hjbParams.value.expectedReturn,
       volatility: hjbParams.value.marketVol,
       timeSteps: trajectoriesDays.value,
-      numPaths: Math.min(hjbParams.value.monteCarloTrajectories, 50),
+      numPaths: hjbParams.value.monteCarloTrajectories,
       dt: 1 / 252,
       jumpIntensity: 2.0,
       jumpMean: 0.05,
@@ -2360,8 +2573,10 @@ const runHJBOptimization = async () => {
     
     // Обновляем траектории если есть результаты Монте-Карло
     if (result.monte_carlo) {
+      // Обновляем 2D визуализацию
       trajectoriesData.paths = result.monte_carlo.paths
-      trajectoriesData.displayPaths = result.monte_carlo.paths.slice(0, 50)
+      // Обновляем displayPaths на основе текущего значения monteCarloTrajectories
+      updateDisplayPaths()
       trajectoriesData.medianPath = result.monte_carlo.median_path
       trajectoriesData.q05 = result.monte_carlo.q05_path
       trajectoriesData.q95 = result.monte_carlo.q95_path
@@ -2375,6 +2590,9 @@ const runHJBOptimization = async () => {
       trajectoriesData.maxY = Math.max(...allValues) * 1.1
       
       playbackStepTrajectories.value = trajectoriesDays.value
+      
+      // Обновляем 3D визуализацию
+      update3DVisualizationFromBackend(result.monte_carlo)
     }
     
     // Обновляем риск-метрики в store для использования в GreekParameters
@@ -2447,6 +2665,8 @@ const yieldReportData = computed(() => {
     const dividendYield = 0.02 + Math.random() * 0.08  // 2-10%
     return {
       symbol: asset.symbol,
+      name: asset.name,
+      color: asset.color,
       historicalYield,
       dividendYield,
       totalYield: historicalYield + dividendYield
@@ -2856,9 +3076,26 @@ const setupResizeObserver = () => {
   }
 }
 
+// Watch for tab changes to update slider position
+watch([paramsTab, weightsTab], async () => {
+  await nextTick()
+  // Force recalculation of slider position
+  // The computed properties will automatically update
+}, { immediate: false })
+
+// Watch for window resize to update slider position
+const handleResize = () => {
+  // Force recalculation by accessing computed properties
+  paramsTabSliderStyle.value
+  weightsTabSliderStyle.value
+}
+
 onMounted(() => {
   // Generate initial trajectories
   generateTrajectories()
+  
+  // Add resize listener for slider position updates
+  window.addEventListener('resize', handleResize)
   
   setTimeout(() => {
     if (garchChart.value) {
@@ -2903,6 +3140,7 @@ onUnmounted(() => {
   if (animationFrameTrajectories) {
     cancelAnimationFrame(animationFrameTrajectories)
   }
+  window.removeEventListener('resize', handleResize)
 })
 
 const initGARCHChart = () => {
@@ -3534,6 +3772,8 @@ const showToast = (message: string, type: 'success' | 'error' | 'info' = 'succes
 .header-tabs {
   display: flex;
   gap: 6px;
+  position: relative;
+  padding-bottom: 2px;
 }
 
 .tab-btn {
@@ -3545,6 +3785,8 @@ const showToast = (message: string, type: 'success' | 'error' | 'info' = 'succes
   color: rgba(255, 255, 255, 0.6);
   cursor: pointer;
   transition: all 0.15s;
+  position: relative;
+  z-index: 2;
 }
 
 .tab-btn:hover {
@@ -3553,9 +3795,21 @@ const showToast = (message: string, type: 'success' | 'error' | 'info' = 'succes
 }
 
 .tab-btn.active {
-  background: rgba(59, 130, 246, 0.3);
   color: #60a5fa;
   border-color: rgba(59, 130, 246, 0.5);
+}
+
+.tab-slider {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  height: 2px;
+  background: linear-gradient(90deg, #3b82f6, #60a5fa);
+  border-radius: 1px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  pointer-events: none;
+  z-index: 3;
+  box-shadow: 0 0 8px rgba(59, 130, 246, 0.4);
 }
 
 .panel-body {
@@ -5399,6 +5653,7 @@ const showToast = (message: string, type: 'success' | 'error' | 'info' = 'succes
 
 .yield-summary {
   padding: 12px;
+  margin-top: 16px;
   background: rgba(255, 255, 255, 0.02);
   border-radius: 8px;
   border: 1px solid rgba(255, 255, 255, 0.08);
