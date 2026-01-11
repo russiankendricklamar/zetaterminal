@@ -65,11 +65,6 @@
       </div>
       <div class="hero-actions">
         <div class="last-update">Обновлено: <span class="mono">{{ lastUpdate }}</span></div>
-        <button class="btn-glass primary" @click="recalcPortfolio" :disabled="isRecalcing">
-          <svg v-if="!isRecalcing" width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
-          <span v-else class="spinner"></span>
-          {{ isRecalcing ? 'Пересчет...' : 'Пересчитать' }}
-        </button>
         <button class="btn-glass outline" @click="exportPdf">
           <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
           Экспорт PDF
@@ -82,14 +77,20 @@
       <div class="glass-card kpi-card glow-green">
         <div class="kpi-header">
           <span class="kpi-label">Total P&L</span>
-          <div class="trend-badge positive">
-            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="4"><path d="M18 15l-6-6-6 6"/></svg>
-            12.4%
+          <div class="trend-badge" :class="portfolioMetrics?.annual_return && portfolioMetrics.annual_return >= 0 ? 'positive' : 'negative'">
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="4">
+              <path v-if="portfolioMetrics?.annual_return && portfolioMetrics.annual_return >= 0" d="M18 15l-6-6-6 6"/>
+              <path v-else d="M6 9l6 6 6-6"/>
+            </svg>
+            {{ portfolioMetrics ? (portfolioMetrics.annual_return * 100).toFixed(1) + '%' : '12.4%' }}
           </div>
         </div>
         <div class="kpi-content">
-          <div class="kpi-value text-gradient-green">452,109 <small>RUB</small></div>
-          <div class="kpi-sub">NAV: 3.64M</div>
+          <div class="kpi-value text-gradient-green">
+            {{ portfolioMetrics ? portfolioMetrics.total_pnl.toLocaleString('ru-RU', { maximumFractionDigits: 0 }) : '452,109' }} 
+            <small>RUB</small>
+          </div>
+          <div class="kpi-sub">NAV: {{ portfolioMetrics ? (portfolioMetrics.nav / 1000000).toFixed(2) + 'M' : '3.64M' }}</div>
         </div>
       </div>
 
@@ -98,11 +99,11 @@
           <span class="kpi-label">VaR 95%</span>
           <div class="trend-badge negative">
             <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="4"><path d="M6 9l6 6 6-6"/></svg>
-            1.2%
+            {{ portfolioMetrics ? portfolioMetrics.var_95_percent.toFixed(1) + '%' : '1.2%' }}
           </div>
         </div>
         <div class="kpi-content">
-          <div class="kpi-value text-white">2.45%</div>
+          <div class="kpi-value text-white">{{ portfolioMetrics ? portfolioMetrics.var_95_percent.toFixed(2) + '%' : '2.45%' }}</div>
           <div class="kpi-sub">Daily Risk</div>
         </div>
       </div>
@@ -112,8 +113,8 @@
           <span class="kpi-label">Sharpe Ratio</span>
         </div>
         <div class="kpi-content">
-          <div class="kpi-value text-gradient-blue">1.85</div>
-          <div class="kpi-sub">Risk-Free Rate: 4.2%</div>
+          <div class="kpi-value text-gradient-blue">{{ portfolioMetrics ? portfolioMetrics.sharpe_ratio.toFixed(2) : '1.85' }}</div>
+          <div class="kpi-sub">Risk-Free Rate: {{ portfolioMetrics ? (portfolioMetrics.risk_free_rate * 100).toFixed(1) + '%' : '4.2%' }}</div>
         </div>
       </div>
 
@@ -122,8 +123,8 @@
           <span class="kpi-label">Diversification</span>
         </div>
         <div class="kpi-content">
-          <div class="kpi-value text-white">0.34</div>
-          <div class="kpi-sub">Correlation Coeff</div>
+          <div class="kpi-value text-white">{{ portfolioMetrics ? portfolioMetrics.diversification.toFixed(2) : '0.34' }}</div>
+          <div class="kpi-sub">Correlation Coeff: {{ portfolioMetrics ? portfolioMetrics.avg_correlation.toFixed(2) : '0.34' }}</div>
         </div>
       </div>
     </div>
@@ -351,8 +352,6 @@
                    <span class="value">-0.24</span>
                 </div>
              </div>
-             
-             <button class="btn-glass primary w-full mt-3" @click="openAnalysis">Открыть анализ</button>
           </div>
         </div>
         </transition>
@@ -402,7 +401,7 @@
                     <span>Max Drawdown</span>
                     <span class="meta-hint">Peak-to-Trough</span>
                  </div>
-                 <div class="metric-value text-red">-18.24%</div>
+                 <div class="metric-value text-red">{{ portfolioMetrics ? (portfolioMetrics.max_drawdown * 100).toFixed(2) + '%' : '-18.24%' }}</div>
               </div>
               <div class="metric-row">
                  <div class="metric-label">
@@ -451,35 +450,37 @@
                     <span>Sharpe Ratio</span>
                     <span class="meta-hint">Risk-Adjusted</span>
                  </div>
-                 <div class="metric-value text-green">1.52</div>
+                 <div class="metric-value text-green">{{ portfolioMetrics ? portfolioMetrics.sharpe_ratio.toFixed(2) : '1.52' }}</div>
               </div>
               <div class="metric-row">
                  <div class="metric-label">
                     <span>Sortino Ratio</span>
                     <span class="meta-hint">Downside Risk</span>
            </div>
-                 <div class="metric-value text-green">2.14</div>
+                 <div class="metric-value text-green">{{ portfolioMetrics ? portfolioMetrics.sortino_ratio.toFixed(2) : '2.14' }}</div>
         </div>
               <div class="metric-row">
                  <div class="metric-label">
                     <span>Beta</span>
                     <span class="meta-hint">vs Benchmark</span>
     </div>
-                 <div class="metric-value text-white">0.87</div>
+                 <div class="metric-value text-white">{{ portfolioMetrics ? portfolioMetrics.beta.toFixed(2) : '0.87' }}</div>
       </div>
               <div class="metric-row">
                  <div class="metric-label">
                     <span>Alpha</span>
                     <span class="meta-hint">Excess Return</span>
       </div>
-                 <div class="metric-value text-green">+2.31%</div>
+                 <div class="metric-value" :class="portfolioMetrics?.alpha && portfolioMetrics.alpha >= 0 ? 'text-green' : 'text-red'">
+                   {{ portfolioMetrics ? (portfolioMetrics.alpha >= 0 ? '+' : '') + (portfolioMetrics.alpha * 100).toFixed(2) + '%' : '+2.31%' }}
+                 </div>
     </div>
               <div class="metric-row">
                  <div class="metric-label">
                     <span>VaR (95%)</span>
                     <span class="meta-hint">Daily</span>
        </div>
-                 <div class="metric-value text-red">-2.15%</div>
+                 <div class="metric-value text-red">{{ portfolioMetrics ? (portfolioMetrics.var_95_percent * -1).toFixed(2) + '%' : '-2.15%' }}</div>
              </div>
               <div class="metric-row">
                  <div class="metric-label">
@@ -706,6 +707,7 @@
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import CorrelationScatter3D from '../components/common/CorrelationScatter3D.vue'
 import { usePortfolioStore } from '../stores/portfolio'
+import { calculatePortfolioMetrics, type PortfolioMetricsResponse } from '../services/portfolioService'
 
 // Динамический импорт Plotly
 let Plotly: any = null
@@ -939,6 +941,12 @@ const searchFilter = ref('')
 const toast = ref({ show: false, message: '', type: 'success' })
 
 // ============================================================================
+// PORTFOLIO METRICS - из API
+// ============================================================================
+const portfolioMetrics = ref<PortfolioMetricsResponse | null>(null)
+const isLoadingMetrics = ref(false)
+
+// ============================================================================
 // BANK SELECTOR - используем store
 // ============================================================================
 const banks = portfolioStore.banks
@@ -951,12 +959,52 @@ const bankSearchQuery = ref('')
 const selectedAsset = ref<any>(null)
 const hoveredAsset = ref<any>(null)
 
+// Функция для загрузки метрик портфеля из API
+const loadPortfolioMetrics = async () => {
+  if (!positions || positions.length === 0) {
+    portfolioMetrics.value = null
+    return
+  }
+  
+  isLoadingMetrics.value = true
+  try {
+    // Преобразуем позиции в формат для API
+    const positionsForAPI = positions.map((pos: any) => ({
+      symbol: pos.symbol,
+      name: pos.name,
+      price: parseFloat(pos.price) || 0,
+      dayChange: pos.dayChange || 0,
+      notional: pos.notional || 0,
+      allocation: pos.allocation || 0,
+      targetAllocation: pos.targetAllocation || 0,
+      color: pos.color || ''
+    }))
+    
+    const metrics = await calculatePortfolioMetrics({
+      positions: positionsForAPI,
+      risk_free_rate: 0.042,
+      market_return: 0.10,
+      market_volatility: 0.15
+    })
+    
+    portfolioMetrics.value = metrics
+  } catch (error) {
+    console.error('Failed to load portfolio metrics:', error)
+    // В случае ошибки оставляем null, будут использоваться значения по умолчанию
+    portfolioMetrics.value = null
+  } finally {
+    isLoadingMetrics.value = false
+  }
+}
+
 // Обновляем selectedAsset при изменении портфеля
 watch(positions, (newPositions) => {
   if (newPositions.length > 0 && (!selectedAsset.value || !newPositions.find(p => p.symbol === selectedAsset.value?.symbol))) {
     selectedAsset.value = newPositions[0]
   }
-}, { immediate: true })
+  // Загружаем метрики при изменении портфеля
+  loadPortfolioMetrics()
+}, { immediate: true, deep: true })
 
 const filteredBanks = computed(() => {
   if (!bankSearchQuery.value.trim()) {

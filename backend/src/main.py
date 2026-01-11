@@ -17,6 +17,7 @@ from src.api import ccmv
 from src.api import stress
 from src.api import backtest
 from src.api import bond
+from src.api import portfolio
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -57,6 +58,7 @@ app.include_router(ccmv.router, prefix="/api/ccmv", tags=["ccmv"])
 app.include_router(stress.router, prefix="/api/stress", tags=["stress"])
 app.include_router(backtest.router, prefix="/api/backtest", tags=["backtest"])
 app.include_router(bond.router, prefix="/api/bond", tags=["bond"])
+app.include_router(portfolio.router, prefix="/api/portfolio", tags=["portfolio"])
 
 
 @app.get("/")
