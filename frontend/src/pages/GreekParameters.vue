@@ -8,6 +8,12 @@
         <p class="section-subtitle">VaR, Стресс-тесты и Факторный анализ</p>
       </div>
       <div class="header-actions">
+        <!-- Selected Bank -->
+        <div class="glass-pill control-pill">
+           <span class="lbl-mini">Банк:</span>
+           <span class="text-white font-bold">{{ selectedBank.name }}</span>
+        </div>
+        
         <!-- Scrubbable Confidence Level -->
         <div class="glass-pill control-pill">
            <span class="lbl-mini">Доверие:</span>
@@ -258,6 +264,8 @@ import { usePortfolioStore } from '@/stores/portfolio'
 const taskStore = useTaskStore()
 const riskMetricsStore = useRiskMetricsStore()
 const portfolioStore = usePortfolioStore()
+
+const selectedBank = computed(() => portfolioStore.selectedBank)
 
 const selectedTimeframe = ref('1d')
 const isLoading = ref(false)

@@ -9,6 +9,12 @@
       </div>
       
       <div class="header-right">
+        <!-- Selected Bank -->
+        <div class="glass-pill control-pill">
+           <span class="lbl-mini">Банк:</span>
+           <span class="text-white font-bold">{{ selectedBank.name }}</span>
+        </div>
+        
         <!-- Severity Multiplier -->
         <div class="glass-pill control-pill">
             <span class="lbl-mini">Множитель шока:</span>
@@ -214,6 +220,8 @@ import { runStressTests, type StressScenario, type StressTestResponse } from '@/
 import { usePortfolioStore } from '@/stores/portfolio'
 
 const portfolioStore = usePortfolioStore()
+
+const selectedBank = computed(() => portfolioStore.selectedBank)
 
 const isRunning = ref(false)
 const shockMultiplier = ref(1.0)
@@ -986,6 +994,7 @@ const runAllStressTests = async () => {
 .text-white { color: #fff; }
 .text-accent { color: #3b82f6; }
 .text-muted { color: rgba(255,255,255,0.4); }
+.font-bold { font-weight: 700; }
 
 .bg-red { background: #f87171; }
 .bg-green { background: #4ade80; }

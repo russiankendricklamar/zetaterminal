@@ -8,8 +8,15 @@
         <p class="section-subtitle">Историческая симуляция стратегии (Long/Short)</p>
       </div>
       
-      <!-- Glass Segmented Control -->
-      <div class="glass-segmented-control">
+      <div class="header-right">
+        <!-- Selected Bank -->
+        <div class="glass-pill control-pill">
+           <span class="lbl-mini">Банк:</span>
+           <span class="text-white font-bold">{{ selectedBank.name }}</span>
+        </div>
+        
+        <!-- Glass Segmented Control -->
+        <div class="glass-segmented-control">
         <button
           v-for="period in periods"
           :key="period"
@@ -19,6 +26,7 @@
         >
           {{ period }}
         </button>
+        </div>
       </div>
     </div>
 
@@ -207,6 +215,8 @@ import { runPortfolioBacktest, type BacktestResponse } from '@/services/backtest
 import { usePortfolioStore } from '@/stores/portfolio'
 
 const portfolioStore = usePortfolioStore()
+
+const selectedBank = computed(() => portfolioStore.selectedBank)
 
 const periods = ref(['1M', '3M', '6M', 'YTD', '1Y', 'All'])
 const selectedPeriod = ref('YTD')
@@ -476,6 +486,30 @@ onMounted(() => {
 /* ============================================
    CONTROLS
    ============================================ */
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.glass-pill {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 12px;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 99px;
+  height: 36px;
+}
+
+.lbl-mini {
+  font-size: 11px;
+  color: rgba(255,255,255,0.5);
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
 .glass-segmented-control {
   background: rgba(255,255,255,0.05); border-radius: 10px; padding: 4px; display: flex; gap: 4px;
   border: 1px solid rgba(255,255,255,0.05);
