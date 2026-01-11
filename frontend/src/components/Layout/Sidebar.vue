@@ -100,7 +100,7 @@
 
         <div
           class="tool-content-wrapper"
-          :style="{ maxHeight: expandedTools.portfolio ? '300px' : '0' }"
+          :style="{ maxHeight: expandedTools.portfolio ? '1000px' : '0' }"
         >
           <div class="tool-content">
             <router-link
@@ -140,7 +140,7 @@
 
         <div
           class="tool-content-wrapper"
-          :style="{ maxHeight: expandedTools.risk ? '180px' : '0' }"
+          :style="{ maxHeight: expandedTools.risk ? '1000px' : '0' }"
         >
           <div class="tool-content">
             <router-link
@@ -180,7 +180,7 @@
 
         <div
           class="tool-content-wrapper"
-          :style="{ maxHeight: expandedTools.quant ? '220px' : '0' }"
+          :style="{ maxHeight: expandedTools.quant ? '1000px' : '0' }"
         >
           <div class="tool-content">
             <router-link
@@ -219,7 +219,7 @@
         </button>
         <div
           class="tool-content-wrapper"
-          :style="{ maxHeight: expandedTools.bonds ? '220px' : '0' }"
+          :style="{ maxHeight: expandedTools.bonds ? '1000px' : '0' }"
         >
           <div class="tool-content">
             <router-link 
@@ -274,7 +274,7 @@
         </button>
         <div
           class="tool-content-wrapper"
-          :style="{ maxHeight: expandedTools.options ? '200px' : '0' }"
+          :style="{ maxHeight: expandedTools.options ? '1000px' : '0' }"
         >
           <div class="tool-content">
             <router-link 
@@ -338,7 +338,7 @@
         </button>
         <div
           class="tool-content-wrapper"
-          :style="{ maxHeight: expandedTools.vol ? '80px' : '0' }"
+          :style="{ maxHeight: expandedTools.vol ? '1000px' : '0' }"
         >
           <div class="tool-content">
             <router-link
@@ -376,7 +376,7 @@
 
         <div
           class="tool-content-wrapper"
-          :style="{ maxHeight: expandedTools.swaps ? '200px' : '0' }"
+          :style="{ maxHeight: expandedTools.swaps ? '1000px' : '0' }"
         >
           <div class="tool-content">
             <router-link
@@ -448,7 +448,7 @@
 
         <div
           class="tool-content-wrapper"
-          :style="{ maxHeight: expandedTools.forwards ? '200px' : '0' }"
+          :style="{ maxHeight: expandedTools.forwards ? '1000px' : '0' }"
         >
           <div class="tool-content">
             <router-link
@@ -530,7 +530,7 @@
         </button>
         <div
           class="tool-content-wrapper"
-          :style="{ maxHeight: expandedTools.margin ? '80px' : '0' }"
+          :style="{ maxHeight: expandedTools.margin ? '1000px' : '0' }"
         >
           <div class="tool-content">
             <router-link to="/pricing/margin" class="nav-item coming-soon">
@@ -562,7 +562,7 @@
         </button>
         <div
           class="tool-content-wrapper"
-          :style="{ maxHeight: expandedTools.bondReports ? '150px' : '0' }"
+          :style="{ maxHeight: expandedTools.bondReports ? '1000px' : '0' }"
         >
           <div class="tool-content">
             <router-link 
@@ -631,7 +631,6 @@ const marketTime = ref('--:--')
 const isSidebarOpen = ref(false)
 
 const expandedTools = reactive({
-  dashboard: true,
   portfolio: false,
   risk: false,
   quant: false,
