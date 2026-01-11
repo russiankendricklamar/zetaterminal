@@ -33,7 +33,7 @@
     <!-- KPI Cards (4-column) -->
     <div class="kpi-cards-grid">
       <div class="glass-card kpi-card">
-        <div class="kpi-label">Total Return</div>
+        <div class="kpi-label">Общая доходность</div>
         <div class="kpi-value text-gradient-green">
           {{ backtestResults?.metrics ? (backtestResults.metrics.total_return * 100).toFixed(1) + '%' : '+24.5%' }}
         </div>
@@ -47,7 +47,7 @@
         <div class="kpi-value text-white">
           {{ backtestResults?.metrics ? (backtestResults.metrics.cagr * 100).toFixed(1) + '%' : '18.2%' }}
         </div>
-        <div class="kpi-change text-muted">Risk-free: 5.0%</div>
+        <div class="kpi-change text-muted">Безрисковая ставка: 5.0%</div>
       </div>
 
       <div class="glass-card kpi-card">
@@ -55,7 +55,7 @@
         <div class="kpi-value text-gradient-blue">
           {{ backtestResults?.metrics ? backtestResults.metrics.sharpe_ratio.toFixed(2) : '1.58' }}
         </div>
-        <div class="kpi-change text-blue">Top 15%</div>
+        <div class="kpi-change text-blue">Топ 15%</div>
       </div>
 
       <div class="glass-card kpi-card">
@@ -63,7 +63,7 @@
         <div class="kpi-value text-red">
           {{ backtestResults?.metrics ? (backtestResults.metrics.max_drawdown * 100).toFixed(1) + '%' : '-14.2%' }}
         </div>
-        <div class="kpi-change text-red">High Risk</div>
+        <div class="kpi-change text-red">Высокий риск</div>
       </div>
     </div>
 
@@ -71,11 +71,11 @@
     <div class="glass-card chart-panel">
       <div class="panel-header">
         <div class="ph-left">
-            <h3>Equity Curve</h3>
-            <span class="badge-live">Cumulative</span>
+            <h3>Кривая капитала</h3>
+            <span class="badge-live">Накопительный</span>
         </div>
         <div class="chart-legend">
-          <div class="legend-item"><span class="dot strategy"></span>Portfolio</div>
+          <div class="legend-item"><span class="dot strategy"></span>Портфель</div>
           <div class="legend-item"><span class="dot benchmark"></span>S&P 500</div>
         </div>
       </div>
@@ -168,15 +168,15 @@
                 <span class="val text-green">{{ backtestResults?.metrics ? backtestResults.metrics.profit_factor.toFixed(2) : '2.34' }}</span>
              </div>
              <div class="stat-box">
-                <span class="lbl">Avg Profit</span>
+                <span class="lbl">Средняя прибыль</span>
                 <span class="val text-green">{{ backtestResults?.metrics ? '+' + backtestResults.metrics.avg_profit.toFixed(0) : '+$245' }}</span>
              </div>
              <div class="stat-box">
-                <span class="lbl">Avg Loss</span>
+                <span class="lbl">Средний убыток</span>
                 <span class="val text-red">{{ backtestResults?.metrics ? '-' + backtestResults.metrics.avg_loss.toFixed(0) : '-$145' }}</span>
              </div>
              <div class="stat-box">
-                <span class="lbl">Hold Time</span>
+                <span class="lbl">Время удержания</span>
                 <span class="val">{{ backtestResults?.metrics ? backtestResults.metrics.hold_time.toFixed(1) + 'd' : '8.4d' }}</span>
              </div>
           </div>
@@ -191,7 +191,7 @@
              <div v-for="(dd, idx) in (backtestResults?.metrics?.drawdowns || drawdowns)" :key="idx" class="dd-item">
                 <div class="dd-info">
                    <span class="dd-period">{{ dd.period }}</span>
-                   <span class="dd-rec">Recovery: {{ dd.recovery }}</span>
+                   <span class="dd-rec">Восстановление: {{ dd.recovery }}</span>
                 </div>
                 <div class="dd-right">
                     <span class="dd-val text-red">{{ dd.amount.toFixed(1) }}%</span>

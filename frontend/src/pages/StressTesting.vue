@@ -80,21 +80,21 @@
                 <!-- 4 Key Metrics -->
                 <div class="impact-metrics-grid">
                     <div class="metric-box">
-                        <span class="lbl">P&L Impact</span>
+                        <span class="lbl">Влияние на P&L</span>
                         <span class="val text-red">{{ formatCurrency(getScenarioPnLImpact(selectedScenario)) }}</span>
                     </div>
                     <div class="metric-box">
-                        <span class="lbl">VaR Change</span>
+                        <span class="lbl">Изменение VaR</span>
                         <span class="val" :class="getScenarioVaRChange(selectedScenario) < 0 ? 'text-red' : 'text-green'">
                             {{ getScenarioVaRChange(selectedScenario).toFixed(1) }}%
                         </span>
                     </div>
                     <div class="metric-box">
-                        <span class="lbl">Duration</span>
+                        <span class="lbl">Длительность</span>
                         <span class="val text-white">{{ selectedScenario.duration }}</span>
                     </div>
                      <div class="metric-box">
-                        <span class="lbl">Probability</span>
+                        <span class="lbl">Вероятность</span>
                         <span class="val text-orange">{{ (selectedScenario.probability * 100).toFixed(1) }}%</span>
                     </div>
                 </div>
@@ -124,11 +124,11 @@
 
                 <!-- Stats Mini Panel -->
                 <div class="panel-header">
-                    <h3>Статистика риска (Risk Stats)</h3>
+                    <h3>Статистика риска</h3>
                 </div>
                 <div class="stats-grid-row">
                      <div class="stat-box">
-                         <span class="lbl-sm">Avg Loss</span>
+                         <span class="lbl-sm">Средний убыток</span>
                          <span class="val-sm text-red">{{ formatCurrencyCompact(avgLoss * shockMultiplier) }}</span>
                      </div>
                      <div class="stat-box">
@@ -176,10 +176,10 @@
           <thead>
             <tr>
               <th class="col-left pl-4">Сценарий</th>
-              <th>P&L Impact</th>
-              <th>VaR Change</th>
-              <th>Duration</th>
-              <th>Prob.</th>
+              <th>Влияние на P&L</th>
+              <th>Изменение VaR</th>
+              <th>Длительность</th>
+              <th>Вер.</th>
             </tr>
           </thead>
           <tbody>

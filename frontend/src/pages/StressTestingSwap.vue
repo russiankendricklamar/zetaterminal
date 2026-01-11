@@ -31,8 +31,8 @@
           class="btn-primary"
           :disabled="isRunning"
         >
-          <span v-if="!isRunning">▶ Запустить</span>
-          <span v-else>⟳ Считаю...</span>
+          <span v-if="!isRunning">Запустить</span>
+          <span v-else>Считаю...</span>
         </button>
       </div>
     </div>
@@ -73,7 +73,7 @@
             <span class="metric-value" :class="scenario.pnlImpact < 0 ? 'loss' : 'gain'">
               {{ formatCompactCurrency(scenario.pnlImpact * shockMultiplier) }}
             </span>
-            <span class="metric-probability">P: {{ (scenario.probability * 100).toFixed(0) }}%</span>
+            <span class="metric-probability">Вер.: {{ (scenario.probability * 100).toFixed(0) }}%</span>
           </div>
         </div>
       </div>
@@ -93,7 +93,7 @@
             </div>
             <div class="metrics-grid">
               <div class="metric-box">
-                <span class="metric-label">P&L Impact</span>
+                <span class="metric-label">Влияние на P&L</span>
                 <span class="metric-num" :class="selectedScenario.pnlImpact < 0 ? 'loss' : 'gain'">
                   {{ formatCurrency(selectedScenario.pnlImpact * shockMultiplier) }}
                 </span>
@@ -111,7 +111,7 @@
                 </span>
               </div>
               <div class="metric-box">
-                <span class="metric-label">Duration</span>
+                <span class="metric-label">Длительность</span>
                 <span class="metric-num">{{ selectedScenario.duration }}</span>
               </div>
             </div>
@@ -120,7 +120,7 @@
           <!-- Greeks Card -->
           <div class="card">
             <div class="card-header">
-              <h3>Греки (Sensitivities)</h3>
+              <h3>Греки</h3>
             </div>
             <div class="greeks-grid">
               <div class="greek-item">
@@ -212,7 +212,7 @@
               <strong>Множитель:</strong> {{ shockMultiplier.toFixed(1) }}x
             </div>
             <div class="info-item">
-              <strong>Расчёт:</strong> Real-time
+              <strong>Расчёт:</strong> В реальном времени
             </div>
             <div class="info-item">
               <strong>Модель:</strong> Vasicek
@@ -275,10 +275,10 @@ const activeShockType = ref('curve')
 
 // Shock Types
 const shockTypes = ref([
-  { id: 'curve', name: 'Сдвиг кривой', icon: '📈' },
-  { id: 'spread', name: 'Спред', icon: '📊' },
-  { id: 'vol', name: 'Волатильность', icon: '⚡' },
-  { id: 'twist', name: 'Кривизна', icon: '🔄' }
+  { id: 'curve', name: 'Сдвиг кривой', icon: '' },
+  { id: 'spread', name: 'Спред', icon: '' },
+  { id: 'vol', name: 'Волатильность', icon: '' },
+  { id: 'twist', name: 'Кривизна', icon: '' }
 ])
 
 // All Scenarios
@@ -507,12 +507,12 @@ const formatLabel = (key: string) => {
 
 const getSeverityIcon = (severity: string) => {
   const icons: { [key: string]: string } = {
-    'critical': '🔴',
-    'high': '🟠',
-    'medium': '🟡',
-    'low': '🟢'
+    'critical': '',
+    'high': '',
+    'medium': '',
+    'low': ''
   }
-  return icons[severity] || '⚪'
+  return icons[severity] || ''
 }
 
 const runStressTests = async () => {

@@ -53,13 +53,13 @@
 
                     <!-- Time to Maturity -->
                     <div class="input-group">
-                        <label class="lbl">T (Time), years</label>
+                        <label class="lbl">T (Time), лет</label>
                         <input v-model.number="params.T" type="number" step="0.01" min="0.001" class="glass-input" @change="calculatePrice" />
                     </div>
 
                     <!-- Dividend Yield -->
                     <div class="input-group">
-                        <label class="lbl">q (Div Yield), %</label>
+                        <label class="lbl">q (Див. доходность), %</label>
                         <input v-model.number="params.q" type="number" step="0.01" class="glass-input" @change="calculatePrice" />
                     </div>
 
@@ -98,11 +98,11 @@
             <!-- Price & Greeks Stats -->
             <transition name="fade">
             <div class="glass-card panel" v-if="results.price !== null">
-                 <div class="panel-header"><h3>Цена & греки</h3></div>
+                 <div class="panel-header"><h3>Цена и греки</h3></div>
                  <div class="stats-list">
                      <div class="stat-item price-highlight">
                          <div class="stat-head">
-                             <span class="stat-icon">💰</span> 
+                             <span class="stat-icon"></span> 
                              <span class="s-name">Цена опциона</span>
                          </div>
                          <span class="val mono" style="font-size: 16px; color: #3b82f6;">{{ results.price.toFixed(4) }}</span>
@@ -172,7 +172,7 @@
                         <div class="decomp-percent">{{ ((results.timeValue / results.price) * 100).toFixed(1) }}%</div>
                     </div>
                     <div class="decomp-item">
-                        <div class="decomp-label">Moneyness (S/K)</div>
+                        <div class="decomp-label">Moneyness</div>
                         <div class="decomp-value">{{ (params.S / params.K).toFixed(4) }}</div>
                         <div class="decomp-percent" :class="params.S/params.K > 1 ? 'text-green' : params.S/params.K < 1 ? 'text-red' : ''">
                             {{ params.S > params.K ? 'ITM' : params.S < params.K ? 'OTM' : 'ATM' }}
@@ -198,7 +198,7 @@
                                 <th>S \ σ</th>
                                 <th>σ - 5%</th>
                                 <th>σ - 2.5%</th>
-                                <th>σ базовая</th>
+                                <th>σ базовое</th>
                                 <th>σ + 2.5%</th>
                                 <th>σ + 5%</th>
                             </tr>
@@ -222,7 +222,7 @@
             <!-- Payoff Diagram -->
             <div class="glass-card chart-card mt-4">
                 <div class="chart-header">
-                    <h3>Payoff диаграмма (при экспирации)</h3>
+                    <h3>Payoff диаграмма</h3>
                 </div>
                 
                 <div class="chart-container">

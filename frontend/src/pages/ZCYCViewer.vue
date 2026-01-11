@@ -4,7 +4,7 @@
     <!-- Hero / Header -->
     <div class="section-header">
       <div class="header-left">
-        <h1 class="section-title">КБД (Zero-Coupon Yield Curve)</h1>
+        <h1 class="section-title">КБД</h1>
         <p class="section-subtitle">Кривая бескупонных доходностей от MOEX ISS API</p>
       </div>
       <div class="header-actions">
@@ -36,28 +36,28 @@
         <div class="kpi-label">Дата КБД</div>
         <div class="kpi-value">{{ formatDate(results.date) }}</div>
         <div class="kpi-sub">
-          <span class="text-muted">Last update</span>
+          <span class="text-muted">Последнее обновление</span>
         </div>
       </div>
       <div class="glass-card kpi-card">
         <div class="kpi-label">Точек на кривой</div>
         <div class="kpi-value text-gradient-blue">{{ results.count }}</div>
         <div class="kpi-sub">
-          <span class="text-muted">Data points</span>
+          <span class="text-muted">Точек данных</span>
         </div>
       </div>
       <div class="glass-card kpi-card">
         <div class="kpi-label">Минимальная ставка</div>
         <div class="kpi-value">{{ formatNumber(results.min_rate, 3) }}%</div>
         <div class="kpi-sub">
-          <span class="text-muted">Min rate</span>
+          <span class="text-muted">Мин. ставка</span>
         </div>
       </div>
       <div class="glass-card kpi-card">
         <div class="kpi-label">Максимальная ставка</div>
         <div class="kpi-value text-gradient-green">{{ formatNumber(results.max_rate, 3) }}%</div>
         <div class="kpi-sub">
-          <span class="text-muted">Max rate</span>
+          <span class="text-muted">Макс. ставка</span>
         </div>
       </div>
     </div>
@@ -109,7 +109,7 @@
         <!-- Interpolated Result Card -->
         <div v-if="selectedPeriod" class="glass-card panel highlight-panel">
           <div class="panel-header">
-            <h3>📊 Результат интерполяции</h3>
+            <h3>Результат интерполяции</h3>
             <div class="badge-glass">{{ getTermType(selectedPeriod.term) }}</div>
           </div>
           <div class="result-metrics">
@@ -195,7 +195,7 @@
               <span class="v mono">{{ formatNumber(results.max_rate - results.min_rate, 3) }}%</span>
             </div>
             <div class="kv-row">
-              <span class="k">Slope (5y - 0.5y)</span>
+              <span class="k">Наклон (5л - 0.5л)</span>
               <span class="v mono" :class="getSlope() > 0 ? 'text-green' : 'text-red'">{{ formatNumber(getSlope(), 3) }}%</span>
             </div>
           </div>
@@ -243,7 +243,7 @@
         <!-- Information -->
         <div class="glass-card panel">
           <div class="panel-header">
-            <h3>ℹ️ О КБД</h3>
+            <h3>О КБД</h3>
           </div>
           <div class="info-text">
             <p>

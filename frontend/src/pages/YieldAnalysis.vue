@@ -24,10 +24,10 @@
             <!-- Chart 1: Daily Changes (Volatile "Spaghetti") -->
             <div class="glass-card chart-container">
                 <div class="panel-header">
-                    <h3>Ежедневные изменения (Daily Returns %)</h3>
+                    <h3>Ежедневные изменения</h3>
                     <div class="legend">
                          <span class="l-item faded"><span class="dot bg-gray"></span> Сценарии</span>
-                         <span class="l-item"><span class="dot bg-green"></span> Выбросы (Outliers)</span>
+                         <span class="l-item"><span class="dot bg-green"></span> Выбросы</span>
                     </div>
                 </div>
                 
@@ -59,7 +59,7 @@
             <!-- Chart 2: Cumulative Changes (Trends) -->
             <div class="glass-card chart-container">
                 <div class="panel-header">
-                    <h3>Накопленная доходность (Cumulative Returns %)</h3>
+                    <h3>Накопленная доходность</h3>
                     <div class="legend">
                          <span class="l-item"><span class="dot bg-blue"></span> US10Y Trend</span>
                          <span class="l-item"><span class="dot bg-purple"></span> US02Y Trend</span>
@@ -98,11 +98,11 @@
                 
                 <div class="stat-list">
                     <div class="stat-row">
-                        <span class="lbl">Max Daily Change</span>
+                        <span class="lbl">Макс. дневное изменение</span>
                         <span class="val text-red font-mono">+8.4%</span>
                     </div>
                     <div class="stat-row">
-                        <span class="lbl">Mean Reversion</span>
+                        <span class="lbl">Возврат к среднему</span>
                         <span class="val font-mono">0.45</span>
                     </div>
                     <div class="stat-row">
@@ -116,7 +116,7 @@
                 <div class="panel-header-sm"><h3>Параметры симуляции</h3></div>
                 <div class="stat-list">
                     <div class="stat-row">
-                        <span class="lbl">Количество путей</span>
+                        <span class="lbl">Количество сценариев</span>
                         <span class="val font-mono">50</span>
                     </div>
                     <div class="stat-row">
@@ -125,7 +125,7 @@
                     </div>
                     <div class="stat-row">
                         <span class="lbl">Модель</span>
-                        <span class="val font-mono text-blue">GARCH(1,1)</span>
+                        <span class="val font-mono text-blue">—</span>
                     </div>
                 </div>
 

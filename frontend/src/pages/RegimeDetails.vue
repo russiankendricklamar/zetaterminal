@@ -9,7 +9,7 @@
       </div>
       <div class="header-actions">
          <div class="glass-pill status-pill">
-            <span class="status-label text-muted">Data: <b class="text-white">01.11.2025</b></span>
+            <span class="status-label text-muted">Данные: <b class="text-white">01.11.2025</b></span>
          </div>
       </div>
     </div>
@@ -80,11 +80,11 @@
         <!-- Transition Matrix Heatmap -->
         <div class="glass-card panel">
             <div class="panel-header">
-                <h3>Матрица переходов (Transition Matrix)</h3>
+                <h3>Матрица переходов</h3>
             </div>
             <div class="heatmap-container">
                 <div class="heatmap-grid">
-                    <div class="h-label">From \ To</div>
+                    <div class="h-label">От \ К</div>
                     <div class="h-col-header text-blue">Стаб</div>
                     <div class="h-col-header text-red">Падение</div>
                     <div class="h-col-header text-green">Рост</div>
@@ -135,7 +135,7 @@
                         <tr><td class="pl-2">5 дней</td><td class="text-right">31.7%</td><td class="text-right">35.2%</td><td class="text-right">33.1%</td></tr>
                         <tr><td class="pl-2">10 дней</td><td class="text-right">49.0%</td><td class="text-right">26.8%</td><td class="text-right">24.2%</td></tr>
                         <tr class="stationary">
-                            <td class="pl-2 text-orange font-bold">∞ (Long-run)</td>
+                            <td class="pl-2 text-orange font-bold">∞ (Долгосрочный)</td>
                             <td class="text-right font-bold text-orange">70.8%</td>
                             <td class="text-right font-bold text-orange">15.6%</td>
                             <td class="text-right font-bold text-orange">13.5%</td>
@@ -182,9 +182,9 @@
                     <path d="M200,220 Q380,50 500,220" fill="rgba(74, 222, 128, 0.1)" stroke="#4ade80" stroke-width="2" />
                     
                     <!-- Labels -->
-                    <text x="310" y="30" fill="#3b82f6" font-size="10" font-weight="600">Стабильность (Low σ)</text>
-                    <text x="100" y="100" fill="#f87171" font-size="10" font-weight="600">Падение (Neg μ)</text>
-                    <text x="450" y="100" fill="#4ade80" font-size="10" font-weight="600">Рост (Pos μ)</text>
+                    <text x="310" y="30" fill="#3b82f6" font-size="10" font-weight="600">Стабильность (Низкая σ)</text>
+                    <text x="100" y="100" fill="#f87171" font-size="10" font-weight="600">Падение (Отрицательная μ)</text>
+                    <text x="450" y="100" fill="#4ade80" font-size="10" font-weight="600">Рост (Положительная μ)</text>
                 </svg>
             </div>
             <p class="chart-caption">Распределение изменений доходностей. Режим «Падение» имеет "толстый хвост" слева.</p>
@@ -193,7 +193,7 @@
         <!-- Comparative Bars -->
         <div class="glass-card panel">
              <div class="panel-header">
-                <h3>Характеристики режимов (Vol vs Ret)</h3>
+                <h3>Характеристики режимов (Волатильность vs Доходность)</h3>
             </div>
              <div class="chart-container-rect">
                 <svg viewBox="0 0 500 250" class="svg-chart">

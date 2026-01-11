@@ -4,12 +4,12 @@
     <!-- Header -->
     <div class="section-header">
       <div class="header-left">
-        <h1 class="section-title">Оценка облигаций (DCF)</h1>
+        <h1 class="section-title">Оценка облигаций</h1>
         <p class="section-subtitle">Моделирование денежных потоков на данных MOEX ISS API</p>
       </div>
       <div class="header-actions">
         <button class="btn-glass primary" @click="calculateBond" :disabled="loading">
-            <span v-if="!loading">▶ Рассчитать</span>
+            <span v-if="!loading">Рассчитать</span>
             <span v-else class="flex-center"><span class="spinner-mini"></span> Загрузка...</span>
         </button>
       </div>
@@ -69,7 +69,7 @@
             <!-- Error Alert -->
             <transition name="fade">
                 <div v-if="error" class="error-banner">
-                    <span class="icon">⚠️</span> {{ error }}
+                    <span class="icon">⚠</span> {{ error }}
                 </div>
             </transition>
 
@@ -142,7 +142,7 @@
                                 </td>
                             </tr>
                             <tr>
-                                <td><strong>Дюрация (Mac)</strong></td>
+                                <td><strong>Дюрация (Modified)</strong></td>
                                 <td class="mono">{{ formatNumber(results.scenario1.duration, 2) }} лет</td>
                                 <td class="mono">{{ formatNumber(results.scenario2.duration, 2) }} лет</td>
                                 <td class="mono text-muted">
@@ -185,7 +185,7 @@
                         </tbody>
                         <tfoot>
                             <tr>
-                                <td colspan="4" class="text-right text-muted">Total PV (Dirty):</td>
+                                <td colspan="4" class="text-right text-muted">Общая PV (Dirty):</td>
                                 <td class="text-right mono text-blue font-bold">{{ formatNumber(results.scenario1.dirtyPrice, 2) }}</td>
                             </tr>
                         </tfoot>
@@ -224,7 +224,7 @@
                         </tbody>
                         <tfoot>
                             <tr>
-                                <td colspan="4" class="text-right text-muted">Total PV (Dirty):</td>
+                                <td colspan="4" class="text-right text-muted">Общая PV (Dirty):</td>
                                 <td class="text-right mono text-green font-bold">{{ formatNumber(results.scenario2.dirtyPrice, 2) }}</td>
                             </tr>
                         </tfoot>

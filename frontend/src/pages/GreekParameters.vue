@@ -54,14 +54,14 @@
         <div class="kpi-label">VaR {{ confidenceLevel }}% (Value at Risk)</div>
         <div class="kpi-value text-red">{{ formatCurrency(adjustedVaR) }}</div>
         <div class="kpi-sub">
-           <span class="text-muted">Risk/Equity:</span> <span class="text-white font-bold">{{ (Math.abs(adjustedVaR)/riskMetricsStore.totalEquity*100).toFixed(2) }}%</span>
+           <span class="text-muted">Риск/Капитал:</span> <span class="text-white font-bold">{{ (Math.abs(adjustedVaR)/riskMetricsStore.totalEquity*100).toFixed(2) }}%</span>
         </div>
       </div>
       <div class="glass-card kpi-card">
         <div class="kpi-label">Expected Shortfall (CVaR)</div>
         <div class="kpi-value text-orange">{{ formatCurrency(confidenceLevel >= 99 ? riskMetricsStore.cvar99 : riskMetricsStore.cvar95) }}</div>
         <div class="kpi-sub">
-           <span class="text-muted">Tail Avg Loss</span>
+           <span class="text-muted">Средний убыток в хвосте</span>
         </div>
       </div>
       <div class="glass-card kpi-card">
@@ -104,8 +104,8 @@
                    <tr>
                       <th class="text-left pl-4">Актив</th>
                       <th class="text-right">Вес</th>
-                      <th class="text-right">Risk Contrib.</th>
-                      <th class="text-right pr-4">% Risk</th>
+                      <th class="text-right">Вклад в риск</th>
+                      <th class="text-right pr-4">% Риска</th>
                    </tr>
                 </thead>
                 <tbody>
@@ -137,7 +137,7 @@
           <div class="panel-header">
             <h3>Стресс-тестирование</h3>
             <button @click="runStressTest" class="btn-xs-glass" :disabled="isStressTesting">
-              {{ isStressTesting ? 'Running...' : 'Запустить' }}
+              {{ isStressTesting ? 'Выполняется...' : 'Запустить' }}
             </button>
           </div>
           <div class="stress-list">
@@ -163,8 +163,8 @@
           <div class="panel-header">
             <h3>Матрица корреляций</h3>
             <div class="legend">
-               <span class="dot-legend bg-blue"></span> Pos
-               <span class="dot-legend bg-red"></span> Neg
+               <span class="dot-legend bg-blue"></span> Поз
+               <span class="dot-legend bg-red"></span> Нег
             </div>
           </div>
           <div class="correlation-matrix-wrapper">
@@ -239,11 +239,11 @@
           </div>
           <div class="metrics-kv-list">
              <div class="kv-row">
-                <span class="k">Days to Liquidate (95%)</span>
+                <span class="k">Дней до ликвидации (95%)</span>
                 <span class="v">1.2 дня</span>
              </div>
              <div class="kv-row">
-                <span class="k">Bid-Ask Spread Cost</span>
+                <span class="k">Стоимость спреда Bid-Ask</span>
                 <span class="v text-orange">0.08%</span>
              </div>
           </div>
@@ -323,11 +323,11 @@ const stressScenarios = ref([
 const factors = computed(() => {
   const beta = riskMetricsStore.portfolioBeta
   return [
-    { name: 'Market Risk', index: 'IMOEX', beta: beta },
-    { name: 'Interest Rates', index: 'RU 10Y', beta: -0.42 },
+    { name: 'Рыночный риск', index: 'IMOEX', beta: beta },
+    { name: 'Процентные ставки', index: 'RU 10Y', beta: -0.42 },
     { name: 'Momentum', index: 'MTUM ETF', beta: 0.25 },
-    { name: 'Volatility', index: 'RTSVIX', beta: -0.65 },
-    { name: 'Commodities', index: 'BCOM Index', beta: 0.12 },
+    { name: 'Волатильность', index: 'RTSVIX', beta: -0.65 },
+    { name: 'Сырье', index: 'BCOM Index', beta: 0.12 },
   ]
 })
 

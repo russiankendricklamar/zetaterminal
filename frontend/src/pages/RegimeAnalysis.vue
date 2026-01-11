@@ -23,13 +23,13 @@
         @click="viewMode = '2d'" 
         :class="['tab-btn', { active: viewMode === '2d' }]"
       >
-        📊 2D Анализ
+        2D Анализ
       </button>
       <button 
         @click="viewMode = '3d'" 
         :class="['tab-btn', { active: viewMode === '3d' }]"
       >
-        🌐 3D Пространство режимов
+        3D Пространство режимов
       </button>
     </div>
 
@@ -74,13 +74,13 @@
                                 :min="2" :max="4" :step="1" 
                                 class="text-accent font-bold"
                             />
-                            <span class="unit">states</span>
+                            <span class="unit">режимов</span>
                         </div>
                     </div>
 
                     <!-- Shock Multiplier -->
                     <div class="input-group mt-2">
-                        <label class="lbl">Множитель шока (Vol Shock)</label>
+                        <label class="lbl">Множитель шока волатильности</label>
                         <div class="scrub-row">
                             <ScrubInput 
                                 v-model="shockMultiplier" 
@@ -146,12 +146,12 @@
                 <div class="chart-header">
                     <div class="ch-left">
                         <h3>Динамика цены и режимы</h3>
-                        <span v-if="isPlaying" class="badge-live">● LIVE</span>
+                        <span v-if="isPlaying" class="badge-live">В ПРЯМОМ ЭФИРЕ</span>
                     </div>
                     
                     <!-- PLAYBACK CONTROLS -->
                     <div class="playback-controls" v-if="chartData.length">
-                        <button class="icon-btn" @click="togglePlay" title="Play/Pause">
+                        <button class="icon-btn" @click="togglePlay" title="Воспроизвести/Пауза">
                             <span v-if="isPlaying">⏸</span>
                             <span v-else>▶</span>
                         </button>
@@ -167,7 +167,7 @@
                             <div class="timeline-thumb" :style="{ left: progressPercent + '%' }"></div>
                         </div>
 
-                        <button class="icon-btn" @click="resetPlayback" title="Reset">↺</button>
+                        <button class="icon-btn" @click="resetPlayback" title="Сброс">↺</button>
                     </div>
                 </div>
 
@@ -207,7 +207,7 @@
             <!-- Chart 2: Rolling Volatility (UPDATED HEIGHT: 160px) -->
             <div class="glass-card chart-card mt-4">
                 <div class="chart-header">
-                    <h3>Скользящая волатильность (20D Rolling Vol)</h3>
+                    <h3>Скользящая волатильность (20Д)</h3>
                 </div>
                 <div class="chart-container-sm">
                     <!-- VIEWBOX UPDATED TO 800 160 -->
@@ -240,9 +240,9 @@
                         <line v-for="s in [0, 1, 2]" :key="'g-'+s" x1="0" :y1="scaleYState(s)" x2="800" :y2="scaleYState(s)" stroke="rgba(255,255,255,0.05)" stroke-dasharray="4"/>
                         
                         <!-- Labels -->
-                        <text x="10" :y="scaleYState(0) - 8" fill="rgba(255,255,255,0.2)" font-size="10">Stable (0)</text>
-                        <text x="10" :y="scaleYState(1) - 8" fill="rgba(255,255,255,0.2)" font-size="10">Growth (1)</text>
-                        <text x="10" :y="scaleYState(2) - 8" fill="rgba(255,255,255,0.2)" font-size="10">Stress (2)</text>
+                        <text x="10" :y="scaleYState(0) - 8" fill="rgba(255,255,255,0.2)" font-size="10">Стабильный (0)</text>
+                        <text x="10" :y="scaleYState(1) - 8" fill="rgba(255,255,255,0.2)" font-size="10">Рост (1)</text>
+                        <text x="10" :y="scaleYState(2) - 8" fill="rgba(255,255,255,0.2)" font-size="10">Стресс (2)</text>
 
                         <!-- Scatter Points -->
                         <circle 
@@ -437,10 +437,10 @@ const slicedPricePath = computed(() => {
 })
 
 const getRegimeName = (r: number) => {
-    if(r===0) return 'Stable (Low Vol)'
-    if(r===1) return 'Growth (Bull)'
-    if(r===2) return 'Stress (Bear)'
-    return 'Correction'
+    if(r===0) return 'Стабильный (Низкая волатильность)'
+    if(r===1) return 'Рост (Бычий)'
+    if(r===2) return 'Стресс (Медвежий)'
+    return 'Коррекция'
 }
 
 const getRegimeColor = (r: number, alpha: number) => {

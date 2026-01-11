@@ -1247,7 +1247,7 @@ const playbackStepTrajectories = ref(0)
 const isPlayingTrajectories = ref(false)
 let animationFrameTrajectories: number | null = null
 const trajectoriesChartContainer = ref<HTMLElement | null>(null)
-const initialPrice = ref(100)
+const initialPrice = ref(0)
 
 // Convert horizon from years to days (252 trading days per year)
 const trajectoriesDays = computed(() => {

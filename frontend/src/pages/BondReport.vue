@@ -5,7 +5,7 @@
     <div class="section-header">
       <div class="header-left">
         <h1 class="section-title">Отчет по оценке облигаций</h1>
-        <p class="section-subtitle">Формирование аналитического отчёта (DCF)</p>
+        <p class="section-subtitle">Формирование аналитического отчёта</p>
       </div>
       <div class="header-actions">
         <button class="btn-glass primary" @click="generateReport" :disabled="loading || !results">
@@ -13,7 +13,7 @@
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m4-3H8m7-7H5a2 2 0 00-2 2v12a2 2 0 002 2h14a2 2 0 002-2V7a2 2 0 00-2-2z"></path>
           </svg>
           <span v-else class="spinner-mini"></span>
-          <span>{{ loading ? 'Генерация...' : '📄 Скачать PDF' }}</span>
+          <span>{{ loading ? 'Генерация...' : 'Скачать PDF' }}</span>
         </button>
       </div>
     </div>
@@ -69,7 +69,7 @@
         </div>
         
         <button class="btn-glass primary wide" @click="calculateBond" :disabled="loading">
-          <span v-if="!loading">▶ Загрузить оценку</span>
+          <span v-if="!loading">Загрузить оценку</span>
           <span v-else class="flex-center"><span class="spinner-mini"></span> Загрузка...</span>
         </button>
       </div>
@@ -100,7 +100,7 @@
           <div class="checkbox-grid">
             <label class="checkbox-item">
               <input v-model="report.includeExec" type="checkbox" />
-              <span>Резюме (Executive Summary)</span>
+              <span>Резюме</span>
             </label>
             <label class="checkbox-item">
               <input v-model="report.includeBondInfo" type="checkbox" />
@@ -165,18 +165,18 @@
         
         <!-- Executive Summary -->
         <div v-if="report.includeExec" class="report-section">
-          <h2 class="report-title">Резюме (Executive Summary)</h2>
+          <h2 class="report-title">Резюме</h2>
           <div class="summary-box">
             <div class="summary-row">
-              <span class="label">Облигация (ISIN)</span>
+              <span class="label">Облигация</span>
               <span class="value mono">{{ results.secid }}</span>
             </div>
             <div class="summary-row">
-              <span class="label">Справедливая стоимость (Dirty Price)</span>
+              <span class="label">Справедливая стоимость</span>
               <span class="value text-gradient-blue">{{ formatNumber(results.dirtyPrice, 4) }} ₽</span>
             </div>
             <div class="summary-row">
-              <span class="label">Чистая цена (Clean Price)</span>
+              <span class="label">Чистая цена</span>
               <span class="value">{{ formatNumber(results.cleanPrice, 4) }} ₽</span>
             </div>
             <div class="summary-row">
@@ -184,7 +184,7 @@
               <span class="value">{{ formatNumber(results.pricePercent, 2) }}%</span>
             </div>
             <div class="summary-row">
-              <span class="label">Дюрация (Macaulay)</span>
+              <span class="label">Дюрация (Modified)</span>
               <span class="value text-orange">{{ formatNumber(results.duration, 4) }} лет</span>
             </div>
           </div>
@@ -232,7 +232,7 @@
             <table class="report-table">
               <tbody>
                 <tr>
-                  <td class="label">Dirty Price (с НКД)</td>
+                  <td class="label">Dirty Price</td>
                   <td class="value mono text-gradient-blue">{{ formatNumber(results.dirtyPrice, 4) }} ₽</td>
                 </tr>
                 <tr>
@@ -240,7 +240,7 @@
                   <td class="value mono">{{ formatNumber(results.accruedInterest, 4) }} ₽</td>
                 </tr>
                 <tr>
-                  <td class="label">Clean Price (без НКД)</td>
+                  <td class="label">Clean Price</td>
                   <td class="value mono">{{ formatNumber(results.cleanPrice, 4) }} ₽</td>
                 </tr>
                 <tr>
@@ -248,7 +248,7 @@
                   <td class="value mono">{{ formatNumber(results.pricePercent, 3) }}%</td>
                 </tr>
                 <tr>
-                  <td class="label">Дюрация Маколея</td>
+                  <td class="label">Дюрация (Modified)</td>
                   <td class="value mono text-orange">{{ formatNumber(results.duration, 4) }} лет</td>
                 </tr>
               </tbody>
@@ -258,7 +258,7 @@
 
         <!-- Cash Flows -->
         <div v-if="report.includeCashFlows && results.cashFlows" class="report-section">
-          <h2 class="report-title">Денежные потоки (DCF)</h2>
+          <h2 class="report-title">Денежные потоки</h2>
           <p class="report-desc">Таблица дисконтированных денежных потоков</p>
           <div class="table-scroll">
             <table class="report-table cf-table">
@@ -284,7 +284,7 @@
               </tbody>
               <tfoot>
                 <tr>
-                  <td colspan="5" class="text-right"><strong>Итого (Dirty Price)</strong></td>
+                  <td colspan="5" class="text-right"><strong>Итого</strong></td>
                   <td class="text-right mono"><strong>{{ formatNumber(results.dirtyPrice, 4) }}</strong></td>
                 </tr>
               </tfoot>
@@ -367,13 +367,13 @@
     <transition name="fade">
     <div v-if="results" class="action-bar">
       <button class="btn-glass primary" @click="generateReport" :disabled="loading">
-        📄 Скачать PDF
+        Скачать PDF
       </button>
       <button class="btn-glass secondary" @click="printReport">
-        🖨️ Печать
+        Печать
       </button>
       <button class="btn-glass secondary" @click="copyToClipboard">
-        📋 Копировать
+        Копировать
       </button>
     </div>
     </transition>
