@@ -268,19 +268,19 @@
                 <div class="garch-stats">
                   <div class="garch-stat">
                     <span class="stat-label">α (ARCH)</span>
-                    <span class="stat-val">0.082</span>
+                    <span class="stat-val">{{ garchData?.result?.parameters?.alpha?.toFixed(3) || '0.082' }}</span>
                   </div>
                   <div class="garch-stat">
                     <span class="stat-label">β (GARCH)</span>
-                    <span class="stat-val">0.893</span>
+                    <span class="stat-val">{{ garchData?.result?.parameters?.beta?.toFixed(3) || '0.893' }}</span>
                   </div>
                   <div class="garch-stat">
                     <span class="stat-label">ω</span>
-                    <span class="stat-val">0.000025</span>
+                    <span class="stat-val">{{ garchData?.result?.parameters?.omega?.toFixed(6) || '0.000025' }}</span>
                   </div>
                   <div class="garch-stat">
                     <span class="stat-label">Long-term Vol</span>
-                    <span class="stat-val">18.2%</span>
+                    <span class="stat-val">{{ garchData?.result?.long_term_volatility ? (garchData.result.long_term_volatility * 100).toFixed(1) + '%' : '18.2%' }}</span>
                   </div>
                 </div>
               </div>
@@ -1059,6 +1059,7 @@ import { usePortfolioStore } from '../stores/portfolio'
 import { useRiskMetricsStore } from '../stores/riskMetrics'
 import { optimizeHJBPortfolio, type HJBResponse } from '../services/hjbService'
 import { optimizeCCMVPortfolio, type CCMVResponse, type CCMVCluster } from '../services/ccmvService'
+import { calculateGARCH, type GARCHResponse } from '../services/computeService'
 import * as THREE from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 
@@ -3007,6 +3008,10 @@ watch([portfolioPositions, selectedBank, activeMethod], () => {
 
 // ==================== GARCH CHART ====================
 const garchChart = ref<HTMLCanvasElement | null>(null)
+const garchData = ref<GARCHResponse | null>(null)
+const garchAnimationFrame = ref<number | null>(null)
+const garchAnimationStep = ref(0)
+const isGARCHAnimating = ref(false)
 
 let resizeObserver: ResizeObserver | null = null
 
@@ -3090,6 +3095,13 @@ const handleResize = () => {
   weightsTabSliderStyle.value
 }
 
+// Watch portfolio positions to update GARCH data
+watch(() => portfolioPositions.value, () => {
+  if (garchChart.value) {
+    loadGARCHData()
+  }
+}, { deep: true })
+
 onMounted(() => {
   // Generate initial trajectories
   generateTrajectories()
@@ -3102,8 +3114,9 @@ onMounted(() => {
       initGARCHChart()
       // Добавляем обработчик изменения размера для перерисовки графика
       const resizeObserver = new ResizeObserver(() => {
-        if (garchChart.value) {
-          initGARCHChart()
+        if (garchChart.value && garchData.value) {
+          // Перерисовываем график с текущими данными
+          animateGARCHChart()
         }
       })
       if (garchChart.value.parentElement) {
@@ -3140,33 +3153,136 @@ onUnmounted(() => {
   if (animationFrameTrajectories) {
     cancelAnimationFrame(animationFrameTrajectories)
   }
+  stopGARCHAnimation()
   window.removeEventListener('resize', handleResize)
 })
 
-const initGARCHChart = () => {
+// Функция для получения доходностей из портфеля для GARCH
+const getPortfolioReturnsForGARCH = (): number[] => {
+  const positions = portfolioPositions.value
+  if (positions.length === 0) return []
+  
+  // Генерируем доходности на основе dayChange
+  const returns: number[] = []
+  for (let i = 0; i < 500; i++) {
+    // Используем dayChange как базовую доходность и добавляем случайный шум
+    const baseReturn = positions.reduce((sum, pos) => {
+      const dailyReturn = (pos.dayChange / 100) / 252 // Преобразуем в дневную доходность
+      return sum + dailyReturn * (pos.allocation || 0)
+    }, 0)
+    
+    // Добавляем случайный шум для реалистичности
+    const noise = (Math.random() - 0.5) * 0.02
+    returns.push(baseReturn + noise)
+  }
+  
+  return returns
+}
+
+// Загрузка данных GARCH из бэкенда
+const loadGARCHData = async () => {
+  try {
+    const returns = getPortfolioReturnsForGARCH()
+    if (returns.length === 0) return
+    
+    const result = await calculateGARCH({
+      returns,
+      omega: 0.000025,
+      alpha: 0.082,
+      beta: 0.893
+    })
+    
+    garchData.value = result
+    garchAnimationStep.value = 0
+    startGARCHAnimation()
+  } catch (error) {
+    console.error('Failed to load GARCH data:', error)
+    // Fallback to local generation
+    generateLocalGARCHData()
+  }
+}
+
+// Генерация локальных данных GARCH (fallback)
+const generateLocalGARCHData = () => {
+  const returns = getPortfolioReturnsForGARCH()
+  if (returns.length === 0) {
+    // Генерируем случайные данные
+    const dataPoints = 500
+    const volatilities: number[] = []
+    let currentVol = 0.18
+    
+    for (let i = 0; i < dataPoints; i++) {
+      const noise = (Math.random() - 0.5) * 0.05
+      currentVol = Math.max(0.05, Math.min(0.5, currentVol * 0.95 + noise))
+      volatilities.push(currentVol)
+    }
+    
+    garchData.value = {
+      result: {
+        variances: volatilities.map(v => v * v),
+        volatilities,
+        residuals: returns.length > 0 ? returns : Array(dataPoints).fill(0).map(() => (Math.random() - 0.5) * 0.3),
+        parameters: {
+          omega: 0.000025,
+          alpha: 0.082,
+          beta: 0.893
+        },
+        long_term_volatility: 0.182,
+        mean_variance: 0.033,
+        mean_volatility: 0.18
+      },
+      status: 'success',
+      timestamp: new Date().toISOString()
+    }
+    garchAnimationStep.value = 0
+    startGARCHAnimation()
+  }
+}
+
+// Анимация GARCH графика
+const startGARCHAnimation = () => {
+  if (isGARCHAnimating.value) return
+  isGARCHAnimating.value = true
+  garchAnimationStep.value = 0
+  animateGARCHChart()
+}
+
+const stopGARCHAnimation = () => {
+  isGARCHAnimating.value = false
+  if (garchAnimationFrame.value) {
+    cancelAnimationFrame(garchAnimationFrame.value)
+    garchAnimationFrame.value = null
+  }
+}
+
+const animateGARCHChart = () => {
+  if (!isGARCHAnimating.value || !garchData.value) {
+    return
+  }
+  
   const canvas = document.getElementById('garch-chart') as HTMLCanvasElement
-  if (!canvas) return
+  if (!canvas) {
+    stopGARCHAnimation()
+    return
+  }
   
   const ctx = canvas.getContext('2d')
-  if (!ctx) return
+  if (!ctx) {
+    stopGARCHAnimation()
+    return
+  }
   
   const width = canvas.offsetWidth || 1200
   const height = 200
   canvas.width = width
   canvas.height = height
   
-  // Генерируем данные шума (noise) - случайные колебания
-  const dataPoints = 500
-  let currentValue = 0
-  const data = Array.from({ length: dataPoints }, (_, i) => {
-    // Генерируем случайный шум с некоторой автокорреляцией
-    const noise = (Math.random() - 0.5) * 0.3
-    currentValue = currentValue * 0.7 + noise
-    return {
-      x: i,
-      y: currentValue
-    }
-  })
+  const volatilities = garchData.value.result.volatilities
+  const dataPoints = volatilities.length
+  
+  // Увеличиваем шаг анимации
+  garchAnimationStep.value += 2
+  const currentLength = Math.min(garchAnimationStep.value, dataPoints)
   
   // Очищаем canvas
   ctx.fillStyle = 'rgba(20, 22, 28, 0.5)'
@@ -3182,46 +3298,83 @@ const initGARCHChart = () => {
   ctx.stroke()
   ctx.setLineDash([])
   
-  // Рисуем график шума
-  ctx.strokeStyle = '#60a5fa'
-  ctx.lineWidth = 1.5
-  ctx.beginPath()
-  
-  const maxY = Math.max(...data.map(d => Math.abs(d.y))) * 1.2
-  const minY = -maxY
-  const rangeY = maxY - minY
-  
-  data.forEach((point, i) => {
-    const x = (i / (data.length - 1)) * width
-    const y = height / 2 - (point.y / rangeY) * (height * 0.8)
+  if (currentLength > 0) {
+    // Нормализуем волатильности для отображения (центрируем вокруг нуля)
+    const meanVol = garchData.value.result.mean_volatility
+    const maxDev = Math.max(...volatilities.slice(0, currentLength).map(v => Math.abs(v - meanVol))) * 1.2
+    const rangeY = maxDev * 2 || 0.1
     
-    if (i === 0) {
-      ctx.moveTo(x, y)
-    } else {
-      ctx.lineTo(x, y)
+    // Рисуем график волатильности
+    ctx.strokeStyle = '#60a5fa'
+    ctx.lineWidth = 2
+    ctx.beginPath()
+    
+    for (let i = 0; i < currentLength; i++) {
+      const x = (i / (dataPoints - 1)) * width
+      const normalizedVol = (volatilities[i] - meanVol) / rangeY
+      const y = height / 2 - normalizedVol * (height * 0.8)
+      
+      if (i === 0) {
+        ctx.moveTo(x, y)
+      } else {
+        ctx.lineTo(x, y)
+      }
     }
-  })
-  
-  ctx.stroke()
-  
-  // Добавляем заливку под графиком
-  ctx.fillStyle = 'rgba(96, 165, 250, 0.1)'
-  ctx.lineTo(width, height / 2)
-  ctx.lineTo(0, height / 2)
-  ctx.closePath()
-  ctx.fill()
-  
-  // Рисуем точки данных
-  ctx.fillStyle = '#60a5fa'
-  data.forEach((point, i) => {
-    if (i % 10 === 0) { // Рисуем каждую 10-ю точку для производительности
-      const x = (i / (data.length - 1)) * width
-      const y = height / 2 - (point.y / rangeY) * (height * 0.8)
-      ctx.beginPath()
-      ctx.arc(x, y, 1.5, 0, Math.PI * 2)
+    
+    ctx.stroke()
+    
+    // Добавляем заливку под графиком
+    ctx.fillStyle = 'rgba(96, 165, 250, 0.15)'
+    if (currentLength > 0) {
+      const lastX = ((currentLength - 1) / (dataPoints - 1)) * width
+      const lastY = height / 2
+      ctx.lineTo(lastX, lastY)
+      ctx.lineTo(0, lastY)
+      ctx.closePath()
       ctx.fill()
     }
-  })
+    
+    // Рисуем точки данных
+    ctx.fillStyle = '#60a5fa'
+    for (let i = 0; i < currentLength; i += 10) {
+      const x = (i / (dataPoints - 1)) * width
+      const normalizedVol = (volatilities[i] - meanVol) / rangeY
+      const y = height / 2 - normalizedVol * (height * 0.8)
+      ctx.beginPath()
+      ctx.arc(x, y, 2, 0, Math.PI * 2)
+      ctx.fill()
+    }
+    
+    // Рисуем индикатор текущей позиции
+    if (currentLength < dataPoints) {
+      const currentX = ((currentLength - 1) / (dataPoints - 1)) * width
+      ctx.strokeStyle = '#fbbf24'
+      ctx.lineWidth = 2
+      ctx.beginPath()
+      ctx.moveTo(currentX, 0)
+      ctx.lineTo(currentX, height)
+      ctx.stroke()
+    }
+  }
+  
+  // Продолжаем анимацию, если еще не достигли конца
+  if (currentLength < dataPoints) {
+    garchAnimationFrame.value = requestAnimationFrame(animateGARCHChart)
+  } else {
+    // Анимация завершена, перезапускаем через 2 секунды
+    setTimeout(() => {
+      garchAnimationStep.value = 0
+      garchAnimationFrame.value = requestAnimationFrame(animateGARCHChart)
+    }, 2000)
+  }
+}
+
+const initGARCHChart = () => {
+  const canvas = document.getElementById('garch-chart') as HTMLCanvasElement
+  if (!canvas) return
+  
+  // Загружаем данные из бэкенда
+  loadGARCHData()
 }
 
 // ==================== CCMV PARAMETERS ====================
