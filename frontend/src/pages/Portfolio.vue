@@ -55,8 +55,8 @@
           </span></h1>
         </div>
         <div class="hero-meta">
-          <span class="glass-pill">Стратегия: <strong>Multi-Asset</strong></span>
-          <span class="glass-pill">Ребалансировка: <strong>Monthly</strong></span>
+          <span class="glass-pill">Стратегия: <strong>Мультиактив</strong></span>
+          <span class="glass-pill">Ребалансировка: <strong>Ежемесячно</strong></span>
           <span class="glass-pill risk-aggressive">
             <span class="status-dot"></span>
             Риск: Агрессивный
@@ -76,7 +76,7 @@
     <div class="kpi-grid">
       <div class="glass-card kpi-card glow-green">
         <div class="kpi-header">
-          <span class="kpi-label">Total P&L</span>
+          <span class="kpi-label">Общий P&L</span>
           <div class="trend-badge" :class="portfolioMetrics?.annual_return && portfolioMetrics.annual_return >= 0 ? 'positive' : 'negative'">
             <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="4">
               <path v-if="portfolioMetrics?.annual_return && portfolioMetrics.annual_return >= 0" d="M18 15l-6-6-6 6"/>
@@ -90,7 +90,7 @@
             {{ portfolioMetrics ? portfolioMetrics.total_pnl.toLocaleString('ru-RU', { maximumFractionDigits: 0 }) : '452,109' }} 
             <small>RUB</small>
           </div>
-          <div class="kpi-sub">NAV: {{ portfolioMetrics ? (portfolioMetrics.nav / 1000000).toFixed(2) + 'M' : '3.64M' }}</div>
+          <div class="kpi-sub">ЧСА: {{ portfolioMetrics ? (portfolioMetrics.nav / 1000000).toFixed(2) + 'M' : '3.64M' }}</div>
         </div>
       </div>
 
@@ -104,7 +104,7 @@
         </div>
         <div class="kpi-content">
           <div class="kpi-value text-white">{{ portfolioMetrics ? portfolioMetrics.var_95_percent.toFixed(2) + '%' : '2.45%' }}</div>
-          <div class="kpi-sub">Daily Risk</div>
+          <div class="kpi-sub">Дневной риск</div>
         </div>
       </div>
 
@@ -114,17 +114,17 @@
         </div>
         <div class="kpi-content">
           <div class="kpi-value text-gradient-blue">{{ portfolioMetrics ? portfolioMetrics.sharpe_ratio.toFixed(2) : '1.85' }}</div>
-          <div class="kpi-sub">Risk-Free Rate: {{ portfolioMetrics ? (portfolioMetrics.risk_free_rate * 100).toFixed(1) + '%' : '4.2%' }}</div>
+          <div class="kpi-sub">Безрисковая ставка: {{ portfolioMetrics ? (portfolioMetrics.risk_free_rate * 100).toFixed(1) + '%' : '4.2%' }}</div>
         </div>
       </div>
 
       <div class="glass-card kpi-card">
         <div class="kpi-header">
-          <span class="kpi-label">Diversification</span>
+          <span class="kpi-label">Диверсификация</span>
         </div>
         <div class="kpi-content">
           <div class="kpi-value text-white">{{ portfolioMetrics ? portfolioMetrics.diversification.toFixed(2) : '0.34' }}</div>
-          <div class="kpi-sub">Correlation Coeff: {{ portfolioMetrics ? portfolioMetrics.avg_correlation.toFixed(2) : '0.34' }}</div>
+          <div class="kpi-sub">Коэфф. корреляции: {{ portfolioMetrics ? portfolioMetrics.avg_correlation.toFixed(2) : '0.34' }}</div>
         </div>
       </div>
     </div>
@@ -256,11 +256,11 @@
                     </div>
                     <div class="tooltip-row" v-if="hoveredAsset.volatility !== undefined">
                        <span>Волатильность:</span>
-                       <strong>{{ hoveredAsset.volatility?.toFixed(1) || 'N/A' }}%</strong>
+                       <strong>{{ hoveredAsset.volatility?.toFixed(1) || 'Н/Д' }}%</strong>
                     </div>
                     <div class="tooltip-row" v-if="hoveredAsset.avgCorrelation !== undefined">
                        <span>Ср. корреляция:</span>
-                       <strong>{{ hoveredAsset.avgCorrelation?.toFixed(2) || 'N/A' }}</strong>
+                       <strong>{{ hoveredAsset.avgCorrelation?.toFixed(2) || 'Н/Д' }}</strong>
                     </div>
                     <div class="tooltip-row">
                        <span>Вес в портфеле:</span>
@@ -302,7 +302,7 @@
                      <span>{{ selectedAsset.name }}</span>
                  </div>
              </div>
-             <div class="badge-glass">Equity</div>
+             <div class="badge-glass">{{ (selectedAsset.symbol.includes('ОФЗ') || selectedAsset.symbol.includes('Облигац') || selectedAsset.symbol.includes('обл')) ? 'Облигация' : 'Акция' }}</div>
           </div>
           <div class="panel-body">
              <div class="mini-chart-container">
@@ -315,17 +315,17 @@
                     ></div>
                  </div>
                  <div class="chart-meta">
-                    <span class="active">1D</span><span>1W</span><span>1M</span><span>3M</span><span>1Y</span>
+                    <span class="active">1Д</span><span>1Н</span><span>1М</span><span>3М</span><span>1Г</span>
                  </div>
              </div>
 
              <div class="inspector-grid">
                 <div class="metric-cell">
-                   <label>Return</label>
+                   <label>Доходность</label>
                    <span class="text-green">+14.2%</span>
                 </div>
                 <div class="metric-cell">
-                   <label>Volatility</label>
+                   <label>Волатильность</label>
                    <span>18.5%</span>
                 </div>
                 <div class="metric-cell">
@@ -399,77 +399,77 @@
               <div class="metric-row">
                  <div class="metric-label">
                     <span>Max Drawdown</span>
-                    <span class="meta-hint">Peak-to-Trough</span>
+                    <span class="meta-hint">От пика до минимума</span>
                  </div>
                  <div class="metric-value text-red">{{ portfolioMetrics ? (portfolioMetrics.max_drawdown * 100).toFixed(2) + '%' : '-18.24%' }}</div>
               </div>
               <div class="metric-row">
                  <div class="metric-label">
                     <span>Calmar Ratio</span>
-                    <span class="meta-hint">Return / Max DD</span>
+                    <span class="meta-hint">Доходность / Max DD</span>
                  </div>
                  <div class="metric-value text-white">1.41</div>
               </div>
               <div class="metric-row">
                  <div class="metric-label">
-                    <span>Rolling Vol (30D)</span>
-                    <span class="meta-hint">Annualized</span>
+                    <span>Скользящая волатильность (30Д)</span>
+                    <span class="meta-hint">Годовая</span>
                  </div>
                  <div class="metric-value text-white">12.8%</div>
               </div>
               <div class="metric-row">
                  <div class="metric-label">
-                    <span>YTD Return</span>
-                    <span class="meta-hint">Year-to-Date</span>
+                    <span>Доходность с начала года</span>
+                    <span class="meta-hint">YTD</span>
            </div>
                  <div class="metric-value text-green">+8.42%</div>
                  </div>
               <div class="metric-row">
                  <div class="metric-label">
-                    <span>Win Rate</span>
-                    <span class="meta-hint">% Profitable</span>
+                    <span>Процент выигрышей</span>
+                    <span class="meta-hint">% прибыльных</span>
                  </div>
                  <div class="metric-value text-green">58.3%</div>
                  </div>
               <div class="metric-row">
                  <div class="metric-label">
-                    <span>Profit Factor</span>
-                    <span class="meta-hint">Gross P / Gross L</span>
+                    <span>Фактор прибыли</span>
+                    <span class="meta-hint">Валовая П / Валовая У</span>
                  </div>
                  <div class="metric-value text-white">1.87x</div>
               </div>
               <div class="metric-row">
                  <div class="metric-label">
-                    <span>Avg Trade</span>
-                    <span class="meta-hint">Mean Return</span>
+                    <span>Средняя сделка</span>
+                    <span class="meta-hint">Средняя доходность</span>
            </div>
                  <div class="metric-value text-white">+0.34%</div>
                  </div>
               <div class="metric-row">
                  <div class="metric-label">
                     <span>Sharpe Ratio</span>
-                    <span class="meta-hint">Risk-Adjusted</span>
+                    <span class="meta-hint">Скорректированный на риск</span>
                  </div>
                  <div class="metric-value text-green">{{ portfolioMetrics ? portfolioMetrics.sharpe_ratio.toFixed(2) : '1.52' }}</div>
               </div>
               <div class="metric-row">
                  <div class="metric-label">
                     <span>Sortino Ratio</span>
-                    <span class="meta-hint">Downside Risk</span>
+                    <span class="meta-hint">Риск снижения</span>
            </div>
                  <div class="metric-value text-green">{{ portfolioMetrics ? portfolioMetrics.sortino_ratio.toFixed(2) : '2.14' }}</div>
         </div>
               <div class="metric-row">
                  <div class="metric-label">
                     <span>Beta</span>
-                    <span class="meta-hint">vs Benchmark</span>
+                    <span class="meta-hint">относительно бенчмарка</span>
     </div>
                  <div class="metric-value text-white">{{ portfolioMetrics ? portfolioMetrics.beta.toFixed(2) : '0.87' }}</div>
       </div>
               <div class="metric-row">
                  <div class="metric-label">
                     <span>Alpha</span>
-                    <span class="meta-hint">Excess Return</span>
+                    <span class="meta-hint">Избыточная доходность</span>
       </div>
                  <div class="metric-value" :class="portfolioMetrics?.alpha && portfolioMetrics.alpha >= 0 ? 'text-green' : 'text-red'">
                    {{ portfolioMetrics ? (portfolioMetrics.alpha >= 0 ? '+' : '') + (portfolioMetrics.alpha * 100).toFixed(2) + '%' : '+2.31%' }}
@@ -478,28 +478,28 @@
               <div class="metric-row">
                  <div class="metric-label">
                     <span>VaR (95%)</span>
-                    <span class="meta-hint">Daily</span>
+                    <span class="meta-hint">Дневной</span>
        </div>
                  <div class="metric-value text-red">{{ portfolioMetrics ? (portfolioMetrics.var_95_percent * -1).toFixed(2) + '%' : '-2.15%' }}</div>
              </div>
               <div class="metric-row">
                  <div class="metric-label">
                     <span>Information Ratio</span>
-                    <span class="meta-hint">Active Return / TE</span>
+                    <span class="meta-hint">Активная доходность / Ошибка отслеживания</span>
              </div>
                  <div class="metric-value text-green">0.94</div>
              </div>
               <div class="metric-row">
                  <div class="metric-label">
                     <span>Treynor Ratio</span>
-                    <span class="meta-hint">Return / Beta</span>
+                    <span class="meta-hint">Доходность / Beta</span>
              </div>
                  <div class="metric-value text-white">9.67%</div>
           </div>
               <div class="metric-row">
                  <div class="metric-label">
                     <span>Tracking Error</span>
-                    <span class="meta-hint">vs Index</span>
+                    <span class="meta-hint">относительно индекса</span>
                 </div>
                  <div class="metric-value text-white">3.42%</div>
              </div>
