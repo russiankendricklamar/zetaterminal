@@ -161,18 +161,20 @@
                <span class="dot-legend bg-red"></span> Neg
             </div>
           </div>
-          <div class="correlation-matrix-grid">
-             <!-- Headers -->
-             <div class="matrix-cell empty"></div>
-             <div v-for="label in correlationLabels" :key="label" class="matrix-cell header">{{ label }}</div>
-             
-             <!-- Rows -->
-             <template v-for="(row, i) in correlationData" :key="'row-'+i">
-                <div class="matrix-cell header">{{ correlationLabels[i] }}</div>
-                <div v-for="(cell, j) in row" :key="i+'-'+j" class="matrix-cell value" :style="getHeatmapStyle(cell)">
-                  {{ cell.toFixed(2) }}
-                </div>
-             </template>
+          <div class="correlation-matrix-wrapper">
+            <div class="correlation-matrix-grid">
+               <!-- Headers -->
+               <div class="matrix-cell empty"></div>
+               <div v-for="label in correlationLabels.slice(0, 10)" :key="label" class="matrix-cell header" :title="label">{{ label.length > 6 ? label.substring(0, 6) + '...' : label }}</div>
+               
+               <!-- Rows -->
+               <template v-for="(row, i) in correlationData.slice(0, 10)" :key="'row-'+i">
+                  <div class="matrix-cell header" :title="correlationLabels[i]">{{ correlationLabels[i] && correlationLabels[i].length > 6 ? correlationLabels[i].substring(0, 6) + '...' : (correlationLabels[i] || '') }}</div>
+                  <div v-for="(cell, j) in row.slice(0, 10)" :key="i+'-'+j" class="matrix-cell value" :style="getHeatmapStyle(cell)" :title="`${correlationLabels[i]} vs ${correlationLabels[j]}: ${cell.toFixed(3)}`">
+                    {{ cell.toFixed(2) }}
+                  </div>
+               </template>
+            </div>
           </div>
         </div>
 
@@ -321,24 +323,69 @@ const factors = computed(() => {
   ]
 })
 
-// Correlation matrix из portfolio store
+// Функция для генерации fallback матрицы корреляций
+const generateCorrelationMatrix = (size: number): number[][] => {
+  const matrix: number[][] = []
+  for (let i = 0; i < size; i++) {
+    const row: number[] = []
+    for (let j = 0; j < size; j++) {
+      if (i === j) {
+        row.push(1.0)
+      } else {
+        const seed = (i * size + j) % 100
+        const baseCorr = (seed / 100) * 2 - 1
+        const correlation = Math.max(-0.8, Math.min(0.95, baseCorr))
+        row.push(parseFloat(correlation.toFixed(2)))
+      }
+    }
+    matrix.push(row)
+  }
+  // Делаем матрицу симметричной
+  for (let i = 0; i < size; i++) {
+    for (let j = i + 1; j < size; j++) {
+      matrix[j][i] = matrix[i][j]
+    }
+  }
+  return matrix
+}
+
+// Correlation matrix из portfolio store (10x10)
 const correlationLabels = computed(() => {
-  return portfolioStore.positions.map(p => p.symbol)
+  const positions = portfolioStore.positions.map(p => p.symbol)
+  // Берем первые 10 активов, если их меньше - дополняем пустыми строками
+  const labels = positions.slice(0, 10)
+  while (labels.length < 10) {
+    labels.push(`Asset${labels.length + 1}`)
+  }
+  return labels
 })
 
 const correlationData = computed(() => {
   const matrix = portfolioStore.correlationMatrix
   if (!matrix || matrix.length === 0) {
-    // Fallback данные
-    return [
-      [1.0, 0.92, -0.35, 0.15, 0.45],
-      [0.92, 1.0, -0.42, 0.10, 0.55],
-      [-0.35, -0.42, 1.0, 0.25, -0.15],
-      [0.15, 0.10, 0.25, 1.0, 0.20],
-      [0.45, 0.55, -0.15, 0.20, 1.0]
-    ]
+    // Fallback данные для 10x10 матрицы
+    return generateCorrelationMatrix(10)
   }
-  return matrix.map(row => row.values)
+  
+  // Берем первые 10 строк и первые 10 значений из каждой строки
+  const limitedMatrix = matrix.slice(0, 10).map(row => row.values.slice(0, 10))
+  
+  // Если данных меньше 10, дополняем fallback
+  if (limitedMatrix.length < 10) {
+    const fallback = generateCorrelationMatrix(10)
+    for (let i = limitedMatrix.length; i < 10; i++) {
+      limitedMatrix.push(fallback[i])
+    }
+  }
+  
+  // Убеждаемся, что каждая строка имеет 10 элементов
+  return limitedMatrix.map(row => {
+    const extendedRow = [...row]
+    while (extendedRow.length < 10) {
+      extendedRow.push(0)
+    }
+    return extendedRow.slice(0, 10)
+  })
 })
 
 // Helpers
@@ -509,14 +556,16 @@ const runStressTest = async () => {
 /* ============================================
    MATRIX
    ============================================ */
-.correlation-matrix-grid { display: grid; grid-template-columns: 40px repeat(5, 1fr); gap: 4px; }
+.correlation-matrix-grid { display: grid; grid-template-columns: 40px repeat(10, 1fr); gap: 4px; overflow-x: auto; }
 .matrix-cell {
   height: 40px; display: flex; align-items: center; justify-content: center;
   font-size: 12px; border-radius: 6px;
 }
 .matrix-cell.header { color: rgba(255,255,255,0.4); font-weight: 600; font-size: 10px; }
-.matrix-cell.value { font-family: "SF Mono", monospace; font-weight: 500; cursor: default; transition: transform 0.1s; }
-.matrix-cell.value:hover { transform: scale(1.1); z-index: 2; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
+.matrix-cell.value { font-family: "SF Mono", monospace; font-weight: 500; cursor: default; transition: transform 0.1s; font-size: 11px; }
+.matrix-cell.value:hover { transform: scale(1.15); z-index: 2; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
+.matrix-cell.header { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.correlation-matrix-wrapper { overflow-x: auto; width: 100%; }
 
 /* ============================================
    UTILS
@@ -615,7 +664,7 @@ const runStressTest = async () => {
   }
   
   .correlation-matrix-grid {
-    grid-template-columns: 30px repeat(5, 1fr);
+    grid-template-columns: 30px repeat(10, 1fr);
     gap: 2px;
   }
   
@@ -668,8 +717,9 @@ const runStressTest = async () => {
   }
   
   .correlation-matrix-grid {
-    grid-template-columns: 25px repeat(5, 1fr);
+    grid-template-columns: 25px repeat(10, 1fr);
     gap: 1px;
+    min-width: 100%;
   }
   
   .matrix-cell {
