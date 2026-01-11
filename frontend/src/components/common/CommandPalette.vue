@@ -106,38 +106,12 @@ const commands: Command[] = [
     action: () => router.push('/') 
   },
   { 
-    id: 'nav-dash', 
-    label: 'Дашборд', 
-    group: 'Навигация', 
-    icon: '📊', 
-    desc: 'Главная панель управления',
-    action: () => router.push('/dashboard') 
-  },
-  { 
     id: 'nav-docs', 
     label: 'Документация', 
     group: 'Навигация', 
     icon: '📚', 
     desc: 'Справочная информация',
     action: () => router.push('/docs') 
-  },
-
-  // ===== РЫНОЧНЫЕ ДАННЫЕ =====
-  { 
-    id: 'nav-market-data', 
-    label: 'Рыночные данные', 
-    group: 'Рыночные данные', 
-    icon: '📊', 
-    desc: 'Акции, облигации, индексы',
-    action: () => router.push('/data') 
-  },
-  { 
-    id: 'nav-markets', 
-    label: 'Рынки', 
-    group: 'Рыночные данные', 
-    icon: '🌍', 
-    desc: 'Обзор мировых рынков',
-    action: () => router.push('/markets') 
   },
 
   // ===== ПОРТФЕЛЬ И АНАЛИТИКА =====
@@ -178,7 +152,7 @@ const commands: Command[] = [
     group: 'Портфель и аналитика', 
     icon: '📈', 
     desc: 'Декомпозиция прибылей/убытков',
-    action: () => router.push('/pnl-attribution') 
+    action: () => router.push('/analytics/pnl') 
   },
   { 
     id: 'nav-ccmv', 
@@ -340,7 +314,7 @@ const commands: Command[] = [
     group: 'Свопы', 
     icon: '🎯', 
     desc: 'Риск-метрики свопов',
-    action: () => router.push('/valuation/swaps/greeks') 
+    action: () => router.push('/swap-greeks') 
   },
   { 
     id: 'nav-swap-stress', 
@@ -348,7 +322,7 @@ const commands: Command[] = [
     group: 'Свопы', 
     icon: '⚡', 
     desc: 'Анализ стресс-сценариев',
-    action: () => router.push('/valuation/swaps/stress') 
+    action: () => router.push('/stress/swaps') 
   },
 
   // ===== ФОРВАРДЫ =====
@@ -520,7 +494,6 @@ const groupedCommands = computed(() => {
   // Сортируем группы в определённом порядке
   const groupOrder = [
     'Навигация',
-    'Рыночные данные',
     'Портфель и аналитика',
     'Управление рисками',
     'Анализ режимов',

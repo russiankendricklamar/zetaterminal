@@ -28,25 +28,6 @@
           </p>
         </div>
 
-        <div class="hero-actions">
-          <router-link to="/dashboard" class="btn primary">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path>
-              <polyline points="13 2 13 9 20 9"></polyline>
-            </svg>
-            Открыть рабочую панель
-          </router-link>
-          <router-link to="/regimes" class="btn ghost">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <polyline points="12 3 20 7.5 20 16.5 12 21 4 16.5 4 7.5 12 3"></polyline>
-              <line x1="12" y1="12" x2="20" y2="7.5"></line>
-              <line x1="12" y1="12" x2="12" y2="21"></line>
-              <line x1="12" y1="12" x2="4" y2="7.5"></line>
-            </svg>
-            Смотреть рыночные режимы
-          </router-link>
-        </div>
-
         <!-- Terminal Block -->
         <router-link to="/terminal" class="terminal-block-link">
           <div class="terminal-block">

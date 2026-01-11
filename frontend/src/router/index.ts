@@ -2,7 +2,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import MainLayout from '@/components/Layout/MainLayout.vue'
 import Home from '@/pages/Home.vue'
-import MainDashboard from '@/pages/MainDashboard.vue'
 import Portfolio from '@/pages/Portfolio.vue'
 import MonteCarlo from '@/pages/MonteCarlo.vue'
 import GreekParameters from '@/pages/GreekParameters.vue'
@@ -37,9 +36,7 @@ import ArbitrageScanner from '@/pages/ArbitrageScanner.vue'
 import VolatilitySurface from '@/pages/VolatilitySurface.vue'
 import CCMVOptimizationPage from '@/pages/CCMVOptimization.vue'
 import DocumentationPage from '@/pages/DocumentationPage.vue'
-import MarketData from '@/pages/MarketData.vue'
 import Terminal from '@/pages/Terminal.vue'
-import Markets from '@/pages/Markets.vue'
 import Profile from '@/pages/Profile.vue'
 
 const routes = [
@@ -56,12 +53,6 @@ const routes = [
     meta: { title: 'Документация' }
   },
   {
-    path: '/data',
-    name: 'MarketData',
-    component: MarketData,
-    meta: { title: 'Рыночные данные', icon: '📊' }
-  },
-  {
     path: '/terminal',
     name: 'Terminal',
     component: Terminal,
@@ -74,21 +65,9 @@ const routes = [
     meta: { title: 'Профиль', icon: '👤', bare: true }
   },
   {
-    path: '/markets',
-    name: 'Markets',
-    component: Markets,
-    meta: { title: 'Рынки', icon: '🌍' }
-  },
-  {
     path: '/',
     component: MainLayout,
     children: [
-      {
-        path: 'dashboard',
-        component: MainDashboard,
-        name: 'Dashboard',
-        meta: { title: 'Дашборд', icon: '📊' }
-      },
       {
         path: 'portfolio',
         component: Portfolio,
