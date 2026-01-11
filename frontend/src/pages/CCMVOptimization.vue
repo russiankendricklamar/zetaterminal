@@ -605,6 +605,7 @@
         <div class="hero-meta">
           <span class="glass-pill">Метод: <strong>{{ params.method === 'delta' ? 'Δ-CCMV' : 'α-CCMV' }}</strong></span>
           <span class="glass-pill">Кластеров: <strong>{{ clusteringResult.numClusters }}</strong></span>
+          <span class="glass-pill">Банк: <strong>{{ selectedBank.name }}</strong></span>
           <span class="glass-pill">Активов: <strong>{{ portfolioPositions.length }}</strong></span>
         </div>
       </div>
