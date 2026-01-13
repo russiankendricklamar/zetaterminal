@@ -1,7 +1,6 @@
 import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
 import { fileURLToPath } from 'node:url'
-import { resolve } from 'node:path'
 
 export default defineConfig({
   base: '/stochastic-dashbord-v1/',
@@ -27,18 +26,6 @@ export default defineConfig({
   },
   server: {
     port: 5173,
-    strictPort: false,
-    proxy: {
-      '/api': {
-        target: 'http://127.0.0.1:8000',
-        changeOrigin: true,
-        secure: false,
-        rewrite: (path) => path
-      },
-      '/ws': {
-        target: 'ws://localhost:8000',
-        ws: true
-      }
-    }
+    strictPort: false
   }
 })
