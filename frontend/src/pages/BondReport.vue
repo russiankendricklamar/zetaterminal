@@ -496,7 +496,7 @@ const calculateBond = async () => {
   results.value = null
 
   try {
-    const response = await fetch('http://localhost:8000/api/bond/valuation', {
+    const response = await fetch('/api/bond/valuate', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({

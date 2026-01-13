@@ -140,7 +140,7 @@
                   class="w-full bg-black/20 border border-white/10 rounded-xl py-2.5 px-4 text-sm text-white focus:border-indigo-500/50 outline-none transition-colors"
                 >
                   <option value="RUB">RUB - Российский рубль</option>
-                  <option value="USD">USD - Доллар США</option>
+                  <option value="RUB">RUB - Российский рубль</option>
                   <option value="EUR">EUR - Евро</option>
                 </select>
               </div>

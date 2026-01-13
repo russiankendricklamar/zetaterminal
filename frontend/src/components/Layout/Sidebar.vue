@@ -1,24 +1,25 @@
 <!-- src/components/layout/Sidebar.vue -->
 <template>
-  <!-- Narrow Tab Bar (Left Strip) -->
-  <div
-    class="sidebar-tab"
-    @click="toggleSidebar"
-    :class="{ hidden: isSidebarOpen }"
-    title="Open Menu"
-  >
-    <div class="burger-icon">
-      <span></span>
-      <span></span>
-      <span></span>
+  <div v-bind="$attrs" class="sidebar-wrapper">
+    <!-- Narrow Tab Bar (Left Strip) -->
+    <div
+      class="sidebar-tab"
+      @click="toggleSidebar"
+      :class="{ hidden: isSidebarOpen }"
+      title="Open Menu"
+    >
+      <div class="burger-icon">
+        <span></span>
+        <span></span>
+        <span></span>
+      </div>
     </div>
-  </div>
 
-  <!-- Backdrop Overlay -->
-  <div v-if="isSidebarOpen" class="sidebar-backdrop" @click="closeSidebar" />
+    <!-- Backdrop Overlay -->
+    <div v-if="isSidebarOpen" class="sidebar-backdrop" @click="closeSidebar" />
 
-  <!-- Sliding Sidebar Panel -->
-  <aside class="sidebar" :class="{ 'sidebar--open': isSidebarOpen }">
+    <!-- Sliding Sidebar Panel -->
+    <aside class="sidebar" :class="{ 'sidebar--open': isSidebarOpen }">
     <!-- Lava Lamp Background -->
     <div class="sidebar-lava-layer"></div>
 
@@ -620,6 +621,7 @@
       </div>
     </div>
   </aside>
+  </div>
 </template>
 
 <script setup lang="ts">
@@ -842,6 +844,10 @@ onUnmounted(() => clearInterval(timer))
 /* ============================================
    SIDEBAR LAYOUT
    ============================================ */
+.sidebar-wrapper {
+  position: relative;
+}
+
 .sidebar-tab {
   position: fixed;
   top: 0;

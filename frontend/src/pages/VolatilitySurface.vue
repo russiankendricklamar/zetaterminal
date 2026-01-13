@@ -17,7 +17,7 @@
             <option value="spy">SPY (Equity Index)</option>
             <option value="eur">EUR/USD (FX)</option>
             <option value="brent">Brent Oil</option>
-            <option value="rates">USD Rates</option>
+            <option value="rates">RUB Rates</option>
           </select>
         </div>
 

@@ -18,6 +18,8 @@ from src.api import stress
 from src.api import backtest
 from src.api import bond
 from src.api import portfolio
+from src.api import forward
+from src.api import swap
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -59,6 +61,8 @@ app.include_router(stress.router, prefix="/api/stress", tags=["stress"])
 app.include_router(backtest.router, prefix="/api/backtest", tags=["backtest"])
 app.include_router(bond.router, prefix="/api/bond", tags=["bond"])
 app.include_router(portfolio.router, prefix="/api/portfolio", tags=["portfolio"])
+app.include_router(forward.router, prefix="/api/forward", tags=["forward"])
+app.include_router(swap.router, prefix="/api/swap", tags=["swap"])
 
 
 @app.get("/")

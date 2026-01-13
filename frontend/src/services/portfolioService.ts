@@ -2,7 +2,8 @@
  * Сервис для работы с метриками портфеля
  */
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
+// Используем относительный путь для работы с Vite proxy
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
 
 export interface Position {
   symbol: string;

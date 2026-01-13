@@ -67,7 +67,7 @@
               <div class="control-right">
                 <select v-model="settings.general.currency" class="glass-select">
                   <option value="RUB">RUB (₽)</option>
-                  <option value="USD">USD ($)</option>
+                  <option value="RUB">RUB (₽)</option>
                   <option value="EUR">EUR (€)</option>
                   <option value="CNY">CNY (¥)</option>
                 </select>

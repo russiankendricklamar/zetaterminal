@@ -315,7 +315,7 @@ const riskContribution = computed(() => {
 const stressScenarios = ref([
   { id: 1, name: 'Финансовый Кризис 2008', description: 'Рыночный крах (повтор)', impact: -452000, impactPct: -0.25 },
   { id: 2, name: 'Скачок Инфляции', description: 'Рост ставок +200 б.п.', impact: -125000, impactPct: -0.07 },
-  { id: 3, name: 'Падение Нефти', description: 'Нефть Brent < $40', impact: -35000, impactPct: -0.02 },
+  { id: 3, name: 'Падение Нефти', description: 'Нефть Brent < ₽40', impact: -35000, impactPct: -0.02 },
   { id: 4, name: 'Рост Волатильности', description: 'VIX > 40', impact: -85000, impactPct: -0.045 }
 ])
 
@@ -397,7 +397,7 @@ const correlationData = computed(() => {
 })
 
 // Helpers
-const formatCurrency = (val: number) => '$' + Math.abs(val).toLocaleString('en-US', {maximumFractionDigits: 0})
+const formatCurrency = (val: number) => '₽' + Math.abs(val).toLocaleString('ru-RU', {maximumFractionDigits: 0})
 const getBetaClass = (val: number) => Math.abs(val) > 0.5 ? 'font-bold text-white' : 'text-muted'
 
 const getHeatmapStyle = (val: number) => {

@@ -467,7 +467,7 @@ const generateAreaD = (lower: number[], upper: number[], limit: number): string 
 }
 
 const formatCurrency = (val: number): string => 
-    new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(val)
+    new Intl.NumberFormat('ru-RU', { style: 'currency', currency: 'RUB', maximumFractionDigits: 0 }).format(val)
 
 const getColor = (val: number | string): string => {
     const numVal = typeof val === 'string' ? parseFloat(val) : val

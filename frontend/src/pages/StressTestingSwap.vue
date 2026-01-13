@@ -481,7 +481,7 @@ const selectScenario = (scenario: any) => {
 const formatCurrency = (val: number) => {
   return new Intl.NumberFormat('ru-RU', {
     style: 'currency',
-    currency: 'USD',
+    currency: 'RUB',
     minimumFractionDigits: 0,
     maximumFractionDigits: 0
   }).format(val)

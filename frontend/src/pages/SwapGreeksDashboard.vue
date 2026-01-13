@@ -26,8 +26,8 @@
         <div class="control-group">
           <label class="control-label">Индекс:</label>
           <select v-model="selectedIndex" class="index-select">
-            <option value="usd3m">USD 3M SOFR</option>
-            <option value="usd6m">USD 6M LIBOR</option>
+            <option value="rub3m">RUB 3M RUONIA</option>
+            <option value="rub6m">RUB 6M RUONIA</option>
             <option value="eur3m">EUR 3M EURIBOR</option>
             <option value="gbp6m">GBP 6M SONIA</option>
           </select>
@@ -342,11 +342,11 @@ import { ref, onMounted, onBeforeUnmount } from 'vue'
 import Chart from 'chart.js/auto'
 
 const selectedSwapType = ref('all')
-const selectedIndex = ref('usd3m')
+const selectedIndex = ref('rub3m')
 
 // Swap Greeks Data
 const swapGreeks = ref({
-  dv01: 125000,           // Dollar Value of 1bp
+  dv01: 125000,           // Рублевая стоимость 1 б.п.
   spreadDv01: 85000,      // Spread sensitivity
   basisRisk: 42000,       // Basis swap risk
   convexity: 2.15,        // Convexity (higher order effect)
@@ -490,7 +490,7 @@ let spreadSensitivityChart: Chart | null = null
 const formatCurrency = (val: number) => {
   return new Intl.NumberFormat('ru-RU', {
     style: 'currency',
-    currency: 'USD',
+    currency: 'RUB',
     minimumFractionDigits: 0,
     maximumFractionDigits: 0
   }).format(val)

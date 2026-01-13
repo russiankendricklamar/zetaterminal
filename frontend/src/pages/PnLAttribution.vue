@@ -129,7 +129,7 @@
           <thead>
             <tr>
               <th class="col-component">Компонент</th>
-              <th class="col-amount">Сумма (М USD)</th>
+              <th class="col-amount">Сумма (М RUB)</th>
               <th class="col-percent">% от общего</th>
               <th class="col-description">Описание</th>
               <th class="col-bucket">Категория</th>
@@ -379,7 +379,7 @@
     <div class="page-footer">
       <span>• Метод: Greeks Decomposition (DCF-based)</span>
       <span>• Обновление: В реальном времени</span>
-      <span>• Базовая валюта: USD</span>
+      <span>• Базовая валюта: RUB</span>
     </div>
 
   </div>
@@ -569,12 +569,12 @@ const unexplainedPnL = computed(() => {
 const topPositions = ref([
   {
     name: 'Long IRS 5Y',
-    asset: 'USD SOFR',
+    asset: 'RUB RUONIA',
     pnl: 85400
   },
   {
     name: 'Short Bonds',
-    asset: 'US Treasuries',
+    asset: 'ОФЗ',
     pnl: 42300
   },
   {
@@ -605,9 +605,9 @@ let waterfallChart: Chart | null = null
 
 // Methods
 const formatCurrency = (val: number) => {
-  return new Intl.NumberFormat('en-US', {
+  return new Intl.NumberFormat('ru-RU', {
     style: 'currency',
-    currency: 'USD',
+    currency: 'RUB',
     minimumFractionDigits: 0,
     maximumFractionDigits: 0
   }).format(val)

@@ -169,11 +169,11 @@
              </div>
              <div class="stat-box">
                 <span class="lbl">Средняя прибыль</span>
-                <span class="val text-green">{{ backtestResults?.metrics ? '+' + backtestResults.metrics.avg_profit.toFixed(0) : '+$245' }}</span>
+                <span class="val text-green">{{ backtestResults?.metrics ? '+' + backtestResults.metrics.avg_profit.toFixed(0) : '+₽245' }}</span>
              </div>
              <div class="stat-box">
                 <span class="lbl">Средний убыток</span>
-                <span class="val text-red">{{ backtestResults?.metrics ? '-' + backtestResults.metrics.avg_loss.toFixed(0) : '-$145' }}</span>
+                <span class="val text-red">{{ backtestResults?.metrics ? '-' + backtestResults.metrics.avg_loss.toFixed(0) : '-₽145' }}</span>
              </div>
              <div class="stat-box">
                 <span class="lbl">Время удержания</span>

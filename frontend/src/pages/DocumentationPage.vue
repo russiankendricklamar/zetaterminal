@@ -952,7 +952,7 @@
                 <dd>Модифицированная дюрация, показывающая процентное изменение цены при изменении доходности на 1%. D<sub>mod</sub> = D / (1 + y).</dd>
               </div>
               <div class="glossary-item">
-                <dt>DV01 (Dollar Value of 1 basis point)</dt>
+                <dt>DV01 (Рублевая стоимость 1 базисного пункта)</dt>
                 <dd>Изменение стоимости облигации в денежных единицах при сдвиге кривой доходности на 1 basis point (0.01%). DV01 = -P × D<sub>mod</sub> × 0.0001.</dd>
               </div>
               <div class="glossary-item">
@@ -1231,7 +1231,7 @@
                 <p class="formula-desc">где y — доходность к погашению. Показывает процентное изменение цены при изменении доходности на 1%</p>
               </div>
               <div class="formula-block">
-                <div class="formula-title">DV01 (Dollar Value of 1 bp):</div>
+                <div class="formula-title">DV01 (Рублевая стоимость 1 б.п.):</div>
                 <div class="formula">DV01 = -P × D<sub>mod</sub> × 0.0001</div>
                 <p class="formula-desc">Изменение стоимости облигации при сдвиге кривой доходности на 1 basis point (0.01%)</p>
               </div>

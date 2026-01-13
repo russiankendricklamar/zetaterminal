@@ -1,26 +1,27 @@
 # Web Framework
-fastapi==0.104.1
-uvicorn[standard]==0.24.0
+fastapi>=0.104.1
+uvicorn[standard]>=0.24.0
 
 # Data Processing
-numpy==1.26.2
-pandas==2.1.3
-scipy==1.11.4
+numpy>=1.26.0
+pandas>=2.2.0
+scipy>=1.14.0
 
 # Financial Calculations
-quantlib-python==1.32
-cvxpy==1.4.1
+# quantlib-python - опционально, используется только в bond_pricing.py
+# Если нужен, установите отдельно: pip install quantlib-python
+cvxpy>=1.4.0
 
 # API Utilities
-pydantic==2.5.0
-pydantic-settings==2.1.0
+pydantic>=2.5.0
+pydantic-settings>=2.1.0
 
 # CORS
-python-multipart==0.0.6
+python-multipart>=0.0.6
 
 # Environment variables
-python-dotenv==1.0.0
+python-dotenv>=1.0.0
 
 # Optional: для более продвинутых вычислений
-# numba==0.59.0  # JIT компиляция для ускорения вычислений
-# scikit-learn==1.3.2  # Машинное обучение
+# numba>=0.59.0  # JIT компиляция для ускорения вычислений
+# scikit-learn>=1.3.0  # Машинное обучение

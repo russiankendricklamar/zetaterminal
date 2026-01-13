@@ -615,7 +615,7 @@ const recentAlerts = ref([
     type: 'Execution',
     icon: '✓',
     title: 'Арбитраж исполнен',
-    message: 'Oil Futures: Reverse Carry исполнен, Прибыль: $870',
+    message: 'Oil Futures: Reverse Carry исполнен, Прибыль: ₽870',
     time: '3 мин назад'
   }
 ])
@@ -681,9 +681,9 @@ const maxExecutionTime = 450
 
 // Methods
 const formatCurrency = (val: number) => {
-  return new Intl.NumberFormat('en-US', {
+  return new Intl.NumberFormat('ru-RU', {
     style: 'currency',
-    currency: 'USD',
+    currency: 'RUB',
     minimumFractionDigits: 2,
     maximumFractionDigits: 2
   }).format(val)
@@ -693,7 +693,7 @@ const formatCompactCurrency = (val: number) => {
   if (Math.abs(val) >= 1_000_000) {
     return (val / 1_000_000).toFixed(1) + 'М'
   }
-  return '$' + (val / 1000).toFixed(0) + 'K'
+  return '₽' + (val / 1000).toFixed(0) + 'K'
 }
 
 const scanArbitrage = async () => {

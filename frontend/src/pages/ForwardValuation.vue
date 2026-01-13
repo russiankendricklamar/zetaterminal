@@ -34,57 +34,144 @@
       </div>
     </div>
 
+    <!-- Error Message -->
+    <div v-if="error" class="error-message">
+      ⚠️ {{ error }}
+    </div>
+
     <!-- Input Parameters -->
     <div class="grid-2">
-      <!-- Underlying Asset Parameters -->
-      <div class="card">
-        <div class="card-header">
-          <h3>Параметры базового актива</h3>
+      <!-- Валютный форвард (FX) -->
+      <template v-if="selectedForwardType === 'fx'">
+        <!-- FX Parameters -->
+        <div class="card">
+          <div class="card-header">
+            <h3>Параметры валютного форварда</h3>
+          </div>
+          <div class="parameter-group">
+            <div class="param-row">
+              <label>Покупаемая валюта</label>
+              <select v-model="params.fxBuyCurrency" class="param-input" @change="updateValuation">
+                <option value="RUB">RUB</option>
+                <option value="RUB">RUB</option>
+                <option value="EUR">EUR</option>
+                <option value="CNY">CNY</option>
+                <option value="GBP">GBP</option>
+                <option value="JPY">JPY</option>
+              </select>
+            </div>
+            <div class="param-row">
+              <label>Продаваемая валюта</label>
+              <select v-model="params.fxSellCurrency" class="param-input" @change="updateValuation">
+                <option value="CNY">CNY</option>
+                <option value="RUB">RUB</option>
+                <option value="EUR">EUR</option>
+                <option value="RUB">RUB</option>
+                <option value="GBP">GBP</option>
+                <option value="JPY">JPY</option>
+              </select>
+            </div>
+            <div class="param-row">
+              <label>Сумма покупки</label>
+              <input v-model.number="params.fxBuyAmount" type="number" class="param-input" step="0.01" @change="updateValuation" />
+            </div>
+            <div class="param-row">
+              <label>Сумма продажи</label>
+              <input v-model.number="params.fxSellAmount" type="number" class="param-input" step="0.01" @change="updateValuation" />
+            </div>
+          </div>
         </div>
-        <div class="parameter-group">
-          <div class="param-row">
-            <label>Спот цена (S₀)</label>
-            <input v-model.number="params.spotPrice" type="number" class="param-input" step="0.01" @change="updateValuation" />
-          </div>
-          <div class="param-row">
-            <label>Дивиденды / Купоны (%)</label>
-            <input v-model.number="params.dividendYield" type="number" class="param-input" step="0.01" @change="updateValuation" />
-          </div>
-          <div class="param-row">
-            <label>Стоимость хранения (%)</label>
-            <input v-model.number="params.carryingCost" type="number" class="param-input" step="0.01" @change="updateValuation" />
-          </div>
-          <div class="param-row">
-            <label>Удобство владения (Convenience Yield, %)</label>
-            <input v-model.number="params.convenienceYield" type="number" class="param-input" step="0.01" @change="updateValuation" />
-          </div>
-        </div>
-      </div>
 
-      <!-- Forward Parameters -->
-      <div class="card">
-        <div class="card-header">
-          <h3>Параметры форварда</h3>
+        <!-- FX Dates and Rates -->
+        <div class="card">
+          <div class="card-header">
+            <h3>Даты и курсы</h3>
+          </div>
+          <div class="parameter-group">
+            <div class="param-row">
+              <label>Дата сделки</label>
+              <input v-model="params.fxDealDate" type="date" class="param-input" @change="updateValuation" />
+            </div>
+            <div class="param-row">
+              <label>Дата оценки</label>
+              <input v-model="params.fxValuationDate" type="date" class="param-input" @change="updateValuation" />
+            </div>
+            <div class="param-row">
+              <label>Дата экспирации</label>
+              <input v-model="params.fxExpirationDate" type="date" class="param-input" @change="updateValuation" />
+            </div>
+            <div class="param-row">
+              <label>Спот курс</label>
+              <input v-model.number="params.spotPrice" type="number" class="param-input" step="0.0001" @change="updateValuation" />
+            </div>
+            <div class="param-row">
+              <label>Курс сделки (форвард)</label>
+              <input v-model.number="params.marketForwardPrice" type="number" class="param-input" step="0.0001" @change="updateValuation" />
+            </div>
+            <div class="param-row">
+              <label>Ставка для {{ params.fxBuyCurrency }} (%)</label>
+              <input v-model.number="params.fxInternalRate" type="number" class="param-input" step="0.01" @change="updateValuation" />
+            </div>
+            <div class="param-row">
+              <label>Ставка для {{ params.fxSellCurrency }} (%)</label>
+              <input v-model.number="params.fxExternalRate" type="number" class="param-input" step="0.01" @change="updateValuation" />
+            </div>
+          </div>
         </div>
-        <div class="parameter-group">
-          <div class="param-row">
-            <label>Время до экспирации (лет)</label>
-            <input v-model.number="params.timeToMaturity" type="number" class="param-input" step="0.01" @change="updateValuation" />
+      </template>
+
+      <!-- Cost-of-Carry форварды (bond, commodity, equity, rate) -->
+      <template v-else>
+        <!-- Underlying Asset Parameters -->
+        <div class="card">
+          <div class="card-header">
+            <h3>Параметры базового актива</h3>
           </div>
-          <div class="param-row">
-            <label>Безрисковая ставка (%)</label>
-            <input v-model.number="params.riskFreeRate" type="number" class="param-input" step="0.01" @change="updateValuation" />
-          </div>
-          <div class="param-row">
-            <label>Рыночная цена форварда</label>
-            <input v-model.number="params.marketForwardPrice" type="number" class="param-input" step="0.01" @change="updateValuation" />
-          </div>
-          <div class="param-row">
-            <label>Репо ставка (%)</label>
-            <input v-model.number="params.repoRate" type="number" class="param-input" step="0.01" @change="updateValuation" />
+          <div class="parameter-group">
+            <div class="param-row">
+              <label>Спот цена (S₀)</label>
+              <input v-model.number="params.spotPrice" type="number" class="param-input" step="0.01" @change="updateValuation" />
+            </div>
+            <div class="param-row" v-if="selectedForwardType === 'bond' || selectedForwardType === 'equity'">
+              <label>Дивиденды / Купоны (%)</label>
+              <input v-model.number="params.dividendYield" type="number" class="param-input" step="0.01" @change="updateValuation" />
+            </div>
+            <div class="param-row" v-if="selectedForwardType === 'commodity'">
+              <label>Стоимость хранения (%)</label>
+              <input v-model.number="params.carryingCost" type="number" class="param-input" step="0.01" @change="updateValuation" />
+            </div>
+            <div class="param-row" v-if="selectedForwardType === 'commodity'">
+              <label>Удобство владения (Convenience Yield, %)</label>
+              <input v-model.number="params.convenienceYield" type="number" class="param-input" step="0.01" @change="updateValuation" />
+            </div>
           </div>
         </div>
-      </div>
+
+        <!-- Forward Parameters -->
+        <div class="card">
+          <div class="card-header">
+            <h3>Параметры форварда</h3>
+          </div>
+          <div class="parameter-group">
+            <div class="param-row">
+              <label>Время до экспирации (лет)</label>
+              <input v-model.number="params.timeToMaturity" type="number" class="param-input" step="0.01" @change="updateValuation" />
+            </div>
+            <div class="param-row">
+              <label>Безрисковая ставка (%)</label>
+              <input v-model.number="params.riskFreeRate" type="number" class="param-input" step="0.01" @change="updateValuation" />
+            </div>
+            <div class="param-row">
+              <label>Рыночная цена форварда</label>
+              <input v-model.number="params.marketForwardPrice" type="number" class="param-input" step="0.01" @change="updateValuation" />
+            </div>
+            <div class="param-row" v-if="selectedForwardType === 'bond'">
+              <label>Репо ставка (%)</label>
+              <input v-model.number="params.repoRate" type="number" class="param-input" step="0.01" @change="updateValuation" />
+            </div>
+          </div>
+        </div>
+      </template>
     </div>
 
     <!-- Fair Value Results -->
@@ -100,7 +187,7 @@
         </div>
         <div class="metric-detail">
           <span class="detail-label">Модель:</span>
-          <span class="detail-value">Cost-of-Carry</span>
+          <span class="detail-value">{{ selectedForwardType === 'fx' ? 'Валютный форвард' : 'Cost-of-Carry' }}</span>
         </div>
       </div>
 
@@ -130,13 +217,93 @@
         </div>
         <div class="metric-detail">
           <span class="detail-label">За контракт:</span>
-          <span class="detail-value">{{ formatCompactCurrency(valuationResults.forwardValue * params.contractSize) }}</span>
+          <!-- Для FX форвардов forwardValue уже рассчитан с учетом buy_amount, не умножаем на contractSize -->
+          <span class="detail-value" v-if="selectedForwardType === 'fx'">
+            {{ formatCompactCurrency(valuationResults.forwardValue) }}
+          </span>
+          <!-- Для других типов форвардов используем contractSize -->
+          <span class="detail-value" v-else>
+            {{ formatCompactCurrency(valuationResults.forwardValue * params.contractSize) }}
+          </span>
         </div>
       </div>
     </div>
 
-    <!-- Cost-of-Carry Breakdown -->
-    <div class="card full-width">
+    <!-- FX Forward Details (только для валютных форвардов) -->
+    <template v-if="selectedForwardType === 'fx' && valuationResults.currencyPair">
+      <div class="card full-width">
+        <div class="card-header">
+          <h3>Детали валютного форварда</h3>
+        </div>
+        <div class="grid-3">
+          <div class="metric-card">
+            <div class="metric-header">
+              <h3>Валютная пара</h3>
+            </div>
+            <div class="metric-value accent">
+              {{ valuationResults.currencyPair }}
+            </div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-header">
+              <h3>Форвардный курс (мин)</h3>
+            </div>
+            <div class="metric-value blue">
+              {{ valuationResults.forwardRateMin?.toFixed(3) || 'N/A' }}
+            </div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-header">
+              <h3>Форвардный курс (макс)</h3>
+            </div>
+            <div class="metric-value blue">
+              {{ valuationResults.forwardRateMax?.toFixed(3) || 'N/A' }}
+            </div>
+          </div>
+        </div>
+        <div class="grid-2" style="margin-top: 20px;">
+          <div class="card">
+            <div class="card-header">
+              <h3>Дисконт-факторы</h3>
+            </div>
+            <div class="parameter-group">
+              <div class="param-row">
+                <label>Внутренняя валюта ({{ params.fxBuyCurrency }})</label>
+                <span class="param-value">{{ valuationResults.discountFactorInternal?.toFixed(3) || 'N/A' }}</span>
+              </div>
+              <div class="param-row">
+                <label>Внешняя валюта ({{ params.fxSellCurrency }})</label>
+                <span class="param-value">{{ valuationResults.discountFactorExternal?.toFixed(3) || 'N/A' }}</span>
+              </div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-header">
+              <h3>Справедливая стоимость</h3>
+            </div>
+            <div class="parameter-group">
+              <div class="param-row">
+                <label>Минимальная (тыс. {{ params.settlementCurrency || 'RUB' }})</label>
+                <span class="param-value">{{ valuationResults.fairValueMin?.toFixed(3) || 'N/A' }}</span>
+              </div>
+              <div class="param-row">
+                <label>Максимальная (тыс. {{ params.settlementCurrency || 'RUB' }})</label>
+                <span class="param-value">{{ valuationResults.fairValueMax?.toFixed(3) || 'N/A' }}</span>
+              </div>
+              <div class="param-row" v-if="valuationResults.forwardDiff !== undefined">
+                <label>Расхождение с курсом сделки</label>
+                <span class="param-value" :class="typeof valuationResults.forwardDiff === 'string' ? '' : (valuationResults.forwardDiff >= 0 ? 'positive' : 'negative')">
+                  {{ typeof valuationResults.forwardDiff === 'string' ? valuationResults.forwardDiff : valuationResults.forwardDiff.toFixed(3) }}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </template>
+
+    <!-- Cost-of-Carry Breakdown (только для не-FX форвардов) -->
+    <div v-if="selectedForwardType !== 'fx'" class="card full-width">
       <div class="card-header">
         <h3>Модель Cost-of-Carry</h3>
       </div>
@@ -176,8 +343,8 @@
       </div>
     </div>
 
-    <!-- Forward Value Components -->
-    <div class="grid-3">
+    <!-- Forward Value Components (только для не-FX форвардов) -->
+    <div v-if="selectedForwardType !== 'fx'" class="grid-3">
       <!-- Intrinsic Value -->
       <div class="card">
         <div class="card-header">
@@ -260,8 +427,10 @@
       <!-- Price vs Spot -->
       <div class="card">
         <div class="chart-header">
-          <h3>Профиль форвардной цены</h3>
-          <span class="chart-subtitle">F(S) зависимость от спот цены</span>
+          <h3>{{ selectedForwardType === 'fx' ? 'Профиль форвардного курса' : 'Профиль форвардной цены' }}</h3>
+          <span class="chart-subtitle">
+            {{ selectedForwardType === 'fx' ? 'Зависимость форвардного курса от спот курса' : 'F(S) зависимость от спот цены' }}
+          </span>
         </div>
         <div class="chart-container">
           <canvas ref="priceProfileRef"></canvas>
@@ -271,8 +440,10 @@
       <!-- Value vs Time -->
       <div class="card">
         <div class="chart-header">
-          <h3>Стоимость форварда vs Время</h3>
-          <span class="chart-subtitle">Эволюция стоимости по времени</span>
+          <h3>{{ selectedForwardType === 'fx' ? 'NPV контракта vs Время' : 'Стоимость форварда vs Время' }}</h3>
+          <span class="chart-subtitle">
+            {{ selectedForwardType === 'fx' ? 'Эволюция NPV по времени до экспирации' : 'Эволюция стоимости по времени' }}
+          </span>
         </div>
         <div class="chart-container">
           <canvas ref="valueVsTimeRef"></canvas>
@@ -320,8 +491,8 @@
       </div>
     </div>
 
-    <!-- Sensitivity Analysis -->
-    <div class="grid-2">
+    <!-- Sensitivity Analysis (только для не-FX форвардов) -->
+    <div v-if="selectedForwardType !== 'fx'" class="grid-2">
       <!-- Sensitivity to Spot Price -->
       <div class="card">
         <div class="chart-header">
@@ -331,7 +502,7 @@
         <div class="sensitivity-metrics">
           <div class="sens-item">
             <span class="label">Дельта (Delta)</span>
-            <span class="value accent">{{ valuationResults.delta.toFixed(4) }}</span>
+            <span class="value accent">{{ valuationResults.delta.toFixed(3) }}</span>
           </div>
           <div class="sens-item">
             <span class="label">P&L на 1% спота</span>
@@ -353,7 +524,7 @@
         <div class="sensitivity-metrics">
           <div class="sens-item">
             <span class="label">Rho (Rho)</span>
-            <span class="value accent">{{ valuationResults.rho.toFixed(4) }}</span>
+            <span class="value accent">{{ valuationResults.rho.toFixed(3) }}</span>
           </div>
           <div class="sens-item">
             <span class="label">P&L на 1% ставки</span>
@@ -369,8 +540,9 @@
 
     <!-- Footer -->
     <div class="page-footer">
-      <span>• Модель: Cost-of-Carry (без арбитража)</span>
-      <span>• Метод: Непрерывное начисление</span>
+      <span v-if="selectedForwardType === 'fx'">• Модель: Валютный форвард (дисконт-факторы)</span>
+      <span v-else>• Модель: Cost-of-Carry (без арбитража)</span>
+      <span>• Метод: {{ selectedForwardType === 'fx' ? 'Дисконтирование денежных потоков' : 'Непрерывное начисление' }}</span>
       <span>• Обновление: В реальном времени</span>
     </div>
 
@@ -378,106 +550,58 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount, watch } from 'vue'
 import Chart from 'chart.js/auto'
+import { valuateForward, type ForwardValuationResponse } from '@/services/forwardService'
 
-const selectedForwardType = ref('bond')
+const selectedForwardType = ref('fx')
 const calculating = ref(false)
+const error = ref('')
 
 // Parameters
 const params = ref({
+  // Общие параметры
   spotPrice: 100,
+  timeToMaturity: 0.25,         // лет
+  marketForwardPrice: 101.50,   // рыночная цена форварда
+  contractSize: 1_000_000,      // условных единиц
+  
+  // Cost-of-Carry параметры (для bond, commodity, equity, rate)
   dividendYield: 2.5,           // % (дивиденды/купоны)
   carryingCost: 0.5,            // % (стоимость хранения)
   convenienceYield: 0,          // % (удобство владения)
-  timeToMaturity: 0.25,         // лет
   riskFreeRate: 4.25,           // %
-  marketForwardPrice: 101.50,   // рыночная цена форварда
   repoRate: 4.2,                // %
-  contractSize: 1_000_000       // условных единиц
+  
+  // FX параметры (для валютных форвардов)
+  fxBuyCurrency: 'RUB',
+  fxSellCurrency: 'CNY',
+  fxBuyAmount: 407160000,
+  fxSellAmount: 30000000,
+  fxDealDate: new Date().toISOString().split('T')[0],
+  fxValuationDate: new Date().toISOString().split('T')[0],
+  fxExpirationDate: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // +90 дней по умолчанию
+  settlementCurrency: 'RUB',
+  fxInternalRate: 15.0,  // Ставка для покупаемой валюты (%)
+  fxExternalRate: 1.7    // Ставка для продаваемой валюты (%)
 })
 
 // Valuation Results
-const valuationResults = computed(() => {
-  const r = params.value.riskFreeRate / 100
-  const d = params.value.dividendYield / 100
-  const c = params.value.carryingCost / 100
-  const y = params.value.convenienceYield / 100
-  const T = params.value.timeToMaturity
-  const S0 = params.value.spotPrice
-
-  // Fair Forward Price: F = S0 * e^((r + c - d - y) * T)
-  const netCarry = r + c - d - y
-  const fairForwardPrice = S0 * Math.exp(netCarry * T)
-
-  // Forward Value = (S - K) / e^(r*T) для лонга
-  // Где K - страйк (рыночная цена форварда)
-  const K = params.value.marketForwardPrice
-  const forwardValue = (S0 - K) / Math.exp(r * T)
-
-  const intrinsicValue = S0 - K
-  const timeValue = forwardValue - intrinsicValue
-  const totalValue = forwardValue
-
-  // Greeks
-  const delta = Math.exp(-r * T)  // всегда близко к 1 для форвардов
-  const rho = S0 * T * Math.exp((r + c - d - y) * T)  // чувствительность к ставке
-
-  return {
-    fairForwardPrice,
-    forwardValue,
-    intrinsicValue,
-    timeValue,
-    totalValue,
-    delta,
-    rho
-  }
+const valuationResults = ref<ForwardValuationResponse>({
+  fairForwardPrice: 0,
+  forwardValue: 0,
+  intrinsicValue: 0,
+  timeValue: 0,
+  totalValue: 0,
+  delta: 0,
+  rho: 0,
+  netCarry: 0,
+  scenarios: []
 })
 
-// Scenario Analysis
+// Scenario Analysis - используем данные из API
 const scenarioAnalysis = computed(() => {
-  const baseSpot = params.value.spotPrice
-  const K = params.value.marketForwardPrice
-  const r = params.value.riskFreeRate / 100
-  const T = params.value.timeToMaturity
-
-  const scenarios: Array<{
-    id: number
-    name: string
-    spotPrice: number
-    change: number
-    forwardValue: number
-    pnlLong: number
-    pnlShort: number
-    isBase: boolean
-  }> = []
-  const spotPrices = [
-    baseSpot * 0.8,
-    baseSpot * 0.9,
-    baseSpot,
-    baseSpot * 1.1,
-    baseSpot * 1.2
-  ]
-
-  spotPrices.forEach((spot, idx) => {
-    const change = ((spot - baseSpot) / baseSpot) * 100
-    const forwardValue = (spot - K) / Math.exp(r * T)
-    const pnlLong = (spot - K)  // при экспирации
-    const pnlShort = (K - spot) // при экспирации
-
-    scenarios.push({
-      id: idx,
-      name: idx === 2 ? 'Base Case' : (idx < 2 ? 'Bear' : 'Bull'),
-      spotPrice: spot,
-      change: change,
-      forwardValue: forwardValue,
-      pnlLong: pnlLong * params.value.contractSize,
-      pnlShort: pnlShort * params.value.contractSize,
-      isBase: idx === 2
-    })
-  })
-
-  return scenarios
+  return valuationResults.value.scenarios || []
 })
 
 // Chart References
@@ -489,30 +613,69 @@ let valueVsTimeChart: Chart | null = null
 
 // Methods
 const formatCurrency = (val: number) => {
-  return new Intl.NumberFormat('en-US', {
+  return new Intl.NumberFormat('ru-RU', {
     style: 'currency',
-    currency: 'USD',
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2
+    currency: 'RUB',
+    minimumFractionDigits: 3,
+    maximumFractionDigits: 3
   }).format(val)
 }
 
 const formatCompactCurrency = (val: number) => {
   if (Math.abs(val) >= 1_000_000) {
-    return (val / 1_000_000).toFixed(1) + 'М'
+    return (val / 1_000_000).toFixed(3) + 'М'
   }
-  return '$' + (val / 1000).toFixed(0) + 'K'
+  return '₽' + (val / 1000).toFixed(3) + 'K'
 }
 
 const updateValuation = () => {
-  initCharts()
+  // Обновляем графики после расчета
+  setTimeout(() => {
+    initCharts()
+  }, 100)
 }
 
 const calculateValuation = async () => {
   calculating.value = true
+  error.value = ''
+  
   try {
-    await new Promise(r => setTimeout(r, 1000))
+    const request: any = {
+      forwardType: selectedForwardType.value,
+      spotPrice: params.value.spotPrice,
+      timeToMaturity: params.value.timeToMaturity,
+      marketForwardPrice: params.value.marketForwardPrice,
+      contractSize: params.value.contractSize
+    }
+    
+    // Добавляем параметры в зависимости от типа форварда
+    if (selectedForwardType.value === 'fx') {
+      request.buyCurrency = params.value.fxBuyCurrency
+      request.sellCurrency = params.value.fxSellCurrency
+      request.buyAmount = params.value.fxBuyAmount
+      request.sellAmount = params.value.fxSellAmount
+      request.dealDate = params.value.fxDealDate
+      request.valuationDate = params.value.fxValuationDate
+      request.expirationDate = params.value.fxExpirationDate
+      request.settlementCurrency = params.value.settlementCurrency || 'RUB'
+      request.internalRate = params.value.fxInternalRate
+      request.externalRate = params.value.fxExternalRate
+    } else {
+      request.dividendYield = params.value.dividendYield
+      request.carryingCost = params.value.carryingCost
+      request.convenienceYield = params.value.convenienceYield
+      request.riskFreeRate = params.value.riskFreeRate
+      if (params.value.repoRate) {
+        request.repoRate = params.value.repoRate
+      }
+    }
+    
+    const result = await valuateForward(request)
+    valuationResults.value = result
     updateValuation()
+  } catch (err: any) {
+    error.value = err.message || 'Ошибка при расчете форварда'
+    console.error('Forward valuation error:', err)
   } finally {
     calculating.value = false
   }
@@ -525,30 +688,53 @@ const initCharts = () => {
   // Forward Price Profile
   if (priceProfileRef.value?.getContext('2d')) {
     const spotRange = []
-    const forwardPrices = []
+    const fairForwardPrices = []
+    const marketForwardPrices = []
     
-    for (let i = 0.7; i <= 1.3; i += 0.05) {
-      const spot = params.value.spotPrice * i
-      spotRange.push(spot)
-      
-      const r = params.value.riskFreeRate / 100
-      const d = params.value.dividendYield / 100
-      const c = params.value.carryingCost / 100
-      const y = params.value.convenienceYield / 100
+    if (selectedForwardType.value === 'fx') {
+      // FX Forward: используем Covered Interest Parity
+      const spot = params.value.spotPrice
+      const internalRate = (params.value.fxInternalRate || 4.2) / 100
+      const externalRate = (params.value.fxExternalRate || 11.7) / 100
       const T = params.value.timeToMaturity
+      const marketForward = params.value.marketForwardPrice
       
-      const forwardPrice = spot * Math.exp((r + c - d - y) * T)
-      forwardPrices.push(forwardPrice)
+      for (let i = 0.7; i <= 1.3; i += 0.05) {
+        const spotVariation = spot * i
+        spotRange.push(spotVariation)
+        
+        // Covered Interest Parity: F = S × (1 + r_sell × T) / (1 + r_buy × T)
+        // Для EUR/RUB: r_sell = RUB rate, r_buy = EUR rate
+        const fairForward = spotVariation * (1 + externalRate * T) / (1 + internalRate * T)
+        fairForwardPrices.push(fairForward)
+        marketForwardPrices.push(marketForward)
+      }
+    } else {
+      // Cost-of-Carry для других типов форвардов
+      for (let i = 0.7; i <= 1.3; i += 0.05) {
+        const spot = params.value.spotPrice * i
+        spotRange.push(spot)
+        
+        const r = params.value.riskFreeRate / 100
+        const d = params.value.dividendYield / 100
+        const c = params.value.carryingCost / 100
+        const y = params.value.convenienceYield / 100
+        const T = params.value.timeToMaturity
+        
+        const forwardPrice = spot * Math.exp((r + c - d - y) * T)
+        fairForwardPrices.push(forwardPrice)
+        marketForwardPrices.push(params.value.marketForwardPrice)
+      }
     }
 
     priceProfileChart = new Chart(priceProfileRef.value.getContext('2d') as any, {
       type: 'line',
       data: {
-        labels: spotRange.map(s => s.toFixed(1)),
+        labels: spotRange.map(s => s.toFixed(2)),
         datasets: [
           {
             label: 'Fair Forward Price',
-            data: forwardPrices,
+            data: fairForwardPrices,
             borderColor: '#60a5fa',
             backgroundColor: 'rgba(96, 165, 250, 0.08)',
             fill: true,
@@ -558,7 +744,7 @@ const initCharts = () => {
           },
           {
             label: 'Market Price',
-            data: Array(forwardPrices.length).fill(params.value.marketForwardPrice),
+            data: marketForwardPrices,
             borderColor: '#f59e0b',
             backgroundColor: 'transparent',
             fill: false,
@@ -574,8 +760,16 @@ const initCharts = () => {
         maintainAspectRatio: false,
         plugins: { legend: { labels: { color: 'rgba(255,255,255,0.6)' } } },
         scales: {
-          x: { grid: { display: false }, ticks: { color: 'rgba(255,255,255,0.3)' } },
-          y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: 'rgba(255,255,255,0.3)' } }
+          x: { 
+            title: { display: true, text: 'Spot Price', color: 'rgba(255,255,255,0.5)' },
+            grid: { display: false }, 
+            ticks: { color: 'rgba(255,255,255,0.3)' } 
+          },
+          y: { 
+            title: { display: true, text: 'Forward Price', color: 'rgba(255,255,255,0.5)' },
+            grid: { color: 'rgba(255,255,255,0.05)' }, 
+            ticks: { color: 'rgba(255,255,255,0.3)' } 
+          }
         }
       }
     } as any)
@@ -586,14 +780,51 @@ const initCharts = () => {
     const timePoints = []
     const values = []
     
-    for (let t = 0; t <= params.value.timeToMaturity; t += params.value.timeToMaturity / 12) {
-      const r = params.value.riskFreeRate / 100
-      const S0 = params.value.spotPrice
-      const K = params.value.marketForwardPrice
+    if (selectedForwardType.value === 'fx') {
+      // FX Forward: NPV эволюция по времени
+      const spot = params.value.spotPrice
+      const marketForward = params.value.marketForwardPrice
+      const internalRate = (params.value.fxInternalRate || 4.2) / 100
+      const externalRate = (params.value.fxExternalRate || 11.7) / 100
+      const buyAmount = params.value.fxBuyAmount || 1_000_000
       
-      const forwardValue = (S0 - K) / Math.exp(r * t)
-      timePoints.push((t * 12).toFixed(0))
-      values.push(forwardValue)
+      // Рассчитываем T из дат, если доступны
+      let T = params.value.timeToMaturity
+      if (params.value.fxValuationDate && params.value.fxExpirationDate) {
+        const valDate = new Date(params.value.fxValuationDate)
+        const expDate = new Date(params.value.fxExpirationDate)
+        const daysDiff = (expDate.getTime() - valDate.getTime()) / (1000 * 60 * 60 * 24)
+        T = daysDiff / 365.0
+      }
+      
+      for (let i = 0; i <= 12; i++) {
+        const t = (T * i) / 12
+        const remainingT = T - t
+        
+        if (remainingT > 0) {
+          // Справедливый форвард на момент t (спот остается тем же, но время до экспирации уменьшается)
+          const fairForwardAtT = spot * (1 + externalRate * remainingT) / (1 + internalRate * remainingT)
+          // PnL на экспирацию
+          const pnlAtMaturity = (marketForward - fairForwardAtT) * buyAmount
+          // NPV с дисконтированием по оставшемуся времени (дисконтируем по ставке settlement currency = RUB)
+          const npv = pnlAtMaturity / (1 + externalRate * remainingT)
+          values.push(npv)
+        } else {
+          values.push(0)
+        }
+        timePoints.push((t * 12).toFixed(0))
+      }
+    } else {
+      // Cost-of-Carry для других типов
+      for (let t = 0; t <= params.value.timeToMaturity; t += params.value.timeToMaturity / 12) {
+        const r = params.value.riskFreeRate / 100
+        const S0 = params.value.spotPrice
+        const K = params.value.marketForwardPrice
+        
+        const forwardValue = (S0 - K) / Math.exp(r * t)
+        timePoints.push((t * 12).toFixed(0))
+        values.push(forwardValue)
+      }
     }
 
     valueVsTimeChart = new Chart(valueVsTimeRef.value.getContext('2d') as any, {
@@ -601,7 +832,7 @@ const initCharts = () => {
       data: {
         labels: timePoints,
         datasets: [{
-          label: 'Forward Value',
+          label: selectedForwardType.value === 'fx' ? 'NPV Contract (RUB)' : 'Forward Value',
           data: values,
           borderColor: '#38bdf8',
           backgroundColor: 'rgba(56, 189, 248, 0.08)',
@@ -616,19 +847,55 @@ const initCharts = () => {
         maintainAspectRatio: false,
         plugins: { legend: { display: false } },
         scales: {
-          x: { grid: { display: false }, ticks: { color: 'rgba(255,255,255,0.3)' } },
-          y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: 'rgba(255,255,255,0.3)' } }
+          x: { 
+            title: { display: true, text: 'Months to Maturity', color: 'rgba(255,255,255,0.5)' },
+            grid: { display: false }, 
+            ticks: { color: 'rgba(255,255,255,0.3)' } 
+          },
+          y: { 
+            title: { display: true, text: selectedForwardType.value === 'fx' ? 'NPV (RUB)' : 'Value', color: 'rgba(255,255,255,0.5)' },
+            grid: { color: 'rgba(255,255,255,0.05)' }, 
+            ticks: { color: 'rgba(255,255,255,0.3)' } 
+          }
         }
       }
     } as any)
   }
 }
 
+// Обновляем графики при изменении типа форварда
+watch(selectedForwardType, () => {
+  setTimeout(() => {
+    initCharts()
+  }, 100)
+})
+
+// Обновляем графики при изменении параметров (debounce)
+let chartUpdateTimeout: ReturnType<typeof setTimeout> | null = null
+watch(() => [
+  params.value.spotPrice,
+  params.value.marketForwardPrice,
+  params.value.timeToMaturity,
+  params.value.fxInternalRate,
+  params.value.fxExternalRate,
+  params.value.fxBuyAmount,
+  params.value.riskFreeRate,
+  params.value.dividendYield
+], () => {
+  if (chartUpdateTimeout) clearTimeout(chartUpdateTimeout)
+  chartUpdateTimeout = setTimeout(() => {
+    if (priceProfileRef.value && valueVsTimeRef.value) {
+      initCharts()
+    }
+  }, 300)
+}, { deep: true })
+
 onMounted(() => {
-  initCharts()
+  calculateValuation()
 })
 
 onBeforeUnmount(() => {
+  if (chartUpdateTimeout) clearTimeout(chartUpdateTimeout)
   if (priceProfileChart) priceProfileChart.destroy()
   if (valueVsTimeChart) valueVsTimeChart.destroy()
 })
@@ -849,6 +1116,23 @@ onBeforeUnmount(() => {
   outline: none;
   border-color: rgba(59, 130, 246, 0.5);
   background: rgba(59, 130, 246, 0.05);
+}
+
+.param-value {
+  flex: 1;
+  color: #fff;
+  font-size: 12px;
+  font-family: "SF Mono", monospace;
+  text-align: right;
+  font-weight: 600;
+}
+
+.param-value.positive {
+  color: #4ade80;
+}
+
+.param-value.negative {
+  color: #f87171;
 }
 
 /* ============================================
@@ -1240,6 +1524,22 @@ onBeforeUnmount(() => {
 .description {
   font-size: 9px;
   color: rgba(255,255,255,0.4);
+}
+
+/* ============================================
+   ERROR MESSAGE
+   ============================================ */
+.error-message {
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: 12px;
+  padding: 16px 20px;
+  margin-bottom: 24px;
+  color: #fca5a5;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 /* ============================================

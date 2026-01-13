@@ -33,6 +33,11 @@
       </div>
     </div>
 
+    <!-- Error Message -->
+    <div v-if="error" class="error-message">
+      ⚠️ {{ error }}
+    </div>
+
     <!-- Input Parameters Section -->
     <div class="grid-2">
       <!-- Swap Parameters -->
@@ -96,7 +101,7 @@
       <div class="metric-card">
         <div class="metric-header">
           <h3>PV фиксированной ноги</h3>
-          <span class="metric-unit">млн USD</span>
+          <span class="metric-unit">млн RUB</span>
         </div>
         <div class="metric-value accent">
           {{ formatCurrency(valuationResults.pvFixedLeg) }}
@@ -111,7 +116,7 @@
       <div class="metric-card">
         <div class="metric-header">
           <h3>PV плавающей ноги</h3>
-          <span class="metric-unit">млн USD</span>
+          <span class="metric-unit">млн RUB</span>
         </div>
         <div class="metric-value blue">
           {{ formatCurrency(valuationResults.pvFloatingLeg) }}
@@ -126,7 +131,7 @@
       <div class="metric-card">
         <div class="metric-header">
           <h3>Стоимость свопа (Payer)</h3>
-          <span class="metric-unit">млн USD</span>
+          <span class="metric-unit">млн RUB</span>
         </div>
         <div class="metric-value" :class="valuationResults.swapValue >= 0 ? 'positive' : 'negative'">
           {{ formatCurrency(valuationResults.swapValue) }}
@@ -227,7 +232,7 @@
           <tbody>
             <tr v-for="(cf, idx) in valuationResults.cashflows" :key="idx">
               <td class="col-period">{{ idx + 1 }}</td>
-              <td class="col-date mono">{{ cf.date }}</td>
+              <td class="col-date mono">{{ formatDate(cf.date) }}</td>
               <td class="col-amount accent">{{ formatCurrency(cf.fixedLeg) }}</td>
               <td class="col-amount blue">{{ formatCurrency(cf.floatingLeg) }}</td>
               <td class="col-amount" :class="cf.net >= 0 ? 'positive' : 'negative'">
@@ -346,9 +351,11 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 import Chart from 'chart.js/auto'
+import { valuateSwap, type SwapValuationResponse } from '@/services/swapService'
 
 const selectedSwapType = ref('irs')
 const calculating = ref(false)
+const error = ref('')
 
 // Swap Parameters
 const params = ref({
@@ -363,75 +370,21 @@ const params = ref({
 })
 
 // Valuation Results
-const valuationResults = ref({
-  pvFixedLeg: 102.45,
-  pvFloatingLeg: 100.0,
-  swapValue: 2.45,
-  duration: 4.25,
-  dv01: 42500,              // млн / 100bp
-  spreadDv01: 28500,
-  convexity: 18.5,
-  cashflows: [] as any[]
+const valuationResults = ref<SwapValuationResponse>({
+  pvFixedLeg: 0,
+  pvFloatingLeg: 0,
+  swapValue: 0,
+  duration: 0,
+  dv01: 0,
+  spreadDv01: 0,
+  convexity: 0,
+  cashflows: [],
+  scenarios: []
 })
 
-// Scenario Analysis
+// Scenario Analysis - используем данные из API
 const scenarioAnalysis = computed(() => {
-  const baseFixed = params.value.fixedRate
-  const baseFloating = params.value.floatingRate
-  const baseSwapValue = valuationResults.value.swapValue
-
-  return [
-    {
-      name: 'Down -200bp',
-      fixedRate: baseFixed - 2,
-      floatingRate: baseFloating - 2,
-      pvFixed: 112.5,
-      pvFloating: 108.2,
-      swapValue: 4.3,
-      pnl: 4.3 - baseSwapValue,
-      isBase: false
-    },
-    {
-      name: 'Down -100bp',
-      fixedRate: baseFixed - 1,
-      floatingRate: baseFloating - 1,
-      pvFixed: 107.3,
-      pvFloating: 104.1,
-      swapValue: 3.2,
-      pnl: 3.2 - baseSwapValue,
-      isBase: false
-    },
-    {
-      name: 'Base Case',
-      fixedRate: baseFixed,
-      floatingRate: baseFloating,
-      pvFixed: valuationResults.value.pvFixedLeg,
-      pvFloating: valuationResults.value.pvFloatingLeg,
-      swapValue: baseSwapValue,
-      pnl: 0,
-      isBase: true
-    },
-    {
-      name: 'Up +100bp',
-      fixedRate: baseFixed + 1,
-      floatingRate: baseFloating + 1,
-      pvFixed: 96.8,
-      pvFloating: 95.9,
-      swapValue: 0.9,
-      pnl: 0.9 - baseSwapValue,
-      isBase: false
-    },
-    {
-      name: 'Up +200bp',
-      fixedRate: baseFixed + 2,
-      floatingRate: baseFloating + 2,
-      pvFixed: 91.5,
-      pvFloating: 91.2,
-      swapValue: 0.3,
-      pnl: 0.3 - baseSwapValue,
-      isBase: false
-    }
-  ]
+  return valuationResults.value.scenarios || []
 })
 
 // Chart References
@@ -456,67 +409,45 @@ const formatCompactCurrency = (val: number) => {
   return '$' + (val / 1000).toFixed(0) + 'K'
 }
 
-const updateValuation = () => {
-  // Simplified DCF calculation
-  const tenor = params.value.tenor
-  const notional = params.value.notional
-  const fixedRate = params.value.fixedRate / 100
-  const floatingRate = (params.value.floatingRate + params.value.spread / 100) / 100
-  const discountRate = params.value.discountRate / 100
-  const couponFreq = params.value.couponsPerYear
-
-  const periodRate = discountRate / couponFreq
-  const periods = tenor * couponFreq
-
-  let pvFixed = 0
-  let pvFloating = 0
-  const cashflows = []
-
-  for (let i = 1; i <= periods; i++) {
-    const year = i / couponFreq
-    const discountFactor = Math.pow(1 + periodRate, -i)
-    
-    const fixedCoupon = (notional * fixedRate) / couponFreq
-    const floatingCoupon = (notional * floatingRate) / couponFreq
-    
-    pvFixed += fixedCoupon * discountFactor
-    pvFloating += floatingCoupon * discountFactor
-
-    cashflows.push({
-      date: `${year.toFixed(1)}Y`,
-      fixedLeg: fixedCoupon,
-      floatingLeg: floatingCoupon,
-      net: fixedCoupon - floatingCoupon,
-      pv: (fixedCoupon - floatingCoupon) * discountFactor
+const formatDate = (dateStr: string) => {
+  try {
+    const date = new Date(dateStr)
+    return date.toLocaleDateString('ru-RU', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric'
     })
+  } catch {
+    return dateStr
   }
+}
 
-  pvFixed += notional * Math.pow(1 + periodRate, -periods)
-  pvFloating += notional * Math.pow(1 + periodRate, -periods)
-
-  const swapValue = pvFixed - pvFloating
-  const duration = tenor * 0.85 // simplified
-  const dv01 = (notional * 1_000_000 * duration * 0.0001) / 100
-
-  valuationResults.value = {
-    pvFixedLeg: pvFixed,
-    pvFloatingLeg: pvFloating,
-    swapValue: swapValue,
-    duration: duration,
-    dv01: dv01,
-    spreadDv01: dv01 * 0.67,
-    convexity: duration * duration * 0.5,
-    cashflows: cashflows
-  }
-
+const updateValuation = () => {
   initCharts()
 }
 
 const calculateValuation = async () => {
   calculating.value = true
+  error.value = ''
+  
   try {
-    await new Promise(r => setTimeout(r, 1000))
+    const result = await valuateSwap({
+      notional: params.value.notional,
+      tenor: params.value.tenor,
+      fixedRate: params.value.fixedRate,
+      floatingRate: params.value.floatingRate,
+      spread: params.value.spread,
+      couponsPerYear: params.value.couponsPerYear,
+      discountRate: params.value.discountRate,
+      volatility: params.value.volatility,
+      swapType: selectedSwapType.value
+    })
+    
+    valuationResults.value = result
     updateValuation()
+  } catch (err: any) {
+    error.value = err.message || 'Ошибка при расчете свопа'
+    console.error('Swap valuation error:', err)
   } finally {
     calculating.value = false
   }
@@ -562,7 +493,7 @@ const initCharts = () => {
       data: {
         labels: ['2Y', '3Y', '5Y', '7Y', '10Y'],
         datasets: [{
-          label: 'DV01 (USD)',
+          label: 'DV01 (RUB)',
           data: [28000, 35000, 42500, 48000, 52000],
           backgroundColor: 'rgba(96, 165, 250, 0.6)',
           borderColor: '#60a5fa',
@@ -583,7 +514,7 @@ const initCharts = () => {
 }
 
 onMounted(() => {
-  updateValuation()
+  calculateValuation()
 })
 
 onBeforeUnmount(() => {
@@ -1125,6 +1056,22 @@ onBeforeUnmount(() => {
 .chart-container canvas {
   width: 100% !important;
   height: 100% !important;
+}
+
+/* ============================================
+   ERROR MESSAGE
+   ============================================ */
+.error-message {
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: 12px;
+  padding: 16px 20px;
+  margin-bottom: 24px;
+  color: #fca5a5;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 /* ============================================

@@ -301,8 +301,8 @@ const selectScenario = (scenario: any) => selectedScenario.value = scenario
 
 // Helpers
 const getImpact = (val: number) => val * shockMultiplier.value
-const formatCurrency = (val: number) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(val)
-const formatCurrencyCompact = (val: number) => '$' + (val / 1000).toFixed(0) + 'k'
+const formatCurrency = (val: number) => new Intl.NumberFormat('ru-RU', { style: 'currency', currency: 'RUB', maximumFractionDigits: 0 }).format(val)
+const formatCurrencyCompact = (val: number) => '₽' + (val / 1000).toFixed(0) + 'k'
 const formatLabel = (key: string) => key.charAt(0).toUpperCase() + key.slice(1)
 
 // Computed properties для отображения данных из API результатов
