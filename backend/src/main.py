@@ -41,10 +41,13 @@ app = FastAPI(
 )
 
 # CORS configuration
+default_origins = "http://localhost:5173,http://localhost:3000,https://russiankendricklamar.github.io"
 cors_origins = os.getenv(
     "CORS_ORIGINS",
-    "http://localhost:5173,http://localhost:3000"
+    default_origins
 ).split(",")
+# Remove empty strings and strip whitespace
+cors_origins = [origin.strip() for origin in cors_origins if origin.strip()]
 
 app.add_middleware(
     CORSMiddleware,
