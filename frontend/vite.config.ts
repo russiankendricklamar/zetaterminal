@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url'
 import { resolve } from 'node:path'
 
 export default defineConfig({
-  base: '/',
+  base: '/stochastic-dashbord-v1/',
   plugins: [vue()],
   resolve: {
     alias: {
