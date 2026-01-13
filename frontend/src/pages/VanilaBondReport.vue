@@ -18,6 +18,35 @@
       </div>
       
       <div class="header-actions">
+        <!-- Valuation Date -->
+        <div class="glass-pill">
+          <label class="lbl-mini">Дата оценки:</label>
+          <input 
+            v-model="valuationDate"
+            type="date"
+            class="date-input-small"
+            @change="onValuationDateChange"
+          />
+        </div>
+
+        <!-- Edit Mode Toggle -->
+        <button 
+          @click="toggleEditMode" 
+          class="btn-toggle-edit"
+          :class="{ 'active': editMode }"
+        >
+          {{ editMode ? '✓ Режим редактирования' : '✎ Редактировать' }}
+        </button>
+
+        <!-- Export to Excel -->
+        <button 
+          @click="exportToExcel" 
+          class="btn-export-excel"
+          :disabled="!report"
+        >
+          📊 Excel
+        </button>
+
         <!-- Search Control -->
         <div class="glass-pill">
           <label class="lbl-mini">ISIN:</label>
@@ -58,12 +87,42 @@
             <h3>Общие сведения</h3>
           </div>
           <table class="info-table">
-            <tr><td class="label">Эмитент</td><td class="value">{{ report.issuer }}</td></tr>
+            <tr>
+              <td class="label">Эмитент</td>
+              <td class="value">
+                <input v-if="editMode && editableReport" v-model="editableReport.issuer" type="text" class="edit-input" />
+                <span v-else>{{ report.issuer }}</span>
+              </td>
+            </tr>
             <tr><td class="label">ISIN</td><td class="value mono">{{ report.isin }}</td></tr>
-            <tr><td class="label">Страна</td><td class="value">{{ report.risk_country || '—' }}</td></tr>
-            <tr><td class="label">Сектор</td><td class="value">{{ report.sector || '—' }}</td></tr>
-            <tr><td class="label">Отрасль</td><td class="value">{{ report.industry || '—' }}</td></tr>
-            <tr><td class="label">Объём</td><td class="value mono">{{ formatNumber(report.outstanding_amount) || '—' }}</td></tr>
+            <tr>
+              <td class="label">Страна</td>
+              <td class="value">
+                <input v-if="editMode && editableReport" v-model="editableReport.risk_country" type="text" class="edit-input" />
+                <span v-else>{{ report.risk_country || '—' }}</span>
+              </td>
+            </tr>
+            <tr>
+              <td class="label">Сектор</td>
+              <td class="value">
+                <input v-if="editMode && editableReport" v-model="editableReport.sector" type="text" class="edit-input" />
+                <span v-else>{{ report.sector || '—' }}</span>
+              </td>
+            </tr>
+            <tr>
+              <td class="label">Отрасль</td>
+              <td class="value">
+                <input v-if="editMode && editableReport" v-model="editableReport.industry" type="text" class="edit-input" />
+                <span v-else>{{ report.industry || '—' }}</span>
+              </td>
+            </tr>
+            <tr>
+              <td class="label">Объём</td>
+              <td class="value mono">
+                <input v-if="editMode && editableReport" v-model.number="editableReport.outstanding_amount" type="number" class="edit-input" />
+                <span v-else>{{ formatNumber(report.outstanding_amount) || '—' }}</span>
+              </td>
+            </tr>
           </table>
         </div>
 
@@ -72,10 +131,37 @@
             <h3>Параметры выпуска</h3>
           </div>
           <table class="info-table">
-            <tr><td class="label">Дата начала</td><td class="value mono">{{ formatDate(report.issue_info?.issue_date) }}</td></tr>
-            <tr><td class="label">Дата погашения</td><td class="value mono">{{ formatDate(report.issue_info?.maturity_date) }}</td></tr>
-            <tr><td class="label">Ставка купона</td><td class="value"><span v-if="report.issue_info?.coupon_rate !== null && report.issue_info?.coupon_rate !== undefined" class="accent">{{ ((report.issue_info?.coupon_rate || 0) * 100).toFixed(2) }}%</span><span v-else>—</span></td></tr>
-            <tr><td class="label">Купонов в год</td><td class="value mono">{{ report.issue_info?.coupon_per_year ?? '—' }}</td></tr>
+            <tr>
+              <td class="label">Дата начала</td>
+              <td class="value mono">
+                <input v-if="editMode && editableReport?.issue_info" v-model="editableReport.issue_info.issue_date" type="date" class="edit-input" />
+                <span v-else>{{ formatDate(report.issue_info?.issue_date) }}</span>
+              </td>
+            </tr>
+            <tr>
+              <td class="label">Дата погашения</td>
+              <td class="value mono">
+                <input v-if="editMode && editableReport?.issue_info" v-model="editableReport.issue_info.maturity_date" type="date" class="edit-input" />
+                <span v-else>{{ formatDate(report.issue_info?.maturity_date) }}</span>
+              </td>
+            </tr>
+            <tr>
+              <td class="label">Ставка купона</td>
+              <td class="value">
+                <input v-if="editMode && editableReport?.issue_info" v-model.number="editableReport.issue_info.coupon_rate" type="number" step="0.01" class="edit-input" placeholder="0.00" />
+                <span v-else>
+                  <span v-if="report.issue_info?.coupon_rate !== null && report.issue_info?.coupon_rate !== undefined" class="accent">{{ ((report.issue_info?.coupon_rate || 0) * 100).toFixed(2) }}%</span>
+                  <span v-else>—</span>
+                </span>
+              </td>
+            </tr>
+            <tr>
+              <td class="label">Купонов в год</td>
+              <td class="value mono">
+                <input v-if="editMode && editableReport?.issue_info" v-model.number="editableReport.issue_info.coupon_per_year" type="number" class="edit-input" />
+                <span v-else>{{ report.issue_info?.coupon_per_year ?? '—' }}</span>
+              </td>
+            </tr>
           </table>
         </div>
       </div>
@@ -148,10 +234,34 @@
             <h3>Котировка и доходность</h3>
           </div>
           <div class="metric-list">
-            <div class="metric"><span>Чистая цена</span><span class="val accent">{{ report.pricing?.clean_price_pct?.toFixed(2) }}%</span></div>
-            <div class="metric"><span>YTM</span><span class="val accent">{{ report.pricing?.ytm ? ((report.pricing.ytm * 100).toFixed(2) + '%') : '—' }}</span></div>
-            <div class="metric"><span>G-spread</span><span class="val mono">{{ report.pricing?.g_spread_bps ?? '—' }}<span v-if="report.pricing?.g_spread_bps"> bps</span></span></div>
-            <div class="metric"><span>G-curve</span><span class="val mono">{{ report.pricing?.g_curve_yield ? ((report.pricing.g_curve_yield * 100).toFixed(2) + '%') : '—' }}</span></div>
+            <div class="metric">
+              <span>Чистая цена</span>
+              <span class="val accent">
+                <input v-if="editMode && editableReport?.pricing" v-model.number="editableReport.pricing.clean_price_pct" type="number" step="0.01" class="edit-input-inline" />
+                <span v-else>{{ report.pricing?.clean_price_pct?.toFixed(2) }}%</span>
+              </span>
+            </div>
+            <div class="metric">
+              <span>YTM</span>
+              <span class="val accent">
+                <input v-if="editMode && editableReport?.pricing" v-model.number="editableReport.pricing.ytm" type="number" step="0.0001" class="edit-input-inline" />
+                <span v-else>{{ report.pricing?.ytm ? ((report.pricing.ytm * 100).toFixed(2) + '%') : '—' }}</span>
+              </span>
+            </div>
+            <div class="metric">
+              <span>G-spread</span>
+              <span class="val mono">
+                <input v-if="editMode && editableReport?.pricing" v-model.number="editableReport.pricing.g_spread_bps" type="number" class="edit-input-inline" />
+                <span v-else>{{ report.pricing?.g_spread_bps ?? '—' }}<span v-if="report.pricing?.g_spread_bps"> bps</span></span>
+              </span>
+            </div>
+            <div class="metric">
+              <span>G-curve</span>
+              <span class="val mono">
+                <input v-if="editMode && editableReport?.pricing" v-model.number="editableReport.pricing.g_curve_yield" type="number" step="0.0001" class="edit-input-inline" />
+                <span v-else>{{ report.pricing?.g_curve_yield ? ((report.pricing.g_curve_yield * 100).toFixed(2) + '%') : '—' }}</span>
+              </span>
+            </div>
           </div>
         </div>
 
@@ -160,10 +270,34 @@
             <h3>Риск-метрики</h3>
           </div>
           <div class="metric-list">
-            <div class="metric"><span>Мод. дюрация</span><span class="val">{{ report.risk_indicators?.mod_duration?.toFixed(2) || report.risk_indicators?.duration?.toFixed(2) || '—' }}</span></div>
-            <div class="metric"><span>Дюрация</span><span class="val">{{ report.risk_indicators?.duration?.toFixed(2) }}</span></div>
-            <div class="metric"><span>Выпуклость</span><span class="val">{{ report.risk_indicators?.convexity?.toFixed(2) }}</span></div>
-            <div class="metric"><span>DV01</span><span class="val">{{ formatNumber(report.risk_indicators?.dv01) }}</span></div>
+            <div class="metric">
+              <span>Мод. дюрация</span>
+              <span class="val">
+                <input v-if="editMode && editableReport?.risk_indicators" v-model.number="editableReport.risk_indicators.mod_duration" type="number" step="0.0001" class="edit-input-inline" />
+                <span v-else>{{ report.risk_indicators?.mod_duration?.toFixed(4) || report.risk_indicators?.duration?.toFixed(4) || '—' }}</span>
+              </span>
+            </div>
+            <div class="metric">
+              <span>Дюрация</span>
+              <span class="val">
+                <input v-if="editMode && editableReport?.risk_indicators" v-model.number="editableReport.risk_indicators.duration" type="number" step="0.0001" class="edit-input-inline" />
+                <span v-else>{{ report.risk_indicators?.duration?.toFixed(4) }}</span>
+              </span>
+            </div>
+            <div class="metric">
+              <span>Выпуклость</span>
+              <span class="val">
+                <input v-if="editMode && editableReport?.risk_indicators" v-model.number="editableReport.risk_indicators.convexity" type="number" step="0.01" class="edit-input-inline" />
+                <span v-else>{{ report.risk_indicators?.convexity?.toFixed(2) }}</span>
+              </span>
+            </div>
+            <div class="metric">
+              <span>DV01</span>
+              <span class="val">
+                <input v-if="editMode && editableReport?.risk_indicators" v-model.number="editableReport.risk_indicators.dv01" type="number" step="0.01" class="edit-input-inline" />
+                <span v-else>{{ formatNumber(report.risk_indicators?.dv01) }}</span>
+              </span>
+            </div>
           </div>
         </div>
       </div>
@@ -291,9 +425,10 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref, onBeforeUnmount } from 'vue'
+import { computed, onMounted, ref, onBeforeUnmount, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import Chart from 'chart.js/auto'
+import * as XLSX from 'xlsx'
 
 interface RatingEntry {
   agency: string
@@ -365,6 +500,9 @@ const localIsin = ref(isin.value)
 const loading = ref(false)
 const error = ref<string | null>(null)
 const report = ref<BondReport | null>(null)
+const valuationDate = ref(new Date().toISOString().split('T')[0])
+const editMode = ref(false)
+const editableReport = ref<BondReport | null>(null)
 
 // Analogous bonds management
 const newAnalogIsin = ref('')
@@ -936,6 +1074,158 @@ const initCharts = () => {
   }
 }
 
+// Toggle edit mode
+const toggleEditMode = () => {
+  editMode.value = !editMode.value
+  if (editMode.value && report.value) {
+    // Создаем глубокую копию отчета для редактирования
+    editableReport.value = JSON.parse(JSON.stringify(report.value))
+    // Инициализируем вложенные объекты, если их нет
+    if (editableReport.value && !editableReport.value.issue_info) {
+      editableReport.value.issue_info = {
+        issue_date: null,
+        maturity_date: null,
+        coupon_rate: null,
+        coupon_per_year: null
+      }
+    }
+    if (editableReport.value && !editableReport.value.pricing) {
+      editableReport.value.pricing = {
+        clean_price_pct: null,
+        ytm: null,
+        g_spread_bps: null,
+        g_curve_yield: null
+      }
+    }
+    if (editableReport.value && !editableReport.value.risk_indicators) {
+      editableReport.value.risk_indicators = {
+        duration: null,
+        mod_duration: null,
+        convexity: null,
+        dv01: null
+      }
+    }
+  } else if (!editMode.value && editableReport.value) {
+    // При выходе из режима редактирования обновляем основной отчет
+    report.value = JSON.parse(JSON.stringify(editableReport.value))
+  }
+}
+
+
+// Valuation date change handler
+const onValuationDateChange = () => {
+  // Здесь можно добавить логику пересчета отчета на новую дату
+  console.log('Valuation date changed to:', valuationDate.value)
+}
+
+// Export to Excel
+const exportToExcel = () => {
+  const dataToExport = editMode.value && editableReport.value ? editableReport.value : report.value
+  if (!dataToExport) return
+
+  try {
+    const data: any[][] = []
+    
+    // Заголовок
+    data.push(['Отчет по облигации'])
+    data.push(['Дата оценки:', valuationDate.value])
+    data.push(['ISIN:', dataToExport.isin])
+    data.push([])
+
+    // Общие сведения
+    data.push(['ОБЩИЕ СВЕДЕНИЯ'])
+    data.push(['Эмитент', dataToExport.issuer || ''])
+    data.push(['ISIN', dataToExport.isin])
+    data.push(['Страна', dataToExport.risk_country || ''])
+    data.push(['Сектор', dataToExport.sector || ''])
+    data.push(['Отрасль', dataToExport.industry || ''])
+    data.push(['Объём', dataToExport.outstanding_amount || ''])
+    data.push([])
+
+    // Параметры выпуска
+    data.push(['ПАРАМЕТРЫ ВЫПУСКА'])
+    data.push(['Дата начала', dataToExport.issue_info?.issue_date || ''])
+    data.push(['Дата погашения', dataToExport.issue_info?.maturity_date || ''])
+    data.push(['Ставка купона', dataToExport.issue_info?.coupon_rate ? (dataToExport.issue_info.coupon_rate * 100).toFixed(2) + '%' : ''])
+    data.push(['Купонов в год', dataToExport.issue_info?.coupon_per_year || ''])
+    data.push([])
+
+    // Котировка и доходность
+    data.push(['КОТИРОВКА И ДОХОДНОСТЬ'])
+    data.push(['Чистая цена', dataToExport.pricing?.clean_price_pct ? dataToExport.pricing.clean_price_pct.toFixed(2) + '%' : ''])
+    data.push(['YTM', dataToExport.pricing?.ytm ? (dataToExport.pricing.ytm * 100).toFixed(2) + '%' : ''])
+    data.push(['G-spread', dataToExport.pricing?.g_spread_bps ? dataToExport.pricing.g_spread_bps + ' bps' : ''])
+    data.push(['G-curve', dataToExport.pricing?.g_curve_yield ? (dataToExport.pricing.g_curve_yield * 100).toFixed(2) + '%' : ''])
+    data.push([])
+
+    // Риск-метрики
+    data.push(['РИСК-МЕТРИКИ'])
+    data.push(['Мод. дюрация', dataToExport.risk_indicators?.mod_duration?.toFixed(4) || ''])
+    data.push(['Дюрация', dataToExport.risk_indicators?.duration?.toFixed(4) || ''])
+    data.push(['Выпуклость', dataToExport.risk_indicators?.convexity?.toFixed(2) || ''])
+    data.push(['DV01', dataToExport.risk_indicators?.dv01 || ''])
+    data.push([])
+
+    // Индексы
+    if (dataToExport.indices) {
+      data.push(['СРАВНЕНИЕ С ИНДЕКСАМИ'])
+      data.push(['Индекс гос. облигаций (менее года)', dataToExport.indices.gov_less_1y ? (dataToExport.indices.gov_less_1y * 100).toFixed(2) + '%' : ''])
+      data.push(['Индекс корп. облигаций (ААА)', dataToExport.indices.corp_aaa ? (dataToExport.indices.corp_aaa * 100).toFixed(2) + '%' : ''])
+      data.push(['Индекс корп. облигаций (АА)', dataToExport.indices.corp_aa ? (dataToExport.indices.corp_aa * 100).toFixed(2) + '%' : ''])
+      data.push(['Оцениваемая облигация', dataToExport.pricing?.ytm ? (dataToExport.pricing.ytm * 100).toFixed(2) + '%' : ''])
+      data.push(['Индекс корп. облигаций (А)', dataToExport.indices.corp_a ? (dataToExport.indices.corp_a * 100).toFixed(2) + '%' : ''])
+      data.push(['Индекс корп. облигаций (ВВВ)', dataToExport.indices.corp_bbb ? (dataToExport.indices.corp_bbb * 100).toFixed(2) + '%' : ''])
+      data.push([])
+    }
+
+    // Рейтинги
+    if (dataToExport.ratings?.issue?.length) {
+      data.push(['РЕЙТИНГ ЭМИССИИ'])
+      data.push(['Агентство', 'Рейтинг', 'Дата'])
+      dataToExport.ratings.issue.forEach(r => {
+        data.push([r.agency, r.rating, r.date || ''])
+      })
+      data.push([])
+    }
+
+    if (dataToExport.ratings?.issuer?.length) {
+      data.push(['РЕЙТИНГ ЭМИТЕНТА'])
+      data.push(['Агентство', 'Рейтинг', 'Прогноз', 'Дата'])
+      dataToExport.ratings.issuer.forEach(r => {
+        data.push([r.agency, r.rating, r.outlook || '', r.date || ''])
+      })
+      data.push([])
+    }
+
+    // Корпоративные события
+    if (dataToExport.corporate_events?.length) {
+      data.push(['КОРПОРАТИВНЫЕ СОБЫТИЯ'])
+      data.push(['Дата', 'Описание'])
+      dataToExport.corporate_events.forEach(ev => {
+        data.push([ev.date || '', ev.description])
+      })
+    }
+
+    // Создаем книгу Excel
+    const ws = XLSX.utils.aoa_to_sheet(data)
+    const wb = XLSX.utils.book_new()
+    XLSX.utils.book_append_sheet(wb, ws, 'Отчет')
+
+    // Настройка ширины колонок
+    ws['!cols'] = [
+      { wch: 40 },
+      { wch: 30 }
+    ]
+
+    // Сохраняем файл
+    const fileName = `Bond_Report_${dataToExport.isin}_${valuationDate.value}.xlsx`
+    XLSX.writeFile(wb, fileName)
+  } catch (err: any) {
+    console.error('Export error:', err)
+    alert(`Ошибка при экспорте: ${err.message}`)
+  }
+}
+
 const onChangeIsin = () => {
   if (localIsin.value?.trim()) {
     router.push({ params: { isin: localIsin.value } })
@@ -1205,6 +1495,119 @@ onBeforeUnmount(() => {
   cursor: not-allowed;
 }
 .lbl-mini { font-size: 10px; color: rgba(255,255,255,0.5); font-weight: 600; text-transform: uppercase; }
+
+.date-input-small {
+  background: transparent;
+  border: none;
+  color: #fff;
+  font-size: 12px;
+  outline: none;
+  padding: 4px 8px;
+  cursor: pointer;
+  font-family: inherit;
+  min-width: 140px;
+}
+
+.date-input-small::-webkit-calendar-picker-indicator {
+  filter: invert(1);
+  cursor: pointer;
+}
+
+.date-input-small::-webkit-datetime-edit-text {
+  color: #fff;
+}
+
+.date-input-small::-webkit-datetime-edit-month-field,
+.date-input-small::-webkit-datetime-edit-day-field,
+.date-input-small::-webkit-datetime-edit-year-field {
+  color: #fff;
+}
+
+.btn-toggle-edit {
+  padding: 8px 16px;
+  background: rgba(34, 197, 94, 0.15);
+  color: #22c55e;
+  border: 1px solid rgba(34, 197, 94, 0.3);
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.btn-toggle-edit:hover {
+  background: rgba(34, 197, 94, 0.25);
+  border-color: rgba(34, 197, 94, 0.5);
+  transform: translateY(-1px);
+}
+
+.btn-toggle-edit.active {
+  background: rgba(34, 197, 94, 0.3);
+  border-color: rgba(34, 197, 94, 0.5);
+  color: #4ade80;
+}
+
+.btn-export-excel {
+  padding: 8px 16px;
+  background: rgba(245, 158, 11, 0.15);
+  color: #f59e0b;
+  border: 1px solid rgba(245, 158, 11, 0.3);
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.btn-export-excel:hover:not(:disabled) {
+  background: rgba(245, 158, 11, 0.25);
+  border-color: rgba(245, 158, 11, 0.5);
+  transform: translateY(-1px);
+}
+
+.btn-export-excel:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.edit-input {
+  width: 100%;
+  background: rgba(59, 130, 246, 0.1);
+  border: 1px solid rgba(59, 130, 246, 0.3);
+  border-radius: 6px;
+  color: #fff;
+  padding: 4px 8px;
+  font-size: 12px;
+  outline: none;
+  transition: all 0.2s;
+}
+
+.edit-input:focus {
+  background: rgba(59, 130, 246, 0.15);
+  border-color: rgba(59, 130, 246, 0.5);
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
+}
+
+.edit-input-inline {
+  width: 120px;
+  background: rgba(59, 130, 246, 0.1);
+  border: 1px solid rgba(59, 130, 246, 0.3);
+  border-radius: 6px;
+  color: #fff;
+  padding: 4px 8px;
+  font-size: 12px;
+  outline: none;
+  transition: all 0.2s;
+  text-align: right;
+}
+
+.edit-input-inline:focus {
+  background: rgba(59, 130, 246, 0.15);
+  border-color: rgba(59, 130, 246, 0.5);
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
+}
 
 /* ============================================
    GRID & CONTENT

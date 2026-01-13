@@ -313,42 +313,14 @@
             >
               <span class="nav-label">Портфель опционов</span>
             </router-link>
-          </div>
-        </div>
-      </div>
 
-      <!-- 8) Volatility Surface -->
-      <div class="tool-group">
-        <button
-          class="tool-header"
-          @click="toggleTool('vol')"
-          :class="{ expanded: expandedTools.vol }"
-        >
-          <div class="glossy-icon">
-            <div class="supernova indigo"></div>
-          </div>
-          <div class="tool-info">
-            <span class="tool-title">Поверхность волатильности</span>
-            <span class="tool-subtitle">SABR/SVI модели</span>
-          </div>
-          <div class="chevron">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <polyline points="6 9 12 15 18 9" />
-            </svg>
-          </div>
-        </button>
-        <div
-          class="tool-content-wrapper"
-          :style="{ maxHeight: expandedTools.vol ? '1000px' : '0' }"
-        >
-          <div class="tool-content">
             <router-link
               to="/analytics/volatility"
               class="nav-item"
               :class="{ active: isActive('/analytics/volatility') }"
               @click="closeSidebar"
             >
-              <span class="nav-label">Построение поверхности</span>
+              <span class="nav-label">Поверхность волатильности</span>
             </router-link>
           </div>
         </div>
@@ -487,57 +459,6 @@
             >
               <span class="nav-label">Анализ спот-форвард базиса</span>
             </router-link>
-
-            <router-link
-              to="/forwards/margin"
-              class="nav-item"
-              :class="{ active: isActive('/forwards/margin') }"
-              @click="closeSidebar"
-            >
-              <span class="nav-label">Управление маржой</span>
-            </router-link>
-
-            <router-link
-              to="/forwards/arbitrage"
-              class="nav-item"
-              :class="{ active: isActive('/forwards/arbitrage') }"
-              @click="closeSidebar"
-            >
-              <span class="nav-label">Арбитраж</span>
-            </router-link>
-          </div>
-        </div>
-      </div>
-
-      <!-- 10) Derivatives Margin -->
-      <div class="tool-group">
-        <button
-          class="tool-header"
-          @click="toggleTool('margin')"
-          :class="{ expanded: expandedTools.margin }"
-        >
-          <div class="glossy-icon">
-            <div class="supernova yellow"></div>
-          </div>
-          <div class="tool-info">
-            <span class="tool-title">Маржа по деривативам</span>
-            <span class="tool-subtitle">SIMM/SA-CCR</span>
-          </div>
-          <div class="chevron">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <polyline points="6 9 12 15 18 9" />
-            </svg>
-          </div>
-        </button>
-        <div
-          class="tool-content-wrapper"
-          :style="{ maxHeight: expandedTools.margin ? '1000px' : '0' }"
-        >
-          <div class="tool-content">
-            <router-link to="/pricing/margin" class="nav-item coming-soon">
-              <span class="nav-label">Расчет маржи</span>
-              <span class="nav-soon">SOON</span>
-            </router-link>
           </div>
         </div>
       </div>
@@ -640,9 +561,7 @@ const expandedTools = reactive({
   bondReports: false,
   options: false,
   swaps: false,
-  vol: false,
   forwards: false,
-  margin: false,
 
 })
 

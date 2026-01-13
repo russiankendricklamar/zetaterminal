@@ -28,6 +28,18 @@ class ForwardValuationRequest(BaseModel):
     riskFreeRate: Optional[float] = Field(None, description="Безрисковая ставка (%)")
     repoRate: Optional[float] = Field(None, description="Репо ставка (%)")
     
+    # Параметры для форварда на облигацию (bond)
+    accruedInterest: Optional[float] = Field(0.0, description="Накопленный купонный доход (AI)")
+    couponRate: Optional[float] = Field(None, description="Купонная ставка (годовая, %)")
+    couponFrequency: Optional[int] = Field(2, description="Частота выплаты купонов (1, 2, 4, 12 - раз в год)")
+    faceValue: Optional[float] = Field(100.0, description="Номинал облигации")
+    lastCouponDate: Optional[str] = Field(None, description="Дата последнего купона (YYYY-MM-DD)")
+    maturityDate: Optional[str] = Field(None, description="Дата погашения облигации (YYYY-MM-DD)")
+    dayCountConvention: Optional[str] = Field("ACT/365", description="Конвенция подсчета дней: ACT/ACT, ACT/365, ACT/360, 30/360")
+    autoCalculateAI: Optional[bool] = Field(True, description="Автоматически рассчитывать НКД из даты последнего купона")
+    yieldCurveTenors: Optional[list[float]] = Field(None, description="Теноры кривой доходности (в годах)")
+    yieldCurveRates: Optional[list[float]] = Field(None, description="Ставки кривой доходности (в процентах)")
+    
     # Параметры для валютных форвардов (fx)
     buyCurrency: Optional[str] = Field(None, description="Покупаемая валюта (для fx)")
     sellCurrency: Optional[str] = Field(None, description="Продаваемая валюта (для fx)")
@@ -65,6 +77,17 @@ async def valuate_forward(request: ForwardValuationRequest):
             convenience_yield=request.convenienceYield,
             risk_free_rate=request.riskFreeRate,
             repo_rate=request.repoRate,
+            # Bond параметры
+            accrued_interest=request.accruedInterest,
+            coupon_rate=request.couponRate,
+            coupon_frequency=request.couponFrequency,
+            face_value=request.faceValue,
+            last_coupon_date=request.lastCouponDate,
+            maturity_date=request.maturityDate,
+            day_count_convention=request.dayCountConvention or "ACT/365",
+            yield_curve_tenors=request.yieldCurveTenors,
+            yield_curve_rates=request.yieldCurveRates,
+            auto_calculate_ai=request.autoCalculateAI if request.autoCalculateAI is not None else True,
             # FX параметры
             buy_currency=request.buyCurrency,
             sell_currency=request.sellCurrency,

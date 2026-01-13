@@ -10,15 +10,35 @@
       </div>
       
       <div class="header-right">
-        <!-- Instrument -->
+        <!-- Valuation Date -->
         <div class="control-group">
-          <label class="control-label">Инструмент:</label>
-          <select v-model="selectedInstrument" class="instrument-select" @change="regenerateSurface">
-            <option value="spy">SPY (Equity Index)</option>
-            <option value="eur">EUR/USD (FX)</option>
-            <option value="brent">Brent Oil</option>
-            <option value="rates">RUB Rates</option>
-          </select>
+          <label class="control-label">Дата оценки:</label>
+          <input 
+            v-model="valuationDate" 
+            type="date" 
+            class="date-input"
+            @change="regenerateSurface"
+          />
+        </div>
+
+        <!-- Excel Upload -->
+        <div class="control-group">
+          <label class="control-label">Реестр:</label>
+          <input 
+            type="file" 
+            ref="fileInputRef"
+            @change="handleFileUpload" 
+            accept=".xlsx,.xls"
+            style="display: none"
+            id="excel-upload"
+          />
+          <button 
+            @click="() => { if (fileInputRef) fileInputRef.click() }" 
+            class="btn-secondary"
+            title="Загрузить реестр из Excel"
+          >
+            Загрузить Excel
+          </button>
         </div>
 
         <!-- Show Grid -->
@@ -40,6 +60,71 @@
 
         <!-- Reset View -->
         <button @click="resetCamera" class="btn-secondary">↺ Сброс</button>
+      </div>
+    </div>
+
+    <!-- Registry Table (if loaded) -->
+    <div v-if="registryContracts.length > 0" class="card full-width" style="margin-bottom: 24px;">
+      <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
+        <div>
+          <h3>Реестр контрактов</h3>
+          <span class="card-subtitle">Загружено контрактов: {{ registryContracts.length }}</span>
+        </div>
+        <div style="display: flex; gap: 8px;">
+          <button 
+            @click="calculateAllContracts" 
+            class="btn-secondary"
+            :disabled="calculatingAll"
+            style="font-size: 11px; padding: 6px 12px;"
+          >
+            <span v-if="!calculatingAll">Рассчитать все</span>
+            <span v-else>↺ Считаю...</span>
+          </button>
+          <button 
+            @click="clearRegistry" 
+            class="btn-secondary"
+            style="font-size: 11px; padding: 6px 12px; background: rgba(239, 68, 68, 0.2); border-color: rgba(239, 68, 68, 0.3);"
+          >
+            ✕ Очистить
+          </button>
+        </div>
+      </div>
+      <div class="scenario-table-container">
+        <table class="scenario-table">
+          <thead>
+            <tr>
+              <th>№</th>
+              <th>Инструмент</th>
+              <th>Strike</th>
+              <th>Срок</th>
+              <th>IV (%)</th>
+              <th>Действие</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr 
+              v-for="(contract, idx) in registryContracts" 
+              :key="idx"
+              :class="{ 'selected': selectedContractIndex === idx }"
+              @click="selectContract(idx)"
+            >
+              <td>{{ idx + 1 }}</td>
+              <td>{{ contract.instrument || 'N/A' }}</td>
+              <td class="mono">{{ contract.strike ? contract.strike.toFixed(2) : '-' }}</td>
+              <td class="mono">{{ contract.tenor || '-' }}</td>
+              <td class="mono accent">{{ contract.iv ? (contract.iv * 100).toFixed(2) + '%' : '-' }}</td>
+              <td>
+                <button 
+                  @click.stop="loadContractToForm(idx)" 
+                  class="btn-small"
+                  title="Загрузить в форму"
+                >
+                  Загрузить
+                </button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
       </div>
     </div>
 
@@ -257,12 +342,18 @@
 import { ref, computed, onMounted, onBeforeUnmount, nextTick } from 'vue'
 import Chart from 'chart.js/auto'
 import * as THREE from 'three'
+import * as XLSX from 'xlsx'
 
 /* --- CONTROLS & STATE --- */
 const selectedInstrument = ref('spy')
 const showGrid = ref(true)
 const showWireframe = ref(false)
 const animating = ref(false)
+const valuationDate = ref(new Date().toISOString().split('T')[0])
+const fileInputRef = ref<HTMLInputElement | null>(null)
+const registryContracts = ref<any[]>([])
+const selectedContractIndex = ref<number | null>(null)
+const calculatingAll = ref(false)
 
 const threeCanvas = ref<HTMLCanvasElement | null>(null)
 let scene: THREE.Scene | null = null
@@ -1292,6 +1383,81 @@ const buildConvexityChart = () => {
 }
 
 /* --- LIFECYCLE --- */
+// Excel File Upload Handler
+const handleFileUpload = async (event: Event) => {
+  const target = event.target as HTMLInputElement
+  const file = target.files?.[0]
+  if (!file) return
+
+  try {
+    const arrayBuffer = await file.arrayBuffer()
+    const workbook = XLSX.read(arrayBuffer, { type: 'array' })
+    const firstSheetName = workbook.SheetNames[0]
+    const worksheet = workbook.Sheets[firstSheetName]
+    const jsonData = XLSX.utils.sheet_to_json(worksheet, { raw: false })
+
+    // Парсим данные из Excel
+    const contracts: any[] = []
+    
+    for (const row of jsonData as any[]) {
+      const contract: any = {
+        instrument: row['Instrument'] || row['instrument'] || row['Инструмент'] || row['Symbol'] || row['symbol'] || 'SPY',
+        strike: parseFloat(row['Strike'] || row['strike'] || row['Страйк'] || row['K'] || '1.0'),
+        tenor: row['Tenor'] || row['tenor'] || row['Срок'] || row['Maturity'] || row['maturity'] || '1M',
+        iv: parseFloat(row['IV'] || row['iv'] || row['Volatility'] || row['volatility'] || row['Волатильность'] || row['σ'] || '0.15'),
+      }
+
+      // Проверяем, что есть минимальные данные
+      if (contract.instrument && contract.strike > 0) {
+        contracts.push(contract)
+      }
+    }
+
+    registryContracts.value = contracts
+    selectedContractIndex.value = null
+  } catch (err: any) {
+    console.error('Excel parsing error:', err)
+    alert(`Ошибка при загрузке файла: ${err.message}`)
+  }
+}
+
+// Select contract from registry
+const selectContract = (index: number) => {
+  selectedContractIndex.value = index
+}
+
+// Load contract to form
+const loadContractToForm = (index: number) => {
+  const contract = registryContracts.value[index]
+  if (!contract) return
+
+  selectedInstrument.value = contract.instrument.toLowerCase() || 'spy'
+  
+  // Автоматически обновляем поверхность после загрузки
+  setTimeout(() => {
+    regenerateSurface()
+  }, 100)
+}
+
+// Calculate all contracts
+const calculateAllContracts = async () => {
+  calculatingAll.value = true
+  // Здесь можно добавить логику расчета для всех контрактов
+  // Например, обновление IV для каждого контракта
+  setTimeout(() => {
+    calculatingAll.value = false
+  }, 1000)
+}
+
+// Clear registry
+const clearRegistry = () => {
+  registryContracts.value = []
+  selectedContractIndex.value = null
+  if (fileInputRef.value) {
+    fileInputRef.value.value = ''
+  }
+}
+
 onMounted(async () => {
   await nextTick()
   initThreeJS()
@@ -1377,17 +1543,29 @@ onBeforeUnmount(() => {
   margin: 0;
 }
 
-.instrument-select {
+.date-input {
   background: transparent;
   border: none;
   color: #fff;
   font-size: 12px;
   outline: none;
+  padding: 4px 8px;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.date-input::-webkit-calendar-picker-indicator {
+  filter: invert(1);
   cursor: pointer;
 }
 
-.instrument-select option {
-  background: #1e1f28;
+.date-input::-webkit-datetime-edit-text {
+  color: #fff;
+}
+
+.date-input::-webkit-datetime-edit-month-field,
+.date-input::-webkit-datetime-edit-day-field,
+.date-input::-webkit-datetime-edit-year-field {
   color: #fff;
 }
 
@@ -1573,6 +1751,65 @@ onBeforeUnmount(() => {
   color: rgba(255,255,255,0.4);
   margin: 0;
   display: block;
+}
+
+.scenario-table-container {
+  overflow-x: auto;
+}
+
+.scenario-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 11px;
+}
+
+.scenario-table th,
+.scenario-table td {
+  padding: 10px;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+  text-align: right;
+}
+
+.scenario-table th {
+  background: rgba(255,255,255,0.02);
+  color: rgba(255,255,255,0.5);
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: 10px;
+}
+
+.scenario-table td {
+  color: rgba(226, 232, 240, 0.9);
+}
+
+.scenario-table tr.selected {
+  background: rgba(59, 130, 246, 0.15);
+  border-left: 3px solid #3b82f6;
+}
+
+.scenario-table .mono {
+  font-family: "SF Mono", monospace;
+}
+
+.scenario-table .accent {
+  color: #f59e0b;
+  font-weight: 600;
+}
+
+.btn-small {
+  padding: 4px 8px;
+  background: rgba(59, 130, 246, 0.15);
+  color: #60a5fa;
+  border: 1px solid rgba(59, 130, 246, 0.3);
+  border-radius: 6px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-small:hover {
+  background: rgba(59, 130, 246, 0.25);
+  border-color: rgba(59, 130, 246, 0.5);
 }
 
 /* matrix table */

@@ -36,7 +36,15 @@
           </div>
         </div>
 
-        <div class="flex-1 overflow-auto bg-black/20 rounded-2xl border border-white/5">
+        <!-- Индикатор загрузки -->
+        <div v-if="loadingRates" class="flex items-center justify-center py-4 text-gray-400 mb-4">
+          <div class="flex items-center gap-2">
+            <div class="w-4 h-4 border-2 border-green-500 border-t-transparent rounded-full animate-spin"></div>
+            <span class="text-xs font-bold">Загрузка курсов валют...</span>
+          </div>
+        </div>
+
+        <div class="flex-1 overflow-auto bg-black/20 rounded-2xl border border-white/5" :class="{ 'opacity-50': loadingRates }">
           <table class="w-full text-center border-collapse">
             <thead>
               <tr>
@@ -65,7 +73,15 @@
         <div class="p-6 rounded-2xl bg-white/5 border border-white/5 flex flex-col gap-6">
           <h3 class="text-lg font-bold text-white">Расчет спот-курса</h3>
           
-          <div class="space-y-4">
+          <!-- Индикатор загрузки -->
+          <div v-if="loadingRates" class="flex items-center justify-center py-4 text-gray-400">
+            <div class="flex items-center gap-2">
+              <div class="w-4 h-4 border-2 border-green-500 border-t-transparent rounded-full animate-spin"></div>
+              <span class="text-xs font-bold">Загрузка курсов...</span>
+            </div>
+          </div>
+          
+          <div class="space-y-4" :class="{ 'opacity-50': loadingRates }">
             <div>
               <label class="text-xs text-gray-500 font-bold uppercase mb-1 block">Количество</label>
               <input 
@@ -82,8 +98,8 @@
                   <option v-for="c in ['USD', 'EUR', 'GBP', 'JPY', 'CAD']" :key="c">{{ c }}</option>
                 </select>
               </div>
-              <button class="p-3 bg-white/10 rounded-xl hover:bg-white/20 text-white mb-1">
-                <RefreshCwIcon class="w-4 h-4" />
+              <button @click="loadCurrencyRates" class="p-3 bg-white/10 rounded-xl hover:bg-white/20 text-white mb-1 transition-colors" :disabled="loadingRates">
+                <RefreshCwIcon :class="`w-4 h-4 ${loadingRates ? 'animate-spin' : ''}`" />
               </button>
               <div>
                 <label class="text-xs text-gray-500 font-bold uppercase mb-1 block">В</label>
@@ -99,7 +115,7 @@
             <div class="text-3xl font-bold text-green-400 font-mono">
               {{ (amount * conversionRate).toFixed(2) }} <span class="text-sm text-gray-400">{{ toCurrency }}</span>
             </div>
-            <div class="text-xs text-gray-500 mt-2">Курс: 1 {{ fromCurrency }} = {{ conversionRate }} {{ toCurrency }}</div>
+            <div class="text-xs text-gray-500 mt-2">Курс: 1 {{ fromCurrency }} = {{ conversionRate.toFixed(4) }} {{ toCurrency }}</div>
           </div>
         </div>
 
@@ -228,7 +244,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue';
+import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue';
+import { getCurrencyRate, type CurrencyRate } from '@/services/marketDataService';
 import { use } from 'echarts/core';
 import { CanvasRenderer } from 'echarts/renderers';
 import { LineChart } from 'echarts/charts';
@@ -258,20 +275,78 @@ const tabs = [
 ];
 
 const currencies = ['USD', 'EUR', 'JPY', 'GBP', 'CHF', 'CAD', 'AUD'];
-const bases: Record<string, number> = { 'USD': 1, 'EUR': 1.08, 'GBP': 1.26, 'AUD': 0.65, 'CAD': 0.73, 'CHF': 1.10, 'JPY': 0.0066 };
 
-const getRate = (r1: string, r2: string) => bases[r1] / bases[r2];
+// Хранилище реальных курсов валют (относительно USD)
+const bases = ref<Record<string, number>>({ 
+  'USD': 1, 'EUR': 1.08, 'GBP': 1.26, 'AUD': 0.65, 'CAD': 0.73, 'CHF': 1.10, 'JPY': 0.0066 
+});
+
+const loadingRates = ref(false);
+
+// Загрузка реальных курсов валют
+const loadCurrencyRates = async () => {
+  loadingRates.value = true;
+  try {
+    console.log('Loading currency rates...');
+    // Загружаем курсы относительно USD
+    const ratePromises = currencies
+      .filter(c => c !== 'USD')
+      .map(async (currency) => {
+        try {
+          // yfinance использует формат BASE-QUOTE=X, для USD/JPY это JPY=X
+          const rateData = await getCurrencyRate(currency, 'USD');
+          // Если курс возвращается как currency/USD, конвертируем в USD/currency
+          bases.value[currency] = 1 / rateData.rate;
+          console.log(`Loaded ${currency}/USD:`, rateData.rate);
+        } catch (error: any) {
+          console.error(`Error loading rate for ${currency}:`, error.message);
+        }
+      });
+    
+    await Promise.all(ratePromises);
+    console.log('Currency rates loaded successfully');
+  } catch (error: any) {
+    console.error('Error loading currency rates:', error);
+    console.error('Error details:', error.message, error.stack);
+  } finally {
+    loadingRates.value = false;
+  }
+};
+
+const getRate = (r1: string, r2: string) => {
+  if (r1 === r2) return 1.0;
+  return bases.value[r1] / bases.value[r2];
+};
 
 const amount = ref(1000);
 const fromCurrency = ref('USD');
 const toCurrency = ref('EUR');
-const conversionRate = 0.9250;
+
+const conversionRate = computed(() => {
+  return getRate(fromCurrency.value, toCurrency.value);
+});
 
 const fxChartData = computed(() => {
   return Array.from({ length: 30 }, (_, i) => ({
     day: i,
-    rate: conversionRate + Math.sin(i / 5) * 0.02 + (Math.random() - 0.5) * 0.01
+    rate: conversionRate.value + Math.sin(i / 5) * 0.02 + (Math.random() - 0.5) * 0.01
   }));
+});
+
+// Переменная для интервала обновления
+let currencyUpdateInterval: ReturnType<typeof setInterval> | null = null;
+
+// Загружаем курсы при монтировании
+onMounted(async () => {
+  await loadCurrencyRates();
+  // Обновляем курсы каждые 60 секунд
+  currencyUpdateInterval = setInterval(loadCurrencyRates, 60000);
+});
+
+onBeforeUnmount(() => {
+  if (currencyUpdateInterval) {
+    clearInterval(currencyUpdateInterval);
+  }
 });
 
 const fxChartOption = computed(() => ({

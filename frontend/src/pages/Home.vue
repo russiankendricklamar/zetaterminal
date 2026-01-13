@@ -228,29 +228,6 @@
               </svg>
             </div>
           </div>
-
-          <!-- 10. Margin -->
-          <div 
-            class="tool-card coming-soon"
-            :class="{ 'is-exploding': activeExplosion === '/pricing/margin', 'is-faded': isFaded('/pricing/margin') }"
-            @click="triggerExplosion('/pricing/margin')"
-          >
-            <div class="tool-icon orange">
-              <div class="supernova orange"></div>
-            </div>
-            <div class="tool-body">
-              <div class="tool-name">Маржа по деривативам</div>
-              <div class="tool-desc">
-                Вариационная/начальная маржа, SIMM, стресс-надбавки
-              </div>
-              <div class="tool-tag">Soon</div>
-            </div>
-            <div class="tool-arrow">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <polyline points="9 18 15 12 9 6" />
-              </svg>
-            </div>
-          </div>
         </div>
 
         <div 

@@ -1,9 +1,9 @@
 <template>
-  <div class="flex-1 glass-panel rounded-3xl overflow-hidden shadow-2xl shadow-black/20 p-6 flex flex-col animate-fade-in relative">
+  <div class="flex-1 glass-panel rounded-3xl overflow-hidden shadow-2xl shadow-black/20 p-6 flex flex-col animate-fade-in relative h-full min-h-0">
     <!-- Decorative background element -->
     <div class="absolute top-0 right-0 w-96 h-96 bg-gradient-to-b from-indigo-500/5 to-transparent rounded-full blur-3xl -z-10 pointer-events-none"></div>
 
-    <div class="flex flex-col gap-4 mb-8">
+    <div class="flex flex-col gap-4 mb-8 flex-shrink-0">
       <div class="flex justify-between items-center">
         <div>
           <h2 class="text-3xl font-bold text-white tracking-tight mb-1">
@@ -167,61 +167,80 @@
       </div>
     </div>
 
-    <div class="overflow-auto custom-scrollbar flex-1">
+    <!-- Индикатор загрузки -->
+    <div v-if="loading" class="flex items-center justify-center py-8 text-gray-400 flex-shrink-0">
+      <div class="flex items-center gap-2">
+        <div class="w-4 h-4 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
+        <span class="text-xs font-bold">Загрузка реальных данных...</span>
+      </div>
+    </div>
+
+    <div :class="{ 'opacity-50': loading }" class="bg-black/20 rounded-2xl border border-white/5 overflow-y-auto custom-scrollbar flex-1 min-h-0 relative">
       <table class="w-full text-left border-collapse">
-        <thead>
-          <tr class="text-xs text-gray-500 border-b border-white/5 uppercase tracking-wider">
-            <th class="font-bold py-4 px-4 pl-0">Инструмент</th>
-            <th class="font-bold py-4 px-4 text-right">Цена</th>
-            <th class="font-bold py-4 px-4 text-right">Изменение 24ч</th>
-            <th class="font-bold py-4 px-4 text-right hidden md:table-cell">Детали</th>
+        <thead class="sticky top-0 z-20">
+          <tr class="bg-black/95 backdrop-blur-md border-b border-white/10">
+            <th class="font-bold py-3.5 px-6 text-xs text-gray-400 uppercase tracking-wider" style="border-radius: 0.75rem 0 0 0;">Инструмент</th>
+            <th class="font-bold py-3.5 px-6 text-xs text-gray-400 uppercase tracking-wider text-right">Цена</th>
+            <th class="font-bold py-3.5 px-6 text-xs text-gray-400 uppercase tracking-wider text-right">Изменение 24ч</th>
+            <th class="font-bold py-3.5 px-6 text-xs text-gray-400 uppercase tracking-wider text-right hidden md:table-cell" style="border-radius: 0 0.75rem 0 0;">Детали</th>
           </tr>
         </thead>
-        <tbody class="text-sm font-medium">
+        <tbody>
           <tr 
             v-for="asset in filteredAssets" 
             :key="asset.symbol"
             @click="$emit('assetClick', asset)"
-            class="border-b border-white/5 hover:bg-white/5 transition-colors group cursor-pointer"
+            class="border-b border-white/5 hover:bg-white/5 transition-all duration-150 group cursor-pointer"
           >
-            <td class="py-4 px-4 pl-0">
-              <div class="flex items-center gap-4">
+            <td class="py-4 px-6">
+              <div class="flex items-center gap-3">
                 <button 
-                  class="text-gray-600 hover:text-yellow-400 transition-colors"
+                  class="opacity-0 group-hover:opacity-100 text-gray-500 hover:text-yellow-400 transition-all duration-150 flex-shrink-0"
                   @click.stop
+                  title="Добавить в избранное"
                 >
                   <StarIcon class="w-4 h-4" />
                 </button>
-                <div :class="`w-10 h-10 rounded-xl flex items-center justify-center text-xs font-bold shadow-lg overflow-hidden ${getCategoryStyle(asset.category)}`">
+                <div :class="`w-12 h-12 rounded-xl flex items-center justify-center text-xs font-bold shadow-md overflow-hidden flex-shrink-0 ${getCategoryStyle(asset.category)}`">
                   <img 
+                    v-if="!logoErrors.has(asset.symbol) && getLogoUrl(asset.symbol)"
                     :src="getLogoUrl(asset.symbol)" 
                     :alt="asset.symbol"
                     @error="handleLogoError"
                     class="w-full h-full object-cover"
-                    :class="{ 'hidden': logoErrors.has(asset.symbol) }"
+                    loading="lazy"
                   />
-                  <span v-if="logoErrors.has(asset.symbol)" class="text-white">
+                  <span v-else class="text-white text-xs font-bold">
                     {{ asset.symbol.substring(0, 2) }}
                   </span>
                 </div>
-                <div>
-                  <div class="text-white font-bold text-base">{{ asset.symbol }}</div>
-                  <div class="text-xs text-gray-500 flex items-center gap-2">
-                    {{ asset.name }}
-                    <span class="px-1.5 py-0.5 rounded bg-white/5 text-[10px] uppercase text-gray-400">{{ asset.category }}</span>
+                <div class="min-w-0 flex-1">
+                  <div class="text-white font-bold text-sm mb-0.5 truncate">{{ asset.symbol }}</div>
+                  <div class="text-xs text-gray-400 flex items-center gap-2 truncate">
+                    <span class="truncate">{{ asset.name }}</span>
+                    <span class="px-2 py-0.5 rounded-md bg-white/5 text-[10px] font-medium uppercase text-gray-400 flex-shrink-0">{{ asset.category }}</span>
                   </div>
                 </div>
               </div>
             </td>
-            <td class="py-4 px-4 text-right font-mono text-white text-base">{{ asset.price }}</td>
-            <td class="py-4 px-4 text-right">
-              <div :class="`inline-flex items-center gap-1 px-2 py-1 rounded-lg ${asset.change.startsWith('+') ? 'bg-emerald-500/10 text-emerald-400' : 'bg-rose-500/10 text-rose-400'}`">
-                <component :is="asset.change.startsWith('+') ? 'TrendingUpIcon' : 'TrendingDownIcon'" class="w-3 h-3" />
-                <span class="font-mono font-bold">{{ asset.change }}</span>
+            <td class="py-4 px-6 text-right">
+              <div class="font-mono text-white text-sm font-semibold">{{ asset.price }}</div>
+            </td>
+            <td class="py-4 px-6 text-right">
+              <div :class="`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold ${
+                asset.change.startsWith('+') 
+                  ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/20' 
+                  : 'bg-rose-500/15 text-rose-400 border border-rose-500/20'
+              }`">
+                <component :is="asset.change.startsWith('+') ? 'TrendingUpIcon' : 'TrendingDownIcon'" class="w-3.5 h-3.5 flex-shrink-0" />
+                <span class="font-mono">{{ asset.change }}</span>
               </div>
             </td>
-            <td class="py-4 px-4 text-right text-gray-400 hidden md:table-cell font-mono">
-              {{ asset.cap ? `Кап: ${asset.cap}` : '-' }}
+            <td class="py-4 px-6 text-right hidden md:table-cell">
+              <div class="text-xs text-gray-400 font-mono">
+                <span v-if="asset.cap" class="text-gray-300">{{ asset.cap }}</span>
+                <span v-else class="text-gray-600">-</span>
+              </div>
             </td>
           </tr>
         </tbody>
@@ -231,8 +250,9 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, onMounted, onBeforeUnmount } from 'vue';
+import { computed, ref, onMounted, onBeforeUnmount, reactive } from 'vue';
 import { AssetInfo } from '@/types/terminal';
+import { getMultipleStocks, getPopularTickers, type StockInfo } from '@/services/marketDataService';
 
 interface Props {
   category: string;
@@ -254,6 +274,8 @@ const isRegionOpen = ref(false);
 const isCountryOpen = ref(false);
 const isSectorOpen = ref(false);
 const logoErrors = ref(new Set<string>());
+const loading = ref(false);
+const useRealData = ref(true); // Флаг для переключения между реальными и статическими данными
 
 const selectRegion = (region: string) => {
   selectedRegion.value = region;
@@ -293,13 +315,208 @@ onMounted(() => {
   document.addEventListener('click', clickOutsideHandler);
 });
 
+// Переменная для интервала обновления
+let updateInterval: ReturnType<typeof setInterval> | null = null;
+
+onMounted(async () => {
+  clickOutsideHandler = (e: MouseEvent) => {
+    const target = e.target as HTMLElement;
+    if (!target.closest('[data-dropdown-region]') && !target.closest('[data-dropdown-country]') && !target.closest('[data-dropdown-sector]')) {
+      isRegionOpen.value = false;
+      isCountryOpen.value = false;
+      isSectorOpen.value = false;
+    }
+  };
+  document.addEventListener('click', clickOutsideHandler);
+  
+  // Загружаем данные сразу при монтировании
+  await loadRealData();
+  // Обновляем данные каждые 60 секунд
+  updateInterval = setInterval(loadRealData, 60000);
+});
+
 onBeforeUnmount(() => {
+  if (updateInterval) {
+    clearInterval(updateInterval);
+  }
   if (clickOutsideHandler) {
     document.removeEventListener('click', clickOutsideHandler);
   }
 });
 
-const allAssets: AssetInfo[] = [
+// Функция для загрузки популярных тикеров и расширения списка акций
+const loadPopularTickers = async () => {
+  try {
+    console.log('🔄 Loading popular tickers from API...');
+    const tickers = await getPopularTickers();
+    console.log(`✅ Loaded ${tickers.length} popular tickers from API`);
+    
+    // Создаем мапу существующих символов для быстрой проверки
+    const existingSymbols = new Set(allAssets.value.map(a => a.symbol));
+    
+    // Добавляем новые тикеры, которых еще нет в списке
+    let addedCount = 0;
+    tickers.forEach(ticker => {
+      if (!existingSymbols.has(ticker)) {
+        // Определяем регион и страну на основе тикера
+        let region = 'Americas';
+        let country = 'USA';
+        let sector = 'Technology';
+        
+        if (ticker.includes('.ME')) {
+          region = 'EMEA';
+          country = 'Russia';
+          sector = 'Banking';
+        } else if (ticker.includes('.L') || ['AZN', 'SHEL', 'BP', 'GSK', 'VOD', 'DEO', 'UL'].some(t => ticker.includes(t))) {
+          region = 'EMEA';
+          country = 'UK';
+          sector = 'Consumer';
+        } else if (['SAP', 'SIEGY', 'MBGYY', 'BMWYY', 'VWAGY', 'ALIZY'].some(t => ticker.includes(t))) {
+          region = 'EMEA';
+          country = 'Germany';
+          sector = 'Technology';
+        } else if (['TTE', 'LVMUY', 'LRLCY', 'SNY', 'EADSY'].some(t => ticker.includes(t))) {
+          region = 'EMEA';
+          country = 'France';
+          sector = 'Consumer';
+        } else if (['NSRGY', 'NVS', 'RHHBY', 'UBS'].some(t => ticker.includes(t))) {
+          region = 'EMEA';
+          country = 'Switzerland';
+          sector = 'Healthcare';
+        } else if (['ASML', 'UNLY', 'ING'].some(t => ticker.includes(t))) {
+          region = 'EMEA';
+          country = 'Netherlands';
+          sector = 'Technology';
+        } else if (['TM', 'SONY', 'SFTBY', 'NTDOY', 'HMC', 'NSANY'].some(t => ticker.includes(t))) {
+          region = 'APAC';
+          country = 'Japan';
+          sector = 'Technology';
+        } else if (['SSNLF', 'HXSCL', 'LGEAF'].some(t => ticker.includes(t))) {
+          region = 'APAC';
+          country = 'South Korea';
+          sector = 'Technology';
+        } else if (ticker.includes('TSM')) {
+          region = 'APAC';
+          country = 'Taiwan';
+          sector = 'Technology';
+        } else if (ticker.includes('.BSE') || ['RELIANCE', 'TCS', 'INFY'].some(t => ticker.includes(t))) {
+          region = 'APAC';
+          country = 'India';
+          sector = 'Technology';
+        } else if (['BABA', 'TCEHY', 'JD', 'BIDU', 'PNGAY', 'IDCBY', 'CICHY', 'BYDDY', 'NIO', 'XPEV', 'LI'].some(t => ticker.includes(t))) {
+          region = 'APAC';
+          country = 'China';
+          sector = 'Technology';
+        } else if (['SHOP', 'RY', 'CNI'].some(t => ticker.includes(t))) {
+          region = 'Americas';
+          country = 'Canada';
+          sector = 'Technology';
+        } else if (['BHP', 'RIO', 'CMWAY'].some(t => ticker.includes(t))) {
+          region = 'APAC';
+          country = 'Australia';
+          sector = 'Materials';
+        }
+        
+        allAssets.value.push({
+          name: ticker,
+          symbol: ticker,
+          price: '0.00',
+          change: '+0.00%',
+          category: 'Equities',
+          region: region,
+          country: country,
+          sector: sector,
+          vol: '-',
+          cap: '-'
+        });
+        existingSymbols.add(ticker);
+        addedCount++;
+      }
+    });
+    
+    console.log(`✅ Added ${addedCount} new tickers to the list`);
+  } catch (error: any) {
+    console.error('❌ Error loading popular tickers:', error);
+    console.warn('⚠️ Using static tickers only');
+  }
+};
+
+// Функция для загрузки реальных данных с yfinance
+const loadRealData = async () => {
+  if (!useRealData.value) {
+    console.log('Real data loading is disabled');
+    return;
+  }
+  
+  loading.value = true;
+  try {
+    // Сначала загружаем популярные тикеры и расширяем список
+    await loadPopularTickers();
+    
+    // Получаем список всех тикеров из статических данных
+    const allTickers = allAssets.value.map(asset => asset.symbol);
+    
+    console.log('🔄 Loading market data for', allTickers.length, 'tickers...');
+    
+    // Загружаем данные батчами по 50 тикеров для оптимизации
+    const batchSize = 50;
+    let updatedCount = 0;
+    
+    for (let i = 0; i < allTickers.length; i += batchSize) {
+      const batch = allTickers.slice(i, i + batchSize);
+      console.log(`📦 Loading batch ${Math.floor(i / batchSize) + 1}/${Math.ceil(allTickers.length / batchSize)} (${batch.length} tickers)...`);
+      
+      try {
+        const stocksData = await getMultipleStocks(batch);
+        
+        // Обновляем данные в allAssets
+        stocksData.forEach((stock: StockInfo) => {
+          const assetIndex = allAssets.value.findIndex(a => a.symbol === stock.ticker);
+          if (assetIndex !== -1) {
+            allAssets.value[assetIndex].price = stock.price.toFixed(2);
+            allAssets.value[assetIndex].change = `${stock.changePercent >= 0 ? '+' : ''}${stock.changePercent.toFixed(2)}%`;
+            allAssets.value[assetIndex].name = stock.name;
+            if (stock.marketCap) {
+              const capB = stock.marketCap / 1e9;
+              allAssets.value[assetIndex].cap = capB >= 1000 ? `${(capB / 1000).toFixed(1)}T` : `${capB.toFixed(0)}B`;
+            }
+            if (stock.volume) {
+              const volM = stock.volume / 1e6;
+              allAssets.value[assetIndex].vol = `${volM.toFixed(0)}M`;
+            }
+            updatedCount++;
+          }
+        });
+        
+        // Небольшая задержка между батчами, чтобы не перегружать API
+        if (i + batchSize < allTickers.length) {
+          await new Promise(resolve => setTimeout(resolve, 500));
+        }
+      } catch (batchError: any) {
+        console.warn(`⚠️ Error loading batch ${Math.floor(i / batchSize) + 1}:`, batchError.message);
+        // Продолжаем загрузку следующих батчей
+      }
+    }
+    
+    console.log(`✅ Updated ${updatedCount} assets with real data`);
+  } catch (error: any) {
+    console.error('❌ Error loading real market data:', error);
+    console.error('Error message:', error.message);
+    if (error.stack) {
+      console.error('Error stack:', error.stack);
+    }
+    
+    // В случае ошибки используем статические данные
+    useRealData.value = false;
+    console.warn('⚠️ Falling back to static data');
+  } finally {
+    loading.value = false;
+    console.log('🏁 Data loading finished');
+  }
+};
+
+// Инициализируем allAssets как реактивный массив
+const allAssets = ref<AssetInfo[]>([
   // США - Технологии
   { name: 'Apple Inc.', symbol: 'AAPL', price: '173.50', change: '+1.20%', category: 'Equities', region: 'Americas', country: 'USA', sector: 'Technology', vol: '55M', cap: '2.7T' },
   { name: 'NVIDIA Corp', symbol: 'NVDA', price: '892.10', change: '+4.25%', category: 'Equities', region: 'Americas', country: 'USA', sector: 'Technology', vol: '42M', cap: '2.2T' },
@@ -450,17 +667,150 @@ const allAssets: AssetInfo[] = [
   { name: 'Rio Tinto', symbol: 'RIO', price: '68.80', change: '+1.05%', category: 'Equities', region: 'APAC', country: 'Australia', sector: 'Materials', vol: '3M', cap: '125B' },
   { name: 'Commonwealth Bank', symbol: 'CMWAY', price: '85.20', change: '+0.55%', category: 'Equities', region: 'APAC', country: 'Australia', sector: 'Banking', vol: '1.2M', cap: '165B' },
 
-];
+  // Дополнительные популярные акции США - S&P 500
+  { name: 'Costco', symbol: 'COST', price: '850.20', change: '+0.85%', category: 'Equities', region: 'Americas', country: 'USA', sector: 'Retail', vol: '2M', cap: '375B' },
+  { name: 'Home Depot', symbol: 'HD', price: '385.60', change: '+0.65%', category: 'Equities', region: 'Americas', country: 'USA', sector: 'Retail', vol: '4M', cap: '385B' },
+  { name: 'Visa', symbol: 'V', price: '285.40', change: '+0.45%', category: 'Equities', region: 'Americas', country: 'USA', sector: 'Finance', vol: '8M', cap: '585B' },
+  { name: 'Mastercard', symbol: 'MA', price: '485.80', change: '+0.55%', category: 'Equities', region: 'Americas', country: 'USA', sector: 'Finance', vol: '3M', cap: '425B' },
+  { name: 'PayPal', symbol: 'PYPL', price: '68.50', change: '+1.25%', category: 'Equities', region: 'Americas', country: 'USA', sector: 'Finance', vol: '12M', cap: '72B' },
+  { name: 'Salesforce', symbol: 'CRM', price: '285.40', change: '+1.15%', category: 'Equities', region: 'Americas', country: 'USA', sector: 'Technology', vol: '8M', cap: '285B' },
+  { name: 'Cisco', symbol: 'CSCO', price: '52.80', change: '+0.35%', category: 'Equities', region: 'Americas', country: 'USA', sector: 'Technology', vol: '18M', cap: '215B' },
+  { name: 'IBM', symbol: 'IBM', price: '185.60', change: '+0.25%', category: 'Equities', region: 'Americas', country: 'USA', sector: 'Technology', vol: '5M', cap: '168B' },
+  { name: 'Disney', symbol: 'DIS', price: '112.40', change: '+0.85%', category: 'Equities', region: 'Americas', country: 'USA', sector: 'Consumer', vol: '15M', cap: '205B' },
+  { name: 'Comcast', symbol: 'CMCSA', price: '42.80', change: '+0.45%', category: 'Equities', region: 'Americas', country: 'USA', sector: 'Telecommunications', vol: '18M', cap: '175B' },
+  { name: 'AT&T', symbol: 'T', price: '17.40', change: '+0.15%', category: 'Equities', region: 'Americas', country: 'USA', sector: 'Telecommunications', vol: '45M', cap: '124B' },
+  { name: 'Boeing', symbol: 'BA', price: '185.40', change: '+1.85%', category: 'Equities', region: 'Americas', country: 'USA', sector: 'Industrial', vol: '8M', cap: '115B' },
+  { name: 'Lockheed Martin', symbol: 'LMT', price: '485.20', change: '+0.95%', category: 'Equities', region: 'Americas', country: 'USA', sector: 'Industrial', vol: '1M', cap: '125B' },
+  { name: 'Raytheon', symbol: 'RTX', price: '95.80', change: '+0.65%', category: 'Equities', region: 'Americas', country: 'USA', sector: 'Industrial', vol: '5M', cap: '145B' },
+  { name: 'General Motors', symbol: 'GM', price: '42.60', change: '+0.85%', category: 'Equities', region: 'Americas', country: 'USA', sector: 'Automotive', vol: '18M', cap: '48B' },
+  { name: 'Ford', symbol: 'F', price: '12.80', change: '+0.45%', category: 'Equities', region: 'Americas', country: 'USA', sector: 'Automotive', vol: '45M', cap: '52B' },
+  { name: 'Starbucks', symbol: 'SBUX', price: '95.80', change: '+0.85%', category: 'Equities', region: 'Americas', country: 'USA', sector: 'Consumer', vol: '9M', cap: '110B' },
+  { name: 'Chipotle', symbol: 'CMG', price: '2850.40', change: '+1.45%', category: 'Equities', region: 'Americas', country: 'USA', sector: 'Consumer', vol: '0.3M', cap: '78B' },
+  { name: 'Target', symbol: 'TGT', price: '165.20', change: '+0.55%', category: 'Equities', region: 'Americas', country: 'USA', sector: 'Retail', vol: '5M', cap: '75B' },
+  { name: 'Lowe\'s', symbol: 'LOW', price: '225.60', change: '+0.75%', category: 'Equities', region: 'Americas', country: 'USA', sector: 'Retail', vol: '4M', cap: '135B' },
+  { name: 'Nike', symbol: 'NKE', price: '98.40', change: '+1.15%', category: 'Equities', region: 'Americas', country: 'USA', sector: 'Consumer', vol: '8M', cap: '151B' },
+  { name: 'Coca-Cola', symbol: 'KO', price: '62.80', change: '+0.20%', category: 'Equities', region: 'Americas', country: 'USA', sector: 'Consumer', vol: '18M', cap: '270B' },
+  { name: 'PepsiCo', symbol: 'PEP', price: '172.50', change: '+0.40%', category: 'Equities', region: 'Americas', country: 'USA', sector: 'Consumer', vol: '6M', cap: '238B' },
+  { name: 'Procter & Gamble', symbol: 'PG', price: '168.90', change: '+0.35%', category: 'Equities', region: 'Americas', country: 'USA', sector: 'Consumer', vol: '7M', cap: '400B' },
+  { name: 'Johnson & Johnson', symbol: 'JNJ', price: '158.40', change: '+0.30%', category: 'Equities', region: 'Americas', country: 'USA', sector: 'Healthcare', vol: '9M', cap: '420B' },
+  { name: 'Pfizer', symbol: 'PFE', price: '27.80', change: '-0.50%', category: 'Equities', region: 'Americas', country: 'USA', sector: 'Healthcare', vol: '45M', cap: '158B' },
+  { name: 'Merck', symbol: 'MRK', price: '128.60', change: '+0.55%', category: 'Equities', region: 'Americas', country: 'USA', sector: 'Healthcare', vol: '12M', cap: '326B' },
+  { name: 'AbbVie', symbol: 'ABBV', price: '168.90', change: '+0.40%', category: 'Equities', region: 'Americas', country: 'USA', sector: 'Healthcare', vol: '8M', cap: '298B' },
+  { name: 'UnitedHealth', symbol: 'UNH', price: '525.40', change: '+1.20%', category: 'Equities', region: 'Americas', country: 'USA', sector: 'Healthcare', vol: '4M', cap: '495B' },
+  { name: 'Eli Lilly', symbol: 'LLY', price: '765.20', change: '+2.45%', category: 'Equities', region: 'Americas', country: 'USA', sector: 'Healthcare', vol: '3M', cap: '728B' },
+  { name: 'Exxon Mobil', symbol: 'XOM', price: '118.50', change: '+0.85%', category: 'Equities', region: 'Americas', country: 'USA', sector: 'Oil & Gas', vol: '22M', cap: '495B' },
+  { name: 'Chevron', symbol: 'CVX', price: '162.40', change: '+0.75%', category: 'Equities', region: 'Americas', country: 'USA', sector: 'Oil & Gas', vol: '12M', cap: '305B' },
+  { name: 'ConocoPhillips', symbol: 'COP', price: '115.80', change: '+1.05%', category: 'Equities', region: 'Americas', country: 'USA', sector: 'Oil & Gas', vol: '8M', cap: '138B' },
+  { name: 'Schlumberger', symbol: 'SLB', price: '52.40', change: '+0.95%', category: 'Equities', region: 'Americas', country: 'USA', sector: 'Oil & Gas', vol: '12M', cap: '75B' },
+  { name: 'Halliburton', symbol: 'HAL', price: '38.60', change: '+0.85%', category: 'Equities', region: 'Americas', country: 'USA', sector: 'Oil & Gas', vol: '8M', cap: '35B' },
+  { name: 'Caterpillar', symbol: 'CAT', price: '348.60', change: '+1.45%', category: 'Equities', region: 'Americas', country: 'USA', sector: 'Industrial', vol: '4M', cap: '175B' },
+  { name: '3M', symbol: 'MMM', price: '98.50', change: '+0.25%', category: 'Equities', region: 'Americas', country: 'USA', sector: 'Industrial', vol: '5M', cap: '55B' },
+  { name: 'General Electric', symbol: 'GE', price: '148.20', change: '+1.15%', category: 'Equities', region: 'Americas', country: 'USA', sector: 'Industrial', vol: '12M', cap: '162B' },
+  { name: 'Honeywell', symbol: 'HON', price: '215.80', change: '+0.65%', category: 'Equities', region: 'Americas', country: 'USA', sector: 'Industrial', vol: '3M', cap: '145B' },
+  { name: 'Deere', symbol: 'DE', price: '385.40', change: '+1.25%', category: 'Equities', region: 'Americas', country: 'USA', sector: 'Industrial', vol: '2M', cap: '108B' },
+  { name: 'Union Pacific', symbol: 'UNP', price: '245.60', change: '+0.55%', category: 'Equities', region: 'Americas', country: 'USA', sector: 'Industrial', vol: '3M', cap: '145B' },
+  { name: 'FedEx', symbol: 'FDX', price: '285.40', change: '+0.85%', category: 'Equities', region: 'Americas', country: 'USA', sector: 'Industrial', vol: '2M', cap: '72B' },
+  { name: 'UPS', symbol: 'UPS', price: '165.80', change: '+0.45%', category: 'Equities', region: 'Americas', country: 'USA', sector: 'Industrial', vol: '4M', cap: '145B' },
+  { name: 'JPMorgan Chase', symbol: 'JPM', price: '185.40', change: '+0.55%', category: 'Equities', region: 'Americas', country: 'USA', sector: 'Banking', vol: '15M', cap: '540B' },
+  { name: 'Bank of America', symbol: 'BAC', price: '38.50', change: '+0.40%', category: 'Equities', region: 'Americas', country: 'USA', sector: 'Banking', vol: '45M', cap: '305B' },
+  { name: 'Wells Fargo', symbol: 'WFC', price: '58.20', change: '+0.30%', category: 'Equities', region: 'Americas', country: 'USA', sector: 'Banking', vol: '25M', cap: '215B' },
+  { name: 'Goldman Sachs', symbol: 'GS', price: '425.80', change: '+0.85%', category: 'Equities', region: 'Americas', country: 'USA', sector: 'Finance', vol: '3M', cap: '145B' },
+  { name: 'Morgan Stanley', symbol: 'MS', price: '95.60', change: '+0.65%', category: 'Equities', region: 'Americas', country: 'USA', sector: 'Finance', vol: '8M', cap: '175B' },
+  { name: 'Citigroup', symbol: 'C', price: '62.40', change: '+0.25%', category: 'Equities', region: 'Americas', country: 'USA', sector: 'Banking', vol: '28M', cap: '120B' },
+  { name: 'Charles Schwab', symbol: 'SCHW', price: '68.50', change: '+0.35%', category: 'Equities', region: 'Americas', country: 'USA', sector: 'Finance', vol: '8M', cap: '125B' },
+  { name: 'BlackRock', symbol: 'BLK', price: '825.40', change: '+0.55%', category: 'Equities', region: 'Americas', country: 'USA', sector: 'Finance', vol: '0.5M', cap: '125B' },
+  { name: 'Berkshire Hathaway', symbol: 'BRK.B', price: '385.60', change: '+0.45%', category: 'Equities', region: 'Americas', country: 'USA', sector: 'Finance', vol: '4M', cap: '875B' },
+  { name: 'American Express', symbol: 'AXP', price: '225.80', change: '+0.65%', category: 'Equities', region: 'Americas', country: 'USA', sector: 'Finance', vol: '3M', cap: '165B' },
+  { name: 'Walmart', symbol: 'WMT', price: '165.30', change: '+0.45%', category: 'Equities', region: 'Americas', country: 'USA', sector: 'Retail', vol: '8M', cap: '445B' },
+  { name: 'Amazon', symbol: 'AMZN', price: '180.25', change: '+0.95%', category: 'Equities', region: 'Americas', country: 'USA', sector: 'Retail', vol: '38M', cap: '1.8T' },
+  { name: 'Apple Inc.', symbol: 'AAPL', price: '173.50', change: '+1.20%', category: 'Equities', region: 'Americas', country: 'USA', sector: 'Technology', vol: '55M', cap: '2.7T' },
+  { name: 'Microsoft', symbol: 'MSFT', price: '420.55', change: '-0.45%', category: 'Equities', region: 'Americas', country: 'USA', sector: 'Technology', vol: '22M', cap: '3.1T' },
+  { name: 'NVIDIA Corp', symbol: 'NVDA', price: '892.10', change: '+4.25%', category: 'Equities', region: 'Americas', country: 'USA', sector: 'Technology', vol: '42M', cap: '2.2T' },
+  { name: 'Google', symbol: 'GOOGL', price: '156.40', change: '-0.20%', category: 'Equities', region: 'Americas', country: 'USA', sector: 'Technology', vol: '24M', cap: '1.9T' },
+  { name: 'Meta Platforms', symbol: 'META', price: '495.10', change: '+1.85%', category: 'Equities', region: 'Americas', country: 'USA', sector: 'Technology', vol: '18M', cap: '1.2T' },
+  { name: 'Tesla Inc', symbol: 'TSLA', price: '175.30', change: '+2.10%', category: 'Equities', region: 'Americas', country: 'USA', sector: 'Automotive', vol: '95M', cap: '550B' },
+  { name: 'Netflix', symbol: 'NFLX', price: '485.20', change: '+2.30%', category: 'Equities', region: 'Americas', country: 'USA', sector: 'Technology', vol: '8M', cap: '215B' },
+  { name: 'AMD', symbol: 'AMD', price: '142.50', change: '+3.15%', category: 'Equities', region: 'Americas', country: 'USA', sector: 'Technology', vol: '65M', cap: '230B' },
+  { name: 'Intel', symbol: 'INTC', price: '44.80', change: '+0.90%', category: 'Equities', region: 'Americas', country: 'USA', sector: 'Technology', vol: '35M', cap: '185B' },
+  { name: 'Qualcomm', symbol: 'QCOM', price: '145.60', change: '+1.45%', category: 'Equities', region: 'Americas', country: 'USA', sector: 'Technology', vol: '12M', cap: '162B' },
+  { name: 'Broadcom', symbol: 'AVGO', price: '1280.40', change: '+2.60%', category: 'Equities', region: 'Americas', country: 'USA', sector: 'Technology', vol: '3M', cap: '590B' },
+  { name: 'Oracle', symbol: 'ORCL', price: '118.25', change: '+0.75%', category: 'Equities', region: 'Americas', country: 'USA', sector: 'Technology', vol: '18M', cap: '320B' },
+  { name: 'Adobe', symbol: 'ADBE', price: '545.80', change: '+1.85%', category: 'Equities', region: 'Americas', country: 'USA', sector: 'Technology', vol: '5M', cap: '248B' },
+  { name: 'Snowflake', symbol: 'SNOW', price: '185.40', change: '+2.15%', category: 'Equities', region: 'Americas', country: 'USA', sector: 'Technology', vol: '5M', cap: '58B' },
+  { name: 'Palantir', symbol: 'PLTR', price: '25.60', change: '+3.45%', category: 'Equities', region: 'Americas', country: 'USA', sector: 'Technology', vol: '45M', cap: '52B' },
+  { name: 'Zoom', symbol: 'ZM', price: '68.50', change: '+1.25%', category: 'Equities', region: 'Americas', country: 'USA', sector: 'Technology', vol: '5M', cap: '22B' },
+  { name: 'Datadog', symbol: 'DDOG', price: '145.80', change: '+2.35%', category: 'Equities', region: 'Americas', country: 'USA', sector: 'Technology', vol: '3M', cap: '48B' },
+  { name: 'CrowdStrike', symbol: 'CRWD', price: '325.40', change: '+2.85%', category: 'Equities', region: 'Americas', country: 'USA', sector: 'Technology', vol: '4M', cap: '78B' },
+  { name: 'Zscaler', symbol: 'ZS', price: '185.60', change: '+1.95%', category: 'Equities', region: 'Americas', country: 'USA', sector: 'Technology', vol: '2M', cap: '28B' },
+  { name: 'Okta', symbol: 'OKTA', price: '95.40', change: '+1.65%', category: 'Equities', region: 'Americas', country: 'USA', sector: 'Technology', vol: '3M', cap: '15B' },
+  { name: 'Twilio', symbol: 'TWLO', price: '68.20', change: '+1.45%', category: 'Equities', region: 'Americas', country: 'USA', sector: 'Technology', vol: '5M', cap: '12B' },
+  { name: 'Shopify', symbol: 'SHOP', price: '78.40', change: '+2.15%', category: 'Equities', region: 'Americas', country: 'Canada', sector: 'Technology', vol: '8M', cap: '98B' },
+  { name: 'Square', symbol: 'SQ', price: '68.50', change: '+1.85%', category: 'Equities', region: 'Americas', country: 'USA', sector: 'Finance', vol: '12M', cap: '42B' },
+  { name: 'Coinbase', symbol: 'COIN', price: '185.40', change: '+4.25%', category: 'Equities', region: 'Americas', country: 'USA', sector: 'Finance', vol: '8M', cap: '45B' },
+  { name: 'Robinhood', symbol: 'HOOD', price: '18.50', change: '+2.15%', category: 'Equities', region: 'Americas', country: 'USA', sector: 'Finance', vol: '15M', cap: '16B' },
+  { name: 'SoFi', symbol: 'SOFI', price: '8.50', change: '+1.85%', category: 'Equities', region: 'Americas', country: 'USA', sector: 'Finance', vol: '45M', cap: '8B' },
+  { name: 'Rivian', symbol: 'RIVN', price: '15.80', change: '+3.25%', category: 'Equities', region: 'Americas', country: 'USA', sector: 'Automotive', vol: '25M', cap: '15B' },
+  { name: 'Lucid', symbol: 'LCID', price: '3.25', change: '+2.45%', category: 'Equities', region: 'Americas', country: 'USA', sector: 'Automotive', vol: '45M', cap: '7B' },
+  { name: 'NIO', symbol: 'NIO', price: '5.80', change: '+1.95%', category: 'Equities', region: 'APAC', country: 'China', sector: 'Automotive', vol: '55M', cap: '12B' },
+  { name: 'XPeng', symbol: 'XPEV', price: '8.50', change: '+2.15%', category: 'Equities', region: 'APAC', country: 'China', sector: 'Automotive', vol: '25M', cap: '8B' },
+  { name: 'Li Auto', symbol: 'LI', price: '28.40', change: '+1.65%', category: 'Equities', region: 'APAC', country: 'China', sector: 'Automotive', vol: '12M', cap: '28B' },
+  { name: 'Rivian', symbol: 'RIVN', price: '15.80', change: '+3.25%', category: 'Equities', region: 'Americas', country: 'USA', sector: 'Automotive', vol: '25M', cap: '15B' },
+  { name: 'Lucid', symbol: 'LCID', price: '3.25', change: '+2.45%', category: 'Equities', region: 'Americas', country: 'USA', sector: 'Automotive', vol: '45M', cap: '7B' },
+  
+  // Дополнительные популярные акции - S&P 500 расширенный список
+  { name: 'Costco', symbol: 'COST', price: '850.20', change: '+0.85%', category: 'Equities', region: 'Americas', country: 'USA', sector: 'Retail', vol: '2M', cap: '375B' },
+  { name: 'Home Depot', symbol: 'HD', price: '385.60', change: '+0.65%', category: 'Equities', region: 'Americas', country: 'USA', sector: 'Retail', vol: '4M', cap: '385B' },
+  { name: 'Visa', symbol: 'V', price: '285.40', change: '+0.45%', category: 'Equities', region: 'Americas', country: 'USA', sector: 'Finance', vol: '8M', cap: '585B' },
+  { name: 'Mastercard', symbol: 'MA', price: '485.80', change: '+0.55%', category: 'Equities', region: 'Americas', country: 'USA', sector: 'Finance', vol: '3M', cap: '425B' },
+  { name: 'Salesforce', symbol: 'CRM', price: '285.40', change: '+1.15%', category: 'Equities', region: 'Americas', country: 'USA', sector: 'Technology', vol: '8M', cap: '285B' },
+  { name: 'Cisco', symbol: 'CSCO', price: '52.80', change: '+0.35%', category: 'Equities', region: 'Americas', country: 'USA', sector: 'Technology', vol: '18M', cap: '215B' },
+  { name: 'IBM', symbol: 'IBM', price: '185.60', change: '+0.25%', category: 'Equities', region: 'Americas', country: 'USA', sector: 'Technology', vol: '5M', cap: '168B' },
+  { name: 'Disney', symbol: 'DIS', price: '112.40', change: '+0.85%', category: 'Equities', region: 'Americas', country: 'USA', sector: 'Consumer', vol: '15M', cap: '205B' },
+  { name: 'Lockheed Martin', symbol: 'LMT', price: '485.20', change: '+0.95%', category: 'Equities', region: 'Americas', country: 'USA', sector: 'Industrial', vol: '1M', cap: '125B' },
+  { name: 'Raytheon', symbol: 'RTX', price: '95.80', change: '+0.65%', category: 'Equities', region: 'Americas', country: 'USA', sector: 'Industrial', vol: '5M', cap: '145B' },
+  { name: 'General Motors', symbol: 'GM', price: '42.60', change: '+0.85%', category: 'Equities', region: 'Americas', country: 'USA', sector: 'Automotive', vol: '18M', cap: '48B' },
+  { name: 'Ford', symbol: 'F', price: '12.80', change: '+0.45%', category: 'Equities', region: 'Americas', country: 'USA', sector: 'Automotive', vol: '45M', cap: '52B' },
+  { name: 'Chipotle', symbol: 'CMG', price: '2850.40', change: '+1.45%', category: 'Equities', region: 'Americas', country: 'USA', sector: 'Consumer', vol: '0.3M', cap: '78B' },
+  { name: 'Target', symbol: 'TGT', price: '165.20', change: '+0.55%', category: 'Equities', region: 'Americas', country: 'USA', sector: 'Retail', vol: '5M', cap: '75B' },
+  { name: 'Lowe\'s', symbol: 'LOW', price: '225.60', change: '+0.75%', category: 'Equities', region: 'Americas', country: 'USA', sector: 'Retail', vol: '4M', cap: '135B' },
+  { name: 'Charles Schwab', symbol: 'SCHW', price: '68.50', change: '+0.35%', category: 'Equities', region: 'Americas', country: 'USA', sector: 'Finance', vol: '8M', cap: '125B' },
+  { name: 'BlackRock', symbol: 'BLK', price: '825.40', change: '+0.55%', category: 'Equities', region: 'Americas', country: 'USA', sector: 'Finance', vol: '0.5M', cap: '125B' },
+  { name: 'Berkshire Hathaway', symbol: 'BRK.B', price: '385.60', change: '+0.45%', category: 'Equities', region: 'Americas', country: 'USA', sector: 'Finance', vol: '4M', cap: '875B' },
+  { name: 'American Express', symbol: 'AXP', price: '225.80', change: '+0.65%', category: 'Equities', region: 'Americas', country: 'USA', sector: 'Finance', vol: '3M', cap: '165B' },
+  { name: 'Honeywell', symbol: 'HON', price: '215.80', change: '+0.65%', category: 'Equities', region: 'Americas', country: 'USA', sector: 'Industrial', vol: '3M', cap: '145B' },
+  { name: 'Deere', symbol: 'DE', price: '385.40', change: '+1.25%', category: 'Equities', region: 'Americas', country: 'USA', sector: 'Industrial', vol: '2M', cap: '108B' },
+  { name: 'Union Pacific', symbol: 'UNP', price: '245.60', change: '+0.55%', category: 'Equities', region: 'Americas', country: 'USA', sector: 'Industrial', vol: '3M', cap: '145B' },
+  { name: 'FedEx', symbol: 'FDX', price: '285.40', change: '+0.85%', category: 'Equities', region: 'Americas', country: 'USA', sector: 'Industrial', vol: '2M', cap: '72B' },
+  { name: 'UPS', symbol: 'UPS', price: '165.80', change: '+0.45%', category: 'Equities', region: 'Americas', country: 'USA', sector: 'Industrial', vol: '4M', cap: '145B' },
+  { name: 'Schlumberger', symbol: 'SLB', price: '52.40', change: '+0.95%', category: 'Equities', region: 'Americas', country: 'USA', sector: 'Oil & Gas', vol: '12M', cap: '75B' },
+  { name: 'Halliburton', symbol: 'HAL', price: '38.60', change: '+0.85%', category: 'Equities', region: 'Americas', country: 'USA', sector: 'Oil & Gas', vol: '8M', cap: '35B' },
+  { name: 'NextEra Energy', symbol: 'NEE', price: '68.50', change: '+0.45%', category: 'Equities', region: 'Americas', country: 'USA', sector: 'Utilities', vol: '8M', cap: '145B' },
+  { name: 'Duke Energy', symbol: 'DUK', price: '102.40', change: '+0.35%', category: 'Equities', region: 'Americas', country: 'USA', sector: 'Utilities', vol: '5M', cap: '78B' },
+  { name: 'Prologis', symbol: 'PLD', price: '125.60', change: '+0.55%', category: 'Equities', region: 'Americas', country: 'USA', sector: 'Real Estate', vol: '4M', cap: '125B' },
+  { name: 'Freeport-McMoRan', symbol: 'FCX', price: '42.60', change: '+1.25%', category: 'Equities', region: 'Americas', country: 'USA', sector: 'Materials', vol: '18M', cap: '62B' },
+  { name: 'Newmont', symbol: 'NEM', price: '42.80', change: '+0.85%', category: 'Equities', region: 'Americas', country: 'USA', sector: 'Materials', vol: '12M', cap: '52B' },
+  { name: 'Northrop Grumman', symbol: 'NOC', price: '485.60', change: '+0.75%', category: 'Equities', region: 'Americas', country: 'USA', sector: 'Industrial', vol: '0.8M', cap: '75B' },
+  { name: 'General Dynamics', symbol: 'GD', price: '285.40', change: '+0.55%', category: 'Equities', region: 'Americas', country: 'USA', sector: 'Industrial', vol: '1.2M', cap: '78B' },
+  { name: 'Domino\'s', symbol: 'DPZ', price: '425.60', change: '+0.95%', category: 'Equities', region: 'Americas', country: 'USA', sector: 'Consumer', vol: '0.5M', cap: '15B' },
+  { name: 'Yum Brands', symbol: 'YUM', price: '142.80', change: '+0.65%', category: 'Equities', region: 'Americas', country: 'USA', sector: 'Consumer', vol: '2M', cap: '38B' },
+  { name: 'Marathon Petroleum', symbol: 'MPC', price: '185.40', change: '+1.15%', category: 'Equities', region: 'Americas', country: 'USA', sector: 'Oil & Gas', vol: '5M', cap: '68B' },
+  { name: 'Valero Energy', symbol: 'VLO', price: '145.60', change: '+0.95%', category: 'Equities', region: 'Americas', country: 'USA', sector: 'Oil & Gas', vol: '6M', cap: '52B' },
+  { name: 'Southern Company', symbol: 'SO', price: '72.80', change: '+0.25%', category: 'Equities', region: 'Americas', country: 'USA', sector: 'Utilities', vol: '6M', cap: '82B' },
+  { name: 'Equity Residential', symbol: 'EQR', price: '62.40', change: '+0.45%', category: 'Equities', region: 'Americas', country: 'USA', sector: 'Real Estate', vol: '3M', cap: '25B' },
+  { name: 'Simon Property', symbol: 'SPG', price: '145.80', change: '+0.65%', category: 'Equities', region: 'Americas', country: 'USA', sector: 'Real Estate', vol: '2M', cap: '48B' },
+  { name: 'Southern Copper', symbol: 'SCCO', price: '85.40', change: '+1.15%', category: 'Equities', region: 'Americas', country: 'USA', sector: 'Materials', vol: '2M', cap: '68B' },
+
+]);
 
 // Получаем доступные регионы и страны
 const availableRegions = computed(() => {
-  const equities = allAssets.filter(a => a.category === 'Equities');
+  const equities = allAssets.value.filter(a => a.category === 'Equities');
   const regions = new Set(equities.map(a => a.region).filter(Boolean));
   return Array.from(regions).sort();
 });
 
 const availableCountries = computed(() => {
-  const equities = allAssets.filter(a => a.category === 'Equities');
+  const equities = allAssets.value.filter(a => a.category === 'Equities');
   let filtered = equities;
   
   if (selectedRegion.value !== 'All') {
@@ -472,7 +822,7 @@ const availableCountries = computed(() => {
 });
 
 const availableSectors = computed(() => {
-  const equities = allAssets.filter(a => a.category === 'Equities');
+  const equities = allAssets.value.filter(a => a.category === 'Equities');
   let filtered = equities;
   
   if (selectedRegion.value !== 'All') {
@@ -487,9 +837,10 @@ const availableSectors = computed(() => {
   return Array.from(sectors).sort();
 });
 
+
 const filteredAssets = computed(() => {
   // Показываем только акции (Equities), исключаем индексы и криптовалюты
-  let equities = allAssets.filter(a => a.category === 'Equities');
+  let equities = allAssets.value.filter(a => a.category === 'Equities');
   
   // Фильтр по категории
   if (props.category !== 'All') {
@@ -591,6 +942,11 @@ const getSectorName = (sector: string) => {
 };
 
 const getLogoUrl = (symbol: string) => {
+  // Если логотип уже не загрузился, не пытаемся загрузить снова
+  if (logoErrors.value.has(symbol)) {
+    return ''; // Пустая строка, чтобы не делать лишние запросы
+  }
+  
   // Убираем суффиксы типа .BSE, .NSE и т.д.
   const cleanSymbol = symbol.split('.')[0].toUpperCase();
   
@@ -600,11 +956,13 @@ const getLogoUrl = (symbol: string) => {
   const domain = getCompanyDomain(cleanSymbol);
   
   // Используем Clearbit для известных компаний, для остальных - альтернативный источник
-  if (domain.includes('.com') || domain.includes('.ru') || domain.includes('.cn')) {
+  // ВАЖНО: Эти внешние сервисы могут быть недоступны, поэтому мы обрабатываем ошибки
+  if (domain && (domain.includes('.com') || domain.includes('.ru') || domain.includes('.cn'))) {
     return `https://logo.clearbit.com/${domain}`;
   }
   
   // Альтернативный источник для тикеров напрямую
+  // Если и этот не работает, вернется пустая строка и будет показан fallback
   return `https://assets.cdn.money.net/udata/images/logos/${cleanSymbol}.png`;
 };
 
@@ -729,7 +1087,12 @@ const getCompanyDomain = (symbol: string) => {
 const handleLogoError = (event: Event) => {
   const img = event.target as HTMLImageElement;
   const symbol = img.alt;
+  // Добавляем символ в список ошибок, чтобы не пытаться загрузить снова
   logoErrors.value.add(symbol);
+  // Скрываем изображение, чтобы не было видно битого изображения
+  if (img) {
+    img.style.display = 'none';
+  }
 };
 
 const getCategoryStyle = (category: string) => {

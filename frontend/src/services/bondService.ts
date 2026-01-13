@@ -11,13 +11,35 @@ export interface BondValuationRequest {
   discountYield1: number;
   discountYield2: number;
   dayCount?: number;
+  dayCountConvention?: string;
+}
+
+export interface SensitivityScenario {
+  yieldChangeBps: number;
+  yieldChangePercent: number;
+  priceChangePercent: number;
+  priceChangeAbsolute: number;
+  newDirtyPrice: number;
+  newYtmPercent: number;
 }
 
 export interface ScenarioResults {
   dirtyPrice: number;
   cleanPrice: number;
   pricePercent: number;
+  currentYield?: number;
+  adjustedCurrentYield?: number;
+  simpleYield?: number;
+  ytm?: number;
+  ytmPercent?: number;
+  nominalYield?: number;
   duration: number;
+  modifiedDuration?: number;
+  convexity?: number;
+  pvbp?: number;
+  pvbpAbsolute?: number;
+  sensitivityScenarios?: SensitivityScenario[];
+  discountMargin?: number | null;
 }
 
 export interface CashFlow {

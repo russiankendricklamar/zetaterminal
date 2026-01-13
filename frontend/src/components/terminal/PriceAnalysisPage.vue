@@ -4,7 +4,7 @@
     <div class="flex flex-col md:flex-row items-center justify-between p-6 border-b border-white/5 bg-black/20 gap-4">
       <div class="flex items-center gap-4 self-start md:self-auto">
         <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-emerald-500/20 to-teal-500/20 flex items-center justify-center text-lg font-bold text-emerald-300 border border-emerald-500/30">
-          {{ localSymbol.substring(0, 2) }}
+          {{ (localSymbol || 'BT').substring(0, 2) }}
         </div>
         
         <div class="relative group" data-dropdown-asset>
@@ -148,6 +148,48 @@
         </div>
       </div>
 
+      <!-- Intraday Chart -->
+      <div v-else-if="section === 'GIP'" class="h-full flex flex-col">
+        <div class="flex justify-between items-center mb-4">
+          <h3 class="text-lg font-bold text-white">Внутридневной график</h3>
+          <div class="flex gap-2">
+            <button 
+              v-for="interval in intradayIntervals"
+              :key="interval.value"
+              @click="selectedIntradayInterval = interval.value"
+              :class="`px-3 py-1 rounded-lg text-xs font-bold border transition-all ${
+                selectedIntradayInterval === interval.value 
+                  ? 'bg-emerald-500/20 border-emerald-500/50 text-emerald-300' 
+                  : 'border-white/10 text-gray-500 hover:text-white hover:bg-white/5'
+              }`"
+            >
+              {{ interval.label }}
+            </button>
+          </div>
+        </div>
+        <div class="flex-1 bg-black/20 rounded-xl border border-white/5 p-4 min-h-[400px]">
+          <v-chart class="w-full h-full" :option="intradayChartOption" autoresize />
+        </div>
+        <div class="mt-4 grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div class="bg-black/20 rounded-xl border border-white/5 p-4 text-center">
+            <div class="text-xs text-gray-400 mb-1">Открытие</div>
+            <div class="text-lg font-bold text-white font-mono">{{ intradayStats.open }}</div>
+          </div>
+          <div class="bg-black/20 rounded-xl border border-white/5 p-4 text-center">
+            <div class="text-xs text-gray-400 mb-1">Максимум</div>
+            <div class="text-lg font-bold text-emerald-400 font-mono">{{ intradayStats.high }}</div>
+          </div>
+          <div class="bg-black/20 rounded-xl border border-white/5 p-4 text-center">
+            <div class="text-xs text-gray-400 mb-1">Минимум</div>
+            <div class="text-lg font-bold text-rose-400 font-mono">{{ intradayStats.low }}</div>
+          </div>
+          <div class="bg-black/20 rounded-xl border border-white/5 p-4 text-center">
+            <div class="text-xs text-gray-400 mb-1">Текущая</div>
+            <div class="text-lg font-bold text-white font-mono">{{ intradayStats.current }}</div>
+          </div>
+        </div>
+      </div>
+
       <!-- Beta Analysis -->
       <div v-else-if="section === 'BETA'" class="h-full grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div class="lg:col-span-2 bg-black/20 rounded-xl border border-white/5 p-6 flex flex-col min-h-[400px]">
@@ -249,7 +291,7 @@ import { TitleComponent, TooltipComponent, GridComponent } from 'echarts/compone
 import VChart from 'vue-echarts';
 import { AssetInfo } from '@/types/terminal';
 
-use([CanvasRenderer, LineChart, ScatterChart, TitleComponent, TooltipComponent, GridComponent]);
+use([CanvasRenderer, LineChart, ScatterChart, BarChart, TitleComponent, TooltipComponent, GridComponent]);
 
 interface Props {
   symbol: string;
@@ -258,12 +300,13 @@ interface Props {
 
 const props = defineProps<Props>();
 
-const section = ref(props.activeSection);
-const localSymbol = ref(props.symbol);
+const section = ref(props.activeSection || 'HP');
+const localSymbol = ref(props.symbol || 'BTC/USDT');
 const showMA = ref(true);
 const showBB = ref(false);
 const isAssetOpen = ref(false);
 const assetSearchQuery = ref('');
+const selectedIntradayInterval = ref('1h');
 
 watch(() => props.activeSection, (val) => { section.value = val; });
 watch(() => props.symbol, (val) => { localSymbol.value = val; });
@@ -495,6 +538,125 @@ const movingAverages = [
   { period: 'MA50', sma: '125.00', ema: '128.40', action: 'ПОКУПКА' },
   { period: 'MA200', sma: '110.10', ema: '115.20', action: 'ПОКУПКА' },
 ];
+
+// Intraday intervals
+const intradayIntervals = [
+  { label: '1 мин', value: '1m' },
+  { label: '5 мин', value: '5m' },
+  { label: '15 мин', value: '15m' },
+  { label: '1 час', value: '1h' },
+  { label: '4 часа', value: '4h' },
+];
+
+// Intraday data
+const intradayData = computed(() => {
+  const now = new Date();
+  const points = selectedIntradayInterval.value === '1m' ? 390 : 
+                 selectedIntradayInterval.value === '5m' ? 78 :
+                 selectedIntradayInterval.value === '15m' ? 26 :
+                 selectedIntradayInterval.value === '1h' ? 6.5 : 1.5;
+  
+  const basePrice = 145.32;
+  return Array.from({ length: Math.floor(points) }, (_, i) => {
+    const time = new Date(now);
+    if (selectedIntradayInterval.value === '1m') {
+      time.setMinutes(time.getMinutes() - (Math.floor(points) - i));
+    } else if (selectedIntradayInterval.value === '5m') {
+      time.setMinutes(time.getMinutes() - (Math.floor(points) - i) * 5);
+    } else if (selectedIntradayInterval.value === '15m') {
+      time.setMinutes(time.getMinutes() - (Math.floor(points) - i) * 15);
+    } else if (selectedIntradayInterval.value === '1h') {
+      time.setHours(time.getHours() - (Math.floor(points) - i));
+    } else {
+      time.setHours(time.getHours() - (Math.floor(points) - i) * 4);
+    }
+    
+    const price = basePrice + Math.sin(i * 0.1) * 2 + (Math.random() - 0.5) * 1.5;
+    return {
+      time: time.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' }),
+      price: price,
+      volume: Math.random() * 1000000
+    };
+  });
+});
+
+const intradayStats = computed(() => {
+  const prices = intradayData.value.map(d => d.price);
+  if (prices.length === 0) {
+    return {
+      open: '0.00',
+      high: '0.00',
+      low: '0.00',
+      current: '0.00'
+    };
+  }
+  return {
+    open: prices[0]?.toFixed(2) || '0.00',
+    high: Math.max(...prices).toFixed(2),
+    low: Math.min(...prices).toFixed(2),
+    current: prices[prices.length - 1]?.toFixed(2) || '0.00'
+  };
+});
+
+const intradayChartOption = computed(() => ({
+  grid: { left: 50, right: 50, top: 20, bottom: 40 },
+  xAxis: {
+    type: 'category',
+    data: intradayData.value.map(d => d.time),
+    axisLabel: { 
+      color: 'rgba(255,255,255,0.3)', 
+      fontSize: 10,
+      rotate: 45,
+      interval: selectedIntradayInterval.value === '1m' ? 'auto' : 0
+    },
+    axisLine: { show: false },
+    axisTick: { show: false }
+  },
+  yAxis: {
+    type: 'value',
+    position: 'right',
+    axisLabel: { color: 'rgba(255,255,255,0.3)', fontSize: 10 },
+    axisLine: { show: false },
+    axisTick: { show: false },
+    splitLine: { lineStyle: { color: 'rgba(255,255,255,0.05)' } }
+  },
+  series: [
+    {
+      type: 'line',
+      data: intradayData.value.map(d => d.price),
+      smooth: false,
+      symbol: 'none',
+      lineStyle: { color: '#10b981', width: 2 },
+      areaStyle: {
+        color: {
+          type: 'linear',
+          x: 0, y: 0, x2: 0, y2: 1,
+          colorStops: [
+            { offset: 0, color: 'rgba(16, 185, 129, 0.3)' },
+            { offset: 1, color: 'rgba(16, 185, 129, 0)' }
+          ]
+        }
+      },
+      markLine: {
+        silent: true,
+        data: [
+          { yAxis: parseFloat(intradayStats.value.open), name: 'Открытие', lineStyle: { color: '#60a5fa', type: 'dashed', width: 1 } },
+          { yAxis: parseFloat(intradayStats.value.high), name: 'Максимум', lineStyle: { color: '#10b981', type: 'dashed', width: 1 } },
+          { yAxis: parseFloat(intradayStats.value.low), name: 'Минимум', lineStyle: { color: '#ef4444', type: 'dashed', width: 1 } }
+        ]
+      }
+    }
+  ],
+  tooltip: { 
+    backgroundColor: '#18181b', 
+    borderColor: '#27272a', 
+    textStyle: { color: '#fff' },
+    trigger: 'axis',
+    axisPointer: {
+      type: 'cross'
+    }
+  }
+}));
 
 // Icon components
 const CalendarIcon = { template: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>' };

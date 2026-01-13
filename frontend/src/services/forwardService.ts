@@ -19,6 +19,18 @@ export interface ForwardValuationRequest {
   riskFreeRate?: number;
   repoRate?: number;
   
+  // Bond параметры
+  accruedInterest?: number;
+  couponRate?: number;
+  couponFrequency?: number;
+  faceValue?: number;
+  lastCouponDate?: string;
+  maturityDate?: string;
+  dayCountConvention?: string;
+  autoCalculateAI?: boolean;
+  yieldCurveTenors?: number[];
+  yieldCurveRates?: number[];
+  
   // FX параметры (для валютных форвардов)
   buyCurrency?: string;
   sellCurrency?: string;
@@ -60,6 +72,37 @@ export interface ForwardValuationResponse {
   fairValueMax?: number;
   discountFactorInternal?: number;
   discountFactorExternal?: number;
+  // Дополнительные поля для Bond
+  spotDirtyPrice?: number;
+  forwardDirtyPrice?: number;
+  aiForward?: number;
+  pvCoupons?: number;
+  couponSchedule?: Array<{
+    couponNumber: number;
+    couponDate: string;
+    daysToPayment: number;
+    yearsToPayment: number;
+    couponAmount: number;
+    discountRate: number;
+    discountFactor: number;
+    presentValue: number;
+  }>;
+  formulaBreakdown?: {
+    spotCleanPrice: number;
+    accruedInterestSpot: number;
+    spotDirtyPrice: number;
+    repoRate: number;
+    timeToMaturity: number;
+    financingCost: number;
+    totalCouponsPV: number;
+    forwardDirtyPriceBeforeAI: number;
+    accruedInterestForward: number;
+    forwardCleanPrice: number;
+  };
+  dv01?: number;
+  convexity?: number;
+  repoSensitivity?: number;
+  daysToMaturity?: number;
 }
 
 /**

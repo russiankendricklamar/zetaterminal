@@ -35,10 +35,16 @@
                     </div>
 
                     <div class="form-group">
-                        <label class="lbl">Базис</label>
-                        <select v-model.number="params.dayCount" class="glass-input">
-                            <option :value="365">ACT/365</option>
-                            <option :value="360">30/360</option>
+                        <label class="lbl">Базис расчета дней</label>
+                        <select v-model="params.dayCountConvention" class="glass-input day-count-select">
+                            <option value="">Actual/365F (по умолчанию)</option>
+                            <option value="Actual/365F">Actual/365F (Fixed 365)</option>
+                            <option value="Actual/360">Actual/360 (French)</option>
+                            <option value="Actual/Actual (ISDA)">Actual/Actual (ISDA)</option>
+                            <option value="30/360 (US)">30/360 (US Municipal Bond Basis)</option>
+                            <option value="30E/360 (ISDA)">30E/360 (ISDA) / 30/360 German</option>
+                            <option value="30E/360">30E/360 (Eurobond Basis)</option>
+                            <option value="Actual/Actual (ISMA)">Actual/Actual (ISMA) / Actual/Actual (ICMA)</option>
                         </select>
                     </div>
                 </div>
@@ -142,12 +148,178 @@
                                 </td>
                             </tr>
                             <tr>
-                                <td><strong>Дюрация (Modified)</strong></td>
-                                <td class="mono">{{ formatNumber(results.scenario1.duration, 2) }} лет</td>
-                                <td class="mono">{{ formatNumber(results.scenario2.duration, 2) }} лет</td>
-                                <td class="mono text-muted">
-                                    (одинаковая)
+                                <td><strong>Дюрация Маколея</strong></td>
+                                <td class="mono">{{ formatNumber(results.scenario1.duration, 4) }} лет</td>
+                                <td class="mono">{{ formatNumber(results.scenario2.duration, 4) }} лет</td>
+                                <td class="mono" :class="results.scenario1.duration > results.scenario2.duration ? 'text-green' : 'text-red'">
+                                    {{ formatNumber(results.scenario1.duration - results.scenario2.duration, 4) }} лет
                                 </td>
+                            </tr>
+                            <tr v-if="results.scenario1.modifiedDuration !== undefined">
+                                <td><strong>Модифицированная дюрация</strong></td>
+                                <td class="mono">{{ formatNumber(results.scenario1.modifiedDuration, 4) }} лет</td>
+                                <td class="mono">{{ formatNumber(results.scenario2.modifiedDuration || 0, 4) }} лет</td>
+                                <td class="mono" :class="(results.scenario1.modifiedDuration || 0) > (results.scenario2.modifiedDuration || 0) ? 'text-green' : 'text-red'">
+                                    {{ formatNumber((results.scenario1.modifiedDuration || 0) - (results.scenario2.modifiedDuration || 0), 4) }} лет
+                                </td>
+                            </tr>
+                            <tr v-if="results.scenario1.currentYield !== undefined">
+                                <td><strong>Текущая доходность (CY)</strong></td>
+                                <td class="mono">{{ formatNumber(results.scenario1.currentYield, 2) }}%</td>
+                                <td class="mono">{{ formatNumber(results.scenario2.currentYield || 0, 2) }}%</td>
+                                <td class="mono" :class="(results.scenario1.currentYield || 0) > (results.scenario2.currentYield || 0) ? 'text-green' : 'text-red'">
+                                    {{ formatNumber((results.scenario1.currentYield || 0) - (results.scenario2.currentYield || 0), 2) }}%
+                                </td>
+                            </tr>
+                            <tr v-if="results.scenario1.adjustedCurrentYield !== undefined">
+                                <td><strong>Скорректированная CY (ACY)</strong></td>
+                                <td class="mono">{{ formatNumber(results.scenario1.adjustedCurrentYield, 2) }}%</td>
+                                <td class="mono">{{ formatNumber(results.scenario2.adjustedCurrentYield || 0, 2) }}%</td>
+                                <td class="mono" :class="(results.scenario1.adjustedCurrentYield || 0) > (results.scenario2.adjustedCurrentYield || 0) ? 'text-green' : 'text-red'">
+                                    {{ formatNumber((results.scenario1.adjustedCurrentYield || 0) - (results.scenario2.adjustedCurrentYield || 0), 2) }}%
+                                </td>
+                            </tr>
+                            <tr v-if="results.scenario1.simpleYield !== undefined">
+                                <td><strong>Простая доходность (SY)</strong></td>
+                                <td class="mono">{{ formatNumber(results.scenario1.simpleYield, 2) }}%</td>
+                                <td class="mono">{{ formatNumber(results.scenario2.simpleYield || 0, 2) }}%</td>
+                                <td class="mono" :class="(results.scenario1.simpleYield || 0) > (results.scenario2.simpleYield || 0) ? 'text-green' : 'text-red'">
+                                    {{ formatNumber((results.scenario1.simpleYield || 0) - (results.scenario2.simpleYield || 0), 2) }}%
+                                </td>
+                            </tr>
+                            <tr v-if="results.scenario1.ytmPercent !== undefined">
+                                <td><strong>YTM (доходность к погашению)</strong></td>
+                                <td class="mono">{{ formatNumber(results.scenario1.ytmPercent, 2) }}%</td>
+                                <td class="mono">{{ formatNumber(results.scenario2.ytmPercent || 0, 2) }}%</td>
+                                <td class="mono" :class="(results.scenario1.ytmPercent || 0) > (results.scenario2.ytmPercent || 0) ? 'text-green' : 'text-red'">
+                                    {{ formatNumber((results.scenario1.ytmPercent || 0) - (results.scenario2.ytmPercent || 0), 2) }}%
+                                </td>
+                            </tr>
+                            <tr v-if="results.scenario1.nominalYield !== undefined">
+                                <td><strong>Номинальная доходность (NY)</strong></td>
+                                <td class="mono">{{ formatNumber(results.scenario1.nominalYield, 2) }}%</td>
+                                <td class="mono">{{ formatNumber(results.scenario2.nominalYield || 0, 2) }}%</td>
+                                <td class="mono" :class="(results.scenario1.nominalYield || 0) > (results.scenario2.nominalYield || 0) ? 'text-green' : 'text-red'">
+                                    {{ formatNumber((results.scenario1.nominalYield || 0) - (results.scenario2.nominalYield || 0), 2) }}%
+                                </td>
+                            </tr>
+                            <tr v-if="results.scenario1.convexity !== undefined">
+                                <td><strong>Выпуклость (Convexity)</strong></td>
+                                <td class="mono">{{ formatNumber(results.scenario1.convexity, 2) }}</td>
+                                <td class="mono">{{ formatNumber(results.scenario2.convexity || 0, 2) }}</td>
+                                <td class="mono" :class="(results.scenario1.convexity || 0) > (results.scenario2.convexity || 0) ? 'text-green' : 'text-red'">
+                                    {{ formatNumber((results.scenario1.convexity || 0) - (results.scenario2.convexity || 0), 2) }}
+                                </td>
+                            </tr>
+                            <tr v-if="results.scenario1.pvbp !== undefined">
+                                <td><strong>PVBP/DV01 (% от номинала)</strong></td>
+                                <td class="mono">{{ formatNumber(results.scenario1.pvbp, 4) }}%</td>
+                                <td class="mono">{{ formatNumber(results.scenario2.pvbp || 0, 4) }}%</td>
+                                <td class="mono" :class="(results.scenario1.pvbp || 0) > (results.scenario2.pvbp || 0) ? 'text-green' : 'text-red'">
+                                    {{ formatNumber((results.scenario1.pvbp || 0) - (results.scenario2.pvbp || 0), 4) }}%
+                                </td>
+                            </tr>
+                            <tr v-if="results.scenario1.pvbpAbsolute !== undefined">
+                                <td><strong>PVBP/DV01 (абсолютное)</strong></td>
+                                <td class="mono">{{ formatNumber(results.scenario1.pvbpAbsolute, 2) }} ₽</td>
+                                <td class="mono">{{ formatNumber(results.scenario2.pvbpAbsolute || 0, 2) }} ₽</td>
+                                <td class="mono" :class="(results.scenario1.pvbpAbsolute || 0) > (results.scenario2.pvbpAbsolute || 0) ? 'text-green' : 'text-red'">
+                                    {{ formatNumber((results.scenario1.pvbpAbsolute || 0) - (results.scenario2.pvbpAbsolute || 0), 2) }} ₽
+                                </td>
+                            </tr>
+                            <tr v-if="results.scenario1.discountMargin !== null && results.scenario1.discountMargin !== undefined">
+                                <td><strong>Discount Margin (DM)</strong></td>
+                                <td class="mono">{{ formatNumber(results.scenario1.discountMargin, 2) }} bp</td>
+                                <td class="mono">{{ formatNumber(results.scenario2.discountMargin || 0, 2) }} bp</td>
+                                <td class="mono" :class="(results.scenario1.discountMargin || 0) > (results.scenario2.discountMargin || 0) ? 'text-green' : 'text-red'">
+                                    {{ formatNumber((results.scenario1.discountMargin || 0) - (results.scenario2.discountMargin || 0), 2) }} bp
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            </transition>
+
+            <!-- Sensitivity Scenarios (Scenario 1) -->
+            <transition name="fade">
+            <div v-if="results && results.scenario1.sensitivityScenarios && results.scenario1.sensitivityScenarios.length > 0" class="glass-card panel h-auto">
+                <div class="panel-header">
+                    <h3>Анализ чувствительности цены (Сценарий 1)</h3>
+                    <div class="glass-pill">{{ results.scenario1.sensitivityScenarios.length }} сценариев</div>
+                </div>
+                
+                <div class="table-wrapper custom-scroll">
+                    <table class="glass-table">
+                        <thead>
+                            <tr>
+                                <th>Δ Доходность (bp)</th>
+                                <th class="text-right">Δ Доходность (%)</th>
+                                <th class="text-right">Δ Цена (%)</th>
+                                <th class="text-right">Δ Цена (₽)</th>
+                                <th class="text-right">Новая цена (₽)</th>
+                                <th class="text-right">Новая YTM (%)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr v-for="(scenario, idx) in results.scenario1.sensitivityScenarios" :key="idx">
+                                <td class="mono" :class="scenario.yieldChangeBps > 0 ? 'text-red' : scenario.yieldChangeBps < 0 ? 'text-green' : ''">
+                                    {{ scenario.yieldChangeBps > 0 ? '+' : '' }}{{ scenario.yieldChangeBps }} bp
+                                </td>
+                                <td class="text-right mono" :class="scenario.yieldChangePercent > 0 ? 'text-red' : scenario.yieldChangePercent < 0 ? 'text-green' : ''">
+                                    {{ scenario.yieldChangePercent > 0 ? '+' : '' }}{{ formatNumber(scenario.yieldChangePercent, 2) }}%
+                                </td>
+                                <td class="text-right mono" :class="scenario.priceChangePercent > 0 ? 'text-green' : scenario.priceChangePercent < 0 ? 'text-red' : ''">
+                                    {{ scenario.priceChangePercent > 0 ? '+' : '' }}{{ formatNumber(scenario.priceChangePercent, 2) }}%
+                                </td>
+                                <td class="text-right mono" :class="scenario.priceChangeAbsolute > 0 ? 'text-green' : scenario.priceChangeAbsolute < 0 ? 'text-red' : ''">
+                                    {{ scenario.priceChangeAbsolute > 0 ? '+' : '' }}{{ formatNumber(scenario.priceChangeAbsolute, 2) }} ₽
+                                </td>
+                                <td class="text-right mono font-bold">{{ formatNumber(scenario.newDirtyPrice, 2) }} ₽</td>
+                                <td class="text-right mono">{{ formatNumber(scenario.newYtmPercent, 2) }}%</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            </transition>
+
+            <!-- Sensitivity Scenarios (Scenario 2) -->
+            <transition name="fade">
+            <div v-if="results && results.scenario2.sensitivityScenarios && results.scenario2.sensitivityScenarios.length > 0" class="glass-card panel h-auto">
+                <div class="panel-header">
+                    <h3>Анализ чувствительности цены (Сценарий 2)</h3>
+                    <div class="glass-pill">{{ results.scenario2.sensitivityScenarios.length }} сценариев</div>
+                </div>
+                
+                <div class="table-wrapper custom-scroll">
+                    <table class="glass-table">
+                        <thead>
+                            <tr>
+                                <th>Δ Доходность (bp)</th>
+                                <th class="text-right">Δ Доходность (%)</th>
+                                <th class="text-right">Δ Цена (%)</th>
+                                <th class="text-right">Δ Цена (₽)</th>
+                                <th class="text-right">Новая цена (₽)</th>
+                                <th class="text-right">Новая YTM (%)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr v-for="(scenario, idx) in results.scenario2.sensitivityScenarios" :key="idx">
+                                <td class="mono" :class="scenario.yieldChangeBps > 0 ? 'text-red' : scenario.yieldChangeBps < 0 ? 'text-green' : ''">
+                                    {{ scenario.yieldChangeBps > 0 ? '+' : '' }}{{ scenario.yieldChangeBps }} bp
+                                </td>
+                                <td class="text-right mono" :class="scenario.yieldChangePercent > 0 ? 'text-red' : scenario.yieldChangePercent < 0 ? 'text-green' : ''">
+                                    {{ scenario.yieldChangePercent > 0 ? '+' : '' }}{{ formatNumber(scenario.yieldChangePercent, 2) }}%
+                                </td>
+                                <td class="text-right mono" :class="scenario.priceChangePercent > 0 ? 'text-green' : scenario.priceChangePercent < 0 ? 'text-red' : ''">
+                                    {{ scenario.priceChangePercent > 0 ? '+' : '' }}{{ formatNumber(scenario.priceChangePercent, 2) }}%
+                                </td>
+                                <td class="text-right mono" :class="scenario.priceChangeAbsolute > 0 ? 'text-green' : scenario.priceChangeAbsolute < 0 ? 'text-red' : ''">
+                                    {{ scenario.priceChangeAbsolute > 0 ? '+' : '' }}{{ formatNumber(scenario.priceChangeAbsolute, 2) }} ₽
+                                </td>
+                                <td class="text-right mono font-bold">{{ formatNumber(scenario.newDirtyPrice, 2) }} ₽</td>
+                                <td class="text-right mono">{{ formatNumber(scenario.newYtmPercent, 2) }}%</td>
                             </tr>
                         </tbody>
                     </table>
@@ -287,11 +459,32 @@ interface Coupon {
   date: string; value: number; isPaid: boolean
 }
 
+interface SensitivityScenario {
+  yieldChangeBps: number
+  yieldChangePercent: number
+  priceChangePercent: number
+  priceChangeAbsolute: number
+  newDirtyPrice: number
+  newYtmPercent: number
+}
+
 interface ScenarioResults {
   dirtyPrice: number
   cleanPrice: number
   pricePercent: number
+  currentYield?: number
+  adjustedCurrentYield?: number
+  simpleYield?: number
+  ytm?: number
+  ytmPercent?: number
+  nominalYield?: number
   duration: number
+  modifiedDuration?: number
+  convexity?: number
+  pvbp?: number
+  pvbpAbsolute?: number
+  sensitivityScenarios?: SensitivityScenario[]
+  discountMargin?: number | null
 }
 
 interface BondResults {
@@ -309,7 +502,8 @@ interface BondParams {
   valuationDate: string
   discountYield1: number
   discountYield2: number
-  dayCount: number
+  dayCount?: number
+  dayCountConvention?: string
 }
 
 // --- State ---
@@ -318,7 +512,8 @@ const params = ref<BondParams>({
   valuationDate: new Date().toISOString().split('T')[0],
   discountYield1: 14.0,
   discountYield2: 16.0,
-  dayCount: 365
+  dayCount: 365,
+  dayCountConvention: ''
 })
 
 const results = ref<BondResults | null>(null)
@@ -351,7 +546,8 @@ const calculateBond = async () => {
       valuationDate: params.value.valuationDate,
       discountYield1: params.value.discountYield1,
       discountYield2: params.value.discountYield2,
-      dayCount: params.value.dayCount
+      dayCount: params.value.dayCount,
+      dayCountConvention: params.value.dayCountConvention || undefined
     })
     
     results.value = response
@@ -430,6 +626,12 @@ const formatDate = (dateStr: string) => new Date(dateStr).toLocaleDateString('ru
   border-color: rgba(255, 255, 255, 0.25);
   background: rgba(0, 0, 0, 0.3);
   box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.05);
+}
+
+.glass-input.day-count-select {
+  padding: 12px 14px;
+  min-height: 48px;
+  height: auto;
 }
 
 /* Buttons */

@@ -20,6 +20,7 @@ from src.api import bond
 from src.api import portfolio
 from src.api import forward
 from src.api import swap
+from src.api import market_data
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -63,6 +64,7 @@ app.include_router(bond.router, prefix="/api/bond", tags=["bond"])
 app.include_router(portfolio.router, prefix="/api/portfolio", tags=["portfolio"])
 app.include_router(forward.router, prefix="/api/forward", tags=["forward"])
 app.include_router(swap.router, prefix="/api/swap", tags=["swap"])
+app.include_router(market_data.router, prefix="/api/market", tags=["market_data"])
 
 
 @app.get("/")

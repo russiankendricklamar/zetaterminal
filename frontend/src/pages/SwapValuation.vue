@@ -10,6 +10,37 @@
       </div>
       
       <div class="header-right">
+        <!-- Valuation Date -->
+        <div class="control-group">
+          <label class="control-label">Дата оценки:</label>
+          <input 
+            v-model="valuationDate" 
+            type="date" 
+            class="date-input"
+            @change="updateValuation"
+          />
+        </div>
+
+        <!-- Excel Upload -->
+        <div class="control-group">
+          <label class="control-label">Реестр:</label>
+          <input 
+            type="file" 
+            ref="fileInputRef"
+            @change="handleFileUpload" 
+            accept=".xlsx,.xls"
+            style="display: none"
+            id="excel-upload"
+          />
+          <button 
+            @click="() => { if (fileInputRef) fileInputRef.click() }" 
+            class="btn-secondary"
+            title="Загрузить реестр свопов из Excel"
+          >
+            Загрузить Excel
+          </button>
+        </div>
+
         <!-- Swap Type Selector -->
         <div class="control-group">
           <label class="control-label">Тип свопа:</label>
@@ -36,6 +67,82 @@
     <!-- Error Message -->
     <div v-if="error" class="error-message">
       ⚠️ {{ error }}
+    </div>
+
+    <!-- Registry Table (if loaded) -->
+    <div v-if="registrySwaps.length > 0" class="card full-width" style="margin-bottom: 24px;">
+      <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
+        <div>
+          <h3>Реестр свопов</h3>
+          <span class="card-subtitle">Загружено свопов: {{ registrySwaps.length }}</span>
+        </div>
+        <div style="display: flex; gap: 8px;">
+          <button 
+            @click="calculateAllSwaps" 
+            class="btn-secondary"
+            :disabled="calculatingAll"
+            style="font-size: 11px; padding: 6px 12px;"
+          >
+            <span v-if="!calculatingAll">Рассчитать все</span>
+            <span v-else>↺ Считаю...</span>
+          </button>
+          <button 
+            @click="clearRegistry" 
+            class="btn-secondary"
+            style="font-size: 11px; padding: 6px 12px; background: rgba(239, 68, 68, 0.2); border-color: rgba(239, 68, 68, 0.3);"
+          >
+            ✕ Очистить
+          </button>
+        </div>
+      </div>
+      <div class="scenario-table-container">
+        <table class="scenario-table">
+          <thead>
+            <tr>
+              <th>№</th>
+              <th>Тип</th>
+              <th>Номинал (млн)</th>
+              <th>Срок (лет)</th>
+              <th>Фикс. ставка (%)</th>
+              <th>Плавающая (%)</th>
+              <th v-if="swapResults.length > 0">Swap Value</th>
+              <th v-if="swapResults.length > 0">DV01</th>
+              <th>Действие</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr 
+              v-for="(swap, idx) in registrySwaps" 
+              :key="idx"
+              :class="{ 'selected': selectedSwapIndex === idx }"
+              @click="selectSwap(idx)"
+            >
+              <td>{{ idx + 1 }}</td>
+              <td>{{ swap.swapType?.toUpperCase() || 'IRS' }}</td>
+              <td class="mono">{{ swap.notional ? swap.notional.toFixed(2) : '-' }}</td>
+              <td class="mono">{{ swap.tenor ? swap.tenor.toFixed(2) : '-' }}</td>
+              <td class="mono">{{ swap.fixedRate ? swap.fixedRate.toFixed(2) + '%' : '-' }}</td>
+              <td class="mono">{{ swap.floatingRate ? swap.floatingRate.toFixed(2) + '%' : '-' }}</td>
+              <td v-if="swapResults.length > 0 && swapResults[idx]" class="mono" 
+                  :class="swapResults[idx]?.swapValue >= 0 ? 'positive' : 'negative'">
+                {{ swapResults[idx]?.swapValue ? formatCurrency(swapResults[idx].swapValue) : '-' }}
+              </td>
+              <td v-if="swapResults.length > 0 && swapResults[idx]" class="mono accent">
+                {{ swapResults[idx]?.dv01 ? formatCompactCurrency(swapResults[idx].dv01) : '-' }}
+              </td>
+              <td>
+                <button 
+                  @click.stop="loadSwapToForm(idx)" 
+                  class="btn-small"
+                  title="Загрузить в форму"
+                >
+                  Загрузить
+                </button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
     </div>
 
     <!-- Input Parameters Section -->
@@ -351,11 +458,18 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 import Chart from 'chart.js/auto'
+import * as XLSX from 'xlsx'
 import { valuateSwap, type SwapValuationResponse } from '@/services/swapService'
 
 const selectedSwapType = ref('irs')
 const calculating = ref(false)
 const error = ref('')
+const fileInputRef = ref<HTMLInputElement | null>(null)
+const registrySwaps = ref<any[]>([])
+const selectedSwapIndex = ref<number | null>(null)
+const swapResults = ref<(SwapValuationResponse | null)[]>([])
+const calculatingAll = ref(false)
+const valuationDate = ref(new Date().toISOString().split('T')[0])
 
 // Swap Parameters
 const params = ref({
@@ -513,6 +627,137 @@ const initCharts = () => {
   }
 }
 
+// Excel File Upload Handler
+const handleFileUpload = async (event: Event) => {
+  const target = event.target as HTMLInputElement
+  const file = target.files?.[0]
+  if (!file) return
+
+  try {
+    const arrayBuffer = await file.arrayBuffer()
+    const workbook = XLSX.read(arrayBuffer, { type: 'array' })
+    const firstSheetName = workbook.SheetNames[0]
+    const worksheet = workbook.Sheets[firstSheetName]
+    const jsonData = XLSX.utils.sheet_to_json(worksheet, { raw: false })
+
+    // Парсим данные из Excel
+    const swaps: any[] = []
+    
+    for (const row of jsonData as any[]) {
+      const swap: any = {
+        notional: parseFloat(row['Notional'] || row['notional'] || row['Номинал'] || row['Номинал (млн)'] || '100'),
+        tenor: parseFloat(row['Tenor'] || row['tenor'] || row['Срок'] || row['Срок (лет)'] || row['Срок (годы)'] || '5'),
+        fixedRate: parseFloat(row['Fixed Rate'] || row['fixedRate'] || row['Фиксированная ставка'] || row['Фикс. ставка'] || row['Fixed'] || '4.25'),
+        floatingRate: parseFloat(row['Floating Rate'] || row['floatingRate'] || row['Плавающая ставка'] || row['Floating'] || row['Index'] || '4.15'),
+        spread: parseFloat(row['Spread'] || row['spread'] || row['Спред'] || row['Спред (bp)'] || '15'),
+        couponsPerYear: parseFloat(row['Coupons Per Year'] || row['couponsPerYear'] || row['Купонов в год'] || row['Frequency'] || '2'),
+        discountRate: parseFloat(row['Discount Rate'] || row['discountRate'] || row['Дисконт кривая'] || row['Базовая ставка'] || '4.2'),
+        volatility: parseFloat(row['Volatility'] || row['volatility'] || row['Волатильность'] || row['Vol'] || '12'),
+        swapType: (row['Type'] || row['Swap Type'] || row['type'] || row['Тип'] || row['Тип свопа'] || 'irs').toLowerCase(),
+      }
+
+      // Нормализация типа свопа
+      if (swap.swapType && !['irs', 'cds', 'basis', 'xccy'].includes(swap.swapType)) {
+        const typeMap: Record<string, string> = {
+          'interest rate swap': 'irs',
+          'credit default swap': 'cds',
+          'basis swap': 'basis',
+          'cross currency': 'xccy',
+          'cross-currency': 'xccy',
+          'процентный': 'irs',
+          'кредитный': 'cds',
+          'базисный': 'basis',
+          'валютный': 'xccy'
+        }
+        swap.swapType = typeMap[swap.swapType.toLowerCase()] || 'irs'
+      }
+
+      // Проверяем, что есть минимальные данные
+      if (swap.notional > 0 && swap.tenor > 0) {
+        swaps.push(swap)
+      }
+    }
+
+    registrySwaps.value = swaps
+    selectedSwapIndex.value = null
+    swapResults.value = []
+  } catch (err: any) {
+    console.error('Excel parsing error:', err)
+    error.value = `Ошибка при загрузке файла: ${err.message}`
+  }
+}
+
+// Select swap from registry
+const selectSwap = (index: number) => {
+  selectedSwapIndex.value = index
+}
+
+// Load swap to form
+const loadSwapToForm = (index: number) => {
+  const swap = registrySwaps.value[index]
+  if (!swap) return
+
+  params.value.notional = swap.notional || params.value.notional
+  params.value.tenor = swap.tenor || params.value.tenor
+  params.value.fixedRate = swap.fixedRate || params.value.fixedRate
+  params.value.floatingRate = swap.floatingRate || params.value.floatingRate
+  params.value.spread = swap.spread || params.value.spread
+  params.value.couponsPerYear = swap.couponsPerYear || params.value.couponsPerYear
+  params.value.discountRate = swap.discountRate || params.value.discountRate
+  params.value.volatility = swap.volatility || params.value.volatility
+  selectedSwapType.value = swap.swapType || selectedSwapType.value
+
+  // Автоматически рассчитываем после загрузки
+  setTimeout(() => {
+    calculateValuation()
+  }, 100)
+}
+
+// Calculate all swaps
+const calculateAllSwaps = async () => {
+  calculatingAll.value = true
+  swapResults.value = []
+  error.value = ''
+
+  try {
+    for (let i = 0; i < registrySwaps.value.length; i++) {
+      const swap = registrySwaps.value[i]
+      try {
+        const result = await valuateSwap({
+          notional: swap.notional,
+          tenor: swap.tenor,
+          fixedRate: swap.fixedRate,
+          floatingRate: swap.floatingRate,
+          spread: swap.spread,
+          couponsPerYear: swap.couponsPerYear,
+          discountRate: swap.discountRate,
+          volatility: swap.volatility,
+          swapType: swap.swapType || 'irs'
+        })
+        swapResults.value.push(result)
+      } catch (err: any) {
+        swapResults.value.push(null)
+        console.error(`Error calculating swap ${i + 1}:`, err)
+      }
+    }
+  } catch (err: any) {
+    console.error('Error calculating swaps:', err)
+    error.value = `Ошибка при расчете свопов: ${err.message}`
+  } finally {
+    calculatingAll.value = false
+  }
+}
+
+// Clear registry
+const clearRegistry = () => {
+  registrySwaps.value = []
+  selectedSwapIndex.value = null
+  swapResults.value = []
+  if (fileInputRef.value) {
+    fileInputRef.value.value = ''
+  }
+}
+
 onMounted(() => {
   calculateValuation()
 })
@@ -605,6 +850,32 @@ onBeforeUnmount(() => {
   color: #fff;
 }
 
+.date-input {
+  background: transparent;
+  border: none;
+  color: #fff;
+  font-size: 12px;
+  outline: none;
+  padding: 4px 8px;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.date-input::-webkit-calendar-picker-indicator {
+  filter: invert(1);
+  cursor: pointer;
+}
+
+.date-input::-webkit-datetime-edit-text {
+  color: #fff;
+}
+
+.date-input::-webkit-datetime-edit-month-field,
+.date-input::-webkit-datetime-edit-day-field,
+.date-input::-webkit-datetime-edit-year-field {
+  color: #fff;
+}
+
 .btn-primary {
   padding: 8px 16px;
   background: #3b82f6;
@@ -627,6 +898,65 @@ onBeforeUnmount(() => {
 .btn-primary:disabled {
   opacity: 0.7;
   cursor: not-allowed;
+}
+
+.btn-secondary {
+  padding: 8px 16px;
+  background: rgba(59, 130, 246, 0.15);
+  color: #60a5fa;
+  border: 1px solid rgba(59, 130, 246, 0.3);
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.btn-secondary:hover:not(:disabled) {
+  background: rgba(59, 130, 246, 0.25);
+  border-color: rgba(59, 130, 246, 0.5);
+  transform: translateY(-1px);
+}
+
+.btn-secondary:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.btn-small {
+  padding: 4px 8px;
+  background: rgba(59, 130, 246, 0.15);
+  color: #60a5fa;
+  border: 1px solid rgba(59, 130, 246, 0.3);
+  border-radius: 6px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-small:hover {
+  background: rgba(59, 130, 246, 0.25);
+  border-color: rgba(59, 130, 246, 0.5);
+}
+
+.card-subtitle {
+  font-size: 11px;
+  color: rgba(255,255,255,0.4);
+  display: block;
+  margin-top: 4px;
+  font-weight: normal;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.scenario-table-container {
+  overflow-x: auto;
+}
+
+.scenario-table tr.selected {
+  background: rgba(59, 130, 246, 0.15);
+  border-left: 3px solid #3b82f6;
 }
 
 /* ============================================

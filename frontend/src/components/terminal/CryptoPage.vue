@@ -119,7 +119,15 @@
       </div>
     </div>
 
-    <div class="overflow-auto custom-scrollbar flex-1">
+    <!-- Индикатор загрузки -->
+    <div v-if="loading" class="flex items-center justify-center py-8 text-gray-400 flex-shrink-0">
+      <div class="flex items-center gap-2">
+        <div class="w-4 h-4 border-2 border-orange-500 border-t-transparent rounded-full animate-spin"></div>
+        <span class="text-xs font-bold">Загрузка реальных данных...</span>
+      </div>
+    </div>
+
+    <div class="overflow-auto custom-scrollbar flex-1" :class="{ 'opacity-50': loading }">
       <table class="w-full text-left border-collapse">
         <thead>
           <tr class="text-xs text-gray-500 border-b border-white/5 uppercase tracking-wider">
@@ -176,6 +184,7 @@
 <script setup lang="ts">
 import { computed, ref, onMounted, onBeforeUnmount } from 'vue';
 import { AssetInfo } from '@/types/terminal';
+import { getPopularCryptos, getCryptoInfo, type CryptoInfo } from '@/services/marketDataService';
 
 const emit = defineEmits<{
   navigate: [page: string];
@@ -191,7 +200,11 @@ const isCapOpen = ref(false);
 
 const capRanges = ['Mega', 'Large', 'Mid', 'Small', 'Micro'];
 
-const allCryptoAssets: AssetInfo[] = [
+const loading = ref(false);
+const useRealData = ref(true);
+
+// Инициализируем allCryptoAssets как реактивный массив
+const allCryptoAssets = ref<AssetInfo[]>([
   // Layer 1 - Основные блокчейны
   { name: 'Bitcoin', symbol: 'BTC', price: '64,230.50', change: '+2.45%', cap: '1.2T', vol: '35B', category: 'Crypto', region: 'Layer1' },
   { name: 'Ethereum', symbol: 'ETH', price: '3,450.20', change: '-1.12%', cap: '400B', vol: '15B', category: 'Crypto', region: 'Layer1' },
@@ -319,17 +332,184 @@ const allCryptoAssets: AssetInfo[] = [
   { name: 'Klaytn', symbol: 'KLAY', price: '0.18', change: '+1.25%', cap: '680M', vol: '35M', category: 'Crypto', region: 'Layer1' },
   { name: 'Terra Classic', symbol: 'LUNC', price: '0.00012', change: '+3.25%', cap: '720M', vol: '85M', category: 'Crypto', region: 'Layer1' },
   { name: 'Terra', symbol: 'LUNA', price: '0.65', change: '+2.15%', cap: '450M', vol: '45M', category: 'Crypto', region: 'Layer1' },
-];
+]);
+
+// Функция для определения типа криптовалюты на основе символа
+const getCryptoType = (symbol: string): string => {
+  const symbolUpper = symbol.toUpperCase();
+  
+  // Layer 1
+  if (['BTC', 'ETH', 'SOL', 'ADA', 'AVAX', 'DOT', 'ATOM', 'NEAR', 'ALGO', 'XTZ', 'HBAR', 'FTM', 'APT', 'SUI', 'TRX', 'TON', 'ICP', 'VET', 'EOS', 'WAVES', 'ZIL', 'ONE', 'EGLD', 'CELO', 'KLAY', 'LUNC', 'LUNA'].includes(symbolUpper)) {
+    return 'Layer1';
+  }
+  // Layer 2
+  if (['MATIC', 'ARB', 'OP', 'IMX', 'LRC', 'STRK'].includes(symbolUpper)) {
+    return 'Layer2';
+  }
+  // DeFi
+  if (['UNI', 'LINK', 'AAVE', 'MKR', 'COMP', 'CRV', 'SUSHI', 'CAKE', '1INCH', 'YFI', 'SNX', 'BAL', 'CVX', 'FRAX', 'LDO'].includes(symbolUpper)) {
+    return 'DeFi';
+  }
+  // Stablecoin
+  if (['USDT', 'USDC', 'DAI', 'BUSD', 'TUSD', 'USDP', 'GUSD', 'HUSD'].includes(symbolUpper)) {
+    return 'Stablecoin';
+  }
+  // Payment
+  if (['XRP', 'LTC', 'BCH', 'XLM', 'DASH', 'XMR', 'ZEC'].includes(symbolUpper)) {
+    return 'Payment';
+  }
+  // NFT
+  if (['SAND', 'MANA', 'AXS', 'ENJ', 'FLOW', 'IMX', 'APE'].includes(symbolUpper)) {
+    return 'NFT';
+  }
+  // Meme
+  if (['DOGE', 'SHIB', 'PEPE', 'FLOKI', 'BONK', 'WIF', 'MEME', 'MYRO', 'POPCAT', 'MEW'].includes(symbolUpper)) {
+    return 'Meme';
+  }
+  // Exchange
+  if (['BNB', 'CRO', 'KCS', 'HT', 'OKB', 'FTT', 'LEO', 'GT'].includes(symbolUpper)) {
+    return 'Exchange';
+  }
+  // Gaming
+  if (['GALA', 'ILV', 'ATLAS', 'POLIS', 'MAGIC', 'GMT', 'GFT', 'HOOK', 'HFT'].includes(symbolUpper)) {
+    return 'Gaming';
+  }
+  // AI
+  if (['FET', 'AGIX', 'OCEAN', 'RNDR', 'TAO', 'AI', 'OLAS', 'ARKM', 'GLM', 'NMR', 'CTXC', 'DBC', 'VXV', 'COTI', 'GRT'].includes(symbolUpper)) {
+    return 'AI';
+  }
+  // Privacy
+  if (['XMR', 'ZEC', 'DASH', 'ZEN'].includes(symbolUpper)) {
+    return 'Privacy';
+  }
+  // Infrastructure
+  if (['FIL', 'AR', 'HNT', 'THETA', 'BAT'].includes(symbolUpper)) {
+    return 'Infrastructure';
+  }
+  
+  return 'Layer1'; // По умолчанию
+};
+
+// Функция для загрузки популярных криптовалют и расширения списка
+const loadPopularCryptos = async () => {
+  try {
+    console.log('🔄 Loading popular cryptos from API...');
+    const cryptoTickers = await getPopularCryptos();
+    console.log(`✅ Loaded ${cryptoTickers.length} popular cryptos from API`);
+    
+    // Создаем мапу существующих символов для быстрой проверки
+    const existingSymbols = new Set(allCryptoAssets.value.map(a => a.symbol));
+    
+    // Добавляем новые криптовалюты, которых еще нет в списке
+    let addedCount = 0;
+    cryptoTickers.forEach(ticker => {
+      // Извлекаем символ из формата SYMBOL-USD
+      const symbol = ticker.replace('-USD', '');
+      
+      if (!existingSymbols.has(symbol)) {
+        const cryptoType = getCryptoType(symbol);
+        
+        allCryptoAssets.value.push({
+          name: symbol,
+          symbol: symbol,
+          price: '0.00',
+          change: '+0.00%',
+          cap: '-',
+          vol: '-',
+          category: 'Crypto',
+          region: cryptoType
+        });
+        existingSymbols.add(symbol);
+        addedCount++;
+      }
+    });
+    
+    console.log(`✅ Added ${addedCount} new cryptos to the list`);
+  } catch (error: any) {
+    console.error('❌ Error loading popular cryptos:', error);
+    console.warn('⚠️ Using static cryptos only');
+  }
+};
+
+// Функция для загрузки реальных данных о криптовалютах
+const loadRealData = async () => {
+  if (!useRealData.value) {
+    console.log('Real data loading is disabled');
+    return;
+  }
+  
+  loading.value = true;
+  try {
+    // Сначала загружаем популярные криптовалюты и расширяем список
+    await loadPopularCryptos();
+    
+    // Получаем список всех криптовалют
+    const allCryptoTickers = allCryptoAssets.value.map(asset => `${asset.symbol}-USD`);
+    
+    console.log('🔄 Loading market data for', allCryptoTickers.length, 'cryptos...');
+    
+    // Загружаем данные батчами по 20 криптовалют для оптимизации
+    const batchSize = 20;
+    let updatedCount = 0;
+    
+    for (let i = 0; i < allCryptoTickers.length; i += batchSize) {
+      const batch = allCryptoTickers.slice(i, i + batchSize);
+      console.log(`📦 Loading batch ${Math.floor(i / batchSize) + 1}/${Math.ceil(allCryptoTickers.length / batchSize)} (${batch.length} cryptos)...`);
+      
+      // Загружаем данные для каждого тикера в батче
+      const promises = batch.map(async (ticker) => {
+        try {
+          const cryptoData = await getCryptoInfo(ticker);
+          const symbol = ticker.replace('-USD', '');
+          
+          const assetIndex = allCryptoAssets.value.findIndex(a => a.symbol === symbol);
+          if (assetIndex !== -1) {
+            allCryptoAssets.value[assetIndex].price = cryptoData.price.toFixed(2);
+            allCryptoAssets.value[assetIndex].change = `${cryptoData.changePercent >= 0 ? '+' : ''}${cryptoData.changePercent.toFixed(2)}%`;
+            allCryptoAssets.value[assetIndex].name = cryptoData.name || symbol;
+            if (cryptoData.marketCap) {
+              const capB = cryptoData.marketCap / 1e9;
+              allCryptoAssets.value[assetIndex].cap = capB >= 1000 ? `${(capB / 1000).toFixed(1)}T` : `${capB.toFixed(2)}B`;
+            }
+            if (cryptoData.volume) {
+              const volM = cryptoData.volume / 1e6;
+              allCryptoAssets.value[assetIndex].vol = volM >= 1000 ? `${(volM / 1000).toFixed(2)}B` : `${volM.toFixed(2)}M`;
+            }
+            updatedCount++;
+          }
+        } catch (error: any) {
+          console.warn(`⚠️ Error loading ${ticker}:`, error.message);
+        }
+      });
+      
+      await Promise.all(promises);
+      
+      // Небольшая задержка между батчами
+      if (i + batchSize < allCryptoTickers.length) {
+        await new Promise(resolve => setTimeout(resolve, 500));
+      }
+    }
+    
+    console.log(`✅ Updated ${updatedCount} cryptos with real data`);
+  } catch (error: any) {
+    console.error('❌ Error loading real crypto data:', error);
+    console.warn('⚠️ Falling back to static data');
+    useRealData.value = false;
+  } finally {
+    loading.value = false;
+    console.log('🏁 Crypto data loading finished');
+  }
+};
 
 // Получаем доступные типы
 const availableTypes = computed(() => {
-  const types = new Set(allCryptoAssets.map(a => a.region).filter(Boolean));
+  const types = new Set(allCryptoAssets.value.map(a => a.region).filter(Boolean));
   return Array.from(types).sort();
 });
 
 // Фильтрация по типу и капитализации
 const cryptoAssets = computed(() => {
-  let filtered = [...allCryptoAssets];
+  let filtered = [...allCryptoAssets.value];
   
   // Фильтр по типу
   if (selectedType.value !== 'All') {
@@ -435,6 +615,8 @@ const clearFilters = () => {
 // Закрытие выпадающих меню при клике вне их
 let clickOutsideHandler: ((e: MouseEvent) => void) | null = null;
 
+let updateInterval: NodeJS.Timeout | null = null;
+
 onMounted(() => {
   clickOutsideHandler = (e: MouseEvent) => {
     const target = e.target as HTMLElement;
@@ -444,11 +626,22 @@ onMounted(() => {
     }
   };
   document.addEventListener('click', clickOutsideHandler);
+  
+  // Загружаем реальные данные о криптовалютах
+  loadRealData();
+  
+  // Обновляем данные каждые 60 секунд
+  updateInterval = setInterval(() => {
+    loadRealData();
+  }, 60000);
 });
 
 onBeforeUnmount(() => {
   if (clickOutsideHandler) {
     document.removeEventListener('click', clickOutsideHandler);
+  }
+  if (updateInterval) {
+    clearInterval(updateInterval);
   }
 });
 

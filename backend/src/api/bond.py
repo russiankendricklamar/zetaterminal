@@ -15,7 +15,8 @@ class BondValuationRequest(BaseModel):
     valuationDate: str = Field(..., description="Дата оценки (YYYY-MM-DD)")
     discountYield1: float = Field(..., description="Ставка дисконтирования для сценария 1 (доходность аналога) в процентах")
     discountYield2: float = Field(..., description="Ставка дисконтирования для сценария 2 (доходность индекса) в процентах")
-    dayCount: int = Field(365, description="Базис расчета: 365 (ACT/365) или 360 (30/360)")
+    dayCount: Optional[int] = Field(None, description="Базис расчета: 365 (ACT/365) или 360 (30/360) - устаревший параметр")
+    dayCountConvention: Optional[str] = Field(None, description="Базис расчета: 'Actual/365F', 'Actual/360', 'Actual/Actual (ISDA)', '30/360 (US)', '30E/360 (ISDA)', '30E/360', 'Actual/Actual (ISMA)'")
 
 
 @router.post("/valuate", response_model=Dict[str, Any])
@@ -29,7 +30,8 @@ async def valuate_bond(request: BondValuationRequest):
             valuation_date=request.valuationDate,
             discount_yield1=request.discountYield1,
             discount_yield2=request.discountYield2,
-            day_count=request.dayCount
+            day_count=request.dayCount,
+            day_count_convention=request.dayCountConvention
         )
         return result
     except ValueError as e:

@@ -7,6 +7,8 @@ from typing import Dict, List, Optional
 from datetime import datetime, timedelta
 import logging
 
+from src.services.bond_forward_service import calculate_bond_forward_valuation
+
 logger = logging.getLogger(__name__)
 
 
@@ -445,6 +447,17 @@ def calculate_forward_valuation(
     convenience_yield: Optional[float] = 0.0,
     risk_free_rate: Optional[float] = None,
     repo_rate: Optional[float] = None,
+    # Bond параметры
+    accrued_interest: Optional[float] = 0.0,
+    coupon_rate: Optional[float] = None,
+    coupon_frequency: Optional[int] = 2,
+    face_value: Optional[float] = 100.0,
+    last_coupon_date: Optional[str] = None,
+    maturity_date: Optional[str] = None,
+    day_count_convention: Optional[str] = "ACT/365",
+    yield_curve_tenors: Optional[List[float]] = None,
+    yield_curve_rates: Optional[List[float]] = None,
+    auto_calculate_ai: Optional[bool] = True,
     # FX параметры
     buy_currency: Optional[str] = None,
     sell_currency: Optional[str] = None,
@@ -501,10 +514,39 @@ def calculate_forward_valuation(
             internal_rate=internal_rate,
             external_rate=external_rate
         )
+    elif forward_type == "bond":
+        # Форвард на облигацию - используем специализированный сервис
+        if risk_free_rate is None:
+            raise ValueError("Для форварда на облигацию необходимо указать risk_free_rate")
+        if repo_rate is None:
+            raise ValueError("Для форварда на облигацию необходимо указать repo_rate")
+        if coupon_rate is None:
+            raise ValueError("Для форварда на облигацию необходимо указать coupon_rate")
+        
+        return calculate_bond_forward_valuation(
+            spot_clean_price=spot_price,
+            market_forward_price=market_forward_price,
+            accrued_interest=accrued_interest or 0.0,
+            repo_rate=repo_rate,
+            coupon_rate=coupon_rate,
+            coupon_frequency=coupon_frequency or 2,
+            time_to_maturity=time_to_maturity,
+            risk_free_rate=risk_free_rate,
+            contract_size=contract_size,
+            face_value=face_value or 100.0,
+            valuation_date=valuation_date,
+            expiration_date=expiration_date,
+            last_coupon_date=last_coupon_date,
+            maturity_date=maturity_date,
+            day_count_convention=day_count_convention or "ACT/365",
+            yield_curve_tenors=yield_curve_tenors,
+            yield_curve_rates=yield_curve_rates,
+            auto_calculate_ai=auto_calculate_ai if auto_calculate_ai is not None else True
+        )
     else:
         # Остальные типы - используем Cost-of-Carry
         if risk_free_rate is None:
-            raise ValueError("Для форвардов типа bond/commodity/equity/rate необходимо указать risk_free_rate")
+            raise ValueError("Для форвардов типа commodity/equity/rate необходимо указать risk_free_rate")
         
         return calculate_cost_of_carry_forward(
             spot_price=spot_price,
