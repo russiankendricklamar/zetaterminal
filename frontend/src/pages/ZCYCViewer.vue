@@ -154,20 +154,23 @@
             <table class="glass-table">
               <thead>
                 <tr>
-                  <th class="text-left">#</th>
-                  <th class="text-right">Срок (годы)</th>
-                  <th class="text-right">Ставка (%)</th>
-                  <th class="text-right">Класс</th>
+                  <th class="col-index">#</th>
+                  <th class="col-term">Срок (годы)</th>
+                  <th class="col-rate">Ставка (%)</th>
+                  <th class="col-class">Класс</th>
                 </tr>
               </thead>
               <tbody>
                 <tr v-for="(point, idx) in results.data" :key="idx" :class="getRowClass(point.term)">
-                  <td class="text-left">{{ idx + 1 }}</td>
-                  <td class="text-right mono">{{ formatNumber(point.term, 4) }}</td>
-                  <td class="text-right mono text-gradient-blue">{{ formatNumber(point.value, 4) }}</td>
-                  <td class="text-right">
+                  <td class="col-index">{{ idx + 1 }}</td>
+                  <td class="col-term mono">{{ formatNumber(point.term, 4) }}</td>
+                  <td class="col-rate mono text-gradient-blue">{{ formatNumber(point.value, 4) }}</td>
+                  <td class="col-class">
                     <span class="badge-type">{{ getTermType(point.term) }}</span>
                   </td>
+                </tr>
+                <tr v-if="results.data.length === 0">
+                  <td colspan="4" class="empty-state">Нет данных для отображения</td>
                 </tr>
               </tbody>
             </table>
@@ -385,8 +388,7 @@ const loadZCYC = async () => {
     const errorMessage = error.message || 'Неизвестная ошибка'
     console.error('Детали ошибки:', {
       message: errorMessage,
-      date: params.value.date,
-      apiBase: import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
+      date: params.value.date
     })
     alert(`Ошибка загрузки кривой: ${errorMessage}\n\nПроверьте:\n1. Запущен ли бэкенд сервер\n2. Правильность URL API в настройках`)
   } finally {
@@ -750,17 +752,125 @@ onMounted(() => {
 /* ============================================
    TABLES
    ============================================ */
-.table-wrapper { overflow-x: auto; max-height: 500px; overflow-y: auto; }
-.glass-table { width: 100%; border-collapse: collapse; font-size: 12px; }
-.glass-table th {
-  text-align: left; padding: 12px 0; color: rgba(255,255,255,0.4); font-weight: 600; font-size: 10px;
-  text-transform: uppercase; border-bottom: 1px solid rgba(255,255,255,0.08);
+.table-wrapper { 
+  overflow-x: auto; 
+  max-height: 500px; 
+  overflow-y: auto;
+  border-radius: 12px;
+  background: rgba(0, 0, 0, 0.2);
 }
-.glass-table td { padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.03); color: rgba(255,255,255,0.9); }
-.glass-table tr:last-child td { border-bottom: none; }
-.glass-table tr.short-term { background: rgba(96, 165, 250, 0.05); }
-.glass-table tr.medium-term { background: rgba(34, 197, 94, 0.05); }
-.glass-table tr.long-term { background: rgba(249, 115, 22, 0.05); }
+
+.glass-table { 
+  width: 100%; 
+  border-collapse: collapse; 
+  font-size: 13px;
+  min-width: 100%;
+}
+
+.glass-table thead {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: rgba(30, 32, 40, 0.95);
+  backdrop-filter: blur(10px);
+}
+
+.glass-table th {
+  padding: 14px 16px;
+  color: rgba(255,255,255,0.5);
+  font-weight: 700;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-bottom: 2px solid rgba(255,255,255,0.1);
+  white-space: nowrap;
+}
+
+.glass-table th.col-index {
+  width: 60px;
+  text-align: center;
+}
+
+.glass-table th.col-term {
+  width: 140px;
+  text-align: right;
+}
+
+.glass-table th.col-rate {
+  width: 140px;
+  text-align: right;
+}
+
+.glass-table th.col-class {
+  width: 160px;
+  text-align: left;
+}
+
+.glass-table td {
+  padding: 12px 16px;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+  color: rgba(255,255,255,0.9);
+  transition: background-color 0.15s ease;
+}
+
+.glass-table tbody tr:hover td {
+  background-color: rgba(255,255,255,0.03);
+}
+
+.glass-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.glass-table tbody tr.short-term {
+  background: rgba(96, 165, 250, 0.05);
+}
+
+.glass-table tbody tr.short-term:hover {
+  background: rgba(96, 165, 250, 0.1);
+}
+
+.glass-table tbody tr.medium-term {
+  background: rgba(34, 197, 94, 0.05);
+}
+
+.glass-table tbody tr.medium-term:hover {
+  background: rgba(34, 197, 94, 0.1);
+}
+
+.glass-table tbody tr.long-term {
+  background: rgba(249, 115, 22, 0.05);
+}
+
+.glass-table tbody tr.long-term:hover {
+  background: rgba(249, 115, 22, 0.1);
+}
+
+.glass-table td.col-index {
+  text-align: center;
+  color: rgba(255,255,255,0.5);
+  font-weight: 500;
+}
+
+.glass-table td.col-term {
+  text-align: right;
+  font-weight: 500;
+}
+
+.glass-table td.col-rate {
+  text-align: right;
+  font-weight: 600;
+}
+
+.glass-table td.col-class {
+  text-align: left;
+}
+
+.glass-table td.empty-state {
+  text-align: center;
+  padding: 40px 20px;
+  color: rgba(255,255,255,0.4);
+  font-style: italic;
+}
 
 /* ============================================
    LISTS & METRICS

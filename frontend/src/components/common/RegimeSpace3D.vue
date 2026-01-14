@@ -70,10 +70,6 @@
           </div>
 
           <div class="view-controls">
-            <label class="checkbox-label renaissance-toggle">
-              <input type="checkbox" v-model="showRenaissanceInsights" @change="onRenaissanceToggle" />
-              <span>✨ Renaissance Insights</span>
-            </label>
             <label class="checkbox-label">
               <input type="checkbox" v-model="showTrajectory" @change="onVisibilityChange" />
               <span>Траектория</span>
@@ -141,41 +137,6 @@
           </div>
         </div>
 
-        <!-- Renaissance Insights Panel -->
-        <transition name="fade">
-          <div class="glass-card panel renaissance-panel" v-if="showRenaissanceInsights && hasData">
-            <div class="panel-header">
-              <h3>✨ Renaissance Insights</h3>
-            </div>
-            
-            <!-- Timeframe Selector -->
-            <div class="input-group">
-              <label class="lbl">Timeframe</label>
-              <select v-model="selectedTimeframe" class="glass-select" @change="onTimeframeChange">
-                <option value="intraday">Intraday</option>
-                <option value="daily">Daily</option>
-                <option value="weekly">Weekly</option>
-              </select>
-            </div>
-
-            <!-- Signal Stats -->
-            <div class="renaissance-stats" v-if="signalStats">
-              <div class="stat-item">
-                <span class="stat-label">Win Rate:</span>
-                <span class="stat-value text-green">{{ (signalStats.winRate * 100).toFixed(1) }}%</span>
-              </div>
-              <div class="stat-item">
-                <span class="stat-label">Sharpe Ratio:</span>
-                <span class="stat-value">{{ signalStats.sharpeRatio.toFixed(2) }}</span>
-              </div>
-              <div class="stat-item">
-                <span class="stat-label">Max Drawdown:</span>
-                <span class="stat-value text-red">{{ (signalStats.maxDrawdown * 100).toFixed(1) }}%</span>
-              </div>
-            </div>
-          </div>
-        </transition>
-
         <!-- Transition Matrix -->
         <transition name="fade">
           <div class="glass-card panel" v-if="transitionMatrix">
@@ -208,9 +169,6 @@
               <p class="vis-subtitle">
                 3D визуализация рыночных режимов (HMM)
               </p>
-              <div v-if="showRenaissanceInsights && hasData" class="renaissance-badge-wrapper">
-                <span class="renaissance-badge">+ RENAISSANCE MODE ACTIVE</span>
-              </div>
             </div>
 
           <!-- Timeline Controls -->
@@ -362,33 +320,6 @@
             </div>
           </div>
 
-          <!-- Legend (shown when Renaissance mode is on) -->
-          <div class="stats-card renaissance-legend" v-if="showRenaissanceInsights">
-            <h4>Renaissance Insights Легенда</h4>
-            <div class="legend-items">
-              <div class="legend-item">
-                <span class="legend-color" style="background: #ffff00;"></span>
-                <span class="legend-text">Non-random patterns (высокая предсказуемость)</span>
-              </div>
-              <div class="legend-item">
-                <span class="legend-color" style="background: rgba(255,255,255,0.3);"></span>
-                <span class="legend-text">Mean reversion bands (резиновые связи)</span>
-              </div>
-              <div class="legend-item">
-                <span class="legend-color" style="background: #4ade80;"></span>
-                <span class="legend-text">Buy signals (зеленые конусы)</span>
-              </div>
-              <div class="legend-item">
-                <span class="legend-color" style="background: #f87171;"></span>
-                <span class="legend-text">Sell signals (красные конусы)</span>
-              </div>
-              <div class="legend-item">
-                <span class="legend-color" style="background: #ffd700; opacity: 0.4;"></span>
-                <span class="legend-text">Renaissance benchmark (золотая линия)</span>
-              </div>
-            </div>
-          </div>
-
           <!-- Export Buttons -->
           <div class="export-section">
             <button @click="exportScreenshot" class="btn-export">
@@ -427,16 +358,12 @@ const currentTimeIndex = ref(0)
 const isPlaying = ref(false)
 const playbackSpeed = ref(1)
 const autoRotate = ref(false)
-const selectedTimeframe = ref('daily')
-const signalStats = ref<{ winRate: number; sharpeRatio: number; maxDrawdown: number } | null>(null)
-
 // Visualization toggles - изначально включены сетка, эллипсоиды и траектория (для автоматической анимации)
 const showTrajectory = ref(true)
 const showEllipsoids = ref(true)
 const showCentroids = ref(false)
 const showGrid = ref(true)
 const showTransitionArrows = ref(false)
-const showRenaissanceInsights = ref(false)
 
 // Hover интерактивность
 const hoverInfo = ref<HoverInfo | null>(null)
@@ -597,7 +524,6 @@ const runAnalysis = async () => {
   }
   
   console.log('Starting HMM analysis...', {
-    asset: selectedAsset.value,
     nStates: nStates.value,
     containerSize: {
       width: canvasContainer.value.clientWidth,
@@ -609,74 +535,79 @@ const runAnalysis = async () => {
   hasData.value = false
   
   try {
-    // Generate mock data (в реальном приложении - загрузка с API)
-    await new Promise(resolve => setTimeout(resolve, 500))
-    allMarketData.value = generateMockMarketData(500)
+    // Загружаем данные из HMM модели
+    const { getChartData, getRegimeStatistics, getTransitionMatrix } = await import('@/services/multivariateHmmService')
+    const { usePortfolioStore } = await import('@/stores/portfolio')
+    const portfolioStore = usePortfolioStore()
     
-    // Initialize HMM Model with correct number of states
-    // First, create a default model, then update it with computed transition matrix
-    hmmModel.value = new HMMModel()
+    // Получаем данные для визуализации
+    const chartDataResponse = await getChartData()
     
-    // Update model to use correct number of states
-    const defaultMatrix = hmmModel.value.getTransitionMatrix()
-    const defaultMeans = hmmModel.value.getEmissionMeans()
-    const defaultCovs = hmmModel.value.getEmissionCovariances()
-    
-    // Ensure arrays exist and have valid length
-    if (!defaultMatrix || !defaultMeans || !defaultCovs || 
-        defaultMatrix.length === 0 || defaultMeans.length === 0 || defaultCovs.length === 0) {
-      throw new Error('Failed to get default HMM model parameters')
+    if (!chartDataResponse.success || !chartDataResponse.data || chartDataResponse.data.length === 0) {
+      throw new Error('Нет данных HMM модели. Сначала запустите анализ на странице RegimeAnalysis.')
     }
     
-    // Adjust to match nStates
-    const adjustedMatrix: number[][] = []
+    // Преобразуем данные в формат MarketPoint
+    allMarketData.value = chartDataResponse.data.map((d: any, idx: number) => ({
+      date: new Date(Date.now() - (chartDataResponse.data.length - idx) * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+      return: (d.price - 100) / 100, // Приблизительная доходность
+      volatility: d.vol,
+      liquidity: 0.5 + Math.random() * 0.5, // Заглушка для ликвидности
+      regime: d.regime,
+      probability: Array(nStates.value).fill(0).map((_, i) => i === d.regime ? 0.8 : 0.2 / (nStates.value - 1))
+    }))
+    
+    // Получаем матрицу переходов и статистику из HMM модели
+    const [matrixResponse, statsResponse] = await Promise.all([
+      getTransitionMatrix(),
+      getRegimeStatistics()
+    ])
+    
+    // Обновляем количество состояний на основе данных
+    nStates.value = matrixResponse.n_regimes
+    
+    // Инициализируем HMM модель с данными из бэкенда
+    hmmModel.value = new HMMModel()
+    
+    // Используем матрицу переходов из бэкенда
+    const backendMatrix = matrixResponse.transition_matrix
+    
+    // Вычисляем средние и ковариации из статистики
     const adjustedMeans: number[][] = []
     const adjustedCovs: number[][][] = []
     
-    for (let i = 0; i < nStates.value; i++) {
-      const row: number[] = []
-      for (let j = 0; j < nStates.value; j++) {
-        if (i < defaultMatrix.length && defaultMatrix[i] && j < defaultMatrix[i].length) {
-          row.push(defaultMatrix[i][j])
-        } else {
-          // Equal probability for new states
-          row.push(1 / nStates.value)
-        }
-      }
-      // Normalize row
-      const sum = row.reduce((a, b) => a + b, 0)
-      if (sum > 0) {
-        row.forEach((val, idx) => row[idx] = val / sum)
-      }
-      adjustedMatrix.push(row)
+    for (let i = 0; i < statsResponse.statistics.length; i++) {
+      const stat = statsResponse.statistics[i]
+      // Преобразуем средние доходности в формат [return, volatility, liquidity]
+      const meanReturn = stat.mean.reduce((a: number, b: number) => a + b, 0) / stat.mean.length
+      const meanVol = stat.volatility_per_asset.reduce((a: number, b: number) => a + b, 0) / stat.volatility_per_asset.length
+      adjustedMeans.push([meanReturn, meanVol, 0.5])
       
-      if (i < defaultMeans.length && defaultMeans[i] && i < defaultCovs.length && defaultCovs[i]) {
-        adjustedMeans.push([...defaultMeans[i]])
-        adjustedCovs.push(defaultCovs[i].map((covRow: number[]) => [...covRow]))
+      // Создаем ковариационную матрицу из данных
+      const cov = stat.covariance
+      if (cov && cov.length >= 3 && cov[0].length >= 3) {
+        adjustedCovs.push([
+          [cov[0][0] || 0.01, cov[0][1] || 0, cov[0][2] || 0],
+          [cov[1][0] || 0, cov[1][1] || 0.01, cov[1][2] || 0],
+          [cov[2][0] || 0, cov[2][1] || 0, 0.1]
+        ])
       } else {
-        // Use last regime's parameters for extra states
-        const lastIdx = Math.max(0, defaultMeans.length - 1)
-        if (defaultMeans[lastIdx] && defaultCovs[lastIdx]) {
-          adjustedMeans.push([...defaultMeans[lastIdx]])
-          adjustedCovs.push(defaultCovs[lastIdx].map((covRow: number[]) => [...covRow]))
-        } else {
-          // Fallback to default values if arrays are empty
-          adjustedMeans.push([0, 10, 0.5])
-          adjustedCovs.push([[1, 0, 0], [0, 1, 0], [0, 0, 0.1]])
-        }
+        // Fallback ковариационная матрица
+        adjustedCovs.push([
+          [0.01, 0, 0],
+          [0, 0.01, 0],
+          [0, 0, 0.1]
+        ])
       }
     }
     
     hmmModel.value.setParameters({
       nStates: nStates.value,
-      transitionMatrix: adjustedMatrix,
+      transitionMatrix: backendMatrix,
       initialStateDistribution: Array(nStates.value).fill(1 / nStates.value),
       emissionMeans: adjustedMeans,
       emissionCovariances: adjustedCovs
     })
-    
-    // Compute transition matrix from data
-    computeTransitionMatrixFromData()
     
     // Compute stationary distribution
     if (hmmModel.value) {
@@ -690,9 +621,7 @@ const runAnalysis = async () => {
     }
     
     // Update transition matrix display
-    if (hmmModel.value) {
-      transitionMatrix.value = hmmModel.value.getTransitionMatrix()
-    }
+    transitionMatrix.value = backendMatrix
     
     // Initialize renderer
     if (canvasContainer.value && !renderer) {
@@ -781,11 +710,6 @@ const runAnalysis = async () => {
       const configs = getRegimeConfigs()
       renderer.setData(filteredData.value, hmmModel.value, configs)
       
-      // Restore Renaissance mode if it was enabled
-      if (showRenaissanceInsights.value) {
-        renderer.setRenaissanceMode(true, filteredData.value, hmmModel.value, configs)
-        calculateSignalStats()
-      }
     }
     
     currentTimeIndex.value = filteredData.value.length - 1
@@ -806,47 +730,6 @@ const runAnalysis = async () => {
   }
 }
 
-const computeTransitionMatrixFromData = () => {
-  if (!hmmModel.value || allMarketData.value.length === 0) return
-  
-  // Count transitions
-  const transitions: number[][] = Array(nStates.value)
-    .fill(0)
-    .map(() => Array(nStates.value).fill(0))
-  
-  for (let i = 1; i < allMarketData.value.length; i++) {
-    const prev = allMarketData.value[i - 1].regime || 0
-    const curr = allMarketData.value[i].regime || 0
-    
-    // Clamp regime indices to valid range [0, nStates - 1]
-    const prevClamped = Math.max(0, Math.min(prev, nStates.value - 1))
-    const currClamped = Math.max(0, Math.min(curr, nStates.value - 1))
-    
-    // Check bounds before accessing array
-    if (prevClamped >= 0 && prevClamped < transitions.length && 
-        currClamped >= 0 && currClamped < transitions[prevClamped].length) {
-      transitions[prevClamped][currClamped]++
-    }
-  }
-  
-  // Normalize to probabilities
-  const matrix: number[][] = []
-  for (let i = 0; i < nStates.value; i++) {
-    const row: number[] = []
-    if (!transitions[i]) {
-      // Initialize empty row if missing
-      transitions[i] = Array(nStates.value).fill(0)
-    }
-    const total = transitions[i].reduce((a, b) => a + b, 0) || 1
-    for (let j = 0; j < nStates.value; j++) {
-      row.push((transitions[i][j] || 0) / total)
-    }
-    matrix.push(row)
-  }
-  
-  // Update model (simplified - в реальности нужен Baum-Welch)
-  hmmModel.value.setParameters({ transitionMatrix: matrix })
-}
 
 const onAssetChange = () => {
   runAnalysis()
@@ -881,30 +764,6 @@ const onTransitionArrowsChange = () => {
   renderer.setShowTransitionArrows(showTransitionArrows.value)
 }
 
-const onRenaissanceToggle = () => {
-  if (!renderer || !hmmModel.value) return
-  renderer.setRenaissanceMode(showRenaissanceInsights.value, filteredData.value, hmmModel.value, getRegimeConfigs())
-  if (showRenaissanceInsights.value) {
-    // Calculate signal stats
-    calculateSignalStats()
-  } else {
-    signalStats.value = null
-  }
-}
-
-const onTimeframeChange = () => {
-  if (!renderer || !hmmModel.value || !showRenaissanceInsights.value) return
-  renderer.setTimeframe(selectedTimeframe.value)
-}
-
-const calculateSignalStats = () => {
-  // Mock signal statistics - в реальности вычисляется на основе сигналов
-  signalStats.value = {
-    winRate: 0.68,
-    sharpeRatio: 2.45,
-    maxDrawdown: 0.12
-  }
-}
 
 const setCameraPreset = (preset: CameraPreset) => {
   if (renderer) {
@@ -925,11 +784,6 @@ const onTimelineChange = () => {
     currentTimeIndex.value = Math.max(0, Math.min(currentTimeIndex.value, maxIndex))
     
     renderer.setTimeIndex(currentTimeIndex.value)
-    
-    // Обновляем Renaissance Mode элементы при изменении временного индекса
-    if (showRenaissanceInsights.value && hasData.value && hmmModel.value) {
-      renderer.setRenaissanceMode(true, filteredData.value, hmmModel.value, getRegimeConfigs())
-    }
     
     // Update transition arrows if shown
     if (showTransitionArrows.value) {
@@ -1401,11 +1255,6 @@ onUnmounted(() => {
   margin: 4px 0 8px 0;
 }
 
-.renaissance-badge-wrapper {
-  display: block;
-  margin-top: 8px;
-  margin-bottom: 0;
-}
 
 .timeline-controls {
   display: flex;
@@ -1826,69 +1675,12 @@ onUnmounted(() => {
 .text-accent { color: #3b82f6; }
 .font-bold { font-weight: 700; }
 
-/* Renaissance Insights Styles */
-.renaissance-toggle {
-  background: linear-gradient(135deg, rgba(255, 215, 0, 0.1), rgba(255, 165, 0, 0.1));
-  border: 1px solid rgba(255, 215, 0, 0.3);
-  border-radius: 8px;
-  padding: 10px 12px;
-  margin-bottom: 8px;
-}
-
-.renaissance-toggle:hover {
-  background: linear-gradient(135deg, rgba(255, 215, 0, 0.15), rgba(255, 165, 0, 0.15));
-  border-color: rgba(255, 215, 0, 0.5);
-}
-
-.renaissance-toggle input[type="checkbox"]:checked ~ span {
-  color: #ffd700;
-  font-weight: 700;
-}
-
-.renaissance-panel {
-  border: 1px solid rgba(255, 215, 0, 0.2);
-  background: rgba(255, 215, 0, 0.05);
-}
-
-.renaissance-stats {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  margin-top: 12px;
-  padding-top: 12px;
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.renaissance-stats .stat-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  font-size: 11px;
-  padding: 6px 0;
-}
-
-.renaissance-stats .stat-label {
-  color: rgba(255, 255, 255, 0.6);
-  font-weight: 500;
-}
-
-.renaissance-stats .stat-value {
-  font-weight: 700;
-  font-family: "SF Mono", monospace;
-  font-size: 12px;
-}
-
 /* Info hints and legends */
 .info-hint {
   font-size: 10px;
   color: rgba(255, 255, 255, 0.4);
   margin: 0 0 12px 0;
   font-style: italic;
-}
-
-.renaissance-legend {
-  border: 1px solid rgba(255, 215, 0, 0.2);
-  background: rgba(255, 215, 0, 0.03);
 }
 
 .legend-items {
@@ -1969,39 +1761,6 @@ onUnmounted(() => {
   font-weight: 600;
 }
 
-.renaissance-badge-wrapper {
-  display: block;
-  margin-top: 8px;
-  margin-bottom: 0;
-}
-
-.renaissance-badge {
-  display: inline-flex;
-  align-items: center;
-  padding: 8px 16px;
-  background: linear-gradient(135deg, rgba(255, 215, 0, 0.3), rgba(255, 165, 0, 0.3));
-  border: 2px solid rgba(255, 215, 0, 0.6);
-  border-radius: 10px;
-  font-size: 13px;
-  font-weight: 700;
-  color: #ffd700;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  animation: pulse-gold 2s ease-in-out infinite;
-  box-shadow: 0 0 20px rgba(255, 215, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.2);
-  text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
-}
-
-@keyframes pulse-gold {
-  0%, 100% { 
-    opacity: 1;
-    box-shadow: 0 0 10px rgba(255, 215, 0, 0.3);
-  }
-  50% { 
-    opacity: 0.8;
-    box-shadow: 0 0 20px rgba(255, 215, 0, 0.5);
-  }
-}
 
 .fade-enter-active,
 .fade-leave-active {

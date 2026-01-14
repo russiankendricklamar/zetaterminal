@@ -14,61 +14,52 @@
       </div>
     </div>
 
+    <!-- Loading State -->
+    <div v-if="isLoading" class="loading-container">
+        <div class="spinner-large"></div>
+        <p>Загрузка данных режимов...</p>
+    </div>
+
     <!-- 1. KEY METRICS CARDS -->
-    <div class="grid-3 mb-6">
-        <!-- Stability -->
-        <div class="glass-card regime-card border-blue">
+    <div v-else class="grid-3 mb-6">
+        <div 
+            v-for="(stat, i) in regimeStats" 
+            :key="i"
+            :class="['glass-card regime-card', `border-${getRegimeColor(i)}`]"
+        >
             <div class="card-head">
-                <span class="dot bg-blue"></span>
-                <h3>Состояние 0: Стабильность</h3>
+                <span :class="['dot', `bg-${getRegimeColor(i)}`]"></span>
+                <h3>Состояние {{ i }}: {{ getRegimeName(i) }}</h3>
             </div>
             <div class="card-body">
-                <p class="desc">Динамическое равновесие без ярко выраженного направления. Рынок стабилизируется, волатильность минимальна.</p>
-                <div class="metrics-table">
-                    <div class="m-row"><span>Количество дней</span> <strong>272</strong></div>
-                    <div class="m-row"><span>Доля периода</span> <strong>70.8%</strong></div>
-                    <div class="m-row"><span>Ср. доходность</span> <strong class="text-blue">+0.005%</strong></div>
-                    <div class="m-row"><span>Волатильность</span> <strong>0.375%</strong></div>
-                    <div class="m-row"><span>Устойчивость</span> <strong>0.9632</strong></div>
-                    <div class="m-row"><span>Ожид. длительность</span> <strong>27.2 дня</strong></div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Decline -->
-        <div class="glass-card regime-card border-red">
-            <div class="card-head">
-                <span class="dot bg-red"></span>
-                <h3>Состояние 1: Падение</h3>
-            </div>
-            <div class="card-body">
-                <p class="desc">Фаза понижательного тренда с высокой волатильностью. "Липкое" состояние с короткими отскоками.</p>
-                <div class="metrics-table">
-                    <div class="m-row"><span>Количество дней</span> <strong>60</strong></div>
-                    <div class="m-row"><span>Доля периода</span> <strong>15.6%</strong></div>
-                    <div class="m-row"><span>Ср. доходность</span> <strong class="text-red">-0.039%</strong></div>
-                    <div class="m-row"><span>Волатильность</span> <strong>0.652%</strong></div>
-                    <div class="m-row"><span>Устойчивость</span> <strong>0.6667</strong></div>
-                    <div class="m-row"><span>Ожид. длительность</span> <strong>3.0 дня</strong></div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Growth -->
-        <div class="glass-card regime-card border-green">
-            <div class="card-head">
-                <span class="dot bg-green"></span>
-                <h3>Состояние 2: Рост</h3>
-            </div>
-            <div class="card-body">
-                <p class="desc">Периоды возрастающего тренда. Систематический рост стоимости активов с умеренными колебаниями.</p>
-                <div class="metrics-table">
-                    <div class="m-row"><span>Количество дней</span> <strong>52</strong></div>
-                    <div class="m-row"><span>Доля периода</span> <strong>13.5%</strong></div>
-                    <div class="m-row"><span>Ср. доходность</span> <strong class="text-green">+0.036%</strong></div>
-                    <div class="m-row"><span>Волатильность</span> <strong>0.479%</strong></div>
-                    <div class="m-row"><span>Устойчивость</span> <strong>0.6471</strong></div>
-                    <div class="m-row"><span>Ожид. длительность</span> <strong>2.8 дня</strong></div>
+                <p class="desc">{{ getRegimeDescription(i) }}</p>
+                <div class="metrics-table" v-if="getRegimeStats(i)">
+                    <div class="m-row">
+                        <span>Количество дней</span> 
+                        <strong>{{ getRegimeStats(i)!.days }}</strong>
+                    </div>
+                    <div class="m-row">
+                        <span>Доля периода</span> 
+                        <strong>{{ (getRegimeStats(i)!.frequency * 100).toFixed(1) }}%</strong>
+                    </div>
+                    <div class="m-row">
+                        <span>Ср. доходность</span> 
+                        <strong :class="getRegimeStats(i)!.meanReturn >= 0 ? 'text-green' : 'text-red'">
+                            {{ (getRegimeStats(i)!.meanReturn * 100).toFixed(3) }}%
+                        </strong>
+                    </div>
+                    <div class="m-row">
+                        <span>Волатильность</span> 
+                        <strong>{{ (getRegimeStats(i)!.volatility * 100).toFixed(3) }}%</strong>
+                    </div>
+                    <div class="m-row">
+                        <span>Устойчивость</span> 
+                        <strong>{{ getRegimeStats(i)!.persistence.toFixed(4) }}</strong>
+                    </div>
+                    <div class="m-row">
+                        <span>Ожид. длительность</span> 
+                        <strong>{{ getRegimeStats(i)!.duration ? getRegimeStats(i)!.duration.toFixed(1) + ' дня' : '∞' }}</strong>
+                    </div>
                 </div>
             </div>
         </div>
@@ -83,29 +74,29 @@
                 <h3>Матрица переходов</h3>
             </div>
             <div class="heatmap-container">
-                <div class="heatmap-grid">
+                <div class="heatmap-grid" v-if="transitionMatrix">
                     <div class="h-label">От \ К</div>
-                    <div class="h-col-header text-blue">Стаб</div>
-                    <div class="h-col-header text-red">Падение</div>
-                    <div class="h-col-header text-green">Рост</div>
+                    <div 
+                        v-for="j in transitionMatrix.length" 
+                        :key="j"
+                        :class="['h-col-header', `text-${getRegimeColor(j-1)}`]"
+                    >
+                        {{ getRegimeName(j-1).substring(0, 6) }}
+                    </div>
 
-                    <!-- Row 0 -->
-                    <div class="h-row-header text-blue">Стаб</div>
-                    <div class="h-cell" style="background: rgba(59, 130, 246, 0.8)">0.96</div>
-                    <div class="h-cell" style="background: rgba(248, 113, 113, 0.05)">0.02</div>
-                    <div class="h-cell" style="background: rgba(74, 222, 128, 0.05)">0.01</div>
-
-                    <!-- Row 1 -->
-                    <div class="h-row-header text-red">Падение</div>
-                    <div class="h-cell" style="background: rgba(59, 130, 246, 0.1)">0.08</div>
-                    <div class="h-cell" style="background: rgba(248, 113, 113, 0.6)">0.67</div>
-                    <div class="h-cell" style="background: rgba(74, 222, 128, 0.2)">0.25</div>
-
-                    <!-- Row 2 -->
-                    <div class="h-row-header text-green">Рост</div>
-                    <div class="h-cell" style="background: rgba(59, 130, 246, 0.1)">0.08</div>
-                    <div class="h-cell" style="background: rgba(248, 113, 113, 0.2)">0.27</div>
-                    <div class="h-cell" style="background: rgba(74, 222, 128, 0.6)">0.65</div>
+                    <template v-for="(row, i) in transitionMatrix" :key="i">
+                        <div :class="['h-row-header', `text-${getRegimeColor(i)}`]">
+                            {{ getRegimeName(i).substring(0, 6) }}
+                        </div>
+                        <div 
+                            v-for="(prob, j) in row" 
+                            :key="j"
+                            class="h-cell"
+                            :style="{ background: `rgba(${getRegimeColorRgb(j)}, ${prob * 0.8})` }"
+                        >
+                            {{ prob.toFixed(2) }}
+                        </div>
+                    </template>
                 </div>
                 <div class="analysis-note mt-4">
                     <p>• <strong>Стабильность</strong> имеет наивысшую инерцию (0.96).<br>• Из <strong>Падения</strong> выход в Рост (25%) вероятнее, чем в Стабильность (8%).</p>
@@ -122,23 +113,38 @@
             
             <div class="table-wrapper">
                 <table class="glass-table">
-                    <thead>
+                    <thead v-if="transitionMatrix">
                         <tr>
                             <th class="text-left pl-2">Горизонт</th>
-                            <th class="text-blue text-right">P(Стаб)</th>
-                            <th class="text-red text-right">P(Пад)</th>
-                            <th class="text-green text-right">P(Рост)</th>
+                            <th 
+                                v-for="(stat, i) in regimeStats" 
+                                :key="i"
+                                :class="[`text-${getRegimeColor(i)}`, 'text-right']"
+                            >
+                                P({{ getRegimeName(i).substring(0, 4) }})
+                            </th>
                         </tr>
                     </thead>
-                    <tbody>
-                        <tr><td class="pl-2">1 день</td><td class="text-right">7.8%</td><td class="text-right">27.5%</td><td class="text-right">64.7%</td></tr>
-                        <tr><td class="pl-2">5 дней</td><td class="text-right">31.7%</td><td class="text-right">35.2%</td><td class="text-right">33.1%</td></tr>
-                        <tr><td class="pl-2">10 дней</td><td class="text-right">49.0%</td><td class="text-right">26.8%</td><td class="text-right">24.2%</td></tr>
+                    <tbody v-if="transitionMatrix && stationaryDistribution.length > 0">
+                        <tr v-for="horizon in [1, 5, 10]" :key="horizon">
+                            <td class="pl-2">{{ horizon }} {{ horizon === 1 ? 'день' : 'дней' }}</td>
+                            <td 
+                                v-for="(prob, i) in computeForecast(horizon)" 
+                                :key="i"
+                                class="text-right"
+                            >
+                                {{ (prob * 100).toFixed(1) }}%
+                            </td>
+                        </tr>
                         <tr class="stationary">
                             <td class="pl-2 text-orange font-bold">∞ (Долгосрочный)</td>
-                            <td class="text-right font-bold text-orange">70.8%</td>
-                            <td class="text-right font-bold text-orange">15.6%</td>
-                            <td class="text-right font-bold text-orange">13.5%</td>
+                            <td 
+                                v-for="(prob, i) in stationaryDistribution" 
+                                :key="i"
+                                class="text-right font-bold text-orange"
+                            >
+                                {{ (prob * 100).toFixed(1) }}%
+                            </td>
                         </tr>
                     </tbody>
                 </table>
@@ -228,8 +234,146 @@
 </template>
 
 <script setup lang="ts">
-// Logic is mostly static visualization of the report data
-// In a real app, this data would come from the backend HMM result object
+import { ref, computed, onMounted } from 'vue'
+import { usePortfolioStore } from '@/stores/portfolio'
+import { getRegimeStatistics, getTransitionMatrix, getChartData } from '@/services/multivariateHmmService'
+
+const portfolioStore = usePortfolioStore()
+
+const regimeStats = ref<any[]>([])
+const transitionMatrix = ref<number[][] | null>(null)
+const chartData = ref<any[]>([])
+const isLoading = ref(true)
+
+// Загружаем данные при монтировании компонента
+onMounted(async () => {
+    try {
+        const [statsResponse, matrixResponse, chartResponse] = await Promise.all([
+            getRegimeStatistics(),
+            getTransitionMatrix(),
+            getChartData()
+        ])
+        
+        regimeStats.value = statsResponse.statistics
+        transitionMatrix.value = matrixResponse.transition_matrix
+        chartData.value = chartResponse.data
+        
+        isLoading.value = false
+    } catch (e) {
+        console.error('Ошибка загрузки данных режимов:', e)
+        isLoading.value = false
+    }
+})
+
+// Вычисляем стационарное распределение из матрицы переходов
+const stationaryDistribution = computed(() => {
+    if (!transitionMatrix.value) return []
+    
+    // Используем метод степеней для вычисления стационарного распределения
+    let pi = Array(transitionMatrix.value.length).fill(1 / transitionMatrix.value.length)
+    
+    for (let i = 0; i < 100; i++) {
+        const newPi = transitionMatrix.value[0].map((_, j) => 
+            pi.reduce((sum, p, k) => sum + p * transitionMatrix.value![k][j], 0)
+        )
+        const sum = newPi.reduce((a, b) => a + b, 0)
+        pi = newPi.map(p => p / sum)
+    }
+    
+    return pi
+})
+
+// Вычисляем ожидаемую длительность режимов
+const expectedDurations = computed(() => {
+    if (!transitionMatrix.value) return []
+    
+    return transitionMatrix.value.map((row, i) => {
+        const persistence = row[i]
+        if (persistence >= 1) return null
+        return 1 / (1 - persistence)
+    })
+})
+
+// Получаем статистику для режима
+const getRegimeStats = (regimeId: number) => {
+    if (!regimeStats.value[regimeId]) return null
+    
+    const stat = regimeStats.value[regimeId]
+    const daysInRegime = chartData.value.filter(d => d.regime === regimeId).length
+    const totalDays = chartData.value.length
+    const frequency = daysInRegime / totalDays
+    
+    return {
+        days: daysInRegime,
+        frequency: frequency,
+        meanReturn: stat.mean.reduce((a: number, b: number) => a + b, 0) / stat.mean.length,
+        volatility: stat.volatility_per_asset.reduce((a: number, b: number) => a + b, 0) / stat.volatility_per_asset.length,
+        persistence: stat.persistence,
+        duration: stat.duration_days
+    }
+}
+
+// Получаем название режима
+const getRegimeName = (regimeId: number) => {
+    const names = ['Стабильность', 'Падение', 'Рост', 'Коррекция', 'Восстановление']
+    return names[regimeId] || `Режим ${regimeId}`
+}
+
+// Получаем цвет режима
+const getRegimeColor = (regimeId: number) => {
+    const colors = ['blue', 'red', 'green', 'orange', 'purple']
+    return colors[regimeId % colors.length]
+}
+
+// Получаем описание режима
+const getRegimeDescription = (regimeId: number) => {
+    const descriptions = [
+        'Динамическое равновесие без ярко выраженного направления. Рынок стабилизируется, волатильность минимальна.',
+        'Фаза понижательного тренда с высокой волатильностью. "Липкое" состояние с короткими отскоками.',
+        'Периоды возрастающего тренда. Систематический рост стоимости активов с умеренными колебаниями.',
+        'Коррекционная фаза после роста. Умеренное снижение с сохранением общей тенденции.',
+        'Фаза восстановления после падения. Постепенный возврат к равновесию.'
+    ]
+    return descriptions[regimeId] || 'Режим рыночной активности'
+}
+
+// Получаем RGB цвет для режима
+const getRegimeColorRgb = (regimeId: number) => {
+    const colors = [
+        '59, 130, 246',  // blue
+        '248, 113, 113', // red
+        '74, 222, 128',  // green
+        '251, 191, 36',  // orange
+        '168, 85, 247'   // purple
+    ]
+    return colors[regimeId % colors.length]
+}
+
+// Вычисляем прогноз на горизонт дней
+const computeForecast = (horizon: number) => {
+    if (!transitionMatrix.value || !transitionMatrix.value.length) return []
+    
+    // Начальное состояние: последний режим из данных
+    const lastRegime = chartData.value.length > 0 
+        ? chartData.value[chartData.value.length - 1].regime 
+        : 0
+    
+    let state = Array(transitionMatrix.value.length).fill(0)
+    state[lastRegime] = 1
+    
+    // Умножаем на матрицу переходов horizon раз
+    for (let i = 0; i < horizon; i++) {
+        const newState = Array(transitionMatrix.value.length).fill(0)
+        for (let j = 0; j < transitionMatrix.value.length; j++) {
+            for (let k = 0; k < transitionMatrix.value.length; k++) {
+                newState[j] += state[k] * transitionMatrix.value[k][j]
+            }
+        }
+        state = newState
+    }
+    
+    return state
+}
 </script>
 
 <style scoped>
@@ -341,6 +485,9 @@
 .font-bold { font-weight: 700; }
 .mb-6 { margin-bottom: 24px; }
 .flex-col { display: flex; flex-direction: column; }
+.loading-container { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 400px; gap: 16px; }
+.spinner-large { width: 40px; height: 40px; border: 3px solid rgba(255,255,255,0.1); border-top-color: #3b82f6; border-radius: 50%; animation: spin 1s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
 
 @media (max-width: 1200px) {
   .grid-3 { grid-template-columns: 1fr; }

@@ -24,6 +24,7 @@ from src.api import market_data
 from src.api import database
 from src.api import spectral_regime
 from src.api import zcyc
+from src.api import multivariate_hmm
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -74,6 +75,7 @@ app.include_router(market_data.router, prefix="/api/market", tags=["market_data"
 app.include_router(database.router, prefix="/api/db", tags=["database"])
 app.include_router(spectral_regime.router, prefix="/api/spectral-regime", tags=["spectral_regime"])
 app.include_router(zcyc.router, prefix="/api", tags=["zcyc"])
+app.include_router(multivariate_hmm.router, prefix="/api", tags=["multivariate_hmm"])
 
 
 @app.get("/")

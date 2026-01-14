@@ -52,42 +52,35 @@
                 <div class="panel-header"><h3>Параметры модели</h3></div>
                 
                 <div class="controls-form">
-                    <!-- Asset Select -->
+                    <!-- Bank Portfolio Info -->
                     <div class="input-group">
-                        <label class="lbl">Актив</label>
-                        <div class="select-wrapper">
-                            <select v-model="selectedAsset" class="glass-select full-width">
-                                <option value="SPY">S&P 500 (SPY)</option>
-                                <option value="QQQ">Nasdaq 100 (QQQ)</option>
-                                <option value="BTC">Bitcoin (BTC)</option>
-                                <option value="IMOEX">IMOEX Index</option>
-                            </select>
+                        <label class="lbl">Портфель банка</label>
+                        <div class="glass-pill status-pill">
+                            <span class="status-label text-muted">
+                                <b class="text-white">{{ portfolioStore.selectedBank?.name || 'Не выбран' }}</b>
+                            </span>
                         </div>
+                        <p class="info-text">Используется портфель из {{ portfolioStore.positions.length }} активов</p>
                     </div>
                     
-                    <!-- N States -->
+                    <!-- Auto Optimize -->
                     <div class="input-group mt-2">
+                        <label class="checkbox-label">
+                            <input type="checkbox" v-model="autoOptimize" />
+                            <span>Автоматически определить количество режимов</span>
+                        </label>
+                    </div>
+
+                    <!-- N States -->
+                    <div class="input-group mt-2" v-if="!autoOptimize">
                         <label class="lbl">Количество режимов</label>
                         <div class="scrub-row">
                             <ScrubInput 
                                 v-model="nComponents" 
-                                :min="2" :max="4" :step="1" 
+                                :min="2" :max="5" :step="1" 
                                 class="text-accent font-bold"
                             />
                             <span class="unit">режимов</span>
-                        </div>
-                    </div>
-
-                    <!-- Shock Multiplier -->
-                    <div class="input-group mt-2">
-                        <label class="lbl">Множитель шока волатильности</label>
-                        <div class="scrub-row">
-                            <ScrubInput 
-                                v-model="shockMultiplier" 
-                                :min="0.5" :max="3.0" :step="0.1" :decimals="1"
-                                suffix="x"
-                                class="text-accent font-bold"
-                            />
                         </div>
                     </div>
 
@@ -266,14 +259,16 @@
 <script setup lang="ts">
 import { ref, computed, onUnmounted } from 'vue'
 import { useTaskStore } from '@/stores/tasks'
+import { usePortfolioStore } from '@/stores/portfolio'
 import ScrubInput from '@/components/common/ScrubInput.vue'
 import RegimeSpace3D from '@/components/common/RegimeSpace3D.vue'
 
 const taskStore = useTaskStore()
+const portfolioStore = usePortfolioStore()
 const selectedAsset = ref('SPY')
 const nComponents = ref(3)
+const autoOptimize = ref(true)
 const viewMode = ref<'2d' | '3d'>('2d') 
-const shockMultiplier = ref(1.0)
 const isLoading = ref(false)
 
 const transitionMatrix = ref<number[][] | null>(null)
@@ -294,25 +289,77 @@ const runHMM = async () => {
     isLoading.value = true
     stopPlay()
     
-    const taskId = taskStore.addTask(`Обучение HMM на ${selectedAsset.value}...`, 'simulation')
+    const bankName = portfolioStore.selectedBank?.name || 'Портфель'
+    const taskId = taskStore.addTask(`Обучение HMM на портфеле ${bankName}...`, 'simulation')
 
     try {
         taskStore.updateProgress(taskId, 10)
-        await new Promise(r => setTimeout(r, 600)) 
-
-        for(let i=30; i<=90; i+=20) {
-            await new Promise(r => setTimeout(r, 300))
-            taskStore.updateProgress(taskId, i)
+        
+        // Обучаем модель на портфеле банка
+        const { fitModel, getChartData, getRegimeStatistics, getTransitionMatrix } = await import('@/services/multivariateHmmService')
+        
+        const fitResult = await fitModel({
+            bank_reg_number: portfolioStore.selectedBank?.regNumber,
+            auto_optimize: autoOptimize.value,
+            n_regimes: autoOptimize.value ? undefined : nComponents.value,
+            criterion: 'aicc',
+            max_iterations: 50,
+            tol: 1e-6,
+            random_state: 42,
+            period_days: 252
+        })
+        
+        taskStore.updateProgress(taskId, 70)
+        
+        // Обновляем количество режимов, если было автоматически определено
+        if (autoOptimize.value) {
+            nComponents.value = fitResult.n_regimes
         }
-
-        generateMockResults()
+        
+        // Получаем данные для визуализации
+        const chartDataResponse = await getChartData()
+        
+        taskStore.updateProgress(taskId, 85)
+        
+        // Получаем статистику режимов
+        const statsResponse = await getRegimeStatistics()
+        
+        // Получаем матрицу переходов
+        const matrixResponse = await getTransitionMatrix()
+        
+        taskStore.updateProgress(taskId, 95)
+        
+        // Обновляем данные
+        chartData.value = chartDataResponse.data.map((d: any) => ({
+            price: d.price,
+            regime: d.regime,
+            vol: d.vol
+        }))
+        
+        transitionMatrix.value = matrixResponse.transition_matrix
+        
+        // Обновляем статистику режимов (используем среднее по всем активам)
+        regimeStats.value = statsResponse.statistics.map((stat: any) => {
+            const avgMean = stat.mean.reduce((a: number, b: number) => a + b, 0) / stat.mean.length
+            const avgVol = stat.volatility_per_asset.reduce((a: number, b: number) => a + b, 0) / stat.volatility_per_asset.length
+            return {
+                ret: (avgMean * 100).toFixed(2),
+                vol: (avgVol * 100).toFixed(1)
+            }
+        })
+        
+        playbackIndex.value = chartData.value.length - 1
         taskStore.updateProgress(taskId, 100)
         
-        playbackIndex.value = 0
-        togglePlay()
+        // Автоматически запускаем воспроизведение
+        setTimeout(() => {
+            togglePlay()
+        }, 500)
 
-    } catch (e) {
+    } catch (e: any) {
+        console.error('Ошибка обучения HMM:', e)
         taskStore.failTask(taskId)
+        alert(`Ошибка: ${e.message || 'Неизвестная ошибка'}`)
     } finally {
         isLoading.value = false
     }
@@ -536,6 +583,9 @@ onUnmounted(() => {
 .divider { height: 1px; background: rgba(255,255,255,0.1); margin: 8px 0; }
 .scrub-row { display: flex; align-items: center; gap: 6px; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.05); padding: 8px 12px; border-radius: 12px; }
 .unit { font-size: 12px; color: rgba(255,255,255,0.4); }
+.checkbox-label { display: flex; align-items: center; gap: 8px; font-size: 12px; color: rgba(255,255,255,0.8); cursor: pointer; }
+.checkbox-label input[type="checkbox"] { cursor: pointer; }
+.info-text { font-size: 11px; color: rgba(255,255,255,0.5); margin-top: 4px; }
 
 /* Buttons */
 .btn-primary-gradient {
