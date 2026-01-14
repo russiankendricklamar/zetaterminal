@@ -1,7 +1,7 @@
 <template>
-  <div class="flex-1 glass-panel rounded-3xl overflow-hidden shadow-2xl shadow-black/20 flex flex-col animate-fade-in h-full">
+  <div class="flex-1 glass-panel rounded-3xl overflow-hidden shadow-2xl shadow-black/20 flex flex-col animate-fade-in h-full relative">
     <!-- Header -->
-    <div class="flex items-center justify-between p-4 border-b border-white/5 bg-black/20">
+    <div class="flex items-center justify-between p-4 border-b border-white/5 bg-black/20 z-10">
       <div>
         <h2 class="text-xl font-bold text-white tracking-tight">Главная панель</h2>
         <p class="text-xs text-gray-400">Настраиваемая рабочая область</p>
@@ -11,9 +11,10 @@
     <!-- Dashboard Grid -->
     <div 
       ref="gridRef"
-      class="flex-1 p-4 overflow-auto custom-scrollbar"
+      class="flex-1 p-4 overflow-auto custom-scrollbar relative z-10"
     >
       <div 
+        v-if="widgets.length > 0"
         class="dashboard-grid"
         :style="{ gridTemplateColumns: `repeat(${gridColumns}, 1fr)` }"
       >
@@ -28,6 +29,12 @@
           :show-controls="false"
           :style="{ gridColumn: `span ${widget.width}`, gridRow: `span ${widget.height}` }"
         />
+      </div>
+      <div v-else class="flex items-center justify-center h-full">
+        <div class="text-center">
+          <p class="text-white text-lg mb-2">Нет виджетов</p>
+          <p class="text-gray-400 text-sm">Добавьте виджеты через настройки</p>
+        </div>
       </div>
     </div>
   </div>

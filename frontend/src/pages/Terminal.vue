@@ -203,12 +203,12 @@
       </header>
 
       <!-- Dynamic View Content (Multi-Window Support) -->
-      <div class="flex-1 relative overflow-hidden">
+      <div class="flex-1 relative overflow-hidden min-h-0">
         <div
           v-for="window in windows"
           :key="window.id"
           v-show="activeWindowId === window.id"
-          class="absolute inset-0"
+          class="absolute inset-0 w-full h-full"
         >
           <DashboardPage 
             v-if="window.view === 'Main'"
@@ -804,11 +804,12 @@ const DollarSignIcon = { template: '<svg viewBox="0 0 24 24" fill="none" stroke=
 <style scoped>
 /* Glass Panel - matching original design */
 .glass-panel {
-  background: rgba(30, 30, 40, 0.4);
+  background: rgba(30, 30, 40, 0.6) !important;
   backdrop-filter: blur(24px);
   -webkit-backdrop-filter: blur(24px);
   border: 1px solid rgba(255, 255, 255, 0.08);
   box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+  color: #ffffff;
 }
 
 @keyframes blob {
