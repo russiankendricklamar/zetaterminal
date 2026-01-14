@@ -4,7 +4,7 @@ Repository pattern for database operations.
 from typing import List, Optional, Dict, Any
 from datetime import datetime
 from .client import get_supabase_client
-from .models import BondValuationRecord, PortfolioRecord, CalculationHistory, MarketDataDaily
+from .models import BondValuationRecord, PortfolioRecord, CalculationHistory, MarketDataDaily, FileRecord
 
 
 class BondValuationRepository:
@@ -153,7 +153,7 @@ class MarketDataRepository:
         self.client = get_supabase_client()
         self.table = "market_data_daily"
     
-    def create_or_update(self, record: MarketDataDaily) -> Dict[str, Any]:
+    def create_or_update(self, record: "MarketDataDaily") -> Dict[str, Any]:
         """Create or update market data record (upsert)."""
         data = record.model_dump(exclude={"id", "created_at"}, exclude_none=True)
         
