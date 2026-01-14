@@ -78,6 +78,25 @@
         </div>
         <div style="display: flex; gap: 8px;">
           <button 
+            @click="exportRegistryToExcel" 
+            class="btn-secondary"
+            :disabled="registrySwaps.length === 0"
+            style="font-size: 11px; padding: 6px 12px;"
+            title="Выгрузить реестр в Excel"
+          >
+            📥 Выгрузить Excel
+          </button>
+          <button 
+            @click="saveRegistryToParquetHandler" 
+            class="btn-secondary"
+            :disabled="registrySwaps.length === 0 || savingParquet"
+            style="font-size: 11px; padding: 6px 12px;"
+            title="Сохранить реестр в Supabase (parquet)"
+          >
+            <span v-if="!savingParquet">💾 Сохранить в БД</span>
+            <span v-else>↺ Сохранение...</span>
+          </button>
+          <button 
             @click="calculateAllSwaps" 
             class="btn-secondary"
             :disabled="calculatingAll"
@@ -459,7 +478,7 @@
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 import Chart from 'chart.js/auto'
 import * as XLSX from 'xlsx'
-import { valuateSwap, type SwapValuationResponse } from '@/services/swapService'
+import { valuateSwap, saveRegistryToParquet, type SwapValuationResponse } from '@/services/swapService'
 
 const selectedSwapType = ref('irs')
 const calculating = ref(false)
@@ -469,6 +488,7 @@ const registrySwaps = ref<any[]>([])
 const selectedSwapIndex = ref<number | null>(null)
 const swapResults = ref<(SwapValuationResponse | null)[]>([])
 const calculatingAll = ref(false)
+const savingParquet = ref(false)
 const valuationDate = ref(new Date().toISOString().split('T')[0])
 
 // Swap Parameters
@@ -745,6 +765,64 @@ const calculateAllSwaps = async () => {
     error.value = `Ошибка при расчете свопов: ${err.message}`
   } finally {
     calculatingAll.value = false
+  }
+}
+
+// Export registry to Excel
+const exportRegistryToExcel = () => {
+  if (registrySwaps.value.length === 0) return
+
+  // Prepare data for export
+  const exportData = registrySwaps.value.map((swap, idx) => ({
+    '№': idx + 1,
+    'Тип': swap.swapType?.toUpperCase() || 'IRS',
+    'Номинал (млн)': swap.notional || 0,
+    'Срок (лет)': swap.tenor || 0,
+    'Фиксированная ставка (%)': swap.fixedRate || 0,
+    'Плавающая ставка (%)': swap.floatingRate || 0,
+    'Спред (bp)': swap.spread || 0,
+    'Купонов в год': swap.couponsPerYear || 2,
+    'Дисконт кривая (%)': swap.discountRate || 0,
+    'Волатильность (%)': swap.volatility || 0,
+    'Swap Value': swapResults.value[idx]?.swapValue || '',
+    'DV01': swapResults.value[idx]?.dv01 || '',
+    'Duration': swapResults.value[idx]?.duration || '',
+    'Convexity': swapResults.value[idx]?.convexity || ''
+  }))
+
+  // Create workbook
+  const ws = XLSX.utils.json_to_sheet(exportData)
+  const wb = XLSX.utils.book_new()
+  XLSX.utils.book_append_sheet(wb, ws, 'Реестр свопов')
+
+  // Generate filename with date
+  const dateStr = new Date().toISOString().split('T')[0]
+  const fileName = `реестр_свопов_${dateStr}.xlsx`
+
+  // Save file
+  XLSX.writeFile(wb, fileName)
+}
+
+// Save registry to parquet
+const saveRegistryToParquetHandler = async () => {
+  if (registrySwaps.value.length === 0) return
+
+  savingParquet.value = true
+  error.value = ''
+
+  try {
+    const result = await saveRegistryToParquet(registrySwaps.value)
+    if (result.success) {
+      error.value = `Реестр успешно сохранен: ${result.data.file_name}`
+      setTimeout(() => {
+        error.value = ''
+      }, 5000)
+    }
+  } catch (err: any) {
+    console.error('Error saving registry to parquet:', err)
+    error.value = `Ошибка при сохранении реестра: ${err.message}`
+  } finally {
+    savingParquet.value = false
   }
 }
 

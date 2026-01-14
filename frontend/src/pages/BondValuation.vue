@@ -8,10 +8,127 @@
         <p class="section-subtitle">Моделирование денежных потоков на данных MOEX ISS API</p>
       </div>
       <div class="header-actions">
+        <div class="control-group">
+          <label class="control-label">Реестр:</label>
+          <input 
+            type="file" 
+            ref="fileInputRef"
+            @change="handleFileUpload" 
+            accept=".xlsx,.xls,.xlsm"
+            style="display: none"
+            id="bond-excel-upload"
+          />
+          <button 
+            @click="() => { if (fileInputRef) fileInputRef.click() }" 
+            class="btn-glass secondary"
+            title="Загрузить реестр облигаций из Excel"
+          >
+            📂 Загрузить Excel
+          </button>
+        </div>
+        <button 
+          @click="exportRegistryToExcel" 
+          class="btn-glass secondary"
+          :disabled="registryBonds.length === 0"
+          title="Выгрузить реестр в Excel"
+        >
+          📥 Выгрузить Excel
+        </button>
         <button class="btn-glass primary" @click="calculateBond" :disabled="loading">
             <span v-if="!loading">Рассчитать</span>
             <span v-else class="flex-center"><span class="spinner-mini"></span> Загрузка...</span>
         </button>
+      </div>
+    </div>
+
+    <!-- Registry Table (if loaded) -->
+    <div v-if="registryBonds.length > 0" class="glass-card panel" style="margin-bottom: 24px;">
+      <div class="panel-header" style="display: flex; justify-content: space-between; align-items: center;">
+        <div>
+          <h3>Реестр облигаций</h3>
+          <span class="card-subtitle">Загружено облигаций: {{ registryBonds.length }}</span>
+        </div>
+        <div style="display: flex; gap: 8px;">
+          <button 
+            @click="saveRegistryToParquetHandler" 
+            class="btn-glass secondary"
+            :disabled="registryBonds.length === 0 || savingParquet"
+            style="font-size: 11px; padding: 6px 12px;"
+            title="Сохранить реестр в Supabase (parquet)"
+          >
+            <span v-if="!savingParquet">💾 Сохранить в БД</span>
+            <span v-else>↺ Сохранение...</span>
+          </button>
+          <button 
+            @click="calculateAllBonds" 
+            class="btn-glass secondary"
+            :disabled="calculatingAll"
+            style="font-size: 11px; padding: 6px 12px;"
+          >
+            <span v-if="!calculatingAll">Рассчитать все</span>
+            <span v-else>↺ Считаю...</span>
+          </button>
+          <button 
+            @click="clearRegistry" 
+            class="btn-glass secondary"
+            style="font-size: 11px; padding: 6px 12px; background: rgba(239, 68, 68, 0.2); border-color: rgba(239, 68, 68, 0.3);"
+          >
+            ✕ Очистить
+          </button>
+        </div>
+      </div>
+      <div class="table-wrapper custom-scroll">
+        <table class="glass-table">
+          <thead>
+            <tr>
+              <th>№</th>
+              <th>ISIN</th>
+              <th>Дата оценки</th>
+              <th>Y аналога (%)</th>
+              <th>Y индекса (%)</th>
+              <th>Рыночная доходность (%)</th>
+              <th>Активность рынка</th>
+              <th v-if="bondResults.length > 0">Dirty Price (Сценарий 1)</th>
+              <th v-if="bondResults.length > 0">Dirty Price (Сценарий 2)</th>
+              <th>Действие</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr 
+              v-for="(bond, idx) in registryBonds" 
+              :key="idx"
+              :class="{ 'selected': selectedBondIndex === idx }"
+              @click="selectBond(idx)"
+            >
+              <td>{{ idx + 1 }}</td>
+              <td class="mono">{{ bond.secid || '-' }}</td>
+              <td class="mono">{{ bond.valuationDate || '-' }}</td>
+              <td class="mono">{{ bond.discountYield1 ? formatNumber(bond.discountYield1, 2) : '-' }}%</td>
+              <td class="mono">{{ bond.discountYield2 ? formatNumber(bond.discountYield2, 2) : '-' }}%</td>
+              <td class="mono">{{ bond.marketYield ? formatNumber(bond.marketYield, 2) : '-' }}%</td>
+              <td>
+                <span class="market-activity-badge" :class="bond.marketActivity || 'unknown'">
+                  {{ getMarketActivityLabel(bond.marketActivity) }}
+                </span>
+              </td>
+              <td v-if="bondResults.length > 0 && bondResults[idx]" class="mono text-blue">
+                {{ bondResults[idx]?.scenario1?.dirtyPrice ? formatNumber(bondResults[idx].scenario1.dirtyPrice, 2) : '-' }} ₽
+              </td>
+              <td v-if="bondResults.length > 0 && bondResults[idx]" class="mono text-green">
+                {{ bondResults[idx]?.scenario2?.dirtyPrice ? formatNumber(bondResults[idx].scenario2.dirtyPrice, 2) : '-' }} ₽
+              </td>
+              <td>
+                <button 
+                  @click.stop="loadBondToForm(idx)" 
+                  class="btn-small"
+                  title="Загрузить в форму"
+                >
+                  Загрузить
+                </button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
       </div>
     </div>
 
@@ -47,11 +164,33 @@
                             <option value="Actual/Actual (ISMA)">Actual/Actual (ISMA) / Actual/Actual (ICMA)</option>
                         </select>
                     </div>
+
+                    <div class="form-group">
+                        <label class="lbl">
+                            <input type="checkbox" v-model="params.useMarketYield" @change="onUseMarketYieldChange" />
+                            Использовать доходность из MOEX API
+                        </label>
+                        <span class="form-hint">Если включено, доходности будут загружены из MOEX на дату оценки</span>
+                    </div>
+
+                    <div class="form-group" v-if="params.useMarketYield">
+                        <label class="lbl">Рыночная доходность (%)</label>
+                        <input 
+                            v-model.number="params.marketYield" 
+                            type="number" 
+                            step="0.1" 
+                            class="glass-input" 
+                            placeholder="15.5"
+                        />
+                        <span class="form-hint">
+                            Введите вручную или загрузите из MOEX API
+                        </span>
+                    </div>
                 </div>
             </div>
 
             <!-- SCENARIO 1: Доходность Аналога (Input Block) -->
-            <div class="glass-card panel input-scenario scenario-1-input">
+            <div class="glass-card panel input-scenario scenario-1-input" v-if="!params.useMarketYield">
                 <div class="panel-header">
                     <h3>Сценарий 1: Y аналога</h3>
                 </div>
@@ -62,13 +201,42 @@
             </div>
 
             <!-- SCENARIO 2: Доходность индекса (Input Block) -->
-            <div class="glass-card panel input-scenario scenario-2-input">
+            <div class="glass-card panel input-scenario scenario-2-input" v-if="!params.useMarketYield">
                 <div class="panel-header">
                     <h3>Сценарий 2: Y индекса</h3>
                 </div>
                 <div class="scenario-input-group">
                     <label class="lbl">Ставка дисконтирования (%)</label>
                     <input v-model.number="params.discountYield2" type="number" step="0.1" class="glass-input scenario-input" placeholder="16.0" />
+                </div>
+            </div>
+
+            <!-- Market Yield Info (when using MOEX API) -->
+            <div class="glass-card panel input-scenario scenario-1-input" v-if="params.useMarketYield">
+                <div class="panel-header">
+                    <h3>Доходность из MOEX API</h3>
+                </div>
+                <div class="scenario-input-group">
+                    <label class="lbl">Рыночная доходность на дату оценки (%)</label>
+                    <input 
+                        v-model.number="params.marketYield" 
+                        type="number" 
+                        step="0.1" 
+                        class="glass-input scenario-input" 
+                        placeholder="Введите или загрузите из MOEX"
+                    />
+                    <button 
+                        @click="fetchMarketYield" 
+                        class="btn-glass secondary"
+                        :disabled="loadingMarketYield || !params.secid || !params.valuationDate"
+                        style="margin-top: 8px; width: 100%;"
+                    >
+                        <span v-if="!loadingMarketYield">🔄 Загрузить из MOEX</span>
+                        <span v-else>↺ Загрузка...</span>
+                    </button>
+                    <span class="form-hint" style="margin-top: 8px;">
+                        Доходность будет использована для оценки вместо двух сценариев
+                    </span>
                 </div>
             </div>
 
@@ -448,7 +616,8 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
-import { valuateBond, type BondValuationResponse } from '@/services/bondService'
+import * as XLSX from 'xlsx'
+import { valuateBond, saveRegistryToParquet, type BondValuationResponse } from '@/services/bondService'
 
 // --- Types ---
 interface CashFlow {
@@ -504,6 +673,8 @@ interface BondParams {
   discountYield2: number
   dayCount?: number
   dayCountConvention?: string
+  useMarketYield?: boolean
+  marketYield?: number
 }
 
 // --- State ---
@@ -513,14 +684,69 @@ const params = ref<BondParams>({
   discountYield1: 14.0,
   discountYield2: 16.0,
   dayCount: 365,
-  dayCountConvention: ''
+  dayCountConvention: '',
+  useMarketYield: false,
+  marketYield: undefined
 })
 
 const results = ref<BondResults | null>(null)
 const loading = ref(false)
+const loadingMarketYield = ref(false)
 const error = ref('')
+const fileInputRef = ref<HTMLInputElement | null>(null)
+const registryBonds = ref<any[]>([])
+const selectedBondIndex = ref<number | null>(null)
+const bondResults = ref<(BondValuationResponse | null)[]>([])
+const calculatingAll = ref(false)
+const savingParquet = ref(false)
 
 // --- Methods ---
+
+const fetchMarketYield = async () => {
+  if (!params.value.secid || !params.value.valuationDate) {
+    error.value = 'Введите ISIN и дату оценки'
+    return
+  }
+
+  loadingMarketYield.value = true
+  error.value = ''
+
+  try {
+    const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || ''
+    const response = await fetch(
+      `${API_BASE_URL}/api/bond/market-yield?secid=${params.value.secid.trim()}&date=${params.value.valuationDate}`,
+      {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      }
+    )
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({ detail: 'Unknown error' }))
+      throw new Error(errorData.detail || `HTTP error! status: ${response.status}`)
+    }
+
+    const data = await response.json()
+    if (data.yield !== null && data.yield !== undefined) {
+      params.value.marketYield = data.yield
+    } else {
+      error.value = 'Доходность не найдена для данной даты'
+    }
+  } catch (e: any) {
+    console.error('Ошибка загрузки доходности:', e)
+    error.value = e.message || 'Ошибка загрузки доходности из MOEX API'
+  } finally {
+    loadingMarketYield.value = false
+  }
+}
+
+const onUseMarketYieldChange = () => {
+  if (params.value.useMarketYield && params.value.secid && params.value.valuationDate) {
+    fetchMarketYield()
+  }
+}
 
 const calculateBond = async () => {
   loading.value = true
@@ -534,10 +760,23 @@ const calculateBond = async () => {
     return
   }
 
-  if (!params.value.discountYield1 || !params.value.discountYield2) {
-    error.value = 'Заполните обе ставки дисконтирования'
-    loading.value = false
-    return
+  // Если используется рыночная доходность, проверяем её наличие
+  if (params.value.useMarketYield) {
+    if (!params.value.marketYield || params.value.marketYield <= 0) {
+      error.value = 'Загрузите рыночную доходность из MOEX API или введите вручную'
+      loading.value = false
+      return
+    }
+    // Используем рыночную доходность для обоих сценариев
+    params.value.discountYield1 = params.value.marketYield
+    params.value.discountYield2 = params.value.marketYield
+  } else {
+    // Проверяем оба сценария
+    if (!params.value.discountYield1 || !params.value.discountYield2) {
+      error.value = 'Заполните обе ставки дисконтирования'
+      loading.value = false
+      return
+    }
   }
 
   try {
@@ -556,6 +795,225 @@ const calculateBond = async () => {
     error.value = e.message || 'Ошибка соединения с API или получения данных облигации'
   } finally {
     loading.value = false
+  }
+}
+
+// --- Registry Management ---
+const handleFileUpload = async (event: Event) => {
+  const target = event.target as HTMLInputElement
+  const file = target.files?.[0]
+  if (!file) return
+
+  try {
+    const arrayBuffer = await file.arrayBuffer()
+    const workbook = XLSX.read(arrayBuffer, { type: 'array' })
+    const firstSheetName = workbook.SheetNames[0]
+    const worksheet = workbook.Sheets[firstSheetName]
+    const jsonData = XLSX.utils.sheet_to_json(worksheet, { raw: false })
+
+    // Парсим данные из Excel
+    const bonds: any[] = []
+    
+    for (const row of jsonData as any[]) {
+      const marketYieldStr = row['Рыночная доходность'] || row['Market Yield'] || row['market_yield'] || row['YTM'] || row['ytm'] || ''
+      const marketYield = marketYieldStr ? parseFloat(marketYieldStr) : null
+      
+      // Определяем режим: если есть рыночная доходность, используем её, иначе два сценария
+      const useMarketYield = marketYield !== null && marketYield > 0
+      
+      const bond: any = {
+        secid: row['ISIN'] || row['isin'] || row['SECID'] || row['secid'] || row['Облигация'] || '',
+        valuationDate: row['Дата оценки'] || row['Valuation Date'] || row['valuation_date'] || row['Дата'] || params.value.valuationDate,
+        useMarketYield: useMarketYield,
+        marketYield: marketYield,
+        discountYield1: useMarketYield ? marketYield : parseFloat(row['Y аналога'] || row['Y Analogue'] || row['y_analogue'] || row['Доходность 1'] || row['Discount Yield 1'] || String(params.value.discountYield1) || '14.0'),
+        discountYield2: useMarketYield ? marketYield : parseFloat(row['Y индекса'] || row['Y Index'] || row['y_index'] || row['Доходность 2'] || row['Discount Yield 2'] || String(params.value.discountYield2) || '16.0'),
+        marketActivity: row['Активность рынка'] || row['Market Activity'] || row['market_activity'] || null,
+        dayCountConvention: row['Базис расчета'] || row['Day Count'] || row['day_count'] || params.value.dayCountConvention || ''
+      }
+
+      // Проверяем, что есть минимальные данные
+      if (bond.secid && bond.secid.trim()) {
+        bonds.push(bond)
+      }
+    }
+    
+    // Если есть облигации с пустой рыночной доходностью, загружаем её из MOEX
+    for (const bond of bonds) {
+      if (bond.useMarketYield && (!bond.marketYield || bond.marketYield <= 0)) {
+        // Будет загружена при расчете
+        bond.marketYield = null
+      }
+    }
+
+    registryBonds.value = bonds
+    selectedBondIndex.value = null
+    bondResults.value = []
+    error.value = ''
+  } catch (err: any) {
+    console.error('Excel parsing error:', err)
+    error.value = `Ошибка при загрузке файла: ${err.message}`
+  }
+}
+
+const selectBond = (index: number) => {
+  selectedBondIndex.value = index
+}
+
+const loadBondToForm = (index: number) => {
+  const bond = registryBonds.value[index]
+  if (!bond) return
+
+  params.value.secid = bond.secid || params.value.secid
+  params.value.valuationDate = bond.valuationDate || params.value.valuationDate
+  params.value.discountYield1 = bond.discountYield1 || params.value.discountYield1
+  params.value.discountYield2 = bond.discountYield2 || params.value.discountYield2
+  params.value.dayCountConvention = bond.dayCountConvention || params.value.dayCountConvention
+
+  // Автоматически рассчитываем после загрузки
+  setTimeout(() => {
+    calculateBond()
+  }, 100)
+}
+
+const calculateAllBonds = async () => {
+  calculatingAll.value = true
+  bondResults.value = []
+  error.value = ''
+
+  try {
+    for (let i = 0; i < registryBonds.value.length; i++) {
+      const bond = registryBonds.value[i]
+      try {
+        // Если используется рыночная доходность и она не указана, загружаем из MOEX
+        let discountYield1 = bond.discountYield1
+        let discountYield2 = bond.discountYield2
+        
+        if (bond.useMarketYield) {
+          if (!bond.marketYield || bond.marketYield <= 0) {
+            // Загружаем из MOEX
+            try {
+              const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || ''
+              const yieldResponse = await fetch(
+                `${API_BASE_URL}/api/bond/market-yield?secid=${bond.secid.trim()}&date=${bond.valuationDate}`,
+                {
+                  method: 'GET',
+                  headers: { 'Content-Type': 'application/json' }
+                }
+              )
+              
+              if (yieldResponse.ok) {
+                const yieldData = await yieldResponse.json()
+                if (yieldData.yield !== null && yieldData.yield !== undefined) {
+                  discountYield1 = yieldData.yield
+                  discountYield2 = yieldData.yield
+                  // Сохраняем загруженную доходность
+                  registryBonds.value[i].marketYield = yieldData.yield
+                }
+              }
+            } catch (yieldErr) {
+              console.warn(`Could not fetch market yield for ${bond.secid}:`, yieldErr)
+            }
+          } else {
+            discountYield1 = bond.marketYield
+            discountYield2 = bond.marketYield
+          }
+        }
+        
+        const result = await valuateBond({
+          secid: bond.secid.trim(),
+          valuationDate: bond.valuationDate,
+          discountYield1: discountYield1,
+          discountYield2: discountYield2,
+          dayCountConvention: bond.dayCountConvention || undefined
+        })
+        bondResults.value.push(result)
+      } catch (err: any) {
+        bondResults.value.push(null)
+        console.error(`Error calculating bond ${i + 1}:`, err)
+      }
+    }
+  } catch (err: any) {
+    console.error('Error calculating bonds:', err)
+    error.value = `Ошибка при расчете облигаций: ${err.message}`
+  } finally {
+    calculatingAll.value = false
+  }
+}
+
+const exportRegistryToExcel = () => {
+  if (registryBonds.value.length === 0) return
+
+  // Prepare data for export
+  const exportData = registryBonds.value.map((bond, idx) => ({
+    '№': idx + 1,
+    'ISIN': bond.secid || '',
+    'Дата оценки': bond.valuationDate || '',
+    'Y аналога (%)': bond.discountYield1 || 0,
+    'Y индекса (%)': bond.discountYield2 || 0,
+    'Рыночная доходность (%)': bond.marketYield || '',
+    'Активность рынка': bond.marketActivity || '',
+    'Базис расчета': bond.dayCountConvention || '',
+    'Dirty Price (Сценарий 1)': bondResults.value[idx]?.scenario1?.dirtyPrice || '',
+    'Dirty Price (Сценарий 2)': bondResults.value[idx]?.scenario2?.dirtyPrice || '',
+    'Clean Price (Сценарий 1)': bondResults.value[idx]?.scenario1?.cleanPrice || '',
+    'Clean Price (Сценарий 2)': bondResults.value[idx]?.scenario2?.cleanPrice || '',
+    'Duration (Сценарий 1)': bondResults.value[idx]?.scenario1?.duration || '',
+    'Duration (Сценарий 2)': bondResults.value[idx]?.scenario2?.duration || ''
+  }))
+
+  // Create workbook
+  const ws = XLSX.utils.json_to_sheet(exportData)
+  const wb = XLSX.utils.book_new()
+  XLSX.utils.book_append_sheet(wb, ws, 'Реестр облигаций')
+
+  // Generate filename with date
+  const dateStr = new Date().toISOString().split('T')[0]
+  const fileName = `реестр_облигаций_${dateStr}.xlsx`
+
+  // Save file
+  XLSX.writeFile(wb, fileName)
+}
+
+const clearRegistry = () => {
+  registryBonds.value = []
+  selectedBondIndex.value = null
+  bondResults.value = []
+  if (fileInputRef.value) {
+    fileInputRef.value.value = ''
+  }
+}
+
+const getMarketActivityLabel = (activity: string | null | undefined): string => {
+  if (!activity) return 'Не определено'
+  const labels: Record<string, string> = {
+    'high': 'Высокая',
+    'medium': 'Средняя',
+    'low': 'Низкая',
+    'unknown': 'Не определено'
+  }
+  return labels[activity.toLowerCase()] || activity
+}
+
+const saveRegistryToParquetHandler = async () => {
+  if (registryBonds.value.length === 0) return
+
+  savingParquet.value = true
+  error.value = ''
+
+  try {
+    const result = await saveRegistryToParquet('bond', registryBonds.value)
+    if (result.success) {
+      error.value = `Реестр успешно сохранен: ${result.data.file_name}`
+      setTimeout(() => {
+        error.value = ''
+      }, 5000)
+    }
+  } catch (err: any) {
+    console.error('Error saving registry to parquet:', err)
+    error.value = `Ошибка при сохранении реестра: ${err.message}`
+  } finally {
+    savingParquet.value = false
   }
 }
 
@@ -606,6 +1064,7 @@ const formatDate = (dateStr: string) => new Date(dateStr).toLocaleDateString('ru
 .controls-form { display: flex; flex-direction: column; gap: 16px; }
 .form-group { display: flex; flex-direction: column; gap: 6px; }
 .lbl { font-size: 11px; color: rgba(255,255,255,0.6); font-weight: 600; text-transform: uppercase; }
+.form-hint { font-size: 10px; color: rgba(255,255,255,0.4); display: block; margin-top: 4px; font-style: italic; }
 
 .glass-input {
   background: rgba(0, 0, 0, 0.2);
@@ -822,5 +1281,89 @@ const formatDate = (dateStr: string) => new Date(dateStr).toLocaleDateString('ru
   .main-panel {
     padding: 10px;
   }
+}
+
+/* Registry styles */
+.btn-glass.secondary {
+  background: rgba(59, 130, 246, 0.15);
+  color: #60a5fa;
+  border: 1px solid rgba(59, 130, 246, 0.3);
+}
+
+.btn-glass.secondary:hover:not(:disabled) {
+  background: rgba(59, 130, 246, 0.25);
+  border-color: rgba(59, 130, 246, 0.5);
+}
+
+.btn-glass.secondary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.control-group {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: rgba(255,255,255,0.04);
+  padding: 8px 16px;
+  border-radius: 8px;
+  border: 1px solid rgba(255,255,255,0.08);
+}
+
+.control-label {
+  font-size: 11px;
+  color: rgba(255,255,255,0.5);
+  font-weight: 600;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.btn-small {
+  padding: 4px 8px;
+  background: rgba(59, 130, 246, 0.15);
+  color: #60a5fa;
+  border: 1px solid rgba(59, 130, 246, 0.3);
+  border-radius: 6px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-small:hover {
+  background: rgba(59, 130, 246, 0.25);
+  border-color: rgba(59, 130, 246, 0.5);
+}
+
+.market-activity-badge {
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.market-activity-badge.high {
+  background: rgba(74, 222, 128, 0.15);
+  color: #4ade80;
+}
+
+.market-activity-badge.medium {
+  background: rgba(251, 191, 36, 0.15);
+  color: #fbbf24;
+}
+
+.market-activity-badge.low {
+  background: rgba(239, 68, 68, 0.15);
+  color: #f87171;
+}
+
+.market-activity-badge.unknown {
+  background: rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.glass-table tr.selected {
+  background: rgba(59, 130, 246, 0.15);
+  border-left: 3px solid #3b82f6;
 }
 </style>

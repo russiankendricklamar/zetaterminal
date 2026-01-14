@@ -68,6 +68,25 @@
         </div>
         <div style="display: flex; gap: 8px;">
           <button 
+            @click="exportRegistryToExcel" 
+            class="btn-secondary"
+            :disabled="loadedContracts.length === 0"
+            style="font-size: 11px; padding: 6px 12px;"
+            title="Выгрузить реестр в Excel"
+          >
+            📥 Выгрузить Excel
+          </button>
+          <button 
+            @click="saveRegistryToParquetHandler" 
+            class="btn-secondary"
+            :disabled="loadedContracts.length === 0 || savingParquet"
+            style="font-size: 11px; padding: 6px 12px;"
+            title="Сохранить реестр в Supabase (parquet)"
+          >
+            <span v-if="!savingParquet">💾 Сохранить в БД</span>
+            <span v-else>↺ Сохранение...</span>
+          </button>
+          <button 
             @click="calculateAllContracts" 
             class="btn-secondary"
             :disabled="calculatingAll"
@@ -916,7 +935,7 @@
 import { ref, computed, onMounted, onBeforeUnmount, watch } from 'vue'
 import Chart from 'chart.js/auto'
 import * as XLSX from 'xlsx'
-import { valuateForward, type ForwardValuationResponse } from '@/services/forwardService'
+import { valuateForward, saveRegistryToParquet, type ForwardValuationResponse } from '@/services/forwardService'
 
 const selectedForwardType = ref('fx')
 const calculating = ref(false)
@@ -926,6 +945,7 @@ const fileInputRef = ref<HTMLInputElement | null>(null)
 const loadedContracts = ref<any[]>([])
 const selectedContractIndex = ref<number | null>(null)
 const contractResults = ref<ForwardValuationResponse[]>([])
+const savingParquet = ref(false)
 
 // Parameters
 const params = ref({
@@ -1480,6 +1500,83 @@ const calculateAllContracts = async () => {
     error.value = `Ошибка при расчете контрактов: ${err.message}`
   } finally {
     calculatingAll.value = false
+  }
+}
+
+// Export registry to Excel
+const exportRegistryToExcel = () => {
+  if (loadedContracts.value.length === 0) return
+
+  // Prepare data for export
+  const exportData = loadedContracts.value.map((contract, idx) => {
+    const baseData: any = {
+      '№': idx + 1,
+      'Тип': contract.forwardType || selectedForwardType.value,
+      'Дата оценки': contract.valuationDate || '',
+      'Дата экспирации': contract.expirationDate || '',
+      'Рыночная цена': contract.marketForwardPrice || 0
+    }
+
+    if (selectedForwardType.value === 'fx') {
+      baseData['Валюта продажи'] = contract.fxSellCurrency || ''
+      baseData['Валюта покупки'] = contract.fxBuyCurrency || ''
+      baseData['Сумма продажи'] = contract.fxSellAmount || 0
+      baseData['Сумма покупки'] = contract.fxBuyAmount || 0
+      baseData['Спот курс'] = contract.spotPrice || 0
+      baseData['Ставка покупки (%)'] = contract.fxInternalRate || 0
+      baseData['Ставка продажи (%)'] = contract.fxExternalRate || 0
+    } else {
+      baseData['Спот цена'] = contract.spotPrice || 0
+      baseData['Время до экспирации (лет)'] = contract.timeToMaturity || 0
+      baseData['Безрисковая ставка (%)'] = contract.riskFreeRate || 0
+      if (contract.forwardType === 'bond' || selectedForwardType.value === 'bond') {
+        baseData['Купонная ставка (%)'] = contract.couponRate || 0
+        baseData['Номинал'] = contract.faceValue || 0
+        baseData['Репо ставка (%)'] = contract.repoRate || 0
+      }
+    }
+
+    if (contractResults.value[idx]) {
+      baseData['Справедливая цена'] = contractResults.value[idx]?.fairForwardPrice || ''
+      baseData['Стоимость'] = contractResults.value[idx]?.forwardValue || ''
+    }
+
+    return baseData
+  })
+
+  // Create workbook
+  const ws = XLSX.utils.json_to_sheet(exportData)
+  const wb = XLSX.utils.book_new()
+  XLSX.utils.book_append_sheet(wb, ws, 'Реестр форвардов')
+
+  // Generate filename with date
+  const dateStr = new Date().toISOString().split('T')[0]
+  const fileName = `реестр_форвардов_${dateStr}.xlsx`
+
+  // Save file
+  XLSX.writeFile(wb, fileName)
+}
+
+// Save registry to parquet
+const saveRegistryToParquetHandler = async () => {
+  if (loadedContracts.value.length === 0) return
+
+  savingParquet.value = true
+  error.value = ''
+
+  try {
+    const result = await saveRegistryToParquet(loadedContracts.value)
+    if (result.success) {
+      error.value = `Реестр успешно сохранен: ${result.data.file_name}`
+      setTimeout(() => {
+        error.value = ''
+      }, 5000)
+    }
+  } catch (err: any) {
+    console.error('Error saving registry to parquet:', err)
+    error.value = `Ошибка при сохранении реестра: ${err.message}`
+  } finally {
+    savingParquet.value = false
   }
 }
 

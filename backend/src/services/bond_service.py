@@ -7,6 +7,130 @@ import os
 from typing import Dict, List, Optional
 from datetime import datetime
 import pandas as pd
+import logging
+
+logger = logging.getLogger(__name__)
+
+
+def get_market_yield_from_moex(secid: str, valuation_date: str) -> Optional[float]:
+    """
+    Получает рыночную доходность облигации из MOEX ISS API на указанную дату.
+    
+    Args:
+        secid: ISIN облигации
+        valuation_date: Дата оценки в формате YYYY-MM-DD
+        
+    Returns:
+        Рыночная доходность в процентах или None, если не найдена
+    """
+    try:
+        import requests
+        import pandas as pd
+        from datetime import datetime, timedelta
+        
+        BASE_ISS = "https://iss.moex.com/iss"
+        
+        # Преобразуем дату
+        val_date = pd.to_datetime(valuation_date)
+        
+        # Ищем данные за дату оценки и несколько дней до/после (на случай выходных)
+        date_from = (val_date - timedelta(days=5)).strftime("%Y-%m-%d")
+        date_to = (val_date + timedelta(days=5)).strftime("%Y-%m-%d")
+        
+        # Получаем исторические данные по облигации
+        url = (
+            f"{BASE_ISS}/history/engines/stock/markets/bonds/securities/{secid}.json"
+            f"?from={date_from}&till={date_to}"
+            "&iss.meta=off"
+            "&history.columns=TRADEDATE,CLOSE,YIELD"
+        )
+        
+        response = requests.get(url, timeout=10)
+        response.raise_for_status()
+        data = response.json()
+        
+        if "history" not in data or not data["history"]["data"]:
+            return None
+        
+        # Преобразуем в DataFrame
+        history_df = pd.DataFrame(
+            data["history"]["data"],
+            columns=data["history"]["columns"]
+        )
+        
+        if history_df.empty:
+            return None
+        
+        # Преобразуем даты
+        history_df["TRADEDATE"] = pd.to_datetime(history_df["TRADEDATE"])
+        
+        # Ищем данные за дату оценки или ближайшую дату до неё
+        history_df = history_df[history_df["TRADEDATE"] <= val_date]
+        
+        if history_df.empty:
+            return None
+        
+        # Берем последнюю доступную дату
+        latest_row = history_df.iloc[-1]
+        
+        # Проверяем наличие колонки YIELD
+        if "YIELD" in latest_row and pd.notna(latest_row["YIELD"]):
+            yield_value = float(latest_row["YIELD"])
+            # MOEX возвращает доходность в процентах
+            return yield_value
+        
+        # Если YIELD нет, пытаемся рассчитать из цены
+        if "CLOSE" in latest_row and pd.notna(latest_row["CLOSE"]):
+            # Здесь можно добавить расчет YTM из цены, но это сложнее
+            # Пока возвращаем None
+            return None
+        
+        return None
+        
+    except Exception as e:
+        logger.error(f"Error fetching market yield from MOEX for {secid} on {valuation_date}: {e}")
+        return None
+
+
+def determine_market_activity(
+    secid: str,
+    market_yield: Optional[float] = None,
+    trading_volume: Optional[float] = None,
+    bid_ask_spread: Optional[float] = None,
+    days_since_last_trade: Optional[int] = None
+) -> str:
+    """
+    Определяет активность рынка для облигации.
+    
+    Критерии будут добавлены позже. Пока возвращает 'unknown'.
+    
+    Args:
+        secid: ISIN облигации
+        market_yield: Рыночная доходность (%)
+        trading_volume: Объем торгов за период
+        bid_ask_spread: Спред между bid и ask (bp)
+        days_since_last_trade: Количество дней с последней сделки
+        
+    Returns:
+        'high', 'medium', 'low', или 'unknown'
+    """
+    # TODO: Реализовать критерии определения активности рынка
+    # Пока возвращаем 'unknown' как заглушку
+    
+    if market_yield is None:
+        return 'unknown'
+    
+    # Временная логика (будет заменена на реальные критерии)
+    # Пример: если есть рыночная доходность, считаем активность средней
+    if market_yield > 0:
+        # Здесь будут реальные критерии:
+        # - Объем торгов
+        # - Частота сделок
+        # - Спред bid/ask
+        # - Ликвидность
+        return 'medium'
+    
+    return 'unknown'
 
 # Добавляем корневую директорию backend в путь для импорта bond_pricing
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '../../'))

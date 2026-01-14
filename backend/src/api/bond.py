@@ -1,10 +1,13 @@
 """
 API endpoints для оценки облигаций (DCF).
 """
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Query
 from typing import Optional, Dict, Any
 from pydantic import BaseModel, Field
-from src.services.bond_service import calculate_bond_valuation
+from src.services.bond_service import calculate_bond_valuation, get_market_yield_from_moex
+import logging
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
@@ -39,4 +42,33 @@ async def valuate_bond(request: BondValuationRequest):
     except RuntimeError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
+
+
+@router.get("/market-yield", response_model=Dict[str, Any])
+async def get_market_yield(
+    secid: str = Query(..., description="ISIN облигации"),
+    date: str = Query(..., description="Дата оценки (YYYY-MM-DD)")
+):
+    """
+    Получает рыночную доходность облигации из MOEX API на указанную дату.
+    
+    Args:
+        secid: ISIN облигации
+        date: Дата оценки в формате YYYY-MM-DD
+        
+    Returns:
+        Словарь с рыночной доходностью (в процентах)
+    """
+    try:
+        yield_value = get_market_yield_from_moex(secid, date)
+        return {
+            "secid": secid,
+            "date": date,
+            "yield": yield_value
+        }
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        logger.error(f"Error getting market yield for {secid} on {date}: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
