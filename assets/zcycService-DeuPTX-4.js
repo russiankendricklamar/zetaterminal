@@ -1,0 +1,1 @@
+async function t(t){const n=new URLSearchParams;t&&n.append("date",t);const a="http://localhost:8000/api/zcyc"+(n.toString()?"?"+n.toString():""),o=await fetch(a);if(!o.ok){const t=await o.json().catch(()=>({detail:"Unknown error"}));throw new Error(t.detail||`Ошибка получения кривой: ${o.status}`)}return o.json()}export{t as getZCYC};
