@@ -10,7 +10,7 @@ Stochastic Dashboard v1 — это production-ready full-stack приложен�
 
 ---
 
-## 🎯 Ключевые возможности
+## Ключевые возможности
 
 | Модуль | Описание | Статус |
 |--------|----------|--------|
@@ -25,7 +25,7 @@ Stochastic Dashboard v1 — это production-ready full-stack приложен�
 
 ---
 
-## 🏗️ Архитектура
+## Архитектура
 
 ### High-Level Design
 
@@ -91,7 +91,7 @@ Stochastic Dashboard v1 — это production-ready full-stack приложен�
 
 ---
 
-## 📦 Установка и запуск
+## Установка и запуск
 
 ### Предварительные требования
 
@@ -155,7 +155,7 @@ docker-compose down
 
 ---
 
-## ⚙️ Конфигурация
+## Конфигурация
 
 ### Переменные окружения (`.env`)
 
@@ -221,61 +221,203 @@ hmm_models:
 
 ---
 
-## 🚀 Быстрый старт
+# Настройка Supabase для Stochastic Dashboard
 
-### Пример 1: Оценка европейского колл-опциона (Black-Scholes)
+## Создание проекта в Supabase
 
-```python
-import requests
+1. Создаем новый проект:
+2. Ждём создания проекта (обычно 1-2 минуты)
 
-# Через Python
-response = requests.post(
-    "http://localhost:8000/api/v1/pricing/european",
-    json={
-        "spot_price": 100.0,
-        "strike_price": 105.0,
-        "time_to_maturity": 1.0,
-        "risk_free_rate": 0.05,
-        "volatility": 0.2,
-        "option_type": "call"
-    }
-)
+## Получение credentials
 
-price = response.json()
-print(f"Option Price: {price['price']:.4f}")
-print(f"Greeks: {price['greeks']}")
-```
+1. В проекте переходим в **Settings** → **API**
+2. Копируем следующие значения:
+   - **Project URL** → это `SUPABASE_URL`
+   - **anon public** key → это `SUPABASE_ANON_KEY`
+   - (Опционально) **service_role** key → это `SUPABASE_SERVICE_ROLE_KEY` (для админ операций)
 
-### Пример 2: Моделирование автоколлейбла (Monte-Carlo)
+## Создание таблиц в базе данных
 
+1. В Supabase переходим в **SQL Editor**
+2. Открываем файл `backend/supabase_migrations.sql`
+3. Копирай весь SQL код
+4. Вставляем в SQL Editor в Supabase
+
+Это создаст:
+- Таблицу `bond_valuations` для хранения расчетов облигаций
+- Таблицу `portfolios` для хранения портфелей
+- Таблицу `calculation_history` для истории расчетов
+- Индексы для оптимизации запросов
+- Триггеры для автоматического обновления `updated_at`
+
+## Настройка переменных окружения
+
+### Локально (для разработки):
+
+1. Создаем файл `.env` в директории `backend/` (если его еще нет)
+2. Добавляем:
+   ```env
+   SUPABASE_URL=https://your-project-id.supabase.co
+   SUPABASE_ANON_KEY=your-anon-key-here
+   ```
+   
+### На Railway (для production):
+
+1. Открываем проект в Railway
+2. Переходим в **Settings** → **Variables**
+3. Добавляем переменные:
+   - **Key:** `SUPABASE_URL`
+   - **Value:** Project URL из Supabase
+4. Добавляем еще одну:
+   - **Key:** `SUPABASE_ANON_KEY`
+   - **Value:** anon key из Supabase
+5. Railway автоматически перезапустит сервис
+
+## Установка зависимостей
+
+В локальной разработке:
 ```bash
-# Используя CLI
-python -m app.cli.price_autocallable \
-  --spot 100 \
-  --barrier 80 \
-  --coupon 0.08 \
-  --maturity 3 \
-  --simulations 100000 \
-  --model heston
+cd backend
+pip install -r requirements.txt
 ```
 
-### Пример 3: Анализ рыночных режимов (HMM)
+На Railway зависимости установятся автоматически при деплое.
+
+## Проверка подключения
+
+### Через API:
+
+1. Запускаем backend локально или используем Railway URL
+2. Проверяем health endpoint:
+   ```bash
+   curl https://your-railway-url.railway.app/health
+   ```
+
+3. Создаем запись через API:
+   ```bash
+   curl -X POST https://your-railway-url.railway.app/api/db/bond-valuations \
+     -H "Content-Type: application/json" \
+     -d '{
+       "secid": "RU000A10AU99",
+       "valuation_date": "2026-01-13",
+       "discount_yield1": 14.0,
+       "discount_yield2": 16.0,
+       "dirty_price": 1000.50,
+       "clean_price": 995.20,
+       "ytm": 14.5,
+       "duration": 5.2
+     }'
+   ```
+
+### Через Supabase Dashboard:
+
+1. В Supabase переходим в **Table Editor**
+2. Должны быть видны таблицы: `bond_valuations`, `portfolios`, `calculation_history`
+3. Проверяем, что данные сохраняются после API запросов
+
+## Доступные API Endpoints
+
+После настройки доступны следующие endpoints:
+
+### Bond Valuations:
+- `POST /api/db/bond-valuations` - создать запись
+- `GET /api/db/bond-valuations` - получить все записи
+- `GET /api/db/bond-valuations/{id}` - получить по ID
+- `GET /api/db/bond-valuations?secid=RU000A10AU99` - получить по ISIN
+- `GET /api/db/bond-valuations?start_date=2026-01-01&end_date=2026-01-31` - получить по датам
+- `PUT /api/db/bond-valuations/{id}` - обновить запись
+- `DELETE /api/db/bond-valuations/{id}` - удалить запись
+
+### Portfolios:
+- `POST /api/db/portfolios` - создать портфель
+- `GET /api/db/portfolios` - получить все портфели
+- `GET /api/db/portfolios/{id}` - получить портфель по ID
+
+### Calculation History:
+- `POST /api/db/calculation-history` - сохранить историю расчета
+- `GET /api/db/calculation-history` - получить историю
+- `GET /api/db/calculation-history?calculation_type=bond` - получить по типу
+
+## Интеграция с существующими endpoints
+
+Можно автоматически сохранять результаты расчетов в БД. Например, в `bond.py`:
 
 ```python
-import pandas as pd
-from app.services.hmm import MarketRegimeDetector
+from src.database.repositories import BondValuationRepository, CalculationHistoryRepository
+from src.database.models import BondValuationRecord, CalculationHistory
+import time
 
-# Загрузка исторических данных
-data = pd.read_csv("data/ofz_prices.csv", index_col=0, parse_dates=True)
-
-# Обучение модели
-detector = MarketRegimeDetector(n_states=3)
-detector.fit(data['returns'].values.reshape(-1, 1))
-
-# Предсказание текущего режима
-current_regime = detector.predict_latest()
-print(f"Current Market Regime: {current_regime}")
+@router.post("/valuate", response_model=Dict[str, Any])
+async def valuate_bond(request: BondValuationRequest):
+    start_time = time.time()
+    
+    # Выполняем расчет
+    result = calculate_bond_valuation(...)
+    
+    # Сохраняем в БД
+    bond_repo = BondValuationRepository()
+    history_repo = CalculationHistoryRepository()
+    
+    # Сохраняем результат расчета
+    bond_record = BondValuationRecord(
+        secid=request.secid,
+        valuation_date=request.valuationDate,
+        discount_yield1=request.discountYield1,
+        discount_yield2=request.discountYield2,
+        dirty_price=result["scenario1"]["dirtyPrice"],
+        clean_price=result["scenario1"]["cleanPrice"],
+        ytm=result["scenario1"]["ytmPercent"],
+        duration=result["scenario1"]["duration"],
+        modified_duration=result["scenario1"].get("modifiedDuration"),
+        convexity=result["scenario1"].get("convexity")
+    )
+    bond_repo.create(bond_record)
+    
+    # Сохраняем в историю
+    execution_time = (time.time() - start_time) * 1000
+    history_record = CalculationHistory(
+        calculation_type="bond",
+        input_data=request.model_dump(),
+        result_data=result,
+        execution_time_ms=execution_time
+    )
+    history_repo.create(history_record)
+    
+    return result
 ```
+
+## Безопасность
+
+### Row Level Security (RLS)
+
+По умолчанию RLS отключен. Если нужно включить:
+
+1. В Supabase SQL Editor выполняем:
+   ```sql
+   ALTER TABLE bond_valuations ENABLE ROW LEVEL SECURITY;
+   ```
+
+2. Создаем политику доступа
+
+### Service Role Key
+
+**Важно:** Service Role Key обходит RLS и имеет полный доступ. Используем его только:
+- В backend серверах
+- Для админ операций
+
+## Мониторинг и аналитика
+
+В Supabase Dashboard доступны:
+- **Table Editor** - просмотр и редактирование данных
+- **SQL Editor** - выполнение SQL запросов
+- **Database** → **Reports** - аналитика использования
+- **Logs** - логи запросов
+
+## Полезные ссылки
+
+- [Supabase Documentation](https://supabase.com/docs)
+- [Supabase Python Client](https://github.com/supabase/supabase-py)
+- [PostgreSQL Documentation](https://www.postgresql.org/docs/)
 
 ---
 
@@ -308,7 +450,7 @@ print(f"Current Market Regime: {current_regime}")
 
 ---
 
-## 🔬 Математические модели
+## Математические модели
 
 ### 1. Стохастические модели волатильности
 
@@ -365,7 +507,7 @@ X(t; \sigma, \nu, \theta) = \theta G(t; \nu) + \sigma W(G(t; \nu))
 
 ---
 
-## 🧪 Тестирование
+## Тестирование
 
 Запуск unit-тестов backend:
 
@@ -389,7 +531,7 @@ npm run test
 
 ---
 
-## 🛠️ Структура проекта
+## Структура проекта
 
 ```text
 stochastic-dashbord-v1/
@@ -435,7 +577,7 @@ stochastic-dashbord-v1/
 
 ---
 
-## 🤝 Вклад и развитие
+## Вклад и развитие
 
 Pull Requests и feature-запросы приветствуются. Базовый workflow:
 
@@ -455,7 +597,7 @@ Pull Requests и feature-запросы приветствуются. Базов
 
 ---
 
-## ⚠️ Ограничения и дисклеймер
+## Ограничения и дисклеймер
 
 - Проект предназначен **исключительно для исследовательских и учебных целей**.
 - Реализованные модели и калибровка **не являются** рекомендацией к использованию в продакшн-системах без независимой валидации и проверки risk-моделями.
