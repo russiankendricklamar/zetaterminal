@@ -101,59 +101,44 @@ Stochastic Dashboard v1 — это production-ready full-stack приложен�
 - Redis 7+
 - Docker и Docker Compose (опционально, но рекомендуется)
 
-### Локальная установка (Development)
+# Инструкция по деплою проекта
 
-#### 1. Клонирование репозитория
+## Frontend (уже развернут)
+Frontend автоматически деплоится на GitHub Pages при пуше в `main` ветку.
 
-```bash
-git clone https://github.com/russiankendricklamar/stochastic-dashbord-v1.git
-cd stochastic-dashbord-v1
+URL: `https://russiankendricklamar.github.io/stochastic-dashbord-v1/`
+
+## Backend
+
+### Railway.app
+
+1. Создаем новый проект → **New Project** → **Deploy from GitHub repo**
+2. Выбираем репозиторий `stochastic-dashbord-v1`
+3. Railway автоматически определит что это Python проект
+4. Добавляем переменные окружения
+5. Обновляем frontend чтобы использовать этот URL:
+
+## После деплоя Backend
+
+### Обновление Frontend для использования Production API
+
+1. Получаем URL развернутого backend
+2. Обновляем GitHub Pages workflow чтобы использовать переменную окружения:
+3. После следующего пуша frontend будет использовать production backend
+
+### Локальная разработка
+
+Для локальной разработки создаем файл `frontend/.env.local`:
+```
+VITE_API_BASE_URL=http://localhost:8000
 ```
 
-#### 2. Backend setup
+## Проверка
 
-```bash
-cd backend
-
-# Создание виртуального окружения
-python -m venv venv
-source venv/bin/activate  # Linux/Mac
-# или
-venv\Scripts\activate  # Windows
-
-# Установка зависимостей
-pip install -r requirements.txt
-
-# Установка дополнительных библиотек для оптимизации
-pip install -r requirements-opt.txt
-
-# Настройка переменных окружения
-cp .env.example .env
-# Отредактируйте .env (см. раздел Configuration)
-
-# Запуск миграций
-alembic upgrade head
-
-# Запуск сервера разработки
-uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
-```
-
-API будет доступен по адресу: `http://localhost:8000`
-Документация OpenAPI: `http://localhost:8000/docs`
-
-#### 3. Frontend setup
-
-```bash
-cd frontend
-
-# Установка зависимостей
-npm install
-
-# Запуск dev-сервера
-npm run dev
-```
-
-Frontend будет доступен по адресу: `http://localhost:5173`
+После деплоя проверяем:
+1. Backend health: `https://your-backend.railway.app/health`
+2. Frontend должен работать: `https://russiankendricklamar.github.io/stochastic-dashbord-v1/`
+3. В консоли браузера не должно быть CORS ошибок
 
 ### Docker-развертывание (Production)
 
