@@ -108,9 +108,9 @@
               <div class="supernova blue"></div>
             </div>
             <div class="tool-body">
-              <div class="tool-name">Скрытая Марковская цепь</div>
+              <div class="tool-name">Анализ рыночных режимов</div>
               <div class="tool-desc">
-                Рыночные режимы, матрицы переходов, стационарное распределение
+                Рыночные режимы, комплексный анализ, стационарное распределение
               </div>
             </div>
             <div class="tool-arrow">

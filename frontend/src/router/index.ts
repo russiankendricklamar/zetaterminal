@@ -11,6 +11,7 @@ import Reports from '@/pages/Reports.vue'
 import Settings from '@/pages/Settings.vue'
 import RegimeAnalysis from '@/pages/RegimeAnalysis.vue'
 import RegimeDetails from '@/pages/RegimeDetails.vue'
+import SpectralRegimeAnalysis from '@/pages/SpectralRegimeAnalysis.vue'
 import YieldAnalysis from '@/pages/YieldAnalysis.vue'
 import BondValuation from '@/pages/BondValuation.vue'
 import ZCYCViewer from '@/pages/ZCYCViewer.vue'
@@ -127,6 +128,12 @@ const routes = [
         component: RegimeDetails,
         name: 'RegimeDetails',
         meta: { title: 'HMM Аналитика', icon: '🔬' }
+      },
+      {
+        path: 'spectral-regimes',
+        component: SpectralRegimeAnalysis,
+        name: 'SpectralRegimeAnalysis',
+        meta: { title: 'Комплексный анализ режимов', icon: '🌀' }
       },
       {
         path: 'bond-valuation',

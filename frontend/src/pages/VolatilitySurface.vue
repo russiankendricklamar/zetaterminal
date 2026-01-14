@@ -63,6 +63,13 @@
       </div>
     </div>
 
+    <!-- Error Message -->
+    <div v-if="error" class="card full-width" style="margin-bottom: 24px; background: rgba(239, 68, 68, 0.1); border-color: rgba(239, 68, 68, 0.3);">
+      <div style="padding: 12px; color: rgba(239, 68, 68, 0.9); font-size: 13px;">
+        {{ error }}
+      </div>
+    </div>
+
     <!-- Registry Table (if loaded) -->
     <div v-if="registryContracts.length > 0" class="card full-width" style="margin-bottom: 24px;">
       <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
@@ -79,6 +86,25 @@
           >
             <span v-if="!calculatingAll">Рассчитать все</span>
             <span v-else>↺ Считаю...</span>
+          </button>
+          <button 
+            @click="exportRegistryToExcel" 
+            class="btn-secondary"
+            :disabled="registryContracts.length === 0"
+            style="font-size: 11px; padding: 6px 12px;"
+            title="Выгрузить реестр в Excel"
+          >
+            📥 Выгрузить Excel
+          </button>
+          <button 
+            @click="saveRegistryToParquetHandler" 
+            class="btn-secondary"
+            :disabled="registryContracts.length === 0 || savingParquet"
+            style="font-size: 11px; padding: 6px 12px;"
+            title="Сохранить реестр в Parquet"
+          >
+            <span v-if="!savingParquet">💾 Сохранить в DB</span>
+            <span v-else>↺ Сохранение...</span>
           </button>
           <button 
             @click="clearRegistry" 
@@ -343,6 +369,7 @@ import { ref, computed, onMounted, onBeforeUnmount, nextTick } from 'vue'
 import Chart from 'chart.js/auto'
 import * as THREE from 'three'
 import * as XLSX from 'xlsx'
+import { saveRegistryToParquet } from '@/services/optionService'
 
 /* --- CONTROLS & STATE --- */
 const selectedInstrument = ref('spy')
@@ -354,6 +381,8 @@ const fileInputRef = ref<HTMLInputElement | null>(null)
 const registryContracts = ref<any[]>([])
 const selectedContractIndex = ref<number | null>(null)
 const calculatingAll = ref(false)
+const savingParquet = ref(false)
+const error = ref('')
 
 const threeCanvas = ref<HTMLCanvasElement | null>(null)
 let scene: THREE.Scene | null = null
@@ -1447,6 +1476,55 @@ const calculateAllContracts = async () => {
   setTimeout(() => {
     calculatingAll.value = false
   }, 1000)
+}
+
+// Export registry to Excel
+const exportRegistryToExcel = () => {
+  if (registryContracts.value.length === 0) return
+
+  // Prepare data for export
+  const exportData = registryContracts.value.map((contract, idx) => ({
+    '№': idx + 1,
+    'Инструмент': contract.instrument || '',
+    'Strike': contract.strike || 0,
+    'Срок': contract.tenor || '',
+    'IV (%)': contract.iv || 0
+  }))
+
+  // Create workbook
+  const ws = XLSX.utils.json_to_sheet(exportData)
+  const wb = XLSX.utils.book_new()
+  XLSX.utils.book_append_sheet(wb, ws, 'Реестр контрактов')
+
+  // Generate filename with date
+  const dateStr = new Date().toISOString().split('T')[0]
+  const fileName = `реестр_поверхности_волатильности_${dateStr}.xlsx`
+
+  // Save file
+  XLSX.writeFile(wb, fileName)
+}
+
+// Save registry to parquet
+const saveRegistryToParquetHandler = async () => {
+  if (registryContracts.value.length === 0) return
+
+  savingParquet.value = true
+  error.value = ''
+
+  try {
+    const result = await saveRegistryToParquet(registryContracts.value, 'volatility_surface')
+    if (result.success) {
+      error.value = `Реестр успешно сохранен: ${result.data.file_name}`
+      setTimeout(() => {
+        error.value = ''
+      }, 5000)
+    }
+  } catch (err: any) {
+    console.error('Error saving registry to parquet:', err)
+    error.value = `Ошибка при сохранении реестра: ${err.message}`
+  } finally {
+    savingParquet.value = false
+  }
 }
 
 // Clear registry

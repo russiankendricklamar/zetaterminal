@@ -37,6 +37,13 @@
       </div>
     </div>
 
+    <!-- Error Message -->
+    <div v-if="error" class="glass-card full-width" style="margin-bottom: 24px; background: rgba(239, 68, 68, 0.1); border-color: rgba(239, 68, 68, 0.3);">
+      <div style="padding: 12px; color: rgba(239, 68, 68, 0.9); font-size: 13px;">
+        {{ error }}
+      </div>
+    </div>
+
     <!-- Registry Table (if loaded) -->
     <div v-if="loadedOptions.length > 0" class="glass-card full-width" style="margin-bottom: 24px;">
       <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
@@ -53,6 +60,25 @@
           >
             <span v-if="!calculatingAll">Рассчитать все</span>
             <span v-else>↺ Считаю...</span>
+          </button>
+          <button 
+            @click="exportRegistryToExcel" 
+            class="btn-secondary"
+            :disabled="loadedOptions.length === 0"
+            style="font-size: 11px; padding: 6px 12px;"
+            title="Выгрузить реестр в Excel"
+          >
+            📥 Выгрузить Excel
+          </button>
+          <button 
+            @click="saveRegistryToParquetHandler" 
+            class="btn-secondary"
+            :disabled="loadedOptions.length === 0 || savingParquet"
+            style="font-size: 11px; padding: 6px 12px;"
+            title="Сохранить реестр в Parquet"
+          >
+            <span v-if="!savingParquet">💾 Сохранить в DB</span>
+            <span v-else>↺ Сохранение...</span>
           </button>
           <button 
             @click="clearRegistry" 
@@ -541,6 +567,7 @@
 <script setup lang="ts">
 import { ref, reactive, computed, onMounted, onBeforeUnmount } from 'vue'
 import * as XLSX from 'xlsx'
+import { saveRegistryToParquet } from '@/services/optionService'
 
 const params = reactive({
   S: 100,
@@ -562,6 +589,8 @@ const loadedOptions = ref<any[]>([])
 const selectedOptionIndex = ref<number | null>(null)
 const optionResults = ref<any[]>([])
 const calculatingAll = ref(false)
+const savingParquet = ref(false)
+const error = ref('')
 const optionTypeDropdownOpen = ref(false)
 const modelDropdownOpen = ref(false)
 const assetDropdownOpen = ref(false)
@@ -989,6 +1018,65 @@ const calculateAllOptions = async () => {
     alert(`Ошибка при расчете опционов: ${err.message}`)
   } finally {
     calculatingAll.value = false
+  }
+}
+
+// Export registry to Excel
+const exportRegistryToExcel = () => {
+  if (loadedOptions.value.length === 0) return
+
+  // Prepare data for export
+  const exportData = loadedOptions.value.map((option, idx) => ({
+    '№': idx + 1,
+    'Тип': option.optionType === 'call' ? 'Call' : 'Put',
+    'Модель': option.model === 'bsm' ? 'Black-Scholes' : 'Heston',
+    'Spot (S)': option.S || 0,
+    'Strike (K)': option.K || 0,
+    'Волатильность (σ, %)': option.sigma || 0,
+    'Безрисковая ставка (r, %)': option.r || 0,
+    'Дивидендная доходность (q, %)': option.q || 0,
+    'Время до экспирации (T, лет)': option.T || 0,
+    'Дата оценки': option.valuationDate || '',
+    'Дата экспирации': option.expirationDate || '',
+    'Цена опциона': optionResults.value[idx]?.price || '',
+    'Дельта': optionResults.value[idx]?.delta || '',
+    'Гамма': optionResults.value[idx]?.gamma || '',
+    'Вега': optionResults.value[idx]?.vega || ''
+  }))
+
+  // Create workbook
+  const ws = XLSX.utils.json_to_sheet(exportData)
+  const wb = XLSX.utils.book_new()
+  XLSX.utils.book_append_sheet(wb, ws, 'Реестр опционов')
+
+  // Generate filename with date
+  const dateStr = new Date().toISOString().split('T')[0]
+  const fileName = `реестр_опционов_${dateStr}.xlsx`
+
+  // Save file
+  XLSX.writeFile(wb, fileName)
+}
+
+// Save registry to parquet
+const saveRegistryToParquetHandler = async () => {
+  if (loadedOptions.value.length === 0) return
+
+  savingParquet.value = true
+  error.value = ''
+
+  try {
+    const result = await saveRegistryToParquet(loadedOptions.value)
+    if (result.success) {
+      error.value = `Реестр успешно сохранен: ${result.data.file_name}`
+      setTimeout(() => {
+        error.value = ''
+      }, 5000)
+    }
+  } catch (err: any) {
+    console.error('Error saving registry to parquet:', err)
+    error.value = `Ошибка при сохранении реестра: ${err.message}`
+  } finally {
+    savingParquet.value = false
   }
 }
 

@@ -169,7 +169,7 @@
             <div class="supernova indigo"></div>
           </div>
           <div class="tool-info">
-            <span class="tool-title">Скрытая марковская цепь</span>
+            <span class="tool-title">Анализ рыночных режимов</span>
             <span class="tool-subtitle">Модели и режимы</span>
           </div>
           <div class="chevron">
@@ -585,6 +585,7 @@ const riskItems = [
 const quantItems = [
   { path: '/regimes', label: 'Рыночные режимы' },
   { path: '/regime-details', label: 'Детальный анализ режимов' },
+  { path: '/spectral-regimes', label: 'Комплексный анализ режимов' },
   { path: '/fixed-income', label: 'Доходности облигаций' },
 ]
 

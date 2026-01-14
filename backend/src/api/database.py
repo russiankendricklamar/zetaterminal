@@ -287,20 +287,24 @@ async def export_table_parquet(
 
 
 # Registry export endpoints
+class RegistryParquetRequest(BaseModel):
+    registry_type: str
+    data: List[dict]
+    file_name: Optional[str] = None
+
 @router.post("/export/registry/parquet", response_model=dict)
 async def export_registry_parquet(
-    registry_type: str,  # 'bond', 'swap', 'forward', etc.
-    data: List[dict],
-    file_name: Optional[str] = None
+    request: RegistryParquetRequest
 ):
     """
     Export registry data to Parquet format and store in Supabase Storage.
     
     Args:
-        registry_type: Type of registry ('bond', 'swap', 'forward', etc.)
-        data: List of registry records
-        file_name: Optional custom file name
+        request: Request body with registry_type, data, and optional file_name
     """
+    registry_type = request.registry_type
+    data = request.data
+    file_name = request.file_name
     try:
         import pandas as pd
         from io import BytesIO
