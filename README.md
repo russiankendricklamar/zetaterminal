@@ -10,7 +10,7 @@ Stochastic Dashboard v1 — это production-ready full-stack приложен�
 
 ---
 
-## 🎯 Ключевые возможности
+## Ключевые возможности
 
 | Модуль | Описание | Статус |
 |--------|----------|--------|
@@ -25,7 +25,7 @@ Stochastic Dashboard v1 — это production-ready full-stack приложен�
 
 ---
 
-## 🏗️ Архитектура
+## Архитектура
 
 ### High-Level Design
 
@@ -91,7 +91,7 @@ Stochastic Dashboard v1 — это production-ready full-stack приложен�
 
 ---
 
-## 📦 Установка и запуск
+## Установка и запуск
 
 ### Предварительные требования
 
@@ -101,59 +101,44 @@ Stochastic Dashboard v1 — это production-ready full-stack приложен�
 - Redis 7+
 - Docker и Docker Compose (опционально, но рекомендуется)
 
-### Локальная установка (Development)
+# Инструкция по деплою проекта
 
-#### 1. Клонирование репозитория
+## Frontend (уже развернут)
+Frontend автоматически деплоится на GitHub Pages при пуше в `main` ветку.
 
-```bash
-git clone https://github.com/russiankendricklamar/stochastic-dashbord-v1.git
-cd stochastic-dashbord-v1
+URL: `https://russiankendricklamar.github.io/stochastic-dashbord-v1/`
+
+## Backend
+
+### Railway.app
+
+1. Создаем новый проект → **New Project** → **Deploy from GitHub repo**
+2. Выбираем репозиторий `stochastic-dashbord-v1`
+3. Railway автоматически определит что это Python проект
+4. Добавляем переменные окружения
+5. Обновляем frontend чтобы использовать этот URL:
+
+## После деплоя Backend
+
+### Обновление Frontend для использования Production API
+
+1. Получаем URL развернутого backend
+2. Обновляем GitHub Pages workflow чтобы использовать переменную окружения:
+3. После следующего пуша frontend будет использовать production backend
+
+### Локальная разработка
+
+Для локальной разработки создаем файл `frontend/.env.local`:
+```
+VITE_API_BASE_URL=http://localhost:8000
 ```
 
-#### 2. Backend setup
+## Проверка
 
-```bash
-cd backend
-
-# Создание виртуального окружения
-python -m venv venv
-source venv/bin/activate  # Linux/Mac
-# или
-venv\Scripts\activate  # Windows
-
-# Установка зависимостей
-pip install -r requirements.txt
-
-# Установка дополнительных библиотек для оптимизации
-pip install -r requirements-opt.txt
-
-# Настройка переменных окружения
-cp .env.example .env
-# Отредактируйте .env (см. раздел Configuration)
-
-# Запуск миграций
-alembic upgrade head
-
-# Запуск сервера разработки
-uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
-```
-
-API будет доступен по адресу: `http://localhost:8000`
-Документация OpenAPI: `http://localhost:8000/docs`
-
-#### 3. Frontend setup
-
-```bash
-cd frontend
-
-# Установка зависимостей
-npm install
-
-# Запуск dev-сервера
-npm run dev
-```
-
-Frontend будет доступен по адресу: `http://localhost:5173`
+После деплоя проверяем:
+1. Backend health: `https://your-backend.railway.app/health`
+2. Frontend должен работать: `https://russiankendricklamar.github.io/stochastic-dashbord-v1/`
+3. В консоли браузера не должно быть CORS ошибок
 
 ### Docker-развертывание (Production)
 
@@ -170,7 +155,7 @@ docker-compose down
 
 ---
 
-## ⚙️ Конфигурация
+## Конфигурация
 
 ### Переменные окружения (`.env`)
 
@@ -236,61 +221,596 @@ hmm_models:
 
 ---
 
-## 🚀 Быстрый старт
+# Настройка Supabase для Stochastic Dashboard
 
-### Пример 1: Оценка европейского колл-опциона (Black-Scholes)
+## Создание проекта в Supabase
+
+1. Создаем новый проект:
+2. Ждём создания проекта (обычно 1-2 минуты)
+
+## Получение credentials
+
+1. В проекте переходим в **Settings** → **API**
+2. Копируем следующие значения:
+   - **Project URL** → это `SUPABASE_URL`
+   - **anon public** key → это `SUPABASE_ANON_KEY`
+   - (Опционально) **service_role** key → это `SUPABASE_SERVICE_ROLE_KEY` (для админ операций)
+
+## Создание таблиц в базе данных
+
+1. В Supabase переходим в **SQL Editor**
+2. Открываем файл `backend/supabase_migrations.sql`
+3. Копирай весь SQL код
+4. Вставляем в SQL Editor в Supabase
+
+Это создаст:
+- Таблицу `bond_valuations` для хранения расчетов облигаций
+- Таблицу `portfolios` для хранения портфелей
+- Таблицу `calculation_history` для истории расчетов
+- Индексы для оптимизации запросов
+- Триггеры для автоматического обновления `updated_at`
+
+## Настройка переменных окружения
+
+### Локально (для разработки):
+
+1. Создаем файл `.env` в директории `backend/` (если его еще нет)
+2. Добавляем:
+   ```env
+   SUPABASE_URL=https://your-project-id.supabase.co
+   SUPABASE_ANON_KEY=your-anon-key-here
+   ```
+   
+### На Railway (для production):
+
+1. Открываем проект в Railway
+2. Переходим в **Settings** → **Variables**
+3. Добавляем переменные:
+   - **Key:** `SUPABASE_URL`
+   - **Value:** Project URL из Supabase
+4. Добавляем еще одну:
+   - **Key:** `SUPABASE_ANON_KEY`
+   - **Value:** anon key из Supabase
+5. Railway автоматически перезапустит сервис
+
+## Установка зависимостей
+
+В локальной разработке:
+```bash
+cd backend
+pip install -r requirements.txt
+```
+
+На Railway зависимости установятся автоматически при деплое.
+
+## Проверка подключения
+
+### Через API:
+
+1. Запускаем backend локально или используем Railway URL
+2. Проверяем health endpoint:
+   ```bash
+   curl https://your-railway-url.railway.app/health
+   ```
+
+3. Создаем запись через API:
+   ```bash
+   curl -X POST https://your-railway-url.railway.app/api/db/bond-valuations \
+     -H "Content-Type: application/json" \
+     -d '{
+       "secid": "RU000A10AU99",
+       "valuation_date": "2026-01-13",
+       "discount_yield1": 14.0,
+       "discount_yield2": 16.0,
+       "dirty_price": 1000.50,
+       "clean_price": 995.20,
+       "ytm": 14.5,
+       "duration": 5.2
+     }'
+   ```
+
+### Через Supabase Dashboard:
+
+1. В Supabase переходим в **Table Editor**
+2. Должны быть видны таблицы: `bond_valuations`, `portfolios`, `calculation_history`
+3. Проверяем, что данные сохраняются после API запросов
+
+## Доступные API Endpoints
+
+После настройки доступны следующие endpoints:
+
+### Bond Valuations:
+- `POST /api/db/bond-valuations` - создать запись
+- `GET /api/db/bond-valuations` - получить все записи
+- `GET /api/db/bond-valuations/{id}` - получить по ID
+- `GET /api/db/bond-valuations?secid=RU000A10AU99` - получить по ISIN
+- `GET /api/db/bond-valuations?start_date=2026-01-01&end_date=2026-01-31` - получить по датам
+- `PUT /api/db/bond-valuations/{id}` - обновить запись
+- `DELETE /api/db/bond-valuations/{id}` - удалить запись
+
+### Portfolios:
+- `POST /api/db/portfolios` - создать портфель
+- `GET /api/db/portfolios` - получить все портфели
+- `GET /api/db/portfolios/{id}` - получить портфель по ID
+
+### Calculation History:
+- `POST /api/db/calculation-history` - сохранить историю расчета
+- `GET /api/db/calculation-history` - получить историю
+- `GET /api/db/calculation-history?calculation_type=bond` - получить по типу
+
+## Интеграция с существующими endpoints
+
+Можно автоматически сохранять результаты расчетов в БД. Например, в `bond.py`:
 
 ```python
-import requests
+from src.database.repositories import BondValuationRepository, CalculationHistoryRepository
+from src.database.models import BondValuationRecord, CalculationHistory
+import time
 
-# Через Python
-response = requests.post(
-    "http://localhost:8000/api/v1/pricing/european",
-    json={
-        "spot_price": 100.0,
-        "strike_price": 105.0,
-        "time_to_maturity": 1.0,
-        "risk_free_rate": 0.05,
-        "volatility": 0.2,
-        "option_type": "call"
-    }
+@router.post("/valuate", response_model=Dict[str, Any])
+async def valuate_bond(request: BondValuationRequest):
+    start_time = time.time()
+    
+    # Выполняем расчет
+    result = calculate_bond_valuation(...)
+    
+    # Сохраняем в БД
+    bond_repo = BondValuationRepository()
+    history_repo = CalculationHistoryRepository()
+    
+    # Сохраняем результат расчета
+    bond_record = BondValuationRecord(
+        secid=request.secid,
+        valuation_date=request.valuationDate,
+        discount_yield1=request.discountYield1,
+        discount_yield2=request.discountYield2,
+        dirty_price=result["scenario1"]["dirtyPrice"],
+        clean_price=result["scenario1"]["cleanPrice"],
+        ytm=result["scenario1"]["ytmPercent"],
+        duration=result["scenario1"]["duration"],
+        modified_duration=result["scenario1"].get("modifiedDuration"),
+        convexity=result["scenario1"].get("convexity")
+    )
+    bond_repo.create(bond_record)
+    
+    # Сохраняем в историю
+    execution_time = (time.time() - start_time) * 1000
+    history_record = CalculationHistory(
+        calculation_type="bond",
+        input_data=request.model_dump(),
+        result_data=result,
+        execution_time_ms=execution_time
+    )
+    history_repo.create(history_record)
+    
+    return result
+```
+
+## Безопасность
+
+### Row Level Security (RLS)
+
+По умолчанию RLS отключен. Если нужно включить:
+
+1. В Supabase SQL Editor выполняем:
+   ```sql
+   ALTER TABLE bond_valuations ENABLE ROW LEVEL SECURITY;
+   ```
+
+2. Создаем политику доступа
+
+### Service Role Key
+
+**Важно:** Service Role Key обходит RLS и имеет полный доступ. Используем его только:
+- В backend серверах
+- Для админ операций
+
+## Мониторинг и аналитика
+
+В Supabase Dashboard доступны:
+- **Table Editor** - просмотр и редактирование данных
+- **SQL Editor** - выполнение SQL запросов
+- **Database** → **Reports** - аналитика использования
+- **Logs** - логи запросов
+
+## Полезные ссылки
+
+- [Supabase Documentation](https://supabase.com/docs)
+- [Supabase Python Client](https://github.com/supabase/supabase-py)
+- [PostgreSQL Documentation](https://www.postgresql.org/docs/)
+
+# Настройка Supabase Storage для файлов
+
+## Создание Bucket в Supabase
+
+1. В Supabase Dashboard переходим в **Storage**
+2. Настройки:
+   - **Name:** `files`
+   - **Public bucket:** OFF (приватный) или ON (публичный) - в зависимости от нужного доступа
+   - Нажимаем **Create bucket**
+
+## Настройка политик доступа (RLS)
+
+Если bucket приватный, нужно настроить политику:
+
+1. В Storage → `files` bucket → **Policies**
+2. Создаем политику:
+
+**Для чтения (SELECT):**
+```sql
+CREATE POLICY "Allow authenticated read"
+ON storage.objects FOR SELECT
+USING (bucket_id = 'files' AND auth.role() = 'authenticated');
+```
+
+**Для записи (INSERT):**
+```sql
+CREATE POLICY "Allow authenticated upload"
+ON storage.objects FOR INSERT
+WITH CHECK (bucket_id = 'files' AND auth.role() = 'authenticated');
+```
+
+**Для удаления (DELETE):**
+```sql
+CREATE POLICY "Allow authenticated delete"
+ON storage.objects FOR DELETE
+USING (bucket_id = 'files' AND auth.role() = 'authenticated');
+```
+
+Если нужен публичный доступ, используем:
+```sql
+CREATE POLICY "Allow public read"
+ON storage.objects FOR SELECT
+USING (bucket_id = 'files');
+```
+
+## Структура папок
+
+Рекомендуемая структура в Storage:
+```
+files/
+  ├── reports/
+  │   ├── 2026/
+  │   │   ├── 01/
+  │   │   │   ├── report_2026-01-13.pdf
+  │   │   │   └── ...
+  │   │   └── 02/
+  │   └── ...
+  ├── registers/
+  │   ├── 2026/
+  │   │   ├── 01/
+  │   │   │   ├── register_2026-01-13.xlsx
+  │   │   │   └── ...
+  │   │   └── ...
+  └── exports/
+      └── ...
+```
+
+## Использование через API
+
+### Загрузка файла (через API endpoint)
+
+**Пример через curl:**
+```bash
+curl -X POST https://your-api.com/api/files/upload \
+  -F "file=@/path/to/file.pdf" \
+  -F "file_type=report" \
+  -F "description=Daily report"
+```
+
+**Пример через Python:**
+```python
+from src.database.storage import StorageService
+from src.database.repositories import FileRepository
+from src.database.models import FileRecord
+
+storage = StorageService(bucket_name="files")
+file_repo = FileRepository()
+
+# Загрузить файл
+with open("report.pdf", "rb") as f:
+    file_info = storage.upload_file(
+        file_path="reports/2026/01/report_2026-01-13.pdf",
+        file_data=f,
+        file_type="report",
+        description="Daily bond report"
+    )
+
+# Сохранить метаданные в БД
+file_record = FileRecord(
+    file_name="report_2026-01-13.pdf",
+    file_path=file_info["path"],
+    file_type="report",
+    file_size=file_info["size"],
+    mime_type="application/pdf",
+    description="Daily bond report"
+)
+file_repo.create(file_record)
+```
+
+### Получение файла
+
+**Публичный URL (если bucket публичный):**
+```python
+url = storage.get_public_url("reports/2026/01/report.pdf")
+```
+
+**Подписанный URL (для приватных файлов):**
+```python
+url = storage.get_signed_url("reports/2026/01/report.pdf", expires_in=3600)
+```
+
+## Автоматизация сохранения отчетов
+
+### После генерации отчета:
+
+```python
+from src.database.storage import StorageService
+from src.database.repositories import FileRepository
+from src.database.models import FileRecord
+import io
+
+# Генерация отчета (например, в формате PDF или Excel)
+report_data = generate_report()  # bytes или file-like object
+
+# Загрузка в Storage
+storage = StorageService()
+file_path = storage.generate_file_path("reports", "report_2026-01-13.pdf")
+file_info = storage.upload_file(
+    file_path=file_path,
+    file_data=io.BytesIO(report_data),
+    file_type="report",
+    description="Daily bond valuation report"
 )
 
-price = response.json()
-print(f"Option Price: {price['price']:.4f}")
-print(f"Greeks: {price['greeks']}")
+# Сохранение метаданных
+file_repo = FileRepository()
+file_record = FileRecord(
+    file_name="report_2026-01-13.pdf",
+    file_path=file_info["path"],
+    file_type="report",
+    file_size=file_info["size"],
+    mime_type="application/pdf"
+)
+file_repo.create(file_record)
 ```
 
-### Пример 2: Моделирование автоколлейбла (Monte-Carlo)
+## Полезные ссылки
+
+- [Supabase Storage Docs](https://supabase.com/docs/guides/storage)
+- [Storage Python Client](https://supabase.com/docs/reference/python/storage-createbucket)
+
+---
+
+# Автоматизация загрузки рыночных данных
+
+### n8n Workflow
+
+Создаем workflow в n8n:
+
+```
+Schedule Trigger (Cron: 0 9 * * *) 
+  → HTTP Request (POST /api/market-data/fetch-daily)
+  → IF Node (проверка успешности)
+  → Email/Slack (уведомление об ошибках)
+```
+
+**Настройка HTTP Request:**
+- **Method:** POST
+- **URL:** `https://stochastic-dashbord-v1-production.up.railway.app/api/market-data/fetch-daily`
+- **Authentication:** None (или добавь API key если нужно)
+
+### Railway Cron Job (через API endpoint)
+
+Создаем API endpoint для запуска через HTTP запрос (уже есть в `api/market_data.py`).
+
+Затем используем n8n для планирования.
+
+## Настройка скрипта
+
+1. Редактируем список тикеров в `scripts/fetch_market_data.py`:
+   ```python
+   TICKERS = {
+       "stocks": ["SBER.ME", "GAZP.ME", ...],
+       "currencies": ["USDRUB=X", ...],
+       "indices": ["IMOEX.ME", ...]
+   }
+   ```
+
+2. Устанавливаем переменные окружения:
+   ```bash
+   export SUPABASE_URL=your-url
+   export SUPABASE_ANON_KEY=your-key
+   ```
+
+3. Запускаем вручную для теста:
+   ```bash
+   cd backend
+   python scripts/fetch_market_data.py
+   ```
+
+## Мониторинг
+
+- Проверяем таблицу `market_data_daily` в Supabase
+- Настраиваем уведомления об ошибках (Email/Slack/Telegram)
+- Добавляем логирование
+
+---
+
+# Экспорт данных в формат Parquet
+
+## Что такое Parquet?
+
+Parquet - это колоночный формат данных, оптимизированный для аналитики:
+- **Эффективное сжатие** (обычно в 5-10 раз меньше чем CSV)
+- **Быстрые запросы** (читает только нужные колонки)
+- **Поддержка типов данных** (сохраняет типы, даты, etc.)
+
+## Использование
+
+### Экспорт через API
+
+#### Экспорт рыночных данных:
 
 ```bash
-# Используя CLI
-python -m app.cli.price_autocallable \
-  --spot 100 \
-  --barrier 80 \
-  --coupon 0.08 \
-  --maturity 3 \
-  --simulations 100000 \
-  --model heston
+# Все данные
+curl -X POST https://your-api.com/api/db/export/market-data/parquet
+
+# По тикеру
+curl -X POST "https://your-api.com/api/db/export/market-data/parquet?ticker=SBER.ME"
+
+# По датам
+curl -X POST "https://your-api.com/api/db/export/market-data/parquet?start_date=2026-01-01&end_date=2026-01-31"
+
+# По типу данных
+curl -X POST "https://your-api.com/api/db/export/market-data/parquet?data_type=stock"
 ```
 
-### Пример 3: Анализ рыночных режимов (HMM)
+#### Экспорт таблицы:
+
+```bash
+curl -X POST https://your-api.com/api/db/export/table/market_data_daily/parquet
+```
+
+### Использование в Python
+
+```python
+from src.database.parquet_export import ParquetExporter
+
+exporter = ParquetExporter()
+
+# Экспорт рыночных данных
+result = exporter.export_market_data_to_parquet(
+    ticker="SBER.ME",
+    data_type="stock",
+    start_date="2026-01-01",
+    end_date="2026-01-31"
+)
+
+print(f"Exported to: {result['file_path']}")
+print(f"Records: {result['records_count']}")
+
+# Чтение Parquet файла
+df = exporter.read_parquet_from_storage("exports/2026/01/market_data_20260113.parquet")
+print(df.head())
+```
+
+### Автоматический ежедневный экспорт
+
+#### Через n8n:
+
+```
+Schedule Trigger (Cron: 0 1 * * *)  # Каждый день в 1:00
+  → HTTP Request (POST /api/db/export/market-data/parquet)
+  → Email/Slack (уведомление об успехе)
+```
+
+#### Через скрипт:
+
+```bash
+cd backend
+python scripts/daily_parquet_export.py
+```
+
+## Где хранятся файлы?
+
+Parquet файлы сохраняются в **Supabase Storage** в bucket `files`:
+
+```
+files/
+  └── exports/
+      └── parquet/
+          └── 2026/
+              └── 01/
+                  ├── market_data_20260113.parquet
+                  ├── market_data_stock_20260113.parquet
+                  └── ...
+```
+
+## Работа с Parquet файлами
+
+### Чтение в Python:
 
 ```python
 import pandas as pd
-from app.services.hmm import MarketRegimeDetector
 
-# Загрузка исторических данных
-data = pd.read_csv("data/ofz_prices.csv", index_col=0, parse_dates=True)
+# Читать из локального файла
+df = pd.read_parquet('data.parquet')
 
-# Обучение модели
-detector = MarketRegimeDetector(n_states=3)
-detector.fit(data['returns'].values.reshape(-1, 1))
+# Читать из URL (если файл публичный)
+df = pd.read_parquet('https://your-storage.supabase.co/.../file.parquet')
 
-# Предсказание текущего режима
-current_regime = detector.predict_latest()
-print(f"Current Market Regime: {current_regime}")
+# Читать через экспортер (из Storage)
+from src.database.parquet_export import ParquetExporter
+exporter = ParquetExporter()
+df = exporter.read_parquet_from_storage('exports/2026/01/file.parquet')
 ```
+
+### Чтение в других инструментах:
+
+**Pandas:**
+```python
+df = pd.read_parquet('file.parquet')
+```
+
+**Polars (быстрее для больших данных):**
+```python
+import polars as pl
+df = pl.read_parquet('file.parquet')
+```
+
+**Apache Spark:**
+```python
+df = spark.read.parquet('file.parquet')
+```
+
+**Python с PyArrow:**
+```python
+import pyarrow.parquet as pq
+table = pq.read_table('file.parquet')
+df = table.to_pandas()
+```
+
+## Примеры использования
+
+### Анализ данных в Jupyter:
+
+```python
+import pandas as pd
+
+# Загрузить данные
+df = pd.read_parquet('market_data_20260113.parquet')
+
+# Анализ
+df.groupby('data_type')['price'].mean()
+df[df['ticker'] == 'SBER.ME'].plot(x='date', y='price')
+```
+
+### Загрузка в базу данных:
+
+```python
+import pandas as pd
+from sqlalchemy import create_engine
+
+df = pd.read_parquet('data.parquet')
+engine = create_engine('postgresql://...')
+df.to_sql('analytics_table', engine, if_exists='append')
+```
+
+## API Endpoints
+
+- `POST /api/db/export/market-data/parquet` - экспорт рыночных данных
+  - Query params: `ticker`, `data_type`, `start_date`, `end_date`, `file_name`
+  
+- `POST /api/db/export/table/{table_name}/parquet` - экспорт таблицы
+  - Path param: `table_name`
+  - Query param: `file_name`
+
+## Лимиты
+
+- Размер файла зависит от данных (обычно очень компактный)
+- Supabase Storage Free tier: 1 GB (хватит на тысячи Parquet файлов)
+- Рекомендуется использовать сжатие `snappy` (баланс скорости и размера)
 
 ---
 
@@ -323,7 +843,261 @@ print(f"Current Market Regime: {current_regime}")
 
 ---
 
-## 🔬 Математические модели
+# Автоматизация с n8n
+
+Backend API доступен по адресу: `https://stochastic-dashbord-v1-production.up.railway.app`
+
+### Основные endpoints:
+
+- **Health Check:** `GET /health`
+- **Bond Valuation:** `POST /api/bond/valuate`
+- **Portfolio Metrics:** `POST /api/portfolio/metrics`
+- **Market Data:** `GET /api/market/stock/{ticker}`
+- **Stress Testing:** `POST /api/stress/test`
+- **Backtesting:** `POST /api/backtest/run`
+- **Forward Valuation:** `POST /api/forward/valuate`
+- **Swap Valuation:** `POST /api/swap/valuate`
+
+## Примеры Workflows для n8n
+
+### 1. Ежедневная оценка портфеля облигаций
+
+**Сценарий:** Каждый день в 9:00 рассчитывать стоимость портфеля облигаций и отправлять отчет.
+
+**Workflow:**
+```
+Schedule Trigger (Cron: 0 9 * * *) 
+  → HTTP Request (POST /api/bond/valuate)
+  → Process Data (форматирование результатов)
+  → Email/Slack (отправка отчета)
+```
+
+**Настройка HTTP Request:**
+- **Method:** POST
+- **URL:** `https://stochastic-dashbord-v1-production.up.railway.app/api/bond/valuate`
+- **Headers:**
+  ```json
+  {
+    "Content-Type": "application/json"
+  }
+  ```
+- **Body (JSON):**
+  ```json
+  {
+    "secid": "RU000A10AU99",
+    "valuationDate": "2026-01-13",
+    "discountYield1": 14.0,
+    "discountYield2": 16.0,
+    "dayCountConvention": "Actual/365F"
+  }
+  ```
+
+### 2. Мониторинг изменений цен облигаций
+
+**Сценарий:** Каждый час проверять изменения цен и отправлять уведомления при значительных изменениях.
+
+**Workflow:**
+```
+Schedule Trigger (Cron: 0 * * * *) 
+  → HTTP Request (GET /api/market/stock/{ticker})
+  → IF Node (проверка изменения > 1%)
+  → Slack/Telegram (уведомление)
+```
+
+### 3. Еженедельный стресс-тест портфеля
+
+**Сценарий:** Каждую неделю в понедельник запускать стресс-тестирование портфеля.
+
+**Workflow:**
+```
+Schedule Trigger (Cron: 0 10 * * 1) 
+  → HTTP Request (POST /api/stress/test)
+  → Generate PDF Report (HTML to PDF)
+  → Email (отправка отчета)
+```
+
+### 4. Автоматическое обновление данных о рыночных индексах
+
+**Сценарий:** Каждые 15 минут обновлять данные о ключевых индексах.
+
+**Workflow:**
+```
+Schedule Trigger (Cron: */15 * * * *) 
+  → HTTP Request (GET /api/market/index/{symbol})
+  → Google Sheets (сохранение данных)
+```
+
+### 5. Уведомления о важных событиях
+
+**Сценарий:** При изменении доходности облигации выше порога отправлять уведомление.
+
+**Workflow:**
+```
+Webhook Trigger (или Schedule)
+  → HTTP Request (POST /api/bond/valuate)
+  → IF Node (ytm > threshold)
+  → Telegram Bot (отправка уведомления)
+```
+
+## Настройка n8n для работы с API
+
+**Docker**
+```bash
+docker run -it --rm \
+  --name n8n \
+  -p 5678:5678 \
+  -v ~/.n8n:/home/node/.n8n \
+  n8nio/n8n
+```
+
+### Создание Workflow
+
+1. Открываем n8n интерфейс
+2. Создаем новый workflow
+3. Добавляем ноды:
+   - **Schedule Trigger** (для планирования)
+   - **HTTP Request** (для вызова API)
+   - **IF** (для условий)
+   - **Email/Slack/Telegram** (для уведомлений)
+
+### Настройка HTTP Request Node
+
+**Базовые настройки:**
+- **Method:** GET или POST (в зависимости от endpoint)
+- **URL:** `https://stochastic-dashbord-v1-production.up.railway.app/api/{endpoint}`
+- **Authentication:** None (если API публичный)
+
+**Пример для Bond Valuation:**
+```json
+{
+  "method": "POST",
+  "url": "https://stochastic-dashbord-v1-production.up.railway.app/api/bond/valuate",
+  "headers": {
+    "Content-Type": "application/json"
+  },
+  "body": {
+    "secid": "RU000A10AU99",
+    "valuationDate": "{{ $now.toFormat('yyyy-MM-dd') }}",
+    "discountYield1": 14.0,
+    "discountYield2": 16.0,
+    "dayCountConvention": "Actual/365F"
+  }
+}
+```
+
+## Полезные шаблоны
+
+### Получение текущей даты в формате API
+В n8n используем Expression:
+```javascript
+{{ $now.toFormat('yyyy-MM-dd') }}
+```
+
+### Обработка ошибок API
+Добавь **Error Trigger** node после HTTP Request для обработки ошибок.
+
+### Сохранение результатов
+- **Google Sheets** - для таблиц
+- **PostgreSQL/MySQL** - для баз данных
+- **Google Drive** - для файлов
+- **Airtable** - для структурированных данных
+
+## Примеры готовых workflows
+
+### Workflow 1: Ежедневный отчет по облигациям
+
+```json
+{
+  "name": "Daily Bond Report",
+  "nodes": [
+    {
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "parameters": {
+        "cronExpression": "0 9 * * *"
+      }
+    },
+    {
+      "type": "n8n-nodes-base.httpRequest",
+      "parameters": {
+        "method": "POST",
+        "url": "https://stochastic-dashbord-v1-production.up.railway.app/api/bond/valuate",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "secid",
+              "value": "RU000A10AU99"
+            },
+            {
+              "name": "valuationDate",
+              "value": "={{ $now.toFormat('yyyy-MM-dd') }}"
+            },
+            {
+              "name": "discountYield1",
+              "value": "14.0"
+            },
+            {
+              "name": "discountYield2",
+              "value": "16.0"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "type": "n8n-nodes-base.emailSend",
+      "parameters": {
+        "to": "your-email@example.com",
+        "subject": "Daily Bond Valuation Report",
+        "text": "={{ JSON.stringify($json, null, 2) }}"
+      }
+    }
+  ]
+}
+```
+
+## Интеграция с другими сервисами
+
+n8n поддерживает множество интеграций:
+
+- **Email:** Gmail, Outlook, SMTP
+- **Мессенджеры:** Slack, Telegram, Discord
+- **Облачные хранилища:** Google Drive, Dropbox
+- **Базы данных:** PostgreSQL, MySQL, MongoDB
+- **Таблицы:** Google Sheets, Airtable
+- **Уведомления:** Pushover, Pushbullet
+- **Аналитика:** Google Analytics, Mixpanel
+
+## Безопасность
+
+1. **Храним API ключи в n8n Credentials:**
+   - Settings → Credentials → Create New
+   - Используем переменные окружения для чувствительных данных
+
+2. **Ограничь доступ:**
+   - Настраиваем аутентификацию в n8n
+   - Используем webhook secrets для публичных webhooks
+
+3. **Rate Limiting:**
+   - Учитываем лимиты Railway
+   - Добавляем задержку между запросами
+
+## Мониторинг и логирование
+
+- Используем **n8n Execution Logs** для отладки
+- Настраиваем **Error Workflows** для обработки ошибок
+- Добавляем **Webhook Response** nodes для возврата статуса
+
+## Полезные ссылки
+
+- [n8n Documentation](https://docs.n8n.io/)
+- [n8n Community Forum](https://community.n8n.io/)
+- [n8n Workflow Templates](https://n8n.io/workflows/)
+- [FastAPI Documentation](https://fastapi.tiangolo.com/)
+
+---
+
+## Математические модели
 
 ### 1. Стохастические модели волатильности
 
@@ -380,7 +1154,7 @@ X(t; \sigma, \nu, \theta) = \theta G(t; \nu) + \sigma W(G(t; \nu))
 
 ---
 
-## 🧪 Тестирование
+## Тестирование
 
 Запуск unit-тестов backend:
 
@@ -404,7 +1178,7 @@ npm run test
 
 ---
 
-## 🛠️ Структура проекта
+## Структура проекта
 
 ```text
 stochastic-dashbord-v1/
@@ -450,7 +1224,113 @@ stochastic-dashbord-v1/
 
 ---
 
-## 🤝 Вклад и развитие
+# Формат реестра для оценки облигаций
+
+## Структура Excel файла (.xlsx или .xlsm)
+
+Реестр должен содержать следующие колонки:
+
+### Обязательные поля:
+
+| Колонка | Описание | Пример | Тип данных |
+|---------|----------|--------|------------|
+| **ISIN** | ISIN облигации | RU000A10AU99 | Текст |
+| **Дата оценки** | Дата оценки в формате YYYY-MM-DD | 2024-01-15 | Дата |
+| **Y аналога (%)** | Ставка дисконтирования для сценария 1 (доходность аналога) | 14.0 | Число |
+| **Y индекса (%)** | Ставка дисконтирования для сценария 2 (доходность индекса) | 16.0 | Число |
+
+### Опциональные поля:
+
+| Колонка | Описание | Пример | Тип данных |
+|---------|----------|--------|------------|
+| **Рыночная доходность (%)** | Рыночная доходность облигации на дату оценки | 15.5 | Число |
+| **Активность рынка** | Активность рынка (high/medium/low/unknown) | medium | Текст |
+| **Базис расчета** | Базис расчета дней (Actual/365F, Actual/360, и т.д.) | Actual/365F | Текст |
+
+## Пример реестра (Режим 1: Два сценария)
+
+```
+ISIN            | Дата оценки | Y аналога (%) | Y индекса (%) | Рыночная доходность (%) | Активность рынка | Базис расчета
+----------------|-------------|---------------|---------------|-------------------------|------------------|------------------
+RU000A10AU99    | 2024-01-15  | 14.0          | 16.0          |                         | активный           | Actual/365F
+RU000A0ZZZN2    | 2024-01-15  | 13.5          | 15.5          |                         | неактивный             | Actual/365F
+RU000A0JX0J6    | 2024-01-15  | 15.0          | 17.0          |                         | неативный              | Actual/360
+```
+
+## Пример реестра (Режим 2: Рыночная доходность из MOEX)
+
+```
+ISIN            | Дата оценки | Рыночная доходность (%) | Активность рынка | Базис расчета
+----------------|-------------|-------------------------|------------------|------------------
+RU000A10AU99    | 2024-01-15  | 15.5                     | активный           | Actual/365F
+RU000A0ZZZN2    | 2024-01-15  | 14.2                     | неактивный             | Actual/365F
+RU000A0JX0J6    | 2024-01-15  |                         | неактивный              | Actual/360
+```
+
+**Примечание:** Если колонка "Рыночная доходность (%)" пустая, система автоматически загрузит доходность из MOEX API на указанную дату оценки.
+
+## Альтернативные названия колонок
+
+Система поддерживает следующие варианты названий колонок:
+
+- **ISIN**: `ISIN`, `isin`, `SECID`, `secid`, `Облигация`
+- **Дата оценки**: `Дата оценки`, `Valuation Date`, `valuation_date`, `Дата`
+- **Y аналога**: `Y аналога`, `Y Analogue`, `y_analogue`, `Доходность 1`, `Discount Yield 1`
+- **Y индекса**: `Y индекса`, `Y Index`, `y_index`, `Доходность 2`, `Discount Yield 2`
+- **Рыночная доходность**: `Рыночная доходность`, `Market Yield`, `market_yield`, `YTM`, `ytm`
+- **Активность рынка**: `Активность рынка`, `Market Activity`, `market_activity`
+- **Базис расчета**: `Базис расчета`, `Day Count`, `day_count`
+
+## Как работает система
+
+1. **Если в реестре указаны колонки "Y аналога (%)" и "Y индекса (%)"**:
+   - Система использует два сценария для оценки
+   - Каждый сценарий рассчитывается отдельно
+
+2. **Если в реестре указана колонка "Рыночная доходность (%)"**:
+   - Система использует рыночную доходность для оценки
+   - Если значение пустое, автоматически загружается из MOEX API
+   - Оценка выполняется с использованием этой доходности (один сценарий)
+
+3. **В интерфейсе**:
+   - Можно включить флажок "Использовать доходность из MOEX API"
+   - При включении флажка можно вручную ввести рыночную доходность или нажать кнопку "Загрузить из MOEX"
+   - При загрузке из MOEX система получает доходность на дату оценки из исторических данных MOEX
+
+## Примечания
+
+1. Первая строка должна содержать заголовки колонок
+2. Если какое-то поле отсутствует, будут использованы значения по умолчанию из формы
+3. Для каждой строки будет выполнен расчет оценки облигации
+4. Результаты расчетов можно экспортировать обратно в Excel
+5. Если указана колонка "Рыночная доходность (%)" и она пустая, система автоматически загрузит доходность из MOEX API на указанную дату
+
+## Как использовать в интерфейсе
+
+### Режим 1: Два сценария (по умолчанию)
+
+1. Загрузите реестр с колонками: ISIN, Дата оценки, Y аналога (%), Y индекса (%)
+2. Нажмите "Рассчитать все" для оценки всех облигаций
+3. Результаты будут показаны в таблице с двумя сценариями
+
+### Режим 2: Рыночная доходность из MOEX
+
+1. Включите флажок "Использовать доходность из MOEX API" в форме
+2. Введите ISIN и дату оценки
+3. Нажмите кнопку "🔄 Загрузить из MOEX" для автоматической загрузки доходности
+4. Или введите рыночную доходность вручную в поле "Рыночная доходность (%)"
+5. Нажмите "Рассчитать" - оценка будет выполнена с использованием рыночной доходности
+
+### Загрузка реестра с рыночной доходностью
+
+1. Создайте Excel файл с колонками: ISIN, Дата оценки, Рыночная доходность (%)
+2. Если колонка "Рыночная доходность (%)" пустая, система автоматически загрузит доходность из MOEX API
+3. Загрузите файл через кнопку "📂 Загрузить Excel"
+4. Нажмите "Рассчитать все" - для каждой облигации будет использована рыночная доходность (загруженная или указанная в реестре)
+
+---
+
+## Вклад и развитие
 
 Pull Requests и feature-запросы приветствуются. Базовый workflow:
 
@@ -470,7 +1350,7 @@ Pull Requests и feature-запросы приветствуются. Базов
 
 ---
 
-## ⚠️ Ограничения и дисклеймер
+## Ограничения и дисклеймер
 
 - Проект предназначен **исключительно для исследовательских и учебных целей**.
 - Реализованные модели и калибровка **не являются** рекомендацией к использованию в продакшн-системах без независимой валидации и проверки risk-моделями.
