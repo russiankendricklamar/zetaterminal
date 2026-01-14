@@ -4,7 +4,7 @@ Repository pattern for database operations.
 from typing import List, Optional, Dict, Any
 from datetime import datetime
 from .client import get_supabase_client
-from .models import BondValuationRecord, PortfolioRecord, CalculationHistory
+from .models import BondValuationRecord, PortfolioRecord, CalculationHistory, MarketDataDaily
 
 
 class BondValuationRepository:

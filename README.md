@@ -446,8 +446,8 @@ $$
 
 ### Backend
 
-```bash
-cd backend
+   ```bash
+   cd backend
 pip install -r requirements.txt
 
 # Создать .env файл
