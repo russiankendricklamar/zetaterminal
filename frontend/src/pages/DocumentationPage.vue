@@ -16,7 +16,6 @@
         <!-- ЛЕВАЯ КОЛОНКА: Hero с фоном -->
         <section class="hero">
           <div class="logo-badge">
-            <span class="badge-icon">📚</span>
             Documentation & Glossary
           </div>
           <h1 class="hero-title">
@@ -231,7 +230,7 @@
             <h3>Основные функции платформы</h3>
             <div class="features-grid">
               <div class="feature-card">
-                <h4>📊 Портфельный анализ</h4>
+                <h4>Портфельный анализ</h4>
                 <ul>
                   <li>Расчет VaR и Expected Shortfall (Historical, Parametric, Cornish-Fisher)</li>
                   <li>Анализ производительности (Sharpe, Sortino, Calmar Ratio)</li>
@@ -241,7 +240,7 @@
                 </ul>
               </div>
               <div class="feature-card">
-                <h4>🔄 HMM рыночные режимы</h4>
+                <h4>HMM рыночные режимы</h4>
                 <ul>
                   <li>Идентификация скрытых рыночных режимов</li>
                   <li>Матрица переходов между режимами</li>
@@ -250,7 +249,7 @@
                 </ul>
               </div>
               <div class="feature-card">
-                <h4>📈 Ценообразование деривативов</h4>
+                <h4>Ценообразование деривативов</h4>
                 <ul>
                   <li>Black-Scholes-Merton модель</li>
                   <li>Heston стохастическая волатильность</li>
@@ -260,26 +259,31 @@
                 </ul>
               </div>
               <div class="feature-card">
-                <h4>💵 Оценка облигаций</h4>
+                <h4>Оценка облигаций</h4>
                 <ul>
                   <li>DCF оценка (Discounted Cash Flow)</li>
                   <li>Расчет Duration, Modified Duration, DV01</li>
                   <li>Convexity анализ</li>
                   <li>Кривые доходности (Yield Curves, ZCYC)</li>
                   <li>Отчеты по облигациям (Vanilla, Floater)</li>
+                  <li>Работа с реестрами (загрузка/выгрузка XLSX/XLSM)</li>
+                  <li>Получение рыночной доходности из MOEX API</li>
+                  <li>Сохранение реестров в формате Parquet</li>
                 </ul>
               </div>
               <div class="feature-card">
-                <h4>🔄 Свопы и форварды</h4>
+                <h4>Свопы и форварды</h4>
                 <ul>
                   <li>Оценка процентных свопов (IRS)</li>
                   <li>Кредитные дефолтные свопы (CDS)</li>
                   <li>Валютные свопы (CCS)</li>
                   <li>Оценка форвардов и анализ базисов</li>
+                  <li>Работа с реестрами (загрузка/выгрузка XLSX)</li>
+                  <li>Сохранение реестров в формате Parquet</li>
                 </ul>
               </div>
               <div class="feature-card">
-                <h4>⚠️ Управление рисками</h4>
+                <h4>Управление рисками</h4>
                 <ul>
                   <li>Стресс-тестирование портфелей</li>
                   <li>Monte Carlo симуляции</li>
@@ -289,7 +293,7 @@
                 </ul>
               </div>
               <div class="feature-card">
-                <h4>📊 Рыночные данные</h4>
+                <h4>Рыночные данные</h4>
                 <ul>
                   <li>Потоковые данные российского рынка</li>
                   <li>Индексы, акции, облигации, ПИФы</li>
@@ -298,12 +302,11 @@
                 </ul>
               </div>
               <div class="feature-card">
-                <h4>🔧 Вспомогательные инструменты</h4>
+                <h4>Вспомогательные инструменты</h4>
                 <ul>
                   <li>Бэктестинг стратегий</li>
-                  <li>Сканер арбитража</li>
                   <li>Помощник по хеджированию</li>
-                  <li>Маржинальное финансирование</li>
+                  <li>Работа с реестрами и экспорт данных</li>
                 </ul>
               </div>
             </div>
@@ -375,7 +378,7 @@
             <h3>Модули платформы</h3>
             
             <div class="module-detail">
-              <h4>📊 PORTFOLIO — Управление портфелем</h4>
+              <h4>PORTFOLIO — Управление портфелем</h4>
               <p><strong>Страницы:</strong> /portfolio, /CCMVoptimization, /monte-carlo, /stress, /backtest</p>
               <p><strong>Функции:</strong></p>
               <ul>
@@ -389,7 +392,7 @@
             </div>
 
             <div class="module-detail">
-              <h4>🔄 HMM — Рыночные режимы</h4>
+              <h4>HMM — Рыночные режимы</h4>
               <p><strong>Страницы:</strong> /regimes, /regime-details</p>
               <p><strong>Функции:</strong></p>
               <ul>
@@ -402,7 +405,7 @@
             </div>
 
             <div class="module-detail">
-              <h4>💵 FIXED INCOME — Облигации</h4>
+              <h4>FIXED INCOME — Облигации</h4>
               <p><strong>Страницы:</strong> /bond-valuation, /vanila-bond-report, /floater-bond-report, /fixed-income, /zcyc-viewer</p>
               <p><strong>Функции:</strong></p>
               <ul>
@@ -415,7 +418,7 @@
             </div>
 
             <div class="module-detail">
-              <h4>📈 PRICING — Ценообразование опционов</h4>
+              <h4>PRICING — Ценообразование опционов</h4>
               <p><strong>Страницы:</strong> /pricing/options, /pricing/options/models, /pricing/options/greeks, /pricing/options/portfolio, /volatility-surface</p>
               <p><strong>Функции:</strong></p>
               <ul>
@@ -428,7 +431,7 @@
             </div>
 
             <div class="module-detail">
-              <h4>🔄 VALUATION — Оценка свопов и форвардов</h4>
+              <h4>VALUATION — Оценка свопов и форвардов</h4>
               <p><strong>Страницы:</strong> /valuation/swaps, /valuation/forwards, /forwards/basis, /forwards/greeks</p>
               <p><strong>Функции:</strong></p>
               <ul>
@@ -441,7 +444,7 @@
             </div>
 
             <div class="module-detail">
-              <h4>📊 ANALYTICS — Аналитика</h4>
+              <h4>ANALYTICS — Аналитика</h4>
               <p><strong>Страницы:</strong> /greeks, /reports, /pnl-attribution, /hedging-assistant, /stress/swaps</p>
               <p><strong>Функции:</strong></p>
               <ul>
@@ -454,7 +457,7 @@
             </div>
 
             <div class="module-detail">
-              <h4>📡 TERMINAL — Терминал</h4>
+              <h4>TERMINAL — Терминал</h4>
               <p><strong>Страницы:</strong> /terminal</p>
               <p><strong>Функции:</strong></p>
               <ul>
@@ -493,7 +496,7 @@
               Платформа содержит 30+ специализированных страниц для анализа портфелей, управления рисками и ценообразования финансовых инструментов. Ниже приведено подробное описание каждой страницы с инструкциями по использованию.
             </p>
 
-            <h3>📊 Портфельный анализ</h3>
+            <h3>Портфельный анализ</h3>
             
             <div class="page-detail-block">
               <h4>/portfolio — Управление портфелем</h4>
@@ -563,7 +566,7 @@
               </ol>
             </div>
 
-            <h3>⚠️ Управление рисками</h3>
+            <h3>Управление рисками</h3>
 
             <div class="page-detail-block">
               <h4>/greeks — Risk Metrics</h4>
@@ -604,7 +607,7 @@
               </ol>
             </div>
 
-            <h3>🔄 Рыночные режимы (HMM)</h3>
+            <h3>Рыночные режимы (HMM)</h3>
 
             <div class="page-detail-block">
               <h4>/regimes — Анализ HMM режимов</h4>
@@ -632,7 +635,7 @@
               </ol>
             </div>
 
-            <h3>💵 Облигации (Fixed Income)</h3>
+            <h3>Облигации (Fixed Income)</h3>
 
             <div class="page-detail-block">
               <h4>/bond-valuation — DCF оценка облигаций</h4>
@@ -641,12 +644,18 @@
               <ol>
                 <li>Введите ISIN облигации или выберите из списка</li>
                 <li>Установите дату оценки</li>
-                <li>Введите ставки дисконтирования для двух сценариев (базовый и стрессовый)</li>
-                <li>Нажмите "Рассчитать"</li>
+                <li>Выберите режим работы: два сценария или рыночная доходность из MOEX</li>
+                <li>Для режима двух сценариев: введите ставки дисконтирования для двух сценариев (базовый и стрессовый)</li>
+                <li>Для режима рыночной доходности: включите флажок "Использовать доходность из MOEX API" и нажмите "Загрузить из MOEX" или введите вручную</li>
+                <li>Загрузите реестр облигаций через кнопку "Загрузить Excel" (формат XLSX или XLSM)</li>
+                <li>Нажмите "Рассчитать все" для оценки всех облигаций в реестре</li>
                 <li>Просмотрите результаты: Dirty Price, Clean Price, Duration, DV01, Convexity</li>
+                <li>Экспортируйте результаты в Excel через кнопку "Выгрузить Excel"</li>
+                <li>Сохраните реестр в Parquet через кнопку "Сохранить в DB (Parquet)"</li>
                 <li>Изучите таблицу денежных потоков с дисконт-факторами</li>
               </ol>
               <p><strong>Выходные данные:</strong> Dirty/Clean Price, Macaulay/Modified Duration, DV01, Convexity, Cash Flows Schedule</p>
+              <p><strong>Работа с реестрами:</strong> Поддерживается загрузка реестров в формате XLSX и XLSM. Реестр должен содержать колонки: ISIN, Дата оценки, Y аналога (%), Y индекса (%), Рыночная доходность (%), Активность рынка, Базис расчета.</p>
             </div>
 
             <div class="page-detail-block">
@@ -691,7 +700,7 @@
               </ol>
             </div>
 
-            <h3>📈 Опционы (Options Pricing)</h3>
+            <h3>Опционы (Options Pricing)</h3>
 
             <div class="page-detail-block">
               <h4>/pricing/options — Ценообразование опционов</h4>
@@ -760,7 +769,7 @@
               </ol>
             </div>
 
-            <h3>🔄 Свопы и форварды</h3>
+            <h3>Свопы и форварды</h3>
 
             <div class="page-detail-block">
               <h4>/valuation/swaps — Оценка свопов</h4>
@@ -770,9 +779,13 @@
                 <li>Выберите тип свопа (IRS, CDS, Basis, CCS)</li>
                 <li>Введите параметры свопа: номинал, фиксированная/плавающая ставка, даты платежей</li>
                 <li>Выберите кривую дисконтирования</li>
+                <li>Загрузите реестр свопов через кнопку "Загрузить Excel" (формат XLSX)</li>
+                <li>Нажмите "Рассчитать все" для оценки всех свопов в реестре</li>
                 <li>Рассчитайте справедливую стоимость</li>
                 <li>Просмотрите денежные потоки и их приведенную стоимость</li>
                 <li>Изучите Greeks свопа (DV01, Convexity)</li>
+                <li>Экспортируйте результаты в Excel через кнопку "Выгрузить Excel"</li>
+                <li>Сохраните реестр в Parquet через кнопку "Сохранить в DB (Parquet)"</li>
               </ol>
             </div>
 
@@ -781,11 +794,16 @@
               <p><strong>Назначение:</strong> Расчет справедливой форвардной цены и стоимости форвардного контракта.</p>
               <p><strong>Как использовать:</strong></p>
               <ol>
+                <li>Выберите тип форварда (FX, Bond, Commodity, Equity, Rate)</li>
                 <li>Введите спотовую цену актива</li>
                 <li>Установите безрисковую ставку и дивидендную доходность</li>
                 <li>Введите время до экспирации форварда</li>
+                <li>Загрузите реестр форвардов через кнопку "Загрузить Excel" (формат XLSX)</li>
+                <li>Нажмите "Рассчитать все" для оценки всех форвардов в реестре</li>
                 <li>Рассчитайте справедливую форвардную цену</li>
                 <li>Сравните с рыночной форвардной ценой для выявления арбитража</li>
+                <li>Экспортируйте результаты в Excel через кнопку "Выгрузить Excel"</li>
+                <li>Сохраните реестр в Parquet через кнопку "Сохранить в DB (Parquet)"</li>
               </ol>
             </div>
 
@@ -807,7 +825,7 @@
               <p><strong>Как использовать:</strong> Аналогично опционам, но для форвардов (Delta, Theta, Rho)</p>
             </div>
 
-            <h3>📊 Рыночные данные и аналитика</h3>
+            <h3>Рыночные данные и аналитика</h3>
 
             <div class="page-detail-block">
               <h4>/terminal — Терминал</h4>
@@ -838,7 +856,7 @@
               <p><strong>Назначение:</strong> Построение и анализ форвардных кривых для различных активов.</p>
             </div>
 
-            <h3>🔧 Вспомогательные инструменты</h3>
+            <h3>Вспомогательные инструменты</h3>
 
             <div class="page-detail-block">
               <h4>/hedging-assistant — Помощник по хеджированию</h4>
@@ -846,18 +864,8 @@
             </div>
 
             <div class="page-detail-block">
-              <h4>/pnl-attribution — Атрибуция P&L</h4>
+              <h4>/analytics/pnl — Атрибуция P&L</h4>
               <p><strong>Назначение:</strong> Разложение P&L портфеля по источникам (ценовые движения, волатильность, время, корреляции).</p>
-            </div>
-
-            <div class="page-detail-block">
-              <h4>/margin-financing — Маржинальное финансирование</h4>
-              <p><strong>Назначение:</strong> Расчет требований к марже и стоимости финансирования позиций.</p>
-            </div>
-
-            <div class="page-detail-block">
-              <h4>/arbitrage-scanner — Сканер арбитража</h4>
-              <p><strong>Назначение:</strong> Автоматический поиск арбитражных возможностей на рынке.</p>
             </div>
 
             <div class="page-detail-block">
@@ -1119,231 +1127,231 @@
             <h2>Математические модели и формулы</h2>
             
             <div class="model-block">
-              <h3>📊 Value at Risk (VaR) & Expected Shortfall (ES)</h3>
+              <h3>Value at Risk (VaR) & Expected Shortfall (ES)</h3>
               <p>
                 <strong>VaR (Value at Risk)</strong> — максимальный ожидаемый убыток портфеля на заданном уровне доверия α и горизонте времени T.
               </p>
               <div class="formula-block">
                 <div class="formula-title">VaR (Historical Simulation):</div>
-                <div class="formula">VaR<sub>α</sub> = -Quantile<sub>α</sub>(Returns)</div>
-                <p class="formula-desc">где Quantile<sub>α</sub> — α-квантиль исторических доходностей портфеля</p>
+                <div class="latex-formula display-mode">\text{VaR}_\alpha = -\text{Quantile}_\alpha(\text{Returns})</div>
+                <p class="formula-desc">где <span class="latex-formula">\text{Quantile}_\alpha</span> — α-квантиль исторических доходностей портфеля</p>
               </div>
               <div class="formula-block">
                 <div class="formula-title">VaR (Parametric, Normal):</div>
-                <div class="formula">VaR<sub>α</sub> = -μ - z<sub>α</sub> × σ × √T</div>
-                <p class="formula-desc">где μ — средняя доходность, σ — волатильность, z<sub>α</sub> — квантиль нормального распределения (1.645 для 95%, 2.326 для 99%)</p>
+                <div class="latex-formula display-mode">\text{VaR}_\alpha = -\mu - z_\alpha \times \sigma \times \sqrt{T}</div>
+                <p class="formula-desc">где <span class="latex-formula">\mu</span> — средняя доходность, <span class="latex-formula">\sigma</span> — волатильность, <span class="latex-formula">z_\alpha</span> — квантиль нормального распределения (1.645 для 95%, 2.326 для 99%)</p>
               </div>
               <div class="formula-block">
                 <div class="formula-title">Expected Shortfall (CVaR):</div>
-                <div class="formula">ES<sub>α</sub> = E[Loss | Loss ≥ VaR<sub>α</sub>]</div>
+                <div class="latex-formula display-mode">\text{ES}_\alpha = \mathbb{E}[\text{Loss} \mid \text{Loss} \geq \text{VaR}_\alpha]</div>
                 <p class="formula-desc">Средний убыток при сценариях, превышающих VaR. Более консервативная метрика tail-risk.</p>
               </div>
               <p><strong>Использование:</strong> Страница <code>/greeks</code> — расчет VaR/ES для портфеля. Страница <code>/portfolio</code> — отображение VaR в KPI.</p>
             </div>
 
             <div class="model-block">
-              <h3>📈 Black–Scholes–Merton (BSM) Model</h3>
+              <h3>Black–Scholes–Merton (BSM) Model</h3>
               <p>
                 Классическая модель ценообразования европейских опционов на базе логнормального распределения доходностей базового актива.
               </p>
               <div class="formula-block">
                 <div class="formula-title">Цена Call опциона:</div>
-                <div class="formula">C = S₀e<sup>-qT</sup>N(d₁) - Ke<sup>-rT</sup>N(d₂)</div>
+                <div class="latex-formula display-mode">C = S_0 e^{-qT} N(d_1) - K e^{-rT} N(d_2)</div>
               </div>
               <div class="formula-block">
                 <div class="formula-title">Цена Put опциона:</div>
-                <div class="formula">P = Ke<sup>-rT</sup>N(-d₂) - S₀e<sup>-qT</sup>N(-d₁)</div>
+                <div class="latex-formula display-mode">P = K e^{-rT} N(-d_2) - S_0 e^{-qT} N(-d_1)</div>
               </div>
               <div class="formula-block">
                 <div class="formula-title">Вспомогательные переменные:</div>
-                <div class="formula">d₁ = [ln(S₀/K) + (r - q + σ²/2)T] / (σ√T)</div>
-                <div class="formula">d₂ = d₁ - σ√T</div>
-                <p class="formula-desc">где S₀ — текущая цена актива, K — страйк, r — безрисковая ставка, q — дивидендная доходность, σ — волатильность, T — время до экспирации, N(·) — функция стандартного нормального распределения</p>
+                <div class="latex-formula display-mode">d_1 = \frac{\ln(S_0/K) + (r - q + \sigma^2/2)T}{\sigma\sqrt{T}}</div>
+                <div class="latex-formula display-mode">d_2 = d_1 - \sigma\sqrt{T}</div>
+                <p class="formula-desc">где <span class="latex-formula">S_0</span> — текущая цена актива, <span class="latex-formula">K</span> — страйк, <span class="latex-formula">r</span> — безрисковая ставка, <span class="latex-formula">q</span> — дивидендная доходность, <span class="latex-formula">\sigma</span> — волатильность, <span class="latex-formula">T</span> — время до экспирации, <span class="latex-formula">N(\cdot)</span> — функция стандартного нормального распределения</p>
               </div>
               <div class="formula-block">
                 <div class="formula-title">Greeks (чувствительности):</div>
-                <div class="formula">Δ = ∂C/∂S = e<sup>-qT</sup>N(d₁)  <span class="formula-note">(для Call)</span></div>
-                <div class="formula">Γ = ∂²C/∂S² = e<sup>-qT</sup>n(d₁) / (Sσ√T)</div>
-                <div class="formula">ν = ∂C/∂σ = S₀e<sup>-qT</sup>n(d₁)√T / 100</div>
-                <div class="formula">Θ = ∂C/∂T = -[S₀e<sup>-qT</sup>n(d₁)σ/(2√T) + qS₀e<sup>-qT</sup>N(d₁) - rKe<sup>-rT</sup>N(d₂)] / 365</div>
-                <div class="formula">ρ = ∂C/∂r = KTe<sup>-rT</sup>N(d₂) / 100  <span class="formula-note">(для Call)</span></div>
-                <p class="formula-desc">где n(·) — плотность стандартного нормального распределения</p>
+                <div class="latex-formula display-mode">\Delta = \frac{\partial C}{\partial S} = e^{-qT} N(d_1) \quad \text{(для Call)}</div>
+                <div class="latex-formula display-mode">\Gamma = \frac{\partial^2 C}{\partial S^2} = \frac{e^{-qT} n(d_1)}{S\sigma\sqrt{T}}</div>
+                <div class="latex-formula display-mode">\nu = \frac{\partial C}{\partial \sigma} = \frac{S_0 e^{-qT} n(d_1)\sqrt{T}}{100}</div>
+                <div class="latex-formula display-mode">\Theta = \frac{\partial C}{\partial T} = -\frac{S_0 e^{-qT} n(d_1)\sigma/(2\sqrt{T}) + qS_0 e^{-qT} N(d_1) - rK e^{-rT} N(d_2)}{365}</div>
+                <div class="latex-formula display-mode">\rho = \frac{\partial C}{\partial r} = \frac{K T e^{-rT} N(d_2)}{100} \quad \text{(для Call)}</div>
+                <p class="formula-desc">где <span class="latex-formula">n(\cdot)</span> — плотность стандартного нормального распределения</p>
               </div>
               <p><strong>Использование:</strong> Страница <code>/pricing/options</code> — расчет цены и Greeks. Страница <code>/pricing/options/greeks</code> — детальный анализ чувствительностей.</p>
             </div>
 
             <div class="model-block">
-              <h3>🔄 Heston Stochastic Volatility Model</h3>
+              <h3>Heston Stochastic Volatility Model</h3>
               <p>
                 Модель со стохастической волатильностью, позволяющая моделировать улыбку волатильности (volatility smile) и корреляцию между ценой и волатильностью.
               </p>
               <div class="formula-block">
                 <div class="formula-title">Система стохастических уравнений:</div>
-                <div class="formula">dS = μS dt + √V S dW₁</div>
-                <div class="formula">dV = κ(θ - V)dt + σᵥ√V dW₂</div>
-                <div class="formula">E[dW₁ dW₂] = ρ dt</div>
-                <p class="formula-desc">где V — мгновенная дисперсия, κ — скорость возврата к среднему (mean reversion), θ — долгосрочная дисперсия, σᵥ — волатильность волатильности, ρ — корреляция между ценой и волатильностью</p>
+                <div class="latex-formula display-mode">dS = \mu S \, dt + \sqrt{V} S \, dW_1</div>
+                <div class="latex-formula display-mode">dV = \kappa(\theta - V) \, dt + \sigma_v \sqrt{V} \, dW_2</div>
+                <div class="latex-formula display-mode">\mathbb{E}[dW_1 \, dW_2] = \rho \, dt</div>
+                <p class="formula-desc">где <span class="latex-formula">V</span> — мгновенная дисперсия, <span class="latex-formula">\kappa</span> — скорость возврата к среднему (mean reversion), <span class="latex-formula">\theta</span> — долгосрочная дисперсия, <span class="latex-formula">\sigma_v</span> — волатильность волатильности, <span class="latex-formula">\rho</span> — корреляция между ценой и волатильностью</p>
               </div>
               <p><strong>Использование:</strong> Страница <code>/pricing/options/models</code> — сравнение BSM и Heston моделей.</p>
             </div>
 
             <div class="model-block">
-              <h3>🌊 Geometric Brownian Motion (GBM)</h3>
+              <h3>Geometric Brownian Motion (GBM)</h3>
               <p>
                 Стохастический процесс для моделирования цен активов в Monte Carlo симуляциях.
               </p>
               <div class="formula-block">
                 <div class="formula-title">Стохастическое дифференциальное уравнение:</div>
-                <div class="formula">dS = μS dt + σS dW</div>
-                <p class="formula-desc">где μ — дрейф (drift), σ — волатильность, dW — винеровский процесс</p>
+                <div class="latex-formula display-mode">dS = \mu S \, dt + \sigma S \, dW</div>
+                <p class="formula-desc">где <span class="latex-formula">\mu</span> — дрейф (drift), <span class="latex-formula">\sigma</span> — волатильность, <span class="latex-formula">dW</span> — винеровский процесс</p>
               </div>
               <div class="formula-block">
                 <div class="formula-title">Дискретная аппроксимация (Euler scheme):</div>
-                <div class="formula">S<sub>t+Δt</sub> = S<sub>t</sub> × exp[(μ - σ²/2)Δt + σ√Δt × Z]</div>
-                <p class="formula-desc">где Z ~ N(0,1) — стандартная нормальная случайная величина, Δt — временной шаг</p>
+                <div class="latex-formula display-mode">S_{t+\Delta t} = S_t \times \exp\left[(\mu - \sigma^2/2)\Delta t + \sigma\sqrt{\Delta t} \times Z\right]</div>
+                <p class="formula-desc">где <span class="latex-formula">Z \sim \mathcal{N}(0,1)</span> — стандартная нормальная случайная величина, <span class="latex-formula">\Delta t</span> — временной шаг</p>
               </div>
               <p><strong>Использование:</strong> Страница <code>/monte-carlo</code> — генерация сценариев цен. Страница <code>/terminal</code> — симуляция в Quant Alpha Terminal.</p>
             </div>
 
             <div class="model-block">
-              <h3>💰 DCF Bond Valuation (Discounted Cash Flow)</h3>
+              <h3>DCF Bond Valuation (Discounted Cash Flow)</h3>
               <p>
                 Оценка справедливой стоимости облигации дисконтированием будущих денежных потоков (купоны + номинал).
               </p>
               <div class="formula-block">
                 <div class="formula-title">Dirty Price (полная стоимость):</div>
-                <div class="formula">P<sub>dirty</sub> = Σ<sub>i=1</sub><sup>n</sup> [CF<sub>i</sub> × e<sup>-rᵢtᵢ</sup>]</div>
-                <p class="formula-desc">где CF<sub>i</sub> — денежный поток в момент tᵢ, rᵢ — ставка дисконтирования для периода i, n — количество платежей</p>
+                <div class="latex-formula display-mode">P_{\text{dirty}} = \sum_{i=1}^{n} \frac{CF_i}{(1 + r_i)^{t_i}}</div>
+                <p class="formula-desc">где <span class="latex-formula">CF_i</span> — денежный поток в момент <span class="latex-formula">t_i</span>, <span class="latex-formula">r_i</span> — ставка дисконтирования для периода i, <span class="latex-formula">n</span> — количество платежей</p>
               </div>
               <div class="formula-block">
                 <div class="formula-title">Clean Price (котировочная цена):</div>
-                <div class="formula">P<sub>clean</sub> = P<sub>dirty</sub> - Accrued Interest</div>
-                <p class="formula-desc">Accrued Interest = Coupon × (Days since last coupon / Days in coupon period)</p>
+                <div class="latex-formula display-mode">P_{\text{clean}} = P_{\text{dirty}} - \text{Accrued Interest}</div>
+                <p class="formula-desc"><span class="latex-formula">\text{Accrued Interest} = \text{Coupon} \times \frac{\text{Days since last coupon}}{\text{Days in coupon period}}</span></p>
               </div>
               <div class="formula-block">
                 <div class="formula-title">Macaulay Duration:</div>
-                <div class="formula">D = Σ<sub>i=1</sub><sup>n</sup> [tᵢ × PV(CF<sub>i</sub>)] / P<sub>dirty</sub></div>
+                <div class="latex-formula display-mode">D = \frac{\sum_{i=1}^{n} t_i \times \text{PV}(CF_i)}{P_{\text{dirty}}}</div>
                 <p class="formula-desc">Взвешенный по приведенной стоимости срок до получения денежных потоков</p>
               </div>
               <div class="formula-block">
                 <div class="formula-title">Modified Duration:</div>
-                <div class="formula">D<sub>mod</sub> = D / (1 + y)</div>
-                <p class="formula-desc">где y — доходность к погашению. Показывает процентное изменение цены при изменении доходности на 1%</p>
+                <div class="latex-formula display-mode">D_{\text{mod}} = \frac{D}{1 + y}</div>
+                <p class="formula-desc">где <span class="latex-formula">y</span> — доходность к погашению. Показывает процентное изменение цены при изменении доходности на 1%</p>
               </div>
               <div class="formula-block">
                 <div class="formula-title">DV01 (Рублевая стоимость 1 б.п.):</div>
-                <div class="formula">DV01 = -P × D<sub>mod</sub> × 0.0001</div>
+                <div class="latex-formula display-mode">\text{DV01} = -P \times D_{\text{mod}} \times 0.0001</div>
                 <p class="formula-desc">Изменение стоимости облигации при сдвиге кривой доходности на 1 basis point (0.01%)</p>
               </div>
               <div class="formula-block">
                 <div class="formula-title">Convexity:</div>
-                <div class="formula">C = Σ<sub>i=1</sub><sup>n</sup> [tᵢ(tᵢ + 1) × PV(CF<sub>i</sub>)] / [P × (1 + y)²]</div>
+                <div class="latex-formula display-mode">C = \frac{\sum_{i=1}^{n} t_i(t_i + 1) \times \text{PV}(CF_i)}{P \times (1 + y)^2}</div>
                 <p class="formula-desc">Вторая производная цены по доходности, уточняет оценку изменения цены при крупных сдвигах ставок</p>
               </div>
               <p><strong>Использование:</strong> Страница <code>/bond-valuation</code> — расчет DCF, Duration, DV01, Convexity. Страницы <code>/vanila-bond-report</code> и <code>/floater-bond-report</code> — отчеты по облигациям.</p>
             </div>
 
             <div class="model-block">
-              <h3>📊 Sharpe Ratio & Risk-Adjusted Returns</h3>
+              <h3>Sharpe Ratio & Risk-Adjusted Returns</h3>
               <div class="formula-block">
                 <div class="formula-title">Sharpe Ratio:</div>
-                <div class="formula">SR = (R<sub>p</sub> - R<sub>f</sub>) / σ<sub>p</sub></div>
-                <p class="formula-desc">где R<sub>p</sub> — средняя доходность портфеля, R<sub>f</sub> — безрисковая ставка, σ<sub>p</sub> — волатильность портфеля. Показывает избыточную доходность на единицу риска</p>
+                <div class="latex-formula display-mode">\text{SR} = \frac{R_p - R_f}{\sigma_p}</div>
+                <p class="formula-desc">где <span class="latex-formula">R_p</span> — средняя доходность портфеля, <span class="latex-formula">R_f</span> — безрисковая ставка, <span class="latex-formula">\sigma_p</span> — волатильность портфеля. Показывает избыточную доходность на единицу риска</p>
               </div>
               <div class="formula-block">
                 <div class="formula-title">Sortino Ratio:</div>
-                <div class="formula">Sortino = (R<sub>p</sub> - R<sub>f</sub>) / σ<sub>down</sub></div>
-                <p class="formula-desc">где σ<sub>down</sub> — волатильность отрицательных доходностей (downside deviation). Учитывает только негативный риск</p>
+                <div class="latex-formula display-mode">\text{Sortino} = \frac{R_p - R_f}{\sigma_{\text{down}}}</div>
+                <p class="formula-desc">где <span class="latex-formula">\sigma_{\text{down}}</span> — волатильность отрицательных доходностей (downside deviation). Учитывает только негативный риск</p>
               </div>
               <div class="formula-block">
                 <div class="formula-title">Calmar Ratio:</div>
-                <div class="formula">Calmar = Annual Return / |Max Drawdown|</div>
+                <div class="latex-formula display-mode">\text{Calmar} = \frac{\text{Annual Return}}{|\text{Max Drawdown}|}</div>
                 <p class="formula-desc">Отношение годовой доходности к максимальной просадке</p>
               </div>
               <p><strong>Использование:</strong> Страница <code>/portfolio</code> — отображение Sharpe Ratio в KPI. Страница <code>/greeks</code> — детальные метрики риска.</p>
             </div>
 
             <div class="model-block">
-              <h3>🔍 Hidden Markov Model (HMM)</h3>
+              <h3>Hidden Markov Model (HMM)</h3>
               <p>
                 Модель с невидимыми состояниями (рыночные режимы), управляющими динамикой наблюдаемых доходностей.
               </p>
               <div class="formula-block">
                 <div class="formula-title">Вероятность наблюдения:</div>
-                <div class="formula">P(O<sub>t</sub> | S<sub>t</sub> = i) ~ N(μᵢ, σᵢ²)</div>
-                <p class="formula-desc">где O<sub>t</sub> — наблюдаемая доходность в момент t, S<sub>t</sub> — скрытое состояние (режим), μᵢ и σᵢ — параметры нормального распределения для режима i</p>
+                <div class="latex-formula display-mode">P(O_t \mid S_t = i) \sim \mathcal{N}(\mu_i, \sigma_i^2)</div>
+                <p class="formula-desc">где <span class="latex-formula">O_t</span> — наблюдаемая доходность в момент t, <span class="latex-formula">S_t</span> — скрытое состояние (режим), <span class="latex-formula">\mu_i</span> и <span class="latex-formula">\sigma_i</span> — параметры нормального распределения для режима i</p>
               </div>
               <div class="formula-block">
                 <div class="formula-title">Матрица переходов:</div>
-                <div class="formula">A<sub>ij</sub> = P(S<sub>t+1</sub> = j | S<sub>t</sub> = i)</div>
+                <div class="latex-formula display-mode">A_{ij} = P(S_{t+1} = j \mid S_t = i)</div>
                 <p class="formula-desc">Вероятность перехода из режима i в режим j за один временной шаг</p>
               </div>
               <div class="formula-block">
                 <div class="formula-title">Стационарное распределение:</div>
-                <div class="formula">π = π × A</div>
+                <div class="latex-formula display-mode">\pi = \pi \times A</div>
                 <p class="formula-desc">Долгосрочное распределение вероятностей режимов, решение системы линейных уравнений</p>
               </div>
               <p><strong>Использование:</strong> Страница <code>/regimes</code> — анализ HMM режимов. Страница <code>/regime-details</code> — детальная аналитика режимов.</p>
             </div>
 
             <div class="model-block">
-              <h3>📈 Portfolio Optimization (CCMV)</h3>
+              <h3>Portfolio Optimization (CCMV)</h3>
               <p>
                 Constant Correlation Matrix Model — упрощенная модель оптимизации портфеля с постоянной корреляцией между активами.
               </p>
               <div class="formula-block">
                 <div class="formula-title">Ожидаемая доходность портфеля:</div>
-                <div class="formula">E[R<sub>p</sub>] = Σ<sub>i=1</sub><sup>n</sup> wᵢ × E[Rᵢ]</div>
-                <p class="formula-desc">где wᵢ — вес актива i в портфеле, E[Rᵢ] — ожидаемая доходность актива i</p>
+                <div class="latex-formula display-mode">\mathbb{E}[R_p] = \sum_{i=1}^{n} w_i \times \mathbb{E}[R_i]</div>
+                <p class="formula-desc">где <span class="latex-formula">w_i</span> — вес актива i в портфеле, <span class="latex-formula">\mathbb{E}[R_i]</span> — ожидаемая доходность актива i</p>
               </div>
               <div class="formula-block">
                 <div class="formula-title">Волатильность портфеля:</div>
-                <div class="formula">σ<sub>p</sub> = √[Σ<sub>i,j</sub> wᵢwⱼσᵢσⱼρᵢⱼ]</div>
-                <p class="formula-desc">где σᵢ — волатильность актива i, ρᵢⱼ — корреляция между активами i и j</p>
+                <div class="latex-formula display-mode">\sigma_p = \sqrt{\sum_{i,j} w_i w_j \sigma_i \sigma_j \rho_{ij}}</div>
+                <p class="formula-desc">где <span class="latex-formula">\sigma_i</span> — волатильность актива i, <span class="latex-formula">\rho_{ij}</span> — корреляция между активами i и j</p>
               </div>
               <p><strong>Использование:</strong> Страница <code>/CCMVoptimization</code> — оптимизация весов портфеля.</p>
             </div>
 
             <div class="model-block">
-              <h3>🔄 Swap Valuation (IRS)</h3>
+              <h3>Swap Valuation (IRS)</h3>
               <p>
                 Оценка справедливой стоимости процентного свопа (Interest Rate Swap) методом дисконтирования денежных потоков.
               </p>
               <div class="formula-block">
                 <div class="formula-title">Стоимость свопа (для получателя фиксированной ставки):</div>
-                <div class="formula">V<sub>swap</sub> = PV<sub>fixed</sub> - PV<sub>floating</sub></div>
-                <p class="formula-desc">где PV<sub>fixed</sub> = Σ<sub>i</sub> [Fixed Rate × Notional × DF<sub>i</sub>], PV<sub>floating</sub> = Notional × (1 - DF<sub>n</sub>)</p>
+                <div class="latex-formula display-mode">V_{\text{swap}} = \text{PV}_{\text{fixed}} - \text{PV}_{\text{floating}}</div>
+                <p class="formula-desc">где <span class="latex-formula">\text{PV}_{\text{fixed}} = \sum_i [\text{Fixed Rate} \times \text{Notional} \times \text{DF}_i]</span>, <span class="latex-formula">\text{PV}_{\text{floating}} = \text{Notional} \times (1 - \text{DF}_n)</span></p>
               </div>
               <p><strong>Использование:</strong> Страница <code>/valuation/swaps</code> — оценка IRS, CDS, Basis, CCS свопов.</p>
             </div>
 
             <div class="model-block">
-              <h3>📊 Forward Valuation</h3>
+              <h3>Forward Valuation</h3>
               <p>
                 Оценка справедливой форвардной цены и стоимости форвардного контракта.
               </p>
               <div class="formula-block">
                 <div class="formula-title">Форвардная цена (без дивидендов):</div>
-                <div class="formula">F = S₀ × e<sup>(r - q)T</sup></div>
-                <p class="formula-desc">где S₀ — спотовая цена, r — безрисковая ставка, q — дивидендная доходность, T — время до экспирации</p>
+                <div class="latex-formula display-mode">F = S_0 \times e^{(r - q)T}</div>
+                <p class="formula-desc">где <span class="latex-formula">S_0</span> — спотовая цена, <span class="latex-formula">r</span> — безрисковая ставка, <span class="latex-formula">q</span> — дивидендная доходность, <span class="latex-formula">T</span> — время до экспирации</p>
               </div>
               <div class="formula-block">
                 <div class="formula-title">Стоимость форварда (для длинной позиции):</div>
-                <div class="formula">V = (F - K) × e<sup>-rT</sup></div>
-                <p class="formula-desc">где K — форвардная цена контракта</p>
+                <div class="latex-formula display-mode">V = (F - K) \times e^{-rT}</div>
+                <p class="formula-desc">где <span class="latex-formula">K</span> — форвардная цена контракта</p>
               </div>
               <p><strong>Использование:</strong> Страница <code>/valuation/forwards</code> — оценка форвардов. Страница <code>/forwards/basis</code> — анализ спот-форвард базиса.</p>
             </div>
 
             <div class="model-block">
-              <h3>🌊 Manifold Learning & Liquidity Surface</h3>
+              <h3>Manifold Learning & Liquidity Surface</h3>
               <p>
                 Нестационарный manifold inference для детекции стресса ликвидности на основе топологии рыночной микроструктуры.
               </p>
               <div class="formula-block">
                 <div class="formula-title">Параметрическая поверхность ликвидности:</div>
-                <div class="formula">z(x,y,t) = FlowPressure × sin(r × f + t) × cos(θ × 3 + t × 0.5) × Liquidity + TimeEffect</div>
-                <p class="formula-desc">где r = √(x² + y²), θ = atan2(y, x), f — частота, t — время эволюции</p>
+                <div class="latex-formula display-mode">z(x,y,t) = \text{FlowPressure} \times \sin(r \times f + t) \times \cos(\theta \times 3 + t \times 0.5) \times \text{Liquidity} + \text{TimeEffect}</div>
+                <p class="formula-desc">где <span class="latex-formula">r = \sqrt{x^2 + y^2}</span>, <span class="latex-formula">\theta = \text{atan2}(y, x)</span>, <span class="latex-formula">f</span> — частота, <span class="latex-formula">t</span> — время эволюции</p>
               </div>
               <p><strong>Использование:</strong> Страница <code>/terminal</code> → вкладка "Количественный анализ" — 3D визуализация поверхности ликвидности.</p>
             </div>
@@ -1507,8 +1515,10 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, onMounted, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
+import katex from 'katex'
+import 'katex/dist/katex.min.css'
 
 const router = useRouter()
 const activeSection = ref<string>('overview')
@@ -1519,12 +1529,39 @@ const setActiveSection = (section: string) => {
   // Плавная прокрутка к контенту
   setTimeout(() => {
     contentRef.value?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    nextTick(() => {
+      renderFormulas()
+    })
   }, 100)
 }
 
 const scrollToContent = () => {
   contentRef.value?.scrollIntoView({ behavior: 'smooth', block: 'start' })
 }
+
+const renderFormulas = () => {
+  nextTick(() => {
+    const formulaElements = document.querySelectorAll('.latex-formula')
+    formulaElements.forEach((el) => {
+      if (el instanceof HTMLElement && !el.dataset.rendered) {
+        try {
+          const formula = el.textContent || ''
+          katex.render(formula, el, {
+            throwOnError: false,
+            displayMode: el.classList.contains('display-mode')
+          })
+          el.dataset.rendered = 'true'
+        } catch (e) {
+          console.error('Error rendering formula:', e)
+        }
+      }
+    })
+  })
+}
+
+onMounted(() => {
+  renderFormulas()
+})
 </script>
 
 <style scoped>
@@ -2129,6 +2166,20 @@ html, body {
   padding: 8px 0;
   line-height: 1.8;
   white-space: pre-wrap;
+}
+
+.latex-formula {
+  font-size: 16px;
+  color: #fff;
+  margin: 8px 0;
+  padding: 8px 0;
+  text-align: center;
+}
+
+.latex-formula.display-mode {
+  display: block;
+  margin: 16px auto;
+  padding: 12px;
 }
 
 .formula sub, .formula sup {

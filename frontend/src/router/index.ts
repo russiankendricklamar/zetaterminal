@@ -31,8 +31,6 @@ import ForwardValuation from '@/pages/ForwardValuation.vue'
 import ForwardCurveBuilder from '@/pages/ForwardCurveBuilder.vue'
 import ForwardsGreeksDashboard from '@/pages/ForwardsGreeksDashboard.vue'
 import BasisAnalysis from '@/pages/BasisAnalysis.vue'
-import MarginFinancing from '@/pages/MarginFinancing.vue'
-import ArbitrageScanner from '@/pages/ArbitrageScanner.vue'
 import VolatilitySurface from '@/pages/VolatilitySurface.vue'
 import CCMVOptimizationPage from '@/pages/CCMVOptimization.vue'
 import DocumentationPage from '@/pages/DocumentationPage.vue'
@@ -237,18 +235,6 @@ const routes = [
         component: BasisAnalysis,
         name: 'BasisAnalysis',
         meta: { title: 'Basis Analysis', icon: '📈' }
-      },
-      {
-        path: 'forwards/margin',
-        component: MarginFinancing,
-        name: 'MarginFinancing',
-        meta: { title: 'Margin & Financing', icon: '💰' }
-      },
-      {
-        path: 'forwards/arbitrage',
-        component: ArbitrageScanner,
-        name: 'ArbitrageScanner',
-        meta: { title: 'Arbitrage Scanner', icon: '🔍' }
       },
       {
         path: 'analytics/volatility',
