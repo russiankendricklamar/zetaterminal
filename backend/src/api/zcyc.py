@@ -9,8 +9,9 @@ Endpoints:
 
 from fastapi import APIRouter, HTTPException, Query
 from pydantic import BaseModel, Field
-from typing import List, Optional
+from typing import List, Optional, Dict, Any
 from datetime import datetime
+import pandas as pd
 
 router = APIRouter()
 
@@ -214,4 +215,163 @@ async def get_available_dates():
         raise HTTPException(
             status_code=500,
             detail=f"Ошибка получения списка дат: {str(e)}"
+        )
+
+
+@router.get("/zcyc/maxdates")
+async def get_maxdates_endpoint(
+    engine: str = Query("stock", description="Движок биржи (stock, currency, etc.)")
+):
+    """
+    Получить максимальные даты для кривой ZCYC.
+    
+    Returns:
+        DataFrame с колонками: tradedate, maxdate, months
+    """
+    try:
+        from src.services.zcyc_service import get_maxdates
+        
+        df = get_maxdates(engine=engine)
+        return {
+            "success": True,
+            "data": df.to_dict(orient="records"),
+            "columns": df.columns.tolist()
+        }
+        
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Ошибка получения максимальных дат: {str(e)}"
+        )
+
+
+@router.get("/zcyc/yearyields")
+async def get_yearyields_endpoint(
+    date: Optional[str] = Query(None, description="Дата в формате YYYY-MM-DD"),
+    engine: str = Query("stock", description="Движок биржи (stock, currency, etc.)")
+):
+    """
+    Получить кривую годовых доходностей (yearyields) для указанной даты.
+    
+    Returns:
+        DataFrame с колонками: tradedate, tradetime, period, value
+    """
+    try:
+        from src.services.zcyc_service import get_yearyields
+        
+        # Валидация даты
+        if date:
+            try:
+                datetime.strptime(date, "%Y-%m-%d")
+            except ValueError:
+                raise HTTPException(
+                    status_code=400,
+                    detail="Неверный формат даты. Используйте YYYY-MM-DD"
+                )
+        
+        df = get_yearyields(date=date, engine=engine)
+        return {
+            "success": True,
+            "data": df.to_dict(orient="records"),
+            "columns": df.columns.tolist(),
+            "count": len(df)
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Ошибка получения кривой доходностей: {str(e)}"
+        )
+
+
+@router.get("/zcyc/yearyields/dates")
+async def get_yearyields_dates_endpoint(
+    date: Optional[str] = Query(None, description="Дата в формате YYYY-MM-DD"),
+    engine: str = Query("stock", description="Движок биржи (stock, currency, etc.)")
+):
+    """
+    Получить диапазон доступных дат для yearyields.
+    
+    Returns:
+        DataFrame с колонками: from, till
+    """
+    try:
+        from src.services.zcyc_service import get_yearyields_dates
+        
+        df = get_yearyields_dates(date=date, engine=engine)
+        return {
+            "success": True,
+            "data": df.to_dict(orient="records"),
+            "columns": df.columns.tolist()
+        }
+        
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Ошибка получения диапазона дат: {str(e)}"
+        )
+
+
+@router.get("/zcyc/latest")
+async def get_latest_curve_endpoint(
+    engine: str = Query("stock", description="Движок биржи (stock, currency, etc.)")
+):
+    """
+    Получить последнюю доступную кривую доходностей.
+    
+    Returns:
+        DataFrame с кривой доходностей для последней доступной даты
+    """
+    try:
+        from src.services.zcyc_service import get_latest_curve
+        
+        df = get_latest_curve(engine=engine)
+        return {
+            "success": True,
+            "data": df.to_dict(orient="records"),
+            "columns": df.columns.tolist(),
+            "count": len(df)
+        }
+        
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Ошибка получения последней кривой: {str(e)}"
+        )
+
+
+@router.post("/zcyc/discount")
+async def curve_to_discount_endpoint(
+    data: List[Dict[str, Any]],
+    col_term: str = Query("period", description="Название колонки со сроком"),
+    col_yield: str = Query("value", description="Название колонки с доходностью")
+):
+    """
+    Преобразовать кривую доходностей в discount curve.
+    
+    Body:
+        Список точек кривой с полями period и value
+    
+    Returns:
+        DataFrame с добавленными колонками: yield_decimal, discount_factor
+    """
+    try:
+        from src.services.zcyc_service import curve_to_discount
+        
+        df_curve = pd.DataFrame(data)
+        df_discount = curve_to_discount(df_curve, col_term=col_term, col_yield=col_yield)
+        
+        return {
+            "success": True,
+            "data": df_discount.to_dict(orient="records"),
+            "columns": df_discount.columns.tolist(),
+            "count": len(df_discount)
+        }
+        
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Ошибка преобразования кривой: {str(e)}"
         )

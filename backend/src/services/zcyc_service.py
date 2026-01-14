@@ -12,6 +12,8 @@
 """
 
 import requests
+import pandas as pd
+import numpy as np
 from typing import Dict, List, Optional, Tuple
 from datetime import datetime, timedelta
 import logging
@@ -495,3 +497,227 @@ def get_available_zcyc_dates() -> List[str]:
         logger.error(f"Ошибка получения списка дат ZCYC: {e}")
         # Возвращаем хотя бы сегодняшнюю дату
         return [datetime.now().strftime("%Y-%m-%d")]
+
+
+# ============================================================================
+# Модуль для работы с кривой ZCYC по спецификации MOEX ISS API
+# Спецификация: https://iss.moex.com/iss/reference/417
+# 
+# Базовые функции HTTP-доступа:
+# - get_maxdates(engine): Получить максимальные даты
+# - get_yearyields(date, engine): Получить кривую годовых доходностей
+# - get_yearyields_dates(date, engine): Получить диапазон доступных дат
+# - get_latest_curve(engine): Получить последнюю доступную кривую
+# 
+# Построение КБД (discount curve):
+# - curve_to_discount(df_curve, col_term, col_yield): Преобразовать кривую в discount curve
+# ============================================================================
+
+def get_maxdates(engine: str = "stock") -> pd.DataFrame:
+    """
+    Получить максимальные даты для кривой ZCYC.
+    
+    Parameters
+    ----------
+    engine : str, default "stock"
+        Движок биржи (stock, currency, etc.)
+    
+    Returns
+    -------
+    pd.DataFrame
+        DataFrame с колонками: tradedate, maxdate, months
+    """
+    url = f"{BASE_ISS}/engines/{engine}/zcyc/maxdates.json"
+    params = {
+        "iss.meta": "off"
+    }
+    
+    response = requests.get(url, params=params, timeout=15)
+    response.raise_for_status()
+    data = response.json()
+    
+    if "maxdates" not in data:
+        raise ValueError("Таблица 'maxdates' не найдена в ответе API")
+    
+    table_data = data["maxdates"]
+    columns = table_data.get("columns", [])
+    rows = table_data.get("data", [])
+    
+    if not rows:
+        return pd.DataFrame(columns=columns)
+    
+    df = pd.DataFrame(rows, columns=columns)
+    return df
+
+
+def get_yearyields(date: Optional[str] = None, engine: str = "stock") -> pd.DataFrame:
+    """
+    Получить кривую годовых доходностей (yearyields) для указанной даты.
+    
+    Parameters
+    ----------
+    date : str, optional
+        Дата в формате YYYY-MM-DD. Если None, используется "today" (последняя доступная дата)
+    engine : str, default "stock"
+        Движок биржи (stock, currency, etc.)
+    
+    Returns
+    -------
+    pd.DataFrame
+        DataFrame с колонками: tradedate, tradetime, period, value
+        - period: срок в годах
+        - value: доходность в процентах (годовая)
+    """
+    url = f"{BASE_ISS}/engines/{engine}/zcyc/yearyields.json"
+    params = {
+        "iss.meta": "off"
+    }
+    
+    if date:
+        params["date"] = date
+    
+    response = requests.get(url, params=params, timeout=15)
+    response.raise_for_status()
+    data = response.json()
+    
+    if "yearyields" not in data:
+        raise ValueError("Таблица 'yearyields' не найдена в ответе API")
+    
+    table_data = data["yearyields"]
+    columns = table_data.get("columns", [])
+    rows = table_data.get("data", [])
+    
+    if not rows:
+        return pd.DataFrame(columns=columns)
+    
+    df = pd.DataFrame(rows, columns=columns)
+    return df
+
+
+def get_yearyields_dates(date: Optional[str] = None, engine: str = "stock") -> pd.DataFrame:
+    """
+    Получить диапазон доступных дат для yearyields.
+    
+    Parameters
+    ----------
+    date : str, optional
+        Дата в формате YYYY-MM-DD. Если None, используется "today"
+    engine : str, default "stock"
+        Движок биржи (stock, currency, etc.)
+    
+    Returns
+    -------
+    pd.DataFrame
+        DataFrame с колонками: from, till
+    """
+    url = f"{BASE_ISS}/engines/{engine}/zcyc/yearyields.dates.json"
+    params = {
+        "iss.meta": "off"
+    }
+    
+    if date:
+        params["date"] = date
+    
+    response = requests.get(url, params=params, timeout=15)
+    response.raise_for_status()
+    data = response.json()
+    
+    table_name = "yearyields.dates"
+    if table_name not in data:
+        raise ValueError(f"Таблица '{table_name}' не найдена в ответе API")
+    
+    table_data = data[table_name]
+    columns = table_data.get("columns", [])
+    rows = table_data.get("data", [])
+    
+    if not rows:
+        return pd.DataFrame(columns=columns)
+    
+    df = pd.DataFrame(rows, columns=columns)
+    return df
+
+
+def get_latest_curve(engine: str = "stock") -> pd.DataFrame:
+    """
+    Получить последнюю доступную кривую доходностей.
+    
+    Функция:
+    1. Берёт последнюю доступную дату из maxdates
+    2. Вызывает get_yearyields(date=...) для этой даты
+    
+    Parameters
+    ----------
+    engine : str, default "stock"
+        Движок биржи (stock, currency, etc.)
+    
+    Returns
+    -------
+    pd.DataFrame
+        DataFrame с кривой доходностей для последней доступной даты
+    """
+    # Получаем максимальные даты
+    maxdates_df = get_maxdates(engine=engine)
+    
+    if maxdates_df.empty:
+        raise ValueError("Не удалось получить максимальные даты")
+    
+    # Берем последнюю доступную дату
+    latest_date = maxdates_df.iloc[0]["tradedate"]
+    
+    # Получаем кривую для этой даты
+    curve_df = get_yearyields(date=latest_date, engine=engine)
+    
+    return curve_df
+
+
+def curve_to_discount(
+    df_curve: pd.DataFrame,
+    col_term: str = "period",
+    col_yield: str = "value"
+) -> pd.DataFrame:
+    """
+    Преобразовать кривую доходностей в discount curve (кривую дисконтирования).
+    
+    Функция:
+    1. Сортирует по сроку
+    2. Преобразует ставки из процентов в доли (делит на 100)
+    3. Вычисляет discount factors: DF(t) = exp(-yield * t)
+    
+    Parameters
+    ----------
+    df_curve : pd.DataFrame
+        DataFrame с кривой доходностей
+    col_term : str, default "period"
+        Название колонки со сроком (в годах)
+    col_yield : str, default "value"
+        Название колонки с доходностью (в процентах)
+    
+    Returns
+    -------
+    pd.DataFrame
+        DataFrame с добавленными колонками:
+        - yield_decimal: доходность в долях (value / 100)
+        - discount_factor: фактор дисконтирования exp(-yield * term)
+    """
+    if df_curve.empty:
+        return df_curve.copy()
+    
+    # Проверяем наличие необходимых колонок
+    if col_term not in df_curve.columns:
+        raise ValueError(f"Колонка '{col_term}' не найдена в DataFrame")
+    if col_yield not in df_curve.columns:
+        raise ValueError(f"Колонка '{col_yield}' не найдена в DataFrame")
+    
+    # Создаем копию для избежания изменения исходного DataFrame
+    df = df_curve.copy()
+    
+    # Сортируем по сроку
+    df = df.sort_values(by=col_term).reset_index(drop=True)
+    
+    # Преобразуем ставки из процентов в доли
+    df["yield_decimal"] = df[col_yield] / 100.0
+    
+    # Вычисляем discount factors: DF(t) = exp(-yield * t)
+    df["discount_factor"] = np.exp(-df["yield_decimal"] * df[col_term])
+    
+    return df

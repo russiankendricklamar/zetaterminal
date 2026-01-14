@@ -382,7 +382,13 @@ const loadZCYC = async () => {
     }
   } catch (error: any) {
     console.error('Ошибка загрузки кривой бескупонных доходностей:', error)
-    alert(`Ошибка загрузки кривой: ${error.message || 'Неизвестная ошибка'}`)
+    const errorMessage = error.message || 'Неизвестная ошибка'
+    console.error('Детали ошибки:', {
+      message: errorMessage,
+      date: params.value.date,
+      apiBase: import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
+    })
+    alert(`Ошибка загрузки кривой: ${errorMessage}\n\nПроверьте:\n1. Запущен ли бэкенд сервер\n2. Правильность URL API в настройках`)
   } finally {
     loading.value = false
   }
