@@ -582,6 +582,61 @@ file_repo.create(file_record)
 
 ---
 
+# Автоматизация загрузки рыночных данных
+
+### n8n Workflow
+
+Создаем workflow в n8n:
+
+```
+Schedule Trigger (Cron: 0 9 * * *) 
+  → HTTP Request (POST /api/market-data/fetch-daily)
+  → IF Node (проверка успешности)
+  → Email/Slack (уведомление об ошибках)
+```
+
+**Настройка HTTP Request:**
+- **Method:** POST
+- **URL:** `https://stochastic-dashbord-v1-production.up.railway.app/api/market-data/fetch-daily`
+- **Authentication:** None (или добавь API key если нужно)
+
+### Railway Cron Job (через API endpoint)
+
+Создаем API endpoint для запуска через HTTP запрос (уже есть в `api/market_data.py`).
+
+Затем используем n8n для планирования.
+
+## Настройка скрипта
+
+1. Редактируем список тикеров в `scripts/fetch_market_data.py`:
+   ```python
+   TICKERS = {
+       "stocks": ["SBER.ME", "GAZP.ME", ...],
+       "currencies": ["USDRUB=X", ...],
+       "indices": ["IMOEX.ME", ...]
+   }
+   ```
+
+2. Устанавливаем переменные окружения:
+   ```bash
+   export SUPABASE_URL=your-url
+   export SUPABASE_ANON_KEY=your-key
+   ```
+
+3. Запускаем вручную для теста:
+   ```bash
+   cd backend
+   python scripts/fetch_market_data.py
+   ```
+
+## Мониторинг
+
+- Проверяем таблицу `market_data_daily` в Supabase
+- Настраиваем уведомления об ошибках (Email/Slack/Telegram)
+- Добавляем логирование
+
+---
+
 ## 📚 API Документация
 
 ### Основные эндпоинты
