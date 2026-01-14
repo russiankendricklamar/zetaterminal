@@ -88,7 +88,7 @@
                   @click="setView(item.id)"
                   :class="`flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold transition-all text-left group ${view === item.id ? 'bg-indigo-500/10 text-indigo-300 border border-indigo-500/20' : 'text-gray-400 hover:text-white hover:bg-white/5 border border-transparent'}`"
                 >
-                  <component :is="item.icon" :class="view === item.id ? 'text-indigo-400' : 'text-gray-500 group-hover:text-white'" />
+                  <component :is="iconMap[item.icon] || ActivityIcon" :class="view === item.id ? 'text-indigo-400' : 'text-gray-500 group-hover:text-white'" />
                   <span class="flex-1">{{ item.label }}</span>
                   <span :class="`font-mono text-[10px] px-1.5 py-0.5 rounded border ${view === item.id ? 'bg-indigo-500/20 border-indigo-500/30 text-indigo-300' : 'bg-white/5 border-white/5 text-gray-500 group-hover:text-gray-300'}`">
                     {{ item.code }}
@@ -508,6 +508,7 @@ const navItems = [
   { id: 'Macro', label: 'Макроэкономика', icon: 'DatabaseIcon', code: 'ECOD' },
   { id: 'Options', label: 'Опционы', icon: 'FilterIcon', code: 'OMON' },
   { id: 'Research', label: 'Исследования', icon: 'SearchIcon', code: 'RES' },
+  { id: 'Resources', label: 'Ресурсы', icon: 'DatabaseIcon', code: 'FLDS' },
   { id: 'Swaps', label: 'Свопы', icon: 'ActivityIcon', code: 'SWPM' },
 ];
 
@@ -635,9 +636,22 @@ const getWindowTitle = (viewType: string): string => {
   return item?.label || viewType;
 };
 
+const iconMap: Record<string, any> = {
+  'ActivityIcon': ActivityIcon,
+  'GlobeIcon': GlobeIcon,
+  'TrendingUpIcon': TrendingUpIcon,
+  'FilterIcon': FilterIcon,
+  'PieChartIcon': PieChartIcon,
+  'WifiIcon': WifiIcon,
+  'SearchIcon': SearchIcon,
+  'DollarSignIcon': DollarSignIcon,
+  'DatabaseIcon': DatabaseIcon,
+};
+
 const getWindowIcon = (viewType: string): any => {
   const item = navItems.find(i => i.id === viewType);
-  return item?.icon || 'ActivityIcon';
+  const iconName = item?.icon || 'ActivityIcon';
+  return iconMap[iconName] || ActivityIcon;
 };
 
 const setActiveSymbol = (symbol: string) => {

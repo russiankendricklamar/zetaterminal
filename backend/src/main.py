@@ -23,6 +23,7 @@ from src.api import swap
 from src.api import market_data
 from src.api import database
 from src.api import spectral_regime
+from src.api import zcyc
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -72,6 +73,7 @@ app.include_router(swap.router, prefix="/api/swap", tags=["swap"])
 app.include_router(market_data.router, prefix="/api/market", tags=["market_data"])
 app.include_router(database.router, prefix="/api/db", tags=["database"])
 app.include_router(spectral_regime.router, prefix="/api/spectral-regime", tags=["spectral_regime"])
+app.include_router(zcyc.router, prefix="/api", tags=["zcyc"])
 
 
 @app.get("/")

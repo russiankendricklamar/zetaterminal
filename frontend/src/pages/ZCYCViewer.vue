@@ -16,6 +16,9 @@
             type="date"
             class="date-input"
             :max="today"
+            :min="minDate"
+            @change="onDateChange"
+            :disabled="loading"
           />
         </div>
 
@@ -254,8 +257,13 @@
               <strong>Источник:</strong> MOEX ISS API
             </p>
             <p>
-              <strong>Интерполяция:</strong> Если срок не совпадает ни с одной точкой кривой, система вычисляет 
+              <strong>Интерполяция:</strong> MOEX использует метод Нельсона-Сигеля для интерполяции кривой. 
+              Если срок не совпадает ни с одной точкой кривой, система вычисляет 
               доходность методом линейной интерполяции между двумя ближайшими точками.
+            </p>
+            <p>
+              <strong>Выбор даты:</strong> Выберите дату для получения кривой бескупонных доходностей. 
+              Доступны данные с 2014 года по текущую дату.
             </p>
           </div>
         </div>
@@ -294,7 +302,7 @@ interface ZCYCParams {
 
 // ============= STATE =============
 const params = ref<ZCYCParams>({
-  date: '2026-01-03'
+  date: new Date().toISOString().split('T')[0] // Сегодняшняя дата по умолчанию
 })
 
 // Mock data
@@ -335,6 +343,8 @@ const showSuggestions = ref(false)
 
 // ============= COMPUTED =============
 const today = new Date().toISOString().split('T')[0]
+// Минимальная дата - начало доступных данных MOEX (примерно 2014-01-06)
+const minDate = '2014-01-06'
 
 const filteredPeriods = computed((): ZCYCPoint[] => {
   if (!periodSearch.value || !results.value) return []
@@ -351,13 +361,38 @@ const filteredPeriods = computed((): ZCYCPoint[] => {
 
 // ============= METHODS =============
 const loadZCYC = async () => {
+  if (!params.value.date) {
+    console.warn('Дата не выбрана')
+    return
+  }
+  
   loading.value = true
   
-  setTimeout(() => {
-    // Simulate API call - in real app this would fetch from API
+  try {
+    const { getZCYC } = await import('@/services/zcycService')
+    const data = await getZCYC(params.value.date)
+    
+    if (data.status === 'ok') {
+      results.value = data
+      renderChart(results.value)
+    } else {
+      console.error('Ошибка загрузки КБД:', data.error)
+      // Показываем ошибку пользователю
+      alert(`Ошибка загрузки кривой: ${data.error || 'Неизвестная ошибка'}`)
+    }
+  } catch (error: any) {
+    console.error('Ошибка загрузки кривой бескупонных доходностей:', error)
+    alert(`Ошибка загрузки кривой: ${error.message || 'Неизвестная ошибка'}`)
+  } finally {
     loading.value = false
-    renderChart(results.value)
-  }, 800)
+  }
+}
+
+const onDateChange = () => {
+  // Автоматически загружаем данные при изменении даты
+  if (params.value.date) {
+    loadZCYC()
+  }
 }
 
 const filterPeriods = () => {
@@ -492,7 +527,6 @@ const renderChart = (data: ZCYCResults) => {
           beginAtZero: false,
           grid: {
             color: 'rgba(255, 255, 255, 0.08)',
-            drawBorder: false,
             lineWidth: 1
           },
           ticks: {
@@ -511,8 +545,7 @@ const renderChart = (data: ZCYCResults) => {
         },
         x: {
           grid: {
-            display: false,
-            drawBorder: false
+            display: false
           },
           ticks: {
             color: 'rgba(255,255,255,0.6)',
@@ -584,9 +617,10 @@ const formatDate = (dateStr: string): string => {
   })
 }
 
-// Auto-render chart on mount
+// Auto-render chart on mount and load data
 onMounted(() => {
-  renderChart(results.value)
+  // Загружаем данные при монтировании компонента
+  loadZCYC()
 })
 </script>
 
@@ -760,8 +794,8 @@ onMounted(() => {
 .dot-legend { width: 6px; height: 6px; border-radius: 50%; display: inline-block; margin-right: 4px; }
 
 /* Colors & Helpers */
-.text-gradient-green { background: linear-gradient(135deg, #4ade80, #22c55e); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-.text-gradient-blue { background: linear-gradient(135deg, #60a5fa, #3b82f6); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+.text-gradient-green { background: linear-gradient(135deg, #4ade80, #22c55e); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
+.text-gradient-blue { background: linear-gradient(135deg, #60a5fa, #3b82f6); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
 .text-red { color: #f87171; }
 .text-green { color: #4ade80; }
 .text-muted { color: rgba(255,255,255,0.4); }
