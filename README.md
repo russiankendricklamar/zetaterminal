@@ -340,7 +340,7 @@ $$
 #### Модель CGMY
 
 $$
-\phi_{CGMY}(u) = \exp\left\{ t C \Gamma(-Y) \left[ (M - i u)^Y - M^Y + (G + i u)^Y - G^Y \right] \right\}
+\phi_{CGMY}(u) = \exp \big( t C \Gamma(-Y) [ (M - i u)^Y - M^Y + (G + i u)^Y - G^Y ] \big)
 $$
 
 ---
