@@ -70,8 +70,8 @@ class SpectralRegimeAnalyzer:
     def __init__(
         self,
         max_lag: Optional[int] = None,
-        n_poles: int = 5,
-        window_size: int = 20
+        n_poles: Optional[int] = 5,
+        window_size: Optional[int] = 20
     ):
         """
         Инициализация анализатора.
@@ -588,22 +588,89 @@ class SpectralRegimeAnalyzer:
         # 1. Вычисление ACF
         self.compute_acf(y)
         
-        # 2. Метод Prony
+        # 2. Если n_poles не задан, используем значение по умолчанию
+        if self.n_poles is None or self.n_poles <= 0:
+            self.n_poles = 5
+        
+        # 3. Метод Prony
         self.prony_method(self.acf)
         
-        # 3. Кластеризация полюсов
+        # 4. Если window_size не задан, используем значение по умолчанию
+        if self.window_size is None or self.window_size <= 0:
+            self.window_size = 20
+        
+        # 5. Кластеризация полюсов
         self.cluster_poles(self.poles)
         
-        # 4. Параметры режимов
+        # 6. Параметры режимов
         self.regime_parameters()
         
-        # 5. Спектральная факторизация
+        # 7. Спектральная факторизация
         self.spectral_factorization()
         
-        # 6. Восстановление фазы
+        # 8. Восстановление фазы
         self.minimum_phase_recovery()
         
-        # 7. Динамический анализ
+        # 9. Динамический анализ
+        if self.T > self.window_size:
+            self.dynamic_regime_analysis(y)
+        
+        return self
+    
+    def fit_auto(self, y: np.ndarray, criterion: str = 'bic') -> 'SpectralRegimeAnalyzer':
+        """
+        Полный pipeline оценки с автоматическим определением оптимальных параметров.
+        
+        Автоматически определяет:
+        - Оптимальное количество полюсов через информационные критерии
+        - Оптимальный размер окна на основе длины ряда
+        
+        Parameters
+        ----------
+        y : ndarray
+            Временной ряд размерности (T,)
+        criterion : str
+            Критерий для выбора количества полюсов: 'aic', 'bic', или 'aicc'
+        
+        Returns
+        -------
+        self : SpectralRegimeAnalyzer
+            Для chaining
+        """
+        y = np.asarray(y).flatten()
+        self.y = y
+        self.T = len(y)
+        
+        if self.max_lag is None:
+            self.max_lag = self.T // 4
+        
+        # 1. Вычисление ACF
+        self.compute_acf(y)
+        
+        # 2. Автоматическое определение оптимального количества полюсов
+        if self.n_poles is None or self.n_poles <= 0:
+            self.n_poles = self.find_optimal_n_poles(self.acf, criterion=criterion)
+        
+        # 3. Автоматическое определение оптимального размера окна
+        if self.window_size is None or self.window_size <= 0:
+            self.window_size = self.find_optimal_window_size(self.T)
+        
+        # 4. Метод Prony
+        self.prony_method(self.acf)
+        
+        # 5. Кластеризация полюсов
+        self.cluster_poles(self.poles)
+        
+        # 6. Параметры режимов
+        self.regime_parameters()
+        
+        # 7. Спектральная факторизация
+        self.spectral_factorization()
+        
+        # 8. Восстановление фазы
+        self.minimum_phase_recovery()
+        
+        # 9. Динамический анализ
         if self.T > self.window_size:
             self.dynamic_regime_analysis(y)
         
@@ -792,6 +859,177 @@ class SpectralRegimeAnalyzer:
             'expected_duration_days': duration
         }
     
+    @staticmethod
+    def find_optimal_n_poles(
+        acf: np.ndarray,
+        min_poles: int = 3,
+        max_poles: int = 12,
+        criterion: str = 'bic'
+    ) -> int:
+        """
+        Найти оптимальное количество полюсов через информационные критерии.
+        
+        Использует AIC (Akaike Information Criterion) или BIC (Bayesian Information Criterion)
+        для выбора оптимального количества полюсов, балансируя между точностью
+        восстановления и сложностью модели.
+        
+        Формулы:
+        AIC = 2k - 2*ln(L)  где k - число параметров, L - likelihood
+        BIC = k*ln(n) - 2*ln(L)  где n - размер выборки
+        
+        Parameters
+        ----------
+        acf : ndarray
+            Автоковариация размерности (H+1,)
+        min_poles : int
+            Минимальное количество полюсов (по умолчанию 3)
+        max_poles : int
+            Максимальное количество полюсов (по умолчанию 12)
+        criterion : str
+            Критерий выбора: 'aic', 'bic', или 'aicc' (скорректированный AIC)
+        
+        Returns
+        -------
+        optimal_n_poles : int
+            Оптимальное количество полюсов
+        """
+        H = len(acf) - 1
+        max_poles = min(max_poles, H // 2 - 1)
+        min_poles = max(min_poles, 2)
+        
+        if max_poles < min_poles:
+            return min_poles
+        
+        criteria_values = []
+        n_poles_range = range(min_poles, max_poles + 1)
+        
+        for M in n_poles_range:
+            try:
+                # Создаём временный анализатор для тестирования
+                temp_analyzer = SpectralRegimeAnalyzer(
+                    max_lag=H,
+                    n_poles=M,
+                    window_size=20  # Не важно для этого теста
+                )
+                
+                # Вычисляем полюсы
+                poles, residues = temp_analyzer.prony_method(acf)
+                
+                # Восстанавливаем ACF
+                acf_recon = np.zeros(len(acf), dtype=complex)
+                for h in range(len(acf)):
+                    for k in range(len(poles)):
+                        acf_recon[h] += residues[k] * (poles[k] ** h)
+                acf_recon = np.real(acf_recon)
+                
+                # Вычисляем ошибку восстановления
+                rmse = np.sqrt(np.mean((acf - acf_recon) ** 2))
+                
+                # Количество параметров: 2*M (комплексные полюсы) + 2*M (комплексные остатки) = 4*M
+                k = 4 * M
+                n = len(acf)
+                
+                # Log-likelihood (приблизительно через RMSE)
+                # L ∝ exp(-n*RMSE^2 / (2*σ^2)), где σ^2 - дисперсия ACF
+                var_acf = np.var(acf)
+                if var_acf > 0 and rmse > 0:
+                    # Приближение: ln(L) ≈ -n*RMSE^2 / (2*var_acf)
+                    log_likelihood = -n * (rmse ** 2) / (2 * var_acf + 1e-10)
+                else:
+                    log_likelihood = -1e10
+                
+                # Вычисляем критерий
+                if criterion.lower() == 'aic':
+                    criterion_value = 2 * k - 2 * log_likelihood
+                elif criterion.lower() == 'aicc':
+                    # Скорректированный AIC: AICc = AIC + 2k(k+1)/(n-k-1)
+                    aic = 2 * k - 2 * log_likelihood
+                    if n > k + 1:
+                        correction = 2 * k * (k + 1) / (n - k - 1)
+                    else:
+                        correction = 0
+                    criterion_value = aic + correction
+                else:  # BIC (по умолчанию)
+                    criterion_value = k * np.log(n) - 2 * log_likelihood
+                
+                criteria_values.append((M, criterion_value, rmse))
+                
+            except Exception:
+                # Если не удалось вычислить для данного M, пропускаем
+                continue
+        
+        if not criteria_values:
+            # Fallback: возвращаем среднее значение
+            return (min_poles + max_poles) // 2
+        
+        # Находим минимум критерия
+        criteria_values = np.array(criteria_values)
+        best_idx = np.argmin(criteria_values[:, 1])  # Индекс минимального критерия
+        optimal_n_poles = int(criteria_values[best_idx, 0])
+        
+        return optimal_n_poles
+    
+    @staticmethod
+    def find_optimal_window_size(
+        T: int,
+        min_window: int = 10,
+        max_window: int = 50
+    ) -> int:
+        """
+        Найти оптимальный размер скользящего окна.
+        
+        Использует эвристические правила на основе длины временного ряда:
+        - window_size = sqrt(T) для коротких рядов
+        - window_size = T/10 для длинных рядов
+        - Ограничивается min_window и max_window
+        
+        Parameters
+        ----------
+        T : int
+            Длина временного ряда
+        min_window : int
+            Минимальный размер окна (по умолчанию 10)
+        max_window : int
+            Максимальный размер окна (по умолчанию 50)
+        
+        Returns
+        -------
+        optimal_window_size : int
+            Оптимальный размер окна
+        """
+        if T < min_window:
+            return min_window
+        
+        # Правило 1: sqrt(T) для коротких рядов
+        sqrt_rule = int(np.sqrt(T))
+        
+        # Правило 2: T/10 для длинных рядов
+        fraction_rule = int(T / 10)
+        
+        # Правило 3: log(T) * 5 для средних рядов
+        log_rule = int(np.log(T + 1) * 5)
+        
+        # Выбираем среднее значение правил
+        candidates = [sqrt_rule, fraction_rule, log_rule]
+        candidates = [c for c in candidates if min_window <= c <= max_window]
+        
+        if not candidates:
+            # Если все выходят за границы, используем граничные значения
+            if sqrt_rule < min_window:
+                return min_window
+            elif sqrt_rule > max_window:
+                return max_window
+            else:
+                return sqrt_rule
+        
+        # Возвращаем медиану кандидатов
+        optimal = int(np.median(candidates))
+        
+        # Ограничиваем границами
+        optimal = max(min_window, min(optimal, max_window))
+        
+        return optimal
+    
     def get_summary(self) -> Dict:
         """
         Получить сводную информацию об анализе.
@@ -928,9 +1166,11 @@ class SpectralRegimeAnalyzer:
 
 def run_spectral_regime_analysis(
     returns: List[float],
-    n_poles: int = 5,
-    window_size: int = 20,
-    max_lag: Optional[int] = None
+    n_poles: Optional[int] = None,
+    window_size: Optional[int] = None,
+    max_lag: Optional[int] = None,
+    auto_optimize: bool = False,
+    criterion: str = 'bic'
 ) -> Dict[str, Any]:
     """
     Запустить комплексный анализ скрытых рыночных режимов.
@@ -939,19 +1179,31 @@ def run_spectral_regime_analysis(
     ----------
     returns : list
         Временной ряд доходностей
-    n_poles : int
-        Количество полюсов для идентификации
-    window_size : int
-        Размер скользящего окна
+    n_poles : int, optional
+        Количество полюсов для идентификации. Если None и auto_optimize=True,
+        определяется автоматически через информационные критерии.
+    window_size : int, optional
+        Размер скользящего окна. Если None и auto_optimize=True,
+        определяется автоматически на основе длины ряда.
     max_lag : int, optional
-        Максимальный лаг для ACF
+        Максимальный лаг для ACF (по умолчанию T/4)
+    auto_optimize : bool
+        Если True, автоматически определяет оптимальные n_poles и window_size
+    criterion : str
+        Критерий для выбора количества полюсов: 'aic', 'bic', или 'aicc'
+        (используется только если auto_optimize=True)
     
     Returns
     -------
     dict
-        Полные результаты анализа
+        Полные результаты анализа с информацией об использованных параметрах
     """
     returns_arr = np.array(returns)
+    
+    # Если auto_optimize=True, устанавливаем None для автоматического определения
+    if auto_optimize:
+        n_poles = None
+        window_size = None
     
     analyzer = SpectralRegimeAnalyzer(
         max_lag=max_lag,
@@ -959,9 +1211,23 @@ def run_spectral_regime_analysis(
         window_size=window_size
     )
     
-    analyzer.fit(returns_arr)
+    # Используем fit_auto если auto_optimize=True или параметры не заданы
+    if auto_optimize or (n_poles is None and window_size is None):
+        analyzer.fit_auto(returns_arr, criterion=criterion)
+    else:
+        analyzer.fit(returns_arr)
+    
+    summary = analyzer.get_summary()
+    
+    # Добавляем информацию об использованных параметрах
+    summary['optimization'] = {
+        'auto_optimized': auto_optimize or (n_poles is None or window_size is None),
+        'n_poles_used': analyzer.n_poles,
+        'window_size_used': analyzer.window_size,
+        'criterion_used': criterion if auto_optimize else None
+    }
     
     return {
-        'summary': analyzer.get_summary(),
+        'summary': summary,
         'visualization': analyzer.get_visualization_data()
     }

@@ -77,22 +77,47 @@
           <div class="panel-header"><h3>Параметры анализа</h3></div>
           
           <div class="controls-form">
-            <!-- N Poles -->
+            <!-- Auto Optimize Checkbox -->
             <div class="input-group">
+              <label class="checkbox-label">
+                <input type="checkbox" v-model="autoOptimize" class="checkbox-input" />
+                <span class="checkbox-text">Автоматическая оптимизация параметров</span>
+              </label>
+              <span class="hint">Автоматически определяет оптимальные значения</span>
+            </div>
+            
+            <!-- N Poles -->
+            <div class="input-group" :class="{ 'opacity-50': autoOptimize }">
               <label class="lbl">Количество полюсов (M)</label>
               <div class="range-row">
-                <input type="range" v-model.number="nPoles" min="3" max="12" step="1" class="range-slider" />
-                <span class="range-value">{{ nPoles }}</span>
+                <input 
+                  type="range" 
+                  v-model.number="nPoles" 
+                  min="3" 
+                  max="12" 
+                  step="1" 
+                  class="range-slider" 
+                  :disabled="autoOptimize"
+                />
+                <span class="range-value">{{ autoOptimize ? 'auto' : nPoles }}</span>
               </div>
               <span class="hint">Рекомендуется 5-8</span>
             </div>
             
             <!-- Window Size -->
-            <div class="input-group mt-3">
+            <div class="input-group mt-3" :class="{ 'opacity-50': autoOptimize }">
               <label class="lbl">Размер окна (W)</label>
               <div class="range-row">
-                <input type="range" v-model.number="windowSize" min="10" max="50" step="5" class="range-slider" />
-                <span class="range-value">{{ windowSize }} дн.</span>
+                <input 
+                  type="range" 
+                  v-model.number="windowSize" 
+                  min="10" 
+                  max="50" 
+                  step="5" 
+                  class="range-slider" 
+                  :disabled="autoOptimize"
+                />
+                <span class="range-value">{{ autoOptimize ? 'auto' : windowSize + ' дн.' }}</span>
               </div>
               <span class="hint">Для динамического анализа</span>
             </div>
@@ -119,7 +144,10 @@
               </div>
               <div class="metric-item">
                 <span class="metric-label">Полюсов</span>
-                <span class="metric-value">{{ analysisResult.summary.n_poles }}</span>
+                <span class="metric-value">
+                  {{ analysisResult.summary.n_poles }}
+                  <span v-if="analysisResult.summary.optimization?.auto_optimized" class="text-xs text-yellow ml-1">(auto)</span>
+                </span>
               </div>
               <div class="metric-item">
                 <span class="metric-label">Энтропия</span>
@@ -132,6 +160,18 @@
                 <span class="metric-value text-green">
                   {{ analysisResult.summary.reconstruction.pct_explained.toFixed(1) }}%
                 </span>
+              </div>
+            </div>
+            
+            <!-- Optimization Info -->
+            <div v-if="analysisResult.summary.optimization?.auto_optimized" class="optimization-info">
+              <div class="opt-item">
+                <span class="opt-label">Окно:</span>
+                <span class="opt-value">{{ analysisResult.summary.optimization.window_size_used }} дн.</span>
+              </div>
+              <div class="opt-item">
+                <span class="opt-label">Критерий:</span>
+                <span class="opt-value">{{ analysisResult.summary.optimization.criterion_used?.toUpperCase() || 'BIC' }}</span>
               </div>
             </div>
             
@@ -268,9 +308,36 @@
               <text x="0.05" y="-1.35" fill="rgba(255,255,255,0.4)" font-size="0.08">Im</text>
               <text x="1.02" y="0.12" fill="rgba(255,255,255,0.3)" font-size="0.06">|z|=1</text>
             </svg>
-            <div v-else class="empty-state">
-              <span>Запустите анализ для отображения диаграммы полюсов</span>
-            </div>
+            <!-- Placeholder visualization -->
+            <svg v-else viewBox="-1.5 -1.5 3 3" preserveAspectRatio="xMidYMid meet" class="poles-svg placeholder">
+              <!-- Grid -->
+              <line x1="-1.5" y1="0" x2="1.5" y2="0" stroke="rgba(255,255,255,0.1)" stroke-width="0.01" />
+              <line x1="0" y1="-1.5" x2="0" y2="1.5" stroke="rgba(255,255,255,0.1)" stroke-width="0.01" />
+              
+              <!-- Unit Circle -->
+              <circle cx="0" cy="0" r="1" fill="none" stroke="rgba(255,255,255,0.2)" stroke-width="0.02" stroke-dasharray="0.05 0.03" />
+              <circle cx="0" cy="0" r="0.5" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="0.01" />
+              
+              <!-- Stability zones -->
+              <circle cx="0" cy="0" r="0.8" fill="rgba(74, 222, 128, 0.03)" stroke="none" />
+              <circle cx="0" cy="0" r="0.95" fill="none" stroke="rgba(251, 191, 36, 0.1)" stroke-width="0.01" />
+              
+              <!-- Placeholder poles (example positions) -->
+              <circle cx="0.6" cy="0.3" r="0.04" fill="#4ade80" fill-opacity="0.4" stroke="rgba(255,255,255,0.3)" stroke-width="0.01" />
+              <circle cx="0.7" cy="-0.2" r="0.04" fill="#fbbf24" fill-opacity="0.4" stroke="rgba(255,255,255,0.3)" stroke-width="0.01" />
+              <circle cx="0.85" cy="0.1" r="0.08" fill="#3b82f6" fill-opacity="0.4" stroke="rgba(255,255,255,0.4)" stroke-width="0.015" />
+              <circle cx="0.4" cy="0.5" r="0.04" fill="#f97316" fill-opacity="0.4" stroke="rgba(255,255,255,0.3)" stroke-width="0.01" />
+              
+              <!-- Labels -->
+              <text x="1.35" y="0.05" fill="rgba(255,255,255,0.2)" font-size="0.08">Re</text>
+              <text x="0.05" y="-1.35" fill="rgba(255,255,255,0.2)" font-size="0.08">Im</text>
+              <text x="1.02" y="0.12" fill="rgba(255,255,255,0.15)" font-size="0.06">|z|=1</text>
+              
+              <!-- Placeholder text -->
+              <text x="0" y="0.3" fill="rgba(255,255,255,0.3)" font-size="0.2" text-anchor="middle" font-weight="300">
+                Запустите анализ
+              </text>
+            </svg>
           </div>
         </div>
 
@@ -331,10 +398,46 @@
                 stroke-dasharray="4"
               />
             </svg>
-            <div v-else class="empty-state">
-              <div v-if="isLoading" class="spinner-large"></div>
-              <span v-else>Нажмите «Запустить анализ»</span>
-            </div>
+            <!-- Placeholder visualization -->
+            <svg v-else viewBox="0 0 800 300" preserveAspectRatio="none" class="dynamics-svg placeholder">
+              <!-- Grid -->
+              <line v-for="y in [75, 150, 225]" :key="'grid-' + y" x1="0" :y1="y" x2="800" :y2="y" stroke="rgba(255,255,255,0.05)" />
+              
+              <!-- Placeholder regime bars -->
+              <rect x="0" y="0" width="160" height="300" fill="rgba(59, 130, 246, 0.08)" />
+              <rect x="160" y="0" width="160" height="300" fill="rgba(74, 222, 128, 0.08)" />
+              <rect x="320" y="0" width="160" height="300" fill="rgba(59, 130, 246, 0.08)" />
+              <rect x="480" y="0" width="160" height="300" fill="rgba(251, 191, 36, 0.08)" />
+              <rect x="640" y="0" width="160" height="300" fill="rgba(59, 130, 246, 0.08)" />
+              
+              <!-- Placeholder price line (sinusoidal) -->
+              <path 
+                d="M 0,150 Q 100,100 200,120 T 400,140 T 600,130 T 800,150" 
+                fill="none" 
+                stroke="rgba(255,255,255,0.3)" 
+                stroke-width="1.5" 
+                stroke-linejoin="round"
+                stroke-dasharray="4 2"
+              />
+              
+              <!-- Loading indicator -->
+              <g v-if="isLoading">
+                <circle cx="400" cy="150" r="20" fill="none" stroke="rgba(59, 130, 246, 0.5)" stroke-width="2" stroke-dasharray="10 5">
+                  <animateTransform
+                    attributeName="transform"
+                    type="rotate"
+                    from="0 400 150"
+                    to="360 400 150"
+                    dur="1s"
+                    repeatCount="indefinite"
+                  />
+                </circle>
+                <text x="400" y="200" fill="rgba(255,255,255,0.4)" font-size="12" text-anchor="middle">Загрузка...</text>
+              </g>
+              <text v-else x="400" y="150" fill="rgba(255,255,255,0.3)" font-size="14" text-anchor="middle" font-weight="300">
+                Нажмите «Запустить анализ»
+              </text>
+            </svg>
           </div>
         </div>
 
@@ -355,9 +458,28 @@
                 />
               </g>
             </svg>
-            <div v-else-if="!isLoading" class="empty-state-sm">
-              <span>Данные отсутствуют</span>
-            </div>
+            <!-- Placeholder visualization -->
+            <svg v-else viewBox="0 0 800 120" preserveAspectRatio="none" class="entropy-svg placeholder">
+              <!-- Grid -->
+              <line x1="0" y1="60" x2="800" y2="60" stroke="rgba(255,255,255,0.1)" stroke-dasharray="4" />
+              
+              <!-- Placeholder entropy curve -->
+              <path 
+                d="M 0,100 Q 100,80 200,70 T 400,65 T 600,75 T 800,85" 
+                fill="rgba(139, 92, 246, 0.15)" 
+                stroke="rgba(139, 92, 246, 0.4)" 
+                stroke-width="1.5"
+              />
+              <path 
+                d="M 0,100 Q 100,80 200,70 T 400,65 T 600,75 T 800,85 L 800,120 L 0,120 Z" 
+                fill="rgba(139, 92, 246, 0.15)" 
+                stroke="none"
+              />
+              
+              <text x="400" y="70" fill="rgba(255,255,255,0.2)" font-size="11" text-anchor="middle" font-weight="300">
+                Энтропия режимности
+              </text>
+            </svg>
           </div>
         </div>
 
@@ -392,9 +514,28 @@
                 max entropy
               </text>
             </svg>
-            <div v-else-if="!isLoading" class="empty-state-sm">
-              <span>Данные отсутствуют</span>
-            </div>
+            <!-- Placeholder visualization -->
+            <svg v-else viewBox="0 0 800 120" preserveAspectRatio="none" class="entropy-svg placeholder">
+              <!-- Grid -->
+              <line x1="0" y1="60" x2="800" y2="60" stroke="rgba(255,255,255,0.1)" stroke-dasharray="4" />
+              
+              <!-- Placeholder entropy curve -->
+              <path 
+                d="M 0,100 Q 100,80 200,70 T 400,65 T 600,75 T 800,85" 
+                fill="rgba(139, 92, 246, 0.15)" 
+                stroke="rgba(139, 92, 246, 0.4)" 
+                stroke-width="1.5"
+              />
+              <path 
+                d="M 0,100 Q 100,80 200,70 T 400,65 T 600,75 T 800,85 L 800,120 L 0,120 Z" 
+                fill="rgba(139, 92, 246, 0.15)" 
+                stroke="none"
+              />
+              
+              <text x="400" y="70" fill="rgba(255,255,255,0.2)" font-size="11" text-anchor="middle" font-weight="300">
+                Энтропия режимности
+              </text>
+            </svg>
           </div>
         </div>
 
@@ -416,9 +557,29 @@
               <text x="395" y="135" fill="rgba(255,255,255,0.3)" font-size="9">π/2</text>
               <text x="790" y="135" fill="rgba(255,255,255,0.3)" font-size="9">π</text>
             </svg>
-            <div v-else-if="!isLoading" class="empty-state-sm">
-              <span>Данные отсутствуют</span>
-            </div>
+            <!-- Placeholder visualization -->
+            <svg v-else viewBox="0 0 800 140" preserveAspectRatio="none" class="spectrum-svg placeholder">
+              <!-- Grid -->
+              <line v-for="y in [35, 70, 105]" :key="'spec-grid-' + y" x1="0" :y1="y" x2="800" :y2="y" stroke="rgba(255,255,255,0.05)" />
+              
+              <!-- Placeholder spectrum curve -->
+              <path 
+                d="M 0,120 Q 200,100 400,60 T 800,40" 
+                fill="none" 
+                stroke="rgba(96, 165, 250, 0.4)" 
+                stroke-width="1.5"
+                stroke-dasharray="3 2"
+              />
+              
+              <!-- Frequency labels -->
+              <text x="5" y="135" fill="rgba(255,255,255,0.2)" font-size="9">0</text>
+              <text x="395" y="135" fill="rgba(255,255,255,0.2)" font-size="9">π/2</text>
+              <text x="790" y="135" fill="rgba(255,255,255,0.2)" font-size="9">π</text>
+              
+              <text x="400" y="80" fill="rgba(255,255,255,0.2)" font-size="11" text-anchor="middle" font-weight="300">
+                Амплитудный спектр
+              </text>
+            </svg>
           </div>
         </div>
 
@@ -457,6 +618,7 @@ const selectedTicker = ref('SPY')
 const periodDays = ref(252)
 
 // Analysis parameters
+const autoOptimize = ref(true)
 const nPoles = ref(5)
 const windowSize = ref(20)
 
@@ -742,12 +904,14 @@ const runAnalysis = async () => {
     loadingStatus.value = 'Загрузка данных...'
     await new Promise(r => setTimeout(r, 100))
     
-    loadingStatus.value = 'Анализ спектра...'
+    loadingStatus.value = autoOptimize.value ? 'Оптимизация параметров...' : 'Анализ спектра...'
     const result = await analyzeAssetRegimes(
       selectedTicker.value,
       periodDays.value,
-      nPoles.value,
-      windowSize.value
+      autoOptimize.value ? null : nPoles.value,
+      autoOptimize.value ? null : windowSize.value,
+      autoOptimize.value,
+      'bic'
     )
     
     if (result.success) {
@@ -1213,6 +1377,17 @@ onUnmounted(() => {
   font-size: 12px;
 }
 
+/* Placeholder visualizations */
+.placeholder {
+  opacity: 0.6;
+  filter: blur(0.5px);
+  transition: opacity 0.3s ease;
+}
+
+.placeholder:hover {
+  opacity: 0.8;
+}
+
 /* Playback */
 .playback-controls {
   display: flex;
@@ -1345,6 +1520,80 @@ onUnmounted(() => {
 
 @keyframes spin {
   to { transform: rotate(360deg); }
+}
+
+/* Checkbox */
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 8px;
+  transition: background 0.2s;
+}
+
+.checkbox-label:hover {
+  background: rgba(255,255,255,0.05);
+}
+
+.checkbox-input {
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+  accent-color: #3b82f6;
+}
+
+.checkbox-text {
+  font-size: 13px;
+  color: #fff;
+  font-weight: 500;
+}
+
+.opacity-50 {
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+/* Optimization Info */
+.optimization-info {
+  margin-top: 12px;
+  padding: 10px;
+  background: rgba(59, 130, 246, 0.1);
+  border: 1px solid rgba(59, 130, 246, 0.2);
+  border-radius: 8px;
+  display: flex;
+  gap: 16px;
+  font-size: 11px;
+}
+
+.opt-item {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.opt-label {
+  color: rgba(255,255,255,0.5);
+  font-weight: 600;
+}
+
+.opt-value {
+  color: #3b82f6;
+  font-weight: 700;
+  font-family: "SF Mono", monospace;
+}
+
+.text-xs {
+  font-size: 11px;
+}
+
+.text-yellow {
+  color: #fbbf24;
+}
+
+.ml-1 {
+  margin-left: 4px;
 }
 
 /* Transitions */

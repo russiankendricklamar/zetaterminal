@@ -375,11 +375,6 @@
             :symbol="activeSymbol"
             :activeSection="swapsSection"
           />
-
-          <!-- Spectral Regimes Page -->
-          <SpectralRegimeAnalysis 
-            v-else-if="window.view === 'SpectralRegimes'" 
-          />
         </div>
       </div>
     </div>
@@ -430,7 +425,6 @@ import ResearchPage from '@/components/terminal/ResearchPage.vue';
 import ResourcesPage from '@/components/terminal/ResourcesPage.vue';
 import SwapsPage from '@/components/terminal/SwapsPage.vue';
 import DashboardPage from '@/components/terminal/DashboardPage.vue';
-import SpectralRegimeAnalysis from '@/pages/SpectralRegimeAnalysis.vue';
 
 // State
 const data = ref<Candle[]>([]);
@@ -515,7 +509,6 @@ const navItems = [
   { id: 'Options', label: 'Опционы', icon: 'FilterIcon', code: 'OMON' },
   { id: 'Research', label: 'Исследования', icon: 'SearchIcon', code: 'RES' },
   { id: 'Swaps', label: 'Свопы', icon: 'ActivityIcon', code: 'SWPM' },
-  { id: 'SpectralRegimes', label: 'Комплексный анализ режимов', icon: 'ActivityIcon', code: 'SPEC' },
 ];
 
 // System Commands
@@ -555,7 +548,6 @@ const systemCommands: SearchResult[] = [
   { id: 'MVS', label: 'Momentum-Volatility Surface', code: 'MVS', type: 'command', description: 'Поверхность волатильности с учетом импульса' },
   { id: 'LIQ', label: 'Liquidity Model', code: 'LIQ', type: 'command', description: 'Модель ликвидности рынка' },
   { id: 'HMM', label: 'HMM regime model visualization', code: 'HMM', type: 'command', description: 'Визуализация режимов скрытой марковской модели' },
-  { id: 'SPEC', label: 'Комплексный анализ режимов', code: 'SPEC', type: 'command', description: 'Спектральная декомпозиция скрытых рыночных режимов через мероморфное расширение' },
   { id: 'TSIG', label: 'Time series с сигналами', code: 'TSIG', type: 'command', description: 'Линейный/бар чарт цены + наложение флагов buy/sell' },
   { id: 'CORR', label: 'Correlation heatmap', code: 'CORR', type: 'command', description: 'Цветная матрица корреляций' },
   { id: 'HMMD', label: 'HMM state diagram', code: 'HMMD', type: 'command', description: 'Граф состояний + timeline colors' },

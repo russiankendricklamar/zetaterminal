@@ -105,6 +105,13 @@ export interface EntropyStats {
   std: number
 }
 
+export interface OptimizationInfo {
+  auto_optimized: boolean
+  n_poles_used: number
+  window_size_used: number
+  criterion_used: string | null
+}
+
 export interface AnalysisSummary {
   n_regimes: number
   n_poles: number
@@ -126,6 +133,7 @@ export interface AnalysisSummary {
   regime_time_stats: { [key: string]: RegimeTimeStats }
   entropy_stats: EntropyStats
   current_metrics: CurrentMetrics
+  optimization?: OptimizationInfo
 }
 
 export interface VisualizationData {
@@ -199,9 +207,11 @@ export async function fetchAssetData(
  */
 export async function analyzeSpectralRegimes(
   returns: number[],
-  nPoles: number = 5,
-  windowSize: number = 20,
-  maxLag?: number
+  nPoles?: number | null,
+  windowSize?: number | null,
+  maxLag?: number | null,
+  autoOptimize: boolean = false,
+  criterion: 'aic' | 'bic' | 'aicc' = 'bic'
 ): Promise<SpectralAnalysisResponse> {
   const response = await fetch(`${API_BASE}/api/spectral-regime/analyze`, {
     method: 'POST',
@@ -210,9 +220,11 @@ export async function analyzeSpectralRegimes(
     },
     body: JSON.stringify({
       returns,
-      n_poles: nPoles,
-      window_size: windowSize,
-      max_lag: maxLag
+      n_poles: nPoles ?? null,
+      window_size: windowSize ?? null,
+      max_lag: maxLag ?? null,
+      auto_optimize: autoOptimize || (nPoles === null || windowSize === null),
+      criterion
     })
   })
   
@@ -230,15 +242,25 @@ export async function analyzeSpectralRegimes(
 export async function analyzeAssetRegimes(
   ticker: string,
   periodDays: number = 252,
-  nPoles: number = 5,
-  windowSize: number = 20
+  nPoles?: number | null,
+  windowSize?: number | null,
+  autoOptimize: boolean = true,
+  criterion: 'aic' | 'bic' | 'aicc' = 'bic'
 ): Promise<FullAssetAnalysisResponse> {
   const params = new URLSearchParams({
     ticker,
     period_days: periodDays.toString(),
-    n_poles: nPoles.toString(),
-    window_size: windowSize.toString()
+    auto_optimize: autoOptimize.toString(),
+    criterion
   })
+  
+  if (nPoles !== null && nPoles !== undefined) {
+    params.append('n_poles', nPoles.toString())
+  }
+  
+  if (windowSize !== null && windowSize !== undefined) {
+    params.append('window_size', windowSize.toString())
+  }
   
   const response = await fetch(`${API_BASE}/api/spectral-regime/analyze-asset?${params}`, {
     method: 'POST',

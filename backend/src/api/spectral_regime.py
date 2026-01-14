@@ -19,16 +19,20 @@ router = APIRouter()
 class SpectralAnalysisRequest(BaseModel):
     """Запрос на анализ спектральных режимов."""
     returns: List[float] = Field(..., description="Временной ряд доходностей")
-    n_poles: int = Field(default=5, ge=2, le=15, description="Количество полюсов (2-15)")
-    window_size: int = Field(default=20, ge=5, le=100, description="Размер скользящего окна (5-100)")
+    n_poles: Optional[int] = Field(default=None, ge=2, le=15, description="Количество полюсов (2-15). Если None, определяется автоматически")
+    window_size: Optional[int] = Field(default=None, ge=5, le=100, description="Размер скользящего окна (5-100). Если None, определяется автоматически")
     max_lag: Optional[int] = Field(default=None, description="Максимальный лаг ACF (по умолчанию T/4)")
+    auto_optimize: bool = Field(default=False, description="Автоматически определить оптимальные n_poles и window_size")
+    criterion: str = Field(default='bic', description="Критерий для выбора количества полюсов: 'aic', 'bic', или 'aicc'")
     
     class Config:
         json_schema_extra = {
             "example": {
                 "returns": [0.01, -0.02, 0.015, 0.005, -0.01],
-                "n_poles": 5,
-                "window_size": 20
+                "n_poles": None,
+                "window_size": None,
+                "auto_optimize": True,
+                "criterion": "bic"
             }
         }
 
@@ -245,7 +249,9 @@ async def analyze_spectral_regimes(request: SpectralAnalysisRequest):
             returns=returns,
             n_poles=request.n_poles,
             window_size=request.window_size,
-            max_lag=request.max_lag
+            max_lag=request.max_lag,
+            auto_optimize=request.auto_optimize or (request.n_poles is None or request.window_size is None),
+            criterion=request.criterion
         )
         
         return SpectralAnalysisResponse(
@@ -267,8 +273,10 @@ async def analyze_spectral_regimes(request: SpectralAnalysisRequest):
 async def analyze_asset_regimes(
     ticker: str,
     period_days: int = 252,
-    n_poles: int = 5,
-    window_size: int = 20
+    n_poles: Optional[int] = None,
+    window_size: Optional[int] = None,
+    auto_optimize: bool = True,
+    criterion: str = 'bic'
 ):
     """
     Комбинированный endpoint: загрузка данных актива и анализ режимов.
@@ -296,7 +304,9 @@ async def analyze_asset_regimes(
         analysis_request = SpectralAnalysisRequest(
             returns=returns,
             n_poles=n_poles,
-            window_size=window_size
+            window_size=window_size,
+            auto_optimize=auto_optimize,
+            criterion=criterion
         )
         analysis_response = await analyze_spectral_regimes(analysis_request)
         
