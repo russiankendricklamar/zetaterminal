@@ -34,6 +34,14 @@
           <span class="dot" :class="params.optionType === 'call' ? 'bg-green' : 'bg-red'"></span>
           <span class="status-label">Модель: <b class="text-white">{{ params.model === 'bsm' ? 'Black-Scholes' : 'Heston' }}</b></span>
         </div>
+        <button 
+          @click="showHelpModal = true" 
+          class="btn-secondary"
+          style="font-size: 11px; padding: 6px 12px;"
+          title="Справка по моделям ценообразования"
+        >
+          📖 Справка
+        </button>
       </div>
     </div>
 
@@ -66,7 +74,7 @@
             class="btn-secondary"
             :disabled="loadedOptions.length === 0"
             style="font-size: 11px; padding: 6px 12px;"
-            title="Выгрузить реестр в Excel"
+            title="Выгрузить реестр в Excel (включая все греки и расчеты)"
           >
             📥 Выгрузить Excel
           </button>
@@ -561,6 +569,294 @@
 
         </main>
     </div>
+
+    <!-- Help Modal -->
+    <transition name="modal-fade">
+      <div v-if="showHelpModal" class="modal-overlay" @click="showHelpModal = false">
+        <div class="help-modal-container" @click.stop>
+          <div class="help-modal-header">
+            <h2>Справка: Модели ценообразования опционов</h2>
+            <button class="modal-close" @click="showHelpModal = false">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
+              </svg>
+            </button>
+          </div>
+          
+          <div class="help-modal-body custom-scroll">
+            <!-- Model Compatibility Table -->
+            <div class="help-section">
+              <h3 class="help-section-title">Совместимость моделей с типами опционов</h3>
+              <div class="compatibility-table-wrapper">
+                <table class="compatibility-table">
+                  <thead>
+                    <tr>
+                      <th>Модель</th>
+                      <th>European</th>
+                      <th>American</th>
+                      <th>Bermudan</th>
+                      <th>Asian</th>
+                      <th>Barrier</th>
+                      <th>Digital</th>
+                      <th>Lookback</th>
+                      <th>Knockout</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td class="model-name"><strong>Black-Scholes</strong></td>
+                      <td class="compatible">✓ Отлично</td>
+                      <td class="limited">⚠ Только приближенно</td>
+                      <td class="limited">⚠ Только приближенно</td>
+                      <td class="not-compatible">✗ Не подходит</td>
+                      <td class="not-compatible">✗ Не подходит</td>
+                      <td class="compatible">✓ Да</td>
+                      <td class="not-compatible">✗ Не подходит</td>
+                      <td class="not-compatible">✗ Не подходит</td>
+                    </tr>
+                    <tr>
+                      <td class="model-name"><strong>Heston</strong></td>
+                      <td class="compatible">✓ Отлично</td>
+                      <td class="limited">⚠ Численные методы</td>
+                      <td class="limited">⚠ Численные методы</td>
+                      <td class="limited">⚠ Частично</td>
+                      <td class="limited">⚠ Частично</td>
+                      <td class="compatible">✓ Да</td>
+                      <td class="limited">⚠ Частично</td>
+                      <td class="limited">⚠ Частично</td>
+                    </tr>
+                    <tr>
+                      <td class="model-name"><strong>Merton</strong></td>
+                      <td class="compatible">✓ Отлично</td>
+                      <td class="limited">⚠ Численные методы</td>
+                      <td class="limited">⚠ Численные методы</td>
+                      <td class="limited">⚠ Частично</td>
+                      <td class="not-compatible">✗ Не подходит</td>
+                      <td class="compatible">✓ Да</td>
+                      <td class="not-compatible">✗ Не подходит</td>
+                      <td class="not-compatible">✗ Не подходит</td>
+                    </tr>
+                    <tr>
+                      <td class="model-name"><strong>Bates</strong></td>
+                      <td class="compatible">✓ Отлично</td>
+                      <td class="limited">⚠ Численные методы</td>
+                      <td class="limited">⚠ Численные методы</td>
+                      <td class="limited">⚠ Частично</td>
+                      <td class="limited">⚠ Частично</td>
+                      <td class="compatible">✓ Да</td>
+                      <td class="limited">⚠ Частично</td>
+                      <td class="limited">⚠ Частично</td>
+                    </tr>
+                    <tr>
+                      <td class="model-name"><strong>SABR</strong></td>
+                      <td class="compatible">✓ Отлично</td>
+                      <td class="limited">⚠ Численные методы</td>
+                      <td class="limited">⚠ Численные методы</td>
+                      <td class="not-compatible">✗ Не подходит</td>
+                      <td class="not-compatible">✗ Не подходит</td>
+                      <td class="compatible">✓ Да</td>
+                      <td class="not-compatible">✗ Не подходит</td>
+                      <td class="not-compatible">✗ Не подходит</td>
+                    </tr>
+                    <tr>
+                      <td class="model-name"><strong>Variance Gamma</strong></td>
+                      <td class="compatible">✓ Отлично</td>
+                      <td class="limited">⚠ Численные методы</td>
+                      <td class="limited">⚠ Численные методы</td>
+                      <td class="limited">⚠ Частично</td>
+                      <td class="limited">⚠ Частично</td>
+                      <td class="compatible">✓ Да</td>
+                      <td class="limited">⚠ Частично</td>
+                      <td class="limited">⚠ Частично</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- Model Descriptions -->
+            <div class="help-section">
+              <h3 class="help-section-title">Описание моделей</h3>
+              
+              <div class="model-description-card">
+                <div class="model-description-header">
+                  <span class="model-icon icon-bsm">BS</span>
+                  <div>
+                    <h4>Black-Scholes (BSM)</h4>
+                    <span class="model-tag">Классическая модель</span>
+                  </div>
+                </div>
+                <div class="model-description-content">
+                  <p><strong>Применение:</strong> Европейские опционы на акции, индексы, валюты. Стандарт индустрии для простых опционов.</p>
+                  <p><strong>Преимущества:</strong> Быстрый расчет, аналитическая формула, точность для европейских опционов.</p>
+                  <p><strong>Ограничения:</strong> Предполагает постоянную волатильность, не учитывает скачки цен, не подходит для американских опционов.</p>
+                  <p><strong>Рекомендуется для:</strong> Европейские Call/Put опционы, Digital опционы, опционы на акции с постоянной волатильностью.</p>
+                </div>
+              </div>
+
+              <div class="model-description-card">
+                <div class="model-description-header">
+                  <span class="model-icon icon-heston">H</span>
+                  <div>
+                    <h4>Heston</h4>
+                    <span class="model-tag">Стохастическая волатильность</span>
+                  </div>
+                </div>
+                <div class="model-description-content">
+                  <p><strong>Применение:</strong> Опционы с учетом изменяющейся волатильности (volatility smile/skew).</p>
+                  <p><strong>Преимущества:</strong> Учитывает стохастическую волатильность, корреляцию между ценой и волатильностью, лучше описывает рыночные данные.</p>
+                  <p><strong>Ограничения:</strong> Сложнее в калибровке, требует больше параметров.</p>
+                  <p><strong>Рекомендуется для:</strong> Европейские опционы с учетом volatility smile, опционы на валюты, опционы на индексы.</p>
+                </div>
+              </div>
+
+              <div class="model-description-card">
+                <div class="model-description-header">
+                  <span class="model-icon icon-merton">M</span>
+                  <div>
+                    <h4>Merton</h4>
+                    <span class="model-tag">Модель скачков</span>
+                  </div>
+                </div>
+                <div class="model-description-content">
+                  <p><strong>Применение:</strong> Опционы на активы с резкими скачками цен (новости, события).</p>
+                  <p><strong>Преимущества:</strong> Учитывает скачки цен, лучше описывает "толстые хвосты" распределения.</p>
+                  <p><strong>Ограничения:</strong> Не учитывает стохастическую волатильность.</p>
+                  <p><strong>Рекомендуется для:</strong> Опционы на акции с высокой волатильностью, опционы на криптовалюты, опционы в периоды нестабильности.</p>
+                </div>
+              </div>
+
+              <div class="model-description-card">
+                <div class="model-description-header">
+                  <span class="model-icon icon-bates">B</span>
+                  <div>
+                    <h4>Bates</h4>
+                    <span class="model-tag">Heston + Скачки</span>
+                  </div>
+                </div>
+                <div class="model-description-content">
+                  <p><strong>Применение:</strong> Комбинирует стохастическую волатильность и скачки цен.</p>
+                  <p><strong>Преимущества:</strong> Наиболее гибкая модель, учитывает и волатильность, и скачки.</p>
+                  <p><strong>Ограничения:</strong> Сложная калибровка, требует много параметров.</p>
+                  <p><strong>Рекомендуется для:</strong> Сложные опционы, опционы в периоды кризисов, опционы на волатильные активы.</p>
+                </div>
+              </div>
+
+              <div class="model-description-card">
+                <div class="model-description-header">
+                  <span class="model-icon icon-sabr">S</span>
+                  <div>
+                    <h4>SABR</h4>
+                    <span class="model-tag">Процентные опционы</span>
+                  </div>
+                </div>
+                <div class="model-description-content">
+                  <p><strong>Применение:</strong> Опционы на процентные ставки, облигации, свопы.</p>
+                  <p><strong>Преимущества:</strong> Специально разработана для процентных инструментов, хорошо калибруется к рынку.</p>
+                  <p><strong>Ограничения:</strong> Ограничена процентными инструментами.</p>
+                  <p><strong>Рекомендуется для:</strong> Опционы на облигации, процентные свопы, опционы на кривые доходности.</p>
+                </div>
+              </div>
+
+              <div class="model-description-card">
+                <div class="model-description-header">
+                  <span class="model-icon icon-vg">VG</span>
+                  <div>
+                    <h4>Variance Gamma</h4>
+                    <span class="model-tag">Процесс Леви</span>
+                  </div>
+                </div>
+                <div class="model-description-content">
+                  <p><strong>Применение:</strong> Экзотические опционы, опционы с не-нормальным распределением.</p>
+                  <p><strong>Преимущества:</strong> Гибкое распределение, учитывает асимметрию и эксцесс.</p>
+                  <p><strong>Ограничения:</strong> Сложная реализация, требует численных методов.</p>
+                  <p><strong>Рекомендуется для:</strong> Экзотические опционы, опционы с нестандартными выплатами, опционы на активы с не-нормальным распределением.</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Exercise Style Guide -->
+            <div class="help-section">
+              <h3 class="help-section-title">Рекомендации по стилям исполнения</h3>
+              
+              <div class="exercise-style-guide">
+                <div class="guide-item">
+                  <h4>European (Европейский)</h4>
+                  <p>Исполнение только в дату экспирации. <strong>Все модели</strong> подходят идеально. Рекомендуется: <strong>Black-Scholes</strong> для простых случаев, <strong>Heston</strong> для учета volatility smile.</p>
+                </div>
+                
+                <div class="guide-item">
+                  <h4>American (Американский)</h4>
+                  <p>Исполнение в любой момент до экспирации. Требуются <strong>численные методы</strong> (биномиальное дерево, метод конечных разностей). Black-Scholes дает приближенную оценку через Barone-Adesi Whaley.</p>
+                </div>
+                
+                <div class="guide-item">
+                  <h4>Bermudan (Бермудский)</h4>
+                  <p>Исполнение в определенные даты. Требуются <strong>численные методы</strong>. Модели Heston, Bates, VG могут использоваться с численными методами.</p>
+                </div>
+                
+                <div class="guide-item">
+                  <h4>Asian (Азиатский)</h4>
+                  <p>Цена основана на средней цене актива. Требуются <strong>специальные модели</strong> или численные методы. Heston и Bates могут использоваться с модификациями.</p>
+                </div>
+                
+                <div class="guide-item">
+                  <h4>Barrier (Барьерный)</h4>
+                  <p>Опцион с триггерами активации/деактивации. Требуются <strong>специальные модели</strong>. Heston, Bates, VG могут использоваться с модификациями.</p>
+                </div>
+                
+                <div class="guide-item">
+                  <h4>Digital (Дигитальный)</h4>
+                  <p>Фиксированная выплата при исполнении. <strong>Все модели</strong> подходят. Рекомендуется: <strong>Black-Scholes</strong> для простоты.</p>
+                </div>
+                
+                <div class="guide-item">
+                  <h4>Lookback</h4>
+                  <p>Исполнение по лучшей цене за период. Требуются <strong>специальные модели</strong>. Heston, Bates, VG могут использоваться с модификациями.</p>
+                </div>
+                
+                <div class="guide-item">
+                  <h4>Knockout</h4>
+                  <p>Аннулируется при достижении барьера. Требуются <strong>специальные модели</strong>. Heston, Bates, VG могут использоваться с модификациями.</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Quick Reference -->
+            <div class="help-section">
+              <h3 class="help-section-title">Быстрая справка</h3>
+              <div class="quick-reference-grid">
+                <div class="quick-ref-item">
+                  <strong>Простой европейский опцион на акцию</strong>
+                  <span>→ Black-Scholes</span>
+                </div>
+                <div class="quick-ref-item">
+                  <strong>Опцион с учетом volatility smile</strong>
+                  <span>→ Heston</span>
+                </div>
+                <div class="quick-ref-item">
+                  <strong>Опцион на актив с скачками</strong>
+                  <span>→ Merton или Bates</span>
+                </div>
+                <div class="quick-ref-item">
+                  <strong>Опцион на облигацию</strong>
+                  <span>→ SABR</span>
+                </div>
+                <div class="quick-ref-item">
+                  <strong>Экзотический опцион</strong>
+                  <span>→ Variance Gamma или Heston</span>
+                </div>
+                <div class="quick-ref-item">
+                  <strong>Американский опцион</strong>
+                  <span>→ Численные методы (не аналитические)</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </transition>
   </div>
 </template>
 
@@ -595,6 +891,7 @@ const optionTypeDropdownOpen = ref(false)
 const modelDropdownOpen = ref(false)
 const assetDropdownOpen = ref(false)
 const exerciseStyleDropdownOpen = ref(false)
+const showHelpModal = ref(false)
 
 // Available assets
 const availableAssets = [
@@ -983,18 +1280,27 @@ const calculateAllOptions = async () => {
       try {
         const price = calculateOptionPrice(S, K, r, sigma, T, q, optionType)
         
-        // Рассчитываем греки
+        // Рассчитываем все греки
         const d1 = (Math.log(S / K) + (r - q + 0.5 * sigma * sigma) * T) / (sigma * Math.sqrt(T))
         const d2 = d1 - sigma * Math.sqrt(T)
         const Nd1 = normalCdf(d1)
+        const Nd2 = normalCdf(d2)
         const N_d1 = normalCdf(-d1)
+        const N_d2 = normalCdf(-d2)
         const nd1 = normalPdf(d1)
 
         let delta: number
+        let theta: number
+        let rho: number
+        
         if (optionType === 'call') {
           delta = Math.exp(-q * T) * Nd1
+          theta = (-S * Math.exp(-q * T) * nd1 * sigma / (2 * Math.sqrt(T)) + q * S * Math.exp(-q * T) * Nd1 - r * K * Math.exp(-r * T) * Nd2) / 365
+          rho = (K * T * Math.exp(-r * T) * Nd2) / 100
         } else {
           delta = -Math.exp(-q * T) * N_d1
+          theta = (-S * Math.exp(-q * T) * nd1 * sigma / (2 * Math.sqrt(T)) - q * S * Math.exp(-q * T) * N_d1 + r * K * Math.exp(-r * T) * N_d2) / 365
+          rho = (-K * T * Math.exp(-r * T) * N_d2) / 100
         }
 
         optionResults.value.push({
@@ -1002,6 +1308,8 @@ const calculateAllOptions = async () => {
           delta,
           gamma: (Math.exp(-q * T) * nd1) / (S * sigma * Math.sqrt(T)),
           vega: S * Math.exp(-q * T) * nd1 * Math.sqrt(T) / 100,
+          theta,
+          rho
         })
       } catch (err: any) {
         optionResults.value.push({
@@ -1023,38 +1331,109 @@ const calculateAllOptions = async () => {
 
 // Export registry to Excel
 const exportRegistryToExcel = () => {
-  if (loadedOptions.value.length === 0) return
+  if (loadedOptions.value.length === 0) {
+    alert('Нет данных для экспорта. Загрузите реестр опционов.')
+    return
+  }
 
-  // Prepare data for export
-  const exportData = loadedOptions.value.map((option, idx) => ({
-    '№': idx + 1,
-    'Тип': option.optionType === 'call' ? 'Call' : 'Put',
-    'Модель': option.model === 'bsm' ? 'Black-Scholes' : 'Heston',
-    'Spot (S)': option.S || 0,
-    'Strike (K)': option.K || 0,
-    'Волатильность (σ, %)': option.sigma || 0,
-    'Безрисковая ставка (r, %)': option.r || 0,
-    'Дивидендная доходность (q, %)': option.q || 0,
-    'Время до экспирации (T, лет)': option.T || 0,
-    'Дата оценки': option.valuationDate || '',
-    'Дата экспирации': option.expirationDate || '',
-    'Цена опциона': optionResults.value[idx]?.price || '',
-    'Дельта': optionResults.value[idx]?.delta || '',
-    'Гамма': optionResults.value[idx]?.gamma || '',
-    'Вега': optionResults.value[idx]?.vega || ''
-  }))
+  // Check if any options were calculated
+  const hasCalculatedOptions = optionResults.value.length > 0 && optionResults.value.some(r => r && r.price !== null && r.price !== undefined)
+  
+  if (!hasCalculatedOptions) {
+    const confirmExport = confirm('Опционы еще не рассчитаны. Экспортировать только входные параметры?')
+    if (!confirmExport) return
+  }
+
+  // Prepare data for export with all available information
+  const exportData = loadedOptions.value.map((option, idx) => {
+    const result = optionResults.value[idx]
+    const S = option.S || 0
+    const K = option.K || 0
+    const price = result?.price || null
+    const moneyness = S > 0 && K > 0 ? (S / K) : null
+    const intrinsicValue = price !== null ? (
+      option.optionType === 'call' 
+        ? Math.max(S - K, 0) 
+        : Math.max(K - S, 0)
+    ) : null
+    const timeValue = price !== null && intrinsicValue !== null ? Math.max(price - intrinsicValue, 0) : null
+    
+    return {
+      '№': idx + 1,
+      'Тип': option.optionType === 'call' ? 'Call' : 'Put',
+      'Модель': option.model === 'bsm' ? 'Black-Scholes' : 
+                option.model === 'heston' ? 'Heston' :
+                option.model === 'merton' ? 'Merton' :
+                option.model === 'bates' ? 'Bates' :
+                option.model === 'sabr' ? 'SABR' :
+                option.model === 'vg' ? 'Variance Gamma' : option.model,
+      'Spot (S)': S,
+      'Strike (K)': K,
+      'Moneyness (S/K)': moneyness !== null ? moneyness.toFixed(4) : '',
+      'Статус': moneyness !== null ? (moneyness > 1 ? 'ITM' : moneyness < 1 ? 'OTM' : 'ATM') : '',
+      'Волатильность (σ, %)': option.sigma || 0,
+      'Безрисковая ставка (r, %)': option.r || 0,
+      'Дивидендная доходность (q, %)': option.q || 0,
+      'Время до экспирации (T, лет)': option.T || 0,
+      'Дата оценки': option.valuationDate || '',
+      'Дата экспирации': option.expirationDate || '',
+      'Цена опциона': price !== null ? price.toFixed(6) : '',
+      'Внутренняя стоимость': intrinsicValue !== null ? intrinsicValue.toFixed(6) : '',
+      'Временная стоимость': timeValue !== null ? timeValue.toFixed(6) : '',
+      'Дельта (Δ)': result?.delta !== null && result?.delta !== undefined ? result.delta.toFixed(6) : '',
+      'Гамма (Γ)': result?.gamma !== null && result?.gamma !== undefined ? result.gamma.toFixed(6) : '',
+      'Вега (ν)': result?.vega !== null && result?.vega !== undefined ? result.vega.toFixed(6) : '',
+      'Тета (Θ)': result?.theta !== null && result?.theta !== undefined ? result.theta.toFixed(6) : '',
+      'Ро (ρ)': result?.rho !== null && result?.rho !== undefined ? result.rho.toFixed(6) : ''
+    }
+  })
 
   // Create workbook
   const ws = XLSX.utils.json_to_sheet(exportData)
+  
+  // Set column widths for better readability
+  const colWidths = [
+    { wch: 5 },   // №
+    { wch: 8 },   // Тип
+    { wch: 15 },  // Модель
+    { wch: 12 },  // Spot
+    { wch: 12 },  // Strike
+    { wch: 12 },  // Moneyness
+    { wch: 8 },   // Статус
+    { wch: 18 },  // Волатильность
+    { wch: 20 },  // Ставка
+    { wch: 22 },  // Дивиденды
+    { wch: 22 },  // Время
+    { wch: 12 },  // Дата оценки
+    { wch: 18 },  // Дата экспирации
+    { wch: 15 },  // Цена
+    { wch: 20 },  // Внутренняя стоимость
+    { wch: 20 },  // Временная стоимость
+    { wch: 12 },  // Дельта
+    { wch: 12 },  // Гамма
+    { wch: 12 },  // Вега
+    { wch: 12 },  // Тета
+    { wch: 12 }   // Ро
+  ]
+  ws['!cols'] = colWidths
+
   const wb = XLSX.utils.book_new()
   XLSX.utils.book_append_sheet(wb, ws, 'Реестр опционов')
 
-  // Generate filename with date
-  const dateStr = new Date().toISOString().split('T')[0]
-  const fileName = `реестр_опционов_${dateStr}.xlsx`
+  // Generate filename with date and time
+  const now = new Date()
+  const dateStr = now.toISOString().split('T')[0]
+  const timeStr = now.toTimeString().split(' ')[0].replace(/:/g, '-')
+  const fileName = `реестр_опционов_${dateStr}_${timeStr}.xlsx`
 
   // Save file
-  XLSX.writeFile(wb, fileName)
+  try {
+    XLSX.writeFile(wb, fileName)
+    alert(`Реестр успешно экспортирован: ${fileName}`)
+  } catch (err: any) {
+    console.error('Ошибка при экспорте:', err)
+    alert(`Ошибка при экспорте файла: ${err.message}`)
+  }
 }
 
 // Save registry to parquet
@@ -2009,6 +2388,306 @@ onBeforeUnmount(() => {
   .glass-input {
     font-size: 12px;
     padding: 8px 12px;
+  }
+}
+
+/* Help Modal Styles */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  z-index: 2000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  overflow-y: auto;
+}
+
+.help-modal-container {
+  background: rgba(20, 22, 28, 0.95);
+  backdrop-filter: blur(50px) saturate(200%);
+  -webkit-backdrop-filter: blur(50px) saturate(200%);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 20px;
+  box-shadow: 
+    0 30px 60px -15px rgba(0, 0, 0, 0.8),
+    inset 0 1px 0 rgba(255, 255, 255, 0.12);
+  width: 100%;
+  max-width: 1200px;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.help-modal-header {
+  padding: 20px 24px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.02);
+  flex-shrink: 0;
+}
+
+.help-modal-header h2 {
+  font-size: 20px;
+  font-weight: 700;
+  color: #fff;
+  margin: 0;
+  letter-spacing: -0.01em;
+}
+
+.modal-close {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.7);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.modal-close:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.2);
+  color: #fff;
+}
+
+.help-modal-body {
+  padding: 24px;
+  overflow-y: auto;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+}
+
+.help-section {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.help-section-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: #fff;
+  margin: 0;
+  padding-bottom: 12px;
+  border-bottom: 2px solid rgba(59, 130, 246, 0.3);
+}
+
+/* Compatibility Table */
+.compatibility-table-wrapper {
+  overflow-x: auto;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.compatibility-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+  min-width: 800px;
+}
+
+.compatibility-table th {
+  background: rgba(59, 130, 246, 0.15);
+  color: #fff;
+  font-weight: 600;
+  padding: 12px 8px;
+  text-align: center;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  font-size: 11px;
+  text-transform: uppercase;
+}
+
+.compatibility-table td {
+  padding: 10px 8px;
+  text-align: center;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  font-size: 11px;
+}
+
+.compatibility-table .model-name {
+  background: rgba(255, 255, 255, 0.03);
+  text-align: left;
+  padding-left: 12px;
+  font-weight: 600;
+  color: #fff;
+}
+
+.compatible {
+  color: #4ade80;
+  font-weight: 600;
+}
+
+.limited {
+  color: #fbbf24;
+  font-weight: 600;
+}
+
+.not-compatible {
+  color: rgba(255, 255, 255, 0.3);
+}
+
+/* Model Description Cards */
+.model-description-card {
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 12px;
+}
+
+.model-description-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.model-description-header h4 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 700;
+  color: #fff;
+}
+
+.model-tag {
+  font-size: 10px;
+  padding: 2px 8px;
+  background: rgba(59, 130, 246, 0.2);
+  color: #60a5fa;
+  border-radius: 4px;
+  text-transform: uppercase;
+  font-weight: 600;
+}
+
+.model-description-content {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.model-description-content p {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.6;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.model-description-content strong {
+  color: #fff;
+  font-weight: 600;
+}
+
+/* Exercise Style Guide */
+.exercise-style-guide {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.guide-item {
+  background: rgba(0, 0, 0, 0.2);
+  border-left: 3px solid rgba(59, 130, 246, 0.5);
+  border-radius: 8px;
+  padding: 12px 16px;
+}
+
+.guide-item h4 {
+  margin: 0 0 6px 0;
+  font-size: 13px;
+  font-weight: 700;
+  color: #fff;
+}
+
+.guide-item p {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.guide-item strong {
+  color: #60a5fa;
+  font-weight: 600;
+}
+
+/* Quick Reference */
+.quick-reference-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+
+.quick-ref-item {
+  background: rgba(59, 130, 246, 0.1);
+  border: 1px solid rgba(59, 130, 246, 0.2);
+  border-radius: 8px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.quick-ref-item strong {
+  font-size: 12px;
+  color: #fff;
+  font-weight: 600;
+}
+
+.quick-ref-item span {
+  font-size: 11px;
+  color: #60a5fa;
+  font-weight: 600;
+}
+
+/* Modal Animation */
+.modal-fade-enter-active,
+.modal-fade-leave-active {
+  transition: all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.modal-fade-enter-from,
+.modal-fade-leave-to {
+  opacity: 0;
+}
+
+.modal-fade-enter-from .help-modal-container,
+.modal-fade-leave-to .help-modal-container {
+  transform: scale(0.95) translateY(20px);
+}
+
+@media (max-width: 768px) {
+  .help-modal-container {
+    max-width: 95%;
+    max-height: 95vh;
+  }
+  
+  .compatibility-table {
+    font-size: 10px;
+  }
+  
+  .compatibility-table th,
+  .compatibility-table td {
+    padding: 6px 4px;
+  }
+  
+  .quick-reference-grid {
+    grid-template-columns: 1fr;
   }
 }
 </style>

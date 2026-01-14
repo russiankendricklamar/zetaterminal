@@ -54,7 +54,21 @@
       >
         <div class="sc-header">
           <span class="sc-name">{{ scenario.name }}</span>
+          <div class="sc-header-actions">
           <span class="badge" :class="scenario.severity">{{ scenario.severity }}</span>
+            <div class="sc-actions" @click.stop>
+              <button @click="editScenario(scenario)" class="btn-icon-sm" title="Редактировать">
+                <svg width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                </svg>
+              </button>
+              <button @click="deleteScenario(scenario.id)" class="btn-icon-sm" title="Удалить" v-if="scenario.custom">
+                <svg width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                </svg>
+              </button>
+            </div>
+          </div>
         </div>
         <p class="sc-desc">{{ scenario.description }}</p>
         <div class="sc-footer">
@@ -62,6 +76,16 @@
                 {{ formatCurrencyCompact(getScenarioPnLImpact(scenario)) }}
             </span>
             <span class="sc-prob">Вероятность: {{ (scenario.probability * 100).toFixed(0) }}%</span>
+        </div>
+      </div>
+      
+      <!-- Add New Scenario Card -->
+      <div @click="openScenarioEditor()" class="glass-card scenario-card add-scenario-card">
+        <div class="add-scenario-content">
+          <svg width="32" height="32" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+          </svg>
+          <span class="add-scenario-text">Создать сценарий</span>
         </div>
       </div>
     </div>
@@ -211,6 +235,243 @@
         <span class="note-item">Рекомендуется ежеквартальный пересмотр</span>
     </div>
 
+    <!-- Scenario Editor Modal -->
+    <transition name="modal-fade">
+      <div v-if="isEditorOpen" class="modal-overlay" @click="closeEditor">
+        <div class="modal-container scenario-editor-modal" @click.stop>
+          <div class="modal-header">
+            <h2>{{ editingScenario ? 'Редактировать сценарий' : 'Создать сценарий' }}</h2>
+            <button class="modal-close" @click="closeEditor">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
+              </svg>
+            </button>
+          </div>
+          
+          <div class="modal-body">
+            <form @submit.prevent="saveScenario" class="scenario-form">
+              <!-- Basic Info -->
+              <div class="form-section">
+                <h3 class="section-title">Основная информация</h3>
+                <div class="form-grid">
+                  <div class="form-group">
+                    <label>Название сценария</label>
+                    <input 
+                      type="text" 
+                      v-model="formData.name" 
+                      class="glass-input"
+                      placeholder="Например: Кризис ликвидности"
+                      required
+                    />
+                  </div>
+                  <div class="form-group">
+                    <label>Описание</label>
+                    <textarea 
+                      v-model="formData.description" 
+                      class="glass-input"
+                      rows="2"
+                      placeholder="Краткое описание сценария"
+                    ></textarea>
+                  </div>
+                  <div class="form-group">
+                    <label>Длительность</label>
+                    <input 
+                      type="text" 
+                      v-model="formData.duration" 
+                      class="glass-input"
+                      placeholder="Например: 1–3 дня"
+                    />
+                  </div>
+                  <div class="form-group">
+                    <label>Вероятность (%)</label>
+                    <input 
+                      type="number" 
+                      v-model.number="formData.probability" 
+                      class="glass-input"
+                      min="0"
+                      max="100"
+                      step="0.1"
+                      required
+                    />
+                  </div>
+                  <div class="form-group">
+                    <label>Уровень серьезности</label>
+                    <select v-model="formData.severity" class="glass-input">
+                      <option value="critical">Критический</option>
+                      <option value="high">Высокий</option>
+                      <option value="medium">Средний</option>
+                      <option value="low">Низкий</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Shock Type -->
+              <div class="form-section">
+                <h3 class="section-title">Тип шока</h3>
+                <div class="form-group">
+                  <label>Тип стресс-теста</label>
+                  <select v-model="formData.type" class="glass-input" @change="onShockTypeChange">
+                    <option value="return_shock">Шок доходности</option>
+                    <option value="volatility_shock">Шок волатильности</option>
+                    <option value="correlation_shock">Шок корреляции</option>
+                  </select>
+                </div>
+                
+                <div class="form-grid" v-if="formData.type === 'return_shock'">
+                  <div class="form-group">
+                    <label>Множитель доходности</label>
+                    <input 
+                      type="number" 
+                      v-model.number="formData.return_multiplier" 
+                      class="glass-input"
+                      min="0"
+                      max="2"
+                      step="0.1"
+                      placeholder="0.5"
+                    />
+                    <span class="form-hint">Множитель для ожидаемой доходности (0.5 = снижение на 50%)</span>
+                  </div>
+                </div>
+                
+                <div class="form-grid" v-if="formData.type === 'volatility_shock'">
+                  <div class="form-group">
+                    <label>Множитель волатильности</label>
+                    <input 
+                      type="number" 
+                      v-model.number="formData.volatility_multiplier" 
+                      class="glass-input"
+                      min="0.5"
+                      max="5"
+                      step="0.1"
+                      placeholder="1.5"
+                    />
+                    <span class="form-hint">Множитель для волатильности (1.5 = увеличение на 50%)</span>
+                  </div>
+                </div>
+                
+                <div class="form-grid" v-if="formData.type === 'correlation_shock'">
+                  <div class="form-group">
+                    <label>Множитель корреляции</label>
+                    <input 
+                      type="number" 
+                      v-model.number="formData.correlation_multiplier" 
+                      class="glass-input"
+                      min="0.5"
+                      max="2"
+                      step="0.1"
+                      placeholder="1.3"
+                    />
+                    <span class="form-hint">Множитель для корреляций (1.3 = увеличение на 30%)</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Market Changes -->
+              <div class="form-section">
+                <h3 class="section-title">Рыночные изменения</h3>
+                <div class="market-changes-editor">
+                  <div 
+                    v-for="(value, key, index) in formData.marketChanges" 
+                    :key="index"
+                    class="market-change-row"
+                  >
+                    <input 
+                      type="text" 
+                      v-model="marketChangeKeys[index]" 
+                      class="glass-input"
+                      placeholder="Параметр (например: VIX)"
+                      @input="updateMarketChange(key, marketChangeKeys[index], value)"
+                    />
+                    <input 
+                      type="text" 
+                      v-model="marketChangeValues[index]" 
+                      class="glass-input"
+                      placeholder="Изменение (например: +20 pts)"
+                      @input="updateMarketChange(key, marketChangeKeys[index], marketChangeValues[index])"
+                    />
+                    <button 
+                      type="button" 
+                      @click="removeMarketChange(key)"
+                      class="btn-icon-sm btn-danger"
+                    >
+                      <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                      </svg>
+                    </button>
+                  </div>
+                  <button 
+                    type="button" 
+                    @click="addMarketChange"
+                    class="btn-glass outline btn-add"
+                  >
+                    <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                    </svg>
+                    Добавить параметр
+                  </button>
+                </div>
+              </div>
+
+              <!-- Asset Impact -->
+              <div class="form-section">
+                <h3 class="section-title">Влияние на классы активов (%)</h3>
+                <div class="asset-impact-editor">
+                  <div 
+                    v-for="(value, asset, index) in formData.assetImpact" 
+                    :key="index"
+                    class="asset-impact-row"
+                  >
+                    <input 
+                      type="text" 
+                      v-model="assetImpactKeys[index]" 
+                      class="glass-input"
+                      placeholder="Класс актива (например: Акции)"
+                      @input="updateAssetImpact(asset, assetImpactKeys[index], value)"
+                    />
+                    <input 
+                      type="number" 
+                      v-model.number="assetImpactValues[index]" 
+                      class="glass-input"
+                      placeholder="Влияние (%)"
+                      step="0.1"
+                      @input="updateAssetImpact(asset, assetImpactKeys[index], assetImpactValues[index])"
+                    />
+                    <button 
+                      type="button" 
+                      @click="removeAssetImpact(asset)"
+                      class="btn-icon-sm btn-danger"
+                    >
+                      <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                      </svg>
+                    </button>
+                  </div>
+                  <button 
+                    type="button" 
+                    @click="addAssetImpact"
+                    class="btn-glass outline btn-add"
+                  >
+                    <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                    </svg>
+                    Добавить класс актива
+                  </button>
+                </div>
+              </div>
+
+              <!-- Form Actions -->
+              <div class="form-actions">
+                <button type="button" @click="closeEditor" class="btn-glass outline">Отмена</button>
+                <button type="submit" class="btn-glass primary">Сохранить сценарий</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </transition>
+
   </div>
 </template>
 
@@ -247,7 +508,8 @@ const scenarios = ref([
     assetImpact: { 'Акции': -35, 'Облигации': -12, 'Товары': -25, 'Валюта': -8 },
     key: 'black_swan',
     type: 'return_shock' as const,
-    return_multiplier: 0.5
+    return_multiplier: 0.5,
+    custom: false
   },
   {
     id: 2,
@@ -262,7 +524,8 @@ const scenarios = ref([
     assetImpact: { 'Акции': -18, 'Облигации': -5, 'Опционы': -40, 'Валюта': -3 },
     key: 'volatility_spike',
     type: 'volatility_shock' as const,
-    volatility_multiplier: 1.5
+    volatility_multiplier: 1.5,
+    custom: false
   },
   {
     id: 3,
@@ -277,7 +540,8 @@ const scenarios = ref([
     assetImpact: { 'Акции': -12, 'Облигации': -22, 'Недвижимость': -15, 'Валюта': -6 },
     key: 'rate_hike',
     type: 'return_shock' as const,
-    return_multiplier: 0.7
+    return_multiplier: 0.7,
+    custom: false
   },
   {
     id: 4,
@@ -292,9 +556,247 @@ const scenarios = ref([
     assetImpact: { 'Акции': -8, 'Облигации': 2, 'Товары': -5, 'Валюта': -2 },
     key: 'correction',
     type: 'correlation_shock' as const,
-    correlation_multiplier: 1.3
+    correlation_multiplier: 1.3,
+    custom: false
   }
 ])
+
+// Scenario Editor State
+const isEditorOpen = ref(false)
+const editingScenario = ref<any>(null)
+const nextScenarioId = ref(5)
+
+const formData = ref({
+  name: '',
+  description: '',
+  duration: '',
+  probability: 1,
+  severity: 'medium',
+  type: 'return_shock' as 'return_shock' | 'volatility_shock' | 'correlation_shock',
+  return_multiplier: 0.5,
+  volatility_multiplier: 1.5,
+  correlation_multiplier: 1.3,
+  marketChanges: {} as Record<string, string>,
+  assetImpact: {} as Record<string, number>
+})
+
+const marketChangeKeys = ref<string[]>([])
+const marketChangeValues = ref<string[]>([])
+const assetImpactKeys = ref<string[]>([])
+const assetImpactValues = ref<number[]>([])
+
+// Load custom scenarios from localStorage
+const loadCustomScenarios = () => {
+  try {
+    const saved = localStorage.getItem('custom_stress_scenarios')
+    if (saved) {
+      const custom = JSON.parse(saved)
+      scenarios.value = [...scenarios.value.filter(s => !s.custom), ...custom]
+      const maxId = Math.max(...scenarios.value.map(s => s.id))
+      nextScenarioId.value = maxId + 1
+    }
+  } catch (e) {
+    console.error('Failed to load custom scenarios:', e)
+  }
+}
+
+// Save custom scenarios to localStorage
+const saveCustomScenarios = () => {
+  try {
+    const custom = scenarios.value.filter(s => s.custom)
+    localStorage.setItem('custom_stress_scenarios', JSON.stringify(custom))
+  } catch (e) {
+    console.error('Failed to save custom scenarios:', e)
+  }
+}
+
+const openScenarioEditor = (scenario?: any) => {
+  if (scenario) {
+    editingScenario.value = scenario
+    formData.value = {
+      name: scenario.name,
+      description: scenario.description || '',
+      duration: scenario.duration || '',
+      probability: (scenario.probability || 0.01) * 100,
+      severity: scenario.severity || 'medium',
+      type: scenario.type || 'return_shock',
+      return_multiplier: scenario.return_multiplier || 0.5,
+      volatility_multiplier: scenario.volatility_multiplier || 1.5,
+      correlation_multiplier: scenario.correlation_multiplier || 1.3,
+      marketChanges: scenario.marketChanges ? { ...scenario.marketChanges } : {},
+      assetImpact: scenario.assetImpact ? { ...scenario.assetImpact } : {}
+    }
+  } else {
+    editingScenario.value = null
+    formData.value = {
+      name: '',
+      description: '',
+      duration: '',
+      probability: 1,
+      severity: 'medium',
+      type: 'return_shock',
+      return_multiplier: 0.5,
+      volatility_multiplier: 1.5,
+      correlation_multiplier: 1.3,
+      marketChanges: {},
+      assetImpact: {}
+    }
+  }
+  
+  // Initialize arrays for editing
+  marketChangeKeys.value = Object.keys(formData.value.marketChanges)
+  marketChangeValues.value = Object.values(formData.value.marketChanges)
+  assetImpactKeys.value = Object.keys(formData.value.assetImpact)
+  assetImpactValues.value = Object.values(formData.value.assetImpact)
+  
+  isEditorOpen.value = true
+}
+
+const closeEditor = () => {
+  isEditorOpen.value = false
+  editingScenario.value = null
+}
+
+const onShockTypeChange = () => {
+  // Reset multipliers when type changes
+  if (formData.value.type === 'return_shock') {
+    formData.value.volatility_multiplier = undefined
+    formData.value.correlation_multiplier = undefined
+  } else if (formData.value.type === 'volatility_shock') {
+    formData.value.return_multiplier = undefined
+    formData.value.correlation_multiplier = undefined
+  } else if (formData.value.type === 'correlation_shock') {
+    formData.value.return_multiplier = undefined
+    formData.value.volatility_multiplier = undefined
+  }
+}
+
+const updateMarketChange = (oldKey: string, newKey: string, value: string) => {
+  const index = marketChangeKeys.value.indexOf(oldKey)
+  if (index > -1) {
+    if (oldKey !== newKey) {
+      delete formData.value.marketChanges[oldKey]
+    }
+    if (newKey) {
+      formData.value.marketChanges[newKey] = value
+      marketChangeKeys.value[index] = newKey
+      marketChangeValues.value[index] = value
+    }
+  }
+}
+
+const addMarketChange = () => {
+  const newKey = `Параметр${Object.keys(formData.value.marketChanges).length + 1}`
+  formData.value.marketChanges[newKey] = ''
+  marketChangeKeys.value.push(newKey)
+  marketChangeValues.value.push('')
+}
+
+const removeMarketChange = (key: string) => {
+  delete formData.value.marketChanges[key]
+  const index = marketChangeKeys.value.indexOf(key)
+  if (index > -1) {
+    marketChangeKeys.value.splice(index, 1)
+    marketChangeValues.value.splice(index, 1)
+  }
+}
+
+const updateAssetImpact = (oldKey: string, newKey: string, value: number) => {
+  const index = assetImpactKeys.value.indexOf(oldKey)
+  if (index > -1) {
+    if (oldKey !== newKey) {
+      delete formData.value.assetImpact[oldKey]
+    }
+    if (newKey) {
+      formData.value.assetImpact[newKey] = value
+      assetImpactKeys.value[index] = newKey
+      assetImpactValues.value[index] = value
+    }
+  }
+}
+
+const addAssetImpact = () => {
+  const newKey = `Актив${Object.keys(formData.value.assetImpact).length + 1}`
+  formData.value.assetImpact[newKey] = 0
+  assetImpactKeys.value.push(newKey)
+  assetImpactValues.value.push(0)
+}
+
+const removeAssetImpact = (key: string) => {
+  delete formData.value.assetImpact[key]
+  const index = assetImpactKeys.value.indexOf(key)
+  if (index > -1) {
+    assetImpactKeys.value.splice(index, 1)
+    assetImpactValues.value.splice(index, 1)
+  }
+}
+
+const saveScenario = () => {
+  // Generate key from name
+  const key = formData.value.name.toLowerCase()
+    .replace(/[^a-z0-9]+/g, '_')
+    .replace(/^_+|_+$/g, '')
+  
+  const scenarioData: any = {
+    id: editingScenario?.value?.id || nextScenarioId.value++,
+    name: formData.value.name,
+    description: formData.value.description,
+    duration: formData.value.duration,
+    probability: formData.value.probability / 100,
+    severity: formData.value.severity,
+    key: editingScenario?.value?.key || `custom_${key}`,
+    type: formData.value.type,
+    marketChanges: { ...formData.value.marketChanges },
+    assetImpact: { ...formData.value.assetImpact },
+    custom: true
+  }
+  
+  // Add multiplier based on type
+  if (formData.value.type === 'return_shock' && formData.value.return_multiplier) {
+    scenarioData.return_multiplier = formData.value.return_multiplier
+  } else if (formData.value.type === 'volatility_shock' && formData.value.volatility_multiplier) {
+    scenarioData.volatility_multiplier = formData.value.volatility_multiplier
+  } else if (formData.value.type === 'correlation_shock' && formData.value.correlation_multiplier) {
+    scenarioData.correlation_multiplier = formData.value.correlation_multiplier
+  }
+  
+  // Initialize impact values
+  scenarioData.pnlImpact = 0
+  scenarioData.varChange = 0
+  
+  if (editingScenario.value) {
+    // Update existing scenario
+    const index = scenarios.value.findIndex(s => s.id === editingScenario.value.id)
+    if (index > -1) {
+      scenarios.value[index] = { ...scenarios.value[index], ...scenarioData }
+    }
+  } else {
+    // Add new scenario
+    scenarios.value.push(scenarioData)
+  }
+  
+  saveCustomScenarios()
+  closeEditor()
+  showToast(editingScenario.value ? 'Сценарий обновлен' : 'Сценарий создан', 'success')
+}
+
+const editScenario = (scenario: any) => {
+  openScenarioEditor(scenario)
+}
+
+const deleteScenario = (id: number) => {
+  if (confirm('Удалить этот сценарий?')) {
+    scenarios.value = scenarios.value.filter(s => s.id !== id)
+    saveCustomScenarios()
+    if (selectedScenario.value?.id === id) {
+      selectedScenario.value = scenarios.value[0] || null
+    }
+    showToast('Сценарий удален', 'success')
+  }
+}
+
+// Load custom scenarios on mount
+loadCustomScenarios()
 
 const selectedScenario = ref(scenarios.value[0])
 const selectScenario = (scenario: any) => selectedScenario.value = scenario
@@ -628,6 +1130,77 @@ const runAllStressTests = async () => {
   align-items: flex-start;
   margin-bottom: 8px;
   gap: 8px;
+}
+
+.sc-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.sc-actions {
+  display: flex;
+  gap: 4px;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.scenario-card:hover .sc-actions {
+  opacity: 1;
+}
+
+.btn-icon-sm {
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: none;
+  background: rgba(255,255,255,0.1);
+  border-radius: 6px;
+  color: rgba(255,255,255,0.7);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.btn-icon-sm:hover {
+  background: rgba(255,255,255,0.2);
+  color: #fff;
+}
+
+.btn-icon-sm.btn-danger:hover {
+  background: rgba(239, 68, 68, 0.2);
+  color: #ef4444;
+}
+
+.add-scenario-card {
+  border: 2px dashed rgba(255,255,255,0.2);
+  background: rgba(255,255,255,0.02);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 160px;
+}
+
+.add-scenario-card:hover {
+  border-color: rgba(59, 130, 246, 0.5);
+  background: rgba(59, 130, 246, 0.05);
+}
+
+.add-scenario-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  color: rgba(255,255,255,0.5);
+}
+
+.add-scenario-text {
+  font-size: 13px;
+  font-weight: 600;
+  color: rgba(255,255,255,0.6);
 }
 
 .sc-name {
@@ -1013,6 +1586,204 @@ const runAllStressTests = async () => {
 }
 
 /* ============================================
+   MODAL & FORM
+   ============================================ */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  z-index: 2000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  overflow-y: auto;
+}
+
+.scenario-editor-modal {
+  background: rgba(20, 22, 28, 0.95);
+  backdrop-filter: blur(50px) saturate(200%);
+  -webkit-backdrop-filter: blur(50px) saturate(200%);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 20px;
+  box-shadow: 
+    0 30px 60px -15px rgba(0, 0, 0, 0.8),
+    inset 0 1px 0 rgba(255, 255, 255, 0.12);
+  width: 100%;
+  max-width: 900px;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.modal-header {
+  padding: 20px 24px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.02);
+  flex-shrink: 0;
+}
+
+.modal-header h2 {
+  font-size: 18px;
+  font-weight: 700;
+  color: #fff;
+  margin: 0;
+  letter-spacing: -0.01em;
+}
+
+.modal-close {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.7);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.modal-close:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.2);
+  color: #fff;
+}
+
+.modal-body {
+  padding: 24px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.scenario-form {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.form-section {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.section-title {
+  font-size: 12px;
+  font-weight: 700;
+  color: rgba(255,255,255,0.5);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin: 0;
+  padding-bottom: 8px;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.form-group label {
+  font-size: 11px;
+  color: rgba(255,255,255,0.6);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.glass-input {
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  padding: 10px 14px;
+  color: #fff;
+  font-size: 13px;
+  font-family: inherit;
+  outline: none;
+  transition: all 0.2s;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.glass-input:focus {
+  background: rgba(0, 0, 0, 0.4);
+  border-color: rgba(59, 130, 246, 0.5);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.glass-input::placeholder {
+  color: rgba(255, 255, 255, 0.3);
+}
+
+.form-hint {
+  font-size: 10px;
+  color: rgba(255,255,255,0.4);
+  font-style: italic;
+}
+
+.market-changes-editor,
+.asset-impact-editor {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.market-change-row,
+.asset-impact-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr auto;
+  gap: 10px;
+  align-items: center;
+}
+
+.btn-add {
+  margin-top: 4px;
+  width: 100%;
+  justify-content: center;
+}
+
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  padding-top: 16px;
+  border-top: 1px solid rgba(255,255,255,0.08);
+}
+
+.modal-fade-enter-active,
+.modal-fade-leave-active {
+  transition: all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.modal-fade-enter-from,
+.modal-fade-leave-to {
+  opacity: 0;
+}
+
+.modal-fade-enter-from .scenario-editor-modal,
+.modal-fade-leave-to .scenario-editor-modal {
+  transform: scale(0.95) translateY(20px);
+}
+
+/* ============================================
    RESPONSIVE
    ============================================ */
 @media (max-width: 1200px) {
@@ -1096,6 +1867,34 @@ const runAllStressTests = async () => {
   }
   .impact-metrics-grid {
     grid-template-columns: 1fr;
+  }
+  
+  .scenario-editor-modal {
+    max-width: 100%;
+    max-height: 100vh;
+    border-radius: 0;
+  }
+  
+  .modal-body {
+    padding: 16px;
+  }
+  
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .market-change-row,
+  .asset-impact-row {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+  
+  .form-actions {
+    flex-direction: column;
+  }
+  
+  .form-actions .btn-glass {
+    width: 100%;
   }
 }
 </style>

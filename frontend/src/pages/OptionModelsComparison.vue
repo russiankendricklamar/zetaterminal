@@ -6,13 +6,13 @@
     <div class="section-header">
       <div class="header-left">
         <h1 class="section-title">Сравнение моделей ценообразования</h1>
-        <p class="section-subtitle">Black-Scholes, Heston, Lévy процессы, FFT</p>
+        <p class="section-subtitle">Black-Scholes, Heston, Merton, Bates, SABR, Variance Gamma</p>
       </div>
       
       <div class="header-actions">
          <div class="glass-pill status-pill">
             <span class="dot bg-blue"></span>
-            <span class="status-label">Активных моделей: <b class="text-white">4</b></span>
+            <span class="status-label">Активных моделей: <b class="text-white">6</b></span>
          </div>
       </div>
     </div>
@@ -91,29 +91,95 @@
                 </div>
             </div>
 
-            <!-- Lévy Parameters -->
+            <!-- Merton Parameters -->
             <div class="glass-card panel">
-                <div class="panel-header"><h3>Параметры Lévy</h3></div>
+                <div class="panel-header"><h3>Параметры Merton</h3></div>
                 
                 <div class="controls-form">
                     <div class="input-group">
-                        <label class="lbl">α (Устойчивость)</label>
-                        <input v-model.number="levyParams.alpha" type="number" step="0.01" min="0.1" max="2" class="glass-input" @change="calculateAllModels" />
+                        <label class="lbl">λ (Интенсивность скачков)</label>
+                        <input v-model.number="mertonParams.lambda" type="number" step="0.01" min="0" class="glass-input" @change="calculateAllModels" />
                     </div>
                     
                     <div class="input-group">
-                        <label class="lbl">β (Асимметрия)</label>
-                        <input v-model.number="levyParams.beta" type="number" step="0.01" min="-1" max="1" class="glass-input" @change="calculateAllModels" />
+                        <label class="lbl">μ_j (Среднее скачка)</label>
+                        <input v-model.number="mertonParams.mu_j" type="number" step="0.01" class="glass-input" @change="calculateAllModels" />
                     </div>
 
                     <div class="input-group">
-                        <label class="lbl">σ (Масштаб)</label>
-                        <input v-model.number="levyParams.sigma" type="number" step="0.001" min="0.001" class="glass-input" @change="calculateAllModels" />
+                        <label class="lbl">σ_j (Волатильность скачка)</label>
+                        <input v-model.number="mertonParams.sigma_j" type="number" step="0.01" min="0.01" class="glass-input" @change="calculateAllModels" />
+                    </div>
+                </div>
+            </div>
+
+            <!-- Bates Parameters -->
+            <div class="glass-card panel">
+                <div class="panel-header"><h3>Параметры Bates</h3></div>
+                
+                <div class="controls-form">
+                    <div class="input-group">
+                        <label class="lbl">λ (Интенсивность скачков)</label>
+                        <input v-model.number="batesParams.lambda" type="number" step="0.01" min="0" class="glass-input" @change="calculateAllModels" />
                     </div>
 
                     <div class="input-group">
-                        <label class="lbl">μ (Положение)</label>
-                        <input v-model.number="levyParams.mu" type="number" step="0.001" class="glass-input" @change="calculateAllModels" />
+                        <label class="lbl">μ_j (Среднее скачка)</label>
+                        <input v-model.number="batesParams.mu_j" type="number" step="0.01" class="glass-input" @change="calculateAllModels" />
+                    </div>
+
+                    <div class="input-group">
+                        <label class="lbl">σ_j (Волатильность скачка)</label>
+                        <input v-model.number="batesParams.sigma_j" type="number" step="0.01" min="0.01" class="glass-input" @change="calculateAllModels" />
+                    </div>
+                </div>
+            </div>
+
+            <!-- SABR Parameters -->
+            <div class="glass-card panel">
+                <div class="panel-header"><h3>Параметры SABR</h3></div>
+                
+                <div class="controls-form">
+                    <div class="input-group">
+                        <label class="lbl">α (Начальная волатильность)</label>
+                        <input v-model.number="sabrParams.alpha" type="number" step="0.001" min="0.001" class="glass-input" @change="calculateAllModels" />
+                    </div>
+
+                    <div class="input-group">
+                        <label class="lbl">β (Эластичность)</label>
+                        <input v-model.number="sabrParams.beta" type="number" step="0.01" min="0" max="1" class="glass-input" @change="calculateAllModels" />
+                    </div>
+
+                    <div class="input-group">
+                        <label class="lbl">ρ (Корреляция)</label>
+                        <input v-model.number="sabrParams.rho" type="number" step="0.01" min="-1" max="1" class="glass-input" @change="calculateAllModels" />
+                    </div>
+
+                    <div class="input-group">
+                        <label class="lbl">ν (Волатильность волатильности)</label>
+                        <input v-model.number="sabrParams.nu" type="number" step="0.01" min="0.01" class="glass-input" @change="calculateAllModels" />
+                    </div>
+                </div>
+            </div>
+
+            <!-- Variance Gamma Parameters -->
+            <div class="glass-card panel">
+                <div class="panel-header"><h3>Параметры Variance Gamma</h3></div>
+                
+                <div class="controls-form">
+                    <div class="input-group">
+                        <label class="lbl">θ (Дрифт)</label>
+                        <input v-model.number="vgParams.theta" type="number" step="0.01" class="glass-input" @change="calculateAllModels" />
+                    </div>
+
+                    <div class="input-group">
+                        <label class="lbl">σ (Волатильность)</label>
+                        <input v-model.number="vgParams.sigma" type="number" step="0.001" min="0.001" class="glass-input" @change="calculateAllModels" />
+                    </div>
+
+                    <div class="input-group">
+                        <label class="lbl">ν (Параметр формы)</label>
+                        <input v-model.number="vgParams.nu" type="number" step="0.001" min="0.001" class="glass-input" @change="calculateAllModels" />
                     </div>
                 </div>
             </div>
@@ -156,23 +222,39 @@
                                 <td class="value">{{ models.heston.putPrice?.toFixed(4) || '-' }}</td>
                                 <td class="value">{{ models.heston.callDelta?.toFixed(4) || '-' }}</td>
                                 <td class="value">{{ models.heston.putDelta?.toFixed(4) || '-' }}</td>
-                                <td class="note">Улыбка волатильности</td>
+                                <td class="note">Стохастическая волатильность</td>
                             </tr>
                             <tr>
-                                <td class="model-name">Lévy</td>
-                                <td class="value">{{ models.levy.callPrice?.toFixed(4) || '-' }}</td>
-                                <td class="value">{{ models.levy.putPrice?.toFixed(4) || '-' }}</td>
-                                <td class="value">{{ models.levy.callDelta?.toFixed(4) || '-' }}</td>
-                                <td class="value">{{ models.levy.putDelta?.toFixed(4) || '-' }}</td>
-                                <td class="note">Толстые хвосты</td>
+                                <td class="model-name">Merton</td>
+                                <td class="value">{{ models.merton.callPrice?.toFixed(4) || '-' }}</td>
+                                <td class="value">{{ models.merton.putPrice?.toFixed(4) || '-' }}</td>
+                                <td class="value">{{ models.merton.callDelta?.toFixed(4) || '-' }}</td>
+                                <td class="value">{{ models.merton.putDelta?.toFixed(4) || '-' }}</td>
+                                <td class="note">Модель скачков</td>
                             </tr>
                             <tr>
-                                <td class="model-name">FFT (Carr-Madan)</td>
-                                <td class="value">{{ models.fft.callPrice?.toFixed(4) || '-' }}</td>
-                                <td class="value">{{ models.fft.putPrice?.toFixed(4) || '-' }}</td>
-                                <td class="value">{{ models.fft.callDelta?.toFixed(4) || '-' }}</td>
-                                <td class="value">{{ models.fft.putDelta?.toFixed(4) || '-' }}</td>
-                                <td class="note">Быстрое преобразование</td>
+                                <td class="model-name">Bates</td>
+                                <td class="value">{{ models.bates.callPrice?.toFixed(4) || '-' }}</td>
+                                <td class="value">{{ models.bates.putPrice?.toFixed(4) || '-' }}</td>
+                                <td class="value">{{ models.bates.callDelta?.toFixed(4) || '-' }}</td>
+                                <td class="value">{{ models.bates.putDelta?.toFixed(4) || '-' }}</td>
+                                <td class="note">Heston + Скачки</td>
+                            </tr>
+                            <tr>
+                                <td class="model-name">SABR</td>
+                                <td class="value">{{ models.sabr.callPrice?.toFixed(4) || '-' }}</td>
+                                <td class="value">{{ models.sabr.putPrice?.toFixed(4) || '-' }}</td>
+                                <td class="value">{{ models.sabr.callDelta?.toFixed(4) || '-' }}</td>
+                                <td class="value">{{ models.sabr.putDelta?.toFixed(4) || '-' }}</td>
+                                <td class="note">Процентные опционы</td>
+                            </tr>
+                            <tr>
+                                <td class="model-name">Variance Gamma</td>
+                                <td class="value">{{ models.vg.callPrice?.toFixed(4) || '-' }}</td>
+                                <td class="value">{{ models.vg.putPrice?.toFixed(4) || '-' }}</td>
+                                <td class="value">{{ models.vg.callDelta?.toFixed(4) || '-' }}</td>
+                                <td class="value">{{ models.vg.putDelta?.toFixed(4) || '-' }}</td>
+                                <td class="note">Процесс Леви</td>
                             </tr>
                         </tbody>
                     </table>
@@ -213,116 +295,70 @@
                                 </td>
                             </tr>
                             <tr>
-                                <td class="model-name">Lévy</td>
-                                <td :class="{ positive: (models.levy.callPrice || 0) - (models.bsm.callPrice || 0) > 0, negative: (models.levy.callPrice || 0) - (models.bsm.callPrice || 0) < 0 }">
-                                    {{ ((models.levy.callPrice || 0) - (models.bsm.callPrice || 0)).toFixed(4) }}
+                                <td class="model-name">Merton</td>
+                                <td :class="{ positive: (models.merton.callPrice || 0) - (models.bsm.callPrice || 0) > 0, negative: (models.merton.callPrice || 0) - (models.bsm.callPrice || 0) < 0 }">
+                                    {{ ((models.merton.callPrice || 0) - (models.bsm.callPrice || 0)).toFixed(4) }}
                                 </td>
-                                <td :class="{ positive: (models.levy.callPrice || 0) - (models.bsm.callPrice || 0) > 0, negative: (models.levy.callPrice || 0) - (models.bsm.callPrice || 0) < 0 }">
-                                    {{ (((models.levy.callPrice || 0) - (models.bsm.callPrice || 0)) / (models.bsm.callPrice || 1) * 100).toFixed(2) }}%
+                                <td :class="{ positive: (models.merton.callPrice || 0) - (models.bsm.callPrice || 0) > 0, negative: (models.merton.callPrice || 0) - (models.bsm.callPrice || 0) < 0 }">
+                                    {{ (((models.merton.callPrice || 0) - (models.bsm.callPrice || 0)) / (models.bsm.callPrice || 1) * 100).toFixed(2) }}%
                                 </td>
-                                <td :class="{ positive: (models.levy.putPrice || 0) - (models.bsm.putPrice || 0) > 0, negative: (models.levy.putPrice || 0) - (models.bsm.putPrice || 0) < 0 }">
-                                    {{ ((models.levy.putPrice || 0) - (models.bsm.putPrice || 0)).toFixed(4) }}
+                                <td :class="{ positive: (models.merton.putPrice || 0) - (models.bsm.putPrice || 0) > 0, negative: (models.merton.putPrice || 0) - (models.bsm.putPrice || 0) < 0 }">
+                                    {{ ((models.merton.putPrice || 0) - (models.bsm.putPrice || 0)).toFixed(4) }}
                                 </td>
-                                <td :class="{ positive: (models.levy.putPrice || 0) - (models.bsm.putPrice || 0) > 0, negative: (models.levy.putPrice || 0) - (models.bsm.putPrice || 0) < 0 }">
-                                    {{ (((models.levy.putPrice || 0) - (models.bsm.putPrice || 0)) / (models.bsm.putPrice || 1) * 100).toFixed(2) }}%
+                                <td :class="{ positive: (models.merton.putPrice || 0) - (models.bsm.putPrice || 0) > 0, negative: (models.merton.putPrice || 0) - (models.bsm.putPrice || 0) < 0 }">
+                                    {{ (((models.merton.putPrice || 0) - (models.bsm.putPrice || 0)) / (models.bsm.putPrice || 1) * 100).toFixed(2) }}%
                                 </td>
                             </tr>
                             <tr>
-                                <td class="model-name">FFT</td>
-                                <td :class="{ positive: (models.fft.callPrice || 0) - (models.bsm.callPrice || 0) > 0.0001, negative: (models.fft.callPrice || 0) - (models.bsm.callPrice || 0) < -0.0001 }">
-                                    {{ ((models.fft.callPrice || 0) - (models.bsm.callPrice || 0)).toFixed(6) }}
+                                <td class="model-name">Bates</td>
+                                <td :class="{ positive: (models.bates.callPrice || 0) - (models.bsm.callPrice || 0) > 0, negative: (models.bates.callPrice || 0) - (models.bsm.callPrice || 0) < 0 }">
+                                    {{ ((models.bates.callPrice || 0) - (models.bsm.callPrice || 0)).toFixed(4) }}
                                 </td>
-                                <td class="near-zero">≈ 0%</td>
-                                <td :class="{ positive: (models.fft.putPrice || 0) - (models.bsm.putPrice || 0) > 0.0001, negative: (models.fft.putPrice || 0) - (models.bsm.putPrice || 0) < -0.0001 }">
-                                    {{ ((models.fft.putPrice || 0) - (models.bsm.putPrice || 0)).toFixed(6) }}
+                                <td :class="{ positive: (models.bates.callPrice || 0) - (models.bsm.callPrice || 0) > 0, negative: (models.bates.callPrice || 0) - (models.bsm.callPrice || 0) < 0 }">
+                                    {{ (((models.bates.callPrice || 0) - (models.bsm.callPrice || 0)) / (models.bsm.callPrice || 1) * 100).toFixed(2) }}%
                                 </td>
-                                <td class="near-zero">≈ 0%</td>
+                                <td :class="{ positive: (models.bates.putPrice || 0) - (models.bsm.putPrice || 0) > 0, negative: (models.bates.putPrice || 0) - (models.bsm.putPrice || 0) < 0 }">
+                                    {{ ((models.bates.putPrice || 0) - (models.bsm.putPrice || 0)).toFixed(4) }}
+                                </td>
+                                <td :class="{ positive: (models.bates.putPrice || 0) - (models.bsm.putPrice || 0) > 0, negative: (models.bates.putPrice || 0) - (models.bsm.putPrice || 0) < 0 }">
+                                    {{ (((models.bates.putPrice || 0) - (models.bsm.putPrice || 0)) / (models.bsm.putPrice || 1) * 100).toFixed(2) }}%
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="model-name">SABR</td>
+                                <td :class="{ positive: (models.sabr.callPrice || 0) - (models.bsm.callPrice || 0) > 0, negative: (models.sabr.callPrice || 0) - (models.bsm.callPrice || 0) < 0 }">
+                                    {{ ((models.sabr.callPrice || 0) - (models.bsm.callPrice || 0)).toFixed(4) }}
+                                </td>
+                                <td :class="{ positive: (models.sabr.callPrice || 0) - (models.bsm.callPrice || 0) > 0, negative: (models.sabr.callPrice || 0) - (models.bsm.callPrice || 0) < 0 }">
+                                    {{ (((models.sabr.callPrice || 0) - (models.bsm.callPrice || 0)) / (models.bsm.callPrice || 1) * 100).toFixed(2) }}%
+                                </td>
+                                <td :class="{ positive: (models.sabr.putPrice || 0) - (models.bsm.putPrice || 0) > 0, negative: (models.sabr.putPrice || 0) - (models.bsm.putPrice || 0) < 0 }">
+                                    {{ ((models.sabr.putPrice || 0) - (models.bsm.putPrice || 0)).toFixed(4) }}
+                                </td>
+                                <td :class="{ positive: (models.sabr.putPrice || 0) - (models.bsm.putPrice || 0) > 0, negative: (models.sabr.putPrice || 0) - (models.bsm.putPrice || 0) < 0 }">
+                                    {{ (((models.sabr.putPrice || 0) - (models.bsm.putPrice || 0)) / (models.bsm.putPrice || 1) * 100).toFixed(2) }}%
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="model-name">Variance Gamma</td>
+                                <td :class="{ positive: (models.vg.callPrice || 0) - (models.bsm.callPrice || 0) > 0, negative: (models.vg.callPrice || 0) - (models.bsm.callPrice || 0) < 0 }">
+                                    {{ ((models.vg.callPrice || 0) - (models.bsm.callPrice || 0)).toFixed(4) }}
+                                </td>
+                                <td :class="{ positive: (models.vg.callPrice || 0) - (models.bsm.callPrice || 0) > 0, negative: (models.vg.callPrice || 0) - (models.bsm.callPrice || 0) < 0 }">
+                                    {{ (((models.vg.callPrice || 0) - (models.bsm.callPrice || 0)) / (models.bsm.callPrice || 1) * 100).toFixed(2) }}%
+                                </td>
+                                <td :class="{ positive: (models.vg.putPrice || 0) - (models.bsm.putPrice || 0) > 0, negative: (models.vg.putPrice || 0) - (models.bsm.putPrice || 0) < 0 }">
+                                    {{ ((models.vg.putPrice || 0) - (models.bsm.putPrice || 0)).toFixed(4) }}
+                                </td>
+                                <td :class="{ positive: (models.vg.putPrice || 0) - (models.bsm.putPrice || 0) > 0, negative: (models.vg.putPrice || 0) - (models.bsm.putPrice || 0) < 0 }">
+                                    {{ (((models.vg.putPrice || 0) - (models.bsm.putPrice || 0)) / (models.bsm.putPrice || 1) * 100).toFixed(2) }}%
+                                </td>
                             </tr>
                         </tbody>
                     </table>
                 </div>
             </div>
 
-            <!-- Model Characteristics -->
-            <div class="glass-card chart-card mt-4">
-                <div class="chart-header">
-                    <h3>Характеристики моделей</h3>
-                </div>
-
-                <div class="models-grid">
-                    <div class="model-info-card">
-                        <div class="card-title">Black-Scholes</div>
-                        <div class="card-content">
-                            <div class="card-row">
-                                <span class="label">Плюсы:</span>
-                                <span>Аналитическая форма, быстрая</span>
-                            </div>
-                            <div class="card-row">
-                                <span class="label">Минусы:</span>
-                                <span>Логнормальное распределение</span>
-                            </div>
-                            <div class="card-row">
-                                <span class="label">Использование:</span>
-                                <span>Базовое ценообразование</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="model-info-card">
-                        <div class="card-title">Heston</div>
-                        <div class="card-content">
-                            <div class="card-row">
-                                <span class="label">Плюсы:</span>
-                                <span>Стохастическая волатильность</span>
-                            </div>
-                            <div class="card-row">
-                                <span class="label">Минусы:</span>
-                                <span>Сложнее калибровка</span>
-                            </div>
-                            <div class="card-row">
-                                <span class="label">Использование:</span>
-                                <span>Рынки акций, валюты</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="model-info-card">
-                        <div class="card-title">Lévy процессы</div>
-                        <div class="card-content">
-                            <div class="card-row">
-                                <span class="label">Плюсы:</span>
-                                <span>Толстые хвосты, скачки</span>
-                            </div>
-                            <div class="card-row">
-                                <span class="label">Минусы:</span>
-                                <span>Требует численной интеграции</span>
-                            </div>
-                            <div class="card-row">
-                                <span class="label">Использование:</span>
-                                <span>Экзотические опционы</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="model-info-card">
-                        <div class="card-title">FFT (Carr-Madan)</div>
-                        <div class="card-content">
-                            <div class="card-row">
-                                <span class="label">Плюсы:</span>
-                                <span>Быстрое вычисление</span>
-                            </div>
-                            <div class="card-row">
-                                <span class="label">Минусы:</span>
-                                <span>Требует характеристической функции</span>
-                            </div>
-                            <div class="card-row">
-                                <span class="label">Использование:</span>
-                                <span>Портфельный анализ</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
 
         </main>
     </div>
@@ -349,18 +385,38 @@ const hestonParams = reactive({
   rho: -0.5,
 })
 
-const levyParams = reactive({
-  alpha: 1.5,
-  beta: -0.3,
-  sigma: 0.15,
-  mu: 0.01,
+const mertonParams = reactive({
+  lambda: 0.1,
+  mu_j: -0.05,
+  sigma_j: 0.15,
+})
+
+const batesParams = reactive({
+  lambda: 0.1,
+  mu_j: -0.05,
+  sigma_j: 0.15,
+})
+
+const sabrParams = reactive({
+  alpha: 0.2,
+  beta: 0.5,
+  rho: -0.3,
+  nu: 0.4,
+})
+
+const vgParams = reactive({
+  theta: -0.1,
+  sigma: 0.2,
+  nu: 0.3,
 })
 
 const models = reactive({
   bsm: { callPrice: null, putPrice: null, callDelta: null, putDelta: null },
   heston: { callPrice: null, putPrice: null, callDelta: null, putDelta: null },
-  levy: { callPrice: null, putPrice: null, callDelta: null, putDelta: null },
-  fft: { callPrice: null, putPrice: null, callDelta: null, putDelta: null },
+  merton: { callPrice: null, putPrice: null, callDelta: null, putDelta: null },
+  bates: { callPrice: null, putPrice: null, callDelta: null, putDelta: null },
+  sabr: { callPrice: null, putPrice: null, callDelta: null, putDelta: null },
+  vg: { callPrice: null, putPrice: null, callDelta: null, putDelta: null },
 })
 
 // ===== Black-Scholes Helpers =====
@@ -426,22 +482,48 @@ const calculateAllModels = () => {
   models.heston.callDelta = Math.exp(-q * T) * normalCdf(d1_heston)
   models.heston.putDelta = -Math.exp(-q * T) * normalCdf(-d1_heston)
 
-  // === Lévy (упрощённая) ===
-  const tailAdj = levyParams.alpha < 2 ? 0.08 : 0
-  const adjSigmaLevy = sigma * (1 - tailAdj)
-  const d1_levy = (Math.log(S / K) + (r - q + 0.5 * adjSigmaLevy * adjSigmaLevy) * T) / (adjSigmaLevy * Math.sqrt(T))
-  const d2_levy = d1_levy - adjSigmaLevy * Math.sqrt(T)
+  // === Merton (Jump Diffusion) ===
+  const jumpAdj = mertonParams.lambda * (Math.exp(mertonParams.mu_j + 0.5 * mertonParams.sigma_j * mertonParams.sigma_j) - 1)
+  const adjSigmaMerton = Math.sqrt(sigma * sigma + mertonParams.lambda * (mertonParams.mu_j * mertonParams.mu_j + mertonParams.sigma_j * mertonParams.sigma_j))
+  const d1_merton = (Math.log(S / K) + (r - q - jumpAdj + 0.5 * adjSigmaMerton * adjSigmaMerton) * T) / (adjSigmaMerton * Math.sqrt(T))
+  const d2_merton = d1_merton - adjSigmaMerton * Math.sqrt(T)
 
-  models.levy.callPrice = S * Math.exp(-q * T) * normalCdf(d1_levy) - K * Math.exp(-r * T) * normalCdf(d2_levy)
-  models.levy.putPrice = K * Math.exp(-r * T) * normalCdf(-d2_levy) - S * Math.exp(-q * T) * normalCdf(-d1_levy)
-  models.levy.callDelta = Math.exp(-q * T) * normalCdf(d1_levy)
-  models.levy.putDelta = -Math.exp(-q * T) * normalCdf(-d1_levy)
+  models.merton.callPrice = S * Math.exp(-q * T) * normalCdf(d1_merton) - K * Math.exp(-r * T) * normalCdf(d2_merton)
+  models.merton.putPrice = K * Math.exp(-r * T) * normalCdf(-d2_merton) - S * Math.exp(-q * T) * normalCdf(-d1_merton)
+  models.merton.callDelta = Math.exp(-q * T) * normalCdf(d1_merton)
+  models.merton.putDelta = -Math.exp(-q * T) * normalCdf(-d1_merton)
 
-  // === FFT (как BSM + высокая точность) ===
-  models.fft.callPrice = models.bsm.callPrice * 0.9998
-  models.fft.putPrice = models.bsm.putPrice * 0.9998
-  models.fft.callDelta = models.bsm.callDelta
-  models.fft.putDelta = models.bsm.putDelta
+  // === Bates (Heston + Jumps) ===
+  const batesJumpAdj = batesParams.lambda * (Math.exp(batesParams.mu_j + 0.5 * batesParams.sigma_j * batesParams.sigma_j) - 1)
+  const adjSigmaBates = Math.sqrt(adjSigma * adjSigma + batesParams.lambda * (batesParams.mu_j * batesParams.mu_j + batesParams.sigma_j * batesParams.sigma_j))
+  const d1_bates = (Math.log(S / K) + (r - q - batesJumpAdj + 0.5 * adjSigmaBates * adjSigmaBates) * T) / (adjSigmaBates * Math.sqrt(T))
+  const d2_bates = d1_bates - adjSigmaBates * Math.sqrt(T)
+
+  models.bates.callPrice = S * Math.exp(-q * T) * normalCdf(d1_bates) - K * Math.exp(-r * T) * normalCdf(d2_bates)
+  models.bates.putPrice = K * Math.exp(-r * T) * normalCdf(-d2_bates) - S * Math.exp(-q * T) * normalCdf(-d1_bates)
+  models.bates.callDelta = Math.exp(-q * T) * normalCdf(d1_bates)
+  models.bates.putDelta = -Math.exp(-q * T) * normalCdf(-d1_bates)
+
+  // === SABR (Stochastic Alpha Beta Rho) ===
+  const sabrVol = sabrParams.alpha * Math.pow(S / K, sabrParams.beta) * (1 + sabrParams.rho * sabrParams.nu * Math.log(S / K))
+  const d1_sabr = (Math.log(S / K) + (r - q + 0.5 * sabrVol * sabrVol) * T) / (sabrVol * Math.sqrt(T))
+  const d2_sabr = d1_sabr - sabrVol * Math.sqrt(T)
+
+  models.sabr.callPrice = S * Math.exp(-q * T) * normalCdf(d1_sabr) - K * Math.exp(-r * T) * normalCdf(d2_sabr)
+  models.sabr.putPrice = K * Math.exp(-r * T) * normalCdf(-d2_sabr) - S * Math.exp(-q * T) * normalCdf(-d1_sabr)
+  models.sabr.callDelta = Math.exp(-q * T) * normalCdf(d1_sabr)
+  models.sabr.putDelta = -Math.exp(-q * T) * normalCdf(-d1_sabr)
+
+  // === Variance Gamma ===
+  const vgAdj = vgParams.theta + 0.5 * vgParams.sigma * vgParams.sigma
+  const adjSigmaVG = Math.sqrt(sigma * sigma + vgParams.sigma * vgParams.sigma / vgParams.nu)
+  const d1_vg = (Math.log(S / K) + (r - q + vgAdj) * T) / (adjSigmaVG * Math.sqrt(T))
+  const d2_vg = d1_vg - adjSigmaVG * Math.sqrt(T)
+
+  models.vg.callPrice = S * Math.exp(-q * T) * normalCdf(d1_vg) - K * Math.exp(-r * T) * normalCdf(d2_vg)
+  models.vg.putPrice = K * Math.exp(-r * T) * normalCdf(-d2_vg) - S * Math.exp(-q * T) * normalCdf(-d1_vg)
+  models.vg.callDelta = Math.exp(-q * T) * normalCdf(d1_vg)
+  models.vg.putDelta = -Math.exp(-q * T) * normalCdf(-d1_vg)
 }
 
 calculateAllModels()
@@ -657,49 +739,6 @@ calculateAllModels()
   font-weight: 600;
 }
 
-/* Models Grid */
-.models-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 16px;
-}
-
-.model-info-card {
-  background: rgba(0, 0, 0, 0.2);
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  border-radius: 12px;
-  padding: 16px;
-}
-
-.card-title {
-  font-size: 13px;
-  font-weight: 700;
-  color: #3b82f6;
-  margin-bottom: 12px;
-}
-
-.card-content {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.card-row {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  font-size: 11px;
-}
-
-.card-row .label {
-  color: rgba(255, 255, 255, 0.5);
-  font-weight: 600;
-  text-transform: uppercase;
-}
-
-.card-row span:not(.label) {
-  color: rgba(226, 232, 240, 0.8);
-}
 
 /* Utilities */
 .dot {
@@ -738,19 +777,11 @@ calculateAllModels()
   .dashboard-grid {
     grid-template-columns: 1fr;
   }
-
-  .models-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
 }
 
 @media (max-width: 768px) {
   .page-container {
     padding: 16px 20px;
-  }
-
-  .models-grid {
-    grid-template-columns: 1fr;
   }
 
   .data-table th,

@@ -93,32 +93,26 @@
             <div class="badge-glass">Marginal VaR</div>
           </div>
           <div class="risk-table-wrapper">
-             <table class="glass-table">
-                <colgroup>
-                    <col style="width: 30%">
-                    <col style="width: 20%">
-                    <col style="width: 25%">
-                    <col style="width: 25%">
-                </colgroup>
+             <table class="glass-table risk-decomposition-table">
                 <thead>
                    <tr>
-                      <th class="text-left pl-4">Актив</th>
+                      <th class="text-left">Актив</th>
                       <th class="text-right">Вес</th>
                       <th class="text-right">Вклад в риск</th>
-                      <th class="text-right pr-4">% Риска</th>
+                      <th class="text-right">% Риска</th>
                    </tr>
                 </thead>
                 <tbody>
                    <tr v-for="asset in riskContribution" :key="asset.symbol">
-                      <td class="pl-4">
+                      <td class="text-left">
                          <div class="asset-row">
                             <span class="dot" :style="{background: asset.color}"></span>
                             <span class="sym">{{ asset.symbol }}</span>
                          </div>
                       </td>
                       <td class="text-right mono">{{ asset.weight }}%</td>
-                      <td class="text-right mono text-red">${{ (asset.contribution / 1000).toFixed(1) }}k</td>
-                      <td class="text-right pr-4">
+                      <td class="text-right mono text-red">₽{{ (asset.contribution / 1000).toFixed(1) }}k</td>
+                      <td class="text-right">
                          <div class="bar-cell">
                             <div class="progress-bar">
                                <div class="progress-fill" :style="{width: asset.percentRisk + '%'}"></div>
@@ -511,24 +505,139 @@ const runStressTest = async () => {
 /* ============================================
    TABLES
    ============================================ */
-.risk-table-wrapper { overflow-x: auto; }
-.glass-table { width: 100%; border-collapse: collapse; font-size: 13px; }
-.glass-table th { 
-  text-align: left; padding: 0 0 12px 0; 
-  color: rgba(255,255,255,0.4); font-weight: 600; font-size: 10px; text-transform: uppercase; 
-  border-bottom: 1px solid rgba(255,255,255,0.08);
+.risk-table-wrapper { 
+  overflow-x: auto; 
+  width: 100%;
+  -webkit-overflow-scrolling: touch;
 }
-.glass-table td { padding: 12px 0; border-bottom: 1px solid rgba(255,255,255,0.03); color: rgba(255,255,255,0.9); }
-.glass-table tr:last-child td { border-bottom: none; }
 
-.asset-row { display: flex; align-items: center; gap: 10px; }
-.dot { width: 6px; height: 6px; border-radius: 2px; }
-.sym { font-weight: 600; color: #fff; }
+.glass-table { 
+  width: 100%; 
+  border-collapse: collapse; 
+  font-size: 13px; 
+  table-layout: fixed;
+}
 
-.bar-cell { display: flex; align-items: center; justify-content: flex-end; gap: 10px; }
-.progress-bar { width: 80px; height: 4px; background: rgba(255,255,255,0.1); border-radius: 2px; overflow: hidden; }
-.progress-fill { height: 100%; background: #ef4444; border-radius: 2px; }
-.bar-val { min-width: 32px; text-align: right; opacity: 0.7; }
+.glass-table th { 
+  text-align: left; 
+  padding: 12px 16px; 
+  color: rgba(255,255,255,0.4); 
+  font-weight: 600; 
+  font-size: 10px; 
+  text-transform: uppercase; 
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+  white-space: nowrap;
+}
+
+.glass-table th.text-right {
+  text-align: right;
+}
+
+.glass-table td { 
+  padding: 14px 16px; 
+  border-bottom: 1px solid rgba(255,255,255,0.03); 
+  color: rgba(255,255,255,0.9); 
+  vertical-align: middle;
+}
+
+.glass-table tr:last-child td { 
+  border-bottom: none; 
+}
+
+.glass-table tr:hover {
+  background: rgba(255,255,255,0.02);
+  transition: background 0.2s;
+}
+
+/* Risk Decomposition Table Specific */
+.risk-decomposition-table {
+  min-width: 100%;
+}
+
+.risk-decomposition-table th:nth-child(1),
+.risk-decomposition-table td:nth-child(1) {
+  width: 35%;
+  min-width: 120px;
+}
+
+.risk-decomposition-table th:nth-child(2),
+.risk-decomposition-table td:nth-child(2) {
+  width: 15%;
+  min-width: 60px;
+}
+
+.risk-decomposition-table th:nth-child(3),
+.risk-decomposition-table td:nth-child(3) {
+  width: 25%;
+  min-width: 100px;
+}
+
+.risk-decomposition-table th:nth-child(4),
+.risk-decomposition-table td:nth-child(4) {
+  width: 25%;
+  min-width: 140px;
+}
+
+.asset-row { 
+  display: flex; 
+  align-items: center; 
+  gap: 10px; 
+  min-width: 0;
+}
+
+.dot { 
+  width: 8px; 
+  height: 8px; 
+  border-radius: 2px; 
+  flex-shrink: 0;
+  box-shadow: 0 0 4px currentColor;
+}
+
+.sym { 
+  font-weight: 600; 
+  color: #fff; 
+  font-size: 13px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.bar-cell { 
+  display: flex; 
+  align-items: center; 
+  justify-content: flex-end; 
+  gap: 12px; 
+  width: 100%;
+  min-width: 0;
+}
+
+.progress-bar { 
+  flex: 1;
+  min-width: 60px;
+  max-width: 100px;
+  height: 6px; 
+  background: rgba(255,255,255,0.1); 
+  border-radius: 3px; 
+  overflow: hidden; 
+  position: relative;
+}
+
+.progress-fill { 
+  height: 100%; 
+  background: linear-gradient(90deg, #ef4444, #f87171); 
+  border-radius: 3px; 
+  transition: width 0.3s ease;
+  box-shadow: 0 0 8px rgba(239, 68, 68, 0.3);
+}
+
+.bar-val { 
+  min-width: 40px; 
+  text-align: right; 
+  opacity: 0.8; 
+  font-size: 12px;
+  font-weight: 600;
+  flex-shrink: 0;
+}
 
 /* ============================================
    STRESS LIST

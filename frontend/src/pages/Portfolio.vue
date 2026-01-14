@@ -240,7 +240,7 @@
                  Позиция в 3D пространстве основана на корреляциях между активами.
                  <br><strong>Наведите на шарик</strong> для детализации позиции.
               </p>
-              <div id="correlation-3d-heatmap" style="width:100%; height:500px; position: relative; min-height: 500px; background: transparent; border-radius: 8px; margin-bottom: 0;"></div>
+              <div id="correlation-3d-heatmap" style="width:100%; height:500px; position: relative; min-height: 500px; background: rgba(0,0,0,0.1); border-radius: 8px; margin-bottom: 0; display: block; visibility: visible; opacity: 1;"></div>
               <div v-if="hoveredAsset" class="asset-tooltip-3d">
                  <div class="tooltip-header">
                     <div class="asset-icon" :style="{ background: hoveredAsset.color }">{{ hoveredAsset.symbol[0] }}</div>
@@ -712,20 +712,65 @@ import { calculatePortfolioMetrics, type PortfolioMetricsResponse } from '../ser
 // Динамический импорт Plotly
 let Plotly: any = null
 const loadPlotly = async () => {
-  if (typeof window !== 'undefined' && !window.Plotly) {
-    const script = document.createElement('script')
-    script.src = 'https://cdn.plot.ly/plotly-latest.min.js'
-    script.async = true
-    document.head.appendChild(script)
+  if (typeof window === 'undefined') {
+    console.error('Window is undefined')
+    return null
+  }
+  
+  // Проверяем, уже ли загружен Plotly
+  if ((window as any).Plotly) {
+    Plotly = (window as any).Plotly
+    console.log('Plotly already loaded')
+    return Plotly
+  }
+  
+  // Проверяем, не загружается ли уже скрипт
+  const existingScript = document.querySelector('script[src*="plotly"]')
+  if (existingScript) {
     return new Promise((resolve) => {
-      script.onload = () => {
-        Plotly = window.Plotly
-        resolve(Plotly)
-      }
+      const checkInterval = setInterval(() => {
+        if ((window as any).Plotly) {
+          clearInterval(checkInterval)
+          Plotly = (window as any).Plotly
+          console.log('Plotly loaded from existing script')
+          resolve(Plotly)
+        }
+      }, 100)
+      
+      // Таймаут на случай, если скрипт не загрузится
+      setTimeout(() => {
+        clearInterval(checkInterval)
+        console.error('Plotly script timeout')
+        resolve(null)
+      }, 10000)
     })
   }
-  Plotly = window.Plotly
-  return Plotly
+  
+  // Создаем новый скрипт
+  const script = document.createElement('script')
+  script.src = 'https://cdn.plot.ly/plotly-latest.min.js'
+  script.async = true
+  script.crossOrigin = 'anonymous'
+  
+  return new Promise((resolve, reject) => {
+    script.onload = () => {
+      if ((window as any).Plotly) {
+        Plotly = (window as any).Plotly
+        console.log('Plotly loaded successfully')
+        resolve(Plotly)
+      } else {
+        console.error('Plotly not found after script load')
+        reject(new Error('Plotly not found'))
+      }
+    }
+    
+    script.onerror = (error) => {
+      console.error('Failed to load Plotly script:', error)
+      reject(error)
+    }
+    
+    document.head.appendChild(script)
+  })
 }
 
 // ============================================================================
@@ -1165,16 +1210,32 @@ const topAssetsFor3D = computed(() => {
 // ============================================================================
 const initCorrelation3DHeatmap = async () => {
   try {
-    await loadPlotly()
-    if (!Plotly) {
+    console.log('Initializing 3D Correlation Heatmap...')
+    const plotlyResult = await loadPlotly()
+    if (!plotlyResult) {
       console.error('Plotly not loaded')
       return
     }
+    Plotly = plotlyResult
     
     const container = document.getElementById('correlation-3d-heatmap')
     if (!container) {
       console.error('Container correlation-3d-heatmap not found')
       return
+    }
+    
+    console.log('Container found, dimensions:', container.clientWidth, container.clientHeight)
+    
+    // Проверяем, что контейнер видим и имеет размеры
+    if (container.clientWidth === 0 || container.clientHeight === 0) {
+      console.warn('Container has zero dimensions, waiting for layout...')
+      // Ждем следующего кадра для завершения layout
+      await new Promise(resolve => requestAnimationFrame(resolve))
+      if (container.clientWidth === 0 || container.clientHeight === 0) {
+        console.error('Container still has zero dimensions after wait')
+        return
+      }
+      console.log('Container dimensions after wait:', container.clientWidth, container.clientHeight)
     }
     
     // Берем все активы для визуализации (акции и облигации)
@@ -1403,7 +1464,16 @@ const initCorrelation3DHeatmap = async () => {
       displaylogo: false
     }
 
-    Plotly.newPlot(container, traces, layout, config)
+    console.log('Portfolio: Creating 3D plot with', traces.length, 'traces')
+    console.log('Portfolio: Container dimensions:', container.clientWidth, container.clientHeight)
+    
+    try {
+      Plotly.newPlot(container, traces, layout, config)
+      console.log('Portfolio: 3D plot created successfully')
+    } catch (error) {
+      console.error('Portfolio: Error creating 3D plot:', error)
+      return
+    }
     
     // Обработчик hover для кастомного tooltip в правом нижнем углу
     const plotlyContainer = container as any

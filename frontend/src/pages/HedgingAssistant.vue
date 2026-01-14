@@ -308,20 +308,20 @@
             <div class="cost-bar-container">
               <div 
                 class="cost-bar"
-                :style="{ width: (Math.abs(hedge.cost) / 5 * 100) + '%' }"
+                :style="{ width: Math.min(100, Math.max(2, (Math.abs(hedge.cost) / Math.max(totalCost, 1)) * 100)) + '%' }"
               ></div>
             </div>
-            <span class="cost-value">{{ hedge.cost }}bp</span>
+            <span class="cost-value mono">{{ hedge.cost.toFixed(1) }}bp</span>
           </div>
           <div class="cost-item total">
             <span class="instrument-name"><strong>ОБЩАЯ СТОИМОСТЬ</strong></span>
-            <div class="cost-bar-container">
+            <div class="cost-bar-container total-bar-container">
               <div 
-                class="cost-bar"
-                :style="{ width: (Math.abs(totalCost) / 5 * 100) + '%' }"
+                class="cost-bar total-bar"
+                :style="{ width: '100%' }"
               ></div>
             </div>
-            <span class="cost-value"><strong>{{ totalCost.toFixed(1) }}bp</strong></span>
+            <span class="cost-value total-value mono"><strong>{{ totalCost.toFixed(1) }}bp</strong></span>
           </div>
         </div>
       </div>
@@ -1202,46 +1202,80 @@ onMounted(() => {
 .cost-breakdown {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 14px;
+  padding: 4px 0;
 }
 
 .cost-item {
-  display: flex;
+  display: grid;
+  grid-template-columns: minmax(140px, 1fr) minmax(120px, 2fr) minmax(60px, auto);
   align-items: center;
-  gap: 12px;
+  gap: 16px;
+  padding: 8px 0;
 }
 
 .cost-item.total {
-  border-top: 1px solid rgba(255,255,255,0.1);
-  padding-top: 8px;
+  border-top: 2px solid rgba(255,255,255,0.15);
+  padding-top: 16px;
+  margin-top: 4px;
 }
 
 .instrument-name {
   font-size: 11px;
-  color: rgba(255,255,255,0.6);
-  min-width: 120px;
+  color: rgba(255,255,255,0.7);
+  font-weight: 600;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cost-item.total .instrument-name {
+  color: rgba(255,255,255,0.9);
+  font-size: 12px;
 }
 
 .cost-bar-container {
   flex: 1;
-  height: 6px;
-  background: rgba(255,255,255,0.05);
-  border-radius: 2px;
+  height: 8px;
+  background: rgba(255,255,255,0.06);
+  border-radius: 4px;
   overflow: hidden;
+  position: relative;
+  min-width: 0;
+}
+
+.cost-item.total .cost-bar-container {
+  height: 10px;
+  background: rgba(255,255,255,0.08);
 }
 
 .cost-bar {
   height: 100%;
-  background: linear-gradient(90deg, #3b82f6, #60a5fa);
-  border-radius: 2px;
+  background: linear-gradient(90deg, rgba(59, 130, 246, 0.8), rgba(96, 165, 250, 0.9));
+  border-radius: 4px;
+  transition: width 0.3s ease;
+  min-width: 2px;
+  box-shadow: 0 0 8px rgba(59, 130, 246, 0.3);
+}
+
+.cost-item.total .cost-bar {
+  background: linear-gradient(90deg, rgba(59, 130, 246, 1), rgba(96, 165, 250, 1));
+  box-shadow: 0 0 12px rgba(59, 130, 246, 0.5);
 }
 
 .cost-value {
-  font-size: 10px;
+  font-size: 11px;
   font-family: "SF Mono", monospace;
-  color: rgba(255,255,255,0.6);
-  min-width: 40px;
+  color: rgba(255,255,255,0.7);
+  min-width: 55px;
   text-align: right;
+  font-weight: 600;
+}
+
+.cost-item.total .cost-value {
+  color: rgba(255,255,255,0.95);
+  font-size: 12px;
 }
 
 /* ============================================

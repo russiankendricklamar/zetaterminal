@@ -238,7 +238,7 @@
         </thead>
         <tbody>
           <tr 
-            v-for="scenario in scenarios" 
+            v-for="scenario in scenariosWithRegistry" 
             :key="scenario.id"
             class="table-row"
             :class="{ active: selectedScenario?.id === scenario.id }"
@@ -267,7 +267,10 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
+import { useSwapRegistryStore } from '@/stores/swapRegistry'
+
+const swapRegistryStore = useSwapRegistryStore()
 
 const isRunning = ref(false)
 const shockMultiplier = ref(1.0)
@@ -462,6 +465,45 @@ const scenarios = ref([
 
 const selectedScenario = ref(scenarios.value[0])
 
+// Computed: обновляем сценарии на основе данных из реестра
+const scenariosWithRegistry = computed(() => {
+  // Если реестр пуст, используем дефолтные сценарии
+  if (swapRegistryStore.totalSwaps === 0) {
+    return scenarios.value
+  }
+  
+  // Пересчитываем P&L на основе реальных данных из реестра
+  const baseDv01 = swapRegistryStore.totalDv01
+  const baseSpreadDv01 = swapRegistryStore.totalSpreadDv01
+  const baseSwapValue = swapRegistryStore.totalSwapValue
+  
+  return scenarios.value.map(scenario => {
+    // Пересчитываем P&L на основе реального DV01
+    const pnlMultiplier = baseDv01 !== 0 ? baseDv01 / 125000 : 1 // Нормализуем относительно дефолтного DV01
+    const newPnlImpact = scenario.pnlImpact * pnlMultiplier
+    const newDv01Change = scenario.dv01Change * pnlMultiplier
+    
+    // Обновляем positionImpact на основе реальных свопов из реестра
+    const positionImpact: { [key: string]: number } = {}
+    swapRegistryStore.registrySwaps.forEach((swap, idx) => {
+      const result = swapRegistryStore.getResultByIndex(idx)
+      if (result) {
+        const swapName = `${swap.swapType.toUpperCase()} ${swap.tenor}Y`
+        // Примерная оценка влияния на позицию
+        positionImpact[swapName] = (result.dv01 * scenario.dv01Change) / 10
+      }
+    })
+    
+    return {
+      ...scenario,
+      pnlImpact: newPnlImpact,
+      dv01Change: newDv01Change,
+      spreadDv01: baseSpreadDv01 * (scenario.spreadDv01 / 85000), // Нормализуем относительно дефолтного
+      positionImpact: Object.keys(positionImpact).length > 0 ? positionImpact : scenario.positionImpact
+    }
+  })
+})
+
 // Computed
 const filteredScenarios = computed(() => {
   const typeMap: { [key: string]: string } = {
@@ -470,7 +512,14 @@ const filteredScenarios = computed(() => {
     'vol': 'Vol',
     'twist': 'Curve'
   }
-  return scenarios.value.filter(s => s.shockType === typeMap[activeShockType.value])
+  return scenariosWithRegistry.value.filter(s => s.shockType === typeMap[activeShockType.value])
+})
+
+// Обновляем selectedScenario при изменении реестра
+watch(() => swapRegistryStore.totalSwaps, () => {
+  if (scenariosWithRegistry.value.length > 0) {
+    selectedScenario.value = scenariosWithRegistry.value[0]
+  }
 })
 
 // Methods

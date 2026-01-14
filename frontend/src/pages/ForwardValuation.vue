@@ -42,6 +42,15 @@
           </select>
         </div>
 
+        <!-- Add to Registry Button -->
+        <button 
+          @click="addForwardManually" 
+          class="btn-secondary"
+          title="Добавить текущий форвард в реестр"
+        >
+          ➕ Добавить в реестр
+        </button>
+
         <!-- Calculation Button -->
         <button 
           @click="calculateValuation" 
@@ -936,16 +945,22 @@ import { ref, computed, onMounted, onBeforeUnmount, watch } from 'vue'
 import Chart from 'chart.js/auto'
 import * as XLSX from 'xlsx'
 import { valuateForward, saveRegistryToParquet, type ForwardValuationResponse } from '@/services/forwardService'
+import { useForwardRegistryStore } from '@/stores/forwardRegistry'
+
+// Используем store для реестра форвардов
+const forwardRegistryStore = useForwardRegistryStore()
 
 const selectedForwardType = ref('fx')
 const calculating = ref(false)
 const calculatingAll = ref(false)
 const error = ref('')
 const fileInputRef = ref<HTMLInputElement | null>(null)
-const loadedContracts = ref<any[]>([])
 const selectedContractIndex = ref<number | null>(null)
-const contractResults = ref<ForwardValuationResponse[]>([])
 const savingParquet = ref(false)
+
+// Используем данные из store
+const loadedContracts = computed(() => forwardRegistryStore.registryForwards)
+const contractResults = computed(() => forwardRegistryStore.forwardResults)
 
 // Parameters
 const params = ref({
@@ -1384,9 +1399,9 @@ const handleFileUpload = async (event: Event) => {
       }
     }
 
-    loadedContracts.value = contracts
+    // Сохраняем реестр в store
+    forwardRegistryStore.loadRegistry(contracts)
     selectedContractIndex.value = null
-    contractResults.value = []
     error.value = ''
   } catch (err: any) {
     error.value = `Ошибка при загрузке файла: ${err.message}`
@@ -1401,7 +1416,7 @@ const selectContract = (index: number) => {
 
 // Load contract to form
 const loadContractToForm = (index: number) => {
-  const contract = loadedContracts.value[index]
+  const contract = forwardRegistryStore.getForwardByIndex(index)
   if (!contract) return
 
   selectedForwardType.value = contract.forwardType || selectedForwardType.value
@@ -1444,11 +1459,12 @@ const loadContractToForm = (index: number) => {
 const calculateAllContracts = async () => {
   calculatingAll.value = true
   error.value = ''
-  contractResults.value = []
 
   try {
-    for (let i = 0; i < loadedContracts.value.length; i++) {
-      const contract = loadedContracts.value[i]
+    const results: (ForwardValuationResponse | null)[] = []
+    
+    for (let i = 0; i < forwardRegistryStore.registryForwards.length; i++) {
+      const contract = forwardRegistryStore.registryForwards[i]
       const request: any = {
         forwardType: contract.forwardType || selectedForwardType.value,
         spotPrice: contract.spotPrice || 0,
@@ -1480,9 +1496,10 @@ const calculateAllContracts = async () => {
 
       try {
         const result = await valuateForward(request)
-        contractResults.value.push(result)
+        results.push(result)
+        forwardRegistryStore.setForwardResult(i, result)
       } catch (err: any) {
-        contractResults.value.push({
+        const errorResult: ForwardValuationResponse = {
           fairForwardPrice: 0,
           forwardValue: 0,
           intrinsicValue: 0,
@@ -1492,10 +1509,15 @@ const calculateAllContracts = async () => {
           rho: 0,
           netCarry: 0,
           scenarios: []
-        })
+        }
+        results.push(errorResult)
+        forwardRegistryStore.setForwardResult(i, errorResult)
         console.error(`Error calculating contract ${i + 1}:`, err)
       }
     }
+    
+    // Сохраняем все результаты в store
+    forwardRegistryStore.setAllResults(results)
   } catch (err: any) {
     error.value = `Ошибка при расчете контрактов: ${err.message}`
   } finally {
@@ -1505,19 +1527,35 @@ const calculateAllContracts = async () => {
 
 // Export registry to Excel
 const exportRegistryToExcel = () => {
-  if (loadedContracts.value.length === 0) return
+  if (forwardRegistryStore.registryForwards.length === 0) {
+    alert('Нет данных для экспорта. Загрузите реестр форвардов.')
+    return
+  }
 
-  // Prepare data for export
-  const exportData = loadedContracts.value.map((contract, idx) => {
+  // Check if any contracts were calculated
+  const hasCalculatedContracts = forwardRegistryStore.forwardResults.length > 0 && forwardRegistryStore.forwardResults.some(r => r && r.fairForwardPrice !== null && r.fairForwardPrice !== undefined)
+  
+  if (!hasCalculatedContracts) {
+    const confirmExport = confirm('Контракты еще не рассчитаны. Экспортировать только входные параметры?')
+    if (!confirmExport) return
+  }
+
+  // Prepare data for export with all available information
+  const exportData = forwardRegistryStore.registryForwards.map((contract, idx) => {
+    const result = forwardRegistryStore.getResultByIndex(idx)
+    const contractType = contract.forwardType || selectedForwardType.value
+    
     const baseData: any = {
       '№': idx + 1,
-      'Тип': contract.forwardType || selectedForwardType.value,
+      'Тип': contractType.toUpperCase(),
       'Дата оценки': contract.valuationDate || '',
       'Дата экспирации': contract.expirationDate || '',
-      'Рыночная цена': contract.marketForwardPrice || 0
+      'Рыночная цена': contract.marketForwardPrice || 0,
+      'Размер контракта': contract.contractSize || 1_000_000
     }
 
-    if (selectedForwardType.value === 'fx') {
+    // FX форварды
+    if (contractType === 'fx' || selectedForwardType.value === 'fx') {
       baseData['Валюта продажи'] = contract.fxSellCurrency || ''
       baseData['Валюта покупки'] = contract.fxBuyCurrency || ''
       baseData['Сумма продажи'] = contract.fxSellAmount || 0
@@ -1526,46 +1564,187 @@ const exportRegistryToExcel = () => {
       baseData['Ставка покупки (%)'] = contract.fxInternalRate || 0
       baseData['Ставка продажи (%)'] = contract.fxExternalRate || 0
     } else {
+      // Другие типы форвардов
       baseData['Спот цена'] = contract.spotPrice || 0
       baseData['Время до экспирации (лет)'] = contract.timeToMaturity || 0
       baseData['Безрисковая ставка (%)'] = contract.riskFreeRate || 0
-      if (contract.forwardType === 'bond' || selectedForwardType.value === 'bond') {
+      
+      if (contractType === 'bond' || selectedForwardType.value === 'bond') {
         baseData['Купонная ставка (%)'] = contract.couponRate || 0
         baseData['Номинал'] = contract.faceValue || 0
         baseData['Репо ставка (%)'] = contract.repoRate || 0
+        baseData['Частота купонов'] = contract.couponFrequency || 2
+        baseData['НКД'] = contract.accruedInterest || 0
+      } else if (contractType === 'equity') {
+        baseData['Дивиденды (%)'] = contract.dividendYield || 0
+      } else if (contractType === 'commodity') {
+        baseData['Стоимость хранения (%)'] = contract.carryingCost || 0
+        baseData['Удобство владения (%)'] = contract.convenienceYield || 0
       }
     }
 
-    if (contractResults.value[idx]) {
-      baseData['Справедливая цена'] = contractResults.value[idx]?.fairForwardPrice || ''
-      baseData['Стоимость'] = contractResults.value[idx]?.forwardValue || ''
+    // Результаты расчетов
+    if (result) {
+      baseData['Справедливая цена'] = result.fairForwardPrice !== null && result.fairForwardPrice !== undefined ? result.fairForwardPrice.toFixed(6) : ''
+      baseData['Стоимость (на единицу)'] = result.forwardValue !== null && result.forwardValue !== undefined ? result.forwardValue.toFixed(6) : ''
+      baseData['Стоимость (на контракт)'] = result.forwardValue !== null && result.forwardValue !== undefined 
+        ? (result.forwardValue * (contract.contractSize || 1_000_000)).toFixed(2) : ''
+      baseData['Внутренняя стоимость'] = result.intrinsicValue !== null && result.intrinsicValue !== undefined ? result.intrinsicValue.toFixed(6) : ''
+      baseData['Временная стоимость'] = result.timeValue !== null && result.timeValue !== undefined ? result.timeValue.toFixed(6) : ''
+      baseData['Общая стоимость'] = result.totalValue !== null && result.totalValue !== undefined ? result.totalValue.toFixed(6) : ''
+      baseData['Delta (Δ)'] = result.delta !== null && result.delta !== undefined ? result.delta.toFixed(6) : ''
+      baseData['Rho (ρ)'] = result.rho !== null && result.rho !== undefined ? result.rho.toFixed(6) : ''
+      baseData['Net Carry'] = result.netCarry !== null && result.netCarry !== undefined ? (result.netCarry * 100).toFixed(4) + '%' : ''
+      
+      // FX специфичные поля
+      if (contractType === 'fx' || selectedForwardType.value === 'fx') {
+        baseData['Валютная пара'] = result.currencyPair || ''
+        baseData['Форвардный курс (мин)'] = result.forwardRateMin !== null && result.forwardRateMin !== undefined ? result.forwardRateMin.toFixed(6) : ''
+        baseData['Форвардный курс (макс)'] = result.forwardRateMax !== null && result.forwardRateMax !== undefined ? result.forwardRateMax.toFixed(6) : ''
+        baseData['Дисконт-фактор (внутр.)'] = result.discountFactorInternal !== null && result.discountFactorInternal !== undefined ? result.discountFactorInternal.toFixed(6) : ''
+        baseData['Дисконт-фактор (внешн.)'] = result.discountFactorExternal !== null && result.discountFactorExternal !== undefined ? result.discountFactorExternal.toFixed(6) : ''
+        baseData['Справедливая стоимость (мин)'] = result.fairValueMin !== null && result.fairValueMin !== undefined ? result.fairValueMin.toFixed(2) : ''
+        baseData['Справедливая стоимость (макс)'] = result.fairValueMax !== null && result.fairValueMax !== undefined ? result.fairValueMax.toFixed(2) : ''
+        if (result.forwardDiff !== undefined) {
+          baseData['Расхождение с курсом сделки'] = typeof result.forwardDiff === 'string' ? result.forwardDiff : result.forwardDiff.toFixed(6)
+        }
+      }
+      
+      // Bond специфичные поля
+      if (contractType === 'bond' || selectedForwardType.value === 'bond') {
+        baseData['DV01'] = result.dv01 !== null && result.dv01 !== undefined ? result.dv01.toFixed(6) : ''
+        baseData['Convexity'] = result.convexity !== null && result.convexity !== undefined ? result.convexity.toFixed(4) : ''
+        baseData['Repo Sensitivity'] = result.repoSensitivity !== null && result.repoSensitivity !== undefined ? result.repoSensitivity.toFixed(6) : ''
+        baseData['PV купонов'] = result.pvCoupons !== null && result.pvCoupons !== undefined ? result.pvCoupons.toFixed(2) : ''
+        baseData['Спот цена (dirty)'] = result.spotDirtyPrice !== null && result.spotDirtyPrice !== undefined ? result.spotDirtyPrice.toFixed(6) : ''
+        baseData['Форвард цена (dirty)'] = result.forwardDirtyPrice !== null && result.forwardDirtyPrice !== undefined ? result.forwardDirtyPrice.toFixed(6) : ''
+        baseData['НКД на экспирацию'] = result.aiForward !== null && result.aiForward !== undefined ? result.aiForward.toFixed(6) : ''
+        
+        if (result.formulaBreakdown) {
+          baseData['Спот цена (clean)'] = result.formulaBreakdown.spotCleanPrice.toFixed(6)
+          baseData['НКД на дату оценки'] = result.formulaBreakdown.accruedInterestSpot.toFixed(6)
+          baseData['Стоимость финансирования'] = result.formulaBreakdown.financingCost.toFixed(6)
+          baseData['PV купонов (детально)'] = result.formulaBreakdown.totalCouponsPV.toFixed(6)
+        }
+      }
+      
+      baseData['Статус расчета'] = 'Рассчитан'
+    } else {
+      baseData['Статус расчета'] = 'Не рассчитан'
     }
 
     return baseData
   })
 
-  // Create workbook
-  const ws = XLSX.utils.json_to_sheet(exportData)
+  // Create workbook with multiple sheets
   const wb = XLSX.utils.book_new()
+  
+  // Main registry sheet
+  const ws = XLSX.utils.json_to_sheet(exportData)
+  
+  // Set column widths for better readability
+  const colWidths: any[] = []
+  const maxCols = Math.max(...exportData.map(row => Object.keys(row).length))
+  for (let i = 0; i < maxCols; i++) {
+    colWidths.push({ wch: 18 })
+  }
+  ws['!cols'] = colWidths
+  
   XLSX.utils.book_append_sheet(wb, ws, 'Реестр форвардов')
 
-  // Generate filename with date
-  const dateStr = new Date().toISOString().split('T')[0]
-  const fileName = `реестр_форвардов_${dateStr}.xlsx`
+  // Add scenarios sheet if there are calculated contracts
+  if (hasCalculatedContracts) {
+    const scenariosData: any[] = []
+    
+    loadedContracts.value.forEach((contract, contractIdx) => {
+      const result = contractResults.value[contractIdx]
+      if (result && result.scenarios && result.scenarios.length > 0) {
+        result.scenarios.forEach((scenario, scenarioIdx) => {
+          scenariosData.push({
+            '№ контракта': contractIdx + 1,
+            'Тип': contract.forwardType || selectedForwardType.value,
+            '№ сценария': scenarioIdx + 1,
+            'Название сценария': scenario.name,
+            'Спот цена': scenario.spotPrice.toFixed(6),
+            '% Изменение': (scenario.change >= 0 ? '+' : '') + scenario.change.toFixed(2) + '%',
+            'Стоимость форварда': scenario.forwardValue.toFixed(6),
+            'P&L (Лонг)': scenario.pnlLong.toFixed(2),
+            'P&L (Шорт)': scenario.pnlShort.toFixed(2),
+            'Базовый сценарий': scenario.isBase ? 'Да' : 'Нет'
+          })
+        })
+      }
+    })
+    
+    if (scenariosData.length > 0) {
+      const wsScenarios = XLSX.utils.json_to_sheet(scenariosData)
+      const scenarioColWidths = [
+        { wch: 10 }, { wch: 10 }, { wch: 10 }, { wch: 20 }, { wch: 15 }, { wch: 15 }, { wch: 18 }, { wch: 15 }, { wch: 15 }, { wch: 15 }
+      ]
+      wsScenarios['!cols'] = scenarioColWidths
+      XLSX.utils.book_append_sheet(wb, wsScenarios, 'Сценарии')
+    }
+  }
+
+  // Add coupon schedule sheet for bond forwards
+  if (hasCalculatedContracts) {
+    const couponScheduleData: any[] = []
+    
+    forwardRegistryStore.registryForwards.forEach((contract, contractIdx) => {
+      const result = forwardRegistryStore.getResultByIndex(contractIdx)
+      if (result && result.couponSchedule && result.couponSchedule.length > 0) {
+        result.couponSchedule.forEach((coupon) => {
+          couponScheduleData.push({
+            '№ контракта': contractIdx + 1,
+            'Тип': contract.forwardType || selectedForwardType.value,
+            '№ купона': coupon.couponNumber,
+            'Дата купона': formatDate(coupon.couponDate),
+            'Дней до платежа': coupon.daysToPayment,
+            'Лет до платежа': coupon.yearsToPayment.toFixed(4),
+            'Сумма купона': coupon.couponAmount.toFixed(2),
+            'Ставка дисконтирования (%)': coupon.discountRate.toFixed(3),
+            'Дисконт-фактор': coupon.discountFactor.toFixed(6),
+            'Приведенная стоимость': coupon.presentValue.toFixed(2)
+          })
+        })
+      }
+    })
+    
+    if (couponScheduleData.length > 0) {
+      const wsCoupons = XLSX.utils.json_to_sheet(couponScheduleData)
+      const couponColWidths = [
+        { wch: 10 }, { wch: 10 }, { wch: 10 }, { wch: 12 }, { wch: 15 }, { wch: 15 }, { wch: 15 }, { wch: 20 }, { wch: 15 }, { wch: 18 }
+      ]
+      wsCoupons['!cols'] = couponColWidths
+      XLSX.utils.book_append_sheet(wb, wsCoupons, 'Расписание купонов')
+    }
+  }
+
+  // Generate filename with date and time
+  const now = new Date()
+  const dateStr = now.toISOString().split('T')[0]
+  const timeStr = now.toTimeString().split(' ')[0].replace(/:/g, '-')
+  const fileName = `реестр_форвардов_${dateStr}_${timeStr}.xlsx`
 
   // Save file
-  XLSX.writeFile(wb, fileName)
+  try {
+    XLSX.writeFile(wb, fileName)
+    alert(`Реестр успешно экспортирован: ${fileName}\n${hasCalculatedContracts ? 'Включая все расчеты, сценарии и расписание купонов.' : 'Только входные параметры (контракты не рассчитаны).'}`)
+  } catch (err: any) {
+    console.error('Ошибка при экспорте:', err)
+    alert(`Ошибка при экспорте файла: ${err.message}`)
+  }
 }
 
 // Save registry to parquet
 const saveRegistryToParquetHandler = async () => {
-  if (loadedContracts.value.length === 0) return
+  if (forwardRegistryStore.registryForwards.length === 0) return
 
   savingParquet.value = true
   error.value = ''
 
   try {
-    const result = await saveRegistryToParquet(loadedContracts.value)
+    const result = await saveRegistryToParquet(forwardRegistryStore.registryForwards)
     if (result.success) {
       error.value = `Реестр успешно сохранен: ${result.data.file_name}`
       setTimeout(() => {
@@ -1582,12 +1761,47 @@ const saveRegistryToParquetHandler = async () => {
 
 // Clear registry
 const clearRegistry = () => {
-  loadedContracts.value = []
+  forwardRegistryStore.clearRegistry()
   selectedContractIndex.value = null
-  contractResults.value = []
   if (fileInputRef.value) {
     fileInputRef.value.value = ''
   }
+}
+
+// Add forward manually (сохраняем возможность ручного добавления)
+const addForwardManually = () => {
+  const newForward: any = {
+    forwardType: selectedForwardType.value,
+    spotPrice: params.value.spotPrice,
+    timeToMaturity: params.value.timeToMaturity,
+    marketForwardPrice: params.value.marketForwardPrice,
+    contractSize: params.value.contractSize,
+    riskFreeRate: params.value.riskFreeRate,
+    valuationDate: selectedForwardType.value === 'fx' ? params.value.fxValuationDate : params.value.bondValuationDate,
+    expirationDate: selectedForwardType.value === 'fx' ? params.value.fxExpirationDate : params.value.bondExpirationDate
+  }
+  
+  // Добавляем специфичные параметры
+  if (selectedForwardType.value === 'fx') {
+    newForward.fxBuyCurrency = params.value.fxBuyCurrency
+    newForward.fxSellCurrency = params.value.fxSellCurrency
+    newForward.fxBuyAmount = params.value.fxBuyAmount
+    newForward.fxSellAmount = params.value.fxSellAmount
+    newForward.fxInternalRate = params.value.fxInternalRate
+    newForward.fxExternalRate = params.value.fxExternalRate
+  } else if (selectedForwardType.value === 'bond') {
+    newForward.couponRate = params.value.couponRate
+    newForward.faceValue = params.value.faceValue
+    newForward.repoRate = params.value.repoRate
+    newForward.accruedInterest = params.value.accruedInterest
+    newForward.couponFrequency = params.value.couponFrequency
+  } else {
+    newForward.dividendYield = params.value.dividendYield
+    newForward.carryingCost = params.value.carryingCost
+    newForward.convenienceYield = params.value.convenienceYield
+  }
+  
+  forwardRegistryStore.addForward(newForward)
 }
 
 onMounted(() => {

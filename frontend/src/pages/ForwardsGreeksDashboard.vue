@@ -6,7 +6,15 @@
     <div class="page-header">
       <div class="header-left">
         <h1 class="page-title">Панель греков</h1>
-        <p class="page-subtitle">Анализ чувствительности форвардных позиций</p>
+        <p class="page-subtitle">
+          Анализ чувствительности форвардных позиций
+          <span v-if="forwardRegistryStore.registryForwards.length > 0" style="margin-left: 12px; color: rgba(255,255,255,0.6);">
+            • Портфель: {{ forwardRegistryStore.registryForwards.length }} форвардов
+            <span v-if="forwardRegistryStore.calculatedForwards.length > 0">
+              ({{ forwardRegistryStore.calculatedForwards.length }} рассчитано)
+            </span>
+          </span>
+        </p>
       </div>
       
       <div class="header-right">
@@ -457,6 +465,10 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 import Chart from 'chart.js/auto'
+import { useForwardRegistryStore } from '@/stores/forwardRegistry'
+
+// Используем store для реестра форвардов
+const forwardRegistryStore = useForwardRegistryStore()
 
 const selectedPosition = ref('long-bond')
 const selectedViewType = ref('summary')
@@ -474,7 +486,59 @@ const positionParams = ref({
 })
 
 // Greeks Values
+// Агрегированные греки из реестра форвардов
+const aggregatedGreeks = computed(() => {
+  let totalDelta = 0
+  let totalRho = 0
+  let totalDv01 = 0
+  let totalConvexity = 0
+  let totalValue = 0
+  
+  forwardRegistryStore.registryForwards.forEach((forward, idx) => {
+    const result = forwardRegistryStore.getResultByIndex(idx)
+    if (result) {
+      const contractSize = forward.contractSize || 1_000_000
+      totalDelta += (result.delta || 0) * contractSize
+      totalRho += (result.rho || 0) * contractSize
+      totalValue += (result.forwardValue || 0) * contractSize
+      
+      if (forward.forwardType === 'bond' && result.dv01) {
+        const faceValue = forward.faceValue || 100
+        totalDv01 += result.dv01 * contractSize * faceValue / 100
+        totalConvexity += (result.convexity || 0) * contractSize
+      }
+    }
+  })
+  
+  return {
+    delta: totalDelta,
+    rho: totalRho,
+    dv01: totalDv01,
+    convexity: totalConvexity,
+    totalValue
+  }
+})
+
 const greeksValues = computed(() => {
+  // Если есть данные в реестре, используем агрегированные значения
+  if (forwardRegistryStore.registryForwards.length > 0 && forwardRegistryStore.calculatedForwards.length > 0) {
+    const agg = aggregatedGreeks.value
+    // Нормализуем для отображения (на единицу)
+    const totalContracts = forwardRegistryStore.registryForwards.reduce((sum, f) => sum + (f.contractSize || 1_000_000), 0)
+    return {
+      delta: totalContracts > 0 ? agg.delta / totalContracts : 0,
+      rho: totalContracts > 0 ? agg.rho / totalContracts : 0,
+      gamma: 0, // Gamma требует более сложного расчета
+      vega: 0, // Vega требует волатильности
+      theta: 0, // Theta требует временных параметров
+      volga: 0,
+      vanna: 0,
+      charm: 0,
+      rogas: 0
+    }
+  }
+  
+  // Fallback на локальные расчеты
   const S = positionParams.value.spotPrice
   const K = positionParams.value.strikePrice
   const T = positionParams.value.timeToMaturity
@@ -544,14 +608,54 @@ const pnlMetrics = computed(() => {
   }
 })
 
-// Risk Limits
-const riskLimits = ref([
-  { greeks: 'Delta', current: 0.98, limit: 2.0, utilization: 0.49, status: 'OK' },
-  { greeks: 'Gamma', current: 0.0015, limit: 0.005, utilization: 0.30, status: 'OK' },
-  { greeks: 'Vega', current: 850, limit: 1500, utilization: 0.57, status: 'OK' },
-  { greeks: 'Theta', current: -45.2, limit: -100, utilization: 0.45, status: 'OK' },
-  { greeks: 'Rho', current: 125.3, limit: 200, utilization: 0.63, status: 'Warning' },
-])
+// Risk Limits - используем данные из реестра
+const riskLimits = computed(() => {
+  const agg = aggregatedGreeks.value
+  const totalContracts = forwardRegistryStore.registryForwards.reduce((sum, f) => sum + (f.contractSize || 1_000_000), 0)
+  
+  // Нормализуем значения для отображения
+  const deltaValue = totalContracts > 0 ? Math.abs(agg.delta / totalContracts) : 0
+  const rhoValue = totalContracts > 0 ? Math.abs(agg.rho / totalContracts) : 0
+  const dv01Value = agg.dv01 / 1_000_000 // в млн
+  
+  return [
+    { 
+      greeks: 'Delta', 
+      current: deltaValue, 
+      limit: 2.0, 
+      utilization: deltaValue / 2.0, 
+      status: deltaValue / 2.0 > 0.8 ? 'Warning' : 'OK' 
+    },
+    { 
+      greeks: 'Rho', 
+      current: rhoValue, 
+      limit: 200, 
+      utilization: rhoValue / 200, 
+      status: rhoValue / 200 > 0.8 ? 'Warning' : 'OK' 
+    },
+    { 
+      greeks: 'DV01', 
+      current: dv01Value, 
+      limit: 10.0, 
+      utilization: dv01Value / 10.0, 
+      status: dv01Value / 10.0 > 0.8 ? 'Warning' : 'OK' 
+    },
+    { 
+      greeks: 'Convexity', 
+      current: agg.convexity / 1_000_000, 
+      limit: 5.0, 
+      utilization: (agg.convexity / 1_000_000) / 5.0, 
+      status: (agg.convexity / 1_000_000) / 5.0 > 0.8 ? 'Warning' : 'OK' 
+    },
+    { 
+      greeks: 'Total Value', 
+      current: agg.totalValue / 1_000_000, 
+      limit: 100.0, 
+      utilization: Math.abs(agg.totalValue / 1_000_000) / 100.0, 
+      status: Math.abs(agg.totalValue / 1_000_000) / 100.0 > 0.8 ? 'Warning' : 'OK' 
+    }
+  ]
+})
 
 // Chart References
 const deltaChartRef = ref<HTMLCanvasElement | null>(null)

@@ -1495,3 +1495,4 @@ class BondPricer:
             "cashFlows": cash_flows_detailed,
             "allCoupons": all_coupons_detailed
         }
+

@@ -338,19 +338,35 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onBeforeUnmount } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount, watch } from 'vue'
 import Chart from 'chart.js/auto'
+import { useSwapRegistryStore } from '@/stores/swapRegistry'
+
+const swapRegistryStore = useSwapRegistryStore()
 
 const selectedSwapType = ref('all')
 const selectedIndex = ref('rub3m')
 
-// Swap Greeks Data
-const swapGreeks = ref({
-  dv01: 125000,           // Рублевая стоимость 1 б.п.
-  spreadDv01: 85000,      // Spread sensitivity
-  basisRisk: 42000,       // Basis swap risk
-  convexity: 2.15,        // Convexity (higher order effect)
-  volExposure: 55000      // Swaption-like exposure
+// Swap Greeks Data - вычисляем на основе данных из реестра
+const swapGreeks = computed(() => {
+  // Если есть данные в реестре, используем их
+  if (swapRegistryStore.totalSwaps > 0) {
+    return {
+      dv01: swapRegistryStore.totalDv01,
+      spreadDv01: swapRegistryStore.totalSpreadDv01,
+      basisRisk: swapRegistryStore.totalSpreadDv01 * 0.5, // Примерная оценка
+      convexity: swapRegistryStore.totalConvexity,
+      volExposure: swapRegistryStore.totalDv01 * 0.44 // Примерная оценка
+    }
+  }
+  // Иначе используем дефолтные значения
+  return {
+    dv01: 125000,
+    spreadDv01: 85000,
+    basisRisk: 42000,
+    convexity: 2.15,
+    volExposure: 55000
+  }
 })
 
 // Key Rate Durations
@@ -365,67 +381,75 @@ const keyRateDurations = ref({
   '30Y': 0.05
 })
 
-// Long Positions (Payer)
-const longPositions = ref([
-  {
-    id: 1,
-    name: 'IRS Payer',
-    tenor: '5Y',
-    direction: 'Payer',
-    dv01: -145000,
-    spread: 25,
-    notional: 100_000_000
-  },
-  {
-    id: 2,
-    name: 'IRS Payer',
-    tenor: '10Y',
-    direction: 'Payer',
-    dv01: -185000,
-    spread: 35,
-    notional: 150_000_000
-  },
-  {
-    id: 3,
-    name: 'CDS Protection Buyer',
-    tenor: '5Y',
-    direction: 'Payer',
-    dv01: -32000,
-    spread: 85,
-    notional: 50_000_000
+// Long Positions (Payer) - вычисляем на основе данных из реестра
+const longPositions = computed(() => {
+  if (swapRegistryStore.totalSwaps === 0) {
+    // Дефолтные значения, если реестр пуст
+    return [
+      {
+        id: 1,
+        name: 'IRS Payer',
+        tenor: '5Y',
+        direction: 'Payer',
+        dv01: -145000,
+        spread: 25,
+        notional: 100_000_000
+      }
+    ]
   }
-])
+  
+  // Формируем позиции из реестра
+  return swapRegistryStore.registrySwaps
+    .map((swap, idx) => {
+      const result = swapRegistryStore.getResultByIndex(idx)
+      const tenorStr = `${swap.tenor}Y`
+      return {
+        id: swap.id || idx,
+        name: `${swap.swapType.toUpperCase()} ${swap.swapType === 'irs' ? 'Payer' : 'Swap'}`,
+        tenor: tenorStr,
+        direction: 'Payer',
+        dv01: result?.dv01 || 0,
+        spread: swap.spread,
+        notional: swap.notional * 1_000_000
+      }
+    })
+    .filter(pos => pos.dv01 < 0) // Только Payer позиции
+})
 
-// Short Positions (Receiver)
-const shortPositions = ref([
-  {
-    id: 4,
-    name: 'IRS Receiver',
-    tenor: '2Y',
-    direction: 'Receiver',
-    dv01: 45000,
-    spread: 15,
-    notional: 75_000_000
-  },
-  {
-    id: 5,
-    name: 'IRS Receiver',
-    tenor: '7Y',
-    direction: 'Receiver',
-    dv01: 95000,
-    spread: 28,
-    notional: 120_000_000
-  },
-  {
-    id: 6,
-    name: 'Basis Swap',
-    tenor: '5Y',
-    direction: 'Receiver',
-    dv01: 32000,
-    spread: 12,
-    notional: 80_000_000
+// Short Positions (Receiver) - вычисляем на основе данных из реестра
+const shortPositions = computed(() => {
+  if (swapRegistryStore.totalSwaps === 0) {
+    // Дефолтные значения, если реестр пуст
+    return [
+      {
+        id: 4,
+        name: 'IRS Receiver',
+        tenor: '2Y',
+        direction: 'Receiver',
+        dv01: 45000,
+        spread: 15,
+        notional: 75_000_000
+      }
+    ]
   }
-])
+  
+  // Формируем позиции из реестра (Receiver позиции - это те, где swapValue положительный)
+  return swapRegistryStore.registrySwaps
+    .map((swap, idx) => {
+      const result = swapRegistryStore.getResultByIndex(idx)
+      const tenorStr = `${swap.tenor}Y`
+      return {
+        id: swap.id || idx,
+        name: `${swap.swapType.toUpperCase()} Receiver`,
+        tenor: tenorStr,
+        direction: 'Receiver',
+        dv01: result?.dv01 || 0,
+        spread: swap.spread,
+        notional: swap.notional * 1_000_000
+      }
+    })
+    .filter(pos => pos.dv01 > 0) // Только Receiver позиции
+})
 
 // Scenario Matrix
 const scenarioMatrix = ref([

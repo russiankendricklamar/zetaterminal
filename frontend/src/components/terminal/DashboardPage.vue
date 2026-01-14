@@ -18,22 +18,31 @@
         class="dashboard-grid"
         :style="{ gridTemplateColumns: `repeat(${gridColumns}, 1fr)` }"
       >
-        <component
+        <div
           v-for="widget in widgets"
           :key="widget.id"
-          :is="widget.component"
-          v-bind="widget.props"
-          :width="widget.width"
-          :height="widget.height"
-          :resizable="false"
-          :show-controls="false"
-          :style="{ gridColumn: `span ${widget.width}`, gridRow: `span ${widget.height}` }"
-        />
+          :style="{ 
+            gridColumn: `span ${widget.width}`, 
+            gridRow: `span ${widget.height}`,
+            minHeight: '100px'
+          }"
+          class="widget-container"
+        >
+          <component
+            :is="widget.component"
+            v-bind="widget.props"
+            :width="widget.width"
+            :height="widget.height"
+            :resizable="false"
+            :show-controls="false"
+          />
+        </div>
       </div>
       <div v-else class="flex items-center justify-center h-full">
         <div class="text-center">
           <p class="text-white text-lg mb-2">Нет виджетов</p>
-          <p class="text-gray-400 text-sm">Добавьте виджеты через настройки</p>
+          <p class="text-gray-400 text-sm">Загрузка виджетов...</p>
+          <p class="text-gray-500 text-xs mt-2">Количество виджетов: {{ widgets.length }}</p>
         </div>
       </div>
     </div>
@@ -219,7 +228,20 @@ const getWidgetProps = (type: string) => {
   }
 };
 
-const widgets = ref<Widget[]>(loadWidgets());
+const widgets = ref<Widget[]>([]);
+
+// Инициализируем виджеты после монтирования
+onMounted(() => {
+  widgets.value = loadWidgets();
+  console.log('Loaded widgets:', widgets.value);
+  console.log('Widget components:', widgetComponents);
+  
+  // Слушаем обновления виджетов из настроек
+  window.addEventListener('widgets-updated', () => {
+    widgets.value = loadWidgets();
+    console.log('Widgets updated:', widgets.value);
+  });
+});
 
 const saveWidgets = () => {
   localStorage.setItem('terminal-widgets', JSON.stringify(widgets.value));
@@ -271,12 +293,6 @@ watch(() => props.chartData, () => {
   });
 }, { deep: true });
 
-onMounted(() => {
-  // Слушаем обновления виджетов из настроек
-  window.addEventListener('widgets-updated', () => {
-    widgets.value = loadWidgets();
-  });
-});
 </script>
 
 <style scoped>

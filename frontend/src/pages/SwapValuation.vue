@@ -52,6 +52,15 @@
           </select>
         </div>
 
+        <!-- Add to Registry Button -->
+        <button 
+          @click="addSwapManually" 
+          class="btn-secondary"
+          title="Добавить текущий своп в реестр"
+        >
+          ➕ Добавить в реестр
+        </button>
+
         <!-- Calculation Button -->
         <button 
           @click="calculateValuation" 
@@ -475,21 +484,30 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount, watch } from 'vue'
 import Chart from 'chart.js/auto'
 import * as XLSX from 'xlsx'
 import { valuateSwap, saveRegistryToParquet, type SwapValuationResponse } from '@/services/swapService'
+import { useSwapRegistryStore } from '@/stores/swapRegistry'
+
+// Используем store для реестра свопов
+const swapRegistryStore = useSwapRegistryStore()
 
 const selectedSwapType = ref('irs')
 const calculating = ref(false)
 const error = ref('')
 const fileInputRef = ref<HTMLInputElement | null>(null)
-const registrySwaps = ref<any[]>([])
 const selectedSwapIndex = ref<number | null>(null)
-const swapResults = ref<(SwapValuationResponse | null)[]>([])
 const calculatingAll = ref(false)
 const savingParquet = ref(false)
-const valuationDate = ref(new Date().toISOString().split('T')[0])
+
+// Используем данные из store
+const registrySwaps = computed(() => swapRegistryStore.registrySwaps)
+const swapResults = computed(() => swapRegistryStore.swapResults)
+const valuationDate = computed({
+  get: () => swapRegistryStore.valuationDate,
+  set: (value: string) => swapRegistryStore.setValuationDate(value)
+})
 
 // Swap Parameters
 const params = ref({
@@ -698,9 +716,9 @@ const handleFileUpload = async (event: Event) => {
       }
     }
 
-    registrySwaps.value = swaps
+    // Сохраняем реестр в store
+    swapRegistryStore.loadRegistry(swaps)
     selectedSwapIndex.value = null
-    swapResults.value = []
   } catch (err: any) {
     console.error('Excel parsing error:', err)
     error.value = `Ошибка при загрузке файла: ${err.message}`
@@ -714,7 +732,7 @@ const selectSwap = (index: number) => {
 
 // Load swap to form
 const loadSwapToForm = (index: number) => {
-  const swap = registrySwaps.value[index]
+  const swap = swapRegistryStore.getSwapByIndex(index)
   if (!swap) return
 
   params.value.notional = swap.notional || params.value.notional
@@ -736,12 +754,13 @@ const loadSwapToForm = (index: number) => {
 // Calculate all swaps
 const calculateAllSwaps = async () => {
   calculatingAll.value = true
-  swapResults.value = []
   error.value = ''
 
   try {
-    for (let i = 0; i < registrySwaps.value.length; i++) {
-      const swap = registrySwaps.value[i]
+    const results: (SwapValuationResponse | null)[] = []
+    
+    for (let i = 0; i < swapRegistryStore.registrySwaps.length; i++) {
+      const swap = swapRegistryStore.registrySwaps[i]
       try {
         const result = await valuateSwap({
           notional: swap.notional,
@@ -754,12 +773,17 @@ const calculateAllSwaps = async () => {
           volatility: swap.volatility,
           swapType: swap.swapType || 'irs'
         })
-        swapResults.value.push(result)
+        results.push(result)
+        swapRegistryStore.setSwapResult(i, result)
       } catch (err: any) {
-        swapResults.value.push(null)
+        results.push(null)
+        swapRegistryStore.setSwapResult(i, null)
         console.error(`Error calculating swap ${i + 1}:`, err)
       }
     }
+    
+    // Сохраняем все результаты в store
+    swapRegistryStore.setAllResults(results)
   } catch (err: any) {
     console.error('Error calculating swaps:', err)
     error.value = `Ошибка при расчете свопов: ${err.message}`
@@ -770,48 +794,142 @@ const calculateAllSwaps = async () => {
 
 // Export registry to Excel
 const exportRegistryToExcel = () => {
-  if (registrySwaps.value.length === 0) return
+  if (swapRegistryStore.registrySwaps.length === 0) {
+    alert('Нет данных для экспорта. Загрузите реестр свопов.')
+    return
+  }
 
-  // Prepare data for export
-  const exportData = registrySwaps.value.map((swap, idx) => ({
-    '№': idx + 1,
-    'Тип': swap.swapType?.toUpperCase() || 'IRS',
-    'Номинал (млн)': swap.notional || 0,
-    'Срок (лет)': swap.tenor || 0,
-    'Фиксированная ставка (%)': swap.fixedRate || 0,
-    'Плавающая ставка (%)': swap.floatingRate || 0,
-    'Спред (bp)': swap.spread || 0,
-    'Купонов в год': swap.couponsPerYear || 2,
-    'Дисконт кривая (%)': swap.discountRate || 0,
-    'Волатильность (%)': swap.volatility || 0,
-    'Swap Value': swapResults.value[idx]?.swapValue || '',
-    'DV01': swapResults.value[idx]?.dv01 || '',
-    'Duration': swapResults.value[idx]?.duration || '',
-    'Convexity': swapResults.value[idx]?.convexity || ''
-  }))
+  // Check if any swaps were calculated
+  const hasCalculatedSwaps = swapRegistryStore.swapResults.length > 0 && swapRegistryStore.swapResults.some(r => r && r.swapValue !== null && r.swapValue !== undefined)
+  
+  if (!hasCalculatedSwaps) {
+    const confirmExport = confirm('Свопы еще не рассчитаны. Экспортировать только входные параметры?')
+    if (!confirmExport) return
+  }
 
-  // Create workbook
-  const ws = XLSX.utils.json_to_sheet(exportData)
+  // Prepare data for export with all available information
+  const exportData = swapRegistryStore.registrySwaps.map((swap, idx) => {
+    const result = swapRegistryStore.getResultByIndex(idx)
+    const totalCashflows = result?.cashflows?.length || 0
+    const totalPV = result?.cashflows?.reduce((sum, cf) => sum + cf.pv, 0) || 0
+    
+    return {
+      '№': idx + 1,
+      'Тип': swap.swapType?.toUpperCase() || 'IRS',
+      'Номинал (млн)': swap.notional || 0,
+      'Срок (лет)': swap.tenor || 0,
+      'Фиксированная ставка (%)': swap.fixedRate || 0,
+      'Плавающая ставка (%)': swap.floatingRate || 0,
+      'Спред (bp)': swap.spread || 0,
+      'Купонов в год': swap.couponsPerYear || 2,
+      'Дисконт кривая (%)': swap.discountRate || 0,
+      'Волатильность (%)': swap.volatility || 0,
+      'PV фиксированной ноги (млн)': result?.pvFixedLeg !== null && result?.pvFixedLeg !== undefined ? result.pvFixedLeg.toFixed(6) : '',
+      'PV плавающей ноги (млн)': result?.pvFloatingLeg !== null && result?.pvFloatingLeg !== undefined ? result.pvFloatingLeg.toFixed(6) : '',
+      'Swap Value (млн)': result?.swapValue !== null && result?.swapValue !== undefined ? result.swapValue.toFixed(6) : '',
+      'Swap Value (% номинала)': result?.swapValue !== null && result?.swapValue !== undefined && swap.notional > 0 
+        ? ((result.swapValue / swap.notional) * 100).toFixed(4) + '%' : '',
+      'Duration (лет)': result?.duration !== null && result?.duration !== undefined ? result.duration.toFixed(4) : '',
+      'DV01 (млн/bp)': result?.dv01 !== null && result?.dv01 !== undefined ? (result.dv01 / 1_000_000).toFixed(6) : '',
+      'Spread DV01 (млн/bp)': result?.spreadDv01 !== null && result?.spreadDv01 !== undefined ? (result.spreadDv01 / 1_000_000).toFixed(6) : '',
+      'Convexity': result?.convexity !== null && result?.convexity !== undefined ? result.convexity.toFixed(4) : '',
+      'Количество денежных потоков': totalCashflows,
+      'Суммарный PV потоков (млн)': totalPV !== 0 ? (totalPV / 1_000_000).toFixed(6) : '',
+      'Статус расчета': result ? 'Рассчитан' : 'Не рассчитан'
+    }
+  })
+
+  // Create workbook with multiple sheets
   const wb = XLSX.utils.book_new()
+  
+  // Main registry sheet
+  const ws = XLSX.utils.json_to_sheet(exportData)
+  
+  // Set column widths for better readability
+  const colWidths = [
+    { wch: 5 },   // №
+    { wch: 8 },   // Тип
+    { wch: 15 },  // Номинал
+    { wch: 12 },  // Срок
+    { wch: 20 },  // Фикс. ставка
+    { wch: 20 },  // Плавающая ставка
+    { wch: 12 },  // Спред
+    { wch: 12 },  // Купонов в год
+    { wch: 18 },  // Дисконт кривая
+    { wch: 15 },  // Волатильность
+    { wch: 22 },  // PV фикс. ноги
+    { wch: 22 },  // PV плав. ноги
+    { wch: 18 },  // Swap Value
+    { wch: 20 },  // Swap Value %
+    { wch: 15 },  // Duration
+    { wch: 15 },  // DV01
+    { wch: 18 },  // Spread DV01
+    { wch: 12 },  // Convexity
+    { wch: 22 },  // Количество потоков
+    { wch: 22 },  // Суммарный PV
+    { wch: 15 }   // Статус
+  ]
+  ws['!cols'] = colWidths
+  
   XLSX.utils.book_append_sheet(wb, ws, 'Реестр свопов')
 
-  // Generate filename with date
-  const dateStr = new Date().toISOString().split('T')[0]
-  const fileName = `реестр_свопов_${dateStr}.xlsx`
+  // Add cashflows sheet if there are calculated swaps
+  if (hasCalculatedSwaps) {
+    const cashflowsData: any[] = []
+    
+    swapRegistryStore.registrySwaps.forEach((swap, swapIdx) => {
+      const result = swapRegistryStore.getResultByIndex(swapIdx)
+      if (result && result.cashflows && result.cashflows.length > 0) {
+        result.cashflows.forEach((cf, cfIdx) => {
+          cashflowsData.push({
+            '№ свопа': swapIdx + 1,
+            'Тип': swap.swapType?.toUpperCase() || 'IRS',
+            'Период': cfIdx + 1,
+            'Дата платежа': formatDate(cf.date),
+            'Fixed Leg (млн)': (cf.fixedLeg / 1_000_000).toFixed(6),
+            'Floating Leg (млн)': (cf.floatingLeg / 1_000_000).toFixed(6),
+            'Net (млн)': (cf.net / 1_000_000).toFixed(6),
+            'PV (млн)': (cf.pv / 1_000_000).toFixed(6)
+          })
+        })
+      }
+    })
+    
+    if (cashflowsData.length > 0) {
+      const wsCashflows = XLSX.utils.json_to_sheet(cashflowsData)
+      const cashflowColWidths = [
+        { wch: 8 }, { wch: 8 }, { wch: 8 }, { wch: 12 }, { wch: 18 }, { wch: 18 }, { wch: 15 }, { wch: 15 }
+      ]
+      wsCashflows['!cols'] = cashflowColWidths
+      XLSX.utils.book_append_sheet(wb, wsCashflows, 'Денежные потоки')
+    }
+  }
+
+  // Generate filename with date and time
+  const now = new Date()
+  const dateStr = now.toISOString().split('T')[0]
+  const timeStr = now.toTimeString().split(' ')[0].replace(/:/g, '-')
+  const fileName = `реестр_свопов_${dateStr}_${timeStr}.xlsx`
 
   // Save file
-  XLSX.writeFile(wb, fileName)
+  try {
+    XLSX.writeFile(wb, fileName)
+    alert(`Реестр успешно экспортирован: ${fileName}\n${hasCalculatedSwaps ? 'Включая все расчеты и денежные потоки.' : 'Только входные параметры (свопы не рассчитаны).'}`)
+  } catch (err: any) {
+    console.error('Ошибка при экспорте:', err)
+    alert(`Ошибка при экспорте файла: ${err.message}`)
+  }
 }
 
 // Save registry to parquet
 const saveRegistryToParquetHandler = async () => {
-  if (registrySwaps.value.length === 0) return
+  if (swapRegistryStore.registrySwaps.length === 0) return
 
   savingParquet.value = true
   error.value = ''
 
   try {
-    const result = await saveRegistryToParquet(registrySwaps.value)
+    const result = await saveRegistryToParquet(swapRegistryStore.registrySwaps)
     if (result.success) {
       error.value = `Реестр успешно сохранен: ${result.data.file_name}`
       setTimeout(() => {
@@ -828,12 +946,27 @@ const saveRegistryToParquetHandler = async () => {
 
 // Clear registry
 const clearRegistry = () => {
-  registrySwaps.value = []
+  swapRegistryStore.clearRegistry()
   selectedSwapIndex.value = null
-  swapResults.value = []
   if (fileInputRef.value) {
     fileInputRef.value.value = ''
   }
+}
+
+// Add swap manually (сохраняем возможность ручного добавления)
+const addSwapManually = () => {
+  const newSwap = {
+    notional: params.value.notional,
+    tenor: params.value.tenor,
+    fixedRate: params.value.fixedRate,
+    floatingRate: params.value.floatingRate,
+    spread: params.value.spread,
+    couponsPerYear: params.value.couponsPerYear,
+    discountRate: params.value.discountRate,
+    volatility: params.value.volatility,
+    swapType: selectedSwapType.value
+  }
+  swapRegistryStore.addSwap(newSwap)
 }
 
 onMounted(() => {

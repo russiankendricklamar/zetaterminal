@@ -2,8 +2,6 @@
 Сервис для оценки облигаций (DCF).
 Использует bond_pricing.py для расчетов.
 """
-import sys
-import os
 from typing import Dict, List, Optional
 from datetime import datetime
 import pandas as pd
@@ -132,11 +130,9 @@ def determine_market_activity(
     
     return 'unknown'
 
-# Добавляем корневую директорию backend в путь для импорта bond_pricing
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '../../'))
-
+# Импортируем bond_pricing из той же папки services
 try:
-    from bond_pricing import BondPricer, DayCountConvention
+    from .bond_pricing import BondPricer, DayCountConvention
 except ImportError:
     # Fallback если модуль не найден
     BondPricer = None
@@ -166,7 +162,7 @@ def calculate_bond_valuation(
         Результаты оценки для обоих сценариев
     """
     if BondPricer is None:
-        raise ValueError("Модуль bond_pricing не найден. Убедитесь, что файл bond_pricing.py находится в корне backend.")
+        raise ValueError("Модуль bond_pricing не найден. Убедитесь, что файл bond_pricing.py находится в папке src/services.")
     
     # Определяем базис расчета
     if day_count_convention:

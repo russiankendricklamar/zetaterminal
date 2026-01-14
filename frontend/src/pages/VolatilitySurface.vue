@@ -60,6 +60,42 @@
 
         <!-- Reset View -->
         <button @click="resetCamera" class="btn-secondary">↺ Сброс</button>
+        
+        <!-- Model Selection -->
+        <div class="control-group">
+          <label class="control-label">Модель:</label>
+          <div class="custom-select-wrapper" @click="toggleModelDropdown">
+            <div class="custom-select" :class="{ 'open': modelDropdownOpen }">
+              <div class="select-selected">
+                <span class="select-icon" :class="getModelIconClass(selectedModel)">
+                  {{ getModelIcon(selectedModel) }}
+                </span>
+                <span class="select-text">{{ getModelName(selectedModel) }}</span>
+                <svg class="select-arrow" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="6 9 12 15 18 9" />
+                </svg>
+              </div>
+              <transition name="dropdown">
+                <div class="select-options" v-if="modelDropdownOpen">
+                  <div 
+                    v-for="model in availableModels" 
+                    :key="model.value"
+                    class="select-option" 
+                    :class="{ 'selected': selectedModel === model.value }"
+                    @click.stop="selectModel(model.value)"
+                  >
+                    <span class="option-icon" :class="model.iconClass">{{ model.icon }}</span>
+                    <div style="flex: 1; display: flex; flex-direction: column; gap: 2px;">
+                      <span class="option-text">{{ model.label }}</span>
+                      <span class="option-subtext">{{ model.description }}</span>
+                    </div>
+                    <span class="option-badge" v-if="selectedModel === model.value">✓</span>
+                  </div>
+                </div>
+              </transition>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -312,21 +348,13 @@
       </div>
     </div>
 
-    <!-- Info Panel -->
+    <!-- Market Parameters Panel -->
     <div class="card full-width">
       <div class="card-header">
-        <h3>Параметры модели поверхности</h3>
-        <span class="card-subtitle">Технические параметры модели</span>
+        <h3>Рыночные параметры</h3>
+        <span class="card-subtitle">Текущие рыночные данные</span>
       </div>
       <div class="info-grid">
-        <div class="info-item">
-          <span class="label">Тип модели</span>
-          <span class="value">SABR + Local Vol</span>
-        </div>
-        <div class="info-item">
-          <span class="label">Калибровка</span>
-          <span class="value">Least Squares + Regularization</span>
-        </div>
         <div class="info-item">
           <span class="label">Последнее обновление</span>
           <span class="value">{{ updateTime }}</span>
@@ -351,6 +379,14 @@
           <span class="label">Repo Rate</span>
           <span class="value mono">{{ (repoRate * 100).toFixed(2) }}%</span>
         </div>
+        <div class="info-item">
+          <span class="label">Модель поверхности</span>
+          <span class="value">{{ getModelName(selectedModel) }}</span>
+        </div>
+        <div class="info-item">
+          <span class="label">Калибровка</span>
+          <span class="value">Least Squares + Regularization</span>
+        </div>
       </div>
     </div>
 
@@ -373,6 +409,8 @@ import { saveRegistryToParquet } from '@/services/optionService'
 
 /* --- CONTROLS & STATE --- */
 const selectedInstrument = ref('spy')
+const selectedModel = ref('sabr')
+const modelDropdownOpen = ref(false)
 const showGrid = ref(true)
 const showWireframe = ref(false)
 const animating = ref(false)
@@ -383,6 +421,85 @@ const selectedContractIndex = ref<number | null>(null)
 const calculatingAll = ref(false)
 const savingParquet = ref(false)
 const error = ref('')
+
+// Available models for volatility surface
+const availableModels = [
+  { 
+    value: 'bsm', 
+    label: 'Black-Scholes', 
+    icon: 'BS', 
+    iconClass: 'icon-bsm',
+    description: 'Классическая модель' 
+  },
+  { 
+    value: 'heston', 
+    label: 'Heston', 
+    icon: 'H', 
+    iconClass: 'icon-heston',
+    description: 'Стохастическая волатильность' 
+  },
+  { 
+    value: 'merton', 
+    label: 'Merton', 
+    icon: 'M', 
+    iconClass: 'icon-merton',
+    description: 'Модель скачков' 
+  },
+  { 
+    value: 'bates', 
+    label: 'Bates', 
+    icon: 'B', 
+    iconClass: 'icon-bates',
+    description: 'Heston + Скачки' 
+  },
+  { 
+    value: 'sabr', 
+    label: 'SABR', 
+    icon: 'S', 
+    iconClass: 'icon-sabr',
+    description: 'Stochastic Alpha Beta Rho' 
+  },
+  { 
+    value: 'vg', 
+    label: 'Variance Gamma', 
+    icon: 'VG', 
+    iconClass: 'icon-vg',
+    description: 'VG Process' 
+  },
+]
+
+const getModelName = (model: string) => {
+  const found = availableModels.find(m => m.value === model)
+  return found?.label || 'SABR'
+}
+
+const getModelIcon = (model: string) => {
+  const found = availableModels.find(m => m.value === model)
+  return found?.icon || 'S'
+}
+
+const getModelIconClass = (model: string) => {
+  const found = availableModels.find(m => m.value === model)
+  return found?.iconClass || 'icon-sabr'
+}
+
+const toggleModelDropdown = () => {
+  modelDropdownOpen.value = !modelDropdownOpen.value
+}
+
+const selectModel = (model: string) => {
+  selectedModel.value = model
+  modelDropdownOpen.value = false
+  regenerateSurface()
+}
+
+// Close dropdown when clicking outside
+const handleClickOutside = (event: MouseEvent) => {
+  const target = event.target as HTMLElement
+  if (!target.closest('.custom-select-wrapper')) {
+    modelDropdownOpen.value = false
+  }
+}
 
 const threeCanvas = ref<HTMLCanvasElement | null>(null)
 let scene: THREE.Scene | null = null
@@ -421,28 +538,41 @@ const convexityChartRef = ref<HTMLCanvasElement | null>(null)
 let charts: { [key: string]: Chart | null } = {}
 
 /* --- VOLATILITY SURFACE FUNCTION --- */
-const generateVolatilitySurface = (instrumentType: string): number[][] => {
+const generateVolatilitySurface = (instrumentType: string, model: string = 'sabr'): number[][] => {
   const data: number[][] = []
   
-  // SABR-like model parameters
+  // Base parameters for different models
   let alpha = 0.15
   let beta = 0.8
   let rho = -0.3
   let nu = 0.4
+  let v0 = 0.04  // Heston initial variance
+  let kappa = 3  // Heston mean reversion
+  let theta = 0.04  // Heston long-term variance
+  let lambda = 0.1  // Jump intensity (Merton/Bates)
+  let mu_j = -0.05  // Jump mean
+  let sigma_j = 0.15  // Jump volatility
+  let vg_theta = -0.1  // VG drift
+  let vg_sigma = 0.2  // VG volatility
+  let vg_nu = 0.3  // VG shape parameter
 
+  // Adjust parameters based on instrument type
   if (instrumentType === 'eur') {
     alpha = 0.08
     nu = 0.25
     rho = -0.15
+    v0 = 0.02
   } else if (instrumentType === 'brent') {
     alpha = 0.35
     rho = 0.1
     nu = 0.5
+    v0 = 0.06
   } else if (instrumentType === 'rates') {
     alpha = 0.012
     beta = 0.5
     rho = -0.5
     nu = 0.35
+    v0 = 0.01
   }
 
   for (let i = 0; i < strikes.length; i++) {
@@ -452,29 +582,63 @@ const generateVolatilitySurface = (instrumentType: string): number[][] => {
     
     for (let j = 0; j < tenors.length; j++) {
       const tenorYears = [1/12, 0.25, 0.5, 1, 2, 3][j]
-      
-      // Simplified SABR formula
       const sqrtT = Math.sqrt(tenorYears)
       const f = 1.0
       
-      // ATM vol (alpha * beta term)
-      let atmVol = alpha * Math.pow(f, beta - 1)
+      let vol = 0.15  // Default volatility
       
-      // Smile (skew) term
-      const smileTerm = Math.pow(f * strike, (beta - 1) / 2) * 
-        Math.sinh(rho * Math.acosh(Math.sqrt((alpha / nu) * (alpha / nu) + 1)))
+      if (model === 'bsm') {
+        // Black-Scholes: constant volatility with slight smile
+        const smile = moneyness < 0 
+          ? 1 + (-0.3) * moneyness  // put skew
+          : 1 + (-0.15) * moneyness  // call skew
+        const termFactor = 1 + 0.03 * (1 - tenorYears)
+        vol = alpha * smile * termFactor
+      } else if (model === 'heston') {
+        // Heston: stochastic volatility
+        const v_t = v0 + (theta - v0) * (1 - Math.exp(-kappa * tenorYears))
+        const smile = moneyness < 0 
+          ? 1 + (-0.4) * moneyness * (1 + rho * 0.5)
+          : 1 + (-0.2) * moneyness * (1 + rho * 0.5)
+        vol = Math.sqrt(v_t) * smile
+      } else if (model === 'merton') {
+        // Merton: jump diffusion
+        const jumpAdj = lambda * (Math.exp(mu_j + 0.5 * sigma_j * sigma_j) - 1)
+        const adjSigma = Math.sqrt(alpha * alpha + lambda * (mu_j * mu_j + sigma_j * sigma_j))
+        const smile = moneyness < 0 
+          ? 1 + (-0.5) * moneyness
+          : 1 + (-0.25) * moneyness
+        vol = adjSigma * smile * (1 + jumpAdj * tenorYears)
+      } else if (model === 'bates') {
+        // Bates: Heston + jumps
+        const v_t = v0 + (theta - v0) * (1 - Math.exp(-kappa * tenorYears))
+        const jumpAdj = lambda * (Math.exp(mu_j + 0.5 * sigma_j * sigma_j) - 1)
+        const smile = moneyness < 0 
+          ? 1 + (-0.45) * moneyness * (1 + rho * 0.5)
+          : 1 + (-0.25) * moneyness * (1 + rho * 0.5)
+        vol = Math.sqrt(v_t) * smile * (1 + jumpAdj * tenorYears * 0.5)
+      } else if (model === 'sabr') {
+        // SABR: Stochastic Alpha Beta Rho
+        const atmVol = alpha * Math.pow(f, beta - 1)
+        const smileTerm = Math.pow(f * strike, (beta - 1) / 2) * 
+          Math.sinh(rho * Math.acosh(Math.sqrt((alpha / nu) * (alpha / nu) + 1)))
+        const smile = moneyness < 0 
+          ? 1 + (-0.4) * moneyness
+          : 1 + (-0.2) * moneyness
+        const termFactor = 1 + 0.05 * (1 - tenorYears)
+        const volvol = 1 + Math.abs(moneyness) * 0.15
+        vol = atmVol * smile * termFactor * volvol / sqrtT
+      } else if (model === 'vg') {
+        // Variance Gamma: Lévy process
+        const vgAdj = vg_theta + 0.5 * vg_sigma * vg_sigma
+        const adjSigmaVG = Math.sqrt(alpha * alpha + vg_sigma * vg_sigma / vg_nu)
+        const smile = moneyness < 0 
+          ? 1 + (-0.35) * moneyness * (1 + vg_nu)
+          : 1 + (-0.18) * moneyness * (1 + vg_nu)
+        const termFactor = 1 + 0.04 * (1 - tenorYears)
+        vol = adjSigmaVG * smile * termFactor * (1 + vgAdj * tenorYears)
+      }
       
-      const smile = moneyness < 0 
-        ? 1 + (-0.4) * moneyness // put skew
-        : 1 + (-0.2) * moneyness  // call skew
-      
-      // Term structure
-      const termFactor = 1 + 0.05 * (1 - tenorYears)
-      
-      // Vol of vol smile
-      const volvol = 1 + Math.abs(moneyness) * 0.15
-      
-      const vol = atmVol * smile * termFactor * volvol / sqrtT
       row.push(Math.max(0.05, Math.min(1.0, vol)))
     }
     data.push(row)
@@ -483,7 +647,7 @@ const generateVolatilitySurface = (instrumentType: string): number[][] => {
   return data
 }
 
-let volSurfaceData: number[][] = generateVolatilitySurface('spy')
+let volSurfaceData: number[][] = generateVolatilitySurface('spy', 'sabr')
 
 const getVolForStrikeTenor = (strike: number, tenor: string): number => {
   const strikeIdx = strikes.indexOf(strike)
@@ -1002,7 +1166,7 @@ const setupControls = () => {
 }
 
 const regenerateSurface = () => {
-  volSurfaceData = generateVolatilitySurface(selectedInstrument.value)
+  volSurfaceData = generateVolatilitySurface(selectedInstrument.value, selectedModel.value)
   buildSurface()
   buildCharts()
 }
@@ -1540,6 +1704,11 @@ onMounted(async () => {
   await nextTick()
   initThreeJS()
   buildCharts()
+  document.addEventListener('click', handleClickOutside)
+})
+
+onBeforeUnmount(() => {
+  document.removeEventListener('click', handleClickOutside)
 })
 
 onBeforeUnmount(() => {
@@ -2135,5 +2304,204 @@ onBeforeUnmount(() => {
     font-size: 9px;
     padding: 8px;
   }
+}
+
+/* Custom Select Dropdown */
+.custom-select-wrapper {
+  position: relative;
+  width: 200px;
+}
+
+.custom-select {
+  position: relative;
+  width: 100%;
+}
+
+.select-selected {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  background: rgba(0, 0, 0, 0.2);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+  user-select: none;
+  font-size: 12px;
+}
+
+.select-selected:hover {
+  border-color: rgba(255, 255, 255, 0.2);
+  background: rgba(0, 0, 0, 0.3);
+}
+
+.custom-select.open .select-selected {
+  border-color: rgba(59, 130, 246, 0.5);
+  background: rgba(0, 0, 0, 0.3);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.select-icon {
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 700;
+  flex-shrink: 0;
+  line-height: 1;
+}
+
+.icon-bsm {
+  background: rgba(59, 130, 246, 0.2);
+  color: #3b82f6;
+}
+
+.icon-heston {
+  background: rgba(168, 85, 247, 0.2);
+  color: #a855f7;
+}
+
+.icon-merton {
+  background: rgba(236, 72, 153, 0.2);
+  color: #ec4899;
+}
+
+.icon-bates {
+  background: rgba(139, 92, 246, 0.2);
+  color: #8b5cf6;
+}
+
+.icon-sabr {
+  background: rgba(34, 197, 94, 0.2);
+  color: #22c55e;
+}
+
+.icon-vg {
+  background: rgba(251, 146, 60, 0.2);
+  color: #fb923c;
+}
+
+.select-text {
+  flex: 1;
+  font-size: 12px;
+  font-weight: 600;
+  color: #fff;
+}
+
+.select-arrow {
+  width: 12px;
+  height: 12px;
+  color: rgba(255, 255, 255, 0.5);
+  transition: transform 0.2s;
+  flex-shrink: 0;
+}
+
+.custom-select.open .select-arrow {
+  transform: rotate(180deg);
+}
+
+.select-options {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  z-index: 10000;
+  background: rgba(20, 25, 35, 0.95);
+  backdrop-filter: blur(40px) saturate(180%);
+  -webkit-backdrop-filter: blur(40px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  box-shadow: 
+    0 20px 50px -10px rgba(0, 0, 0, 0.7),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  overflow: hidden;
+  margin-top: 4px;
+}
+
+.select-option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  cursor: pointer;
+  transition: all 0.15s;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  position: relative;
+}
+
+.select-option:last-child {
+  border-bottom: none;
+}
+
+.select-option:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.select-option.selected {
+  background: rgba(59, 130, 246, 0.15);
+  border-left: 3px solid #3b82f6;
+}
+
+.option-icon {
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  flex-shrink: 0;
+  line-height: 1;
+}
+
+.option-text {
+  flex: 1;
+  font-size: 12px;
+  font-weight: 600;
+  color: #fff;
+}
+
+.option-subtext {
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.4);
+  font-weight: 400;
+}
+
+.option-badge {
+  width: 18px;
+  height: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(59, 130, 246, 0.3);
+  color: #60a5fa;
+  border-radius: 50%;
+  font-size: 10px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+/* Dropdown Animation */
+.dropdown-enter-active,
+.dropdown-leave-active {
+  transition: all 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+  transform-origin: top;
+}
+
+.dropdown-enter-from {
+  opacity: 0;
+  transform: translateY(-10px) scale(0.95);
+}
+
+.dropdown-leave-to {
+  opacity: 0;
+  transform: translateY(-10px) scale(0.95);
 }
 </style>
