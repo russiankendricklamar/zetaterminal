@@ -155,7 +155,7 @@ const portfolioTemplates = {
   ] as Position[]
 }
 
-const defaultBank: Bank = { name: 'АО ЮниКредит Банк', regNumber: '1' }
+export const defaultBank: Bank = { name: 'АО ЮниКредит Банк', regNumber: '1' }
 
 // List of all banks
 const banksList: Bank[] = [
@@ -474,10 +474,22 @@ function getPortfolioByBank(bankRegNumber: string): string {
 }
 
 export const usePortfolioStore = defineStore('portfolio', () => {
-  const selectedBank = ref<Bank>(() => {
-    const saved = localStorage.getItem('selectedBank')
-    return saved ? JSON.parse(saved) : defaultBank
-  })
+  // Инициализация selectedBank из localStorage или defaultBank
+  const getInitialBank = (): Bank => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('selectedBank')
+      if (saved) {
+        try {
+          return JSON.parse(saved)
+        } catch (e) {
+          console.error('Failed to parse selectedBank from localStorage:', e)
+        }
+      }
+    }
+    return defaultBank
+  }
+  
+  const selectedBank = ref<Bank>(getInitialBank())
 
   const positions = computed<Position[]>(() => {
     if (!selectedBank.value) return portfolioTemplates.portfolio1

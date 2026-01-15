@@ -10,8 +10,8 @@
             <div class="bank-selector-wrapper">
               <div class="bank-selector" :class="{ 'is-open': isBankMenuOpen }" @click="toggleBankMenu">
                 <div class="bank-selector-content">
-                  <span class="bank-selector-name">{{ selectedBank.name }}</span>
-                  <span class="bank-selector-reg">№ {{ selectedBank.regNumber }}</span>
+                  <span class="bank-selector-name">{{ selectedBank?.name || 'Выберите банк' }}</span>
+                  <span class="bank-selector-reg">№ {{ selectedBank?.regNumber || '' }}</span>
           </div>
                 <svg class="bank-selector-chevron" width="12" height="8" viewBox="0 0 12 8" fill="none" stroke="currentColor" stroke-width="2">
                   <path d="M1 1L6 6L11 1"/>
@@ -705,8 +705,9 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
+import { storeToRefs } from 'pinia'
 import CorrelationScatter3D from '../components/common/CorrelationScatter3D.vue'
-import { usePortfolioStore } from '../stores/portfolio'
+import { usePortfolioStore, defaultBank } from '../stores/portfolio'
 import { calculatePortfolioMetrics, type PortfolioMetricsResponse } from '../services/portfolioService'
 
 // Динамический импорт Plotly
@@ -994,9 +995,7 @@ const isLoadingMetrics = ref(false)
 // ============================================================================
 // BANK SELECTOR - используем store
 // ============================================================================
-const banks = portfolioStore.banks
-const selectedBank = portfolioStore.selectedBank
-const positions = portfolioStore.positions
+const { selectedBank, positions, banks } = storeToRefs(portfolioStore)
 
 const isBankMenuOpen = ref(false)
 const bankSearchQuery = ref('')
@@ -1723,8 +1722,13 @@ const syncPanelHeights = () => {
 }
 
 onMounted(async () => {
-  if (positions?.length > 0 && !selectedAsset.value) {
-    selectedAsset.value = positions[0]
+  // Убеждаемся, что selectedBank инициализирован
+  if (!selectedBank.value) {
+    portfolioStore.setSelectedBank(defaultBank)
+  }
+  
+  if (positions?.value?.length > 0 && !selectedAsset.value) {
+    selectedAsset.value = positions.value[0]
   }
   
   // Sync panel heights
