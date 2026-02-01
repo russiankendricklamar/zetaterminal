@@ -16,6 +16,7 @@ from src.api import hjb
 from src.api import market_data
 from src.api import multivariate_hmm
 from src.api import portfolio
+from src.api import rudata
 from src.api import spectral_regime
 from src.api import stress
 from src.api import swap
@@ -49,6 +50,7 @@ app.include_router(ccmv.router, prefix="/api/ccmv", tags=["CCMV"])
 app.include_router(hjb.router, prefix="/api/hjb", tags=["HJB"])
 app.include_router(market_data.router, prefix="/api/market-data", tags=["Market Data"])
 app.include_router(zcyc.router, prefix="/api/zcyc", tags=["ZCYC"])
+app.include_router(rudata.router, prefix="/api/rudata", tags=["RuData"])
 app.include_router(spectral_regime.router, prefix="/api/spectral-regime", tags=["Spectral Regime"])
 app.include_router(multivariate_hmm.router, prefix="/api/multivariate-hmm", tags=["Multivariate HMM"])
 app.include_router(database.router, prefix="/api/database", tags=["Database"])
