@@ -286,7 +286,12 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, reactive } from 'vue'
+import { ref, watch, reactive, onMounted } from 'vue'
+import {
+  testConnection as testRuDataConnection,
+  saveCredentials as saveRuDataCredentials,
+  loadCredentials as loadRuDataCredentials
+} from '@/services/rudataService'
 
 const activeTab = ref('general')
 const hasChanges = ref(true)
@@ -299,10 +304,10 @@ const tabs = [
   { id: 'api', name: 'API', iconClass: 'icon-api' },
 ]
 
-// Mock Connection States
+// Connection States
 const connectionStates = reactive({
-    cbonds: { status: 'idle' }, 
-    rudata: { status: 'idle' }
+    cbonds: { status: 'idle', message: '' },
+    rudata: { status: 'idle', message: '' }
 })
 
 const settings = reactive({
@@ -314,10 +319,10 @@ const settings = reactive({
   risk: {
     maxVaR: 5.0, maxConcentration: 25, minSharpeRatio: 1.2, enableStressTesting: true
   },
-  api: { 
-      cbondsLogin: '', cbondsPassword: '', 
+  api: {
+      cbondsLogin: '', cbondsPassword: '',
       rudataLogin: '', rudataPassword: '',
-      bloombergKey: '', webhookUrl: '' 
+      bloombergKey: '', webhookUrl: ''
   },
   connectedServices: [
     { id: 1, name: 'Cbonds API', connected: false },
@@ -327,33 +332,128 @@ const settings = reactive({
   ]
 })
 
+// Загрузка сохраненных credentials при монтировании
+onMounted(() => {
+  // Загружаем RuData credentials
+  const rudataCredentials = loadRuDataCredentials()
+  if (rudataCredentials) {
+    settings.api.rudataLogin = rudataCredentials.login
+    settings.api.rudataPassword = rudataCredentials.password
+    connectionStates.rudata.status = 'saved'
+  }
+
+  // Загружаем другие настройки из localStorage
+  const savedSettings = localStorage.getItem('app_settings')
+  if (savedSettings) {
+    try {
+      const parsed = JSON.parse(savedSettings)
+      if (parsed.general) Object.assign(settings.general, parsed.general)
+      if (parsed.models) Object.assign(settings.models, parsed.models)
+      if (parsed.risk) Object.assign(settings.risk, parsed.risk)
+      if (parsed.api?.cbondsLogin) settings.api.cbondsLogin = parsed.api.cbondsLogin
+      if (parsed.api?.cbondsPassword) settings.api.cbondsPassword = parsed.api.cbondsPassword
+    } catch (e) {
+      console.error('Failed to load settings:', e)
+    }
+  }
+
+  hasChanges.value = false
+})
+
 // UI Helpers
 const getConnectionStatus = (provider: 'cbonds' | 'rudata') => {
     const s = connectionStates[provider].status
-    if (s === 'checking') return { text: 'Checking...', class: 'text-blue' }
-    if (s === 'success') return { text: 'Connected', class: 'text-green' }
-    if (s === 'error') return { text: 'Auth Error', class: 'text-red' }
-    return { text: 'Not connected', class: 'text-muted' }
+    const msg = connectionStates[provider].message
+    if (s === 'checking') return { text: 'Проверка...', class: 'text-blue' }
+    if (s === 'success') return { text: 'Подключено', class: 'text-green' }
+    if (s === 'error') return { text: msg || 'Ошибка авторизации', class: 'text-red' }
+    if (s === 'saved') return { text: 'Сохранено', class: 'text-muted' }
+    return { text: 'Не подключено', class: 'text-muted' }
 }
 
-const testConnection = (provider: 'cbonds' | 'rudata') => {
+const testConnection = async (provider: 'cbonds' | 'rudata') => {
     connectionStates[provider].status = 'checking'
-    
-    // Simulating API check
-    setTimeout(() => {
-        if (settings.api[`${provider}Login`] && settings.api[`${provider}Password`]) {
-            connectionStates[provider].status = 'success'
-            const srv = settings.connectedServices.find(s => s.name.toLowerCase().includes(provider))
-            if(srv) srv.connected = true
+    connectionStates[provider].message = ''
+
+    if (provider === 'rudata') {
+      // Реальная проверка подключения к RuData API
+      const login = settings.api.rudataLogin
+      const password = settings.api.rudataPassword
+
+      if (!login || !password) {
+        connectionStates[provider].status = 'error'
+        connectionStates[provider].message = 'Введите логин и пароль'
+        return
+      }
+
+      try {
+        const result = await testRuDataConnection({ login, password })
+
+        if (result.success) {
+          connectionStates[provider].status = 'success'
+          connectionStates[provider].message = result.message
+
+          // Обновляем статус в списке сервисов
+          const srv = settings.connectedServices.find(s => s.name.toLowerCase().includes('rudata'))
+          if (srv) srv.connected = true
+
+          // Сохраняем credentials
+          saveRuDataCredentials({ login, password })
         } else {
-            connectionStates[provider].status = 'error'
+          connectionStates[provider].status = 'error'
+          connectionStates[provider].message = result.message
+
+          const srv = settings.connectedServices.find(s => s.name.toLowerCase().includes('rudata'))
+          if (srv) srv.connected = false
         }
-    }, 1200)
+      } catch (error: any) {
+        connectionStates[provider].status = 'error'
+        connectionStates[provider].message = error.message || 'Ошибка соединения'
+
+        const srv = settings.connectedServices.find(s => s.name.toLowerCase().includes('rudata'))
+        if (srv) srv.connected = false
+      }
+    } else if (provider === 'cbonds') {
+      // Cbonds пока симулируем
+      setTimeout(() => {
+        if (settings.api.cbondsLogin && settings.api.cbondsPassword) {
+          connectionStates[provider].status = 'success'
+          const srv = settings.connectedServices.find(s => s.name.toLowerCase().includes('cbonds'))
+          if (srv) srv.connected = true
+        } else {
+          connectionStates[provider].status = 'error'
+          connectionStates[provider].message = 'Введите логин и пароль'
+        }
+      }, 1200)
+    }
 }
 
 const saveSettings = () => {
+  // Сохраняем RuData credentials отдельно (с обфускацией)
+  if (settings.api.rudataLogin && settings.api.rudataPassword) {
+    saveRuDataCredentials({
+      login: settings.api.rudataLogin,
+      password: settings.api.rudataPassword
+    })
+  }
+
+  // Сохраняем остальные настройки в localStorage
+  const settingsToSave = {
+    general: settings.general,
+    models: settings.models,
+    risk: settings.risk,
+    api: {
+      cbondsLogin: settings.api.cbondsLogin,
+      cbondsPassword: settings.api.cbondsPassword,
+      bloombergKey: settings.api.bloombergKey,
+      webhookUrl: settings.api.webhookUrl
+    }
+  }
+
+  localStorage.setItem('app_settings', JSON.stringify(settingsToSave))
+
   hasChanges.value = false
-  setTimeout(() => hasChanges.value = true, 2000) 
+  setTimeout(() => hasChanges.value = true, 2000)
 }
 
 watch(settings, () => { hasChanges.value = true }, { deep: true })
