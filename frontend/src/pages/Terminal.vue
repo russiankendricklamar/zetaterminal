@@ -208,7 +208,7 @@
           v-for="window in windows"
           :key="window.id"
           v-show="activeWindowId === window.id"
-          class="absolute inset-0 w-full h-full"
+          class="absolute inset-0 w-full h-full overflow-y-auto custom-scrollbar"
         >
           <DashboardPage 
             v-if="window.view === 'Main'"

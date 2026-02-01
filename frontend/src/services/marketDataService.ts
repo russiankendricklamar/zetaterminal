@@ -277,3 +277,153 @@ export const getPopularCryptos = async (): Promise<string[]> => {
     throw error;
   }
 };
+
+// MOEX ISS API interfaces
+export interface MOEXStock {
+  SECID: string;
+  SHORTNAME: string;
+  SECNAME: string;
+  PREVPRICE: number;
+  LAST: number;
+  CHANGE: number;
+  LASTTOPREVPRICE: number;
+  VOLTODAY: number;
+  VALTODAY: number;
+  MARKETCAP?: number;
+  BOARDID: string;
+}
+
+export interface MOEXStockInfo {
+  ticker: string;
+  name: string;
+  symbol: string;
+  price: number;
+  previousClose: number;
+  change: number;
+  changePercent: number;
+  volume: number;
+  marketCap: number;
+  currency: string;
+  exchange: string;
+  country: string;
+}
+
+/**
+ * Получает список всех акций с Московской биржи (MOEX ISS API)
+ * Документация: https://iss.moex.com/iss/reference/
+ */
+export const getMOEXStocks = async (): Promise<MOEXStockInfo[]> => {
+  try {
+    // Получаем данные с MOEX ISS API - акции из основного режима торгов (TQBR)
+    const response = await fetch(
+      'https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities.json?iss.meta=off&iss.only=securities,marketdata&securities.columns=SECID,SHORTNAME,SECNAME,PREVPRICE,BOARDID&marketdata.columns=SECID,LAST,CHANGE,LASTTOPREVPRICE,VOLTODAY,VALTODAY',
+      {
+        method: 'GET',
+        headers: {
+          'Accept': 'application/json',
+        },
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error(`MOEX API error: ${response.status}`);
+    }
+
+    const data = await response.json();
+
+    // Парсим данные из формата MOEX ISS
+    const securities = data.securities?.data || [];
+    const marketdata = data.marketdata?.data || [];
+
+    // Создаем мапу marketdata по SECID для быстрого поиска
+    const marketdataMap = new Map<string, any[]>();
+    marketdata.forEach((row: any[]) => {
+      marketdataMap.set(row[0], row);
+    });
+
+    const stocks: MOEXStockInfo[] = [];
+
+    securities.forEach((sec: any[]) => {
+      const secid = sec[0];
+      const shortname = sec[1];
+      const secname = sec[2];
+      const prevprice = sec[3];
+
+      const md = marketdataMap.get(secid);
+      if (md && md[1]) { // Только если есть цена
+        const last = md[1] || prevprice;
+        const change = md[2] || 0;
+        const changePercent = md[3] || 0;
+        const volume = md[4] || 0;
+        const valtoday = md[5] || 0;
+
+        stocks.push({
+          ticker: secid,
+          name: secname || shortname,
+          symbol: secid,
+          price: last,
+          previousClose: prevprice || last,
+          change: change,
+          changePercent: changePercent,
+          volume: volume,
+          marketCap: valtoday * 100, // Приблизительная оценка
+          currency: 'RUB',
+          exchange: 'MOEX',
+          country: 'Russia',
+        });
+      }
+    });
+
+    return stocks;
+  } catch (error) {
+    console.error('Failed to fetch MOEX stocks:', error);
+    throw error;
+  }
+};
+
+/**
+ * Получает список акций со СПБ Биржи
+ * Примечание: СПБ Биржа не имеет открытого API, поэтому возвращаем список известных тикеров
+ */
+export const getSPBStocks = async (): Promise<string[]> => {
+  // Популярные иностранные акции, торгующиеся на СПБ Бирже
+  return [
+    // Технологии США
+    'AAPL', 'MSFT', 'GOOGL', 'AMZN', 'META', 'NVDA', 'TSLA', 'NFLX', 'AMD', 'INTC',
+    'QCOM', 'AVGO', 'ORCL', 'ADBE', 'CRM', 'CSCO', 'IBM',
+    // Финансы
+    'JPM', 'BAC', 'WFC', 'GS', 'MS', 'V', 'MA', 'PYPL',
+    // Потребительские товары
+    'WMT', 'HD', 'KO', 'PEP', 'NKE', 'MCD', 'SBUX', 'PG', 'DIS',
+    // Здравоохранение
+    'JNJ', 'PFE', 'MRK', 'ABBV', 'UNH', 'LLY',
+    // Энергетика
+    'XOM', 'CVX', 'COP',
+    // Промышленность
+    'BA', 'CAT', 'GE', 'HON', 'MMM',
+    // Телекоммуникации
+    'T', 'VZ', 'TMUS',
+    // Китай
+    'BABA', 'JD', 'BIDU', 'NIO', 'XPEV', 'LI',
+  ];
+};
+
+/**
+ * Получает все тикеры MOEX для добавления в список
+ */
+export const getMOEXTickers = async (): Promise<string[]> => {
+  try {
+    const stocks = await getMOEXStocks();
+    return stocks.map(s => s.ticker + '.ME');
+  } catch (error) {
+    console.error('Failed to get MOEX tickers:', error);
+    // Возвращаем статический список в случае ошибки
+    return [
+      'SBER.ME', 'GAZP.ME', 'LKOH.ME', 'ROSN.ME', 'GMKN.ME', 'YNDX.ME',
+      'MGNT.ME', 'VTBR.ME', 'TATN.ME', 'NVTK.ME', 'SNGS.ME', 'ALRS.ME',
+      'MTSS.ME', 'TRNFP.ME', 'PLZL.ME', 'POLY.ME', 'CHMF.ME', 'NLMK.ME',
+      'MAGN.ME', 'MOEX.ME', 'AFLT.ME', 'RTKM.ME', 'FEES.ME', 'HYDR.ME',
+      'IRAO.ME', 'PIKK.ME', 'PHOR.ME', 'RUAL.ME', 'SIBN.ME', 'FIVE.ME',
+    ];
+  }
+};

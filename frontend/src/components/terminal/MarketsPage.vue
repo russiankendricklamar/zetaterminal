@@ -1,5 +1,5 @@
 <template>
-  <div class="flex-1 glass-panel rounded-3xl overflow-hidden shadow-2xl shadow-black/20 p-6 flex flex-col animate-fade-in relative h-full min-h-0">
+  <div class="glass-panel rounded-3xl shadow-2xl shadow-black/20 p-6 flex flex-col animate-fade-in relative">
     <!-- Decorative background element -->
     <div class="absolute top-0 right-0 w-96 h-96 bg-gradient-to-b from-indigo-500/5 to-transparent rounded-full blur-3xl -z-10 pointer-events-none"></div>
 
@@ -12,8 +12,8 @@
           <p class="text-sm text-gray-400">Цены и аналитика в реальном времени</p>
         </div>
         <div class="flex gap-2">
-          <button 
-            v-for="(filter, i) in filters" 
+          <button
+            v-for="(filter, i) in filters"
             :key="filter"
             @click="activeFilter = filter"
             :class="`px-4 py-2 rounded-xl text-xs font-bold transition-all border border-white/5 hover:border-white/20 ${activeFilter === filter ? 'bg-white/10 text-white' : 'bg-transparent text-gray-400 hover:text-white'}`"
@@ -175,7 +175,7 @@
       </div>
     </div>
 
-    <div :class="{ 'opacity-50': loading }" class="bg-black/20 rounded-2xl border border-white/5 overflow-y-auto custom-scrollbar flex-1 min-h-0 relative">
+    <div :class="{ 'opacity-50': loading }" class="bg-black/20 rounded-2xl border border-white/5 relative">
       <table class="w-full text-left border-collapse">
         <thead class="sticky top-0 z-20">
           <tr class="bg-black/95 backdrop-blur-md border-b border-white/10">
@@ -252,7 +252,7 @@
 <script setup lang="ts">
 import { computed, ref, onMounted, onBeforeUnmount, reactive } from 'vue';
 import { AssetInfo } from '@/types/terminal';
-import { getMultipleStocks, getPopularTickers, type StockInfo } from '@/services/marketDataService';
+import { getMultipleStocks, getPopularTickers, getMOEXStocks, getSPBStocks, type StockInfo, type MOEXStockInfo } from '@/services/marketDataService';
 
 interface Props {
   category: string;
@@ -344,25 +344,96 @@ onBeforeUnmount(() => {
   }
 });
 
+// Функция для загрузки всех тикеров с MOEX
+const loadMOEXStocks = async () => {
+  try {
+    console.log('🔄 Loading MOEX stocks...');
+    const moexStocks = await getMOEXStocks();
+    console.log(`✅ Loaded ${moexStocks.length} stocks from MOEX`);
+
+    const existingSymbols = new Set(allAssets.value.map(a => a.symbol));
+    let addedCount = 0;
+
+    moexStocks.forEach((stock: MOEXStockInfo) => {
+      if (!existingSymbols.has(stock.ticker)) {
+        // Определяем сектор на основе тикера
+        let sector = 'Technology';
+        const ticker = stock.ticker.toUpperCase();
+
+        if (['SBER', 'VTBR', 'MOEX', 'TCSG', 'BSPB', 'CBOM'].some(t => ticker.includes(t))) {
+          sector = 'Banking';
+        } else if (['GAZP', 'LKOH', 'ROSN', 'TATN', 'NVTK', 'SNGS', 'SIBN', 'TRNFP', 'BANEP'].some(t => ticker.includes(t))) {
+          sector = 'Oil & Gas';
+        } else if (['GMKN', 'ALRS', 'PLZL', 'POLY', 'CHMF', 'NLMK', 'MAGN', 'RUAL', 'VSMO'].some(t => ticker.includes(t))) {
+          sector = 'Materials';
+        } else if (['YNDX', 'VKCO', 'OZON', 'HHRU', 'CIAN', 'POSI'].some(t => ticker.includes(t))) {
+          sector = 'Technology';
+        } else if (['MGNT', 'FIVE', 'LENT', 'FIXP', 'DSKY'].some(t => ticker.includes(t))) {
+          sector = 'Retail';
+        } else if (['MTSS', 'RTKM', 'RTKMP'].some(t => ticker.includes(t))) {
+          sector = 'Telecommunications';
+        } else if (['AFLT', 'FLOT', 'NMTP', 'FESH'].some(t => ticker.includes(t))) {
+          sector = 'Industrial';
+        } else if (['HYDR', 'IRAO', 'FEES', 'OGKB', 'TGKA', 'MSNG', 'UPRO'].some(t => ticker.includes(t))) {
+          sector = 'Utilities';
+        } else if (['PIKK', 'LSRG', 'ETLN', 'SMLT'].some(t => ticker.includes(t))) {
+          sector = 'Real Estate';
+        } else if (['PHOR', 'AKRN', 'KZOS'].some(t => ticker.includes(t))) {
+          sector = 'Materials';
+        }
+
+        // Форматируем капитализацию
+        const capB = stock.marketCap / 1e9;
+        const capStr = capB >= 1000 ? `${(capB / 1000).toFixed(1)}T` : capB >= 1 ? `${capB.toFixed(0)}B` : `${(stock.marketCap / 1e6).toFixed(0)}M`;
+
+        // Форматируем объем
+        const volM = stock.volume / 1e6;
+        const volStr = volM >= 1 ? `${volM.toFixed(1)}M` : `${(stock.volume / 1e3).toFixed(0)}K`;
+
+        allAssets.value.push({
+          name: stock.name,
+          symbol: stock.ticker,
+          price: stock.price.toFixed(2),
+          change: `${stock.changePercent >= 0 ? '+' : ''}${stock.changePercent.toFixed(2)}%`,
+          category: 'Equities',
+          region: 'EMEA',
+          country: 'Russia',
+          sector: sector,
+          vol: volStr,
+          cap: capStr
+        });
+        existingSymbols.add(stock.ticker);
+        addedCount++;
+      }
+    });
+
+    console.log(`✅ Added ${addedCount} MOEX stocks to the list`);
+  } catch (error: any) {
+    console.error('❌ Error loading MOEX stocks:', error);
+  }
+};
+
 // Функция для загрузки популярных тикеров и расширения списка акций
 const loadPopularTickers = async () => {
   try {
     console.log('🔄 Loading popular tickers from API...');
     const tickers = await getPopularTickers();
-    console.log(`✅ Loaded ${tickers.length} popular tickers from API`);
-    
+    const spbTickers = await getSPBStocks();
+    const allTickers = [...new Set([...tickers, ...spbTickers])];
+    console.log(`✅ Loaded ${allTickers.length} popular tickers from API`);
+
     // Создаем мапу существующих символов для быстрой проверки
     const existingSymbols = new Set(allAssets.value.map(a => a.symbol));
-    
+
     // Добавляем новые тикеры, которых еще нет в списке
     let addedCount = 0;
-    tickers.forEach(ticker => {
+    allTickers.forEach(ticker => {
       if (!existingSymbols.has(ticker)) {
         // Определяем регион и страну на основе тикера
         let region = 'Americas';
         let country = 'USA';
         let sector = 'Technology';
-        
+
         if (ticker.includes('.ME')) {
           region = 'EMEA';
           country = 'Russia';
@@ -416,7 +487,7 @@ const loadPopularTickers = async () => {
           country = 'Australia';
           sector = 'Materials';
         }
-        
+
         allAssets.value.push({
           name: ticker,
           symbol: ticker,
@@ -433,7 +504,7 @@ const loadPopularTickers = async () => {
         addedCount++;
       }
     });
-    
+
     console.log(`✅ Added ${addedCount} new tickers to the list`);
   } catch (error: any) {
     console.error('❌ Error loading popular tickers:', error);
@@ -447,10 +518,13 @@ const loadRealData = async () => {
     console.log('Real data loading is disabled');
     return;
   }
-  
+
   loading.value = true;
   try {
-    // Сначала загружаем популярные тикеры и расширяем список
+    // Сначала загружаем все акции с Московской биржи (MOEX ISS API)
+    await loadMOEXStocks();
+
+    // Затем загружаем популярные тикеры и тикеры СПБ Биржи
     await loadPopularTickers();
     
     // Получаем список всех тикеров из статических данных
