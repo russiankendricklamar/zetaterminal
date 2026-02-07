@@ -230,6 +230,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, watch, onUnmounted } from 'vue'
+import { useIsMobile } from '@/composables/useIsMobile'
 
 // Types
 interface DataPoint {
@@ -263,9 +264,11 @@ const plotContainer = ref<HTMLElement | null>(null)
 const isLoading = ref(true)
 const Plotly: any = ref(null)
 
+const { isMobile } = useIsMobile()
 const availableAssets = ref(props.availableAssets || ['SPY', 'TLT', 'GLD', 'QQQ', 'BTC'])
 const selectedAssets = ref([availableAssets.value[0], availableAssets.value[1], availableAssets.value[2]])
-const viewMode = ref<'3d' | '2d'>('3d')
+// Auto-switch to 2D mode on mobile for better performance
+const viewMode = ref<'3d' | '2d'>(isMobile.value ? '2d' : '3d')
 const spaceMode = ref<'correlation' | 'pca'>('correlation')
 const timeRange = ref(0)
 const dateRange = ref<[string, string]>(['', ''])
@@ -1826,17 +1829,214 @@ declare global {
 }
 
 @media (max-width: 768px) {
+  .main-layout {
+    grid-template-columns: 1fr;
+    gap: 16px;
+    min-height: auto;
+  }
+
+  .controls-column {
+    order: 2;
+  }
+
+  .plot-column {
+    order: 1;
+  }
+
+  .control-panel {
+    padding: 10px;
+    border-radius: 8px;
+  }
+
+  .controls-two-column {
+    grid-template-columns: 1fr;
+    gap: 12px;
+    margin-bottom: 12px;
+  }
+
   .controls-row {
     flex-direction: column;
     align-items: stretch;
+    gap: 8px;
   }
 
   .control-group {
     width: 100%;
   }
 
+  .control-group label {
+    font-size: 9px;
+  }
+
+  .control-group select {
+    padding: 8px;
+    font-size: 12px;
+    min-height: 44px; /* Touch target */
+  }
+
+  .toggle-btn {
+    padding: 8px 10px;
+    font-size: 11px;
+    min-height: 40px;
+  }
+
+  .btn-reset {
+    padding: 10px;
+    font-size: 12px;
+    min-height: 44px;
+  }
+
+  .regime-row {
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+
+  .regime-filter-label {
+    width: 100%;
+    margin-bottom: 4px;
+  }
+
+  .regime-checkbox {
+    font-size: 12px;
+    padding: 6px 8px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 6px;
+    min-height: 36px;
+  }
+
+  .dropdown-toggle {
+    padding: 10px;
+    font-size: 12px;
+    min-height: 44px;
+  }
+
+  .checkbox-item {
+    font-size: 12px;
+    padding: 8px;
+    min-height: 40px;
+  }
+
+  .playback-controls {
+    flex-wrap: wrap;
+  }
+
+  .btn-playback {
+    width: 44px;
+    height: 44px;
+  }
+
+  .playback-slider {
+    max-width: 100%;
+    flex: 1 1 100%;
+    order: 3;
+    margin-top: 8px;
+  }
+
+  .speed-slider {
+    width: 80px;
+  }
+
   .plot-container {
-    min-height: 400px;
+    min-height: 300px;
+    border-radius: 8px;
+  }
+
+  .stats-panel {
+    padding: 10px;
+    border-radius: 8px;
+    gap: 8px;
+  }
+
+  .stats-section h4 {
+    font-size: 9px;
+    margin-bottom: 6px;
+  }
+
+  .stat-item {
+    padding: 8px 10px;
+  }
+
+  .stat-label-large {
+    font-size: 11px;
+  }
+
+  .stat-value-large {
+    font-size: 14px;
+  }
+
+  .stat-details-large {
+    font-size: 10px;
+    gap: 2px;
+  }
+
+  .stat-item-compact {
+    padding: 8px 10px;
+    gap: 4px;
+  }
+
+  /* Hide 3D toggle on mobile, default to 2D */
+  .toggle-buttons .toggle-btn[data-mode="3d"] {
+    display: none;
+  }
+}
+
+@media (max-width: 480px) {
+  .control-panel {
+    padding: 8px;
+  }
+
+  .controls-two-column {
+    gap: 10px;
+  }
+
+  .control-group select {
+    padding: 6px 8px;
+    font-size: 11px;
+  }
+
+  .toggle-btn {
+    padding: 6px 8px;
+    font-size: 10px;
+  }
+
+  .btn-reset {
+    padding: 8px;
+    font-size: 11px;
+  }
+
+  .regime-checkbox {
+    font-size: 11px;
+  }
+
+  .plot-container {
+    min-height: 250px;
+  }
+
+  .stats-panel {
+    padding: 8px;
+  }
+
+  .stat-label-large {
+    font-size: 10px;
+  }
+
+  .stat-value-large {
+    font-size: 12px;
+  }
+}
+
+@media (max-width: 375px) {
+  .plot-container {
+    min-height: 220px;
+  }
+
+  .control-panel {
+    padding: 6px;
+  }
+
+  .stats-panel {
+    padding: 6px;
   }
 }
 </style>

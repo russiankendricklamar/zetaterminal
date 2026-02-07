@@ -1114,5 +1114,61 @@ const triggerExplosion = (path: string) => {
   .tool-grid {
     max-height: none;
   }
+
+  /* Reduce blur on mobile for performance */
+  .lava-layer {
+    backdrop-filter: blur(60px);
+  }
+}
+
+@media (max-width: 375px) {
+  .home-layout {
+    padding: 48px 12px 24px 12px;
+    gap: 24px;
+  }
+
+  .hero {
+    padding: 16px;
+    border-radius: 12px;
+  }
+
+  .hero-title {
+    font-size: 20px;
+  }
+
+  .subtitle-frame {
+    padding: 12px 14px;
+  }
+
+  .hero-subtitle {
+    font-size: 13px;
+  }
+
+  .tool-grid {
+    padding: 12px 10px;
+  }
+
+  .tool-card {
+    padding: 8px;
+    min-height: 44px;
+  }
+
+  .tool-icon {
+    width: 32px;
+    height: 32px;
+  }
+
+  .tool-name {
+    font-size: 11px;
+  }
+
+  .tool-desc {
+    font-size: 10px;
+    display: none;
+  }
+
+  .terminal-block {
+    padding: 12px;
+  }
 }
 </style>

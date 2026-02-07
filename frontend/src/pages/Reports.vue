@@ -745,4 +745,50 @@ const generateReport = () => {
     padding: 6px 0;
   }
 }
+
+@media (max-width: 375px) {
+  .page-container {
+    padding: 10px;
+    gap: 10px;
+  }
+
+  .section-title {
+    font-size: 16px;
+  }
+
+  .section-subtitle {
+    font-size: 10px;
+  }
+
+  .btn-glass {
+    font-size: 11px;
+    padding: 0 10px;
+    height: 40px;
+    min-height: 44px;
+  }
+
+  .report-viewport {
+    padding: 8px;
+  }
+
+  .a4-sheet {
+    padding: 8mm;
+  }
+
+  .rep-main-title {
+    font-size: 16px;
+  }
+
+  .m-value {
+    font-size: 14px;
+  }
+
+  .chart-container-print {
+    height: 100px;
+  }
+
+  .print-table {
+    font-size: 9px;
+  }
+}
 </style>

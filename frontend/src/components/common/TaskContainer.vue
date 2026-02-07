@@ -94,4 +94,86 @@ const taskStore = useTaskStore()
 /* Spinner */
 .spinner { display: inline-block; animation: spin 1s linear infinite; }
 @keyframes spin { 100% { transform: rotate(360deg); } }
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+  .task-container {
+    bottom: 16px;
+    right: 16px;
+    left: 16px;
+    gap: 8px;
+    /* Safe area for devices with home indicator */
+    padding-bottom: env(safe-area-inset-bottom, 0);
+  }
+
+  .task-card {
+    width: 100%;
+    max-width: none;
+    padding: 10px 14px;
+    border-radius: 10px;
+  }
+
+  .task-header {
+    font-size: 12px;
+    margin-bottom: 6px;
+  }
+
+  .task-pct {
+    font-size: 10px;
+  }
+
+  .progress-track {
+    height: 3px;
+  }
+}
+
+@media (max-width: 480px) {
+  .task-container {
+    bottom: 12px;
+    right: 12px;
+    left: 12px;
+    gap: 6px;
+  }
+
+  .task-card {
+    padding: 8px 12px;
+    border-radius: 8px;
+    border-left-width: 2px;
+  }
+
+  .task-header {
+    font-size: 11px;
+    margin-bottom: 5px;
+  }
+
+  .task-title {
+    margin-right: 8px;
+  }
+
+  .task-pct {
+    font-size: 9px;
+  }
+}
+
+@media (max-width: 375px) {
+  .task-container {
+    bottom: 10px;
+    right: 10px;
+    left: 10px;
+  }
+
+  .task-card {
+    padding: 6px 10px;
+  }
+
+  .task-header {
+    font-size: 10px;
+    margin-bottom: 4px;
+  }
+
+  .task-icon {
+    width: 14px;
+    margin-right: 6px;
+  }
+}
 </style>

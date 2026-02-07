@@ -933,32 +933,176 @@ defineExpose({
 
 /* Responsive */
 @media (max-width: 768px) {
-  .palette-modal { 
-    max-width: 95%; 
+  .palette-backdrop {
+    padding-top: 0;
+    align-items: stretch;
   }
-  
-  .palette-backdrop { 
-    padding-top: 50px; 
+
+  .palette-modal {
+    max-width: 100%;
+    border-radius: 0;
+    height: 100vh;
+    max-height: 100vh;
+    border: none;
+    /* Safe area for notch */
+    padding-top: env(safe-area-inset-top, 0);
+    padding-bottom: env(safe-area-inset-bottom, 0);
   }
-  
+
   .palette-header {
-    padding: 12px 16px;
+    padding: 16px;
+    padding-top: calc(16px + env(safe-area-inset-top, 0));
   }
-  
+
   .palette-input {
+    font-size: 16px; /* Prevent zoom on iOS */
+  }
+
+  .palette-body {
+    max-height: none;
+    flex: 1;
+    padding: 8px;
+  }
+
+  .command-item {
+    padding: 14px 16px;
+    min-height: 48px; /* Touch target */
+  }
+
+  .cmd-icon {
+    font-size: 20px;
+    width: 28px;
+  }
+
+  .cmd-label {
     font-size: 14px;
   }
-  
+
+  .cmd-desc {
+    display: none; /* Hide on mobile to save space */
+  }
+
+  .cmd-shortcut {
+    display: none; /* Hide shortcuts on mobile */
+  }
+
+  .group-title {
+    padding: 12px 16px 8px;
+    font-size: 11px;
+  }
+
+  .palette-footer {
+    padding: 12px 16px;
+    padding-bottom: calc(12px + env(safe-area-inset-bottom, 0));
+    gap: 12px;
+  }
+
+  .footer-item {
+    font-size: 10px;
+  }
+
+  .esc-badge {
+    display: none; /* Use touch to close instead */
+  }
+}
+
+@media (max-width: 480px) {
+  .palette-header {
+    padding: 12px;
+    padding-top: calc(12px + env(safe-area-inset-top, 0));
+  }
+
+  .search-icon {
+    margin-right: 10px;
+  }
+
+  .search-icon svg {
+    width: 18px;
+    height: 18px;
+  }
+
+  .palette-input {
+    font-size: 15px;
+  }
+
+  .palette-body {
+    padding: 6px;
+  }
+
+  .command-item {
+    padding: 12px 14px;
+    border-radius: 6px;
+  }
+
+  .cmd-icon {
+    font-size: 18px;
+    width: 24px;
+  }
+
   .cmd-label {
     font-size: 13px;
   }
-  
-  .cmd-desc {
-    font-size: 11px;
-  }
-  
-  .footer-item {
+
+  .group-title {
+    padding: 10px 14px 6px;
     font-size: 10px;
+  }
+
+  .no-results {
+    padding: 40px 16px;
+    font-size: 13px;
+  }
+
+  .palette-footer {
+    padding: 10px 14px;
+    padding-bottom: calc(10px + env(safe-area-inset-bottom, 0));
+    gap: 10px;
+  }
+}
+
+@media (max-width: 375px) {
+  .palette-header {
+    padding: 10px;
+    padding-top: calc(10px + env(safe-area-inset-top, 0));
+  }
+
+  .palette-input {
+    font-size: 14px;
+  }
+
+  .command-item {
+    padding: 10px 12px;
+    min-height: 44px;
+  }
+
+  .cmd-icon {
+    font-size: 16px;
+    width: 22px;
+    gap: 10px;
+  }
+
+  .cmd-label {
+    font-size: 12px;
+  }
+
+  .group-title {
+    padding: 8px 12px 5px;
+    font-size: 9px;
+  }
+
+  .palette-footer {
+    padding: 8px 12px;
+    padding-bottom: calc(8px + env(safe-area-inset-bottom, 0));
+    gap: 8px;
+  }
+
+  .footer-item {
+    font-size: 9px;
+  }
+
+  .footer-item span {
+    padding: 1px 4px;
+    font-size: 8px;
   }
 }
 </style>

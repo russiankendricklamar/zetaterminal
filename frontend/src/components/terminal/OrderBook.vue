@@ -55,6 +55,9 @@
 import { computed } from 'vue';
 import { OrderBookItem } from '@/types/terminal';
 import OrderBookRow from './OrderBookRow.vue';
+import { useIsMobile } from '@/composables/useIsMobile';
+
+const { isMobile, isSmallMobile } = useIsMobile();
 
 interface Props {
   bids: OrderBookItem[];
@@ -64,8 +67,40 @@ interface Props {
 
 const props = defineProps<Props>();
 
-// Увеличиваем количество отображаемых ордеров для заполнения высоты
-// Количество ордеров для равномерного заполнения (примерно 12-15 на каждую секцию)
-const displayedBids = computed(() => props.bids.slice(0, 12));
-const reversedAsks = computed(() => [...props.asks.slice(0, 12)].reverse());
+// Adjust displayed orders based on screen size
+const ordersToShow = computed(() => {
+  if (isSmallMobile.value) return 6;
+  if (isMobile.value) return 8;
+  return 12;
+});
+
+const displayedBids = computed(() => props.bids.slice(0, ordersToShow.value));
+const reversedAsks = computed(() => [...props.asks.slice(0, ordersToShow.value)].reverse());
 </script>
+
+<style scoped>
+/* Mobile Responsive Styles */
+@media (max-width: 768px) {
+  .px-3 {
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
+  }
+
+  .py-2 {
+    padding-top: 0.375rem;
+    padding-bottom: 0.375rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .text-sm {
+    font-size: 0.8125rem;
+  }
+}
+
+@media (max-width: 375px) {
+  .text-sm {
+    font-size: 0.75rem;
+  }
+}
+</style>

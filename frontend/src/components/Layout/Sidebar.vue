@@ -19,7 +19,14 @@
     <div v-if="isSidebarOpen" class="sidebar-backdrop" @click="closeSidebar" />
 
     <!-- Sliding Sidebar Panel -->
-    <aside class="sidebar" :class="{ 'sidebar--open': isSidebarOpen }">
+    <aside
+      ref="sidebarRef"
+      class="sidebar"
+      :class="{ 'sidebar--open': isSidebarOpen }"
+      @touchstart="handleTouchStart"
+      @touchmove="handleTouchMove"
+      @touchend="handleTouchEnd"
+    >
     <!-- Lava Lamp Background -->
     <div class="sidebar-lava-layer"></div>
 
@@ -553,6 +560,11 @@ const route = useRoute()
 const marketTime = ref('--:--')
 const isSidebarOpen = ref(false)
 
+// Swipe gesture state
+const touchStartX = ref(0)
+const touchEndX = ref(0)
+const sidebarRef = ref<HTMLElement | null>(null)
+
 const expandedTools = reactive({
   portfolio: false,
   risk: false,
@@ -601,6 +613,25 @@ const closeSidebar = () => {
   isSidebarOpen.value = false
 }
 
+// Swipe gesture handlers
+const handleTouchStart = (e: TouchEvent) => {
+  touchStartX.value = e.changedTouches[0].screenX
+}
+
+const handleTouchMove = (e: TouchEvent) => {
+  touchEndX.value = e.changedTouches[0].screenX
+}
+
+const handleTouchEnd = () => {
+  const swipeDistance = touchStartX.value - touchEndX.value
+  const minSwipeDistance = 50 // Minimum distance for swipe
+
+  // Swipe left to close sidebar
+  if (swipeDistance > minSwipeDistance && isSidebarOpen.value) {
+    closeSidebar()
+  }
+}
+
 const updateTime = () => {
   marketTime.value = new Date().toLocaleTimeString('ru-RU', {
     hour: '2-digit',
@@ -608,7 +639,7 @@ const updateTime = () => {
   })
 }
 
-let timer: any
+let timer: ReturnType<typeof setInterval>
 onMounted(() => {
   updateTime()
   timer = setInterval(updateTime, 1000)
@@ -1445,6 +1476,8 @@ onUnmounted(() => clearInterval(timer))
   .sidebar-tab {
     width: 60px;
     min-width: 60px;
+    /* Safe area for notch devices */
+    padding-top: env(safe-area-inset-top, 0);
   }
 
   .burger-icon span {
@@ -1452,9 +1485,99 @@ onUnmounted(() => clearInterval(timer))
     height: 2.5px;
   }
 
-  .sidebar {
-    width: 260px;
+  .sidebar-backdrop {
+    z-index: 1200; /* Higher than header */
   }
+
+  .sidebar {
+    width: 85vw;
+    max-width: 320px;
+    z-index: 1210; /* Higher than backdrop */
+    /* Safe area padding for notch */
+    padding-top: env(safe-area-inset-top, 0);
+    padding-bottom: env(safe-area-inset-bottom, 0);
+  }
+
+  .sidebar-header {
+    padding-top: calc(16px + env(safe-area-inset-top, 0));
+  }
+
+  .sidebar-footer {
+    padding-bottom: calc(12px + env(safe-area-inset-bottom, 0));
+  }
+
+  .tool-title {
+    font-size: 12px;
+  }
+  .tool-subtitle {
+    font-size: 10px;
+  }
+  .home-title,
+  .data-title {
+    font-size: 13px;
+  }
+  .home-subtitle,
+  .data-subtitle {
+    font-size: 11px;
+  }
+  .nav-label {
+    font-size: 12px;
+  }
+
+  /* Ensure touch targets are at least 44px */
+  .nav-item {
+    min-height: 44px;
+    padding: 10px 12px;
+  }
+
+  .tool-header {
+    min-height: 48px;
+    padding: 14px 12px;
+  }
+
+  .close-btn {
+    min-width: 44px;
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .home-entry,
+  .docs-entry,
+  .data-entry {
+    min-height: 48px;
+    padding: 12px 14px;
+  }
+}
+
+@media (max-width: 480px) {
+  .sidebar-tab {
+    width: 56px;
+    min-width: 56px;
+  }
+
+  .burger-icon span {
+    width: 22px;
+    height: 2.5px;
+  }
+
+  .sidebar {
+    width: 100%;
+    max-width: none;
+    border-radius: 0;
+    border-right: none;
+  }
+
+  .sidebar-header {
+    padding: 16px;
+    padding-top: calc(20px + env(safe-area-inset-top, 0));
+  }
+
+  .app-logo {
+    font-size: 16px;
+  }
+
   .tool-title {
     font-size: 11px;
   }
@@ -1472,29 +1595,45 @@ onUnmounted(() => clearInterval(timer))
   .nav-label {
     font-size: 11px;
   }
+  .sidebar-footer {
+    padding: 12px 16px;
+    padding-bottom: calc(16px + env(safe-area-inset-bottom, 0));
+  }
+  .status-row {
+    font-size: 11px;
+  }
+
+  .settings-link-button {
+    min-height: 52px;
+    padding: 14px 16px;
+  }
 }
 
-@media (max-width: 480px) {
+@media (max-width: 375px) {
   .sidebar-tab {
-    width: 56px;
-    min-width: 56px;
+    width: 48px;
+    min-width: 48px;
   }
 
   .burger-icon span {
-    width: 22px;
-    height: 2.5px;
+    width: 18px;
+    height: 2px;
   }
 
-  .sidebar {
-    width: 100%;
-    max-width: 320px;
-  }
   .sidebar-header {
-    padding: 16px;
+    padding: 12px;
+    padding-top: calc(16px + env(safe-area-inset-top, 0));
   }
+
   .app-logo {
-    font-size: 16px;
+    font-size: 14px;
   }
+
+  .sidebar-tools {
+    padding: 12px;
+    gap: 10px;
+  }
+
   .tool-title {
     font-size: 10px;
   }
@@ -1512,11 +1651,22 @@ onUnmounted(() => clearInterval(timer))
   .nav-label {
     font-size: 10px;
   }
-  .sidebar-footer {
-    padding: 10px 12px;
+
+  .glossy-icon,
+  .home-icon,
+  .data-icon {
+    width: 28px;
+    height: 28px;
   }
-  .status-row {
-    font-size: 10px;
+
+  .supernova {
+    width: 10px;
+    height: 10px;
+  }
+
+  .supernova-home {
+    width: 14px;
+    height: 14px;
   }
 }
 </style>

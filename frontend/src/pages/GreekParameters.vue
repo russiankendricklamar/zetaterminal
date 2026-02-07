@@ -854,4 +854,46 @@ const runStressTest = async () => {
     text-align: left;
   }
 }
+
+@media (max-width: 375px) {
+  .page-container {
+    padding: 10px;
+    gap: 10px;
+  }
+
+  .section-title {
+    font-size: 16px;
+  }
+
+  .section-subtitle {
+    font-size: 10px;
+  }
+
+  .kpi-value {
+    font-size: 16px;
+  }
+
+  .panel {
+    padding: 10px;
+    border-radius: 12px;
+  }
+
+  .glass-table {
+    font-size: 10px;
+  }
+
+  .glass-table th,
+  .glass-table td {
+    padding: 6px 0;
+  }
+
+  .matrix-cell {
+    height: 24px;
+    font-size: 8px;
+  }
+
+  .btn-glass {
+    min-height: 44px;
+  }
+}
 </style>

@@ -80,3 +80,69 @@ const getImportanceName = (importance: string) => {
 
 const NewspaperIcon = { template: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-2 2Zm0 0a2 2 0 0 1-2-2v-9c0-1.1.9-2 2-2h2"/><path d="M18 14h-8"/><path d="M15 18h-5"/><path d="M10 6h8v4h-8V6Z"/></svg>' };
 </script>
+
+<style scoped>
+/* Mobile Responsive Styles */
+@media (max-width: 768px) {
+  .p-4 {
+    padding: 0.75rem;
+  }
+
+  .p-3 {
+    padding: 0.625rem;
+  }
+
+  .space-y-3 > * + * {
+    margin-top: 0.5rem;
+  }
+
+  .text-sm {
+    font-size: 0.8125rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .p-4 {
+    padding: 0.5rem;
+  }
+
+  .p-3 {
+    padding: 0.5rem;
+  }
+
+  .space-y-3 > * + * {
+    margin-top: 0.375rem;
+  }
+
+  /* Hide source on small screens */
+  .text-\[10px\].text-gray-500.font-mono {
+    display: none;
+  }
+
+  .text-sm {
+    font-size: 0.75rem;
+  }
+
+  .line-clamp-2 {
+    -webkit-line-clamp: 3;
+  }
+}
+
+@media (max-width: 375px) {
+  .p-4 {
+    padding: 0.375rem;
+  }
+
+  .p-3 {
+    padding: 0.375rem;
+  }
+
+  .text-sm {
+    font-size: 0.6875rem;
+  }
+
+  .text-\[10px\] {
+    font-size: 8px;
+  }
+}
+</style>

@@ -51,6 +51,9 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue';
+import { useIsMobile } from '@/composables/useIsMobile';
+
+const { isMobile, isSmallMobile, isTablet } = useIsMobile();
 import OrderBookWidget from './widgets/OrderBookWidget.vue';
 import ChartWidgetWrapper from './widgets/ChartWidgetWrapper.vue';
 import NewsWidget from './widgets/NewsWidget.vue';
@@ -129,7 +132,14 @@ const props = withDefaults(defineProps<Props>(), {
 });
 
 const gridRef = ref<HTMLElement | null>(null);
-const gridColumns = ref(12);
+
+// Responsive grid columns based on screen size
+const gridColumns = computed(() => {
+  if (isSmallMobile.value) return 1;
+  if (isMobile.value) return 2;
+  if (isTablet.value) return 6;
+  return 12;
+});
 
 // Загружаем виджеты из localStorage или используем дефолтные
 const loadWidgets = (): Widget[] => {
@@ -304,7 +314,7 @@ watch(() => props.chartData, () => {
 
 /* Плавная анимация изменения размера виджетов */
 .dashboard-grid > * {
-  transition: 
+  transition:
     grid-column 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94),
     grid-row 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94),
     transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94),
@@ -314,5 +324,50 @@ watch(() => props.chartData, () => {
 
 .dashboard-grid > *:hover {
   transition-duration: 0.2s;
+}
+
+/* Mobile Responsive Styles */
+@media (max-width: 1024px) {
+  .dashboard-grid {
+    gap: 0.75rem;
+    grid-auto-rows: minmax(80px, auto);
+  }
+}
+
+@media (max-width: 768px) {
+  .dashboard-grid {
+    gap: 0.5rem;
+    grid-auto-rows: minmax(120px, auto);
+  }
+
+  /* Force widgets to take full width on mobile */
+  .widget-container {
+    grid-column: span 2 !important;
+    min-height: 150px !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .dashboard-grid {
+    gap: 0.5rem;
+    grid-auto-rows: minmax(100px, auto);
+  }
+
+  /* Stack all widgets vertically on small mobile */
+  .widget-container {
+    grid-column: span 1 !important;
+    grid-row: span 1 !important;
+    min-height: 180px !important;
+  }
+}
+
+@media (max-width: 375px) {
+  .dashboard-grid {
+    gap: 0.375rem;
+  }
+
+  .widget-container {
+    min-height: 160px !important;
+  }
 }
 </style>

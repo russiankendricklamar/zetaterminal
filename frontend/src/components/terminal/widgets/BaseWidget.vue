@@ -68,6 +68,9 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue';
+import { useIsMobile } from '@/composables/useIsMobile';
+
+const { isMobile } = useIsMobile();
 
 interface Props {
   title: string;
@@ -182,3 +185,66 @@ const startResize = (e: MouseEvent, mode: 'width' | 'height' | 'both' = 'both') 
 const SettingsIcon = { template: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 1v6m0 6v6m9-9h-6m-6 0H3"/></svg>' };
 const XIcon = { template: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>' };
 </script>
+
+<style scoped>
+/* Mobile Responsive Styles */
+@media (max-width: 768px) {
+  /* Reduce header padding */
+  .p-3 {
+    padding: 0.5rem;
+  }
+
+  /* Larger touch targets for buttons */
+  .p-1\.5 {
+    padding: 0.5rem;
+    min-width: 44px;
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* Slightly larger icons on mobile */
+  .w-3\.5 {
+    width: 1rem;
+    height: 1rem;
+  }
+
+  /* Hide resize handles on mobile (touch-unfriendly) */
+  .cursor-ew-resize,
+  .cursor-ns-resize,
+  .cursor-nwse-resize {
+    display: none;
+  }
+}
+
+@media (max-width: 480px) {
+  /* Even smaller header on small mobile */
+  .p-3 {
+    padding: 0.375rem 0.5rem;
+  }
+
+  .text-xs {
+    font-size: 0.625rem;
+  }
+
+  .gap-2 {
+    gap: 0.375rem;
+  }
+
+  .gap-1\.5 {
+    gap: 0.25rem;
+  }
+}
+
+@media (max-width: 375px) {
+  /* Minimal padding on tiny screens */
+  .p-3 {
+    padding: 0.25rem 0.375rem;
+  }
+
+  .text-xs {
+    font-size: 0.5625rem;
+  }
+}
+</style>

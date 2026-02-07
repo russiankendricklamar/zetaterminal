@@ -138,4 +138,88 @@ const toggleDetails = () => {
   0% { transform: scale(0.8) translateY(-20px); opacity: 0; }
   100% { transform: scale(1) translateY(0); opacity: 1; }
 }
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+  .dynamic-island {
+    min-width: 160px;
+    max-width: calc(100vw - 120px);
+    height: 32px;
+    padding: 0 3px;
+    gap: 8px;
+  }
+
+  .island-left {
+    width: 24px;
+    height: 24px;
+  }
+
+  .spinner-island {
+    width: 12px;
+    height: 12px;
+    border-width: 1.5px;
+  }
+
+  .island-title {
+    font-size: 11px;
+  }
+
+  .island-right {
+    margin-right: 8px;
+    font-size: 10px;
+  }
+}
+
+@media (max-width: 480px) {
+  .dynamic-island {
+    min-width: 140px;
+    max-width: calc(100vw - 100px);
+    height: 28px;
+    gap: 6px;
+  }
+
+  .island-left {
+    width: 22px;
+    height: 22px;
+    margin-left: 1px;
+  }
+
+  .spinner-island {
+    width: 10px;
+    height: 10px;
+  }
+
+  .island-title {
+    font-size: 10px;
+  }
+
+  .island-right {
+    margin-right: 6px;
+    font-size: 9px;
+  }
+}
+
+@media (max-width: 375px) {
+  .dynamic-island {
+    min-width: 120px;
+    max-width: calc(100vw - 80px);
+    height: 26px;
+    gap: 4px;
+    border-radius: 16px;
+  }
+
+  .island-left {
+    width: 20px;
+    height: 20px;
+  }
+
+  .island-title {
+    font-size: 9px;
+  }
+
+  .island-right {
+    margin-right: 5px;
+    font-size: 8px;
+  }
+}
 </style>

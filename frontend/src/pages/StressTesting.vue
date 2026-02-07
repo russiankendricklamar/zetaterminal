@@ -1897,4 +1897,43 @@ const runAllStressTests = async () => {
     width: 100%;
   }
 }
+
+@media (max-width: 375px) {
+  .page-container {
+    padding: 10px;
+    gap: 10px;
+  }
+
+  .section-title {
+    font-size: 16px;
+  }
+
+  .section-subtitle {
+    font-size: 10px;
+  }
+
+  .chart-container {
+    height: 200px;
+  }
+
+  .chart-container.tall {
+    height: 250px;
+  }
+
+  .scenarios-grid {
+    gap: 10px;
+  }
+
+  .scenario-card {
+    padding: 12px;
+  }
+
+  .modal-body {
+    padding: 12px;
+  }
+
+  .btn-glass {
+    min-height: 44px;
+  }
+}
 </style>

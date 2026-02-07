@@ -2818,30 +2818,62 @@ input:checked + .slider:before { transform: translateX(12px); }
   }
 }
 
-@media (max-width: 768px) { 
-  .portfolio-page { 
-    padding: 16px; 
-  } 
-  .hero-section { 
-    flex-direction: column; 
-    gap: 16px; 
-  } 
-  .hero-actions { 
-    width: 100%; 
-    flex-wrap: wrap; 
-  } 
-  .kpi-grid { 
-    grid-template-columns: 1fr; 
-  } 
-  .dashboard-grid { 
-    grid-template-columns: 1fr; 
-    gap: 16px; 
-  } 
-  .stats-grid { 
-    grid-template-columns: 1fr; 
-  } 
-  .charts-row-two-col { 
-    grid-template-columns: 1fr; 
+@media (max-width: 1024px) {
+  .portfolio-page {
+    padding: 20px;
+  }
+  .kpi-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .dashboard-grid {
+    grid-template-columns: 1fr;
+  }
+  .col-side-flex {
+    width: 100%;
+  }
+}
+
+@media (max-width: 768px) {
+  .portfolio-page {
+    padding: 16px;
+    margin-top: 0;
+    gap: 20px;
+  }
+  .hero-section {
+    flex-direction: column;
+    gap: 16px;
+    align-items: flex-start;
+  }
+  .hero-left h1 {
+    font-size: 18px;
+    flex-wrap: wrap;
+    white-space: normal;
+  }
+  .hero-actions {
+    width: 100%;
+    flex-wrap: wrap;
+    justify-content: flex-start;
+  }
+  .btn-glass {
+    height: 44px;
+    min-width: 44px;
+  }
+  .kpi-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+  .kpi-value {
+    font-size: 22px;
+  }
+  .dashboard-grid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+  .stats-grid {
+    grid-template-columns: 1fr;
+  }
+  .charts-row-two-col {
+    grid-template-columns: 1fr;
   }
   .chart-container {
     height: 300px;
@@ -2849,14 +2881,75 @@ input:checked + .slider:before { transform: translateX(12px); }
   .chart-container.tall {
     height: 400px;
   }
+  .glass-panel {
+    border-radius: 16px;
+  }
+  .panel-header {
+    padding: 12px 16px;
+  }
+  .panel-body {
+    padding: 12px 16px;
+  }
+  /* Bank selector mobile */
+  .bank-selector {
+    min-width: unset;
+    width: 100%;
+    padding: 8px 12px;
+  }
+  .bank-selector-name {
+    font-size: 11px;
+  }
+  .bank-dropdown {
+    min-width: unset;
+    left: -50px;
+    right: -50px;
+    max-width: calc(100vw - 32px);
+  }
+  /* Table horizontal scroll */
+  .table-container {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  .glass-table {
+    min-width: 600px;
+  }
+  /* Hide some columns on mobile */
+  .glass-table th:nth-child(4),
+  .glass-table td:nth-child(4),
+  .glass-table th:nth-child(6),
+  .glass-table td:nth-child(6),
+  .glass-table th:nth-child(7),
+  .glass-table td:nth-child(7) {
+    display: none;
+  }
+  /* Glass pills */
+  .hero-meta {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .glass-pill {
+    font-size: 10px;
+    padding: 4px 8px;
+  }
+  /* Wave metrics */
+  .wave-metrics-row {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .latent-vol-metrics {
+    grid-template-columns: repeat(2, 1fr);
+  }
 }
 
 @media (max-width: 480px) {
   .portfolio-page {
     padding: 12px;
+    gap: 16px;
   }
   .hero-section {
     gap: 12px;
+  }
+  .hero-left h1 {
+    font-size: 16px;
   }
   .chart-container {
     height: 250px;
@@ -2866,6 +2959,56 @@ input:checked + .slider:before { transform: translateX(12px); }
   }
   .kpi-card {
     padding: 12px;
+  }
+  .kpi-value {
+    font-size: 18px;
+  }
+  .kpi-label {
+    font-size: 10px;
+  }
+  .glass-panel {
+    border-radius: 12px;
+  }
+  .panel-header {
+    padding: 10px 12px;
+  }
+  .panel-body {
+    padding: 10px 12px;
+  }
+  .wave-metrics-row {
+    grid-template-columns: 1fr;
+  }
+  .latent-vol-metrics {
+    grid-template-columns: 1fr;
+  }
+  /* Hide more table columns */
+  .glass-table th:nth-child(3),
+  .glass-table td:nth-child(3),
+  .glass-table th:nth-child(5),
+  .glass-table td:nth-child(5) {
+    display: none;
+  }
+}
+
+@media (max-width: 375px) {
+  .portfolio-page {
+    padding: 10px;
+    gap: 12px;
+  }
+  .hero-left h1 {
+    font-size: 14px;
+  }
+  .kpi-value {
+    font-size: 16px;
+  }
+  .btn-glass {
+    font-size: 11px;
+    padding: 0 12px;
+  }
+  .btn-glass.compact {
+    height: 40px;
+    font-size: 10px;
+    padding: 0 10px;
   }
 }
 </style>

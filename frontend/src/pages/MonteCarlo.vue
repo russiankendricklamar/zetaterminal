@@ -649,4 +649,23 @@ onUnmounted(() => {
     padding: 10px;
   }
 }
+
+@media (max-width: 375px) {
+  .page-container {
+    padding: 10px;
+    gap: 12px;
+  }
+  .chart-container {
+    height: 200px;
+  }
+  .controls-column {
+    padding: 8px;
+  }
+  .section-title {
+    font-size: 16px;
+  }
+  .btn-glass {
+    min-height: 44px;
+  }
+}
 </style>

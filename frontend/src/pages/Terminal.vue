@@ -889,4 +889,117 @@ watch(() => activeSymbol.value, () => {
 :deep(.custom-scrollbar)::-webkit-scrollbar-thumb:active {
   background: rgba(255, 255, 255, 0.35);
 }
+
+/* Mobile Responsive Styles */
+@media (max-width: 1024px) {
+  .p-4 {
+    padding: 0.75rem;
+  }
+  .gap-4 {
+    gap: 0.75rem;
+  }
+}
+
+@media (max-width: 768px) {
+  /* Reduce blur on mobile for performance */
+  .glass-panel {
+    backdrop-filter: blur(12px) !important;
+    -webkit-backdrop-filter: blur(12px) !important;
+  }
+
+  /* Hide mesh gradient blobs on mobile */
+  .fixed.inset-0 .absolute {
+    display: none;
+  }
+
+  /* Tabs bar - horizontal scroll */
+  .flex.items-center.gap-2.overflow-x-auto {
+    padding-bottom: 0.5rem;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Header - compact on mobile */
+  header.h-10 {
+    height: auto;
+    min-height: 2.5rem;
+    padding: 0.5rem !important;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  /* Hide search bar on mobile */
+  .hidden.xl\\:flex {
+    display: none !important;
+  }
+
+  /* Navigation dropdown - full width */
+  .absolute.top-full.left-0 {
+    left: -50px;
+    right: -50px;
+    width: calc(100vw - 32px);
+  }
+
+  /* Profile dropdown - adjust position */
+  .absolute.top-12.right-0 {
+    right: -16px;
+    width: calc(100vw - 32px);
+    max-width: 320px;
+  }
+
+  /* Content area padding */
+  .p-4.gap-4 {
+    padding: 0.5rem;
+    gap: 0.5rem;
+  }
+
+  /* Larger touch targets */
+  button {
+    min-height: 44px;
+    min-width: 44px;
+  }
+
+  .px-3.py-1\.5 {
+    padding: 0.5rem 0.75rem;
+  }
+}
+
+@media (max-width: 480px) {
+  /* Even more compact */
+  .p-4.gap-4 {
+    padding: 0.375rem;
+    gap: 0.375rem;
+  }
+
+  header.h-10 {
+    padding: 0.375rem !important;
+  }
+
+  /* Hide terminal name on small screens */
+  .font-bold.tracking-tight.text-sm {
+    display: none;
+  }
+
+  /* Tabs - smaller */
+  .px-3.py-1\.5 {
+    padding: 0.375rem 0.5rem;
+    font-size: 0.625rem;
+  }
+
+  /* Profile dropdown - smaller */
+  .absolute.top-12.right-0 {
+    max-width: 280px;
+  }
+}
+
+@media (max-width: 375px) {
+  .p-4.gap-4 {
+    padding: 0.25rem;
+    gap: 0.25rem;
+  }
+
+  /* Hide "New window" text */
+  .text-xs.font-medium:not(.whitespace-nowrap) {
+    display: none;
+  }
+}
 </style>

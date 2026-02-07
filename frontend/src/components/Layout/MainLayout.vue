@@ -133,8 +133,10 @@ import { ref, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import Sidebar from '@/components/Layout/Sidebar.vue'
 import TaskWidget from '@/components/common/TaskWidget.vue'
+import { useIsMobile } from '@/composables/useIsMobile'
 
 const route = useRoute()
+const { isMobile } = useIsMobile()
 const searchQuery = ref('')
 const showNotifications = ref(false)
 const unreadCount = ref(2)
@@ -211,11 +213,23 @@ onMounted(() => {
    LAYOUT GRID
    ============================================ */
 .app-container {
-  position: relative; z-index: 10; display: flex; 
+  position: relative; z-index: 10; display: flex;
   min-height: 100%;
   padding: 12px 12px 12px 80px; /* Отступы для "парящего" окна */
   box-sizing: border-box;
   gap: 12px;
+}
+
+@media (max-width: 768px) {
+  .app-container {
+    padding: 0 0 0 60px; /* Уменьшенный отступ для мобильного sidebar-tab */
+  }
+}
+
+@media (max-width: 480px) {
+  .app-container {
+    padding: 0 0 0 56px; /* Еще меньше для маленьких экранов */
+  }
 }
 
 /* ============================================
@@ -428,30 +442,76 @@ onMounted(() => {
     min-height: 100vh;
   }
 
-  .app-container { 
-    padding: 0; 
-    gap: 0; 
+  .app-container {
+    padding: 0 0 0 60px;
+    gap: 0;
     min-height: 100vh;
     height: auto;
   }
-  
-  .main-window { 
-    border-radius: 0; 
-    border: none; 
-    background: #000; 
-    box-shadow: none; 
+
+  .main-window {
+    border-radius: 0;
+    border: none;
+    background: #000;
+    box-shadow: none;
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
     min-height: 100vh;
+    /* Reduce blur on mobile for performance */
+    backdrop-filter: blur(12px) saturate(150%);
+    -webkit-backdrop-filter: blur(12px) saturate(150%);
   }
-  
+
   .window-content {
     overflow-y: visible;
     -webkit-overflow-scrolling: touch;
   }
-  
-  .header-bottom { flex-direction: column; gap: 16px; align-items: stretch; }
-  .search-wrapper { width: 100%; }
+
+  .header-content {
+    padding: 16px;
+    gap: 12px;
+  }
+
+  .header-top {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .system-status {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .header-bottom {
+    flex-direction: column;
+    gap: 12px;
+    align-items: stretch;
+  }
+
+  .search-wrapper {
+    width: 100%;
+  }
+
+  .actions-group {
+    justify-content: flex-end;
+  }
+
+  .notifications-panel {
+    right: 16px;
+    left: 16px;
+    width: auto;
+    max-width: none;
+  }
+
+  /* Hide ambient effects on mobile for performance */
+  .ambient-layer {
+    display: none;
+  }
+
+  .noise-overlay {
+    display: none;
+  }
 }
 
 @media (max-width: 480px) {
@@ -461,16 +521,119 @@ onMounted(() => {
   }
 
   .app-container {
+    padding: 0 0 0 56px;
     min-height: 100vh;
   }
 
   .main-window {
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
+    /* No blur on small mobile for better performance */
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
   }
 
   .window-content {
     overflow-y: visible;
+  }
+
+  .header-content {
+    padding: 12px;
+    gap: 10px;
+  }
+
+  .breadcrumbs {
+    font-size: 10px;
+  }
+
+  .system-status {
+    font-size: 10px;
+    padding: 3px 8px;
+  }
+
+  .search-input {
+    padding: 10px 10px 10px 36px;
+    font-size: 13px;
+  }
+
+  .search-icon {
+    width: 16px;
+    left: 10px;
+  }
+
+  .hk-badge {
+    display: none;
+  }
+
+  .icon-btn {
+    width: 40px;
+    height: 40px;
+  }
+
+  .user-avatar {
+    width: 40px;
+    height: 40px;
+    font-size: 12px;
+  }
+
+  .notifications-panel {
+    right: 12px;
+    left: 12px;
+    margin-top: 8px;
+  }
+
+  .notif-item {
+    padding: 12px 14px;
+    gap: 10px;
+  }
+
+  .notif-title {
+    font-size: 12px;
+  }
+
+  .notif-desc {
+    font-size: 11px;
+  }
+}
+
+/* Extra small phones (375px and below) */
+@media (max-width: 375px) {
+  .app-container {
+    padding: 0 0 0 48px;
+  }
+
+  .header-content {
+    padding: 10px;
+    gap: 8px;
+  }
+
+  .breadcrumbs {
+    font-size: 9px;
+    gap: 6px;
+  }
+
+  .icon-btn {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+  }
+
+  .user-avatar {
+    width: 36px;
+    height: 36px;
+    font-size: 11px;
+    border-radius: 10px;
+  }
+
+  .search-input {
+    padding: 8px 8px 8px 32px;
+    font-size: 12px;
+    border-radius: 10px;
+  }
+
+  .search-icon {
+    width: 14px;
+    left: 8px;
   }
 }
 </style>

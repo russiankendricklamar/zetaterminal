@@ -1044,6 +1044,78 @@ input:checked + .slider:before {
   .glass-input {
     font-size: 12px;
     padding: 6px 10px;
+    min-height: 44px;
+  }
+
+  /* Touch-friendly switches */
+  .switch {
+    min-width: 44px;
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* Segmented control touch targets */
+  .segmented-control button {
+    min-height: 44px;
+  }
+}
+
+@media (max-width: 375px) {
+  .page-container {
+    padding: 10px;
+    gap: 10px;
+  }
+
+  .section-title {
+    font-size: 18px;
+  }
+
+  .section-subtitle {
+    font-size: 10px;
+  }
+
+  .tabs-navigation {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 4px;
+  }
+
+  .tab-item {
+    padding: 6px 8px;
+    font-size: 9px;
+    white-space: nowrap;
+  }
+
+  .settings-block {
+    padding: 10px;
+    border-radius: 12px;
+  }
+
+  .block-title {
+    padding: 10px 12px 4px 12px;
+    font-size: 9px;
+  }
+
+  .control-group {
+    margin: 0 8px 8px;
+    padding: 0 8px;
+  }
+
+  .control-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .control-right {
+    width: 100%;
+  }
+
+  .glass-select,
+  .glass-input {
+    width: 100%;
   }
 }
 </style>

@@ -707,4 +707,45 @@ onMounted(() => {
     padding: 4px 2px;
   }
 }
+
+@media (max-width: 375px) {
+  .page-container {
+    padding: 10px;
+    gap: 10px;
+  }
+
+  .section-title {
+    font-size: 16px;
+  }
+
+  .section-subtitle {
+    font-size: 10px;
+  }
+
+  .kpi-value {
+    font-size: 16px;
+  }
+
+  .chart-panel {
+    min-height: 150px;
+    padding: 10px;
+  }
+
+  .panel-full {
+    padding: 10px;
+  }
+
+  .heatmap-table {
+    font-size: 9px;
+  }
+
+  .val-pill {
+    font-size: 8px;
+    padding: 2px;
+  }
+
+  .btn-glass {
+    min-height: 44px;
+  }
+}
 </style>

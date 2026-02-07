@@ -1781,14 +1781,317 @@ onUnmounted(() => {
 @media (max-width: 1024px) {
   .main-layout {
     grid-template-columns: 1fr;
+    padding: 16px;
+    gap: 16px;
   }
-  
+
   .controls-panel {
     overflow: visible;
   }
-  
+
   .stats-panel {
     grid-template-columns: 1fr;
+  }
+
+  .visualization-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+  }
+
+  .timeline-controls {
+    width: 100%;
+    flex-wrap: wrap;
+    padding: 12px;
+    gap: 10px;
+  }
+
+  .timeline-wrapper {
+    width: 100%;
+    order: 3;
+    margin-top: 8px;
+  }
+
+  .canvas-container {
+    min-height: 400px;
+    height: 400px;
+  }
+}
+
+@media (max-width: 768px) {
+  .main-layout {
+    padding: 12px;
+    gap: 12px;
+  }
+
+  .glass-card.panel {
+    padding: 16px;
+    border-radius: 16px;
+  }
+
+  .panel-header h3 {
+    font-size: 10px;
+    margin-bottom: 12px;
+  }
+
+  .input-group {
+    gap: 4px;
+  }
+
+  .lbl {
+    font-size: 10px;
+  }
+
+  .glass-select {
+    padding: 10px;
+    font-size: 13px;
+    min-height: 44px; /* Touch target */
+  }
+
+  .scrub-row {
+    padding: 10px;
+  }
+
+  .btn-primary-gradient {
+    padding: 14px;
+    font-size: 14px;
+    min-height: 48px;
+  }
+
+  .checkbox-label {
+    font-size: 13px;
+    padding: 10px 8px;
+    min-height: 44px;
+  }
+
+  .preset-buttons {
+    gap: 8px;
+  }
+
+  .btn-preset {
+    padding: 10px;
+    font-size: 12px;
+    min-height: 44px;
+  }
+
+  .regime-badge {
+    padding: 14px;
+    gap: 12px;
+  }
+
+  .regime-name {
+    font-size: 14px;
+  }
+
+  .stat-row {
+    font-size: 13px;
+    padding: 8px 0;
+  }
+
+  .stat-value {
+    font-size: 14px;
+  }
+
+  .matrix-cell {
+    padding: 10px 6px;
+  }
+
+  .m-val {
+    font-size: 12px;
+  }
+
+  .m-lbl {
+    font-size: 8px;
+  }
+
+  .vis-title {
+    font-size: 22px;
+  }
+
+  .vis-subtitle {
+    font-size: 12px;
+  }
+
+  .timeline-controls {
+    padding: 10px 12px;
+    border-radius: 16px;
+    gap: 8px;
+  }
+
+  .btn-play {
+    width: 44px;
+    height: 44px;
+    font-size: 16px;
+  }
+
+  .speed-select {
+    padding: 8px 10px;
+    font-size: 12px;
+    min-height: 40px;
+  }
+
+  .btn-reset {
+    padding: 8px 14px;
+    min-height: 40px;
+  }
+
+  .current-date {
+    font-size: 10px;
+    padding: 8px;
+    min-width: 80px;
+  }
+
+  .canvas-container {
+    min-height: 350px;
+    height: 350px;
+    border-radius: 16px;
+  }
+
+  .stats-card {
+    padding: 16px;
+    border-radius: 16px;
+  }
+
+  .stats-card h4 {
+    font-size: 10px;
+    margin-bottom: 12px;
+  }
+
+  .info-hint {
+    font-size: 9px;
+    margin-bottom: 10px;
+  }
+
+  .dist-bar {
+    height: 32px;
+    padding: 0 10px;
+  }
+
+  .dist-label {
+    font-size: 11px;
+  }
+
+  .duration-item {
+    font-size: 13px;
+    padding: 10px;
+  }
+
+  .duration-value {
+    font-size: 12px;
+  }
+
+  .data-row {
+    padding: 10px;
+  }
+
+  .data-label,
+  .data-value {
+    font-size: 13px;
+  }
+
+  .btn-export {
+    padding: 12px 16px;
+    font-size: 13px;
+    min-height: 44px;
+  }
+
+  .hover-tooltip {
+    min-width: 200px;
+    max-width: 280px;
+    padding: 10px 12px;
+    font-size: 11px;
+  }
+
+  .tooltip-title {
+    font-size: 13px;
+  }
+
+  .tooltip-row {
+    font-size: 11px;
+  }
+}
+
+@media (max-width: 480px) {
+  .main-layout {
+    padding: 8px;
+    gap: 8px;
+  }
+
+  .glass-card.panel {
+    padding: 12px;
+    border-radius: 12px;
+  }
+
+  .vis-title {
+    font-size: 18px;
+  }
+
+  .vis-subtitle {
+    font-size: 11px;
+  }
+
+  .timeline-controls {
+    padding: 8px 10px;
+    border-radius: 12px;
+  }
+
+  .btn-play {
+    width: 40px;
+    height: 40px;
+  }
+
+  .canvas-container {
+    min-height: 280px;
+    height: 280px;
+    border-radius: 12px;
+  }
+
+  .stats-card {
+    padding: 12px;
+    border-radius: 12px;
+  }
+
+  .matrix-cell {
+    padding: 8px 4px;
+  }
+
+  .m-val {
+    font-size: 10px;
+  }
+
+  .export-section {
+    flex-direction: row;
+    gap: 8px;
+  }
+
+  .btn-export {
+    flex: 1;
+    padding: 10px 12px;
+    font-size: 11px;
+  }
+}
+
+@media (max-width: 375px) {
+  .canvas-container {
+    min-height: 240px;
+    height: 240px;
+  }
+
+  .vis-title {
+    font-size: 16px;
+  }
+
+  .timeline-controls {
+    padding: 6px 8px;
+  }
+
+  .btn-play {
+    width: 36px;
+    height: 36px;
+  }
+
+  .current-date {
+    display: none;
   }
 }
 

@@ -65,6 +65,9 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue';
 import { use } from 'echarts/core';
+import { useIsMobile } from '@/composables/useIsMobile';
+
+const { isMobile, isSmallMobile } = useIsMobile();
 import { CanvasRenderer } from 'echarts/renderers';
 import { LineChart, BarChart } from 'echarts/charts';
 import {
@@ -303,5 +306,85 @@ const MinimizeIcon = { template: '<svg viewBox="0 0 24 24" fill="none" stroke="c
 .volume-chart {
   height: 100%;
   width: 100%;
+}
+
+/* Mobile Responsive Styles */
+@media (max-width: 768px) {
+  /* Simplified header on mobile */
+  .absolute.top-0 {
+    padding: 0.5rem 0.75rem;
+  }
+
+  .text-lg {
+    font-size: 0.875rem;
+  }
+
+  .text-xl {
+    font-size: 1rem;
+  }
+
+  /* Smaller timeframe buttons */
+  .px-3.py-1 {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.625rem;
+  }
+
+  /* Reduce chart header padding */
+  .pt-16 {
+    padding-top: 3.5rem;
+  }
+
+  /* Smaller volume chart */
+  .h-\[60px\] {
+    height: 40px;
+  }
+}
+
+@media (max-width: 480px) {
+  /* Hide expand button on small mobile */
+  .p-1\.5.text-gray-400 {
+    display: none;
+  }
+
+  /* Further reduce header */
+  .absolute.top-0 {
+    padding: 0.375rem 0.5rem;
+  }
+
+  .text-lg {
+    font-size: 0.75rem;
+  }
+
+  .text-xl {
+    font-size: 0.875rem;
+  }
+
+  .text-xs {
+    font-size: 0.5rem;
+  }
+
+  /* Hide asset tag on very small screens */
+  .bg-white\/5.px-2.py-0\.5.rounded {
+    display: none;
+  }
+
+  .pt-16 {
+    padding-top: 3rem;
+  }
+
+  .h-\[60px\] {
+    height: 30px;
+  }
+}
+
+@media (max-width: 375px) {
+  /* Hide timeframe selector on tiny screens */
+  .flex.bg-black\/30.rounded-lg {
+    display: none;
+  }
+
+  .pt-16 {
+    padding-top: 2.5rem;
+  }
 }
 </style>
