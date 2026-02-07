@@ -1005,15 +1005,15 @@ const hoveredAsset = ref<any>(null)
 
 // Функция для загрузки метрик портфеля из API
 const loadPortfolioMetrics = async () => {
-  if (!positions || positions.length === 0) {
+  if (!positions.value || positions.value.length === 0) {
     portfolioMetrics.value = null
     return
   }
-  
+
   isLoadingMetrics.value = true
   try {
     // Преобразуем позиции в формат для API
-    const positionsForAPI = positions.map((pos: any) => ({
+    const positionsForAPI = positions.value.map((pos: any) => ({
       symbol: pos.symbol,
       name: pos.name,
       price: parseFloat(pos.price) || 0,
@@ -1052,11 +1052,11 @@ watch(positions, (newPositions) => {
 
 const filteredBanks = computed(() => {
   if (!bankSearchQuery.value.trim()) {
-    return banks
+    return banks.value
   }
   const query = bankSearchQuery.value.toLowerCase().trim()
-  return banks.filter((bank: { name: string; regNumber: string }) => 
-    bank.name.toLowerCase().includes(query) || 
+  return banks.value.filter((bank: { name: string; regNumber: string }) =>
+    bank.name.toLowerCase().includes(query) ||
     bank.regNumber.includes(query)
   )
 })
@@ -1085,16 +1085,16 @@ const handleClickOutside = (event: MouseEvent) => {
 
 // Топ-5 позиций по весу для основного блока
 const top5Positions = computed(() => {
-  return [...positions]
+  return [...positions.value]
     .sort((a, b) => b.allocation - a.allocation)
     .slice(0, 5)
 })
 
 // Полный список для модального окна
 const filteredPositions = computed(() => {
-  if (!searchFilter.value) return positions
+  if (!searchFilter.value) return positions.value
   const query = searchFilter.value.toLowerCase()
-  return positions.filter((p: any) => 
+  return positions.value.filter((p: any) =>
     p.symbol.toLowerCase().includes(query) || p.name.toLowerCase().includes(query)
   )
 })
@@ -1104,9 +1104,9 @@ const isPortfolioDetailsOpen = ref(false)
 const portfolioDetailsSearch = ref('')
 
 const portfolioDetailsFiltered = computed(() => {
-  if (!portfolioDetailsSearch.value) return positions
+  if (!portfolioDetailsSearch.value) return positions.value
   const query = portfolioDetailsSearch.value.toLowerCase()
-  return positions.filter((p: any) => 
+  return positions.value.filter((p: any) =>
     p.symbol.toLowerCase().includes(query) || p.name.toLowerCase().includes(query)
   )
 })
@@ -1131,7 +1131,7 @@ const closePortfolioDetails = () => {
 // Генерация детерминированной матрицы корреляций на основе текущего портфеля (все 25 активов)
 const correlationMatrix = computed(() => {
   // Берем все активы портфеля для полной картины корреляций
-  const allAssets = [...positions]
+  const allAssets = [...positions.value]
   
   // Функция для получения детерминированного значения корреляции на основе символов
   const getCorrelation = (symbol1: string, symbol2: string): number => {
@@ -1198,7 +1198,7 @@ const correlationMatrix = computed(() => {
 
 // Получаем топ-10 активов для 3D визуализации (по весу)
 const topAssetsFor3D = computed(() => {
-  return [...positions]
+  return [...positions.value]
     .sort((a, b) => b.allocation - a.allocation)
     .slice(0, 10)
     .map(asset => asset.symbol)
@@ -1238,8 +1238,8 @@ const initCorrelation3DHeatmap = async () => {
     }
     
     // Берем все активы для визуализации (акции и облигации)
-    const allAssets = [...positions]
-    
+    const allAssets = [...positions.value]
+
     if (allAssets.length === 0) return
     
     // Получаем матрицу корреляций для этих активов
