@@ -1,226 +1,145 @@
 <template>
   <div class="home-root">
-    <!-- Лавовая лампа / liquid glass фон -->
-    <div class="lava-layer">
-      <div class="blob blob-1"></div>
-      <div class="blob blob-2"></div>
-      <div class="blob blob-3"></div>
-      <div class="blob blob-4"></div>
-      <div class="glass-gradient"></div>
+    <!-- Marquee text background -->
+    <div class="marquee-container">
+      <div class="marquee-row">
+        <div class="marquee-track">
+          <span class="marquee-text">PORTFOLIO</span>
+          <span class="marquee-text accent">OPTIONS</span>
+          <span class="marquee-text">BONDS</span>
+          <span class="marquee-text accent">SWAPS</span>
+          <span class="marquee-text">GREEKS</span>
+          <span class="marquee-text accent">FORWARDS</span>
+          <span class="marquee-text">PORTFOLIO</span>
+          <span class="marquee-text accent">OPTIONS</span>
+          <span class="marquee-text">BONDS</span>
+          <span class="marquee-text accent">SWAPS</span>
+          <span class="marquee-text">GREEKS</span>
+          <span class="marquee-text accent">FORWARDS</span>
+        </div>
+      </div>
+      <div class="marquee-row">
+        <div class="marquee-track">
+          <span class="marquee-text accent">HESTON</span>
+          <span class="marquee-text">SABR</span>
+          <span class="marquee-text accent">HMM</span>
+          <span class="marquee-text">MONTE CARLO</span>
+          <span class="marquee-text accent">VAR</span>
+          <span class="marquee-text">DCF</span>
+          <span class="marquee-text accent">HESTON</span>
+          <span class="marquee-text">SABR</span>
+          <span class="marquee-text accent">HMM</span>
+          <span class="marquee-text">MONTE CARLO</span>
+          <span class="marquee-text accent">VAR</span>
+          <span class="marquee-text">DCF</span>
+        </div>
+      </div>
+      <div class="marquee-row">
+        <div class="marquee-track">
+          <span class="marquee-text">VOLATILITY</span>
+          <span class="marquee-text accent">REGIME</span>
+          <span class="marquee-text">STRESS TEST</span>
+          <span class="marquee-text accent">PNL</span>
+          <span class="marquee-text">HEDGING</span>
+          <span class="marquee-text accent">YIELD CURVE</span>
+          <span class="marquee-text">VOLATILITY</span>
+          <span class="marquee-text accent">REGIME</span>
+          <span class="marquee-text">STRESS TEST</span>
+          <span class="marquee-text accent">PNL</span>
+          <span class="marquee-text">HEDGING</span>
+          <span class="marquee-text accent">YIELD CURVE</span>
+        </div>
+      </div>
     </div>
 
-    <!-- Контент поверх -->
-    <div class="home-layout">
-      <!-- Левая колонка -->
-      <section class="hero">
-        <div class="logo-badge">
-          <span class="badge-icon">◆</span>
+    <!-- Hero content -->
+    <div class="hero-overlay">
+      <!-- Top bar -->
+      <div class="hero-top">
+        <div class="hero-logo">
+          <span class="logo-diamond">◆</span>
           Quantitative Analytics
         </div>
-        <h1 class="hero-title">
-          Комплексный <span>калькулятор</span> для портфелей и деривативов
-        </h1>
-        
-        <!-- Framed subtitle -->
-        <div class="subtitle-frame">
+      </div>
+
+      <!-- Center: slider + title -->
+      <div class="hero-center">
+        <div class="hero-text">
+          <h1 class="hero-title">
+            Комплексный<br>
+            <span class="gradient-text">калькулятор</span><br>
+            деривативов
+          </h1>
           <p class="hero-subtitle">
-            Единая платформа для портфельного анализа, скрытых марковских цепей, справедливой стоимости деривативов и риск‑менеджмента институционального уровня.
+            Портфельный анализ, скрытые марковские цепи, справедливая стоимость и риск-менеджмент
           </p>
         </div>
 
-        <!-- Terminal Block -->
-        <router-link to="/terminal" class="terminal-block-link">
-          <div class="terminal-block">
-            <div class="terminal-block-icon">
-              <span class="zeta-logo">ζ</span>
-            </div>
-            <div class="terminal-block-content">
-              <div class="terminal-block-title">Дзета-Терминал</div>
-              <div class="terminal-block-desc">Потоковые данные в реальном времени</div>
-            </div>
-            <div class="terminal-block-arrow">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <polyline points="9 18 15 12 9 6" />
-              </svg>
+        <div class="slider-wrap">
+          <div class="slider-inner" ref="sliderRef">
+            <div
+              v-for="(slide, i) in slides"
+              :key="i"
+              class="slide"
+              :class="{ active: currentSlide === i }"
+            >
+              <div class="slide-icon" :class="slide.color">
+                <div class="slide-glow" :class="slide.color"></div>
+              </div>
+              <div class="slide-content">
+                <span class="slide-label">{{ slide.label }}</span>
+                <h2 class="slide-title">{{ slide.title }}</h2>
+                <p class="slide-desc">{{ slide.desc }}</p>
+              </div>
             </div>
           </div>
-        </router-link>
-      </section>
+          <!-- Pagination dots -->
+          <div class="slider-dots">
+            <button
+              v-for="(_, i) in slides"
+              :key="i"
+              class="dot"
+              :class="{ active: currentSlide === i }"
+              @click="currentSlide = i"
+            ></button>
+          </div>
+        </div>
+      </div>
 
-      <!-- Правая колонка: список инструментов -->
-      <section class="tool-grid">
+      <!-- Scroll hint -->
+      <div class="hero-bottom">
+        <button class="scroll-hint" @click="scrollToTools">
+          <span>Инструменты</span>
+          <div class="scroll-line"></div>
+        </button>
+      </div>
+    </div>
+
+    <!-- Tools section -->
+    <div class="tools-section" ref="toolsSectionRef">
+      <div class="tools-container">
         <div class="tools-header">
-          <h2 class="tools-title">Инструменты платформы</h2>
+          <span class="tools-label">Платформа</span>
+          <h2 class="tools-title">Инструменты</h2>
         </div>
 
         <div class="tools-grid">
-          <!-- 1. Portfolio Analytics -->
-          <div 
+          <div
+            v-for="tool in tools"
+            :key="tool.path"
             class="tool-card"
-            :class="{ 'is-exploding': activeExplosion === '/portfolio', 'is-faded': isFaded('/portfolio') }"
-            @click="triggerExplosion('/portfolio')"
+            :class="{
+              'is-exploding': activeExplosion === tool.path,
+              'is-faded': isFaded(tool.path)
+            }"
+            @click="triggerExplosion(tool.path)"
           >
-            <div class="tool-icon purple">
-              <div class="supernova purple"></div>
+            <div class="tool-icon" :class="tool.color">
+              <div class="supernova" :class="tool.color"></div>
             </div>
             <div class="tool-body">
-              <div class="tool-name">Портфельный анализ</div>
-              <div class="tool-desc">
-                Доходность, VaR/ES, мониторинг позиций, корреляции активов
-              </div>
-            </div>
-            <div class="tool-arrow">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <polyline points="9 18 15 12 9 6" />
-              </svg>
-            </div>
-          </div>
-
-          <!-- 2. Risk Management -->
-          <div 
-            class="tool-card"
-            :class="{ 'is-exploding': activeExplosion === '/stress', 'is-faded': isFaded('/stress') }"
-            @click="triggerExplosion('/stress')"
-          >
-            <div class="tool-icon purple">
-              <div class="supernova purple"></div>
-            </div>
-            <div class="tool-body">
-              <div class="tool-name">Риск-менеджмент</div>
-              <div class="tool-desc">
-                Стресс-тесты, бэктестинг VaR, сценарный анализ портфеля
-              </div>
-            </div>
-            <div class="tool-arrow">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <polyline points="9 18 15 12 9 6" />
-              </svg>
-            </div>
-          </div>
-
-          <!-- 3. Market Regimes (HMM) -->
-          <div 
-            class="tool-card"
-            :class="{ 'is-exploding': activeExplosion === '/regimes', 'is-faded': isFaded('/regimes') }"
-            @click="triggerExplosion('/regimes')"
-          >
-            <div class="tool-icon blue">
-              <div class="supernova blue"></div>
-            </div>
-            <div class="tool-body">
-              <div class="tool-name">Анализ рыночных режимов</div>
-              <div class="tool-desc">
-                Рыночные режимы, комплексный анализ, стационарное распределение
-              </div>
-            </div>
-            <div class="tool-arrow">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <polyline points="9 18 15 12 9 6" />
-              </svg>
-            </div>
-          </div>
-
-          <!-- 4. Bond Valuation (DCF) -->
-          <div 
-            class="tool-card"
-            :class="{ 'is-exploding': activeExplosion === '/bond-valuation', 'is-faded': isFaded('/bond-valuation') }"
-            @click="triggerExplosion('/bond-valuation')"
-          >
-            <div class="tool-icon green">
-              <div class="supernova green"></div>
-            </div>
-            <div class="tool-body">
-              <div class="tool-name">Справедливая стоимость облигаций</div>
-              <div class="tool-desc">
-                DCF подход, спреды к кривой, дюрация, выпуклость (convexity)
-              </div>
-            </div>
-            <div class="tool-arrow">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <polyline points="9 18 15 12 9 6" />
-              </svg>
-            </div>
-          </div>
-
-          <!-- 6. Option Pricing -->
-          <div 
-            class="tool-card"
-            :class="{ 'is-exploding': activeExplosion === '/pricing/options', 'is-faded': isFaded('/pricing/options') }"
-            @click="triggerExplosion('/pricing/options')"
-          >
-            <div class="tool-icon green">
-              <div class="supernova green"></div>
-            </div>
-            <div class="tool-body">
-              <div class="tool-name">Справедливая стоимость опционов</div>
-              <div class="tool-desc">
-                БШМ, модель Хестона, процессы Леви, FFT-ценообразование
-              </div>
-            </div>
-            <div class="tool-arrow">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <polyline points="9 18 15 12 9 6" />
-              </svg>
-            </div>
-          </div>
-
-          <!-- 8. Volatility Surface -->
-          <div 
-            class="tool-card"
-            :class="{ 'is-exploding': activeExplosion === '/analytics/volatility', 'is-faded': isFaded('/analytics/volatility') }"
-            @click="triggerExplosion('/analytics/volatility')"
-          >
-            <div class="tool-icon blue">
-              <div class="supernova blue"></div>
-            </div>
-            <div class="tool-body">
-              <div class="tool-name">Поверхность волатильности</div>
-              <div class="tool-desc">
-                Калибровка SABR/SVI, smile & term-structure, arbitrage-free
-              </div>
-            </div>
-            <div class="tool-arrow">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <polyline points="9 18 15 12 9 6" />
-              </svg>
-            </div>
-          </div>
-
-          <!-- 7. Swaps -->
-          <div 
-            class="tool-card"
-            :class="{ 'is-exploding': activeExplosion === 'valuation/swaps', 'is-faded': isFaded('valuation/swaps') }"
-            @click="triggerExplosion('valuation/swaps')"
-          >
-            <div class="tool-icon green">
-              <div class="supernova green"></div>
-            </div>
-            <div class="tool-body">
-              <div class="tool-name">Справедливая стоимость СВОПов</div>
-              <div class="tool-desc">
-                IRS & FX свопы, NPV, DV01, чувствительность к кривой
-              </div>
-            </div>
-            <div class="tool-arrow">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <polyline points="9 18 15 12 9 6" />
-              </svg>
-            </div>
-          </div>
-
-          <div 
-            class="tool-card"
-            :class="{ 'is-exploding': activeExplosion === 'valuation/forwards', 'is-faded': isFaded('valuation/forwards') }"
-            @click="triggerExplosion('valuation/forwards')"
-          >
-            <div class="tool-icon green">
-              <div class="supernova green"></div>
-            </div>
-            <div class="tool-body">
-              <div class="tool-name">Справедливая стоимость форвардов</div>
-              <div class="tool-desc">
-                Оценка справедливой стоимости, построение кривой, арбитраж
-              </div>
+              <div class="tool-name">{{ tool.name }}</div>
+              <div class="tool-desc">{{ tool.desc }}</div>
             </div>
             <div class="tool-arrow">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -230,43 +149,58 @@
           </div>
         </div>
 
-        <div 
-          class="tool-card"
-          :class="{ 'is-exploding': activeExplosion === '/vanila-bond-report', 'is-faded': isFaded('/vanila-bond-report') }"
-          @click="triggerExplosion('/vanila-bond-report')"
-        >
-          <div class="tool-icon nova">
-            <div class="supernova nova"></div>
+        <!-- Terminal link -->
+        <router-link to="/terminal" class="terminal-card">
+          <div class="terminal-icon">
+            <span class="zeta">ζ</span>
           </div>
-          <div class="tool-body">
-            <div class="tool-name">Отчёты по облигациям</div>
-            <div class="tool-desc">
-              Vanila Bond Report, шаблонные отчеты и аналитика
-            </div>
+          <div class="terminal-body">
+            <div class="terminal-name">Дзета-Терминал</div>
+            <div class="terminal-desc">Потоковые данные в реальном времени</div>
           </div>
-          <div class="tool-arrow">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <div class="terminal-arrow">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <polyline points="9 18 15 12 9 6" />
             </svg>
           </div>
-        </div>
-
-      </section>
+        </router-link>
+      </div>
     </div>
-    
-    <!-- Flash Overlay -->
+
+    <!-- Flash overlay for explosion -->
     <div class="flash-overlay" :class="{ active: !!activeExplosion }"></div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 
 const router = useRouter()
 const activeExplosion = ref<string | null>(null)
+const currentSlide = ref(0)
+const toolsSectionRef = ref<HTMLElement | null>(null)
 
-const totalTools = computed(() => 10)
+const slides = [
+  { label: 'Портфель', title: 'Portfolio Analytics', desc: 'Доходность, VaR/ES, мониторинг позиций', color: 'purple' },
+  { label: 'Опционы', title: 'Option Pricing', desc: 'БШМ, Хестон, Леви, FFT-ценообразование', color: 'green' },
+  { label: 'Режимы', title: 'Market Regimes', desc: 'HMM, стационарное распределение', color: 'blue' },
+  { label: 'Облигации', title: 'Bond Valuation', desc: 'DCF, дюрация, convexity, спреды', color: 'green' },
+  { label: 'Волатильность', title: 'Volatility Surface', desc: 'SABR/SVI калибровка, smile & term-structure', color: 'blue' },
+  { label: 'Свопы', title: 'Swap Valuation', desc: 'IRS & FX свопы, NPV, DV01', color: 'green' },
+]
+
+const tools = [
+  { name: 'Портфельный анализ', desc: 'Доходность, VaR/ES, мониторинг позиций, корреляции активов', color: 'purple', path: '/portfolio' },
+  { name: 'Риск-менеджмент', desc: 'Стресс-тесты, бэктестинг VaR, сценарный анализ портфеля', color: 'purple', path: '/stress' },
+  { name: 'Анализ рыночных режимов', desc: 'Рыночные режимы, комплексный анализ, стационарное распределение', color: 'blue', path: '/regimes' },
+  { name: 'Справедливая стоимость облигаций', desc: 'DCF подход, спреды к кривой, дюрация, выпуклость', color: 'green', path: '/bond-valuation' },
+  { name: 'Справедливая стоимость опционов', desc: 'БШМ, модель Хестона, процессы Леви, FFT-ценообразование', color: 'green', path: '/pricing/options' },
+  { name: 'Поверхность волатильности', desc: 'Калибровка SABR/SVI, smile & term-structure, arbitrage-free', color: 'blue', path: '/analytics/volatility' },
+  { name: 'Справедливая стоимость СВОПов', desc: 'IRS & FX свопы, NPV, DV01, чувствительность к кривой', color: 'green', path: 'valuation/swaps' },
+  { name: 'Справедливая стоимость форвардов', desc: 'Оценка справедливой стоимости, построение кривой, арбитраж', color: 'green', path: 'valuation/forwards' },
+  { name: 'Отчёты по облигациям', desc: 'Vanila Bond Report, шаблонные отчеты и аналитика', color: 'nova', path: '/vanila-bond-report' },
+]
 
 const isFaded = (path: string) => {
   return activeExplosion.value !== null && activeExplosion.value !== path
@@ -274,537 +208,412 @@ const isFaded = (path: string) => {
 
 const triggerExplosion = (path: string) => {
   if (activeExplosion.value) return
-  
   activeExplosion.value = path
-  
   setTimeout(() => {
     router.push(path)
   }, 600)
 }
+
+const scrollToTools = () => {
+  toolsSectionRef.value?.scrollIntoView({ behavior: 'smooth' })
+}
+
+// Auto-advance slides
+let slideInterval: ReturnType<typeof setInterval> | null = null
+
+onMounted(() => {
+  slideInterval = setInterval(() => {
+    currentSlide.value = (currentSlide.value + 1) % slides.length
+  }, 3500)
+})
+
+onUnmounted(() => {
+  if (slideInterval) clearInterval(slideInterval)
+})
 </script>
 
 <style scoped>
 /* ============================================
-   EXPLOSION ANIMATIONS
-   ============================================ */
-.tool-card.is-exploding {
-  z-index: 9999;
-  border-color: rgba(255, 255, 255, 0.8);
-  background: rgba(15, 23, 42, 1);
-  transform: scale(1.02);
-  animation: shockwave 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-  will-change: transform;
-}
-
-.tool-card.is-exploding .tool-icon {
-  overflow: visible !important;
-  background: transparent !important;
-  box-shadow: none !important;
-  border-color: transparent !important;
-}
-
-.tool-card.is-exploding .tool-icon::after {
-  display: none;
-}
-
-.tool-card.is-exploding .supernova {
-  animation: big-bang 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards !important;
-  will-change: transform, opacity, box-shadow;
-}
-
-@keyframes big-bang {
-  0% {
-    transform: scale(1);
-    opacity: 1;
-    background: #fff;
-    box-shadow: 0 0 12px 2px rgba(255, 255, 255, 0.8);
-  }
-  20% {
-    transform: scale(3);
-    opacity: 1;
-    box-shadow: 0 0 40px 20px rgba(255, 255, 255, 0.9);
-  }
-  40% {
-    transform: scale(12);
-    opacity: 0.95;
-    box-shadow: 0 0 150px 80px rgba(255, 255, 255, 0.95);
-  }
-  60% {
-    transform: scale(35);
-    opacity: 0.9;
-    box-shadow: 0 0 300px 150px rgba(255, 255, 255, 0.9);
-  }
-  80% {
-    transform: scale(80);
-    opacity: 0.85;
-    box-shadow: 0 0 600px 300px rgba(255, 255, 255, 0.85);
-  }
-  100% {
-    transform: scale(200);
-    opacity: 1;
-    background: #fff;
-    box-shadow: 0 0 1000px 500px rgba(255, 255, 255, 1);
-  }
-}
-
-@keyframes shockwave {
-  0% { 
-    transform: scale(1);
-  }
-  30% { 
-    transform: scale(0.98);
-  }
-  60% { 
-    transform: scale(1.01);
-  }
-  100% { 
-    transform: scale(1.02);
-  }
-}
-
-.tool-card.is-faded {
-  opacity: 0;
-  pointer-events: none;
-  transform: scale(0.95);
-  filter: blur(3px);
-  transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
-  will-change: opacity, transform, filter;
-}
-
-.flash-overlay {
-  position: fixed;
-  inset: 0;
-  background: #fff;
-  z-index: 9998;
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-  will-change: opacity;
-}
-.flash-overlay.active {
-  transition-delay: 0.4s;
-  opacity: 1;
-}
-
-/* ============================================
-   HOME ROOT & LAYOUT
+   ROOT & VARIABLES
    ============================================ */
 .home-root {
   position: relative;
-  min-height: 100vh;
   width: 100%;
-  overflow-x: hidden;
-  overflow-y: auto;
-  background: radial-gradient(circle at top, #050816 0%, #020308 45%, #000 100%);
+  min-height: 100vh;
+  background: #050510;
   color: #f9fafb;
-  -webkit-overflow-scrolling: touch;
-}
-
-.home-layout {
-  position: relative;
-  z-index: 1;
-  max-width: 1480px;
-  margin: 0 auto;
-  padding: 80px 40px 80px 40px;
-  display: grid;
-  grid-template-columns: 1.2fr 1fr;
-  gap: 60px;
-  align-items: flex-start;
-  min-height: 100vh;
-  width: 100%;
-  box-sizing: border-box;
+  overflow-x: hidden;
 }
 
 /* ============================================
-   LAVA LAMP BACKGROUND
+   MARQUEE BACKGROUND
    ============================================ */
-.lava-layer {
-  position: absolute;
-  inset: 0;
-  overflow: hidden;
+.marquee-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 0;
   z-index: 0;
+  opacity: 0.07;
   pointer-events: none;
-  filter: blur(40px) saturate(150%);
 }
 
-.blob {
-  position: absolute;
-  border-radius: 999px;
-  opacity: 0.85;
-  mix-blend-mode: screen;
+.marquee-row {
+  display: flex;
+  white-space: nowrap;
+  overflow: hidden;
+  width: 100%;
+}
+
+.marquee-track {
+  display: flex;
+  animation: marquee-scroll 28s linear infinite;
   will-change: transform;
 }
 
-.blob-1 {
-  width: 420px;
-  height: 420px;
-  background: radial-gradient(circle at 30% 30%, #34d399, #0f766e 60%, transparent 80%);
-  animation: blobOrbit1 32s ease-in-out infinite;
+.marquee-row:nth-child(even) .marquee-track {
+  animation-direction: reverse;
+  animation-duration: 35s;
 }
 
-.blob-2 {
-  width: 520px;
-  height: 520px;
-  background: radial-gradient(circle at 70% 40%, #f97316, #ea580c 60%, transparent 80%);
-  animation: blobOrbit2 40s ease-in-out infinite;
+.marquee-row:nth-child(3) .marquee-track {
+  animation-duration: 22s;
 }
 
-.blob-3 {
-  width: 480px;
-  height: 480px;
-  background: radial-gradient(circle at 50% 20%, #6366f1, #22d3ee 60%, transparent 80%);
-  animation: blobOrbit3 36s ease-in-out infinite;
+.marquee-text {
+  font-size: clamp(4.5rem, 11vw, 9rem);
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: -0.04em;
+  color: #fff;
+  padding: 0 0.25em;
+  line-height: 1.05;
+  flex-shrink: 0;
+  user-select: none;
 }
 
-.blob-4 {
-  width: 260px;
-  height: 260px;
-  background: radial-gradient(circle at 40% 30%, #22d3ee, #0ea5e9 60%, transparent 80%);
-  animation: blobOrbit4 24s ease-in-out infinite;
-  animation-delay: -4s;
+.marquee-text.accent {
+  color: #e63946;
 }
 
-.glass-gradient {
-  position: absolute;
-  inset: 5%;
-  background:
-    radial-gradient(circle at 10% 0%, rgba(255, 255, 255, 0.1), transparent 40%),
-    radial-gradient(circle at 90% 100%, rgba(255, 255, 255, 0.06), transparent 45%);
-  opacity: 0.9;
+@keyframes marquee-scroll {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
 }
 
 /* ============================================
-   HERO SECTION
+   HERO OVERLAY
    ============================================ */
-.hero {
+.hero-overlay {
+  position: relative;
+  z-index: 1;
+  min-height: 100vh;
   display: flex;
   flex-direction: column;
-  gap: 24px;
-  max-width: 580px;
-  padding: 32px;
-  border-radius: 20px;
-  backdrop-filter: blur(20px);
-  background: rgba(15, 23, 42, 0.75);
-  border: 1.5px solid rgba(34, 211, 238, 0.25);
-  box-shadow: 
-    0 0 40px rgba(34, 211, 238, 0.12),
-    inset 0 1px 20px rgba(34, 211, 238, 0.08),
-    0 20px 60px rgba(15, 23, 42, 0.8);
-  position: relative;
-  z-index: 2;
+  padding: 2rem;
 }
 
-.logo-badge {
+.hero-top {
+  flex-shrink: 0;
+}
+
+.hero-logo {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  padding: 8px 14px;
-  border-radius: 999px;
-  border: 1px solid rgba(148, 163, 184, 0.4);
-  background: radial-gradient(circle at 0 0, rgba(255, 255, 255, 0.18), rgba(15, 23, 42, 0.8));
-  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.8);
-  font-size: 12px;
-  font-weight: 600;
-  letter-spacing: 0.08em;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.15em;
   text-transform: uppercase;
-  width: fit-content;
+  color: rgba(255, 255, 255, 0.4);
 }
 
-.badge-icon {
+.logo-diamond {
   color: #22d3ee;
-  font-size: 14px;
+  font-size: 1rem;
+}
+
+/* ============================================
+   HERO CENTER
+   ============================================ */
+.hero-center {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 60px;
+  max-width: 1300px;
+  margin: 0 auto;
+  width: 100%;
+  padding: 2rem 0;
+}
+
+.hero-text {
+  max-width: 480px;
+  flex-shrink: 0;
 }
 
 .hero-title {
-  font-size: 36px;
-  line-height: 1.2;
-  font-weight: 700;
-  letter-spacing: -0.02em;
-  margin: 0;
+  font-size: clamp(2rem, 4.5vw, 3.5rem);
+  font-weight: 800;
+  line-height: 1.1;
+  letter-spacing: -0.03em;
+  margin: 0 0 1.2rem 0;
 }
 
-.hero-title span {
+.gradient-text {
   background: linear-gradient(135deg, #a5b4fc, #22d3ee, #34d399);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
 }
 
-/* ============================================
-   SUBTITLE FRAME
-   ============================================ */
-.subtitle-frame {
-  backdrop-filter: blur(16px);
-  background: rgba(34, 211, 238, 0.08);
-  border: 1.5px solid rgba(34, 211, 238, 0.2);
-  border-radius: 16px;
-  padding: 18px 20px;
-  box-shadow: 
-    0 0 24px rgba(34, 211, 238, 0.1),
-    inset 0 1px 16px rgba(34, 211, 238, 0.08);
-}
-
 .hero-subtitle {
-  font-size: 15px;
+  font-size: 1rem;
+  color: rgba(255, 255, 255, 0.45);
   line-height: 1.7;
-  color: rgba(226, 232, 240, 0.95);
   margin: 0;
-  font-weight: 500;
 }
 
-.hero-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 14px;
-  margin-top: 8px;
+/* ============================================
+   SLIDE CAROUSEL
+   ============================================ */
+.slider-wrap {
+  width: 420px;
+  flex-shrink: 0;
 }
 
-.btn {
+.slider-inner {
   position: relative;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  padding: 11px 20px;
-  border-radius: 999px;
-  font-size: 13px;
-  font-weight: 600;
-  text-decoration: none;
-  cursor: pointer;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  border: 1px solid transparent;
-  will-change: transform, box-shadow;
-}
-
-.btn.primary {
-  background: linear-gradient(135deg, #22d3ee, #6366f1);
-  color: #0b1020;
-  box-shadow: 0 12px 45px rgba(56, 189, 248, 0.3);
-}
-
-.btn.primary:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 18px 55px rgba(56, 189, 248, 0.45);
-}
-
-.btn.ghost {
-  background: rgba(15, 23, 42, 0.85);
-  color: #e5e7eb;
-  border-color: rgba(148, 163, 184, 0.5);
-}
-
-.btn.ghost:hover {
-  background: rgba(15, 23, 42, 0.95);
-  border-color: rgba(148, 163, 184, 0.8);
-}
-
-/* ============================================
-   TERMINAL BLOCK (Left Column)
-   ============================================ */
-.terminal-block-link {
-  text-decoration: none;
-  color: inherit;
-  display: block;
-  margin-top: 24px;
-}
-
-.terminal-block {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  padding: 18px 20px;
-  background: rgba(15, 23, 42, 0.75);
-  backdrop-filter: blur(20px);
-  border: 1.5px solid rgba(34, 211, 238, 0.25);
-  border-radius: 16px;
-  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: 
-    0 0 30px rgba(34, 211, 238, 0.12),
-    inset 0 1px 20px rgba(34, 211, 238, 0.08),
-    0 20px 60px rgba(15, 23, 42, 0.8);
-  will-change: transform, border-color, background, box-shadow;
-}
-
-.terminal-block:hover {
-  transform: translateY(-2px);
-  border-color: rgba(34, 211, 238, 0.5);
-  background: rgba(15, 23, 42, 0.85);
-  box-shadow: 
-    0 0 40px rgba(34, 211, 238, 0.2),
-    inset 0 1px 20px rgba(34, 211, 238, 0.12),
-    0 25px 70px rgba(15, 23, 42, 0.9);
-}
-
-.terminal-block-icon {
-  width: 48px;
-  height: 48px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: rgba(34, 211, 238, 0.12);
-  border: 1px solid rgba(34, 211, 238, 0.3);
-  border-radius: 12px;
-  color: #22d3ee;
-  flex-shrink: 0;
-  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-  will-change: transform, background, border-color;
-}
-
-.zeta-logo {
-  font-size: 28px;
-  font-weight: bold;
-  font-family: 'Inter', sans-serif;
-  line-height: 1;
-}
-
-.terminal-block:hover .terminal-block-icon {
-  background: rgba(34, 211, 238, 0.2);
-  border-color: rgba(34, 211, 238, 0.5);
-  color: #67e8f9;
-  transform: scale(1.05);
-}
-
-.terminal-block-content {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.terminal-block-title {
-  font-size: 15px;
-  font-weight: 700;
-  color: #fff;
-  letter-spacing: 0.5px;
-}
-
-.terminal-block-desc {
-  font-size: 12px;
-  color: rgba(148, 163, 184, 0.85);
-  line-height: 1.4;
-}
-
-.terminal-block-arrow {
-  color: rgba(148, 163, 184, 0.4);
-  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-  flex-shrink: 0;
-  will-change: transform, color;
-}
-
-.terminal-block:hover .terminal-block-arrow {
-  color: #22d3ee;
-  transform: translateX(4px);
-}
-
-/* ============================================
-   TOOLS GRID - FRAMED CONTAINER
-   ============================================ */
-.tool-grid {
+  height: 320px;
+  border-radius: 20px;
+  overflow: hidden;
+  background: rgba(15, 23, 42, 0.8);
   backdrop-filter: blur(24px);
-  background: rgba(15, 23, 42, 0.6);
-  border-radius: 24px;
-  border: 1.5px solid rgba(34, 211, 238, 0.25);
-  box-shadow: 
-    0 0 30px rgba(34, 211, 238, 0.15),
-    inset 0 1px 20px rgba(34, 211, 238, 0.1),
-    0 30px 80px rgba(15, 23, 42, 0.9);
-  padding: 24px 20px;
+  border: 1.5px solid rgba(34, 211, 238, 0.2);
+  box-shadow:
+    0 0 60px rgba(34, 211, 238, 0.1),
+    0 30px 80px rgba(0, 0, 0, 0.5);
+}
+
+.slide {
+  position: absolute;
+  inset: 0;
   display: flex;
   flex-direction: column;
-  gap: 16px;
-  max-height: calc(100vh - 160px);
-  overflow-y: auto;
-  scroll-behavior: smooth;
-  -webkit-overflow-scrolling: touch;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  padding: 2.5rem;
+  opacity: 0;
+  transform: scale(0.95);
+  transition: opacity 0.8s ease, transform 0.8s ease;
+  pointer-events: none;
 }
 
-/* Стилизованный скроллбар */
-.tool-grid::-webkit-scrollbar {
-  width: 6px;
+.slide.active {
+  opacity: 1;
+  transform: scale(1);
+  pointer-events: auto;
 }
 
-.tool-grid::-webkit-scrollbar-track {
-  background: transparent;
-  border-radius: 10px;
+.slide-icon {
+  width: 64px;
+  height: 64px;
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
 }
 
-.tool-grid::-webkit-scrollbar-thumb {
-  background: rgba(34, 211, 238, 0.2);
-  border-radius: 10px;
-  transition: background 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  border: 1px solid transparent;
-  background-clip: padding-box;
+.slide-icon.blue { background: rgba(56, 189, 248, 0.15); border: 1px solid rgba(56, 189, 248, 0.3); }
+.slide-icon.purple { background: rgba(168, 85, 247, 0.15); border: 1px solid rgba(168, 85, 247, 0.3); }
+.slide-icon.green { background: rgba(34, 197, 94, 0.15); border: 1px solid rgba(34, 197, 94, 0.3); }
+
+.slide-glow {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #fff;
+  animation: glow-pulse 2.5s ease-in-out infinite;
 }
 
-.tool-grid::-webkit-scrollbar-thumb:hover {
-  background: rgba(34, 211, 238, 0.4);
-  border: 1px solid rgba(34, 211, 238, 0.2);
+.slide-glow.blue { box-shadow: 0 0 20px 6px rgba(56, 189, 248, 0.6); }
+.slide-glow.purple { box-shadow: 0 0 20px 6px rgba(168, 85, 247, 0.6); }
+.slide-glow.green { box-shadow: 0 0 20px 6px rgba(34, 197, 94, 0.6); }
+
+@keyframes glow-pulse {
+  0%, 100% { opacity: 0.8; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.15); }
 }
 
-.tool-grid::-webkit-scrollbar-thumb:active {
-  background: rgba(34, 211, 238, 0.5);
+.slide-content {
+  text-align: center;
+}
+
+.slide-label {
+  display: inline-block;
+  padding: 0.25rem 0.7rem;
+  background: rgba(230, 57, 70, 0.9);
+  color: #fff;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  border-radius: 6px;
+  margin-bottom: 0.8rem;
+}
+
+.slide-title {
+  font-size: 1.6rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  margin: 0 0 0.5rem 0;
+}
+
+.slide-desc {
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.5);
+  margin: 0;
+}
+
+.slider-dots {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+  margin-top: 16px;
+}
+
+.dot {
+  width: 24px;
+  height: 3px;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.2);
+  border: none;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  padding: 0;
+}
+
+.dot.active {
+  background: #e63946;
+  width: 36px;
+}
+
+/* ============================================
+   SCROLL HINT
+   ============================================ */
+.hero-bottom {
+  flex-shrink: 0;
+  display: flex;
+  justify-content: center;
+  padding-bottom: 1rem;
+}
+
+.scroll-hint {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  color: rgba(255, 255, 255, 0.35);
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  background: none;
+  border: none;
+  cursor: pointer;
+  transition: color 0.3s ease;
+  font-family: inherit;
+}
+
+.scroll-hint:hover {
+  color: #22d3ee;
+}
+
+.scroll-line {
+  width: 1px;
+  height: 36px;
+  background: rgba(255, 255, 255, 0.3);
+  animation: scroll-pulse 2s ease-in-out infinite;
+}
+
+@keyframes scroll-pulse {
+  0%, 100% { opacity: 0.2; transform: scaleY(0.5); }
+  50% { opacity: 1; transform: scaleY(1); }
+}
+
+/* ============================================
+   TOOLS SECTION
+   ============================================ */
+.tools-section {
+  position: relative;
+  z-index: 1;
+  padding: 5rem 2rem 6rem;
+  background: linear-gradient(180deg, transparent 0%, rgba(5, 5, 16, 0.95) 10%);
+}
+
+.tools-container {
+  max-width: 900px;
+  margin: 0 auto;
 }
 
 .tools-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  margin-bottom: 6px;
+  margin-bottom: 2.5rem;
+}
+
+.tools-label {
+  display: block;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: #e63946;
+  margin-bottom: 0.6rem;
 }
 
 .tools-title {
-  font-size: 13px;
-  font-weight: 600;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: rgba(209, 213, 219, 0.9);
+  font-size: clamp(1.8rem, 4vw, 2.5rem);
+  font-weight: 800;
+  letter-spacing: -0.03em;
   margin: 0;
-}
-
-.tools-count {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 24px;
-  height: 24px;
-  border-radius: 50%;
-  background: rgba(34, 211, 238, 0.15);
-  color: #22d3ee;
-  font-size: 12px;
-  font-weight: 600;
-  border: 1px solid rgba(34, 211, 238, 0.3);
 }
 
 .tools-grid {
   display: flex;
   flex-direction: column;
   gap: 8px;
+  margin-bottom: 16px;
 }
 
+/* ============================================
+   TOOL CARDS
+   ============================================ */
 .tool-card {
   display: flex;
   gap: 14px;
   align-items: center;
-  padding: 12px 12px;
-  border-radius: 12px;
-  text-decoration: none;
-  color: inherit;
-  background: rgba(255, 255, 255, 0.02);
-  border: 1px solid rgba(148, 163, 184, 0.15);
+  padding: 14px 16px;
+  border-radius: 14px;
+  background: rgba(15, 23, 42, 0.6);
+  backdrop-filter: blur(16px);
+  border: 1px solid rgba(148, 163, 184, 0.12);
   cursor: pointer;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
   will-change: transform, border-color, background;
 }
 
 .tool-card:hover {
-  border-color: rgba(148, 163, 184, 0.4);
-  background: rgba(255, 255, 255, 0.05);
-  transform: translateX(4px);
-}
-
-.tool-card.coming-soon {
-  opacity: 0.65;
+  border-color: rgba(148, 163, 184, 0.35);
+  background: rgba(15, 23, 42, 0.85);
+  transform: translateX(6px);
 }
 
 .tool-icon {
@@ -815,360 +624,282 @@ const triggerExplosion = (path: string) => {
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  box-shadow: inset 0 0 12px rgba(0, 0, 0, 0.4);
   position: relative;
   overflow: hidden;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  will-change: transform, border-color, box-shadow;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  transition: all 0.3s ease;
 }
 
-.tool-icon.blue { background: rgba(56, 189, 248, 0.12); }
-.tool-icon.purple { background: rgba(168, 85, 247, 0.12); }
-.tool-icon.cyan { background: rgba(34, 211, 238, 0.12); }
-.tool-icon.green { background: rgba(34, 197, 94, 0.12); }
-.tool-icon.nova { background: rgba(255, 51, 102, 0.12); }
-.tool-icon.orange { background: rgba(249, 115, 22, 0.12); }
-
-.tool-icon::after {
-  content: "";
-  position: absolute;
-  top: -50%;
-  left: -50%;
-  width: 200%;
-  height: 200%;
-  background: radial-gradient(circle, rgba(255, 255, 255, 0.2) 0%, transparent 60%);
-  transform: scale(0);
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 0.5s cubic-bezier(0.4, 0, 0.2, 1), transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
-  z-index: 1;
-  will-change: opacity, transform;
-}
-
-.tool-card:hover .tool-icon::after {
-  opacity: 0.2;
-  animation: beam-wobble 2s infinite ease-in-out;
-  transform: scale(1);
-}
+.tool-icon.blue { background: rgba(56, 189, 248, 0.1); }
+.tool-icon.purple { background: rgba(168, 85, 247, 0.1); }
+.tool-icon.green { background: rgba(34, 197, 94, 0.1); }
+.tool-icon.nova { background: rgba(255, 51, 102, 0.1); }
 
 .supernova {
   width: 12px;
   height: 12px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #ffffff 0%, #e0f2fe 33%, #faf5ff 66%, #ffffff 100%);
-  background-size: 200% 200%;
+  background: #fff;
   position: relative;
   z-index: 2;
-  transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
-  animation: star-pulse 3s infinite ease-in-out, shimmer 3s infinite linear;
+  animation: star-pulse 3s infinite ease-in-out;
   will-change: transform, box-shadow;
 }
 
-.supernova.blue { box-shadow: 0 0 12px 2px rgba(59, 130, 246, 0.6); }
-.supernova.purple { box-shadow: 0 0 12px 2px rgba(168, 85, 247, 0.6); }
-.supernova.cyan { box-shadow: 0 0 12px 2px rgba(34, 211, 238, 0.6); }
-.supernova.green { box-shadow: 0 0 12px 2px rgba(34, 197, 94, 0.6); }
-.supernova.nova { box-shadow: 0 0 12px 2px rgba(255, 51, 102, 0.6); }
-.supernova.orange { box-shadow: 0 0 12px 2px rgba(249, 115, 22, 0.6); }
+.supernova.blue { box-shadow: 0 0 10px 2px rgba(59, 130, 246, 0.5); }
+.supernova.purple { box-shadow: 0 0 10px 2px rgba(168, 85, 247, 0.5); }
+.supernova.green { box-shadow: 0 0 10px 2px rgba(34, 197, 94, 0.5); }
+.supernova.nova { box-shadow: 0 0 10px 2px rgba(255, 51, 102, 0.5); }
 
 .tool-card:hover .supernova {
-  transform: scale(1.2);
-  animation-duration: 1.5s;
+  transform: scale(1.3);
 }
 
 .tool-card:hover .supernova.blue { box-shadow: 0 0 18px 6px #60a5fa, 0 0 36px 12px rgba(59, 130, 246, 0.3); }
 .tool-card:hover .supernova.purple { box-shadow: 0 0 18px 6px #c084fc, 0 0 36px 12px rgba(168, 85, 247, 0.3); }
-.tool-card:hover .supernova.cyan { box-shadow: 0 0 18px 6px #67e8f9, 0 0 36px 12px rgba(34, 211, 238, 0.3); }
 .tool-card:hover .supernova.green { box-shadow: 0 0 18px 6px #4ade80, 0 0 36px 12px rgba(34, 197, 94, 0.3); }
 .tool-card:hover .supernova.nova { box-shadow: 0 0 18px 6px #ff3366, 0 0 36px 12px rgba(255, 51, 102, 0.3); }
-.tool-card:hover .supernova.orange { box-shadow: 0 0 18px 6px #fb923c, 0 0 36px 12px rgba(249, 115, 22, 0.3); }
+
+@keyframes star-pulse {
+  0%, 100% { opacity: 0.85; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.05); }
+}
 
 .tool-body {
   flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
   min-width: 0;
 }
 
 .tool-name {
-  font-size: 13px;
-  font-weight: 600;
+  font-size: 0.85rem;
+  font-weight: 650;
   color: #fff;
   line-height: 1.3;
 }
 
 .tool-desc {
-  font-size: 12px;
-  color: rgba(148, 163, 184, 0.85);
+  font-size: 0.75rem;
+  color: rgba(148, 163, 184, 0.75);
   line-height: 1.4;
-}
-
-.tool-tag {
-  align-self: flex-start;
-  font-size: 9px;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  padding: 2px 6px;
-  border-radius: 4px;
-  border: 1px solid rgba(251, 191, 36, 0.5);
-  color: #fbbf24;
-  background: rgba(251, 191, 36, 0.1);
   margin-top: 2px;
 }
 
 .tool-arrow {
-  color: rgba(148, 163, 184, 0.4);
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  color: rgba(148, 163, 184, 0.3);
+  transition: all 0.3s ease;
   flex-shrink: 0;
-  will-change: transform, color;
 }
 
 .tool-card:hover .tool-arrow {
-  color: rgba(148, 163, 184, 0.8);
-  transform: translateX(2px);
+  color: rgba(148, 163, 184, 0.7);
+  transform: translateX(3px);
 }
 
 /* ============================================
-   ANIMATIONS
+   TERMINAL CARD
    ============================================ */
-@keyframes star-pulse {
-  0%, 100% { 
-    opacity: 0.85; 
-    transform: scale(1); 
-  }
-  50% { 
-    opacity: 1; 
-    transform: scale(1.05); 
-  }
+.terminal-card {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  padding: 18px 20px;
+  border-radius: 16px;
+  background: rgba(15, 23, 42, 0.7);
+  backdrop-filter: blur(20px);
+  border: 1.5px solid rgba(34, 211, 238, 0.2);
+  text-decoration: none;
+  color: inherit;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 0 30px rgba(34, 211, 238, 0.08);
+  margin-top: 16px;
 }
 
-@keyframes shimmer {
-  0% { 
-    background-position: 0% 50%; 
-  }
-  100% { 
-    background-position: 200% 50%; 
-  }
+.terminal-card:hover {
+  border-color: rgba(34, 211, 238, 0.45);
+  background: rgba(15, 23, 42, 0.9);
+  transform: translateY(-2px);
+  box-shadow: 0 0 50px rgba(34, 211, 238, 0.15);
 }
 
-@keyframes beam-wobble {
-  0% { 
-    transform: translate(0, 0) scale(1); 
-  }
-  50% { 
-    transform: translate(2px, -2px) scale(1.05); 
-  }
-  100% { 
-    transform: translate(0, 0) scale(1); 
-  }
+.terminal-icon {
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(34, 211, 238, 0.1);
+  border: 1px solid rgba(34, 211, 238, 0.25);
+  border-radius: 12px;
+  flex-shrink: 0;
+  transition: all 0.3s ease;
 }
 
-@keyframes blobOrbit1 {
-  0% { transform: translate3d(-160px, -120px, 0) scale(1); }
-  25% { transform: translate3d(120px, -40px, 0) scale(1.15); }
-  50% { transform: translate3d(260px, 120px, 0) scale(0.95); }
-  75% { transform: translate3d(-40px, 220px, 0) scale(1.1); }
-  100% { transform: translate3d(-160px, -120px, 0) scale(1); }
+.terminal-card:hover .terminal-icon {
+  background: rgba(34, 211, 238, 0.18);
+  border-color: rgba(34, 211, 238, 0.4);
 }
 
-@keyframes blobOrbit2 {
-  0% { transform: translate3d(220px, 40%, 0) scale(1) rotate(0deg); }
-  20% { transform: translate3d(60px, 10%, 0) scale(1.05) rotate(10deg); }
-  40% { transform: translate3d(-80px, 35%, 0) scale(0.9) rotate(-8deg); }
-  60% { transform: translate3d(40px, 70%, 0) scale(1.12) rotate(4deg); }
-  80% { transform: translate3d(260px, 55%, 0) scale(1.02) rotate(-6deg); }
-  100% { transform: translate3d(220px, 40%, 0) scale(1) rotate(0deg); }
+.zeta {
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: #22d3ee;
+  line-height: 1;
 }
 
-@keyframes blobOrbit3 {
-  0% { transform: translate3d(10%, 80%, 0) scale(1); }
-  25% { transform: translate3d(40%, 60%, 0) scale(1.18); }
-  50% { transform: translate3d(65%, 85%, 0) scale(0.92); }
-  75% { transform: translate3d(30%, 105%, 0) scale(1.08); }
-  100% { transform: translate3d(10%, 80%, 0) scale(1); }
+.terminal-body { flex: 1; }
+
+.terminal-name {
+  font-size: 0.95rem;
+  font-weight: 700;
 }
 
-@keyframes blobOrbit4 {
-  0% { transform: translate3d(35%, 30%, 0) scale(0.9); }
-  20% { transform: translate3d(50%, 20%, 0) scale(1.1); }
-  40% { transform: translate3d(65%, 35%, 0) scale(0.95); }
-  60% { transform: translate3d(55%, 55%, 0) scale(1.15); }
-  80% { transform: translate3d(40%, 45%, 0) scale(1); }
-  100% { transform: translate3d(35%, 30%, 0) scale(0.9); }
+.terminal-desc {
+  font-size: 0.78rem;
+  color: rgba(148, 163, 184, 0.7);
+  margin-top: 2px;
+}
+
+.terminal-arrow {
+  color: rgba(148, 163, 184, 0.3);
+  transition: all 0.3s ease;
+  flex-shrink: 0;
+}
+
+.terminal-card:hover .terminal-arrow {
+  color: #22d3ee;
+  transform: translateX(4px);
+}
+
+/* ============================================
+   EXPLOSION ANIMATIONS
+   ============================================ */
+.tool-card.is-exploding {
+  z-index: 9999;
+  border-color: rgba(255, 255, 255, 0.8);
+  background: rgba(15, 23, 42, 1);
+  animation: shockwave 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.tool-card.is-exploding .tool-icon {
+  overflow: visible !important;
+  background: transparent !important;
+  border-color: transparent !important;
+}
+
+.tool-card.is-exploding .supernova {
+  animation: big-bang 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards !important;
+}
+
+@keyframes big-bang {
+  0% { transform: scale(1); opacity: 1; background: #fff; box-shadow: 0 0 12px 2px rgba(255, 255, 255, 0.8); }
+  30% { transform: scale(5); opacity: 1; box-shadow: 0 0 60px 30px rgba(255, 255, 255, 0.9); }
+  60% { transform: scale(30); opacity: 0.95; box-shadow: 0 0 200px 100px rgba(255, 255, 255, 0.9); }
+  100% { transform: scale(200); opacity: 1; background: #fff; box-shadow: 0 0 1000px 500px rgba(255, 255, 255, 1); }
+}
+
+@keyframes shockwave {
+  0% { transform: scale(1); }
+  30% { transform: scale(0.98); }
+  60% { transform: scale(1.01); }
+  100% { transform: scale(1.02); }
+}
+
+.tool-card.is-faded {
+  opacity: 0;
+  pointer-events: none;
+  transform: scale(0.95);
+  filter: blur(3px);
+  transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.flash-overlay {
+  position: fixed;
+  inset: 0;
+  background: #fff;
+  z-index: 9998;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.flash-overlay.active {
+  transition-delay: 0.4s;
+  opacity: 1;
 }
 
 /* ============================================
    RESPONSIVE
    ============================================ */
-@media (max-width: 1200px) {
-  .home-layout {
-    grid-template-columns: 1fr;
-    gap: 48px;
-    padding: 72px 32px 60px 32px;
-    height: auto;
+@media (max-width: 1024px) {
+  .hero-center {
+    flex-direction: column;
+    gap: 40px;
+    text-align: center;
   }
 
-  .tool-grid {
-    max-height: none;
-    overflow-y: visible;
+  .hero-text {
+    max-width: 600px;
   }
 
-  .hero-title {
-    font-size: 32px;
+  .slider-wrap {
+    width: 100%;
+    max-width: 420px;
   }
 }
 
 @media (max-width: 768px) {
-  .home-root {
-    overflow-y: auto;
-    -webkit-overflow-scrolling: touch;
+  .hero-overlay {
+    padding: 1.5rem;
   }
 
-  .home-layout {
-    padding: 64px 20px 40px 20px;
-    gap: 36px;
-    min-height: auto;
-    height: auto;
+  .marquee-text {
+    font-size: clamp(3rem, 14vw, 5.5rem);
   }
 
-  .hero {
-    padding: 24px;
-    border-radius: 16px;
+  .slider-wrap {
+    max-width: 360px;
   }
 
-  .hero-title {
-    font-size: 28px;
+  .slider-inner {
+    height: 280px;
   }
 
-  .subtitle-frame {
-    padding: 16px 18px;
-  }
-
-  .hero-subtitle {
-    font-size: 14px;
-  }
-
-  .hero-actions {
-    flex-direction: column;
-  }
-
-  .btn {
-    width: 100%;
-  }
-
-  .tool-grid {
-    padding: 18px 14px;
-    max-height: none;
-    overflow-y: visible;
+  .tools-section {
+    padding: 3rem 1.2rem 4rem;
   }
 
   .tool-card {
-    padding: 10px 10px;
-  }
-
-  .tool-name {
-    font-size: 12px;
-  }
-
-  .tool-desc {
-    font-size: 11px;
+    padding: 12px;
   }
 }
 
 @media (max-width: 480px) {
-  .home-root {
-    overflow-y: auto;
-    -webkit-overflow-scrolling: touch;
-  }
-
-  .home-layout {
-    padding: 56px 16px 32px 16px;
-    min-height: auto;
-    height: auto;
-  }
-
-  .hero {
-    padding: 20px;
-    border-radius: 14px;
-  }
-
   .hero-title {
-    font-size: 24px;
+    font-size: 1.7rem;
   }
 
-  .subtitle-frame {
-    padding: 14px 16px;
+  .slider-wrap {
+    max-width: 300px;
   }
 
-  .tool-icon {
-    width: 36px;
-    height: 36px;
+  .slider-inner {
+    height: 260px;
+  }
+
+  .slide-title {
+    font-size: 1.3rem;
+  }
+
+  .tool-name {
+    font-size: 0.78rem;
+  }
+
+  .tool-desc {
+    font-size: 0.68rem;
   }
 
   .tool-arrow {
     display: none;
-  }
-
-  .tool-grid {
-    max-height: none;
-  }
-
-  /* Reduce blur on mobile for performance */
-  .lava-layer {
-    backdrop-filter: blur(60px);
-  }
-}
-
-@media (max-width: 375px) {
-  .home-layout {
-    padding: 48px 12px 24px 12px;
-    gap: 24px;
-  }
-
-  .hero {
-    padding: 16px;
-    border-radius: 12px;
-  }
-
-  .hero-title {
-    font-size: 20px;
-  }
-
-  .subtitle-frame {
-    padding: 12px 14px;
-  }
-
-  .hero-subtitle {
-    font-size: 13px;
-  }
-
-  .tool-grid {
-    padding: 12px 10px;
-  }
-
-  .tool-card {
-    padding: 8px;
-    min-height: 44px;
-  }
-
-  .tool-icon {
-    width: 32px;
-    height: 32px;
-  }
-
-  .tool-name {
-    font-size: 11px;
-  }
-
-  .tool-desc {
-    font-size: 10px;
-    display: none;
-  }
-
-  .terminal-block {
-    padding: 12px;
   }
 }
 </style>
