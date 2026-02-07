@@ -1,174 +1,107 @@
 <template>
   <div class="home-root">
-    <!-- Marquee text background -->
-    <div class="marquee-container">
-      <div class="marquee-row">
-        <div class="marquee-track">
-          <span class="marquee-text">PORTFOLIO</span>
-          <span class="marquee-text accent">OPTIONS</span>
-          <span class="marquee-text">BONDS</span>
-          <span class="marquee-text accent">SWAPS</span>
-          <span class="marquee-text">GREEKS</span>
-          <span class="marquee-text accent">FORWARDS</span>
-          <span class="marquee-text">PORTFOLIO</span>
-          <span class="marquee-text accent">OPTIONS</span>
-          <span class="marquee-text">BONDS</span>
-          <span class="marquee-text accent">SWAPS</span>
-          <span class="marquee-text">GREEKS</span>
-          <span class="marquee-text accent">FORWARDS</span>
-        </div>
-      </div>
-      <div class="marquee-row">
-        <div class="marquee-track">
-          <span class="marquee-text accent">HESTON</span>
-          <span class="marquee-text">SABR</span>
-          <span class="marquee-text accent">HMM</span>
-          <span class="marquee-text">MONTE CARLO</span>
-          <span class="marquee-text accent">VAR</span>
-          <span class="marquee-text">DCF</span>
-          <span class="marquee-text accent">HESTON</span>
-          <span class="marquee-text">SABR</span>
-          <span class="marquee-text accent">HMM</span>
-          <span class="marquee-text">MONTE CARLO</span>
-          <span class="marquee-text accent">VAR</span>
-          <span class="marquee-text">DCF</span>
-        </div>
-      </div>
-      <div class="marquee-row">
-        <div class="marquee-track">
-          <span class="marquee-text">VOLATILITY</span>
-          <span class="marquee-text accent">REGIME</span>
-          <span class="marquee-text">STRESS TEST</span>
-          <span class="marquee-text accent">PNL</span>
-          <span class="marquee-text">HEDGING</span>
-          <span class="marquee-text accent">YIELD CURVE</span>
-          <span class="marquee-text">VOLATILITY</span>
-          <span class="marquee-text accent">REGIME</span>
-          <span class="marquee-text">STRESS TEST</span>
-          <span class="marquee-text accent">PNL</span>
-          <span class="marquee-text">HEDGING</span>
-          <span class="marquee-text accent">YIELD CURVE</span>
+    <!-- Marquee background -->
+    <div class="marquee-bg">
+      <div class="marquee-row" v-for="row in 3" :key="row">
+        <div class="marquee-track" :class="'speed-' + row">
+          <span v-for="(word, j) in marqueeWords[row - 1]" :key="j" class="marquee-word" :class="{ red: j % 2 === 1 }">{{ word }}</span>
+          <span v-for="(word, j) in marqueeWords[row - 1]" :key="'d' + j" class="marquee-word" :class="{ red: j % 2 === 1 }">{{ word }}</span>
         </div>
       </div>
     </div>
 
-    <!-- Hero content -->
-    <div class="hero-overlay">
-      <!-- Top bar -->
-      <div class="hero-top">
-        <div class="hero-logo">
-          <span class="logo-diamond">◆</span>
-          Quantitative Analytics
-        </div>
+    <!-- Hero -->
+    <section class="hero">
+      <div class="hero-top-bar">
+        <span class="brand">◆ QUANT ANALYTICS</span>
       </div>
 
-      <!-- Center: slider + title -->
-      <div class="hero-center">
-        <div class="hero-text">
-          <h1 class="hero-title">
-            Комплексный<br>
-            <span class="gradient-text">калькулятор</span><br>
-            деривативов
-          </h1>
-          <p class="hero-subtitle">
-            Портфельный анализ, скрытые марковские цепи, справедливая стоимость и риск-менеджмент
-          </p>
-        </div>
-
-        <div class="slider-wrap">
-          <div class="slider-inner" ref="sliderRef">
+      <div class="hero-main">
+        <!-- Slider card -->
+        <div class="slider-card">
+          <div class="slider-border"></div>
+          <div class="slider-viewport">
             <div
-              v-for="(slide, i) in slides"
+              v-for="(s, i) in slides"
               :key="i"
-              class="slide"
-              :class="{ active: currentSlide === i }"
+              class="s-slide"
+              :class="{ active: current === i }"
             >
-              <div class="slide-icon" :class="slide.color">
-                <div class="slide-glow" :class="slide.color"></div>
+              <!-- Type A: bold text on red bg -->
+              <div v-if="s.type === 'text'" class="slide-text-card" :style="{ background: s.bg }">
+                <div class="slide-big-title">{{ s.bigTitle }}</div>
+                <div class="slide-big-sub" v-if="s.bigSub">{{ s.bigSub }}</div>
               </div>
-              <div class="slide-content">
-                <span class="slide-label">{{ slide.label }}</span>
-                <h2 class="slide-title">{{ slide.title }}</h2>
-                <p class="slide-desc">{{ slide.desc }}</p>
+              <!-- Type B: info card -->
+              <div v-else class="slide-info-card">
+                <div class="slide-info-label">{{ s.label }}</div>
+                <div class="slide-info-title">{{ s.title }}</div>
+                <div class="slide-info-desc">{{ s.desc }}</div>
+                <div class="slide-info-tags" v-if="s.tags">
+                  <span v-for="t in s.tags" :key="t" class="slide-tag">{{ t }}</span>
+                </div>
               </div>
             </div>
           </div>
-          <!-- Pagination dots -->
-          <div class="slider-dots">
+          <div class="slider-pagination">
             <button
               v-for="(_, i) in slides"
               :key="i"
-              class="dot"
-              :class="{ active: currentSlide === i }"
-              @click="currentSlide = i"
+              class="s-dot"
+              :class="{ active: current === i }"
+              @click="goTo(i)"
             ></button>
           </div>
         </div>
       </div>
 
-      <!-- Scroll hint -->
-      <div class="hero-bottom">
-        <button class="scroll-hint" @click="scrollToTools">
-          <span>Инструменты</span>
-          <div class="scroll-line"></div>
+      <div class="hero-bottom-bar">
+        <button class="scroll-cta" @click="scrollDown">
+          <span>EXPLORE</span>
+          <div class="scroll-bar"></div>
         </button>
       </div>
-    </div>
+    </section>
 
-    <!-- Tools section -->
-    <div class="tools-section" ref="toolsSectionRef">
-      <div class="tools-container">
-        <div class="tools-header">
-          <span class="tools-label">Платформа</span>
-          <h2 class="tools-title">Инструменты</h2>
-        </div>
+    <!-- Tools -->
+    <section class="tools-section" ref="toolsRef">
+      <div class="tools-wrap">
+        <div class="section-eyebrow">PLATFORM</div>
+        <h2 class="section-heading">Инструменты</h2>
 
-        <div class="tools-grid">
+        <div class="cards-grid">
           <div
             v-for="tool in tools"
             :key="tool.path"
-            class="tool-card"
+            class="g-card"
             :class="{
-              'is-exploding': activeExplosion === tool.path,
-              'is-faded': isFaded(tool.path)
+              'is-exploding': explosion === tool.path,
+              'is-faded': explosion && explosion !== tool.path
             }"
-            @click="triggerExplosion(tool.path)"
+            @click="explode(tool.path)"
           >
-            <div class="tool-icon" :class="tool.color">
-              <div class="supernova" :class="tool.color"></div>
+            <div class="g-card-accent" :class="tool.color"></div>
+            <div class="g-card-body">
+              <div class="g-card-title">{{ tool.name }}</div>
+              <div class="g-card-desc">{{ tool.desc }}</div>
             </div>
-            <div class="tool-body">
-              <div class="tool-name">{{ tool.name }}</div>
-              <div class="tool-desc">{{ tool.desc }}</div>
-            </div>
-            <div class="tool-arrow">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <polyline points="9 18 15 12 9 6" />
-              </svg>
-            </div>
+            <div class="g-card-arrow">→</div>
           </div>
         </div>
 
-        <!-- Terminal link -->
-        <router-link to="/terminal" class="terminal-card">
-          <div class="terminal-icon">
-            <span class="zeta">ζ</span>
+        <!-- Terminal -->
+        <router-link to="/terminal" class="terminal-row">
+          <div class="terminal-zeta">ζ</div>
+          <div class="terminal-info">
+            <div class="terminal-title">Дзета-Терминал</div>
+            <div class="terminal-sub">Потоковые данные в реальном времени</div>
           </div>
-          <div class="terminal-body">
-            <div class="terminal-name">Дзета-Терминал</div>
-            <div class="terminal-desc">Потоковые данные в реальном времени</div>
-          </div>
-          <div class="terminal-arrow">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <polyline points="9 18 15 12 9 6" />
-            </svg>
-          </div>
+          <div class="terminal-go">→</div>
         </router-link>
       </div>
-    </div>
+    </section>
 
-    <!-- Flash overlay for explosion -->
-    <div class="flash-overlay" :class="{ active: !!activeExplosion }"></div>
+    <div class="flash" :class="{ on: !!explosion }"></div>
   </div>
 </template>
 
@@ -177,729 +110,549 @@ import { ref, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 
 const router = useRouter()
-const activeExplosion = ref<string | null>(null)
-const currentSlide = ref(0)
-const toolsSectionRef = ref<HTMLElement | null>(null)
+const explosion = ref<string | null>(null)
+const current = ref(0)
+const toolsRef = ref<HTMLElement | null>(null)
+
+const marqueeWords = [
+  ['PORTFOLIO', 'OPTIONS', 'BONDS', 'SWAPS', 'GREEKS', 'FORWARDS'],
+  ['HESTON', 'SABR', 'HMM', 'MONTE CARLO', 'VAR', 'DCF'],
+  ['VOLATILITY', 'REGIME', 'STRESS TEST', 'PNL', 'HEDGING', 'YIELD'],
+]
 
 const slides = [
-  { label: 'Портфель', title: 'Portfolio Analytics', desc: 'Доходность, VaR/ES, мониторинг позиций', color: 'purple' },
-  { label: 'Опционы', title: 'Option Pricing', desc: 'БШМ, Хестон, Леви, FFT-ценообразование', color: 'green' },
-  { label: 'Режимы', title: 'Market Regimes', desc: 'HMM, стационарное распределение', color: 'blue' },
-  { label: 'Облигации', title: 'Bond Valuation', desc: 'DCF, дюрация, convexity, спреды', color: 'green' },
-  { label: 'Волатильность', title: 'Volatility Surface', desc: 'SABR/SVI калибровка, smile & term-structure', color: 'blue' },
-  { label: 'Свопы', title: 'Swap Valuation', desc: 'IRS & FX свопы, NPV, DV01', color: 'green' },
+  { type: 'text', bg: '#e63946', bigTitle: 'QUANTITATIVE', bigSub: 'ANALYTICS' },
+  { type: 'info', label: 'Портфель', title: 'Portfolio Analytics', desc: 'Доходность, VaR/ES, мониторинг позиций', tags: ['VaR', 'ES', 'Sharpe'] },
+  { type: 'text', bg: '#1a1a1a', bigTitle: 'BLACK-SCHOLES', bigSub: '· HESTON · LÉVY' },
+  { type: 'info', label: 'Опционы', title: 'Option Pricing', desc: 'БШМ, Хестон, Леви, FFT-ценообразование', tags: ['FFT', 'Greeks', 'IV'] },
+  { type: 'text', bg: '#e63946', bigTitle: 'MARKET', bigSub: 'REGIMES' },
+  { type: 'info', label: 'Облигации', title: 'Bond Valuation', desc: 'DCF, дюрация, convexity, спреды к кривой', tags: ['DCF', 'Duration', 'Z-spread'] },
+  { type: 'text', bg: '#1a1a1a', bigTitle: 'SABR · SVI', bigSub: 'VOLATILITY SURFACE' },
+  { type: 'info', label: 'Свопы', title: 'Swap Valuation', desc: 'IRS & FX свопы, NPV, DV01', tags: ['IRS', 'NPV', 'DV01'] },
 ]
 
 const tools = [
-  { name: 'Портфельный анализ', desc: 'Доходность, VaR/ES, мониторинг позиций, корреляции активов', color: 'purple', path: '/portfolio' },
-  { name: 'Риск-менеджмент', desc: 'Стресс-тесты, бэктестинг VaR, сценарный анализ портфеля', color: 'purple', path: '/stress' },
-  { name: 'Анализ рыночных режимов', desc: 'Рыночные режимы, комплексный анализ, стационарное распределение', color: 'blue', path: '/regimes' },
-  { name: 'Справедливая стоимость облигаций', desc: 'DCF подход, спреды к кривой, дюрация, выпуклость', color: 'green', path: '/bond-valuation' },
-  { name: 'Справедливая стоимость опционов', desc: 'БШМ, модель Хестона, процессы Леви, FFT-ценообразование', color: 'green', path: '/pricing/options' },
-  { name: 'Поверхность волатильности', desc: 'Калибровка SABR/SVI, smile & term-structure, arbitrage-free', color: 'blue', path: '/analytics/volatility' },
-  { name: 'Справедливая стоимость СВОПов', desc: 'IRS & FX свопы, NPV, DV01, чувствительность к кривой', color: 'green', path: 'valuation/swaps' },
-  { name: 'Справедливая стоимость форвардов', desc: 'Оценка справедливой стоимости, построение кривой, арбитраж', color: 'green', path: 'valuation/forwards' },
-  { name: 'Отчёты по облигациям', desc: 'Vanila Bond Report, шаблонные отчеты и аналитика', color: 'nova', path: '/vanila-bond-report' },
+  { name: 'Портфельный анализ', desc: 'Доходность, VaR/ES, мониторинг позиций, корреляции', color: 'red', path: '/portfolio' },
+  { name: 'Риск-менеджмент', desc: 'Стресс-тесты, бэктестинг VaR, сценарный анализ', color: 'dark', path: '/stress' },
+  { name: 'Рыночные режимы', desc: 'HMM, стационарное распределение, комплексный анализ', color: 'red', path: '/regimes' },
+  { name: 'Стоимость облигаций', desc: 'DCF подход, спреды к кривой, дюрация, convexity', color: 'dark', path: '/bond-valuation' },
+  { name: 'Стоимость опционов', desc: 'БШМ, Хестон, Леви, FFT-ценообразование', color: 'red', path: '/pricing/options' },
+  { name: 'Волатильность', desc: 'Калибровка SABR/SVI, smile & term-structure', color: 'dark', path: '/analytics/volatility' },
+  { name: 'Стоимость СВОПов', desc: 'IRS & FX свопы, NPV, DV01, чувствительность', color: 'red', path: 'valuation/swaps' },
+  { name: 'Стоимость форвардов', desc: 'Справедливая стоимость, построение кривой', color: 'dark', path: 'valuation/forwards' },
+  { name: 'Отчёты', desc: 'Bond Report, шаблонные отчеты и аналитика', color: 'red', path: '/vanila-bond-report' },
 ]
 
-const isFaded = (path: string) => {
-  return activeExplosion.value !== null && activeExplosion.value !== path
+const goTo = (i: number) => { current.value = i }
+
+const explode = (path: string) => {
+  if (explosion.value) return
+  explosion.value = path
+  setTimeout(() => router.push(path), 600)
 }
 
-const triggerExplosion = (path: string) => {
-  if (activeExplosion.value) return
-  activeExplosion.value = path
-  setTimeout(() => {
-    router.push(path)
-  }, 600)
+const scrollDown = () => {
+  toolsRef.value?.scrollIntoView({ behavior: 'smooth' })
 }
 
-const scrollToTools = () => {
-  toolsSectionRef.value?.scrollIntoView({ behavior: 'smooth' })
-}
-
-// Auto-advance slides
-let slideInterval: ReturnType<typeof setInterval> | null = null
-
+let timer: ReturnType<typeof setInterval> | null = null
 onMounted(() => {
-  slideInterval = setInterval(() => {
-    currentSlide.value = (currentSlide.value + 1) % slides.length
-  }, 3500)
+  timer = setInterval(() => {
+    current.value = (current.value + 1) % slides.length
+  }, 3000)
 })
-
-onUnmounted(() => {
-  if (slideInterval) clearInterval(slideInterval)
-})
+onUnmounted(() => { if (timer) clearInterval(timer) })
 </script>
 
 <style scoped>
-/* ============================================
-   ROOT & VARIABLES
-   ============================================ */
+/* ── ROOT ── */
 .home-root {
   position: relative;
   width: 100%;
   min-height: 100vh;
-  background: #050510;
-  color: #f9fafb;
+  background: #000;
+  color: #fff;
   overflow-x: hidden;
+  font-family: 'Inter', -apple-system, system-ui, sans-serif;
 }
 
-/* ============================================
-   MARQUEE BACKGROUND
-   ============================================ */
-.marquee-container {
+/* ── MARQUEE ── */
+.marquee-bg {
   position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100vh;
+  inset: 0;
   display: flex;
   flex-direction: column;
   justify-content: center;
-  gap: 0;
   z-index: 0;
-  opacity: 0.07;
+  opacity: 0.1;
   pointer-events: none;
 }
 
 .marquee-row {
-  display: flex;
-  white-space: nowrap;
   overflow: hidden;
-  width: 100%;
+  white-space: nowrap;
 }
 
 .marquee-track {
-  display: flex;
-  animation: marquee-scroll 28s linear infinite;
+  display: inline-flex;
   will-change: transform;
 }
 
-.marquee-row:nth-child(even) .marquee-track {
-  animation-direction: reverse;
-  animation-duration: 35s;
-}
+.speed-1 { animation: mq 22s linear infinite; }
+.speed-2 { animation: mq 30s linear infinite reverse; }
+.speed-3 { animation: mq 18s linear infinite; }
 
-.marquee-row:nth-child(3) .marquee-track {
-  animation-duration: 22s;
-}
-
-.marquee-text {
-  font-size: clamp(4.5rem, 11vw, 9rem);
+.marquee-word {
+  font-size: clamp(5rem, 13vw, 11rem);
   font-weight: 900;
   text-transform: uppercase;
-  letter-spacing: -0.04em;
-  color: #fff;
-  padding: 0 0.25em;
-  line-height: 1.05;
+  letter-spacing: -0.05em;
+  line-height: 1;
+  padding: 0 0.2em;
   flex-shrink: 0;
   user-select: none;
+  color: #fff;
 }
 
-.marquee-text.accent {
-  color: #e63946;
-}
+.marquee-word.red { color: #e63946; }
 
-@keyframes marquee-scroll {
+@keyframes mq {
   0% { transform: translateX(0); }
   100% { transform: translateX(-50%); }
 }
 
-/* ============================================
-   HERO OVERLAY
-   ============================================ */
-.hero-overlay {
+/* ── HERO ── */
+.hero {
   position: relative;
   z-index: 1;
   min-height: 100vh;
   display: flex;
   flex-direction: column;
-  padding: 2rem;
 }
 
-.hero-top {
-  flex-shrink: 0;
+.hero-top-bar {
+  padding: 28px 32px;
 }
 
-.hero-logo {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 0.75rem;
+.brand {
+  font-size: 11px;
   font-weight: 700;
-  letter-spacing: 0.15em;
-  text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.4);
+  letter-spacing: 0.2em;
+  color: rgba(255,255,255,0.35);
 }
 
-.logo-diamond {
-  color: #22d3ee;
-  font-size: 1rem;
-}
-
-/* ============================================
-   HERO CENTER
-   ============================================ */
-.hero-center {
+.hero-main {
   flex: 1;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 60px;
-  max-width: 1300px;
-  margin: 0 auto;
-  width: 100%;
-  padding: 2rem 0;
+  padding: 0 2rem;
 }
 
-.hero-text {
-  max-width: 480px;
-  flex-shrink: 0;
-}
-
-.hero-title {
-  font-size: clamp(2rem, 4.5vw, 3.5rem);
-  font-weight: 800;
-  line-height: 1.1;
-  letter-spacing: -0.03em;
-  margin: 0 0 1.2rem 0;
-}
-
-.gradient-text {
-  background: linear-gradient(135deg, #a5b4fc, #22d3ee, #34d399);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-
-.hero-subtitle {
-  font-size: 1rem;
-  color: rgba(255, 255, 255, 0.45);
-  line-height: 1.7;
-  margin: 0;
-}
-
-/* ============================================
-   SLIDE CAROUSEL
-   ============================================ */
-.slider-wrap {
-  width: 420px;
-  flex-shrink: 0;
-}
-
-.slider-inner {
+/* ── SLIDER CARD ── */
+.slider-card {
   position: relative;
-  height: 320px;
-  border-radius: 20px;
-  overflow: hidden;
-  background: rgba(15, 23, 42, 0.8);
-  backdrop-filter: blur(24px);
-  border: 1.5px solid rgba(34, 211, 238, 0.2);
-  box-shadow:
-    0 0 60px rgba(34, 211, 238, 0.1),
-    0 30px 80px rgba(0, 0, 0, 0.5);
+  width: 520px;
+  max-width: 92vw;
 }
 
-.slide {
+.slider-border {
+  position: absolute;
+  inset: -3px;
+  border: 2px solid #e63946;
+  border-radius: 4px;
+  pointer-events: none;
+  z-index: 3;
+}
+
+.slider-viewport {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  overflow: hidden;
+  border-radius: 2px;
+  background: #111;
+}
+
+/* slides */
+.s-slide {
   position: absolute;
   inset: 0;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 20px;
-  padding: 2.5rem;
   opacity: 0;
-  transform: scale(0.95);
-  transition: opacity 0.8s ease, transform 0.8s ease;
+  transition: opacity 0.9s ease;
   pointer-events: none;
 }
-
-.slide.active {
+.s-slide.active {
   opacity: 1;
-  transform: scale(1);
   pointer-events: auto;
 }
 
-.slide-icon {
-  width: 64px;
-  height: 64px;
-  border-radius: 16px;
+/* type A: bold text */
+.slide-text-card {
+  width: 100%;
+  height: 100%;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  position: relative;
-  overflow: hidden;
+  padding: 2rem;
 }
 
-.slide-icon.blue { background: rgba(56, 189, 248, 0.15); border: 1px solid rgba(56, 189, 248, 0.3); }
-.slide-icon.purple { background: rgba(168, 85, 247, 0.15); border: 1px solid rgba(168, 85, 247, 0.3); }
-.slide-icon.green { background: rgba(34, 197, 94, 0.15); border: 1px solid rgba(34, 197, 94, 0.3); }
-
-.slide-glow {
-  width: 16px;
-  height: 16px;
-  border-radius: 50%;
-  background: #fff;
-  animation: glow-pulse 2.5s ease-in-out infinite;
-}
-
-.slide-glow.blue { box-shadow: 0 0 20px 6px rgba(56, 189, 248, 0.6); }
-.slide-glow.purple { box-shadow: 0 0 20px 6px rgba(168, 85, 247, 0.6); }
-.slide-glow.green { box-shadow: 0 0 20px 6px rgba(34, 197, 94, 0.6); }
-
-@keyframes glow-pulse {
-  0%, 100% { opacity: 0.8; transform: scale(1); }
-  50% { opacity: 1; transform: scale(1.15); }
-}
-
-.slide-content {
+.slide-big-title {
+  font-size: clamp(2.2rem, 6vw, 4rem);
+  font-weight: 900;
+  letter-spacing: -0.04em;
+  line-height: 1;
   text-align: center;
-}
-
-.slide-label {
-  display: inline-block;
-  padding: 0.25rem 0.7rem;
-  background: rgba(230, 57, 70, 0.9);
-  color: #fff;
-  font-size: 0.7rem;
-  font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.1em;
-  border-radius: 6px;
-  margin-bottom: 0.8rem;
 }
 
-.slide-title {
-  font-size: 1.6rem;
+.slide-big-sub {
+  font-size: clamp(1.4rem, 3.5vw, 2.2rem);
   font-weight: 800;
   letter-spacing: -0.02em;
-  margin: 0 0 0.5rem 0;
+  text-align: center;
+  margin-top: 8px;
+  opacity: 0.85;
 }
 
-.slide-desc {
-  font-size: 0.9rem;
-  color: rgba(255, 255, 255, 0.5);
-  margin: 0;
-}
-
-.slider-dots {
-  display: flex;
-  justify-content: center;
-  gap: 6px;
-  margin-top: 16px;
-}
-
-.dot {
-  width: 24px;
-  height: 3px;
-  border-radius: 2px;
-  background: rgba(255, 255, 255, 0.2);
-  border: none;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  padding: 0;
-}
-
-.dot.active {
-  background: #e63946;
-  width: 36px;
-}
-
-/* ============================================
-   SCROLL HINT
-   ============================================ */
-.hero-bottom {
-  flex-shrink: 0;
-  display: flex;
-  justify-content: center;
-  padding-bottom: 1rem;
-}
-
-.scroll-hint {
+/* type B: info */
+.slide-info-card {
+  width: 100%;
+  height: 100%;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  gap: 0.5rem;
-  color: rgba(255, 255, 255, 0.35);
-  font-size: 0.7rem;
-  font-weight: 600;
+  justify-content: center;
+  padding: 2.5rem 3rem;
+  background: #0a0a0a;
+}
+
+.slide-info-label {
+  font-size: 11px;
+  font-weight: 700;
   letter-spacing: 0.15em;
   text-transform: uppercase;
-  background: none;
-  border: none;
-  cursor: pointer;
-  transition: color 0.3s ease;
-  font-family: inherit;
-}
-
-.scroll-hint:hover {
-  color: #22d3ee;
-}
-
-.scroll-line {
-  width: 1px;
-  height: 36px;
-  background: rgba(255, 255, 255, 0.3);
-  animation: scroll-pulse 2s ease-in-out infinite;
-}
-
-@keyframes scroll-pulse {
-  0%, 100% { opacity: 0.2; transform: scaleY(0.5); }
-  50% { opacity: 1; transform: scaleY(1); }
-}
-
-/* ============================================
-   TOOLS SECTION
-   ============================================ */
-.tools-section {
-  position: relative;
-  z-index: 1;
-  padding: 5rem 2rem 6rem;
-  background: linear-gradient(180deg, transparent 0%, rgba(5, 5, 16, 0.95) 10%);
-}
-
-.tools-container {
-  max-width: 900px;
-  margin: 0 auto;
-}
-
-.tools-header {
-  margin-bottom: 2.5rem;
-}
-
-.tools-label {
-  display: block;
-  font-size: 0.7rem;
-  font-weight: 700;
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
   color: #e63946;
-  margin-bottom: 0.6rem;
+  margin-bottom: 12px;
 }
 
-.tools-title {
-  font-size: clamp(1.8rem, 4vw, 2.5rem);
+.slide-info-title {
+  font-size: clamp(1.6rem, 4vw, 2.4rem);
   font-weight: 800;
   letter-spacing: -0.03em;
-  margin: 0;
+  line-height: 1.1;
+  margin-bottom: 12px;
 }
 
-.tools-grid {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
+.slide-info-desc {
+  font-size: 0.95rem;
+  color: rgba(255,255,255,0.5);
+  line-height: 1.6;
   margin-bottom: 16px;
 }
 
-/* ============================================
-   TOOL CARDS
-   ============================================ */
-.tool-card {
+.slide-info-tags {
   display: flex;
-  gap: 14px;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.slide-tag {
+  padding: 4px 12px;
+  border: 1px solid rgba(230,57,70,0.4);
+  border-radius: 2px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #e63946;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+/* pagination */
+.slider-pagination {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+  margin-top: 14px;
+}
+
+.s-dot {
+  width: 28px;
+  height: 3px;
+  background: rgba(255,255,255,0.15);
+  border: none;
+  border-radius: 1px;
+  cursor: pointer;
+  padding: 0;
+  transition: all 0.3s;
+}
+.s-dot.active {
+  background: #e63946;
+  width: 44px;
+}
+
+/* ── SCROLL CTA ── */
+.hero-bottom-bar {
+  display: flex;
+  justify-content: center;
+  padding: 24px 0 32px;
+}
+
+.scroll-cta {
+  display: flex;
+  flex-direction: column;
   align-items: center;
-  padding: 14px 16px;
-  border-radius: 14px;
-  background: rgba(15, 23, 42, 0.6);
-  backdrop-filter: blur(16px);
-  border: 1px solid rgba(148, 163, 184, 0.12);
+  gap: 8px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: rgba(255,255,255,0.3);
+  font-family: inherit;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  transition: color 0.3s;
+}
+.scroll-cta:hover { color: #e63946; }
+
+.scroll-bar {
+  width: 1px;
+  height: 32px;
+  background: currentColor;
+  animation: pulse-bar 2s ease-in-out infinite;
+}
+
+@keyframes pulse-bar {
+  0%,100% { opacity: 0.2; transform: scaleY(0.5); }
+  50% { opacity: 1; transform: scaleY(1); }
+}
+
+/* ── TOOLS SECTION ── */
+.tools-section {
+  position: relative;
+  z-index: 1;
+  padding: 80px 2rem 100px;
+  background: #000;
+}
+
+.tools-wrap {
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+.section-eyebrow {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.25em;
+  color: #e63946;
+  margin-bottom: 8px;
+}
+
+.section-heading {
+  font-size: clamp(2rem, 5vw, 3rem);
+  font-weight: 900;
+  letter-spacing: -0.04em;
+  margin: 0 0 40px 0;
+}
+
+/* ── GRID CARDS ── */
+.cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 12px;
+}
+
+.g-card {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 20px 22px;
+  background: #0d0d0d;
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 3px;
   cursor: pointer;
   transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
-  will-change: transform, border-color, background;
-}
-
-.tool-card:hover {
-  border-color: rgba(148, 163, 184, 0.35);
-  background: rgba(15, 23, 42, 0.85);
-  transform: translateX(6px);
-}
-
-.tool-icon {
-  width: 40px;
-  height: 40px;
-  border-radius: 10px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  position: relative;
   overflow: hidden;
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  transition: all 0.3s ease;
 }
 
-.tool-icon.blue { background: rgba(56, 189, 248, 0.1); }
-.tool-icon.purple { background: rgba(168, 85, 247, 0.1); }
-.tool-icon.green { background: rgba(34, 197, 94, 0.1); }
-.tool-icon.nova { background: rgba(255, 51, 102, 0.1); }
-
-.supernova {
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
-  background: #fff;
-  position: relative;
-  z-index: 2;
-  animation: star-pulse 3s infinite ease-in-out;
-  will-change: transform, box-shadow;
+.g-card:hover {
+  background: #141414;
+  border-color: #e63946;
+  transform: translateY(-3px);
+  box-shadow: 0 12px 40px rgba(230, 57, 70, 0.12);
 }
 
-.supernova.blue { box-shadow: 0 0 10px 2px rgba(59, 130, 246, 0.5); }
-.supernova.purple { box-shadow: 0 0 10px 2px rgba(168, 85, 247, 0.5); }
-.supernova.green { box-shadow: 0 0 10px 2px rgba(34, 197, 94, 0.5); }
-.supernova.nova { box-shadow: 0 0 10px 2px rgba(255, 51, 102, 0.5); }
-
-.tool-card:hover .supernova {
-  transform: scale(1.3);
+.g-card-accent {
+  width: 4px;
+  align-self: stretch;
+  border-radius: 2px;
+  flex-shrink: 0;
 }
 
-.tool-card:hover .supernova.blue { box-shadow: 0 0 18px 6px #60a5fa, 0 0 36px 12px rgba(59, 130, 246, 0.3); }
-.tool-card:hover .supernova.purple { box-shadow: 0 0 18px 6px #c084fc, 0 0 36px 12px rgba(168, 85, 247, 0.3); }
-.tool-card:hover .supernova.green { box-shadow: 0 0 18px 6px #4ade80, 0 0 36px 12px rgba(34, 197, 94, 0.3); }
-.tool-card:hover .supernova.nova { box-shadow: 0 0 18px 6px #ff3366, 0 0 36px 12px rgba(255, 51, 102, 0.3); }
+.g-card-accent.red { background: #e63946; }
+.g-card-accent.dark { background: rgba(255,255,255,0.12); }
 
-@keyframes star-pulse {
-  0%, 100% { opacity: 0.85; transform: scale(1); }
-  50% { opacity: 1; transform: scale(1.05); }
-}
-
-.tool-body {
+.g-card-body {
   flex: 1;
   min-width: 0;
 }
 
-.tool-name {
-  font-size: 0.85rem;
-  font-weight: 650;
-  color: #fff;
-  line-height: 1.3;
+.g-card-title {
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  margin-bottom: 4px;
 }
 
-.tool-desc {
-  font-size: 0.75rem;
-  color: rgba(148, 163, 184, 0.75);
-  line-height: 1.4;
-  margin-top: 2px;
+.g-card-desc {
+  font-size: 0.78rem;
+  color: rgba(255,255,255,0.4);
+  line-height: 1.5;
 }
 
-.tool-arrow {
-  color: rgba(148, 163, 184, 0.3);
-  transition: all 0.3s ease;
+.g-card-arrow {
+  font-size: 1.1rem;
+  color: rgba(255,255,255,0.15);
   flex-shrink: 0;
+  transition: all 0.3s;
 }
 
-.tool-card:hover .tool-arrow {
-  color: rgba(148, 163, 184, 0.7);
-  transform: translateX(3px);
+.g-card:hover .g-card-arrow {
+  color: #e63946;
+  transform: translateX(4px);
 }
 
-/* ============================================
-   TERMINAL CARD
-   ============================================ */
-.terminal-card {
+/* ── TERMINAL ── */
+.terminal-row {
   display: flex;
-  gap: 16px;
   align-items: center;
-  padding: 18px 20px;
-  border-radius: 16px;
-  background: rgba(15, 23, 42, 0.7);
-  backdrop-filter: blur(20px);
-  border: 1.5px solid rgba(34, 211, 238, 0.2);
+  gap: 16px;
+  margin-top: 20px;
+  padding: 20px 24px;
+  background: #0d0d0d;
+  border: 1px solid rgba(230,57,70,0.2);
+  border-radius: 3px;
   text-decoration: none;
   color: inherit;
-  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: 0 0 30px rgba(34, 211, 238, 0.08);
-  margin-top: 16px;
+  transition: all 0.35s;
 }
 
-.terminal-card:hover {
-  border-color: rgba(34, 211, 238, 0.45);
-  background: rgba(15, 23, 42, 0.9);
+.terminal-row:hover {
+  border-color: #e63946;
+  background: #141414;
   transform: translateY(-2px);
-  box-shadow: 0 0 50px rgba(34, 211, 238, 0.15);
+  box-shadow: 0 12px 40px rgba(230,57,70,0.1);
 }
 
-.terminal-icon {
-  width: 48px;
-  height: 48px;
+.terminal-zeta {
+  width: 44px;
+  height: 44px;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(34, 211, 238, 0.1);
-  border: 1px solid rgba(34, 211, 238, 0.25);
-  border-radius: 12px;
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: #e63946;
+  background: rgba(230,57,70,0.08);
+  border: 1px solid rgba(230,57,70,0.2);
+  border-radius: 3px;
   flex-shrink: 0;
-  transition: all 0.3s ease;
 }
 
-.terminal-card:hover .terminal-icon {
-  background: rgba(34, 211, 238, 0.18);
-  border-color: rgba(34, 211, 238, 0.4);
-}
+.terminal-info { flex: 1; }
 
-.zeta {
-  font-size: 1.6rem;
-  font-weight: 700;
-  color: #22d3ee;
-  line-height: 1;
-}
-
-.terminal-body { flex: 1; }
-
-.terminal-name {
+.terminal-title {
   font-size: 0.95rem;
   font-weight: 700;
 }
 
-.terminal-desc {
+.terminal-sub {
   font-size: 0.78rem;
-  color: rgba(148, 163, 184, 0.7);
+  color: rgba(255,255,255,0.4);
   margin-top: 2px;
 }
 
-.terminal-arrow {
-  color: rgba(148, 163, 184, 0.3);
-  transition: all 0.3s ease;
-  flex-shrink: 0;
+.terminal-go {
+  font-size: 1.1rem;
+  color: rgba(255,255,255,0.15);
+  transition: all 0.3s;
 }
 
-.terminal-card:hover .terminal-arrow {
-  color: #22d3ee;
+.terminal-row:hover .terminal-go {
+  color: #e63946;
   transform: translateX(4px);
 }
 
-/* ============================================
-   EXPLOSION ANIMATIONS
-   ============================================ */
-.tool-card.is-exploding {
+/* ── EXPLOSIONS ── */
+.g-card.is-exploding {
   z-index: 9999;
-  border-color: rgba(255, 255, 255, 0.8);
-  background: rgba(15, 23, 42, 1);
-  animation: shockwave 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  border-color: #fff;
+  animation: shock 0.6s ease;
 }
 
-.tool-card.is-exploding .tool-icon {
-  overflow: visible !important;
-  background: transparent !important;
-  border-color: transparent !important;
+.g-card.is-exploding::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 24px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #fff;
+  transform: translate(-50%, -50%);
+  animation: bang 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
-.tool-card.is-exploding .supernova {
-  animation: big-bang 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards !important;
+@keyframes bang {
+  0% { transform: translate(-50%,-50%) scale(1); box-shadow: 0 0 10px #fff; }
+  100% { transform: translate(-50%,-50%) scale(250); box-shadow: 0 0 600px 300px #fff; opacity: 1; }
 }
 
-@keyframes big-bang {
-  0% { transform: scale(1); opacity: 1; background: #fff; box-shadow: 0 0 12px 2px rgba(255, 255, 255, 0.8); }
-  30% { transform: scale(5); opacity: 1; box-shadow: 0 0 60px 30px rgba(255, 255, 255, 0.9); }
-  60% { transform: scale(30); opacity: 0.95; box-shadow: 0 0 200px 100px rgba(255, 255, 255, 0.9); }
-  100% { transform: scale(200); opacity: 1; background: #fff; box-shadow: 0 0 1000px 500px rgba(255, 255, 255, 1); }
-}
-
-@keyframes shockwave {
+@keyframes shock {
   0% { transform: scale(1); }
   30% { transform: scale(0.98); }
-  60% { transform: scale(1.01); }
-  100% { transform: scale(1.02); }
+  100% { transform: scale(1.01); }
 }
 
-.tool-card.is-faded {
+.g-card.is-faded {
   opacity: 0;
   pointer-events: none;
-  transform: scale(0.95);
+  transform: scale(0.96);
   filter: blur(3px);
-  transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.5s;
 }
 
-.flash-overlay {
+.flash {
   position: fixed;
   inset: 0;
   background: #fff;
   z-index: 9998;
   opacity: 0;
   pointer-events: none;
-  transition: opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: opacity 0.4s;
 }
-
-.flash-overlay.active {
+.flash.on {
   transition-delay: 0.4s;
   opacity: 1;
 }
 
-/* ============================================
-   RESPONSIVE
-   ============================================ */
-@media (max-width: 1024px) {
-  .hero-center {
-    flex-direction: column;
-    gap: 40px;
-    text-align: center;
-  }
-
-  .hero-text {
-    max-width: 600px;
-  }
-
-  .slider-wrap {
-    width: 100%;
-    max-width: 420px;
-  }
-}
-
+/* ── RESPONSIVE ── */
 @media (max-width: 768px) {
-  .hero-overlay {
-    padding: 1.5rem;
-  }
-
-  .marquee-text {
-    font-size: clamp(3rem, 14vw, 5.5rem);
-  }
-
-  .slider-wrap {
-    max-width: 360px;
-  }
-
-  .slider-inner {
-    height: 280px;
-  }
-
-  .tools-section {
-    padding: 3rem 1.2rem 4rem;
-  }
-
-  .tool-card {
-    padding: 12px;
-  }
+  .slider-card { width: 100%; }
+  .marquee-word { font-size: clamp(3rem, 16vw, 6rem); }
+  .tools-section { padding: 48px 1rem 60px; }
+  .cards-grid { grid-template-columns: 1fr; }
+  .slide-big-title { font-size: 2rem; }
+  .slide-big-sub { font-size: 1.2rem; }
+  .slide-info-card { padding: 2rem; }
 }
 
 @media (max-width: 480px) {
-  .hero-title {
-    font-size: 1.7rem;
-  }
-
-  .slider-wrap {
-    max-width: 300px;
-  }
-
-  .slider-inner {
-    height: 260px;
-  }
-
-  .slide-title {
-    font-size: 1.3rem;
-  }
-
-  .tool-name {
-    font-size: 0.78rem;
-  }
-
-  .tool-desc {
-    font-size: 0.68rem;
-  }
-
-  .tool-arrow {
-    display: none;
-  }
+  .hero-top-bar { padding: 16px; }
+  .g-card { padding: 14px 16px; }
+  .g-card-title { font-size: 0.88rem; }
+  .g-card-desc { font-size: 0.72rem; }
+  .g-card-arrow { display: none; }
 }
 </style>
