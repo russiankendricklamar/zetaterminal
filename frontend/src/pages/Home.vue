@@ -263,8 +263,25 @@ function initAllMarquees() {
   initTracks(allTracks)
 }
 
+// Detect the actual scroll container (#app has overflow-y:auto on desktop)
+function getScrollContainer(): HTMLElement | Window {
+  const app = document.getElementById('app')
+  if (app && app.scrollHeight > app.clientHeight && app.clientHeight < window.innerHeight * 1.5) {
+    return app
+  }
+  return window
+}
+
 // Setup scroll-driven background crossfading
 function setupScrollTriggers() {
+  const scrollContainer = getScrollContainer()
+  const useCustomScroller = scrollContainer !== window
+
+  // If #app is the scroller, tell ScrollTrigger about it
+  if (useCustomScroller) {
+    ScrollTrigger.defaults({ scroller: scrollContainer as HTMLElement })
+  }
+
   // Map: which section triggers which background
   const sectionToBg: Array<{ section: HTMLElement | null; bgIndex: number }> = [
     { section: section0.value, bgIndex: 0 },
@@ -284,13 +301,19 @@ function setupScrollTriggers() {
   sectionToBg.forEach(({ section, bgIndex }) => {
     if (!section) return
 
-    ScrollTrigger.create({
+    const config: ScrollTrigger.Vars = {
       trigger: section,
       start: 'top 60%',
       end: 'bottom 40%',
       onEnter: () => fadeToBackground(bgIndex),
       onEnterBack: () => fadeToBackground(bgIndex),
-    })
+    }
+
+    if (useCustomScroller) {
+      config.scroller = scrollContainer as HTMLElement
+    }
+
+    ScrollTrigger.create(config)
   })
 }
 
@@ -329,6 +352,7 @@ onMounted(async () => {
 
 onUnmounted(() => {
   ScrollTrigger.getAll().forEach(st => st.kill())
+  ScrollTrigger.defaults({ scroller: window })
 })
 </script>
 
