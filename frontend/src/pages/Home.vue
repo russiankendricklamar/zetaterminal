@@ -1,22 +1,22 @@
 <template>
-  <div class="home-root">
-    <!-- ═══ FULL-VIEWPORT FADE SLIDER ═══ -->
-    <div class="slider-viewport" ref="viewportRef">
-      <!-- Each slide is position:absolute, crossfaded via opacity -->
+  <div class="home-root" ref="rootRef">
+    <!-- ═══ FIXED BACKGROUND LAYER (crossfades on scroll) ═══ -->
+    <div class="bg-layer">
       <div
-        v-for="(slide, si) in slides"
-        :key="si"
-        class="slide"
-        :class="[slide.type, { active: si === currentSlide }]"
+        v-for="(bg, bi) in backgrounds"
+        :key="bi"
+        class="bg-slide"
+        :class="bg.type"
+        :ref="(el) => setBgRef(el as HTMLElement | null, bi)"
       >
-        <!-- DARK SLIDE: marquee letter rows + center card -->
-        <template v-if="slide.type === 'dark'">
+        <!-- DARK: marquee letter rows -->
+        <template v-if="bg.type === 'dark'">
           <div class="marquee-bg">
             <div
-              v-for="(letter, li) in slide.letters"
+              v-for="(letter, li) in bg.letters"
               :key="li"
               class="marquee-row"
-              :ref="(el) => setTrackRef(el as HTMLElement | null, si, li)"
+              :ref="(el) => setTrackRef(el as HTMLElement | null, bi, li)"
             >
               <div class="marquee-inner">
                 <span v-for="n in 20" :key="'a' + n" class="marquee-letter">{{ letter }}</span>
@@ -24,46 +24,77 @@
               </div>
             </div>
           </div>
-          <div class="slide-center">
-            <div class="center-card">
-              <div class="card-eyebrow">{{ slide.eyebrow }}</div>
-              <div class="card-title">{{ slide.title }}</div>
-              <div class="card-desc">{{ slide.desc }}</div>
-            </div>
-          </div>
         </template>
 
-        <!-- RED SLIDE: bold typography statement -->
-        <template v-if="slide.type === 'red'">
+        <!-- RED: bold typography -->
+        <template v-if="bg.type === 'red'">
           <div class="red-content">
-            <div v-if="slide.topLine" class="red-top">{{ slide.topLine }}</div>
-            <div class="red-headline">{{ slide.headline }}</div>
-            <div v-if="slide.bottomLine" class="red-bottom">{{ slide.bottomLine }}</div>
+            <div v-if="bg.topLine" class="red-top">{{ bg.topLine }}</div>
+            <div class="red-headline">{{ bg.headline }}</div>
+            <div v-if="bg.bottomLine" class="red-bottom">{{ bg.bottomLine }}</div>
           </div>
         </template>
-      </div>
-
-      <!-- Slide indicators -->
-      <div class="slide-indicators">
-        <button
-          v-for="(_, si) in slides"
-          :key="si"
-          class="indicator"
-          :class="{ active: si === currentSlide }"
-          @click="goToSlide(si)"
-        ></button>
-      </div>
-
-      <!-- Scroll down hint -->
-      <div class="scroll-hint">
-        <span>SCROLL</span>
-        <div class="scroll-line"></div>
       </div>
     </div>
 
-    <!-- ═══ TOOLS + TERMINAL (scrollable below slider) ═══ -->
-    <div class="below-fold" ref="belowFoldRef">
-      <section class="tools-section">
+    <!-- ═══ SCROLLABLE CONTENT (one continuous page) ═══ -->
+    <div class="content-layer">
+      <!-- Section 0: Hero -->
+      <section class="section hero-section" ref="section0">
+        <div class="hero-inner">
+          <div class="brand">&#9670; STOCHASTIC</div>
+          <h1 class="hero-headline">QUANTITATIVE</h1>
+          <p class="hero-subline">ANALYTICS</p>
+          <p class="hero-desc">Платформа количественного анализа для финансовых рынков</p>
+          <div class="hero-scroll-hint">
+            <span>SCROLL</span>
+            <div class="scroll-line"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Section 1: statement -->
+      <section class="section statement-section" ref="section1">
+        <div class="statement-inner">
+          <div class="stat-eyebrow">STOCHASTIC PLATFORM</div>
+          <div class="stat-text">Стохастические модели, ценообразование деривативов, портфельный анализ и риск-менеджмент</div>
+        </div>
+      </section>
+
+      <!-- Section 2: features -->
+      <section class="section features-section" ref="section2">
+        <div class="features-inner">
+          <div class="stat-eyebrow">RISK ENGINE</div>
+          <div class="stat-text">VaR, стресс-тесты, HMM-режимы, факторный анализ, бэктестинг</div>
+        </div>
+      </section>
+
+      <!-- Section 3: models -->
+      <section class="section models-section" ref="section3">
+        <div class="models-inner">
+          <div class="stat-eyebrow">MODELS</div>
+          <div class="stat-text">Black-Scholes · Heston · SABR · Monte Carlo · Lévy · FFT</div>
+        </div>
+      </section>
+
+      <!-- Section 4: volatility -->
+      <section class="section vol-section" ref="section4">
+        <div class="vol-inner">
+          <div class="stat-eyebrow">VOLATILITY SURFACE</div>
+          <div class="stat-text">SABR/SVI калибровка, smile & term-structure, FFT-ценообразование</div>
+        </div>
+      </section>
+
+      <!-- Section 5: optimize -->
+      <section class="section opt-section" ref="section5">
+        <div class="opt-inner">
+          <div class="stat-eyebrow">OPTIMIZATION</div>
+          <div class="stat-text">Sharpe, VaR, Greeks, P&L Attribution, портфельная оптимизация</div>
+        </div>
+      </section>
+
+      <!-- Tools grid -->
+      <section class="section tools-section" ref="toolsSection">
         <div class="tools-wrap">
           <div class="section-eyebrow">PLATFORM</div>
           <h2 class="section-heading">Инструменты</h2>
@@ -90,7 +121,8 @@
         </div>
       </section>
 
-      <section class="terminal-section">
+      <!-- Terminal -->
+      <section class="section terminal-section">
         <div
           class="terminal-card"
           :class="{ 'is-active': activeTool === '/terminal' }"
@@ -108,7 +140,7 @@
       <div class="footer-spacer"></div>
     </div>
 
-    <!-- Transition overlay for navigation -->
+    <!-- Transition overlay -->
     <div class="transition-overlay" :class="{ active: activeTool !== null }"></div>
   </div>
 </template>
@@ -117,149 +149,111 @@
 import { ref, onMounted, onUnmounted, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 import { gsap } from 'gsap'
+import { ScrollTrigger } from 'gsap/dist/ScrollTrigger'
 import { useKineticMarquee, type MarqueeTrack } from '@/composables/useKineticMarquee'
 
-const router = useRouter()
-const viewportRef = ref<HTMLElement | null>(null)
-const belowFoldRef = ref<HTMLElement | null>(null)
-const activeTool = ref<string | null>(null)
-const currentSlide = ref(0)
+gsap.registerPlugin(ScrollTrigger)
 
-interface DarkSlide {
+const router = useRouter()
+const rootRef = ref<HTMLElement | null>(null)
+const activeTool = ref<string | null>(null)
+
+// Section refs
+const section0 = ref<HTMLElement | null>(null)
+const section1 = ref<HTMLElement | null>(null)
+const section2 = ref<HTMLElement | null>(null)
+const section3 = ref<HTMLElement | null>(null)
+const section4 = ref<HTMLElement | null>(null)
+const section5 = ref<HTMLElement | null>(null)
+const toolsSection = ref<HTMLElement | null>(null)
+
+// Background definitions
+interface DarkBg {
   type: 'dark'
   letters: string[]
-  eyebrow: string
-  title: string
-  desc: string
 }
 
-interface RedSlide {
+interface RedBg {
   type: 'red'
   topLine?: string
   headline: string
   bottomLine?: string
 }
 
-type Slide = DarkSlide | RedSlide
+type BgSlide = DarkBg | RedBg
 
-const slides: Slide[] = [
-  {
-    type: 'dark',
-    letters: ['Q', 'U', 'A', 'N'],
-    eyebrow: 'STOCHASTIC PLATFORM',
-    title: 'Quantitative Analytics',
-    desc: 'Стохастические модели, ценообразование деривативов, портфельный анализ',
-  },
-  {
-    type: 'red',
-    topLine: 'QUANTITATIVE',
-    headline: 'ANALYTICS',
-    bottomLine: 'STOCHASTIC MODELS',
-  },
-  {
-    type: 'dark',
-    letters: ['R', 'I', 'S', 'K'],
-    eyebrow: 'RISK ENGINE',
-    title: 'Risk Management',
-    desc: 'VaR, стресс-тесты, режимы рынка, факторный анализ',
-  },
-  {
-    type: 'red',
-    topLine: 'BLACK-SCHOLES',
-    headline: 'HESTON',
-    bottomLine: 'MONTE CARLO · LÉVY',
-  },
-  {
-    type: 'dark',
-    letters: ['V', 'O', 'L', 'A'],
-    eyebrow: 'VOLATILITY SURFACE',
-    title: 'Options & Volatility',
-    desc: 'SABR/SVI калибровка, smile, FFT-ценообразование',
-  },
-  {
-    type: 'red',
-    topLine: 'PORTFOLIO',
-    headline: 'OPTIMIZE',
-    bottomLine: 'SHARPE · VAR · GREEKS',
-  },
+const backgrounds: BgSlide[] = [
+  { type: 'dark', letters: ['Q', 'U', 'A', 'N'] },
+  { type: 'red', topLine: 'QUANTITATIVE', headline: 'ANALYTICS', bottomLine: 'STOCHASTIC MODELS' },
+  { type: 'dark', letters: ['R', 'I', 'S', 'K'] },
+  { type: 'red', topLine: 'BLACK-SCHOLES', headline: 'HESTON', bottomLine: 'MONTE CARLO \u00b7 L\u00c9VY' },
+  { type: 'dark', letters: ['V', 'O', 'L', 'A'] },
+  { type: 'red', topLine: 'PORTFOLIO', headline: 'OPTIMIZE', bottomLine: 'SHARPE \u00b7 VAR \u00b7 GREEKS' },
 ]
+
+// Each content section maps to a background index
+// section0 -> bg0 (QUAN dark)
+// section1 -> bg1 (ANALYTICS red)
+// section2 -> bg2 (RISK dark)
+// section3 -> bg3 (HESTON red)
+// section4 -> bg4 (VOLA dark)
+// section5 -> bg5 (OPTIMIZE red)
+// toolsSection -> bg0 (back to QUAN dark)
 
 const tools = [
-  { name: 'Портфельный анализ', desc: 'Доходность, VaR/ES, мониторинг позиций', color: 'red', path: '/portfolio' },
-  { name: 'Риск-менеджмент', desc: 'Стресс-тесты, бэктестинг VaR, сценарии', color: 'dark', path: '/stress' },
-  { name: 'Рыночные режимы', desc: 'HMM, стационарное распределение', color: 'red', path: '/regimes' },
-  { name: 'Стоимость облигаций', desc: 'DCF, дюрация, convexity, спреды', color: 'dark', path: '/bond-valuation' },
-  { name: 'Стоимость опционов', desc: 'БШМ, Хестон, Леви, FFT', color: 'red', path: '/pricing/options' },
-  { name: 'Волатильность', desc: 'SABR/SVI калибровка, smile', color: 'dark', path: '/analytics/volatility' },
-  { name: 'Стоимость СВОПов', desc: 'IRS & FX свопы, NPV, DV01', color: 'red', path: 'valuation/swaps' },
-  { name: 'Стоимость форвардов', desc: 'Справедливая стоимость, кривая', color: 'dark', path: 'valuation/forwards' },
-  { name: 'Отчёты', desc: 'Bond Report, шаблонные отчёты', color: 'red', path: '/vanila-bond-report' },
-  { name: 'Монте-Карло', desc: 'Симуляции, стохастические модели', color: 'dark', path: '/monte-carlo' },
-  { name: 'Кривая доходности', desc: 'ZCYC, zero-coupon yield curve', color: 'red', path: '/zcyc-viewer' },
-  { name: 'P&L Attribution', desc: 'Факторная декомпозиция P&L', color: 'dark', path: '/analytics/pnl' },
-  { name: 'Citadel Zeta Field', desc: 'Гравитационное поле ликвидности', color: 'red', path: '/terminal' },
-  { name: 'Phase Space', desc: 'Фазовое пространство, аттракторы', color: 'dark', path: '/terminal' },
-  { name: 'Liquidity Model', desc: 'Модель ликвидности рынка', color: 'red', path: '/terminal' },
+  { name: '\u041f\u043e\u0440\u0442\u0444\u0435\u043b\u044c\u043d\u044b\u0439 \u0430\u043d\u0430\u043b\u0438\u0437', desc: '\u0414\u043e\u0445\u043e\u0434\u043d\u043e\u0441\u0442\u044c, VaR/ES, \u043c\u043e\u043d\u0438\u0442\u043e\u0440\u0438\u043d\u0433 \u043f\u043e\u0437\u0438\u0446\u0438\u0439', color: 'red', path: '/portfolio' },
+  { name: '\u0420\u0438\u0441\u043a-\u043c\u0435\u043d\u0435\u0434\u0436\u043c\u0435\u043d\u0442', desc: '\u0421\u0442\u0440\u0435\u0441\u0441-\u0442\u0435\u0441\u0442\u044b, \u0431\u044d\u043a\u0442\u0435\u0441\u0442\u0438\u043d\u0433 VaR, \u0441\u0446\u0435\u043d\u0430\u0440\u0438\u0438', color: 'dark', path: '/stress' },
+  { name: '\u0420\u044b\u043d\u043e\u0447\u043d\u044b\u0435 \u0440\u0435\u0436\u0438\u043c\u044b', desc: 'HMM, \u0441\u0442\u0430\u0446\u0438\u043e\u043d\u0430\u0440\u043d\u043e\u0435 \u0440\u0430\u0441\u043f\u0440\u0435\u0434\u0435\u043b\u0435\u043d\u0438\u0435', color: 'red', path: '/regimes' },
+  { name: '\u0421\u0442\u043e\u0438\u043c\u043e\u0441\u0442\u044c \u043e\u0431\u043b\u0438\u0433\u0430\u0446\u0438\u0439', desc: 'DCF, \u0434\u044e\u0440\u0430\u0446\u0438\u044f, convexity, \u0441\u043f\u0440\u0435\u0434\u044b', color: 'dark', path: '/bond-valuation' },
+  { name: '\u0421\u0442\u043e\u0438\u043c\u043e\u0441\u0442\u044c \u043e\u043f\u0446\u0438\u043e\u043d\u043e\u0432', desc: '\u0411\u0428\u041c, \u0425\u0435\u0441\u0442\u043e\u043d, \u041b\u0435\u0432\u0438, FFT', color: 'red', path: '/pricing/options' },
+  { name: '\u0412\u043e\u043b\u0430\u0442\u0438\u043b\u044c\u043d\u043e\u0441\u0442\u044c', desc: 'SABR/SVI \u043a\u0430\u043b\u0438\u0431\u0440\u043e\u0432\u043a\u0430, smile', color: 'dark', path: '/analytics/volatility' },
+  { name: '\u0421\u0442\u043e\u0438\u043c\u043e\u0441\u0442\u044c \u0421\u0412\u041e\u041f\u043e\u0432', desc: 'IRS & FX \u0441\u0432\u043e\u043f\u044b, NPV, DV01', color: 'red', path: 'valuation/swaps' },
+  { name: '\u0421\u0442\u043e\u0438\u043c\u043e\u0441\u0442\u044c \u0444\u043e\u0440\u0432\u0430\u0440\u0434\u043e\u0432', desc: '\u0421\u043f\u0440\u0430\u0432\u0435\u0434\u043b\u0438\u0432\u0430\u044f \u0441\u0442\u043e\u0438\u043c\u043e\u0441\u0442\u044c, \u043a\u0440\u0438\u0432\u0430\u044f', color: 'dark', path: 'valuation/forwards' },
+  { name: '\u041e\u0442\u0447\u0451\u0442\u044b', desc: 'Bond Report, \u0448\u0430\u0431\u043b\u043e\u043d\u043d\u044b\u0435 \u043e\u0442\u0447\u0451\u0442\u044b', color: 'red', path: '/vanila-bond-report' },
+  { name: '\u041c\u043e\u043d\u0442\u0435-\u041a\u0430\u0440\u043b\u043e', desc: '\u0421\u0438\u043c\u0443\u043b\u044f\u0446\u0438\u0438, \u0441\u0442\u043e\u0445\u0430\u0441\u0442\u0438\u0447\u0435\u0441\u043a\u0438\u0435 \u043c\u043e\u0434\u0435\u043b\u0438', color: 'dark', path: '/monte-carlo' },
+  { name: '\u041a\u0440\u0438\u0432\u0430\u044f \u0434\u043e\u0445\u043e\u0434\u043d\u043e\u0441\u0442\u0438', desc: 'ZCYC, zero-coupon yield curve', color: 'red', path: '/zcyc-viewer' },
+  { name: 'P&L Attribution', desc: '\u0424\u0430\u043a\u0442\u043e\u0440\u043d\u0430\u044f \u0434\u0435\u043a\u043e\u043c\u043f\u043e\u0437\u0438\u0446\u0438\u044f P&L', color: 'dark', path: '/analytics/pnl' },
+  { name: 'Citadel Zeta Field', desc: '\u0413\u0440\u0430\u0432\u0438\u0442\u0430\u0446\u0438\u043e\u043d\u043d\u043e\u0435 \u043f\u043e\u043b\u0435 \u043b\u0438\u043a\u0432\u0438\u0434\u043d\u043e\u0441\u0442\u0438', color: 'red', path: '/terminal' },
+  { name: 'Phase Space', desc: '\u0424\u0430\u0437\u043e\u0432\u043e\u0435 \u043f\u0440\u043e\u0441\u0442\u0440\u0430\u043d\u0441\u0442\u0432\u043e, \u0430\u0442\u0442\u0440\u0430\u043a\u0442\u043e\u0440\u044b', color: 'dark', path: '/terminal' },
+  { name: 'Liquidity Model', desc: '\u041c\u043e\u0434\u0435\u043b\u044c \u043b\u0438\u043a\u0432\u0438\u0434\u043d\u043e\u0441\u0442\u0438 \u0440\u044b\u043d\u043a\u0430', color: 'red', path: '/terminal' },
 ]
 
-// Track refs for marquee initialization
+// Bg refs
+const bgRefs = new Map<number, HTMLElement>()
+function setBgRef(el: HTMLElement | null, idx: number) {
+  if (el) { bgRefs.set(idx, el) } else { bgRefs.delete(idx) }
+}
+
+// Track refs for marquee
 const trackRefMap = new Map<string, HTMLElement>()
-
-function setTrackRef(el: HTMLElement | null, slideIdx: number, rowIdx: number) {
-  const key = `${slideIdx}-${rowIdx}`
-  if (el) {
-    trackRefMap.set(key, el)
-  } else {
-    trackRefMap.delete(key)
-  }
+function setTrackRef(el: HTMLElement | null, bgIdx: number, rowIdx: number) {
+  const key = `${bgIdx}-${rowIdx}`
+  if (el) { trackRefMap.set(key, el) } else { trackRefMap.delete(key) }
 }
 
-const { initTracks, boostAll, resetSpeed } = useKineticMarquee()
+const { initTracks, boostAll } = useKineticMarquee()
 
-// Slide timer
-let slideTimer: ReturnType<typeof setInterval> | null = null
-const SLIDE_INTERVAL = 3500
-
-function goToSlide(idx: number) {
-  if (idx === currentSlide.value) return
-  currentSlide.value = idx
-  boostAll(3, 0.3)
-  setTimeout(() => resetSpeed(0.8), 400)
-  resetTimer()
-}
-
-function nextSlide() {
-  const next = (currentSlide.value + 1) % slides.length
-  goToSlide(next)
-}
-
-function resetTimer() {
-  if (slideTimer) clearInterval(slideTimer)
-  slideTimer = setInterval(nextSlide, SLIDE_INTERVAL)
-}
-
-// Navigation with fade transition
+// Navigation
 function navigateTo(path: string, e: MouseEvent) {
   if (activeTool.value) return
   activeTool.value = path
 
   const card = e.currentTarget as HTMLElement
   gsap.to(card, { scale: 1.03, duration: 0.3, ease: 'power2.out' })
-
   boostAll(5, 0.3)
 
   setTimeout(() => router.push(path), 500)
 }
 
-// Init marquee tracks for ALL dark slides
+// Init marquees for all dark backgrounds
 function initAllMarquees() {
   const allTracks: MarqueeTrack[] = []
+  const directions: Array<1 | -1> = [1, -1, 1, -1]
 
-  slides.forEach((slide, si) => {
-    if (slide.type !== 'dark') return
-    const directions: Array<1 | -1> = [1, -1, 1, -1]
-    slide.letters.forEach((_, li) => {
-      const el = trackRefMap.get(`${si}-${li}`)
+  backgrounds.forEach((bg, bi) => {
+    if (bg.type !== 'dark') return
+    bg.letters.forEach((_, li) => {
+      const el = trackRefMap.get(`${bi}-${li}`)
       if (el) {
         allTracks.push({ el, direction: directions[li] })
       }
@@ -269,80 +263,79 @@ function initAllMarquees() {
   initTracks(allTracks)
 }
 
-// Wheel/touch to advance slide when in viewport
-function handleWheel(e: WheelEvent) {
-  // Only intercept if we're at the slider viewport
-  const vp = viewportRef.value
-  if (!vp) return
+// Setup scroll-driven background crossfading
+function setupScrollTriggers() {
+  // Map: which section triggers which background
+  const sectionToBg: Array<{ section: HTMLElement | null; bgIndex: number }> = [
+    { section: section0.value, bgIndex: 0 },
+    { section: section1.value, bgIndex: 1 },
+    { section: section2.value, bgIndex: 2 },
+    { section: section3.value, bgIndex: 3 },
+    { section: section4.value, bgIndex: 4 },
+    { section: section5.value, bgIndex: 5 },
+    { section: toolsSection.value, bgIndex: 0 },
+  ]
 
-  const rect = vp.getBoundingClientRect()
-  // If slider is mostly visible
-  if (rect.top > -100 && rect.bottom > window.innerHeight * 0.5) {
-    // Don't prevent scroll if on last slide and scrolling down
-    if (e.deltaY > 0 && currentSlide.value === slides.length - 1) return
-    // Don't prevent scroll if on first slide and scrolling up
-    if (e.deltaY < 0 && currentSlide.value === 0) return
+  // Show first bg initially
+  bgRefs.forEach((el, idx) => {
+    gsap.set(el, { opacity: idx === 0 ? 1 : 0 })
+  })
 
-    e.preventDefault()
-    if (Math.abs(e.deltaY) < 30) return
+  sectionToBg.forEach(({ section, bgIndex }) => {
+    if (!section) return
 
-    if (e.deltaY > 0) {
-      goToSlide(Math.min(currentSlide.value + 1, slides.length - 1))
-    } else {
-      goToSlide(Math.max(currentSlide.value - 1, 0))
-    }
-  }
+    ScrollTrigger.create({
+      trigger: section,
+      start: 'top 60%',
+      end: 'bottom 40%',
+      onEnter: () => fadeToBackground(bgIndex),
+      onEnterBack: () => fadeToBackground(bgIndex),
+    })
+  })
 }
 
-let touchStartY = 0
+let currentBgIndex = 0
 
-function handleTouchStart(e: TouchEvent) {
-  touchStartY = e.touches[0].clientY
-}
+function fadeToBackground(targetIndex: number) {
+  if (targetIndex === currentBgIndex) return
 
-function handleTouchEnd(e: TouchEvent) {
-  const vp = viewportRef.value
-  if (!vp) return
+  const outEl = bgRefs.get(currentBgIndex)
+  const inEl = bgRefs.get(targetIndex)
 
-  const rect = vp.getBoundingClientRect()
-  if (rect.top > -100 && rect.bottom > window.innerHeight * 0.5) {
-    const dy = touchStartY - e.changedTouches[0].clientY
-    if (Math.abs(dy) < 40) return
-
-    if (dy > 0 && currentSlide.value < slides.length - 1) {
-      goToSlide(currentSlide.value + 1)
-    } else if (dy < 0 && currentSlide.value > 0) {
-      goToSlide(currentSlide.value - 1)
-    }
+  if (outEl) {
+    gsap.to(outEl, { opacity: 0, duration: 0.6, ease: 'power2.inOut' })
   }
+  if (inEl) {
+    gsap.to(inEl, { opacity: 1, duration: 0.6, ease: 'power2.inOut' })
+  }
+
+  // Boost marquee on transition
+  boostAll(3, 0.2)
+  setTimeout(() => {
+    boostAll(1, 0.8)
+  }, 300)
+
+  currentBgIndex = targetIndex
 }
 
 onMounted(async () => {
   await nextTick()
   initAllMarquees()
-  resetTimer()
+  setupScrollTriggers()
 
-  // Entrance animation
-  if (belowFoldRef.value) {
-    gsap.set(belowFoldRef.value, { opacity: 1 })
-  }
-
-  window.addEventListener('wheel', handleWheel, { passive: false })
-  window.addEventListener('touchstart', handleTouchStart, { passive: true })
-  window.addEventListener('touchend', handleTouchEnd, { passive: true })
+  // Entrance animation for content
+  gsap.fromTo('.content-layer', { opacity: 0 }, { opacity: 1, duration: 0.6, delay: 0.1 })
 })
 
 onUnmounted(() => {
-  if (slideTimer) clearInterval(slideTimer)
-  window.removeEventListener('wheel', handleWheel)
-  window.removeEventListener('touchstart', handleTouchStart)
-  window.removeEventListener('touchend', handleTouchEnd)
+  ScrollTrigger.getAll().forEach(st => st.kill())
 })
 </script>
 
 <style scoped>
 /* ══════ ROOT ══════ */
 .home-root {
+  position: relative;
   width: 100%;
   min-height: 100vh;
   background: #000;
@@ -350,35 +343,29 @@ onUnmounted(() => {
   font-family: 'Inter', -apple-system, system-ui, sans-serif;
 }
 
-/* ══════ SLIDER VIEWPORT ══════ */
-.slider-viewport {
-  position: relative;
-  width: 100%;
-  height: 100vh;
-  height: 100dvh;
-  overflow: hidden;
-}
-
-/* ══════ SLIDE (crossfade) ══════ */
-.slide {
-  position: absolute;
+/* ══════ FIXED BACKGROUND LAYER ══════ */
+.bg-layer {
+  position: fixed;
   inset: 0;
-  opacity: 0;
-  transition: opacity 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: 0;
   pointer-events: none;
 }
 
-.slide.active {
-  opacity: 1;
-  pointer-events: auto;
-  z-index: 1;
+.bg-slide {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
 }
 
-/* ══════ DARK SLIDE ══════ */
-.slide.dark {
+.bg-slide.dark {
   background: #000;
 }
 
+.bg-slide.red {
+  background: #e63946;
+}
+
+/* ── Marquee inside dark bg ── */
 .marquee-bg {
   position: absolute;
   inset: 0;
@@ -387,7 +374,6 @@ onUnmounted(() => {
   justify-content: center;
   gap: 0;
   overflow: hidden;
-  z-index: 0;
 }
 
 .marquee-row {
@@ -413,53 +399,7 @@ onUnmounted(() => {
   line-height: 0.9;
 }
 
-/* Center card overlay on dark slides */
-.slide-center {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 2;
-}
-
-.center-card {
-  background: rgba(0, 0, 0, 0.8);
-  backdrop-filter: blur(6px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 4px;
-  padding: 36px 44px;
-  max-width: 420px;
-  text-align: center;
-}
-
-.card-eyebrow {
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.25em;
-  color: #e63946;
-  margin-bottom: 12px;
-}
-
-.card-title {
-  font-size: clamp(1.4rem, 3vw, 2rem);
-  font-weight: 900;
-  letter-spacing: -0.03em;
-  line-height: 1.1;
-  margin-bottom: 10px;
-}
-
-.card-desc {
-  font-size: 0.85rem;
-  color: rgba(255, 255, 255, 0.5);
-  line-height: 1.6;
-}
-
-/* ══════ RED SLIDE ══════ */
-.slide.red {
-  background: #e63946;
-}
-
+/* ── Red bg typography ── */
 .red-content {
   position: absolute;
   inset: 0;
@@ -495,62 +435,81 @@ onUnmounted(() => {
   margin-top: 16px;
 }
 
-/* ══════ SLIDE INDICATORS ══════ */
-.slide-indicators {
-  position: absolute;
-  bottom: 60px;
-  left: 50%;
-  transform: translateX(-50%);
+/* ══════ CONTENT LAYER (scrollable) ══════ */
+.content-layer {
+  position: relative;
+  z-index: 1;
+}
+
+/* ══════ SECTIONS ══════ */
+.section {
+  min-height: 100vh;
+  min-height: 100dvh;
   display: flex;
-  gap: 8px;
-  z-index: 10;
+  align-items: center;
+  justify-content: center;
 }
 
-.indicator {
-  width: 32px;
-  height: 3px;
-  background: rgba(255, 255, 255, 0.2);
-  border: none;
-  border-radius: 2px;
-  cursor: pointer;
-  padding: 0;
-  transition: all 0.4s;
+/* ── Hero ── */
+.hero-section {
+  flex-direction: column;
 }
 
-.indicator.active {
-  background: #e63946;
-  width: 48px;
-}
-
-/* Red slide adjusts indicator colors */
-.slide.red.active ~ .slide-indicators .indicator {
-  background: rgba(0, 0, 0, 0.2);
-}
-
-.slide.red.active ~ .slide-indicators .indicator.active {
-  background: #000;
-}
-
-/* ══════ SCROLL HINT ══════ */
-.scroll-hint {
-  position: absolute;
-  bottom: 16px;
-  left: 50%;
-  transform: translateX(-50%);
+.hero-inner {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 6px;
-  z-index: 10;
+  text-align: center;
+  padding: 0 2rem;
+}
+
+.brand {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  color: rgba(255, 255, 255, 0.3);
+  margin-bottom: 24px;
+}
+
+.hero-headline {
+  font-size: clamp(2.8rem, 8vw, 6rem);
+  font-weight: 900;
+  letter-spacing: -0.04em;
+  line-height: 1;
+  margin: 0;
+}
+
+.hero-subline {
+  font-size: clamp(1.6rem, 4.5vw, 3.2rem);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: #e63946;
+  margin-top: 8px;
+}
+
+.hero-desc {
+  font-size: clamp(0.85rem, 1.4vw, 1.05rem);
+  color: rgba(255, 255, 255, 0.4);
+  margin-top: 20px;
+  line-height: 1.6;
+  max-width: 500px;
+}
+
+.hero-scroll-hint {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  margin-top: 48px;
   color: rgba(255, 255, 255, 0.2);
-  font-size: 9px;
+  font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.2em;
 }
 
 .scroll-line {
   width: 1px;
-  height: 24px;
+  height: 40px;
   background: currentColor;
   animation: pulse-line 2s ease-in-out infinite;
 }
@@ -560,16 +519,68 @@ onUnmounted(() => {
   50% { opacity: 1; transform: scaleY(1); }
 }
 
-/* ══════ BELOW FOLD ══════ */
-.below-fold {
-  position: relative;
-  z-index: 2;
-  background: #000;
+/* ── Statement/feature sections (overlay text on bg) ── */
+.statement-section,
+.features-section,
+.models-section,
+.vol-section,
+.opt-section {
+  padding: 0 2rem;
+}
+
+.statement-inner,
+.features-inner,
+.models-inner,
+.vol-inner,
+.opt-inner {
+  max-width: 600px;
+  text-align: center;
+}
+
+.stat-eyebrow {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.25em;
+  margin-bottom: 16px;
+  opacity: 0.5;
+}
+
+.stat-text {
+  font-size: clamp(1.2rem, 2.5vw, 1.8rem);
+  font-weight: 700;
+  line-height: 1.5;
+  letter-spacing: -0.02em;
+}
+
+/* On red backgrounds, text should be dark */
+.statement-section .stat-eyebrow,
+.models-section .stat-eyebrow,
+.opt-section .stat-eyebrow {
+  color: rgba(0, 0, 0, 0.4);
+}
+
+.statement-section .stat-text,
+.models-section .stat-text,
+.opt-section .stat-text {
+  color: rgba(0, 0, 0, 0.85);
+}
+
+/* On dark backgrounds, text stays white */
+.features-section .stat-eyebrow,
+.vol-section .stat-eyebrow {
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.features-section .stat-text,
+.vol-section .stat-text {
+  color: rgba(255, 255, 255, 0.9);
 }
 
 /* ══════ TOOLS SECTION ══════ */
 .tools-section {
-  padding: 60px 2rem 60px;
+  min-height: auto;
+  padding: 80px 2rem 60px;
+  display: block;
 }
 
 .tools-wrap {
@@ -605,7 +616,8 @@ onUnmounted(() => {
   align-items: center;
   gap: 14px;
   padding: 18px 20px;
-  background: #0d0d0d;
+  background: rgba(13, 13, 13, 0.9);
+  backdrop-filter: blur(4px);
   border: 1px solid rgba(255, 255, 255, 0.06);
   border-radius: 3px;
   cursor: pointer;
@@ -614,7 +626,7 @@ onUnmounted(() => {
 }
 
 .g-card:hover {
-  background: #141414;
+  background: rgba(20, 20, 20, 0.95);
   border-color: #e63946;
   transform: translateY(-2px);
   box-shadow: 0 10px 30px rgba(230, 57, 70, 0.1);
@@ -674,7 +686,9 @@ onUnmounted(() => {
 
 /* ══════ TERMINAL ══════ */
 .terminal-section {
+  min-height: auto;
   padding: 20px 2rem 40px;
+  display: block;
 }
 
 .terminal-card {
@@ -684,7 +698,8 @@ onUnmounted(() => {
   align-items: center;
   gap: 20px;
   padding: 24px 28px;
-  background: #0d0d0d;
+  background: rgba(13, 13, 13, 0.9);
+  backdrop-filter: blur(4px);
   border: 1px solid rgba(230, 57, 70, 0.15);
   border-radius: 3px;
   cursor: pointer;
@@ -695,7 +710,7 @@ onUnmounted(() => {
 
 .terminal-card:hover {
   border-color: #e63946;
-  background: #111;
+  background: rgba(17, 17, 17, 0.95);
   transform: translateY(-2px);
   box-shadow: 0 12px 40px rgba(230, 57, 70, 0.1);
 }
@@ -780,13 +795,8 @@ onUnmounted(() => {
     font-size: clamp(4rem, 18vw, 8rem);
   }
 
-  .center-card {
-    padding: 24px 28px;
-    margin: 0 1rem;
-  }
-
   .tools-section {
-    padding: 40px 1rem 48px;
+    padding: 60px 1rem 48px;
   }
 
   .tools-grid {
@@ -809,6 +819,10 @@ onUnmounted(() => {
   .red-headline {
     font-size: clamp(2.5rem, 14vw, 6rem);
   }
+
+  .stat-text {
+    font-size: clamp(1rem, 3vw, 1.4rem);
+  }
 }
 
 @media (max-width: 480px) {
@@ -824,12 +838,12 @@ onUnmounted(() => {
     display: none;
   }
 
-  .center-card {
-    padding: 20px 22px;
+  .hero-headline {
+    font-size: 2.2rem;
   }
 
-  .card-title {
-    font-size: 1.3rem;
+  .hero-subline {
+    font-size: 1.4rem;
   }
 
   .terminal-card {
@@ -841,10 +855,6 @@ onUnmounted(() => {
     text-align: center;
     padding-top: 8px;
     border-top: 1px solid rgba(255, 255, 255, 0.06);
-  }
-
-  .slide-indicators {
-    bottom: 48px;
   }
 }
 </style>
