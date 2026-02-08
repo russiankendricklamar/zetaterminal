@@ -1,7 +1,7 @@
 <template>
-  <div class="home-root" ref="rootRef">
-    <!-- ═══ FIXED BACKGROUND LAYER (crossfades on scroll) ═══ -->
-    <div class="bg-layer">
+  <div class="home-root">
+    <!-- ═══ FIXED BACKGROUND LAYER ═══ -->
+    <div class="bg-layer" ref="bgLayerRef">
       <div
         v-for="(bg, bi) in backgrounds"
         :key="bi"
@@ -9,7 +9,7 @@
         :class="bg.type"
         :ref="(el) => setBgRef(el as HTMLElement | null, bi)"
       >
-        <!-- DARK: marquee letter rows -->
+        <!-- DARK: marquee letter rows + center card -->
         <template v-if="bg.type === 'dark'">
           <div class="marquee-bg">
             <div
@@ -22,6 +22,13 @@
                 <span v-for="n in 20" :key="'a' + n" class="marquee-letter">{{ letter }}</span>
                 <span v-for="n in 20" :key="'b' + n" class="marquee-letter">{{ letter }}</span>
               </div>
+            </div>
+          </div>
+          <div class="slide-center">
+            <div class="center-card">
+              <div class="card-eyebrow">{{ bg.eyebrow }}</div>
+              <div class="card-title">{{ bg.title }}</div>
+              <div class="card-desc">{{ bg.desc }}</div>
             </div>
           </div>
         </template>
@@ -39,8 +46,8 @@
 
     <!-- ═══ SCROLLABLE CONTENT (one continuous page) ═══ -->
     <div class="content-layer">
-      <!-- Section 0: Hero -->
-      <section class="section hero-section" ref="section0">
+      <!-- Hero -->
+      <section class="section hero-section" ref="sectionRefs_0">
         <div class="hero-inner">
           <div class="brand">&#9670; STOCHASTIC</div>
           <h1 class="hero-headline">QUANTITATIVE</h1>
@@ -53,52 +60,18 @@
         </div>
       </section>
 
-      <!-- Section 1: statement -->
-      <section class="section statement-section" ref="section1">
-        <div class="statement-inner">
-          <div class="stat-eyebrow">STOCHASTIC PLATFORM</div>
-          <div class="stat-text">Стохастические модели, ценообразование деривативов, портфельный анализ и риск-менеджмент</div>
-        </div>
-      </section>
-
-      <!-- Section 2: features -->
-      <section class="section features-section" ref="section2">
-        <div class="features-inner">
-          <div class="stat-eyebrow">RISK ENGINE</div>
-          <div class="stat-text">VaR, стресс-тесты, HMM-режимы, факторный анализ, бэктестинг</div>
-        </div>
-      </section>
-
-      <!-- Section 3: models -->
-      <section class="section models-section" ref="section3">
-        <div class="models-inner">
-          <div class="stat-eyebrow">MODELS</div>
-          <div class="stat-text">Black-Scholes · Heston · SABR · Monte Carlo · Lévy · FFT</div>
-        </div>
-      </section>
-
-      <!-- Section 4: volatility -->
-      <section class="section vol-section" ref="section4">
-        <div class="vol-inner">
-          <div class="stat-eyebrow">VOLATILITY SURFACE</div>
-          <div class="stat-text">SABR/SVI калибровка, smile & term-structure, FFT-ценообразование</div>
-        </div>
-      </section>
-
-      <!-- Section 5: optimize -->
-      <section class="section opt-section" ref="section5">
-        <div class="opt-inner">
-          <div class="stat-eyebrow">OPTIMIZATION</div>
-          <div class="stat-text">Sharpe, VaR, Greeks, P&L Attribution, портфельная оптимизация</div>
-        </div>
-      </section>
+      <!-- Spacer sections (transparent, trigger bg change) -->
+      <section class="section spacer" ref="sectionRefs_1"></section>
+      <section class="section spacer" ref="sectionRefs_2"></section>
+      <section class="section spacer" ref="sectionRefs_3"></section>
+      <section class="section spacer" ref="sectionRefs_4"></section>
+      <section class="section spacer" ref="sectionRefs_5"></section>
 
       <!-- Tools grid -->
-      <section class="section tools-section" ref="toolsSection">
+      <section class="tools-section" ref="sectionRefs_6">
         <div class="tools-wrap">
           <div class="section-eyebrow">PLATFORM</div>
           <h2 class="section-heading">Инструменты</h2>
-
           <div class="tools-grid">
             <div
               v-for="tool in tools"
@@ -122,7 +95,7 @@
       </section>
 
       <!-- Terminal -->
-      <section class="section terminal-section">
+      <section class="terminal-section">
         <div
           class="terminal-card"
           :class="{ 'is-active': activeTool === '/terminal' }"
@@ -155,22 +128,25 @@ import { useKineticMarquee, type MarqueeTrack } from '@/composables/useKineticMa
 gsap.registerPlugin(ScrollTrigger)
 
 const router = useRouter()
-const rootRef = ref<HTMLElement | null>(null)
+const bgLayerRef = ref<HTMLElement | null>(null)
 const activeTool = ref<string | null>(null)
 
 // Section refs
-const section0 = ref<HTMLElement | null>(null)
-const section1 = ref<HTMLElement | null>(null)
-const section2 = ref<HTMLElement | null>(null)
-const section3 = ref<HTMLElement | null>(null)
-const section4 = ref<HTMLElement | null>(null)
-const section5 = ref<HTMLElement | null>(null)
-const toolsSection = ref<HTMLElement | null>(null)
+const sectionRefs_0 = ref<HTMLElement | null>(null)
+const sectionRefs_1 = ref<HTMLElement | null>(null)
+const sectionRefs_2 = ref<HTMLElement | null>(null)
+const sectionRefs_3 = ref<HTMLElement | null>(null)
+const sectionRefs_4 = ref<HTMLElement | null>(null)
+const sectionRefs_5 = ref<HTMLElement | null>(null)
+const sectionRefs_6 = ref<HTMLElement | null>(null)
 
 // Background definitions
 interface DarkBg {
   type: 'dark'
   letters: string[]
+  eyebrow: string
+  title: string
+  desc: string
 }
 
 interface RedBg {
@@ -183,39 +159,30 @@ interface RedBg {
 type BgSlide = DarkBg | RedBg
 
 const backgrounds: BgSlide[] = [
-  { type: 'dark', letters: ['Q', 'U', 'A', 'N'] },
+  { type: 'dark', letters: ['Q', 'U', 'A', 'N', 'T'], eyebrow: 'STOCHASTIC PLATFORM', title: 'Quantitative Analytics', desc: 'Стохастические модели, ценообразование деривативов, портфельный анализ' },
   { type: 'red', topLine: 'QUANTITATIVE', headline: 'ANALYTICS', bottomLine: 'STOCHASTIC MODELS' },
-  { type: 'dark', letters: ['R', 'I', 'S', 'K'] },
+  { type: 'dark', letters: ['R', 'I', 'S', 'K'], eyebrow: 'RISK ENGINE', title: 'Risk Management', desc: 'VaR, стресс-тесты, режимы рынка, факторный анализ' },
   { type: 'red', topLine: 'BLACK-SCHOLES', headline: 'HESTON', bottomLine: 'MONTE CARLO \u00b7 L\u00c9VY' },
-  { type: 'dark', letters: ['V', 'O', 'L', 'A'] },
+  { type: 'dark', letters: ['S', 'I', 'G', 'M', 'A'], eyebrow: 'VOLATILITY', title: 'Options & Sigma', desc: 'SABR/SVI калибровка, smile, FFT-ценообразование' },
   { type: 'red', topLine: 'PORTFOLIO', headline: 'OPTIMIZE', bottomLine: 'SHARPE \u00b7 VAR \u00b7 GREEKS' },
 ]
 
-// Each content section maps to a background index
-// section0 -> bg0 (QUAN dark)
-// section1 -> bg1 (ANALYTICS red)
-// section2 -> bg2 (RISK dark)
-// section3 -> bg3 (HESTON red)
-// section4 -> bg4 (VOLA dark)
-// section5 -> bg5 (OPTIMIZE red)
-// toolsSection -> bg0 (back to QUAN dark)
-
 const tools = [
-  { name: '\u041f\u043e\u0440\u0442\u0444\u0435\u043b\u044c\u043d\u044b\u0439 \u0430\u043d\u0430\u043b\u0438\u0437', desc: '\u0414\u043e\u0445\u043e\u0434\u043d\u043e\u0441\u0442\u044c, VaR/ES, \u043c\u043e\u043d\u0438\u0442\u043e\u0440\u0438\u043d\u0433 \u043f\u043e\u0437\u0438\u0446\u0438\u0439', color: 'red', path: '/portfolio' },
-  { name: '\u0420\u0438\u0441\u043a-\u043c\u0435\u043d\u0435\u0434\u0436\u043c\u0435\u043d\u0442', desc: '\u0421\u0442\u0440\u0435\u0441\u0441-\u0442\u0435\u0441\u0442\u044b, \u0431\u044d\u043a\u0442\u0435\u0441\u0442\u0438\u043d\u0433 VaR, \u0441\u0446\u0435\u043d\u0430\u0440\u0438\u0438', color: 'dark', path: '/stress' },
-  { name: '\u0420\u044b\u043d\u043e\u0447\u043d\u044b\u0435 \u0440\u0435\u0436\u0438\u043c\u044b', desc: 'HMM, \u0441\u0442\u0430\u0446\u0438\u043e\u043d\u0430\u0440\u043d\u043e\u0435 \u0440\u0430\u0441\u043f\u0440\u0435\u0434\u0435\u043b\u0435\u043d\u0438\u0435', color: 'red', path: '/regimes' },
-  { name: '\u0421\u0442\u043e\u0438\u043c\u043e\u0441\u0442\u044c \u043e\u0431\u043b\u0438\u0433\u0430\u0446\u0438\u0439', desc: 'DCF, \u0434\u044e\u0440\u0430\u0446\u0438\u044f, convexity, \u0441\u043f\u0440\u0435\u0434\u044b', color: 'dark', path: '/bond-valuation' },
-  { name: '\u0421\u0442\u043e\u0438\u043c\u043e\u0441\u0442\u044c \u043e\u043f\u0446\u0438\u043e\u043d\u043e\u0432', desc: '\u0411\u0428\u041c, \u0425\u0435\u0441\u0442\u043e\u043d, \u041b\u0435\u0432\u0438, FFT', color: 'red', path: '/pricing/options' },
-  { name: '\u0412\u043e\u043b\u0430\u0442\u0438\u043b\u044c\u043d\u043e\u0441\u0442\u044c', desc: 'SABR/SVI \u043a\u0430\u043b\u0438\u0431\u0440\u043e\u0432\u043a\u0430, smile', color: 'dark', path: '/analytics/volatility' },
-  { name: '\u0421\u0442\u043e\u0438\u043c\u043e\u0441\u0442\u044c \u0421\u0412\u041e\u041f\u043e\u0432', desc: 'IRS & FX \u0441\u0432\u043e\u043f\u044b, NPV, DV01', color: 'red', path: 'valuation/swaps' },
-  { name: '\u0421\u0442\u043e\u0438\u043c\u043e\u0441\u0442\u044c \u0444\u043e\u0440\u0432\u0430\u0440\u0434\u043e\u0432', desc: '\u0421\u043f\u0440\u0430\u0432\u0435\u0434\u043b\u0438\u0432\u0430\u044f \u0441\u0442\u043e\u0438\u043c\u043e\u0441\u0442\u044c, \u043a\u0440\u0438\u0432\u0430\u044f', color: 'dark', path: 'valuation/forwards' },
-  { name: '\u041e\u0442\u0447\u0451\u0442\u044b', desc: 'Bond Report, \u0448\u0430\u0431\u043b\u043e\u043d\u043d\u044b\u0435 \u043e\u0442\u0447\u0451\u0442\u044b', color: 'red', path: '/vanila-bond-report' },
-  { name: '\u041c\u043e\u043d\u0442\u0435-\u041a\u0430\u0440\u043b\u043e', desc: '\u0421\u0438\u043c\u0443\u043b\u044f\u0446\u0438\u0438, \u0441\u0442\u043e\u0445\u0430\u0441\u0442\u0438\u0447\u0435\u0441\u043a\u0438\u0435 \u043c\u043e\u0434\u0435\u043b\u0438', color: 'dark', path: '/monte-carlo' },
-  { name: '\u041a\u0440\u0438\u0432\u0430\u044f \u0434\u043e\u0445\u043e\u0434\u043d\u043e\u0441\u0442\u0438', desc: 'ZCYC, zero-coupon yield curve', color: 'red', path: '/zcyc-viewer' },
-  { name: 'P&L Attribution', desc: '\u0424\u0430\u043a\u0442\u043e\u0440\u043d\u0430\u044f \u0434\u0435\u043a\u043e\u043c\u043f\u043e\u0437\u0438\u0446\u0438\u044f P&L', color: 'dark', path: '/analytics/pnl' },
-  { name: 'Citadel Zeta Field', desc: '\u0413\u0440\u0430\u0432\u0438\u0442\u0430\u0446\u0438\u043e\u043d\u043d\u043e\u0435 \u043f\u043e\u043b\u0435 \u043b\u0438\u043a\u0432\u0438\u0434\u043d\u043e\u0441\u0442\u0438', color: 'red', path: '/terminal' },
-  { name: 'Phase Space', desc: '\u0424\u0430\u0437\u043e\u0432\u043e\u0435 \u043f\u0440\u043e\u0441\u0442\u0440\u0430\u043d\u0441\u0442\u0432\u043e, \u0430\u0442\u0442\u0440\u0430\u043a\u0442\u043e\u0440\u044b', color: 'dark', path: '/terminal' },
-  { name: 'Liquidity Model', desc: '\u041c\u043e\u0434\u0435\u043b\u044c \u043b\u0438\u043a\u0432\u0438\u0434\u043d\u043e\u0441\u0442\u0438 \u0440\u044b\u043d\u043a\u0430', color: 'red', path: '/terminal' },
+  { name: 'Портфельный анализ', desc: 'Доходность, VaR/ES, мониторинг позиций', color: 'red', path: '/portfolio' },
+  { name: 'Риск-менеджмент', desc: 'Стресс-тесты, бэктестинг VaR, сценарии', color: 'dark', path: '/stress' },
+  { name: 'Рыночные режимы', desc: 'HMM, стационарное распределение', color: 'red', path: '/regimes' },
+  { name: 'Стоимость облигаций', desc: 'DCF, дюрация, convexity, спреды', color: 'dark', path: '/bond-valuation' },
+  { name: 'Стоимость опционов', desc: 'БШМ, Хестон, Леви, FFT', color: 'red', path: '/pricing/options' },
+  { name: 'Волатильность', desc: 'SABR/SVI калибровка, smile', color: 'dark', path: '/analytics/volatility' },
+  { name: 'Стоимость СВОПов', desc: 'IRS & FX свопы, NPV, DV01', color: 'red', path: 'valuation/swaps' },
+  { name: 'Стоимость форвардов', desc: 'Справедливая стоимость, кривая', color: 'dark', path: 'valuation/forwards' },
+  { name: 'Отчёты', desc: 'Bond Report, шаблонные отчёты', color: 'red', path: '/vanila-bond-report' },
+  { name: 'Монте-Карло', desc: 'Симуляции, стохастические модели', color: 'dark', path: '/monte-carlo' },
+  { name: 'Кривая доходности', desc: 'ZCYC, zero-coupon yield curve', color: 'red', path: '/zcyc-viewer' },
+  { name: 'P&L Attribution', desc: 'Факторная декомпозиция P&L', color: 'dark', path: '/analytics/pnl' },
+  { name: 'Citadel Zeta Field', desc: 'Гравитационное поле ликвидности', color: 'red', path: '/terminal' },
+  { name: 'Phase Space', desc: 'Фазовое пространство, аттракторы', color: 'dark', path: '/terminal' },
+  { name: 'Liquidity Model', desc: 'Модель ликвидности рынка', color: 'red', path: '/terminal' },
 ]
 
 // Bg refs
@@ -231,92 +198,38 @@ function setTrackRef(el: HTMLElement | null, bgIdx: number, rowIdx: number) {
   if (el) { trackRefMap.set(key, el) } else { trackRefMap.delete(key) }
 }
 
-const { initTracks, boostAll } = useKineticMarquee()
+const { initTracks } = useKineticMarquee()
 
 // Navigation
 function navigateTo(path: string, e: MouseEvent) {
   if (activeTool.value) return
   activeTool.value = path
-
   const card = e.currentTarget as HTMLElement
   gsap.to(card, { scale: 1.03, duration: 0.3, ease: 'power2.out' })
-  boostAll(5, 0.3)
-
   setTimeout(() => router.push(path), 500)
 }
 
 // Init marquees for all dark backgrounds
-function initAllMarquees() {
+function initAllMarquees(container: HTMLElement) {
   const allTracks: MarqueeTrack[] = []
-  const directions: Array<1 | -1> = [1, -1, 1, -1]
+  const dirPattern: Array<1 | -1> = [1, -1, 1, -1, 1]
 
   backgrounds.forEach((bg, bi) => {
     if (bg.type !== 'dark') return
     bg.letters.forEach((_, li) => {
       const el = trackRefMap.get(`${bi}-${li}`)
       if (el) {
-        allTracks.push({ el, direction: directions[li] })
+        allTracks.push({ el, direction: dirPattern[li % dirPattern.length] })
       }
     })
   })
 
-  initTracks(allTracks)
-}
-
-// Detect the actual scroll container (#app has overflow-y:auto on desktop)
-function getScrollContainer(): HTMLElement | Window {
-  const app = document.getElementById('app')
-  if (app && app.scrollHeight > app.clientHeight && app.clientHeight < window.innerHeight * 1.5) {
-    return app
+  if (bgLayerRef.value) {
+    initTracks(allTracks, container, bgLayerRef.value)
   }
-  return window
 }
 
-// Setup scroll-driven background crossfading
-function setupScrollTriggers() {
-  const scrollContainer = getScrollContainer()
-  const useCustomScroller = scrollContainer !== window
-
-  // If #app is the scroller, tell ScrollTrigger about it
-  if (useCustomScroller) {
-    ScrollTrigger.defaults({ scroller: scrollContainer as HTMLElement })
-  }
-
-  // Map: which section triggers which background
-  const sectionToBg: Array<{ section: HTMLElement | null; bgIndex: number }> = [
-    { section: section0.value, bgIndex: 0 },
-    { section: section1.value, bgIndex: 1 },
-    { section: section2.value, bgIndex: 2 },
-    { section: section3.value, bgIndex: 3 },
-    { section: section4.value, bgIndex: 4 },
-    { section: section5.value, bgIndex: 5 },
-    { section: toolsSection.value, bgIndex: 0 },
-  ]
-
-  // Show first bg initially
-  bgRefs.forEach((el, idx) => {
-    gsap.set(el, { opacity: idx === 0 ? 1 : 0 })
-  })
-
-  sectionToBg.forEach(({ section, bgIndex }) => {
-    if (!section) return
-
-    const config: ScrollTrigger.Vars = {
-      trigger: section,
-      start: 'top 60%',
-      end: 'bottom 40%',
-      onEnter: () => fadeToBackground(bgIndex),
-      onEnterBack: () => fadeToBackground(bgIndex),
-    }
-
-    if (useCustomScroller) {
-      config.scroller = scrollContainer as HTMLElement
-    }
-
-    ScrollTrigger.create(config)
-  })
-}
-
+// Background crossfade
 let currentBgIndex = 0
 
 function fadeToBackground(targetIndex: number) {
@@ -325,34 +238,57 @@ function fadeToBackground(targetIndex: number) {
   const outEl = bgRefs.get(currentBgIndex)
   const inEl = bgRefs.get(targetIndex)
 
-  if (outEl) {
-    gsap.to(outEl, { opacity: 0, duration: 0.6, ease: 'power2.inOut' })
-  }
-  if (inEl) {
-    gsap.to(inEl, { opacity: 1, duration: 0.6, ease: 'power2.inOut' })
-  }
-
-  // Boost marquee on transition
-  boostAll(3, 0.2)
-  setTimeout(() => {
-    boostAll(1, 0.8)
-  }, 300)
+  if (outEl) gsap.to(outEl, { opacity: 0, duration: 0.7, ease: 'power2.inOut' })
+  if (inEl) gsap.to(inEl, { opacity: 1, duration: 0.7, ease: 'power2.inOut' })
 
   currentBgIndex = targetIndex
 }
 
+function setupScrollTriggers(container: HTMLElement) {
+  // Show first bg
+  bgRefs.forEach((el, idx) => {
+    gsap.set(el, { opacity: idx === 0 ? 1 : 0 })
+  })
+
+  const sections = [
+    sectionRefs_0.value,
+    sectionRefs_1.value,
+    sectionRefs_2.value,
+    sectionRefs_3.value,
+    sectionRefs_4.value,
+    sectionRefs_5.value,
+    sectionRefs_6.value,
+  ]
+
+  // bg indices: hero→0, spacer1→1, spacer2→2, spacer3→3, spacer4→4, spacer5→5, tools→0
+  const bgMap = [0, 1, 2, 3, 4, 5, 0]
+
+  sections.forEach((section, i) => {
+    if (!section) return
+
+    ScrollTrigger.create({
+      trigger: section,
+      scroller: container,
+      start: 'top 60%',
+      end: 'bottom 40%',
+      onEnter: () => fadeToBackground(bgMap[i]),
+      onEnterBack: () => fadeToBackground(bgMap[i]),
+    })
+  })
+}
+
 onMounted(async () => {
   await nextTick()
-  initAllMarquees()
-  setupScrollTriggers()
 
-  // Entrance animation for content
-  gsap.fromTo('.content-layer', { opacity: 0 }, { opacity: 1, duration: 0.6, delay: 0.1 })
+  const container = document.getElementById('app')
+  if (!container) return
+
+  initAllMarquees(container)
+  setupScrollTriggers(container)
 })
 
 onUnmounted(() => {
   ScrollTrigger.getAll().forEach(st => st.kill())
-  ScrollTrigger.defaults({ scroller: window })
 })
 </script>
 
@@ -373,6 +309,7 @@ onUnmounted(() => {
   inset: 0;
   z-index: 0;
   pointer-events: none;
+  --stretch: 1;
 }
 
 .bg-slide {
@@ -381,15 +318,10 @@ onUnmounted(() => {
   opacity: 0;
 }
 
-.bg-slide.dark {
-  background: #000;
-}
+.bg-slide.dark { background: #000; }
+.bg-slide.red { background: #e63946; }
 
-.bg-slide.red {
-  background: #e63946;
-}
-
-/* ── Marquee inside dark bg ── */
+/* ── Marquee ── */
 .marquee-bg {
   position: absolute;
   inset: 0;
@@ -412,15 +344,59 @@ onUnmounted(() => {
 }
 
 .marquee-letter {
-  font-size: clamp(6rem, 18vw, 16rem);
+  font-size: clamp(5rem, 16vw, 14rem);
   font-weight: 900;
   color: #e63946;
   opacity: 0.85;
   letter-spacing: -0.02em;
-  padding: 0 0.08em;
+  padding: 0 0.06em;
   flex-shrink: 0;
   user-select: none;
   line-height: 0.9;
+  transform: scaleY(var(--stretch, 1));
+  transform-origin: center center;
+}
+
+/* ── Center card on dark slides ── */
+.slide-center {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2;
+}
+
+.center-card {
+  background: rgba(0, 0, 0, 0.82);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 4px;
+  padding: 36px 44px;
+  max-width: 420px;
+  text-align: center;
+}
+
+.card-eyebrow {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.25em;
+  color: #e63946;
+  margin-bottom: 12px;
+}
+
+.card-title {
+  font-size: clamp(1.4rem, 3vw, 2rem);
+  font-weight: 900;
+  letter-spacing: -0.03em;
+  line-height: 1.1;
+  margin-bottom: 10px;
+}
+
+.card-desc {
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.5);
+  line-height: 1.6;
 }
 
 /* ── Red bg typography ── */
@@ -459,7 +435,7 @@ onUnmounted(() => {
   margin-top: 16px;
 }
 
-/* ══════ CONTENT LAYER (scrollable) ══════ */
+/* ══════ CONTENT LAYER ══════ */
 .content-layer {
   position: relative;
   z-index: 1;
@@ -472,6 +448,10 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+.spacer {
+  pointer-events: none;
 }
 
 /* ── Hero ── */
@@ -543,68 +523,9 @@ onUnmounted(() => {
   50% { opacity: 1; transform: scaleY(1); }
 }
 
-/* ── Statement/feature sections (overlay text on bg) ── */
-.statement-section,
-.features-section,
-.models-section,
-.vol-section,
-.opt-section {
-  padding: 0 2rem;
-}
-
-.statement-inner,
-.features-inner,
-.models-inner,
-.vol-inner,
-.opt-inner {
-  max-width: 600px;
-  text-align: center;
-}
-
-.stat-eyebrow {
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.25em;
-  margin-bottom: 16px;
-  opacity: 0.5;
-}
-
-.stat-text {
-  font-size: clamp(1.2rem, 2.5vw, 1.8rem);
-  font-weight: 700;
-  line-height: 1.5;
-  letter-spacing: -0.02em;
-}
-
-/* On red backgrounds, text should be dark */
-.statement-section .stat-eyebrow,
-.models-section .stat-eyebrow,
-.opt-section .stat-eyebrow {
-  color: rgba(0, 0, 0, 0.4);
-}
-
-.statement-section .stat-text,
-.models-section .stat-text,
-.opt-section .stat-text {
-  color: rgba(0, 0, 0, 0.85);
-}
-
-/* On dark backgrounds, text stays white */
-.features-section .stat-eyebrow,
-.vol-section .stat-eyebrow {
-  color: rgba(255, 255, 255, 0.4);
-}
-
-.features-section .stat-text,
-.vol-section .stat-text {
-  color: rgba(255, 255, 255, 0.9);
-}
-
-/* ══════ TOOLS SECTION ══════ */
+/* ══════ TOOLS ══════ */
 .tools-section {
-  min-height: auto;
   padding: 80px 2rem 60px;
-  display: block;
 }
 
 .tools-wrap {
@@ -640,7 +561,7 @@ onUnmounted(() => {
   align-items: center;
   gap: 14px;
   padding: 18px 20px;
-  background: rgba(13, 13, 13, 0.9);
+  background: rgba(13, 13, 13, 0.92);
   backdrop-filter: blur(4px);
   border: 1px solid rgba(255, 255, 255, 0.06);
   border-radius: 3px;
@@ -656,64 +577,22 @@ onUnmounted(() => {
   box-shadow: 0 10px 30px rgba(230, 57, 70, 0.1);
 }
 
-.g-card.is-active {
-  border-color: #e63946;
-  z-index: 10;
-}
+.g-card.is-active { border-color: #e63946; z-index: 10; }
+.g-card.is-faded { opacity: 0.3; filter: blur(2px); pointer-events: none; }
 
-.g-card.is-faded {
-  opacity: 0.3;
-  filter: blur(2px);
-  pointer-events: none;
-  transition: all 0.4s;
-}
-
-.g-card-accent {
-  width: 3px;
-  align-self: stretch;
-  border-radius: 2px;
-  flex-shrink: 0;
-}
-
+.g-card-accent { width: 3px; align-self: stretch; border-radius: 2px; flex-shrink: 0; }
 .g-card-accent.red { background: #e63946; }
 .g-card-accent.dark { background: rgba(255, 255, 255, 0.12); }
 
-.g-card-body {
-  flex: 1;
-  min-width: 0;
-}
+.g-card-body { flex: 1; min-width: 0; }
+.g-card-title { font-size: 0.88rem; font-weight: 700; letter-spacing: -0.01em; margin-bottom: 3px; }
+.g-card-desc { font-size: 0.72rem; color: rgba(255, 255, 255, 0.4); line-height: 1.5; }
 
-.g-card-title {
-  font-size: 0.88rem;
-  font-weight: 700;
-  letter-spacing: -0.01em;
-  margin-bottom: 3px;
-}
-
-.g-card-desc {
-  font-size: 0.72rem;
-  color: rgba(255, 255, 255, 0.4);
-  line-height: 1.5;
-}
-
-.g-card-arrow {
-  font-size: 1rem;
-  color: rgba(255, 255, 255, 0.15);
-  flex-shrink: 0;
-  transition: all 0.3s;
-}
-
-.g-card:hover .g-card-arrow {
-  color: #e63946;
-  transform: translateX(4px);
-}
+.g-card-arrow { font-size: 1rem; color: rgba(255, 255, 255, 0.15); flex-shrink: 0; transition: all 0.3s; }
+.g-card:hover .g-card-arrow { color: #e63946; transform: translateX(4px); }
 
 /* ══════ TERMINAL ══════ */
-.terminal-section {
-  min-height: auto;
-  padding: 20px 2rem 40px;
-  display: block;
-}
+.terminal-section { padding: 20px 2rem 40px; }
 
 .terminal-card {
   max-width: 1100px;
@@ -722,7 +601,7 @@ onUnmounted(() => {
   align-items: center;
   gap: 20px;
   padding: 24px 28px;
-  background: rgba(13, 13, 13, 0.9);
+  background: rgba(13, 13, 13, 0.92);
   backdrop-filter: blur(4px);
   border: 1px solid rgba(230, 57, 70, 0.15);
   border-radius: 3px;
@@ -739,146 +618,57 @@ onUnmounted(() => {
   box-shadow: 0 12px 40px rgba(230, 57, 70, 0.1);
 }
 
-.terminal-card.is-active {
-  border-color: #e63946;
-}
+.terminal-card.is-active { border-color: #e63946; }
 
 .terminal-zeta {
-  width: 52px;
-  height: 52px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 1.8rem;
-  font-weight: 900;
-  color: #e63946;
+  width: 52px; height: 52px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.8rem; font-weight: 900; color: #e63946;
   background: rgba(230, 57, 70, 0.08);
   border: 1px solid rgba(230, 57, 70, 0.2);
-  border-radius: 3px;
-  flex-shrink: 0;
+  border-radius: 3px; flex-shrink: 0;
 }
 
-.terminal-info {
-  flex: 1;
-}
+.terminal-info { flex: 1; }
+.terminal-title { font-size: 1rem; font-weight: 700; margin-bottom: 3px; }
+.terminal-sub { font-size: 0.75rem; color: rgba(255, 255, 255, 0.4); line-height: 1.5; }
 
-.terminal-title {
-  font-size: 1rem;
-  font-weight: 700;
-  margin-bottom: 3px;
-}
-
-.terminal-sub {
-  font-size: 0.75rem;
-  color: rgba(255, 255, 255, 0.4);
-  line-height: 1.5;
-}
-
-.terminal-cta {
-  font-size: 0.85rem;
-  font-weight: 700;
-  color: #e63946;
-  flex-shrink: 0;
-  transition: transform 0.3s;
-}
-
-.terminal-card:hover .terminal-cta {
-  transform: translateX(4px);
-}
+.terminal-cta { font-size: 0.85rem; font-weight: 700; color: #e63946; flex-shrink: 0; transition: transform 0.3s; }
+.terminal-card:hover .terminal-cta { transform: translateX(4px); }
 
 /* ══════ TRANSITION OVERLAY ══════ */
 .transition-overlay {
-  position: fixed;
-  inset: 0;
-  background: #000;
-  z-index: 9998;
-  opacity: 0;
-  pointer-events: none;
+  position: fixed; inset: 0; background: #000; z-index: 9998;
+  opacity: 0; pointer-events: none;
   transition: opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
+.transition-overlay.active { opacity: 1; transition-delay: 0.1s; }
 
-.transition-overlay.active {
-  opacity: 1;
-  transition-delay: 0.1s;
-}
-
-/* ══════ FOOTER SPACER ══════ */
-.footer-spacer {
-  height: 60px;
-}
+.footer-spacer { height: 60px; }
 
 /* ══════ RESPONSIVE ══════ */
 @media (max-width: 1024px) {
-  .tools-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
+  .tools-grid { grid-template-columns: repeat(2, 1fr); }
 }
 
 @media (max-width: 768px) {
-  .marquee-letter {
-    font-size: clamp(4rem, 18vw, 8rem);
-  }
-
-  .tools-section {
-    padding: 60px 1rem 48px;
-  }
-
-  .tools-grid {
-    grid-template-columns: repeat(2, 1fr);
-    gap: 8px;
-  }
-
-  .g-card {
-    padding: 14px 16px;
-  }
-
-  .terminal-section {
-    padding: 12px 1rem 32px;
-  }
-
-  .terminal-card {
-    padding: 18px 20px;
-  }
-
-  .red-headline {
-    font-size: clamp(2.5rem, 14vw, 6rem);
-  }
-
-  .stat-text {
-    font-size: clamp(1rem, 3vw, 1.4rem);
-  }
+  .marquee-letter { font-size: clamp(3.5rem, 16vw, 7rem); }
+  .center-card { padding: 24px 28px; margin: 0 1rem; }
+  .tools-section { padding: 60px 1rem 48px; }
+  .tools-grid { grid-template-columns: repeat(2, 1fr); gap: 8px; }
+  .g-card { padding: 14px 16px; }
+  .terminal-section { padding: 12px 1rem 32px; }
+  .terminal-card { padding: 18px 20px; }
+  .red-headline { font-size: clamp(2.5rem, 14vw, 6rem); }
 }
 
 @media (max-width: 480px) {
-  .marquee-letter {
-    font-size: clamp(3rem, 20vw, 5rem);
-  }
-
-  .tools-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .g-card-arrow {
-    display: none;
-  }
-
-  .hero-headline {
-    font-size: 2.2rem;
-  }
-
-  .hero-subline {
-    font-size: 1.4rem;
-  }
-
-  .terminal-card {
-    flex-wrap: wrap;
-  }
-
-  .terminal-cta {
-    width: 100%;
-    text-align: center;
-    padding-top: 8px;
-    border-top: 1px solid rgba(255, 255, 255, 0.06);
-  }
+  .marquee-letter { font-size: clamp(2.5rem, 18vw, 4.5rem); }
+  .tools-grid { grid-template-columns: 1fr; }
+  .g-card-arrow { display: none; }
+  .hero-headline { font-size: 2.2rem; }
+  .hero-subline { font-size: 1.4rem; }
+  .terminal-card { flex-wrap: wrap; }
+  .terminal-cta { width: 100%; text-align: center; padding-top: 8px; border-top: 1px solid rgba(255, 255, 255, 0.06); }
 }
 </style>

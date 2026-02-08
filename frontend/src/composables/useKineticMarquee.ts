@@ -6,54 +6,122 @@ export interface MarqueeTrack {
   direction: 1 | -1
 }
 
+const SPEED_FACTOR = 0.6
+const MAX_STRETCH = 1.3
+const STRETCH_FACTOR = 0.004
+const STRETCH_DECAY_DURATION = 0.4
+
 /**
- * Creates infinite horizontal marquee animations for letter rows.
- * Each track moves continuously; on slide change we can boost/reset speed.
+ * Scroll-driven marquee: letters move only when scrolling.
+ * Also applies scaleY "stretch" effect proportional to scroll velocity.
+ * When scroll stops, everything freezes and scaleY returns to 1.
  */
 export function useKineticMarquee() {
-  const tweens: gsap.core.Tween[] = []
+  const trackData: Array<{
+    el: HTMLElement
+    inner: HTMLElement
+    direction: 1 | -1
+    offset: number
+    contentWidth: number
+  }> = []
 
-  function initTracks(tracks: MarqueeTrack[]) {
+  let lastScrollTop = 0
+  let scrollContainer: HTMLElement | null = null
+  let bgLayerEl: HTMLElement | null = null
+  let idleTimer: ReturnType<typeof setTimeout> | null = null
+  let stretchTween: gsap.core.Tween | null = null
+
+  function initTracks(tracks: MarqueeTrack[], container: HTMLElement, bgLayer: HTMLElement) {
     destroy()
+
+    scrollContainer = container
+    bgLayerEl = bgLayer
+    lastScrollTop = container.scrollTop
 
     tracks.forEach((track) => {
       const inner = track.el.querySelector('.marquee-inner') as HTMLElement
       if (!inner) return
 
       const contentWidth = inner.scrollWidth / 2
+      if (contentWidth <= 0) return
 
-      const tween = gsap.to(inner, {
-        x: track.direction === 1 ? -contentWidth : contentWidth,
-        duration: 18 + Math.random() * 8,
-        ease: 'none',
-        repeat: -1,
-        modifiers: {
-          x: gsap.utils.unitize((x: string) => {
-            const val = parseFloat(x)
-            return ((val % contentWidth) + contentWidth) % contentWidth - (track.direction === 1 ? contentWidth : 0)
-          }),
-        },
+      trackData.push({
+        el: track.el,
+        inner,
+        direction: track.direction,
+        offset: 0,
+        contentWidth,
       })
-
-      tweens.push(tween)
     })
+
+    container.addEventListener('scroll', onScroll, { passive: true })
   }
 
-  function boostAll(scale: number, duration: number) {
-    tweens.forEach((tween) => {
-      gsap.to(tween, { timeScale: scale, duration, overwrite: true })
+  function onScroll() {
+    if (!scrollContainer || !bgLayerEl) return
+
+    const currentScrollTop = scrollContainer.scrollTop
+    const delta = currentScrollTop - lastScrollTop
+    lastScrollTop = currentScrollTop
+
+    const absDelta = Math.abs(delta)
+
+    // Move letters proportionally to scroll delta
+    trackData.forEach((td) => {
+      td.offset += delta * td.direction * SPEED_FACTOR
+      // Wrap for seamless loop
+      td.offset = ((td.offset % td.contentWidth) + td.contentWidth) % td.contentWidth
+      td.inner.style.transform = `translateX(${-td.offset}px)`
     })
+
+    // Stretch letters vertically based on velocity
+    const stretch = 1 + Math.min(absDelta * STRETCH_FACTOR, MAX_STRETCH - 1)
+
+    // Kill any ongoing decay animation
+    if (stretchTween) {
+      stretchTween.kill()
+      stretchTween = null
+    }
+
+    bgLayerEl.style.setProperty('--stretch', String(stretch))
+
+    // Schedule stretch decay when scroll stops
+    if (idleTimer) clearTimeout(idleTimer)
+    idleTimer = setTimeout(decayStretch, 80)
   }
 
-  function resetSpeed(duration: number) {
-    tweens.forEach((tween) => {
-      gsap.to(tween, { timeScale: 1, duration, ease: 'power2.out', overwrite: true })
+  function decayStretch() {
+    if (!bgLayerEl) return
+
+    const currentStretch = parseFloat(bgLayerEl.style.getPropertyValue('--stretch') || '1')
+    if (currentStretch <= 1.001) return
+
+    stretchTween = gsap.to(bgLayerEl, {
+      '--stretch': 1,
+      duration: STRETCH_DECAY_DURATION,
+      ease: 'power2.out',
+      overwrite: true,
     })
   }
 
   function destroy() {
-    tweens.forEach((t) => t.kill())
-    tweens.length = 0
+    if (scrollContainer) {
+      scrollContainer.removeEventListener('scroll', onScroll)
+    }
+    if (idleTimer) clearTimeout(idleTimer)
+    if (stretchTween) stretchTween.kill()
+
+    trackData.forEach((td) => {
+      td.inner.style.transform = ''
+    })
+    trackData.length = 0
+
+    if (bgLayerEl) {
+      bgLayerEl.style.removeProperty('--stretch')
+    }
+
+    scrollContainer = null
+    bgLayerEl = null
   }
 
   onUnmounted(() => {
@@ -62,8 +130,6 @@ export function useKineticMarquee() {
 
   return {
     initTracks,
-    boostAll,
-    resetSpeed,
     destroy,
   }
 }
