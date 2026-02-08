@@ -1,191 +1,113 @@
 <template>
   <div class="home-root">
-    <!-- Brand (fixed) -->
-    <div class="fixed-brand">
-      <span class="brand-text">&#9670; QUANT ANALYTICS</span>
-    </div>
-
-    <!-- Pagination (fixed) -->
-    <nav class="slide-pagination" :class="{ horizontal: isMobile }">
-      <button
-        v-for="(slide, i) in slides"
-        :key="slide.id"
-        class="slide-dot"
-        :class="{ active: currentSlide === i }"
-        @click="goToSlide(i)"
-      ></button>
-    </nav>
-
-    <!-- Slides -->
-    <div class="slides-container">
-      <section
-        v-for="(slide, i) in slides"
-        :key="slide.id"
-        :ref="el => setSectionRef(el as HTMLElement | null, i)"
-        class="fp-slide"
-        :style="{ background: slide.bgColor }"
+    <!-- Kinetic marquee background (fixed) -->
+    <div class="kinetic-bg">
+      <div
+        v-for="(row, ri) in marqueeRows"
+        :key="ri"
+        class="marquee-row"
+        :ref="el => setRowRef(el as HTMLElement | null, ri)"
       >
-        <!-- Background text -->
-        <div class="slide-bg-text">
+        <div class="marquee-track">
           <span
-            v-for="(word, wi) in slide.bgText"
-            :key="wi"
-            class="slide-bg-word"
-            :style="{ color: slide.bgTextColor }"
+            v-for="(word, wi) in row.words"
+            :key="'a' + wi"
+            class="marquee-word"
+            :class="{ red: wi % 2 === 1 }"
+          >{{ word }}</span>
+          <span
+            v-for="(word, wi) in row.words"
+            :key="'b' + wi"
+            class="marquee-word"
+            :class="{ red: wi % 2 === 1 }"
           >{{ word }}</span>
         </div>
+      </div>
+    </div>
 
-        <!-- Content: hero -->
-        <div v-if="slide.type === 'hero'" class="slide-content" :ref="el => setContentRef(el as HTMLElement | null, i)">
-          <div class="hero-content">
-            <h1 class="hero-headline">{{ slide.headline }}</h1>
-            <p class="hero-subline">{{ slide.subline }}</p>
-            <p class="hero-desc">{{ slide.description }}</p>
-          </div>
+    <!-- Content -->
+    <div class="content-layer" ref="contentRef">
+      <!-- Hero -->
+      <section class="hero">
+        <div class="brand">&#9670; QUANT ANALYTICS</div>
+        <h1 class="hero-headline">QUANTITATIVE</h1>
+        <p class="hero-subline">ANALYTICS</p>
+        <p class="hero-desc">&#1055;&#1083;&#1072;&#1090;&#1092;&#1086;&#1088;&#1084;&#1072; &#1082;&#1086;&#1083;&#1080;&#1095;&#1077;&#1089;&#1090;&#1074;&#1077;&#1085;&#1085;&#1086;&#1075;&#1086; &#1072;&#1085;&#1072;&#1083;&#1080;&#1079;&#1072; &#1076;&#1083;&#1103; &#1092;&#1080;&#1085;&#1072;&#1085;&#1089;&#1086;&#1074;&#1099;&#1093; &#1088;&#1099;&#1085;&#1082;&#1086;&#1074;</p>
+        <div class="hero-scroll-hint">
+          <span>SCROLL</span>
+          <div class="scroll-line"></div>
         </div>
+      </section>
 
-        <!-- Content: theme -->
-        <div v-if="slide.type === 'theme'" class="slide-content" :ref="el => setContentRef(el as HTMLElement | null, i)">
-          <div class="theme-content">
-            <span class="theme-label">{{ slide.label }}</span>
-            <h2 class="theme-headline">{{ slide.headline }}</h2>
-            <p class="theme-subline">{{ slide.subline }}</p>
-            <p class="theme-desc">{{ slide.description }}</p>
-            <div class="theme-tags" v-if="slide.tags">
-              <span v-for="t in slide.tags" :key="t" class="theme-tag">{{ t }}</span>
-            </div>
-          </div>
-        </div>
+      <!-- Tools -->
+      <section class="tools-section">
+        <div class="tools-wrap">
+          <div class="section-eyebrow">PLATFORM</div>
+          <h2 class="section-heading">&#1048;&#1085;&#1089;&#1090;&#1088;&#1091;&#1084;&#1077;&#1085;&#1090;&#1099;</h2>
 
-        <!-- Content: tools -->
-        <div v-if="slide.type === 'tools'" class="slide-content" :ref="el => setContentRef(el as HTMLElement | null, i)">
-          <div class="tools-fullpage">
-            <div class="section-eyebrow">PLATFORM</div>
-            <h2 class="section-heading">&#1048;&#1085;&#1089;&#1090;&#1088;&#1091;&#1084;&#1077;&#1085;&#1090;&#1099;</h2>
-            <div class="tools-grid">
-              <div
-                v-for="tool in tools"
-                :key="tool.path"
-                class="g-card"
-                :class="{
-                  'is-exploding': explosion === tool.path,
-                  'is-faded': explosion && explosion !== tool.path
-                }"
-                @click="explode(tool.path)"
-              >
-                <div class="g-card-accent" :class="tool.color"></div>
-                <div class="g-card-body">
-                  <div class="g-card-title">{{ tool.name }}</div>
-                  <div class="g-card-desc">{{ tool.desc }}</div>
-                </div>
-                <div class="g-card-arrow">&rarr;</div>
+          <div class="tools-grid">
+            <div
+              v-for="tool in tools"
+              :key="tool.path"
+              class="g-card"
+              :class="{
+                'is-active': activeTool === tool.path,
+                'is-faded': activeTool && activeTool !== tool.path
+              }"
+              @click="navigateTo(tool.path, $event)"
+            >
+              <div class="g-card-accent" :class="tool.color"></div>
+              <div class="g-card-body">
+                <div class="g-card-title">{{ tool.name }}</div>
+                <div class="g-card-desc">{{ tool.desc }}</div>
               </div>
+              <div class="g-card-arrow">&rarr;</div>
+              <div class="g-ripple" ref="rippleRefs"></div>
             </div>
-          </div>
-        </div>
-
-        <!-- Content: terminal -->
-        <div v-if="slide.type === 'terminal'" class="slide-content" :ref="el => setContentRef(el as HTMLElement | null, i)">
-          <div class="terminal-fullpage" @click="explode('/terminal')">
-            <div class="terminal-zeta-big">&zeta;</div>
-            <div class="terminal-title-big">&#1044;&#1079;&#1077;&#1090;&#1072;-&#1058;&#1077;&#1088;&#1084;&#1080;&#1085;&#1072;&#1083;</div>
-            <div class="terminal-sub-big">&#1055;&#1086;&#1090;&#1086;&#1082;&#1086;&#1074;&#1099;&#1077; &#1076;&#1072;&#1085;&#1085;&#1099;&#1077; &#1074; &#1088;&#1077;&#1072;&#1083;&#1100;&#1085;&#1086;&#1084; &#1074;&#1088;&#1077;&#1084;&#1077;&#1085;&#1080;</div>
-            <div class="terminal-cta">&#1054;&#1090;&#1082;&#1088;&#1099;&#1090;&#1100; &#1090;&#1077;&#1088;&#1084;&#1080;&#1085;&#1072;&#1083; &rarr;</div>
           </div>
         </div>
       </section>
+
+      <!-- Terminal -->
+      <section class="terminal-section">
+        <div
+          class="terminal-card"
+          :class="{ 'is-active': activeTool === '/terminal' }"
+          @click="navigateTo('/terminal', $event)"
+        >
+          <div class="terminal-zeta">&zeta;</div>
+          <div class="terminal-info">
+            <div class="terminal-title">&#1044;&#1079;&#1077;&#1090;&#1072;-&#1058;&#1077;&#1088;&#1084;&#1080;&#1085;&#1072;&#1083;</div>
+            <div class="terminal-sub">&#1055;&#1086;&#1090;&#1086;&#1082;&#1086;&#1074;&#1099;&#1077; &#1076;&#1072;&#1085;&#1085;&#1099;&#1077; &#1074; &#1088;&#1077;&#1072;&#1083;&#1100;&#1085;&#1086;&#1084; &#1074;&#1088;&#1077;&#1084;&#1077;&#1085;&#1080; &middot; &#1040;&#1082;&#1094;&#1080;&#1080; &middot; &#1050;&#1088;&#1080;&#1087;&#1090;&#1086; &middot; &#1060;&#1100;&#1102;&#1095;&#1077;&#1088;&#1089;&#1099; &middot; &#1054;&#1087;&#1094;&#1080;&#1086;&#1085;&#1099;</div>
+          </div>
+          <div class="terminal-cta">&#1054;&#1090;&#1082;&#1088;&#1099;&#1090;&#1100; &rarr;</div>
+        </div>
+      </section>
+
+      <!-- Footer spacer -->
+      <div class="footer-spacer"></div>
     </div>
 
-    <!-- Explosion flash -->
-    <div class="flash" :class="{ on: !!explosion }"></div>
+    <!-- Transition overlay -->
+    <div class="transition-overlay" :class="{ active: !!activeTool }"></div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, nextTick } from 'vue'
+import { ref, onMounted, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 import { gsap } from 'gsap'
-import { useFullPageSlider } from '@/composables/useFullPageSlider'
-import { useIsMobile } from '@/composables/useIsMobile'
+import { useKineticMarquee } from '@/composables/useKineticMarquee'
 
 const router = useRouter()
-const { isMobile } = useIsMobile()
-const explosion = ref<string | null>(null)
+const activeTool = ref<string | null>(null)
+const contentRef = ref<HTMLElement | null>(null)
 
-interface SlideData {
-  id: string
-  bgText: string[]
-  bgTextColor: string
-  bgColor: string
-  type: 'hero' | 'theme' | 'tools' | 'terminal'
-  headline?: string
-  subline?: string
-  description?: string
-  label?: string
-  tags?: string[]
-}
-
-const slides: SlideData[] = [
-  {
-    id: 'hero',
-    bgText: ['QUANT', 'ANALYTICS'],
-    bgTextColor: '#fff',
-    bgColor: '#000',
-    type: 'hero',
-    headline: 'QUANTITATIVE',
-    subline: 'ANALYTICS',
-    description: 'Платформа количественного анализа для финансовых рынков',
-  },
-  {
-    id: 'pricing',
-    bgText: ['BLACK', 'SCHOLES'],
-    bgTextColor: '#e63946',
-    bgColor: '#0a0a0a',
-    type: 'theme',
-    label: 'Опционы',
-    headline: 'BLACK-SCHOLES',
-    subline: '· HESTON · LÉVY',
-    description: 'БШМ, Хестон, Леви, FFT-ценообразование',
-    tags: ['FFT', 'Greeks', 'IV'],
-  },
-  {
-    id: 'regimes',
-    bgText: ['MARKET', 'REGIMES'],
-    bgTextColor: '#fff',
-    bgColor: '#000',
-    type: 'theme',
-    label: 'Режимы',
-    headline: 'MARKET',
-    subline: 'REGIMES',
-    description: 'HMM, стационарное распределение, комплексный анализ',
-    tags: ['HMM', 'Viterbi', 'Spectral'],
-  },
-  {
-    id: 'volatility',
-    bgText: ['SABR', 'SVI'],
-    bgTextColor: '#e63946',
-    bgColor: '#0a0a0a',
-    type: 'theme',
-    label: 'Волатильность',
-    headline: 'SABR · SVI',
-    subline: 'VOLATILITY SURFACE',
-    description: 'Калибровка SABR/SVI, smile & term-structure',
-    tags: ['SABR', 'SVI', 'Smile'],
-  },
-  {
-    id: 'tools',
-    bgText: ['TOOLS'],
-    bgTextColor: '#fff',
-    bgColor: '#000',
-    type: 'tools',
-  },
-  {
-    id: 'terminal',
-    bgText: ['ZETA'],
-    bgTextColor: '#e63946',
-    bgColor: '#0a0a0a',
-    type: 'terminal',
-  },
+const marqueeRows = [
+  { words: ['BLACK-SCHOLES', 'HESTON', 'LÉVY', 'MONTE CARLO', 'SABR', 'DCF'], direction: 1, speed: 1.0 },
+  { words: ['VOLATILITY', 'HMM', 'GREEKS', 'SHARPE', 'VAR', 'VITERBI', 'SVI'], direction: -1, speed: 1.4 },
+  { words: ['PORTFOLIO', 'OPTIONS', 'FUTURES', 'SWAPS', 'FORWARDS', 'BONDS'], direction: 1, speed: 0.8 },
+  { words: ['LIQUIDITY', 'CORRELATION', 'REGIME', 'STRESS TEST', 'ORDER BOOK', 'DURATION'], direction: -1, speed: 1.2 },
 ]
 
 const tools = [
@@ -198,252 +120,158 @@ const tools = [
   { name: 'Стоимость СВОПов', desc: 'IRS & FX свопы, NPV, DV01, чувствительность', color: 'red', path: 'valuation/swaps' },
   { name: 'Стоимость форвардов', desc: 'Справедливая стоимость, построение кривой', color: 'dark', path: 'valuation/forwards' },
   { name: 'Отчёты', desc: 'Bond Report, шаблонные отчеты и аналитика', color: 'red', path: '/vanila-bond-report' },
+  { name: 'Монте-Карло', desc: 'Симуляции, стохастические модели, генерация путей', color: 'dark', path: '/monte-carlo' },
+  { name: 'Кривая бескупонной доходности', desc: 'ZCYC, zero-coupon yield curve', color: 'red', path: '/zcyc-viewer' },
+  { name: 'P&L Attribution', desc: 'Факторная декомпозиция P&L, атрибуция доходности', color: 'dark', path: '/analytics/pnl' },
 ]
 
-// Refs for DOM elements
-const sectionRefs = ref<(HTMLElement | null)[]>([])
-const contentRefs = ref<(HTMLElement | null)[]>([])
-
-const setSectionRef = (el: HTMLElement | null, i: number) => {
-  sectionRefs.value[i] = el
-}
-const setContentRef = (el: HTMLElement | null, i: number) => {
-  contentRefs.value[i] = el
+// Marquee refs
+const rowRefs = ref<(HTMLElement | null)[]>([])
+const setRowRef = (el: HTMLElement | null, i: number) => {
+  rowRefs.value[i] = el
 }
 
-// GSAP slide transition
-function animateTransition(from: number, to: number, direction: 'up' | 'down') {
-  const yOut = direction === 'down' ? -50 : 50
-  const yIn = direction === 'down' ? 50 : -50
+const { init: initMarquee, boostAll } = useKineticMarquee()
 
-  const outSection = sectionRefs.value[from]
-  const inSection = sectionRefs.value[to]
-  const outBgWords = outSection?.querySelectorAll('.slide-bg-word')
-  const outContent = contentRefs.value[from]
-  const inBgWords = inSection?.querySelectorAll('.slide-bg-word')
-  const inContent = contentRefs.value[to]
+// Navigation with ripple + fade transition
+function navigateTo(path: string, e: MouseEvent) {
+  if (activeTool.value) return
+  activeTool.value = path
 
-  const tl = gsap.timeline()
-
-  // Out
-  if (outBgWords?.length) {
-    tl.to(outBgWords, { opacity: 0, y: yOut, duration: 0.4, stagger: 0.05 }, 0)
-  }
-  if (outContent) {
-    tl.to(outContent, { opacity: 0, y: yOut * 0.6, duration: 0.35 }, 0)
-  }
-  if (outSection) {
-    tl.set(outSection, { visibility: 'hidden' }, 0.45)
+  // Ripple from click point on the card
+  const card = (e.currentTarget as HTMLElement)
+  const rect = card.getBoundingClientRect()
+  const ripple = card.querySelector('.g-ripple') as HTMLElement
+  if (ripple) {
+    ripple.style.left = `${e.clientX - rect.left}px`
+    ripple.style.top = `${e.clientY - rect.top}px`
+    ripple.classList.add('active')
   }
 
-  // In
-  if (inSection) {
-    tl.set(inSection, { visibility: 'visible' }, 0.2)
-  }
-  if (inBgWords?.length) {
-    tl.fromTo(
-      inBgWords,
-      { opacity: 0, y: -yIn },
-      { opacity: 0.06, y: 0, duration: 0.6, stagger: 0.08, ease: 'power2.out' },
-      0.25
-    )
-  }
-  if (inContent) {
-    tl.fromTo(
-      inContent,
-      { opacity: 0, y: -yIn * 0.6 },
-      { opacity: 1, y: 0, duration: 0.5, ease: 'power2.out' },
-      0.35
-    )
-  }
-}
+  // Card scale up
+  gsap.to(card, { scale: 1.03, duration: 0.3, ease: 'power2.out' })
 
-// Full page slider composable
-const { currentSlide, goToSlide } = useFullPageSlider({
-  totalSlides: slides.length,
-  onSlideChange: animateTransition,
-  cooldownMs: 1000,
-})
+  // Boost marquee
+  boostAll(4, 0.3)
 
-// Explosion animation (preserved)
-function explode(path: string) {
-  if (explosion.value) return
-  explosion.value = path
-  setTimeout(() => router.push(path), 600)
+  // Fade out content
+  if (contentRef.value) {
+    gsap.to(contentRef.value, {
+      opacity: 0,
+      scale: 0.98,
+      duration: 0.4,
+      delay: 0.15,
+      ease: 'power2.in',
+    })
+  }
+
+  setTimeout(() => router.push(path), 550)
 }
 
 // Lifecycle
 onMounted(async () => {
-  document.documentElement.style.overflow = 'hidden'
-  document.body.style.overflow = 'hidden'
-
   await nextTick()
 
-  sectionRefs.value.forEach((section, i) => {
-    if (!section) return
-    if (i === 0) {
-      section.style.visibility = 'visible'
-      const bgWords = section.querySelectorAll('.slide-bg-word')
-      const content = contentRefs.value[0]
-      gsap.fromTo(
-        bgWords,
-        { opacity: 0, scale: 1.15 },
-        { opacity: 0.06, scale: 1, duration: 1.2, stagger: 0.1, ease: 'power2.out' }
-      )
-      if (content) {
-        gsap.fromTo(
-          content,
-          { opacity: 0, y: 30 },
-          { opacity: 1, y: 0, duration: 0.8, delay: 0.4, ease: 'power2.out' }
-        )
-      }
-    } else {
-      section.style.visibility = 'hidden'
-    }
-  })
-})
+  const configs = rowRefs.value
+    .filter((el): el is HTMLElement => el !== null)
+    .map((el, i) => ({
+      el,
+      direction: (marqueeRows[i].direction === 1 ? 1 : -1) as 1 | -1,
+      speedMultiplier: marqueeRows[i].speed,
+    }))
 
-onUnmounted(() => {
-  document.documentElement.style.overflow = ''
-  document.body.style.overflow = ''
+  initMarquee(configs)
+
+  // Entrance animation
+  if (contentRef.value) {
+    gsap.fromTo(
+      contentRef.value,
+      { opacity: 0, y: 30 },
+      { opacity: 1, y: 0, duration: 0.8, delay: 0.2, ease: 'power2.out' }
+    )
+  }
 })
 </script>
 
 <style scoped>
 /* ── ROOT ── */
 .home-root {
-  position: fixed;
-  inset: 0;
-  overflow: hidden;
+  position: relative;
+  width: 100%;
+  min-height: 100vh;
   background: #000;
   color: #fff;
   font-family: 'Inter', -apple-system, system-ui, sans-serif;
 }
 
-/* ── BRAND ── */
-.fixed-brand {
+/* ── KINETIC MARQUEE BG ── */
+.kinetic-bg {
   position: fixed;
-  top: 28px;
-  left: 32px;
-  z-index: 100;
-}
-
-.brand-text {
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.2em;
-  color: rgba(255, 255, 255, 0.35);
-}
-
-/* ── PAGINATION ── */
-.slide-pagination {
-  position: fixed;
-  right: 24px;
-  top: 50%;
-  transform: translateY(-50%);
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  z-index: 100;
-}
-
-.slide-pagination.horizontal {
-  right: auto;
-  top: auto;
-  bottom: 24px;
-  left: 50%;
-  transform: translateX(-50%);
-  flex-direction: row;
-}
-
-.slide-dot {
-  width: 3px;
-  height: 20px;
-  background: rgba(255, 255, 255, 0.15);
-  border: none;
-  border-radius: 2px;
-  cursor: pointer;
-  padding: 0;
-  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.slide-dot.active {
-  height: 40px;
-  background: #e63946;
-}
-
-.slide-pagination.horizontal .slide-dot {
-  width: 20px;
-  height: 3px;
-}
-
-.slide-pagination.horizontal .slide-dot.active {
-  width: 40px;
-  height: 3px;
-}
-
-/* ── SLIDES ── */
-.slides-container {
-  position: relative;
-  width: 100%;
-  height: 100vh;
-  height: 100dvh;
-}
-
-.fp-slide {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100vh;
-  height: 100dvh;
-  overflow: hidden;
-}
-
-/* ── BG TEXT ── */
-.slide-bg-text {
-  position: absolute;
   inset: 0;
   display: flex;
   flex-direction: column;
-  align-items: center;
   justify-content: center;
-  pointer-events: none;
   z-index: 0;
+  pointer-events: none;
+  opacity: 0.07;
   overflow: hidden;
-  gap: 0;
+  gap: 4px;
 }
 
-.slide-bg-word {
-  font-size: clamp(8rem, 22vw, 20rem);
+.marquee-row {
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.marquee-track {
+  display: inline-flex;
+  will-change: transform;
+}
+
+.marquee-word {
+  font-size: clamp(5rem, 14vw, 12rem);
   font-weight: 900;
   text-transform: uppercase;
   letter-spacing: -0.05em;
-  line-height: 0.85;
+  line-height: 1;
+  padding: 0 0.15em;
+  flex-shrink: 0;
   user-select: none;
-  opacity: 0.06;
-  will-change: transform, opacity;
+  color: #fff;
+}
+
+.marquee-word.red {
+  color: #e63946;
 }
 
 /* ── CONTENT LAYER ── */
-.slide-content {
+.content-layer {
   position: relative;
   z-index: 1;
-  width: 100%;
-  height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
 }
 
 /* ── HERO ── */
-.hero-content {
-  text-align: center;
-  max-width: 800px;
+.hero {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  min-height: 100dvh;
   padding: 0 2rem;
+  text-align: center;
+}
+
+.brand {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  color: rgba(255, 255, 255, 0.3);
+  margin-bottom: 24px;
 }
 
 .hero-headline {
-  font-size: clamp(2.5rem, 7vw, 5rem);
+  font-size: clamp(2.8rem, 8vw, 6rem);
   font-weight: 900;
   letter-spacing: -0.04em;
   line-height: 1;
@@ -451,85 +279,52 @@ onUnmounted(() => {
 }
 
 .hero-subline {
-  font-size: clamp(1.5rem, 4vw, 2.8rem);
+  font-size: clamp(1.6rem, 4.5vw, 3.2rem);
   font-weight: 800;
   letter-spacing: -0.02em;
-  margin-top: 8px;
-  opacity: 0.85;
   color: #e63946;
+  margin-top: 8px;
 }
 
 .hero-desc {
-  font-size: clamp(0.85rem, 1.5vw, 1.05rem);
+  font-size: clamp(0.85rem, 1.4vw, 1.05rem);
   color: rgba(255, 255, 255, 0.4);
   margin-top: 20px;
   line-height: 1.6;
+  max-width: 500px;
 }
 
-/* ── THEME ── */
-.theme-content {
-  text-align: center;
-  max-width: 700px;
-  padding: 0 2rem;
-}
-
-.theme-label {
-  display: inline-block;
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.15em;
-  text-transform: uppercase;
-  color: #e63946;
-  margin-bottom: 16px;
-}
-
-.theme-headline {
-  font-size: clamp(2rem, 6vw, 4rem);
-  font-weight: 900;
-  letter-spacing: -0.04em;
-  line-height: 1;
-  margin: 0;
-}
-
-.theme-subline {
-  font-size: clamp(1.2rem, 3vw, 2rem);
-  font-weight: 800;
-  letter-spacing: -0.02em;
-  margin-top: 8px;
-  opacity: 0.7;
-}
-
-.theme-desc {
-  font-size: 0.95rem;
-  color: rgba(255, 255, 255, 0.45);
-  margin-top: 16px;
-  line-height: 1.6;
-}
-
-.theme-tags {
+.hero-scroll-hint {
   display: flex;
+  flex-direction: column;
+  align-items: center;
   gap: 8px;
-  flex-wrap: wrap;
-  justify-content: center;
-  margin-top: 20px;
+  margin-top: 48px;
+  color: rgba(255, 255, 255, 0.2);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.2em;
 }
 
-.theme-tag {
-  padding: 5px 14px;
-  border: 1px solid rgba(230, 57, 70, 0.4);
-  border-radius: 2px;
-  font-size: 11px;
-  font-weight: 600;
-  color: #e63946;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
+.scroll-line {
+  width: 1px;
+  height: 40px;
+  background: currentColor;
+  animation: pulse-line 2s ease-in-out infinite;
 }
 
-/* ── TOOLS ── */
-.tools-fullpage {
-  width: 100%;
+@keyframes pulse-line {
+  0%, 100% { opacity: 0.2; transform: scaleY(0.5); }
+  50% { opacity: 1; transform: scaleY(1); }
+}
+
+/* ── TOOLS SECTION ── */
+.tools-section {
+  padding: 40px 2rem 60px;
+}
+
+.tools-wrap {
   max-width: 1100px;
-  padding: 60px 40px;
   margin: 0 auto;
 }
 
@@ -554,12 +349,13 @@ onUnmounted(() => {
   gap: 10px;
 }
 
+/* ── CARD ── */
 .g-card {
   position: relative;
   display: flex;
   align-items: center;
   gap: 14px;
-  padding: 16px 18px;
+  padding: 18px 20px;
   background: #0d0d0d;
   border: 1px solid rgba(255, 255, 255, 0.06);
   border-radius: 3px;
@@ -572,7 +368,19 @@ onUnmounted(() => {
   background: #141414;
   border-color: #e63946;
   transform: translateY(-2px);
-  box-shadow: 0 10px 30px rgba(230, 57, 70, 0.12);
+  box-shadow: 0 10px 30px rgba(230, 57, 70, 0.1);
+}
+
+.g-card.is-active {
+  border-color: #e63946;
+  z-index: 10;
+}
+
+.g-card.is-faded {
+  opacity: 0.3;
+  filter: blur(2px);
+  pointer-events: none;
+  transition: all 0.4s;
 }
 
 .g-card-accent {
@@ -615,103 +423,121 @@ onUnmounted(() => {
   transform: translateX(4px);
 }
 
+/* ── RIPPLE ── */
+.g-ripple {
+  position: absolute;
+  width: 0;
+  height: 0;
+  border-radius: 50%;
+  background: rgba(10, 10, 10, 0.8);
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  opacity: 0;
+}
+
+.g-ripple.active {
+  animation: ripple-expand 0.6s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+@keyframes ripple-expand {
+  0% { width: 0; height: 0; opacity: 0.6; }
+  100% { width: 600px; height: 600px; opacity: 0; }
+}
+
 /* ── TERMINAL ── */
-.terminal-fullpage {
-  text-align: center;
-  cursor: pointer;
-  padding: 2rem;
+.terminal-section {
+  padding: 20px 2rem 40px;
 }
 
-.terminal-zeta-big {
-  font-size: clamp(4rem, 10vw, 8rem);
-  font-weight: 900;
-  color: #e63946;
-  line-height: 1;
-  margin-bottom: 16px;
-}
-
-.terminal-title-big {
-  font-size: clamp(1.5rem, 4vw, 2.4rem);
-  font-weight: 800;
-  letter-spacing: -0.03em;
-  margin-bottom: 8px;
-}
-
-.terminal-sub-big {
-  font-size: 0.95rem;
-  color: rgba(255, 255, 255, 0.4);
-  margin-bottom: 24px;
-}
-
-.terminal-cta {
-  display: inline-block;
-  padding: 12px 28px;
-  border: 1px solid rgba(230, 57, 70, 0.4);
+.terminal-card {
+  max-width: 1100px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 24px 28px;
+  background: #0d0d0d;
+  border: 1px solid rgba(230, 57, 70, 0.15);
   border-radius: 3px;
-  font-size: 0.85rem;
-  font-weight: 700;
-  color: #e63946;
-  letter-spacing: 0.05em;
-  transition: all 0.3s;
+  cursor: pointer;
+  transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow: hidden;
+  position: relative;
 }
 
-.terminal-fullpage:hover .terminal-cta {
-  background: #e63946;
-  color: #fff;
+.terminal-card:hover {
+  border-color: #e63946;
+  background: #111;
+  transform: translateY(-2px);
+  box-shadow: 0 12px 40px rgba(230, 57, 70, 0.1);
+}
+
+.terminal-card.is-active {
   border-color: #e63946;
 }
 
-/* ── EXPLOSIONS ── */
-.g-card.is-exploding {
-  z-index: 9999;
-  border-color: #fff;
-  animation: shock 0.6s ease;
+.terminal-zeta {
+  width: 52px;
+  height: 52px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.8rem;
+  font-weight: 900;
+  color: #e63946;
+  background: rgba(230, 57, 70, 0.08);
+  border: 1px solid rgba(230, 57, 70, 0.2);
+  border-radius: 3px;
+  flex-shrink: 0;
 }
 
-.g-card.is-exploding::after {
-  content: '';
-  position: absolute;
-  top: 50%;
-  left: 24px;
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
-  background: #fff;
-  transform: translate(-50%, -50%);
-  animation: bang 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+.terminal-info {
+  flex: 1;
 }
 
-@keyframes bang {
-  0% { transform: translate(-50%, -50%) scale(1); box-shadow: 0 0 10px #fff; }
-  100% { transform: translate(-50%, -50%) scale(250); box-shadow: 0 0 600px 300px #fff; opacity: 1; }
+.terminal-title {
+  font-size: 1rem;
+  font-weight: 700;
+  margin-bottom: 3px;
 }
 
-@keyframes shock {
-  0% { transform: scale(1); }
-  30% { transform: scale(0.98); }
-  100% { transform: scale(1.01); }
+.terminal-sub {
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.4);
+  line-height: 1.5;
 }
 
-.g-card.is-faded {
-  opacity: 0;
-  pointer-events: none;
-  transform: scale(0.96);
-  filter: blur(3px);
-  transition: all 0.5s;
+.terminal-cta {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #e63946;
+  flex-shrink: 0;
+  transition: transform 0.3s;
 }
 
-.flash {
+.terminal-card:hover .terminal-cta {
+  transform: translateX(4px);
+}
+
+/* ── TRANSITION OVERLAY ── */
+.transition-overlay {
   position: fixed;
   inset: 0;
-  background: #fff;
+  background: #000;
   z-index: 9998;
   opacity: 0;
   pointer-events: none;
-  transition: opacity 0.4s;
+  transition: opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
-.flash.on {
-  transition-delay: 0.4s;
+
+.transition-overlay.active {
   opacity: 1;
+  transition-delay: 0.15s;
+}
+
+/* ── FOOTER SPACER ── */
+.footer-spacer {
+  height: 60px;
 }
 
 /* ── RESPONSIVE ── */
@@ -722,17 +548,12 @@ onUnmounted(() => {
 }
 
 @media (max-width: 768px) {
-  .slide-bg-word {
-    font-size: clamp(4rem, 18vw, 8rem);
+  .marquee-word {
+    font-size: clamp(3rem, 14vw, 6rem);
   }
 
-  .fixed-brand {
-    top: 16px;
-    left: 16px;
-  }
-
-  .tools-fullpage {
-    padding: 40px 16px;
+  .tools-section {
+    padding: 32px 1rem 48px;
   }
 
   .tools-grid {
@@ -741,13 +562,21 @@ onUnmounted(() => {
   }
 
   .g-card {
-    padding: 12px 14px;
+    padding: 14px 16px;
+  }
+
+  .terminal-section {
+    padding: 12px 1rem 32px;
+  }
+
+  .terminal-card {
+    padding: 18px 20px;
   }
 }
 
 @media (max-width: 480px) {
-  .slide-bg-word {
-    font-size: clamp(3rem, 16vw, 6rem);
+  .marquee-word {
+    font-size: clamp(2.5rem, 16vw, 4rem);
   }
 
   .tools-grid {
@@ -759,11 +588,22 @@ onUnmounted(() => {
   }
 
   .hero-headline {
-    font-size: 2rem;
+    font-size: 2.2rem;
   }
 
-  .theme-headline {
-    font-size: 1.8rem;
+  .hero-subline {
+    font-size: 1.4rem;
+  }
+
+  .terminal-card {
+    flex-wrap: wrap;
+  }
+
+  .terminal-cta {
+    width: 100%;
+    text-align: center;
+    padding-top: 8px;
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
   }
 }
 </style>
