@@ -12,9 +12,33 @@ const STRETCH_FACTOR = 0.004
 const STRETCH_DECAY_DURATION = 0.4
 
 /**
+ * Detect whether #app is the scroll container (desktop: height:100% overflow:auto)
+ * or if scroll goes through window (mobile: height:auto).
+ */
+export function getScrollContainer(): HTMLElement | Window {
+  const app = document.getElementById('app')
+  if (!app) return window
+
+  const style = getComputedStyle(app)
+  const isScroller =
+    style.height !== 'auto' &&
+    app.scrollHeight > app.clientHeight &&
+    (style.overflowY === 'auto' || style.overflowY === 'scroll')
+
+  return isScroller ? app : window
+}
+
+function getScrollTop(target: HTMLElement | Window): number {
+  if (target instanceof Window) return window.scrollY
+  return target.scrollTop
+}
+
+/**
  * Scroll-driven marquee: letters move only when scrolling.
  * Also applies scaleY "stretch" effect proportional to scroll velocity.
  * When scroll stops, everything freezes and scaleY returns to 1.
+ *
+ * Automatically detects scroll container: #app on desktop, window on mobile.
  */
 export function useKineticMarquee() {
   const trackData: Array<{
@@ -26,17 +50,17 @@ export function useKineticMarquee() {
   }> = []
 
   let lastScrollTop = 0
-  let scrollContainer: HTMLElement | null = null
+  let scrollTarget: HTMLElement | Window | null = null
   let bgLayerEl: HTMLElement | null = null
   let idleTimer: ReturnType<typeof setTimeout> | null = null
   let stretchTween: gsap.core.Tween | null = null
 
-  function initTracks(tracks: MarqueeTrack[], container: HTMLElement, bgLayer: HTMLElement) {
+  function initTracks(tracks: MarqueeTrack[], _container: HTMLElement, bgLayer: HTMLElement) {
     destroy()
 
-    scrollContainer = container
+    scrollTarget = getScrollContainer()
     bgLayerEl = bgLayer
-    lastScrollTop = container.scrollTop
+    lastScrollTop = getScrollTop(scrollTarget)
 
     tracks.forEach((track) => {
       const inner = track.el.querySelector('.marquee-inner') as HTMLElement
@@ -54,13 +78,13 @@ export function useKineticMarquee() {
       })
     })
 
-    container.addEventListener('scroll', onScroll, { passive: true })
+    scrollTarget.addEventListener('scroll', onScroll, { passive: true })
   }
 
   function onScroll() {
-    if (!scrollContainer || !bgLayerEl) return
+    if (!scrollTarget || !bgLayerEl) return
 
-    const currentScrollTop = scrollContainer.scrollTop
+    const currentScrollTop = getScrollTop(scrollTarget)
     const delta = currentScrollTop - lastScrollTop
     lastScrollTop = currentScrollTop
 
@@ -105,8 +129,8 @@ export function useKineticMarquee() {
   }
 
   function destroy() {
-    if (scrollContainer) {
-      scrollContainer.removeEventListener('scroll', onScroll)
+    if (scrollTarget) {
+      scrollTarget.removeEventListener('scroll', onScroll)
     }
     if (idleTimer) clearTimeout(idleTimer)
     if (stretchTween) stretchTween.kill()
@@ -120,7 +144,7 @@ export function useKineticMarquee() {
       bgLayerEl.style.removeProperty('--stretch')
     }
 
-    scrollContainer = null
+    scrollTarget = null
     bgLayerEl = null
   }
 
