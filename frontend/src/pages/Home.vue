@@ -1,49 +1,72 @@
 <template>
   <div class="home-root">
-    <!-- Kinetic marquee background (fixed) -->
-    <div class="kinetic-bg">
+    <!-- ═══ FULL-VIEWPORT FADE SLIDER ═══ -->
+    <div class="slider-viewport" ref="viewportRef">
+      <!-- Each slide is position:absolute, crossfaded via opacity -->
       <div
-        v-for="(row, ri) in marqueeRows"
-        :key="ri"
-        class="marquee-row"
-        :ref="el => setRowRef(el as HTMLElement | null, ri)"
+        v-for="(slide, si) in slides"
+        :key="si"
+        class="slide"
+        :class="[slide.type, { active: si === currentSlide }]"
       >
-        <div class="marquee-track">
-          <span
-            v-for="(word, wi) in row.words"
-            :key="'a' + wi"
-            class="marquee-word"
-            :class="{ red: wi % 2 === 1 }"
-          >{{ word }}</span>
-          <span
-            v-for="(word, wi) in row.words"
-            :key="'b' + wi"
-            class="marquee-word"
-            :class="{ red: wi % 2 === 1 }"
-          >{{ word }}</span>
-        </div>
+        <!-- DARK SLIDE: marquee letter rows + center card -->
+        <template v-if="slide.type === 'dark'">
+          <div class="marquee-bg">
+            <div
+              v-for="(letter, li) in slide.letters"
+              :key="li"
+              class="marquee-row"
+              :ref="(el) => setTrackRef(el as HTMLElement | null, si, li)"
+            >
+              <div class="marquee-inner">
+                <span v-for="n in 20" :key="'a' + n" class="marquee-letter">{{ letter }}</span>
+                <span v-for="n in 20" :key="'b' + n" class="marquee-letter">{{ letter }}</span>
+              </div>
+            </div>
+          </div>
+          <div class="slide-center">
+            <div class="center-card">
+              <div class="card-eyebrow">{{ slide.eyebrow }}</div>
+              <div class="card-title">{{ slide.title }}</div>
+              <div class="card-desc">{{ slide.desc }}</div>
+            </div>
+          </div>
+        </template>
+
+        <!-- RED SLIDE: bold typography statement -->
+        <template v-if="slide.type === 'red'">
+          <div class="red-content">
+            <div v-if="slide.topLine" class="red-top">{{ slide.topLine }}</div>
+            <div class="red-headline">{{ slide.headline }}</div>
+            <div v-if="slide.bottomLine" class="red-bottom">{{ slide.bottomLine }}</div>
+          </div>
+        </template>
+      </div>
+
+      <!-- Slide indicators -->
+      <div class="slide-indicators">
+        <button
+          v-for="(_, si) in slides"
+          :key="si"
+          class="indicator"
+          :class="{ active: si === currentSlide }"
+          @click="goToSlide(si)"
+        ></button>
+      </div>
+
+      <!-- Scroll down hint -->
+      <div class="scroll-hint">
+        <span>SCROLL</span>
+        <div class="scroll-line"></div>
       </div>
     </div>
 
-    <!-- Content -->
-    <div class="content-layer" ref="contentRef">
-      <!-- Hero -->
-      <section class="hero">
-        <div class="brand">&#9670; QUANT ANALYTICS</div>
-        <h1 class="hero-headline">QUANTITATIVE</h1>
-        <p class="hero-subline">ANALYTICS</p>
-        <p class="hero-desc">&#1055;&#1083;&#1072;&#1090;&#1092;&#1086;&#1088;&#1084;&#1072; &#1082;&#1086;&#1083;&#1080;&#1095;&#1077;&#1089;&#1090;&#1074;&#1077;&#1085;&#1085;&#1086;&#1075;&#1086; &#1072;&#1085;&#1072;&#1083;&#1080;&#1079;&#1072; &#1076;&#1083;&#1103; &#1092;&#1080;&#1085;&#1072;&#1085;&#1089;&#1086;&#1074;&#1099;&#1093; &#1088;&#1099;&#1085;&#1082;&#1086;&#1074;</p>
-        <div class="hero-scroll-hint">
-          <span>SCROLL</span>
-          <div class="scroll-line"></div>
-        </div>
-      </section>
-
-      <!-- Tools -->
+    <!-- ═══ TOOLS + TERMINAL (scrollable below slider) ═══ -->
+    <div class="below-fold" ref="belowFoldRef">
       <section class="tools-section">
         <div class="tools-wrap">
           <div class="section-eyebrow">PLATFORM</div>
-          <h2 class="section-heading">&#1048;&#1085;&#1089;&#1090;&#1088;&#1091;&#1084;&#1077;&#1085;&#1090;&#1099;</h2>
+          <h2 class="section-heading">Инструменты</h2>
 
           <div class="tools-grid">
             <div
@@ -52,7 +75,7 @@
               class="g-card"
               :class="{
                 'is-active': activeTool === tool.path,
-                'is-faded': activeTool && activeTool !== tool.path
+                'is-faded': activeTool !== null && activeTool !== tool.path
               }"
               @click="navigateTo(tool.path, $event)"
             >
@@ -62,13 +85,11 @@
                 <div class="g-card-desc">{{ tool.desc }}</div>
               </div>
               <div class="g-card-arrow">&rarr;</div>
-              <div class="g-ripple" ref="rippleRefs"></div>
             </div>
           </div>
         </div>
       </section>
 
-      <!-- Terminal -->
       <section class="terminal-section">
         <div
           class="terminal-card"
@@ -77,126 +98,251 @@
         >
           <div class="terminal-zeta">&zeta;</div>
           <div class="terminal-info">
-            <div class="terminal-title">&#1044;&#1079;&#1077;&#1090;&#1072;-&#1058;&#1077;&#1088;&#1084;&#1080;&#1085;&#1072;&#1083;</div>
-            <div class="terminal-sub">&#1055;&#1086;&#1090;&#1086;&#1082;&#1086;&#1074;&#1099;&#1077; &#1076;&#1072;&#1085;&#1085;&#1099;&#1077; &#1074; &#1088;&#1077;&#1072;&#1083;&#1100;&#1085;&#1086;&#1084; &#1074;&#1088;&#1077;&#1084;&#1077;&#1085;&#1080; &middot; &#1040;&#1082;&#1094;&#1080;&#1080; &middot; &#1050;&#1088;&#1080;&#1087;&#1090;&#1086; &middot; &#1060;&#1100;&#1102;&#1095;&#1077;&#1088;&#1089;&#1099; &middot; &#1054;&#1087;&#1094;&#1080;&#1086;&#1085;&#1099;</div>
+            <div class="terminal-title">Дзета-Терминал</div>
+            <div class="terminal-sub">Потоковые данные в реальном времени &middot; Акции &middot; Крипто &middot; Фьючерсы &middot; Опционы</div>
           </div>
-          <div class="terminal-cta">&#1054;&#1090;&#1082;&#1088;&#1099;&#1090;&#1100; &rarr;</div>
+          <div class="terminal-cta">Открыть &rarr;</div>
         </div>
       </section>
 
-      <!-- Footer spacer -->
       <div class="footer-spacer"></div>
     </div>
 
-    <!-- Transition overlay -->
-    <div class="transition-overlay" :class="{ active: !!activeTool }"></div>
+    <!-- Transition overlay for navigation -->
+    <div class="transition-overlay" :class="{ active: activeTool !== null }"></div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, nextTick } from 'vue'
+import { ref, onMounted, onUnmounted, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 import { gsap } from 'gsap'
-import { useKineticMarquee } from '@/composables/useKineticMarquee'
+import { useKineticMarquee, type MarqueeTrack } from '@/composables/useKineticMarquee'
 
 const router = useRouter()
+const viewportRef = ref<HTMLElement | null>(null)
+const belowFoldRef = ref<HTMLElement | null>(null)
 const activeTool = ref<string | null>(null)
-const contentRef = ref<HTMLElement | null>(null)
+const currentSlide = ref(0)
 
-const marqueeRows = [
-  { words: ['BLACK-SCHOLES', 'HESTON', 'LÉVY', 'MONTE CARLO', 'SABR', 'DCF'], direction: 1, speed: 1.0 },
-  { words: ['VOLATILITY', 'HMM', 'GREEKS', 'SHARPE', 'VAR', 'VITERBI', 'SVI'], direction: -1, speed: 1.4 },
-  { words: ['PORTFOLIO', 'OPTIONS', 'FUTURES', 'SWAPS', 'FORWARDS', 'BONDS'], direction: 1, speed: 0.8 },
-  { words: ['LIQUIDITY', 'CORRELATION', 'REGIME', 'STRESS TEST', 'ORDER BOOK', 'DURATION'], direction: -1, speed: 1.2 },
+interface DarkSlide {
+  type: 'dark'
+  letters: string[]
+  eyebrow: string
+  title: string
+  desc: string
+}
+
+interface RedSlide {
+  type: 'red'
+  topLine?: string
+  headline: string
+  bottomLine?: string
+}
+
+type Slide = DarkSlide | RedSlide
+
+const slides: Slide[] = [
+  {
+    type: 'dark',
+    letters: ['Q', 'U', 'A', 'N'],
+    eyebrow: 'STOCHASTIC PLATFORM',
+    title: 'Quantitative Analytics',
+    desc: 'Стохастические модели, ценообразование деривативов, портфельный анализ',
+  },
+  {
+    type: 'red',
+    topLine: 'QUANTITATIVE',
+    headline: 'ANALYTICS',
+    bottomLine: 'STOCHASTIC MODELS',
+  },
+  {
+    type: 'dark',
+    letters: ['R', 'I', 'S', 'K'],
+    eyebrow: 'RISK ENGINE',
+    title: 'Risk Management',
+    desc: 'VaR, стресс-тесты, режимы рынка, факторный анализ',
+  },
+  {
+    type: 'red',
+    topLine: 'BLACK-SCHOLES',
+    headline: 'HESTON',
+    bottomLine: 'MONTE CARLO · LÉVY',
+  },
+  {
+    type: 'dark',
+    letters: ['V', 'O', 'L', 'A'],
+    eyebrow: 'VOLATILITY SURFACE',
+    title: 'Options & Volatility',
+    desc: 'SABR/SVI калибровка, smile, FFT-ценообразование',
+  },
+  {
+    type: 'red',
+    topLine: 'PORTFOLIO',
+    headline: 'OPTIMIZE',
+    bottomLine: 'SHARPE · VAR · GREEKS',
+  },
 ]
 
 const tools = [
-  { name: 'Портфельный анализ', desc: 'Доходность, VaR/ES, мониторинг позиций, корреляции', color: 'red', path: '/portfolio' },
-  { name: 'Риск-менеджмент', desc: 'Стресс-тесты, бэктестинг VaR, сценарный анализ', color: 'dark', path: '/stress' },
-  { name: 'Рыночные режимы', desc: 'HMM, стационарное распределение, комплексный анализ', color: 'red', path: '/regimes' },
-  { name: 'Стоимость облигаций', desc: 'DCF подход, спреды к кривой, дюрация, convexity', color: 'dark', path: '/bond-valuation' },
-  { name: 'Стоимость опционов', desc: 'БШМ, Хестон, Леви, FFT-ценообразование', color: 'red', path: '/pricing/options' },
-  { name: 'Волатильность', desc: 'Калибровка SABR/SVI, smile & term-structure', color: 'dark', path: '/analytics/volatility' },
-  { name: 'Стоимость СВОПов', desc: 'IRS & FX свопы, NPV, DV01, чувствительность', color: 'red', path: 'valuation/swaps' },
-  { name: 'Стоимость форвардов', desc: 'Справедливая стоимость, построение кривой', color: 'dark', path: 'valuation/forwards' },
-  { name: 'Отчёты', desc: 'Bond Report, шаблонные отчеты и аналитика', color: 'red', path: '/vanila-bond-report' },
-  { name: 'Монте-Карло', desc: 'Симуляции, стохастические модели, генерация путей', color: 'dark', path: '/monte-carlo' },
-  { name: 'Кривая бескупонной доходности', desc: 'ZCYC, zero-coupon yield curve', color: 'red', path: '/zcyc-viewer' },
-  { name: 'P&L Attribution', desc: 'Факторная декомпозиция P&L, атрибуция доходности', color: 'dark', path: '/analytics/pnl' },
+  { name: 'Портфельный анализ', desc: 'Доходность, VaR/ES, мониторинг позиций', color: 'red', path: '/portfolio' },
+  { name: 'Риск-менеджмент', desc: 'Стресс-тесты, бэктестинг VaR, сценарии', color: 'dark', path: '/stress' },
+  { name: 'Рыночные режимы', desc: 'HMM, стационарное распределение', color: 'red', path: '/regimes' },
+  { name: 'Стоимость облигаций', desc: 'DCF, дюрация, convexity, спреды', color: 'dark', path: '/bond-valuation' },
+  { name: 'Стоимость опционов', desc: 'БШМ, Хестон, Леви, FFT', color: 'red', path: '/pricing/options' },
+  { name: 'Волатильность', desc: 'SABR/SVI калибровка, smile', color: 'dark', path: '/analytics/volatility' },
+  { name: 'Стоимость СВОПов', desc: 'IRS & FX свопы, NPV, DV01', color: 'red', path: 'valuation/swaps' },
+  { name: 'Стоимость форвардов', desc: 'Справедливая стоимость, кривая', color: 'dark', path: 'valuation/forwards' },
+  { name: 'Отчёты', desc: 'Bond Report, шаблонные отчёты', color: 'red', path: '/vanila-bond-report' },
+  { name: 'Монте-Карло', desc: 'Симуляции, стохастические модели', color: 'dark', path: '/monte-carlo' },
+  { name: 'Кривая доходности', desc: 'ZCYC, zero-coupon yield curve', color: 'red', path: '/zcyc-viewer' },
+  { name: 'P&L Attribution', desc: 'Факторная декомпозиция P&L', color: 'dark', path: '/analytics/pnl' },
+  { name: 'Citadel Zeta Field', desc: 'Гравитационное поле ликвидности', color: 'red', path: '/terminal' },
+  { name: 'Phase Space', desc: 'Фазовое пространство, аттракторы', color: 'dark', path: '/terminal' },
+  { name: 'Liquidity Model', desc: 'Модель ликвидности рынка', color: 'red', path: '/terminal' },
 ]
 
-// Marquee refs
-const rowRefs = ref<(HTMLElement | null)[]>([])
-const setRowRef = (el: HTMLElement | null, i: number) => {
-  rowRefs.value[i] = el
+// Track refs for marquee initialization
+const trackRefMap = new Map<string, HTMLElement>()
+
+function setTrackRef(el: HTMLElement | null, slideIdx: number, rowIdx: number) {
+  const key = `${slideIdx}-${rowIdx}`
+  if (el) {
+    trackRefMap.set(key, el)
+  } else {
+    trackRefMap.delete(key)
+  }
 }
 
-const { init: initMarquee, boostAll } = useKineticMarquee()
+const { initTracks, boostAll, resetSpeed } = useKineticMarquee()
 
-// Navigation with ripple + fade transition
+// Slide timer
+let slideTimer: ReturnType<typeof setInterval> | null = null
+const SLIDE_INTERVAL = 3500
+
+function goToSlide(idx: number) {
+  if (idx === currentSlide.value) return
+  currentSlide.value = idx
+  boostAll(3, 0.3)
+  setTimeout(() => resetSpeed(0.8), 400)
+  resetTimer()
+}
+
+function nextSlide() {
+  const next = (currentSlide.value + 1) % slides.length
+  goToSlide(next)
+}
+
+function resetTimer() {
+  if (slideTimer) clearInterval(slideTimer)
+  slideTimer = setInterval(nextSlide, SLIDE_INTERVAL)
+}
+
+// Navigation with fade transition
 function navigateTo(path: string, e: MouseEvent) {
   if (activeTool.value) return
   activeTool.value = path
 
-  // Ripple from click point on the card
-  const card = (e.currentTarget as HTMLElement)
-  const rect = card.getBoundingClientRect()
-  const ripple = card.querySelector('.g-ripple') as HTMLElement
-  if (ripple) {
-    ripple.style.left = `${e.clientX - rect.left}px`
-    ripple.style.top = `${e.clientY - rect.top}px`
-    ripple.classList.add('active')
-  }
-
-  // Card scale up
+  const card = e.currentTarget as HTMLElement
   gsap.to(card, { scale: 1.03, duration: 0.3, ease: 'power2.out' })
 
-  // Boost marquee
-  boostAll(4, 0.3)
+  boostAll(5, 0.3)
 
-  // Fade out content
-  if (contentRef.value) {
-    gsap.to(contentRef.value, {
-      opacity: 0,
-      scale: 0.98,
-      duration: 0.4,
-      delay: 0.15,
-      ease: 'power2.in',
-    })
-  }
-
-  setTimeout(() => router.push(path), 550)
+  setTimeout(() => router.push(path), 500)
 }
 
-// Lifecycle
+// Init marquee tracks for ALL dark slides
+function initAllMarquees() {
+  const allTracks: MarqueeTrack[] = []
+
+  slides.forEach((slide, si) => {
+    if (slide.type !== 'dark') return
+    const directions: Array<1 | -1> = [1, -1, 1, -1]
+    slide.letters.forEach((_, li) => {
+      const el = trackRefMap.get(`${si}-${li}`)
+      if (el) {
+        allTracks.push({ el, direction: directions[li] })
+      }
+    })
+  })
+
+  initTracks(allTracks)
+}
+
+// Wheel/touch to advance slide when in viewport
+function handleWheel(e: WheelEvent) {
+  // Only intercept if we're at the slider viewport
+  const vp = viewportRef.value
+  if (!vp) return
+
+  const rect = vp.getBoundingClientRect()
+  // If slider is mostly visible
+  if (rect.top > -100 && rect.bottom > window.innerHeight * 0.5) {
+    // Don't prevent scroll if on last slide and scrolling down
+    if (e.deltaY > 0 && currentSlide.value === slides.length - 1) return
+    // Don't prevent scroll if on first slide and scrolling up
+    if (e.deltaY < 0 && currentSlide.value === 0) return
+
+    e.preventDefault()
+    if (Math.abs(e.deltaY) < 30) return
+
+    if (e.deltaY > 0) {
+      goToSlide(Math.min(currentSlide.value + 1, slides.length - 1))
+    } else {
+      goToSlide(Math.max(currentSlide.value - 1, 0))
+    }
+  }
+}
+
+let touchStartY = 0
+
+function handleTouchStart(e: TouchEvent) {
+  touchStartY = e.touches[0].clientY
+}
+
+function handleTouchEnd(e: TouchEvent) {
+  const vp = viewportRef.value
+  if (!vp) return
+
+  const rect = vp.getBoundingClientRect()
+  if (rect.top > -100 && rect.bottom > window.innerHeight * 0.5) {
+    const dy = touchStartY - e.changedTouches[0].clientY
+    if (Math.abs(dy) < 40) return
+
+    if (dy > 0 && currentSlide.value < slides.length - 1) {
+      goToSlide(currentSlide.value + 1)
+    } else if (dy < 0 && currentSlide.value > 0) {
+      goToSlide(currentSlide.value - 1)
+    }
+  }
+}
+
 onMounted(async () => {
   await nextTick()
-
-  const configs = rowRefs.value
-    .filter((el): el is HTMLElement => el !== null)
-    .map((el, i) => ({
-      el,
-      direction: (marqueeRows[i].direction === 1 ? 1 : -1) as 1 | -1,
-      speedMultiplier: marqueeRows[i].speed,
-    }))
-
-  initMarquee(configs)
+  initAllMarquees()
+  resetTimer()
 
   // Entrance animation
-  if (contentRef.value) {
-    gsap.fromTo(
-      contentRef.value,
-      { opacity: 0, y: 30 },
-      { opacity: 1, y: 0, duration: 0.8, delay: 0.2, ease: 'power2.out' }
-    )
+  if (belowFoldRef.value) {
+    gsap.set(belowFoldRef.value, { opacity: 1 })
   }
+
+  window.addEventListener('wheel', handleWheel, { passive: false })
+  window.addEventListener('touchstart', handleTouchStart, { passive: true })
+  window.addEventListener('touchend', handleTouchEnd, { passive: true })
+})
+
+onUnmounted(() => {
+  if (slideTimer) clearInterval(slideTimer)
+  window.removeEventListener('wheel', handleWheel)
+  window.removeEventListener('touchstart', handleTouchStart)
+  window.removeEventListener('touchend', handleTouchEnd)
 })
 </script>
 
 <style scoped>
-/* ── ROOT ── */
+/* ══════ ROOT ══════ */
 .home-root {
-  position: relative;
   width: 100%;
   min-height: 100vh;
   background: #000;
@@ -204,111 +350,207 @@ onMounted(async () => {
   font-family: 'Inter', -apple-system, system-ui, sans-serif;
 }
 
-/* ── KINETIC MARQUEE BG ── */
-.kinetic-bg {
-  position: fixed;
+/* ══════ SLIDER VIEWPORT ══════ */
+.slider-viewport {
+  position: relative;
+  width: 100%;
+  height: 100vh;
+  height: 100dvh;
+  overflow: hidden;
+}
+
+/* ══════ SLIDE (crossfade) ══════ */
+.slide {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  transition: opacity 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+  pointer-events: none;
+}
+
+.slide.active {
+  opacity: 1;
+  pointer-events: auto;
+  z-index: 1;
+}
+
+/* ══════ DARK SLIDE ══════ */
+.slide.dark {
+  background: #000;
+}
+
+.marquee-bg {
+  position: absolute;
   inset: 0;
   display: flex;
   flex-direction: column;
   justify-content: center;
-  z-index: 0;
-  pointer-events: none;
-  opacity: 0.07;
+  gap: 0;
   overflow: hidden;
-  gap: 4px;
+  z-index: 0;
 }
 
 .marquee-row {
   overflow: hidden;
   white-space: nowrap;
+  line-height: 1;
 }
 
-.marquee-track {
+.marquee-inner {
   display: inline-flex;
   will-change: transform;
 }
 
-.marquee-word {
-  font-size: clamp(5rem, 14vw, 12rem);
+.marquee-letter {
+  font-size: clamp(6rem, 18vw, 16rem);
   font-weight: 900;
-  text-transform: uppercase;
-  letter-spacing: -0.05em;
-  line-height: 1;
-  padding: 0 0.15em;
+  color: #e63946;
+  opacity: 0.85;
+  letter-spacing: -0.02em;
+  padding: 0 0.08em;
   flex-shrink: 0;
   user-select: none;
-  color: #fff;
+  line-height: 0.9;
 }
 
-.marquee-word.red {
+/* Center card overlay on dark slides */
+.slide-center {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2;
+}
+
+.center-card {
+  background: rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(6px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 4px;
+  padding: 36px 44px;
+  max-width: 420px;
+  text-align: center;
+}
+
+.card-eyebrow {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.25em;
   color: #e63946;
+  margin-bottom: 12px;
 }
 
-/* ── CONTENT LAYER ── */
-.content-layer {
-  position: relative;
-  z-index: 1;
+.card-title {
+  font-size: clamp(1.4rem, 3vw, 2rem);
+  font-weight: 900;
+  letter-spacing: -0.03em;
+  line-height: 1.1;
+  margin-bottom: 10px;
 }
 
-/* ── HERO ── */
-.hero {
+.card-desc {
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.5);
+  line-height: 1.6;
+}
+
+/* ══════ RED SLIDE ══════ */
+.slide.red {
+  background: #e63946;
+}
+
+.red-content {
+  position: absolute;
+  inset: 0;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  min-height: 100vh;
-  min-height: 100dvh;
-  padding: 0 2rem;
   text-align: center;
+  padding: 2rem;
 }
 
-.brand {
-  font-size: 11px;
+.red-top {
+  font-size: clamp(0.8rem, 1.4vw, 1.1rem);
+  font-weight: 700;
+  letter-spacing: 0.25em;
+  color: rgba(0, 0, 0, 0.4);
+  margin-bottom: 12px;
+}
+
+.red-headline {
+  font-size: clamp(3.5rem, 12vw, 10rem);
+  font-weight: 900;
+  letter-spacing: -0.05em;
+  line-height: 0.9;
+  color: #000;
+}
+
+.red-bottom {
+  font-size: clamp(0.7rem, 1.2vw, 1rem);
   font-weight: 700;
   letter-spacing: 0.2em;
-  color: rgba(255, 255, 255, 0.3);
-  margin-bottom: 24px;
+  color: rgba(0, 0, 0, 0.35);
+  margin-top: 16px;
 }
 
-.hero-headline {
-  font-size: clamp(2.8rem, 8vw, 6rem);
-  font-weight: 900;
-  letter-spacing: -0.04em;
-  line-height: 1;
-  margin: 0;
+/* ══════ SLIDE INDICATORS ══════ */
+.slide-indicators {
+  position: absolute;
+  bottom: 60px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 8px;
+  z-index: 10;
 }
 
-.hero-subline {
-  font-size: clamp(1.6rem, 4.5vw, 3.2rem);
-  font-weight: 800;
-  letter-spacing: -0.02em;
-  color: #e63946;
-  margin-top: 8px;
+.indicator {
+  width: 32px;
+  height: 3px;
+  background: rgba(255, 255, 255, 0.2);
+  border: none;
+  border-radius: 2px;
+  cursor: pointer;
+  padding: 0;
+  transition: all 0.4s;
 }
 
-.hero-desc {
-  font-size: clamp(0.85rem, 1.4vw, 1.05rem);
-  color: rgba(255, 255, 255, 0.4);
-  margin-top: 20px;
-  line-height: 1.6;
-  max-width: 500px;
+.indicator.active {
+  background: #e63946;
+  width: 48px;
 }
 
-.hero-scroll-hint {
+/* Red slide adjusts indicator colors */
+.slide.red.active ~ .slide-indicators .indicator {
+  background: rgba(0, 0, 0, 0.2);
+}
+
+.slide.red.active ~ .slide-indicators .indicator.active {
+  background: #000;
+}
+
+/* ══════ SCROLL HINT ══════ */
+.scroll-hint {
+  position: absolute;
+  bottom: 16px;
+  left: 50%;
+  transform: translateX(-50%);
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 8px;
-  margin-top: 48px;
+  gap: 6px;
+  z-index: 10;
   color: rgba(255, 255, 255, 0.2);
-  font-size: 10px;
+  font-size: 9px;
   font-weight: 700;
   letter-spacing: 0.2em;
 }
 
 .scroll-line {
   width: 1px;
-  height: 40px;
+  height: 24px;
   background: currentColor;
   animation: pulse-line 2s ease-in-out infinite;
 }
@@ -318,9 +560,16 @@ onMounted(async () => {
   50% { opacity: 1; transform: scaleY(1); }
 }
 
-/* ── TOOLS SECTION ── */
+/* ══════ BELOW FOLD ══════ */
+.below-fold {
+  position: relative;
+  z-index: 2;
+  background: #000;
+}
+
+/* ══════ TOOLS SECTION ══════ */
 .tools-section {
-  padding: 40px 2rem 60px;
+  padding: 60px 2rem 60px;
 }
 
 .tools-wrap {
@@ -349,7 +598,7 @@ onMounted(async () => {
   gap: 10px;
 }
 
-/* ── CARD ── */
+/* ══════ CARD ══════ */
 .g-card {
   position: relative;
   display: flex;
@@ -423,28 +672,7 @@ onMounted(async () => {
   transform: translateX(4px);
 }
 
-/* ── RIPPLE ── */
-.g-ripple {
-  position: absolute;
-  width: 0;
-  height: 0;
-  border-radius: 50%;
-  background: rgba(10, 10, 10, 0.8);
-  transform: translate(-50%, -50%);
-  pointer-events: none;
-  opacity: 0;
-}
-
-.g-ripple.active {
-  animation: ripple-expand 0.6s cubic-bezier(0.4, 0, 0.2, 1) forwards;
-}
-
-@keyframes ripple-expand {
-  0% { width: 0; height: 0; opacity: 0.6; }
-  100% { width: 600px; height: 600px; opacity: 0; }
-}
-
-/* ── TERMINAL ── */
+/* ══════ TERMINAL ══════ */
 .terminal-section {
   padding: 20px 2rem 40px;
 }
@@ -519,7 +747,7 @@ onMounted(async () => {
   transform: translateX(4px);
 }
 
-/* ── TRANSITION OVERLAY ── */
+/* ══════ TRANSITION OVERLAY ══════ */
 .transition-overlay {
   position: fixed;
   inset: 0;
@@ -532,15 +760,15 @@ onMounted(async () => {
 
 .transition-overlay.active {
   opacity: 1;
-  transition-delay: 0.15s;
+  transition-delay: 0.1s;
 }
 
-/* ── FOOTER SPACER ── */
+/* ══════ FOOTER SPACER ══════ */
 .footer-spacer {
   height: 60px;
 }
 
-/* ── RESPONSIVE ── */
+/* ══════ RESPONSIVE ══════ */
 @media (max-width: 1024px) {
   .tools-grid {
     grid-template-columns: repeat(2, 1fr);
@@ -548,12 +776,17 @@ onMounted(async () => {
 }
 
 @media (max-width: 768px) {
-  .marquee-word {
-    font-size: clamp(3rem, 14vw, 6rem);
+  .marquee-letter {
+    font-size: clamp(4rem, 18vw, 8rem);
+  }
+
+  .center-card {
+    padding: 24px 28px;
+    margin: 0 1rem;
   }
 
   .tools-section {
-    padding: 32px 1rem 48px;
+    padding: 40px 1rem 48px;
   }
 
   .tools-grid {
@@ -572,11 +805,15 @@ onMounted(async () => {
   .terminal-card {
     padding: 18px 20px;
   }
+
+  .red-headline {
+    font-size: clamp(2.5rem, 14vw, 6rem);
+  }
 }
 
 @media (max-width: 480px) {
-  .marquee-word {
-    font-size: clamp(2.5rem, 16vw, 4rem);
+  .marquee-letter {
+    font-size: clamp(3rem, 20vw, 5rem);
   }
 
   .tools-grid {
@@ -587,12 +824,12 @@ onMounted(async () => {
     display: none;
   }
 
-  .hero-headline {
-    font-size: 2.2rem;
+  .center-card {
+    padding: 20px 22px;
   }
 
-  .hero-subline {
-    font-size: 1.4rem;
+  .card-title {
+    font-size: 1.3rem;
   }
 
   .terminal-card {
@@ -604,6 +841,10 @@ onMounted(async () => {
     text-align: center;
     padding-top: 8px;
     border-top: 1px solid rgba(255, 255, 255, 0.06);
+  }
+
+  .slide-indicators {
+    bottom: 48px;
   }
 }
 </style>
