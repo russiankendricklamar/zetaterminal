@@ -1,6 +1,6 @@
 # Overview
 
-This document provides a high-level introduction to the Stochastic Dashboard / v1 system: its purpose, architecture, technology stack, and key modules. This page serves as the entry point to understanding the codebase structure and how the major components interact.
+This space provides a high-level introduction to the Stochastic Dashboard / v1 system: its purpose, architecture, technology stack, and key modules. This page serves as the entry point to understanding the codebase structure and how the major components interact.
 
 For detailed information about specific subsystems, see:
 
@@ -327,3 +327,477 @@ app.add_middleware(
     allow_headers=["*"],
 )
 ```
+
+# Architecture
+
+This space describes the overall system architecture of the Stochastic Dashboard v1, including the separation between frontend and backend components, communication patterns, deployment infrastructure, and key architectural decisions.
+
+For detailed information about specific layers (in separate docs):
+
+- Frontend component organization, routing, and UI framework: see `Frontend Architecture`
+- Backend API structure, service layer, and repository pattern: see `Backend Architecture`
+- External API integrations and data pipelines: see `Data Flow & Integration`
+
+## Purpose and Scope
+
+This space focuses on:
+
+- High-level system overview.
+- Frontend–backend separation of responsibilities.
+- Communication patterns between layers.
+- Deployment architecture (GitHub Pages + Railway).
+- Key architectural decisions and their trade-offs.
+
+## System Overview
+
+The Stochastic Dashboard follows a **decoupled client–server architecture** with a Vue.js 3 SPA frontend communicating with a Python FastAPI backend over HTTPS. The frontend is statically hosted on GitHub Pages, while the backend runs on Railway PaaS.
+
+High-level layers:
+
+- Client (Web Browser, Mobile Device).
+- Vue.js 3 SPA:
+  - `index.html` + Vite build output (`frontend/dist/`).
+  - `main.ts` (entry point).
+  - `router/index.ts` (hash-based routing).
+  - Pinia stores in `src/stores/*`.
+  - Layout components: `MainLayout.vue`, `Sidebar.vue`, `CommandPalette.vue`.
+  - Page components: `Portfolio.vue`, `RegimeSpace3D.vue`, `Terminal.vue`, `BondValuation.vue`, `OptionPricing.vue`, `SwapValuation.vue`, `Settings.vue`.
+- TypeScript services:
+  - `multivariateHmmService.ts`
+  - `spectralRegimeService.ts`
+  - `bondService.ts`
+  - `rudataService.ts`
+- Axios HTTP client configured with `VITE_API_BASE_URL`.
+
+Backend:
+
+- Uvicorn ASGI server.
+- `FastAPI()` application in `backend/src/main.py`.
+- CORS middleware.
+- API routers in `backend/src/api/`:
+  - `bond.py`, `swap.py`, `forward.py`
+  - `compute.py`
+  - `multivariate_hmm.py`
+  - `spectral_regime.py`
+  - `zcyc.py`
+  - `rudata.py`
+  - `database.py`
+  - `portfolio.py`
+  - `backtest.py`
+  - `stress.py`
+  - `ccmv.py`
+  - `hjb.py`
+  - `market_data.py`
+- Service layer in `backend/src/services/`:
+  - `ComputeService` (GARCH(1,1) calculations).
+  - `SpectralRegimeAnalyzer` (Prony Method & ACF).
+  - `RuDataService` (RuData API client).
+  - `ZCYCService` (yield curve processing).
+- Data access layer (`backend/src/database/`):
+  - `client.py` with `get_supabase_client()`.
+  - `repositories.py`:
+    - `BondValuationRepository`
+    - `PortfolioRepository`
+    - `MarketDataRepository`
+    - `FileRepository`
+
+External infrastructure:
+
+- Supabase: PostgreSQL + TimescaleDB, plus Storage (Parquet).
+- MOEX ISS API (`iss.moex.com`) for market yields & ZCYC.
+- RuData/Interfax API (`dh2.efir-net.ru`) for bond reference data.
+- Yahoo Finance (via `yfinance`) for historical prices.
+
+CI/CD:
+
+- GitHub Actions workflows:
+  - `pages.yml` — frontend deployment to GitHub Pages.
+  - `deploy-backend.yml` — backend deployment to Railway.
+
+## Frontend–Backend Separation
+
+The system employs a strict separation between presentation and business logic.
+
+### Frontend Responsibilities
+
+The Vue.js 3 frontend (`frontend/` directory) is responsible for:
+
+- **User Interface Rendering**:
+  - Glass-morphism design system in `frontend/src/components/Layout/MainLayout.vue`.
+  - Core layout: `MainLayout.vue`, `Sidebar.vue`, `CommandPalette.vue`.
+- **Client-Side Routing**:
+  - Hash-based routing via `vue-router` and `createWebHashHistory` in `frontend/src/router/index.ts`.
+- **State Management**:
+  - Pinia stores for portfolio data, risk metrics, swap registries and UI state.
+- **3D Visualizations**:
+  - Three.js renderers for regime space, volatility surfaces, correlation matrices.
+- **Input Validation**:
+  - Form-level validation and formatting before API submission.
+- **Caching**:
+  - `localStorage` for user preferences and RuData credentials (see `frontend/src/services/rudataService.ts`).
+
+### Backend Responsibilities
+
+The FastAPI backend (`backend/` directory) handles:
+
+- **Business Logic**:
+  - Financial calculations (DCF, Black–Scholes, GARCH, HMM, spectral analysis, optimization).
+- **Data Persistence**:
+  - Repository pattern for database operations in `backend/src/database/repositories.py`.
+- **External Integrations**:
+  - MOEX ISS, RuData/Interfax, Yahoo Finance.
+- **Authentication**:
+  - Token-based auth for RuData API in `backend/src/services/rudata_service.py`.
+- **Computational Services**:
+  - Heavy numerical computations (spectral analysis, regime detection, optimization).
+- **File Export**:
+  - Parquet file generation and Supabase Storage uploads.
+
+## Communication Patterns
+
+### REST API over HTTPS
+
+All frontend–backend communication uses RESTful HTTP requests with JSON payloads. The API base URL is configured with `VITE_API_BASE_URL` at frontend build time.
+
+Typical flow (example: bond valuation):
+
+1. Vue component (e.g., `BondValuation.vue`) calls a TypeScript service method, e.g. `bondService.valuateBond(params)`.
+2. Service uses Axios (configured with `VITE_API_BASE_URL`) to send `POST /api/bond/valuate` with JSON body `{isin, valuation_date, ...}`.
+3. FastAPI router `backend/src/api/bond.py`:
+   - Validates request using Pydantic models.
+   - Delegates to bond pricing logic (e.g. `bond_pricing.calculate_dcf()`).
+4. Repository (`BondValuationRepository`) reads/writes data in Supabase.
+5. FastAPI returns JSON response with results:
+   - `clean_price`, `dirty_price`, `duration`, etc.
+6. Service parses response into typed result.
+7. Vue component updates reactive state and displays results.
+
+### API Router Structure
+
+The backend exposes multiple routers, each responsible for a specific domain:
+
+| Router Prefix                | Module                                   | Key Endpoints                        | Description                                   |
+|-----------------------------|------------------------------------------|--------------------------------------|-----------------------------------------------|
+| `/api/bond/*`              | `backend/src/api/bond.py`               | `POST /valuate`, `GET /market-yield` | Bond valuation, DCF calculations              |
+| `/api/swap/*`              | `backend/src/api/swap.py`               | `POST /valuate`                      | IRS, CDS, CCS swap valuation                  |
+| `/api/forward/*`           | `backend/src/api/forward.py`            | `POST /valuate`                      | Forward contract pricing                      |
+| `/api/compute/*`           | `backend/src/api/compute.py`            | `POST /garch`, `POST /statistics`    | GARCH(1,1) and statistical calculations       |
+| `/api/multivariate-hmm/*`  | `backend/src/api/multivariate_hmm.py`   | `GET /chart-data`, `GET /transition-matrix` | HMM regime analysis                   |
+| `/api/spectral-regime/*`   | `backend/src/api/spectral_regime.py`    | `POST /analyze`, `GET /available-assets` | Spectral density analysis, Prony method |
+| `/api/zcyc/*`              | `backend/src/api/zcyc.py`               | `GET /fetch`, `POST /interpolate`    | Zero-coupon yield curves from MOEX            |
+| `/api/rudata/*`            | `backend/src/api/rudata.py`             | `POST /test-connection`, `POST /query` | RuData/Interfax API integration            |
+| `/api/database/*`          | `backend/src/api/database.py`           | `POST /export/registry/parquet`      | Database operations, Parquet export           |
+| `/api/portfolio/*`         | `backend/src/api/portfolio.py`          | `GET /`, `POST /create`              | Portfolio management                          |
+| `/api/backtest/*`          | `backend/src/api/backtest.py`           | `POST /run`                          | Strategy backtesting                          |
+| `/api/stress/*`            | `backend/src/api/stress.py`             | `POST /test`                         | Stress testing                                |
+| `/api/ccmv/*`              | `backend/src/api/ccmv.py`               | `POST /optimize`                     | CCMV optimization                             |
+| `/api/hjb/*`               | `backend/src/api/hjb.py`                | `POST /solve`                        | HJB equation solver                           |
+| `/api/market-data/*`       | `backend/src/api/market_data.py`        | `GET /fetch`                         | Market data retrieval                         |
+
+## Deployment Architecture
+
+### Static Frontend Hosting
+
+The Vue.js application is built using Vite and deployed to GitHub Pages via GitHub Actions (`.github/workflows/pages.yml`).
+
+Build pipeline:
+
+1. Trigger: push to `main`.
+2. Actions:
+   - `actions/checkout@v4`.
+   - `actions/setup-node@v4` with Node.js 20.
+   - `npm ci` in `./frontend`.
+   - `npm run build` using `frontend/vite.config.ts`.
+3. Deploy:
+   - `peaceiris/actions-gh-pages` deploys `frontend/dist/` to `gh-pages` branch.
+
+Runtime characteristics:
+
+- Base path: `/stochastic-dashbord-v1/` (configured in `frontend/vite.config.ts`).
+- Code splitting:
+  - Separate chunks for vendor libraries, chart libraries, and PDF generation.
+- Hash routing:
+  - `createWebHashHistory` in `router/index.ts` to avoid 404s on static host.
+- SPA redirect:
+  - `frontend/404.html` redirects all 404 to root, preserving hash route.
+
+User flow:
+
+- Browser loads `index.html` from GitHub Pages.
+- Vue app initializes with `main.ts`.
+- Vue Router uses hash-based navigation (`/#/portfolio`, `/#/terminal`, etc).
+
+### Backend Hosting on Railway
+
+The FastAPI backend is deployed to Railway using `.github/workflows/deploy-backend.yml`.
+
+Deployment pipeline:
+
+1. Trigger: push to `main` with changes under `backend/**`.
+2. Actions:
+   - `actions/checkout@v4`.
+   - `bervProject/railway-deploy@v1` using `$RAILWAY_TOKEN`.
+3. Railway build:
+   - Detects Python 3.11.0.
+   - Executes `pip install -r requirements.txt`.
+   - Runs `backend/start.sh` (or `Procfile`).
+
+Runtime:
+
+- `backend/start.sh`:
+  - Installs dependencies.
+  - Starts Uvicorn:
+    - `uvicorn src.main:app --host 0.0.0.0 --port $PORT`.
+- Alternatively `backend/Procfile`:
+  - `web: uvicorn src.main:app --host 0.0.0.0 --port $PORT`.
+
+Environment variables:
+
+- `PORT` (provided by Railway).
+- `CORS_ORIGINS` (allowed origins, default `*`).
+- `DATABASE_URL` (PostgreSQL connection).
+- `SUPABASE_URL`, `SUPABASE_ANON_KEY` (Supabase).
+
+CORS configuration in `backend/src/main.py`:
+
+- Uses `CORSMiddleware` with `allow_origins`, `allow_methods`, `allow_headers`, `allow_credentials`.
+
+## Technology Stack
+
+### Frontend Stack
+
+Core framework and tooling:
+
+- Vue 3.4.15 — Composition API, `script setup`.
+- TypeScript 5.3.3 — type safety.
+- Vite 5.0.8 — dev server & bundler.
+
+Routing & state:
+
+- Vue Router 4.6.4 — `createWebHashHistory` routing.
+- Pinia 2.1.7 — stores (e.g. `portfolioStore`, `riskMetricsStore`, `swapRegistryStore`).
+
+UI styling:
+
+- Tailwind CSS 3.4.1 — utility-first CSS.
+- PostCSS 8.4.32 — Autoprefixer.
+- Custom glass design with CSS variables.
+
+Visualization:
+
+- Three.js 0.182.0 — 3D graphics engine.
+- `three-orbit-controls` — camera manipulation.
+- Chart.js 4.4.1 — 2D charts.
+- ECharts 6.0.0 — advanced charting.
+
+Other libs:
+
+- KaTeX 0.16.27 — LaTeX formulas in documentation pages.
+- XLSX 0.18.5 — Excel import/export of registries.
+- `html2pdf.js` 0.12.1 — PDF generation.
+- Axios 1.6.5 — HTTP client configured with `VITE_API_BASE_URL`.
+
+### Backend Stack
+
+Web framework:
+
+- FastAPI 0.104.0+ — async ASGI app.
+- Uvicorn 0.24.0+ — ASGI server (often with `uvloop`).
+
+Scientific computing:
+
+- NumPy 1.24.0+ — core numerical arrays.
+- Pandas 2.0.0+ — tabular & time series.
+- SciPy 1.11.0+ — optimization & statistics.
+- CVXPY 1.3.0+ — convex optimization.
+
+Data storage:
+
+- Supabase client 2.0.0+ — PostgreSQL access.
+- PyArrow 14.0.0+ — Parquet I/O.
+
+HTTP & utilities:
+
+- `requests` 2.31.0+ — sync HTTP.
+- `httpx` 0.25.0+ — async HTTP.
+- `aiohttp` 3.9.0+ — async client for MOEX & RuData.
+- `yfinance` 0.2.0+ — Yahoo Finance data.
+- `python-dotenv` 1.0.0+ — env management.
+- `python-dateutil` 2.8.2+ — date parsing.
+
+## Key Architectural Decisions
+
+### 1. Hash-Based Routing for Static Hosting
+
+**Decision**: Use `createWebHashHistory` for Vue Router.
+
+**Rationale**:
+
+- GitHub Pages is a static file host without server-side routing.
+- Hash routing ensures all routes are handled on the client without server configuration.
+- `404.html` redirect script makes deep links (`/#/route`) work.
+
+**Trade-offs**:
+
+- ✅ Works on any static host out-of-the-box.
+- ✅ No server-side routing required.
+- ❌ URLs contain `#` (less clean).
+- ❌ No server-side rendering (SSR).
+
+### 2. Repository Pattern for Data Access
+
+**Decision**: Implement repository classes (`BondValuationRepository`, `PortfolioRepository`, etc.) instead of direct DB access in API routes.
+
+**Rationale**:
+
+- Separates data access from routing logic.
+- Simplifies testing and mocking.
+- Enforces consistent error handling and CRUD patterns.
+
+**Benefits**:
+
+- Clear separation of concerns.
+- Easier to swap DB implementations.
+- Better testability without a live database.
+
+### 3. Parquet for Registry Export
+
+**Decision**: Use Apache Parquet (via PyArrow) for exporting registries to Supabase Storage.
+
+**Rationale**:
+
+- Columnar storage with strong compression.
+- Preserves data types (dates, decimals) unlike CSV.
+- Efficient for analytics and downstream processing.
+
+**Benefits**:
+
+- 5–10x smaller files compared to CSV (typical).
+- Fast columnar queries.
+- Broad ecosystem support (Pandas, DuckDB, etc.).
+
+### 4. Service Layer for Business Logic
+
+**Decision**: Use service classes (`ComputeService`, `SpectralRegimeAnalyzer`, `RuDataService`) to encapsulate business logic.
+
+**Rationale**:
+
+- Keep FastAPI routes thin and focused on I/O and validation.
+- Make business logic reusable and testable outside HTTP context.
+
+**Pattern**:
+
+- API route (validate) → Service (business logic) → Repository (data access) → Database.
+
+### 5. Async/Await for External API Calls
+
+**Decision**: Use `async`/`await` with `aiohttp` for MOEX, RuData, Yahoo Finance integrations.
+
+**Rationale**:
+
+- External APIs have latency and rate limits.
+- Async I/O allows concurrent requests without blocking threads.
+
+**Benefits**:
+
+- Non-blocking network I/O.
+- Better throughput under concurrent load.
+- Easier to implement rate limiting with `asyncio.sleep()`.
+
+### 6. Environment-Based Configuration
+
+**Decision**: All environment-specific configuration via env vars.
+
+Frontend:
+
+- `VITE_API_BASE_URL` — backend endpoint at build time.
+
+Backend:
+
+- `CORS_ORIGINS` — allowed origins.
+- `DATABASE_URL` — DB connection string.
+- `SUPABASE_URL`, `SUPABASE_ANON_KEY` — Supabase credentials.
+- `PORT` — server port (provided by Railway).
+
+**Rationale**:
+
+- Follows 12-factor app principles.
+- Same codebase works for dev/staging/prod by changing env only.
+
+## Component Communication Flow
+
+End-to-end flow (example: market regime analysis, bond valuation):
+
+1. **User Interaction**:
+   - User clicks “Run analysis” in `RegimeSpace3D.vue` or submits a form in `BondValuation.vue`.
+2. **Presentation Layer**:
+   - Vue component triggers store actions or directly calls TS service.
+3. **State Management**:
+   - Pinia stores hold portfolio, risk metrics, swap registries, etc.
+4. **Service Layer (TS)**:
+   - `multivariateHmmService.ts` for HMM-related endpoints.
+   - `bondService.ts` for bond valuation.
+   - `rudataService.ts` for RuData connectivity.
+   - Uses Axios client with `baseURL = VITE_API_BASE_URL`.
+5. **API Gateway (FastAPI)**:
+   - Corresponding routers handle HTTP requests (`multivariate_hmm.py`, `bond.py`, `rudata.py`, etc.).
+6. **Business Logic (Python Services)**:
+   - HMM processing, bond pricing, RuData client logic.
+7. **Data Access (Repositories)**:
+   - CRUD operations on Supabase: insert/read valuations, portfolios, market data.
+8. **External Systems**:
+   - MOEX ISS for yields.
+   - RuData for reference data.
+   - Supabase PostgreSQL & Storage for persistence.
+9. **Response Flow**:
+   - Results returned to frontend as JSON.
+   - TS services parse and update Pinia stores.
+   - Vue components re-render and show updated analytics.
+
+## Navigation and User Flow
+
+Navigation is implemented in `frontend/src/components/Layout/Sidebar.vue` and `CommandPalette.vue`.
+
+Main elements:
+
+- **Sidebar Menu**:
+  - Expandable tool groups: Portfolio Analytics, Fixed Income, Derivatives, Market Regimes, Forwards, Swaps, Risk Management, System.
+  - Routes like:
+    - `/portfolio`
+    - `/terminal`
+    - `/bond-valuation`
+    - `/zcyc-viewer`
+    - `/pricing/options`
+    - `/analytics/volatility`
+    - `/backtest`
+    - `/stress`
+    - `/settings`
+- **Command Palette**:
+  - Global shortcut (⌘K / Ctrl+K).
+  - Quick search and navigation across all routes.
+- **Breadcrumbs**:
+  - Built from route metadata in `router/index.ts` for context within complex flows.
+
+## Error Handling Strategy
+
+### Frontend Error Handling
+
+- API errors:
+  - Handled in TS service layer, returned as typed error objects.
+- Network failures:
+  - Axios interceptors manage timeouts and connectivity errors.
+- Validation errors:
+  - Form-level checks before sending API requests.
+- User feedback:
+  - Error messages rendered in glass-style cards with red accents.
+
+### Backend Error Handling
+
+- Pydantic validation:
+  - Automatic body validation with detailed 422 errors.
+- HTTP exceptions:
+  - `HTTPException` for 4xx/5xx codes (400, 404, 500).
+- External API failures:
+  - `try/except` with fallbacks (e.g., alternative ZCYC construction).
+- Database errors:
+  - Repository layer catches and logs DB exceptions; returns consistent error structures.
