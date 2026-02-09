@@ -240,6 +240,36 @@
           </div>
         </div>
 
+        <!-- WAVE_σ.9 Quant Model -->
+        <div v-else-if="selectedInstrument.id === 'wave-sigma'" class="flex-1 flex flex-col gap-4">
+          <div ref="waveSigmaContainer" class="flex-1 min-h-[400px] bg-black rounded-xl overflow-hidden relative">
+            <!-- 3D Canvas will be mounted here -->
+          </div>
+          <!-- Stats Panel -->
+          <div class="grid grid-cols-4 gap-4">
+            <div class="p-4 rounded-xl bg-white/5 border border-white/10">
+              <div class="text-xs text-gray-400 mb-1">Режим</div>
+              <div :class="`text-lg font-bold ${waveSigmaRegime === 'TRENDING' ? 'text-green-400' : 'text-red-400'}`">
+                {{ waveSigmaRegime }}
+              </div>
+            </div>
+            <div class="p-4 rounded-xl bg-white/5 border border-white/10">
+              <div class="text-xs text-gray-400 mb-1">Equity</div>
+              <div :class="`text-lg font-bold ${waveSigmaEquity > 1000 ? 'text-green-400' : 'text-red-400'}`">
+                ${{ waveSigmaEquity.toFixed(2) }}
+              </div>
+            </div>
+            <div class="p-4 rounded-xl bg-white/5 border border-white/10">
+              <div class="text-xs text-gray-400 mb-1">Sharpe</div>
+              <div class="text-lg font-bold text-white">2.1</div>
+            </div>
+            <div class="p-4 rounded-xl bg-white/5 border border-white/10">
+              <div class="text-xs text-gray-400 mb-1">Период</div>
+              <div class="text-lg font-bold text-cyan-400">{{ formatWaveSigmaElapsed }}</div>
+            </div>
+          </div>
+        </div>
+
         <!-- Other Tools Placeholder -->
         <div v-else class="flex-1 flex items-center justify-center">
           <div class="text-center">
@@ -313,7 +343,9 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue';
+import { ref, computed, watch, onMounted, onBeforeUnmount, nextTick } from 'vue';
+import { useWaveSigma3D } from '@/composables/waveSigma/useWaveSigma3D';
+import { MarketRegime } from '@/composables/waveSigma/types';
 import { use } from 'echarts/core';
 import { CanvasRenderer } from 'echarts/renderers';
 import { LineChart, PieChart, HeatmapChart } from 'echarts/charts';
@@ -336,6 +368,90 @@ const isInstrumentsOpen = ref(false);
 const selectedAsset = ref<string>('');
 const selectedInstrument = ref<any>(null);
 const assetSearchQuery = ref('');
+
+// WAVE_σ.9 state
+const waveSigmaContainer = ref<HTMLElement | null>(null);
+const waveSigmaRegime = ref<MarketRegime>(MarketRegime.TRENDING);
+const waveSigmaEquity = ref(1000);
+const waveSigmaElapsedDays = ref(0);
+const waveSigmaStartTime = ref(Date.now());
+let waveSigmaRegimeInterval: ReturnType<typeof setInterval> | null = null;
+let waveSigmaElapsedInterval: ReturnType<typeof setInterval> | null = null;
+
+const { init: initWaveSigma, dispose: disposeWaveSigma, setRegime: setWaveSigmaRegime } = useWaveSigma3D();
+
+const formatWaveSigmaElapsed = computed(() => {
+  const years = Math.floor(waveSigmaElapsedDays.value / 365);
+  const days = waveSigmaElapsedDays.value % 365;
+  return years > 0 ? `${years}Y ${days}D` : `${days}D`;
+});
+
+const handleWaveSigmaSignal = (rawSignal: number, _volatility: number) => {
+  let position = 0;
+  if (waveSigmaRegime.value === MarketRegime.TRENDING) {
+    position = rawSignal > 0.2 ? 1 : rawSignal < -0.2 ? -1 : 0;
+  } else {
+    position = rawSignal > 0.5 ? 0.5 : rawSignal < -0.5 ? -0.5 : Math.random() - 0.5;
+  }
+
+  const pnl = Math.abs(position) * (waveSigmaRegime.value === MarketRegime.TRENDING ? 1.5 : -2.0) + (Math.random() * 2 - 1);
+  waveSigmaEquity.value += pnl;
+};
+
+const startWaveSigma = () => {
+  if (!waveSigmaContainer.value) return;
+
+  // Reset state
+  waveSigmaEquity.value = 1000;
+  waveSigmaElapsedDays.value = 0;
+  waveSigmaStartTime.value = Date.now();
+  waveSigmaRegime.value = MarketRegime.TRENDING;
+
+  // Initialize 3D renderer
+  initWaveSigma(waveSigmaContainer.value, handleWaveSigmaSignal);
+
+  // Regime switching every 8 seconds
+  waveSigmaRegimeInterval = setInterval(() => {
+    const newRegime = waveSigmaRegime.value === MarketRegime.TRENDING
+      ? MarketRegime.CHOPPY
+      : MarketRegime.TRENDING;
+    waveSigmaRegime.value = newRegime;
+    setWaveSigmaRegime(newRegime);
+  }, 8000);
+
+  // Elapsed time (1 real second = 7 market days)
+  waveSigmaElapsedInterval = setInterval(() => {
+    const realElapsedSeconds = (Date.now() - waveSigmaStartTime.value) / 1000;
+    waveSigmaElapsedDays.value = Math.floor(realElapsedSeconds * 7);
+  }, 100);
+};
+
+const stopWaveSigma = () => {
+  if (waveSigmaRegimeInterval) {
+    clearInterval(waveSigmaRegimeInterval);
+    waveSigmaRegimeInterval = null;
+  }
+  if (waveSigmaElapsedInterval) {
+    clearInterval(waveSigmaElapsedInterval);
+    waveSigmaElapsedInterval = null;
+  }
+  disposeWaveSigma();
+};
+
+// Watch for instrument changes to init/cleanup WSIGMA
+watch(selectedInstrument, (newInstrument, oldInstrument) => {
+  // Cleanup previous WSIGMA if it was selected
+  if (oldInstrument?.id === 'wave-sigma') {
+    stopWaveSigma();
+  }
+
+  // Initialize WSIGMA if newly selected
+  if (newInstrument?.id === 'wave-sigma') {
+    nextTick(() => {
+      startWaveSigma();
+    });
+  }
+});
 
 // Available assets grouped by type
 const assetsByType = {
@@ -634,12 +750,19 @@ const quantitativeTools = [
     description: '3D‑граф корреляций, где высота узлов пропорциональна posterior probability текущего режима (из HMM)', 
     icon: 'ShareIcon'
   },
-  { 
-    id: 'tail-risk-cube', 
-    label: 'Tail Risk Cube (EVT Stress Scenarios)', 
-    code: 'TAILCUBE', 
-    description: 'Куб, где каждый слой — сценарий стресса (GPD fits для tails), вокселы — P&L портфеля при quantile α', 
+  {
+    id: 'tail-risk-cube',
+    label: 'Tail Risk Cube (EVT Stress Scenarios)',
+    code: 'TAILCUBE',
+    description: 'Куб, где каждый слой — сценарий стресса (GPD fits для tails), вокселы — P&L портфеля при quantile α',
     icon: 'Squares2X2Icon'
+  },
+  {
+    id: 'wave-sigma',
+    label: 'WAVE_σ.9 Quant Model',
+    code: 'WSIGMA',
+    description: 'Топология рыночного импульса с режимами TRENDING/CHOPPY и симуляцией торговли',
+    icon: 'WaveIcon'
   },
 ];
 
@@ -670,6 +793,7 @@ onMounted(() => {
 
 onBeforeUnmount(() => {
   document.removeEventListener('click', handleClickOutside);
+  stopWaveSigma();
 });
 
 const COLORS = ['#F59E0B', '#6366F1', '#10B981', '#EC4899'];
@@ -885,4 +1009,5 @@ const FilterIcon = { template: '<svg viewBox="0 0 24 24" fill="none" stroke="cur
 const WifiIcon = { template: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12.55a11 11 0 0 1 14.08 0"/><path d="M1.42 9a16 16 0 0 1 21.16 0"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><line x1="12" y1="20" x2="12.01" y2="20"/></svg>' };
 const SearchIcon = { template: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>' };
 const DatabaseIcon = { template: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>' };
+const WaveIcon = { template: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12c1.5-3 3-5 5-5s3.5 2 5 5 3 5 5 5 3.5-2 5-5"/></svg>' };
 </script>
