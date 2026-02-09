@@ -327,34 +327,3 @@ app.add_middleware(
     allow_headers=["*"],
 )
 ```
-
-## File Structure Overview
-
-### Frontend Directory Structure
-
-frontend/
-  src/
-    pages/       # Vue page components (RegimeSpace3D.vue, Terminal.vue, etc.)
-    components/  # Reusable UI components (glass cards, panels, inputs)
-    services/    # API client services (TypeScript)
-    stores/      # Pinia state management stores
-    utils/       # Utilities (RegimeSpaceRenderer.ts, HMMModel.ts)
-    router/      # Vue Router configuration
-    assets/      # Static assets (images, fonts)
-    main.ts      # Application entry point
-  vite.config.ts      # Vite build configuration
-  tailwind.config.js  # Tailwind CSS configuration
-  package.json        # Node dependencies
-
-### Backend Directory Structure
-
-backend/
-  src/
-    api/        # FastAPI routers (bond.py, swap.py, compute.py, etc.)
-    services/   # Business logic services (compute_service.py, etc.)
-    database/   # Data access layer (repositories.py, models.py, client.py)
-    main.py     # FastAPI application entry point
-  requirements.txt  # Python dependencies
-  Procfile          # Railway deployment configuration
-  start.sh          # Startup script
-
