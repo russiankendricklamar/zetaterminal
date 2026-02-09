@@ -1,4 +1,4 @@
-<!-- src/components/layout/Sidebar.vue - Brutalist Design -->
+<!-- src/components/layout/Sidebar.vue - Brutalist Design with Animations -->
 <template>
   <div v-bind="$attrs" class="sidebar-wrapper">
     <!-- Narrow Tab Bar (Left Strip) -->
@@ -27,8 +27,14 @@
       @touchmove="handleTouchMove"
       @touchend="handleTouchEnd"
     >
+      <!-- Header with Marquee -->
       <div class="sidebar-header">
-        <span class="app-logo font-anton">STOCHASTIC</span>
+        <div class="logo-marquee">
+          <div class="marquee-track">
+            <span class="font-anton">STOCHASTIC &mdash; QUANT &mdash; RISK &mdash; SIGMA &mdash;&nbsp;</span>
+            <span class="font-anton">STOCHASTIC &mdash; QUANT &mdash; RISK &mdash; SIGMA &mdash;&nbsp;</span>
+          </div>
+        </div>
         <button class="close-btn" @click="closeSidebar">&times;</button>
       </div>
 
@@ -40,9 +46,9 @@
           to="/"
           class="nav-entry"
           :class="{ active: isActive('/') }"
-          @click="closeSidebar"
+          @click.native="handleNavClick"
         >
-          <div class="nav-indicator"></div>
+          <span class="nav-index font-mono">01</span>
           <div class="nav-info">
             <div class="nav-title font-oswald">ГЛАВНАЯ</div>
             <div class="nav-subtitle font-mono">Обзор инструментов</div>
@@ -55,12 +61,12 @@
           to="/docs"
           class="nav-entry"
           :class="{ active: isActive('/docs') }"
-          @click="closeSidebar"
+          @click.native="handleNavClick"
         >
-          <div class="nav-indicator green"></div>
+          <span class="nav-index font-mono">02</span>
           <div class="nav-info">
             <div class="nav-title font-oswald">ДОКУМЕНТАЦИЯ</div>
-            <div class="nav-subtitle font-mono">Как работать с этим приложением?</div>
+            <div class="nav-subtitle font-mono">Как работать с приложением</div>
           </div>
           <span class="nav-arrow font-mono">&rarr;</span>
         </router-link>
@@ -70,7 +76,7 @@
           to="/terminal"
           class="nav-entry terminal-entry"
           :class="{ active: isActive('/terminal') }"
-          @click="closeSidebar"
+          @click.native="handleNavClick"
         >
           <div class="zeta-icon font-anton">&zeta;</div>
           <div class="nav-info">
@@ -85,16 +91,17 @@
 
         <!-- Tool Groups -->
         <div
-          v-for="(group, key) in toolGroups"
+          v-for="(group, key, groupIndex) in toolGroups"
           :key="key"
           class="tool-group"
+          :style="{ '--group-index': groupIndex }"
         >
           <button
             class="tool-header"
             @click="toggleTool(key)"
             :class="{ expanded: expandedTools[key] }"
           >
-            <div class="tool-indicator" :class="group.color"></div>
+            <span class="tool-index font-mono">{{ String(groupIndex + 3).padStart(2, '0') }}</span>
             <div class="tool-info">
               <span class="tool-title font-oswald">{{ group.title }}</span>
               <span class="tool-subtitle font-mono">{{ group.subtitle }}</span>
@@ -106,24 +113,24 @@
             </div>
           </button>
 
-          <div
-            class="tool-content-wrapper"
-            :style="{ maxHeight: expandedTools[key] ? '600px' : '0' }"
-          >
-            <div class="tool-content">
+          <transition name="expand">
+            <div v-show="expandedTools[key]" class="tool-content">
               <router-link
-                v-for="item in group.items"
+                v-for="(item, itemIndex) in group.items"
                 :key="item.path"
                 :to="item.path"
                 class="nav-item"
                 :class="{ active: isActive(item.path), 'coming-soon': item.soon }"
-                @click="closeSidebar"
+                :style="{ '--item-index': itemIndex }"
+                @click.native="!item.soon && handleNavClick($event)"
               >
+                <span class="item-dot"></span>
                 <span class="nav-label font-mono">{{ item.label }}</span>
                 <span v-if="item.soon" class="nav-soon font-mono">SOON</span>
+                <span v-else class="item-arrow font-mono">&rarr;</span>
               </router-link>
             </div>
-          </div>
+          </transition>
         </div>
       </nav>
 
@@ -134,9 +141,9 @@
         to="/settings"
         class="settings-link"
         :class="{ active: isActive('/settings') }"
-        @click="closeSidebar"
+        @click.native="handleNavClick"
       >
-        <div class="nav-indicator pink"></div>
+        <span class="nav-index font-mono">&#9881;</span>
         <div class="nav-info">
           <span class="nav-title font-oswald">ПАРАМЕТРЫ</span>
           <span class="nav-subtitle font-mono">Конфигурация</span>
@@ -148,12 +155,16 @@
       <div class="sidebar-footer">
         <div class="status-row">
           <span class="lbl font-mono">API</span>
-          <span class="val online font-mono">● ONLINE</span>
+          <span class="val online font-mono">
+            <span class="pulse-dot"></span>
+            ONLINE
+          </span>
         </div>
         <div class="status-row">
           <span class="lbl font-mono">TIME</span>
           <span class="val font-mono">{{ marketTime }}</span>
         </div>
+        <div class="version-tag font-mono">v2.0 BRUTALIST</div>
       </div>
     </aside>
   </div>
@@ -161,9 +172,10 @@
 
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, reactive } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 
 const route = useRoute()
+const router = useRouter()
 const marketTime = ref('--:--')
 const isSidebarOpen = ref(false)
 
@@ -186,7 +198,6 @@ const toolGroups = {
   portfolio: {
     title: 'ПОРТФЕЛЬНЫЙ АНАЛИЗ',
     subtitle: 'Анализ и оптимизация',
-    color: 'purple',
     items: [
       { path: '/portfolio', label: 'Состав портфеля' },
       { path: '/CCMVoptimization', label: 'Оптимизация портфеля' },
@@ -197,17 +208,15 @@ const toolGroups = {
   risk: {
     title: 'РИСК-МЕНЕДЖМЕНТ',
     subtitle: 'Бэктестинг, стресс-тестирование',
-    color: 'purple',
     items: [
       { path: '/backtest', label: 'Бэктестинг' },
-      { path: '/stress', label: 'Стресс-тестирование портфеля облигаций' },
-      { path: '/stress/swaps', label: 'Стресс-тестирование портфеля СВОПов' },
+      { path: '/stress', label: 'Стресс-тестирование облигаций' },
+      { path: '/stress/swaps', label: 'Стресс-тестирование СВОПов' },
     ]
   },
   quant: {
     title: 'АНАЛИЗ РЫНОЧНЫХ РЕЖИМОВ',
     subtitle: 'Модели и режимы',
-    color: 'indigo',
     items: [
       { path: '/regimes', label: 'Рыночные режимы' },
       { path: '/regime-details', label: 'Детальный анализ режимов' },
@@ -216,9 +225,8 @@ const toolGroups = {
     ]
   },
   bonds: {
-    title: 'СПРАВЕДЛИВАЯ СТОИМОСТЬ ОБЛИГАЦИЙ',
-    subtitle: 'Оценка и анализ',
-    color: 'green',
+    title: 'СПРАВЕДЛИВАЯ СТОИМОСТЬ',
+    subtitle: 'Оценка облигаций',
     items: [
       { path: '/bond-valuation', label: 'Оценка облигаций' },
       { path: '/zcyc-viewer', label: 'Кривая бескупонной доходности' },
@@ -227,10 +235,9 @@ const toolGroups = {
   },
   options: {
     title: 'ОПЦИОНЫ',
-    subtitle: 'Справедливая стоимость',
-    color: 'green',
+    subtitle: 'Ценообразование и Greeks',
     items: [
-      { path: '/pricing/options', label: 'Справедливая стоимость опционов' },
+      { path: '/pricing/options', label: 'Справедливая стоимость' },
       { path: '/pricing/options/models', label: 'Сравнение моделей' },
       { path: '/pricing/options/greeks', label: 'Анализ Greeks' },
       { path: '/pricing/options/portfolio', label: 'Портфель опционов' },
@@ -240,10 +247,9 @@ const toolGroups = {
   swaps: {
     title: 'СВОПЫ',
     subtitle: 'Greeks, Pricing & Risk',
-    color: 'green',
     items: [
-      { path: '/valuation/swaps', label: 'Справедливая стоимость СВОПов' },
-      { path: '/swap-greeks', label: 'Греки' },
+      { path: '/valuation/swaps', label: 'Справедливая стоимость' },
+      { path: '/swap-greeks', label: 'Греки СВОПов' },
       { path: '/analytics/pnl', label: 'Факторная декомпозиция P&L' },
       { path: '/hedging', label: 'Регрессионное хеджирование' },
       { path: '/reports/swaps', label: 'Отчеты по СВОПам', soon: true },
@@ -251,19 +257,17 @@ const toolGroups = {
   },
   forwards: {
     title: 'ФОРВАРДЫ',
-    subtitle: 'Оценка справедливой стоимости',
-    color: 'green',
+    subtitle: 'Оценка и анализ',
     items: [
       { path: '/valuation/forwards', label: 'Оценка форвардов' },
-      { path: '/forwards/curve', label: 'Построение форвардной кривой' },
-      { path: '/forwards/greeks', label: 'Греки' },
-      { path: '/forwards/basis', label: 'Анализ спот-форвард базиса' },
+      { path: '/forwards/curve', label: 'Форвардная кривая' },
+      { path: '/forwards/greeks', label: 'Греки форвардов' },
+      { path: '/forwards/basis', label: 'Спот-форвард базис' },
     ]
   },
   bondReports: {
     title: 'ОТЧЁТЫ ПО ОБЛИГАЦИЯМ',
     subtitle: 'Шаблонные отчеты',
-    color: 'red',
     items: [
       { path: '/vanila-bond-report', label: 'Vanila Bond Report' },
       { path: '/floater-bond-report', label: 'Floater Bond Report' },
@@ -287,6 +291,13 @@ const closeSidebar = () => {
   isSidebarOpen.value = false
 }
 
+const handleNavClick = (e?: Event) => {
+  // Small delay to allow navigation to complete
+  setTimeout(() => {
+    closeSidebar()
+  }, 50)
+}
+
 const handleTouchStart = (e: TouchEvent) => {
   touchStartX.value = e.changedTouches[0].screenX
 }
@@ -306,6 +317,7 @@ const updateTime = () => {
   marketTime.value = new Date().toLocaleTimeString('ru-RU', {
     hour: '2-digit',
     minute: '2-digit',
+    second: '2-digit',
   })
 }
 
@@ -352,6 +364,10 @@ onUnmounted(() => clearInterval(timer))
   background: #DC2626;
 }
 
+.sidebar-tab:hover .burger-icon span:nth-child(2) {
+  width: 14px;
+}
+
 .sidebar-tab.hidden {
   transform: translateX(-100%);
   opacity: 0;
@@ -369,7 +385,7 @@ onUnmounted(() => clearInterval(timer))
   width: 20px;
   height: 2px;
   background: #525252;
-  transition: background 0.2s;
+  transition: all 0.3s;
 }
 
 /* ============================================
@@ -378,9 +394,9 @@ onUnmounted(() => clearInterval(timer))
 .sidebar-backdrop {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.8);
+  background: rgba(0, 0, 0, 0.85);
   z-index: 1105;
-  animation: fade-in 0.2s ease;
+  animation: fade-in 0.3s ease;
 }
 
 @keyframes fade-in {
@@ -396,14 +412,14 @@ onUnmounted(() => clearInterval(timer))
   top: 0;
   left: 0;
   bottom: 0;
-  width: 300px;
+  width: 320px;
   z-index: 1110;
   background: #050505;
-  border-right: 1px solid #262626;
+  border-right: 1px solid #DC2626;
   display: flex;
   flex-direction: column;
   transform: translateX(-100%);
-  transition: transform 0.3s ease;
+  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
   overflow: hidden;
 }
 
@@ -412,7 +428,7 @@ onUnmounted(() => clearInterval(timer))
 }
 
 /* ============================================
-   HEADER
+   HEADER WITH MARQUEE
    ============================================ */
 .sidebar-header {
   height: 64px;
@@ -422,26 +438,53 @@ onUnmounted(() => clearInterval(timer))
   padding: 0 20px;
   border-bottom: 1px solid #1a1a1a;
   flex-shrink: 0;
+  background: #DC2626;
+  overflow: hidden;
 }
 
-.app-logo {
-  font-size: 18px;
-  color: #DC2626;
-  letter-spacing: 0.05em;
+.logo-marquee {
+  flex: 1;
+  overflow: hidden;
+  mask-image: linear-gradient(90deg, transparent, black 10%, black 90%, transparent);
+  -webkit-mask-image: linear-gradient(90deg, transparent, black 10%, black 90%, transparent);
+}
+
+.marquee-track {
+  display: flex;
+  white-space: nowrap;
+  animation: marquee-scroll 15s linear infinite;
+}
+
+.marquee-track span {
+  font-size: 14px;
+  color: #000;
+  letter-spacing: 0.1em;
+}
+
+@keyframes marquee-scroll {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
 }
 
 .close-btn {
-  background: none;
+  background: #000;
   border: none;
-  color: #525252;
+  color: #DC2626;
   font-size: 24px;
   cursor: pointer;
-  transition: color 0.2s;
+  transition: all 0.2s;
   line-height: 1;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
 }
 
 .close-btn:hover {
-  color: #DC2626;
+  background: #DC2626;
+  color: #000;
 }
 
 /* ============================================
@@ -454,28 +497,50 @@ onUnmounted(() => clearInterval(timer))
   padding: 16px;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 4px;
   -webkit-overflow-scrolling: touch;
 }
 
 /* ============================================
-   NAV ENTRY - BRUTALIST
+   NAV ENTRY - BRUTALIST WITH INDEX
    ============================================ */
 .nav-entry {
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 14px 16px;
+  padding: 12px 16px;
   border: 1px solid #1a1a1a;
   text-decoration: none;
   color: #e5e5e5;
   transition: all 0.2s;
+  position: relative;
+  overflow: hidden;
+}
+
+.nav-entry::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 0;
+  background: #DC2626;
+  transition: width 0.3s ease;
+  z-index: 0;
+}
+
+.nav-entry:hover::before {
+  width: 100%;
 }
 
 .nav-entry:hover {
-  background: #DC2626;
   border-color: #DC2626;
   color: #000;
+}
+
+.nav-entry > * {
+  position: relative;
+  z-index: 1;
 }
 
 .nav-entry:hover .nav-subtitle,
@@ -485,26 +550,21 @@ onUnmounted(() => clearInterval(timer))
 
 .nav-entry.active {
   border-color: #DC2626;
-  background: rgba(220, 38, 38, 0.1);
+  background: rgba(220, 38, 38, 0.15);
 }
 
 .nav-entry.active .nav-title {
   color: #DC2626;
 }
 
-.nav-indicator {
-  width: 4px;
-  height: 32px;
-  background: #262626;
-  flex-shrink: 0;
+.nav-index {
+  font-size: 10px;
+  color: #525252;
+  min-width: 20px;
 }
 
-.nav-indicator.green { background: #22c55e; }
-.nav-indicator.pink { background: #ec4899; }
-
-.nav-entry:hover .nav-indicator,
-.nav-entry.active .nav-indicator {
-  background: #DC2626;
+.nav-entry:hover .nav-index {
+  color: #000;
 }
 
 .nav-info {
@@ -516,14 +576,14 @@ onUnmounted(() => clearInterval(timer))
 }
 
 .nav-title {
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 500;
   letter-spacing: 0.05em;
   text-transform: uppercase;
 }
 
 .nav-subtitle {
-  font-size: 10px;
+  font-size: 9px;
   color: #525252;
   text-transform: uppercase;
   letter-spacing: 0.05em;
@@ -533,38 +593,40 @@ onUnmounted(() => clearInterval(timer))
   color: #525252;
   font-size: 14px;
   flex-shrink: 0;
+  transition: transform 0.2s;
+}
+
+.nav-entry:hover .nav-arrow {
+  transform: translateX(4px);
 }
 
 /* Terminal Entry - Special */
 .terminal-entry {
-  border-color: rgba(220, 38, 38, 0.3);
-  background: rgba(220, 38, 38, 0.05);
-}
-
-.terminal-entry:hover {
-  background: #DC2626;
-  border-color: #DC2626;
+  border-color: rgba(220, 38, 38, 0.5);
+  background: rgba(220, 38, 38, 0.1);
 }
 
 .zeta-icon {
-  width: 32px;
-  height: 32px;
+  width: 28px;
+  height: 28px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 20px;
+  font-size: 18px;
   color: #DC2626;
-  border: 1px solid rgba(220, 38, 38, 0.3);
+  border: 1px solid rgba(220, 38, 38, 0.5);
   flex-shrink: 0;
+  transition: all 0.2s;
 }
 
 .terminal-entry:hover .zeta-icon {
   background: #000;
+  color: #DC2626;
   border-color: #000;
 }
 
 /* ============================================
-   TOOL GROUPS - BRUTALIST
+   TOOL GROUPS - BRUTALIST WITH ANIMATION
    ============================================ */
 .tool-group {
   border: 1px solid #1a1a1a;
@@ -581,12 +643,31 @@ onUnmounted(() => clearInterval(timer))
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 14px 16px;
+  padding: 12px 16px;
   background: transparent;
   border: none;
   cursor: pointer;
   text-align: left;
-  transition: background 0.2s;
+  transition: all 0.2s;
+  position: relative;
+  overflow: hidden;
+}
+
+.tool-header::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background: #262626;
+  transition: all 0.3s;
+}
+
+.tool-header:hover::before,
+.tool-header.expanded::before {
+  background: #DC2626;
+  width: 4px;
 }
 
 .tool-header:hover {
@@ -598,21 +679,15 @@ onUnmounted(() => clearInterval(timer))
   border-bottom: 1px solid #1a1a1a;
 }
 
-.tool-indicator {
-  width: 4px;
-  height: 28px;
-  background: #262626;
-  flex-shrink: 0;
+.tool-index {
+  font-size: 10px;
+  color: #525252;
+  min-width: 20px;
+  transition: color 0.2s;
 }
 
-.tool-indicator.purple { background: #a855f7; }
-.tool-indicator.indigo { background: #818cf8; }
-.tool-indicator.green { background: #22c55e; }
-.tool-indicator.red { background: #DC2626; }
-.tool-indicator.pink { background: #ec4899; }
-
-.tool-header:hover .tool-indicator {
-  background: #DC2626;
+.tool-header:hover .tool-index {
+  color: #DC2626;
 }
 
 .tool-info {
@@ -624,7 +699,7 @@ onUnmounted(() => clearInterval(timer))
 }
 
 .tool-title {
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 500;
   color: #f5f5f5;
   letter-spacing: 0.05em;
@@ -632,7 +707,7 @@ onUnmounted(() => clearInterval(timer))
 }
 
 .tool-subtitle {
-  font-size: 10px;
+  font-size: 9px;
   color: #525252;
   text-transform: uppercase;
   letter-spacing: 0.05em;
@@ -640,17 +715,32 @@ onUnmounted(() => clearInterval(timer))
 
 .chevron {
   color: #525252;
-  transition: transform 0.2s;
+  transition: transform 0.3s ease;
   flex-shrink: 0;
 }
 
 .tool-header.expanded .chevron {
   transform: rotate(180deg);
+  color: #DC2626;
 }
 
-.tool-content-wrapper {
-  transition: max-height 0.3s ease;
+/* Expand Animation */
+.expand-enter-active,
+.expand-leave-active {
+  transition: all 0.3s ease;
   overflow: hidden;
+}
+
+.expand-enter-from,
+.expand-leave-to {
+  opacity: 0;
+  max-height: 0;
+}
+
+.expand-enter-to,
+.expand-leave-from {
+  opacity: 1;
+  max-height: 500px;
 }
 
 .tool-content {
@@ -662,19 +752,44 @@ onUnmounted(() => clearInterval(timer))
 }
 
 /* ============================================
-   NAV ITEMS - BRUTALIST
+   NAV ITEMS - BRUTALIST WITH STAGGER
    ============================================ */
 .nav-item {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  gap: 10px;
   padding: 10px 12px;
   color: #a3a3a3;
   text-decoration: none;
   font-size: 11px;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.03em;
   transition: all 0.2s;
+  position: relative;
+  animation: item-slide-in 0.3s ease forwards;
+  animation-delay: calc(var(--item-index, 0) * 0.05s);
+  opacity: 0;
+  transform: translateX(-10px);
+}
+
+@keyframes item-slide-in {
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.item-dot {
+  width: 4px;
+  height: 4px;
+  background: #525252;
+  transition: all 0.2s;
+  flex-shrink: 0;
+}
+
+.nav-item:hover .item-dot {
+  background: #DC2626;
+  box-shadow: 0 0 8px #DC2626;
 }
 
 .nav-item:hover {
@@ -687,9 +802,13 @@ onUnmounted(() => clearInterval(timer))
   background: rgba(220, 38, 38, 0.1);
 }
 
+.nav-item.active .item-dot {
+  background: #DC2626;
+}
+
 .nav-item.coming-soon {
-  opacity: 0.5;
-  cursor: not-allowed;
+  opacity: 0.4;
+  pointer-events: none;
 }
 
 .nav-label {
@@ -697,10 +816,24 @@ onUnmounted(() => clearInterval(timer))
 }
 
 .nav-soon {
-  font-size: 9px;
+  font-size: 8px;
   border: 1px solid currentColor;
   padding: 1px 4px;
   flex-shrink: 0;
+}
+
+.item-arrow {
+  font-size: 10px;
+  color: #525252;
+  transition: all 0.2s;
+  opacity: 0;
+  transform: translateX(-5px);
+}
+
+.nav-item:hover .item-arrow {
+  opacity: 1;
+  transform: translateX(0);
+  color: #000;
 }
 
 /* ============================================
@@ -715,10 +848,32 @@ onUnmounted(() => clearInterval(timer))
   text-decoration: none;
   color: #e5e5e5;
   transition: all 0.2s;
+  position: relative;
+  overflow: hidden;
+}
+
+.settings-link::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 0;
+  background: #DC2626;
+  transition: width 0.3s ease;
+  z-index: 0;
+}
+
+.settings-link:hover::before {
+  width: 100%;
+}
+
+.settings-link > * {
+  position: relative;
+  z-index: 1;
 }
 
 .settings-link:hover {
-  background: #DC2626;
   color: #000;
 }
 
@@ -740,7 +895,7 @@ onUnmounted(() => clearInterval(timer))
    ============================================ */
 .sidebar-divider {
   height: 1px;
-  background: #1a1a1a;
+  background: linear-gradient(90deg, transparent, #1a1a1a, transparent);
   margin: 8px 16px;
   flex-shrink: 0;
 }
@@ -761,8 +916,8 @@ onUnmounted(() => clearInterval(timer))
   text-transform: uppercase;
 }
 
-.status-row:last-child {
-  margin-bottom: 0;
+.status-row:last-of-type {
+  margin-bottom: 12px;
 }
 
 .lbl {
@@ -771,10 +926,35 @@ onUnmounted(() => clearInterval(timer))
 
 .val {
   color: #a3a3a3;
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
 
 .val.online {
   color: #22c55e;
+}
+
+.pulse-dot {
+  width: 6px;
+  height: 6px;
+  background: #22c55e;
+  border-radius: 50%;
+  animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.4); }
+  50% { opacity: 0.6; box-shadow: 0 0 0 4px rgba(34, 197, 94, 0); }
+}
+
+.version-tag {
+  font-size: 9px;
+  color: #525252;
+  text-align: center;
+  padding-top: 8px;
+  border-top: 1px solid #1a1a1a;
+  letter-spacing: 0.1em;
 }
 
 /* ============================================
@@ -788,7 +968,7 @@ onUnmounted(() => clearInterval(timer))
 
   .sidebar {
     width: 85vw;
-    max-width: 320px;
+    max-width: 340px;
     padding-top: env(safe-area-inset-top, 0);
     padding-bottom: env(safe-area-inset-bottom, 0);
   }
@@ -818,8 +998,8 @@ onUnmounted(() => clearInterval(timer))
     max-width: none;
   }
 
-  .app-logo {
-    font-size: 16px;
+  .marquee-track span {
+    font-size: 12px;
   }
 
   .tool-title,
@@ -829,7 +1009,7 @@ onUnmounted(() => clearInterval(timer))
 
   .tool-subtitle,
   .nav-subtitle {
-    font-size: 9px;
+    font-size: 8px;
   }
 }
 
@@ -844,7 +1024,7 @@ onUnmounted(() => clearInterval(timer))
 
   .sidebar-tools {
     padding: 12px;
-    gap: 6px;
+    gap: 4px;
   }
 }
 </style>
