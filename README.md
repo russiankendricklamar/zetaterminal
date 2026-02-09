@@ -2,7 +2,7 @@ This document provides a high-level introduction to the Stochastic Dashboard / v
 
 For detailed information about specific subsystems, see:
 
-Frontend application structure: Frontend Application
+Frontend application structure: [Frontend Application] (#frontend-application)
 Backend services and APIs: Backend Services
 Deployment pipelines and infrastructure: Deployment & Operations
 Development setup and workflows: Development Guide
