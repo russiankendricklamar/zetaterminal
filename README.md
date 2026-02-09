@@ -4,10 +4,10 @@ This document provides a high-level introduction to the Stochastic Dashboard / v
 
 For detailed information about specific subsystems, see:
 
-- Frontend application structure: [Frontend Application] (#frontend-application)
-- Backend services and APIs: [Backend Services]
-- Deployment pipelines and infrastructure: [Deployment & Operations]
-- Development setup and workflows: [Development Guide]
+- Frontend application structure: [Frontend Application](#frontend-application)
+- Backend services and APIs: [Backend Services](#backend-services)
+- Deployment pipelines and infrastructure: [Deployment & Operations](#deployment--operations)
+- Development setup and workflows: [Development Guide](#development-guide)
 
 ## System Purpose
 
@@ -114,11 +114,11 @@ Based on cluster analysis and usage patterns, the system's modules are ranked by
 
 | Module                  | Importance | Description                                                        | Frontend Component      | Backend API                            | Wiki Page                                                                 |
 |-------------------------|------------|--------------------------------------------------------------------|-------------------------|----------------------------------------|---------------------------------------------------------------------------|
-| **3D Regime Space**     | 47.68      | HMM market regime detection with Three.js 3D visualization         | `RegimeSpace3D.vue`     | `/api/multivariate-hmm/*`             | [RegimeSpace3D Component]() |
-| **Zeta Terminal**       | 18.54      | Spectral regime analysis using Prony method and ACF decomposition  | `Terminal.vue`          | `/api/spectral-regime/*`              | [Market Analysis Terminal]() |
-| **ZCYC Viewer**         | 14.22      | Zero-coupon yield curve visualization with MOEX integration        | `ZCYCViewer.vue`        | `/api/zcyc/*`                         | [ZCYC Viewer]()                         |
-| **Documentation**       | 12.81      | KaTeX-rendered mathematical formulas and model explanations        | `Documentation.vue`     | N/A                                    | [Reporting & Documentation]() |
-| **CCMV/HJB Optimization** | 9.12     | Portfolio optimization with GARCH volatility models                | `CCMVOptimization.vue`  | `/api/compute/garch`, `/api/ccmv/*`, `/api/hjb/*` | [Portfolio Optimization]() |
+| **3D Regime Space**     | 47.68      | HMM market regime detection with Three.js 3D visualization         | `RegimeSpace3D.vue`     | `/api/multivariate-hmm/*`             | [RegimeSpace3D Component](#regimespace3d-component) |
+| **Zeta Terminal**       | 18.54      | Spectral regime analysis using Prony method and ACF decomposition  | `Terminal.vue`          | `/api/spectral-regime/*`              | [Market Analysis Terminal](#market-analysis-terminal) |
+| **ZCYC Viewer**         | 14.22      | Zero-coupon yield curve visualization with MOEX integration        | `ZCYCViewer.vue`        | `/api/zcyc/*`                         | [ZCYC Viewer](#zcyc-viewer)                         |
+| **Documentation**       | 12.81      | KaTeX-rendered mathematical formulas and model explanations        | `Documentation.vue`     | N/A                                    | [Reporting & Documentation](#reporting--documentation) |
+| **CCMV/HJB Optimization** | 9.12     | Portfolio optimization with GARCH volatility models                | `CCMVOptimization.vue`  | `/api/compute/garch`, `/api/ccmv/*`, `/api/hjb/*` | [Portfolio Optimization](#portfolio-optimization) |
 
 ### High Priority Modules
 
@@ -326,3 +326,35 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+```
+
+## File Structure Overview
+
+### Frontend Directory Structure
+
+frontend/
+  src/
+    pages/       # Vue page components (RegimeSpace3D.vue, Terminal.vue, etc.)
+    components/  # Reusable UI components (glass cards, panels, inputs)
+    services/    # API client services (TypeScript)
+    stores/      # Pinia state management stores
+    utils/       # Utilities (RegimeSpaceRenderer.ts, HMMModel.ts)
+    router/      # Vue Router configuration
+    assets/      # Static assets (images, fonts)
+    main.ts      # Application entry point
+  vite.config.ts      # Vite build configuration
+  tailwind.config.js  # Tailwind CSS configuration
+  package.json        # Node dependencies
+
+### Backend Directory Structure
+
+backend/
+  src/
+    api/        # FastAPI routers (bond.py, swap.py, compute.py, etc.)
+    services/   # Business logic services (compute_service.py, etc.)
+    database/   # Data access layer (repositories.py, models.py, client.py)
+    main.py     # FastAPI application entry point
+  requirements.txt  # Python dependencies
+  Procfile          # Railway deployment configuration
+  start.sh          # Startup script
+
