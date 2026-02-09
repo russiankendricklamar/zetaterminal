@@ -57,7 +57,12 @@ body,
 }
 
 body {
-  font-family: 'Oswald', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-family:
+    -apple-system,
+    BlinkMacSystemFont,
+    'Segoe UI',
+    'Roboto',
+    sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   background-color: #050505;
