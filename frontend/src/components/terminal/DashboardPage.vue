@@ -350,6 +350,7 @@ watch(() => props.chartData, () => {
    DASHBOARD GRID
    ============================================ */
 .dashboard-grid-wrapper {
+  flex: 1;
   padding: 16px;
 }
 

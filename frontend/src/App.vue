@@ -57,16 +57,10 @@ body,
 }
 
 body {
-  font-family:
-    'FKGroteskNeue',
-    -apple-system,
-    BlinkMacSystemFont,
-    'Segoe UI',
-    'Roboto',
-    sans-serif;
+  font-family: 'Oswald', -apple-system, BlinkMacSystemFont, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background-color: #000000;
-  color: #ffffff;
+  background-color: #050505;
+  color: #f5f5f5;
 }
 </style>
