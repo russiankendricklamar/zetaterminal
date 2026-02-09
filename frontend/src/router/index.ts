@@ -35,6 +35,7 @@ import BasisAnalysis from '@/pages/BasisAnalysis.vue'
 import VolatilitySurface from '@/pages/VolatilitySurface.vue'
 import CCMVOptimizationPage from '@/pages/CCMVOptimization.vue'
 import DocumentationPage from '@/pages/DocumentationPage.vue'
+import KnowledgeBase from '@/pages/KnowledgeBase.vue'
 import Terminal from '@/pages/Terminal.vue'
 import Profile from '@/pages/Profile.vue'
 
@@ -48,8 +49,14 @@ const routes = [
   {
     path: '/docs',
     name: 'Documentation',
+    component: KnowledgeBase,
+    meta: { title: 'База знаний', bare: true }
+  },
+  {
+    path: '/docs-legacy',
+    name: 'DocumentationLegacy',
     component: DocumentationPage,
-    meta: { title: 'Документация' }
+    meta: { title: 'Документация (старая)' }
   },
   {
     path: '/terminal',
