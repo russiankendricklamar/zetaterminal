@@ -98,7 +98,7 @@
         >
           <button
             class="tool-header"
-            @click="toggleTool(key)"
+            @click="toggleTool(key, $event)"
             :class="{ expanded: expandedTools[key] }"
           >
             <span class="tool-index font-mono">{{ String(groupIndex + 3).padStart(2, '0') }}</span>
@@ -278,8 +278,19 @@ const toolGroups = {
   },
 }
 
-const toggleTool = (id: string) => {
+const toggleTool = (id: string, event?: Event) => {
   expandedTools[id] = !expandedTools[id]
+
+  // Auto-scroll to show expanded content
+  if (expandedTools[id] && event) {
+    const target = event.currentTarget as HTMLElement
+    const group = target.closest('.tool-group') as HTMLElement
+    if (group) {
+      setTimeout(() => {
+        group.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      }, 100)
+    }
+  }
 }
 
 const isActive = (path: string): boolean => {
@@ -491,7 +502,7 @@ onUnmounted(() => clearInterval(timer))
 }
 
 /* ============================================
-   NAVIGATION TOOLS
+   NAVIGATION TOOLS - SCROLLABLE
    ============================================ */
 .sidebar-tools {
   flex: 1;
@@ -502,6 +513,26 @@ onUnmounted(() => clearInterval(timer))
   flex-direction: column;
   gap: 4px;
   -webkit-overflow-scrolling: touch;
+  min-height: 0; /* Important for flex scroll */
+  scroll-behavior: smooth;
+}
+
+/* Custom scrollbar for sidebar */
+.sidebar-tools::-webkit-scrollbar {
+  width: 6px;
+}
+
+.sidebar-tools::-webkit-scrollbar-track {
+  background: #0a0a0a;
+}
+
+.sidebar-tools::-webkit-scrollbar-thumb {
+  background: #DC2626;
+  border-radius: 0;
+}
+
+.sidebar-tools::-webkit-scrollbar-thumb:hover {
+  background: #ef4444;
 }
 
 /* ============================================
@@ -518,6 +549,7 @@ onUnmounted(() => clearInterval(timer))
   transition: all 0.2s;
   position: relative;
   overflow: hidden;
+  flex-shrink: 0; /* Prevent compression */
 }
 
 .nav-entry::before {
@@ -635,6 +667,7 @@ onUnmounted(() => clearInterval(timer))
   border: 1px solid #1a1a1a;
   overflow: hidden;
   transition: border-color 0.2s;
+  flex-shrink: 0; /* Prevent compression */
 }
 
 .tool-group:hover {
@@ -898,7 +931,7 @@ onUnmounted(() => clearInterval(timer))
 .sidebar-divider {
   height: 1px;
   background: linear-gradient(90deg, transparent, #1a1a1a, transparent);
-  margin: 8px 16px;
+  margin: 12px 16px;
   flex-shrink: 0;
 }
 
