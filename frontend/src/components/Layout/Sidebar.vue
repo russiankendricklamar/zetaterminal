@@ -116,7 +116,6 @@
           <div
             class="tool-content-wrapper"
             :class="{ expanded: expandedTools[key] }"
-            :style="{ '--items-count': group.items.length }"
           >
             <div class="tool-content">
               <router-link
@@ -730,13 +729,13 @@ onUnmounted(() => clearInterval(timer))
 
 /* Tool Content Wrapper - Animated Height */
 .tool-content-wrapper {
-  max-height: 0;
-  overflow: hidden;
-  transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .tool-content-wrapper.expanded {
-  max-height: calc(var(--items-count, 5) * 44px + 16px);
+  grid-template-rows: 1fr;
 }
 
 .tool-content {
@@ -745,6 +744,8 @@ onUnmounted(() => clearInterval(timer))
   flex-direction: column;
   gap: 2px;
   background: #0a0a0a;
+  overflow: hidden;
+  min-height: 0;
 }
 
 /* ============================================
