@@ -1,8 +1,10 @@
 <template>
-  <div class="flex-1 glass-panel rounded-3xl overflow-hidden shadow-2xl shadow-black/20 p-8 flex flex-col animate-fade-in overflow-y-auto custom-scrollbar">
-    <div class="text-center mb-10">
-      <h1 class="text-4xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white to-gray-500 mb-2">Grow Your Assets</h1>
-      <p class="text-gray-400">Simple. Secure. High Yields.</p>
+  <div class="page-container custom-scrollbar">
+    <div class="section-header justify-center text-center">
+      <div>
+        <h1 class="section-title font-anton">GROW YOUR ASSETS</h1>
+        <p class="section-subtitle font-mono">SIMPLE. SECURE. HIGH YIELDS.</p>
+      </div>
     </div>
 
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

@@ -1,22 +1,22 @@
 <template>
-  <div class="flex-1 glass-panel rounded-3xl overflow-hidden shadow-2xl shadow-black/20 flex flex-col animate-fade-in h-full">
-    <div class="flex flex-col md:flex-row items-center justify-between p-6 border-b border-white/5 bg-black/20 gap-4">
+  <div class="page-container custom-scrollbar">
+    <div class="section-header flex-col md:flex-row gap-4">
       <div class="flex items-center gap-4">
-        <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-slate-600/20 to-zinc-600/20 flex items-center justify-center text-lg font-bold text-slate-300 border border-slate-500/30">
+        <div class="icon-box">
           <GlobeIcon class="w-6 h-6" />
         </div>
         <div>
-          <h2 class="text-2xl font-bold text-white tracking-tight">Макроэкономика</h2>
-          <p class="text-xs text-gray-400">Индикаторы, релизы и экономическая политика</p>
+          <h2 class="section-title font-anton">МАКРОЭКОНОМИКА</h2>
+          <p class="section-subtitle font-mono">ИНДИКАТОРЫ, РЕЛИЗЫ И ЭКОНОМИЧЕСКАЯ ПОЛИТИКА</p>
         </div>
       </div>
-      <div class="flex bg-black/40 rounded-xl p-1 border border-white/5 overflow-x-auto max-w-full custom-scrollbar">
-        <button v-for="tab in tabs" :key="tab.id" @click="section = tab.id" :class="['px-3 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap', section === tab.id ? 'bg-slate-500/20 text-slate-300 border border-slate-500/30' : 'text-gray-500 hover:text-white hover:bg-white/5']">
+      <div class="tab-group">
+        <button v-for="tab in tabs" :key="tab.id" @click="section = tab.id" :class="['tab-btn', { active: section === tab.id }]">
           {{ tab.label }}
         </button>
       </div>
     </div>
-    <div class="flex-1 overflow-y-auto custom-scrollbar p-6 bg-gradient-to-b from-black/10 to-transparent">
+    <div class="flex-1 flex flex-col gap-6">
       <EconomicCalendar v-if="section === 'ECO'" />
       <EconomicData v-else-if="section === 'ECST'" />
       <Forecasts v-else-if="section === 'ECFC'" />

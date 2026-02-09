@@ -1,49 +1,42 @@
-<!-- src/views/NotFoundView.vue -->
 <template>
   <div class="page-container center-content">
-    
-    <!-- Main Glass Card -->
-    <div class="card glass-panel not-found-card">
-      
-      <!-- Ambient Glow Behind -->
-      <div class="glow-bg"></div>
-
+    <!-- Main Card -->
+    <div class="not-found-card">
       <div class="content-wrapper">
         <div class="error-code-container">
-            <span class="error-code">404</span>
-            <div class="scan-line"></div>
+          <span class="error-code font-anton">404</span>
+          <div class="scan-line"></div>
         </div>
-        
-        <h1 class="error-title">Страница не найдена</h1>
-        <p class="error-desc">
+
+        <h1 class="error-title font-oswald">СТРАНИЦА НЕ НАЙДЕНА</h1>
+        <p class="error-desc font-mono">
           Похоже, вы вышли за пределы известной вселенной или доступных данных.
         </p>
 
         <div class="actions">
-            <router-link to="/" class="btn btn-primary-gradient">
-                <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg>
-                Вернуться на Дашборд
-            </router-link>
-            
-            <button @click="goBack" class="btn btn-outline">
-                <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
-                Назад
-            </button>
+          <router-link to="/" class="btn btn-primary">
+            <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg>
+            Вернуться на Дашборд
+          </router-link>
+
+          <button @click="goBack" class="btn btn-secondary">
+            <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+            Назад
+          </button>
         </div>
 
         <div class="divider"></div>
 
         <div class="suggestions">
-            <span class="suggestions-lbl">Быстрый переход:</span>
-            <div class="links-row">
-                <router-link to="/risk-metrics" class="link-pill">Риск-метрики</router-link>
-                <router-link to="/monte-carlo" class="link-pill">Монте-Карло</router-link>
-                <router-link to="/stress-testing" class="link-pill">Стресс-тесты</router-link>
-            </div>
+          <span class="suggestions-lbl font-mono">БЫСТРЫЙ ПЕРЕХОД:</span>
+          <div class="links-row">
+            <router-link to="/risk-metrics" class="link-pill">Риск-метрики</router-link>
+            <router-link to="/monte-carlo" class="link-pill">Монте-Карло</router-link>
+            <router-link to="/stress-testing" class="link-pill">Стресс-тесты</router-link>
+          </div>
         </div>
       </div>
     </div>
-
   </div>
 </template>
 
@@ -65,202 +58,174 @@ const goBack = () => {
   padding: 20px;
   position: relative;
   overflow: hidden;
+  background: var(--bg-primary);
 }
 
 /* ============================================
-   GLASS CARD ENGINE
+   BRUTALIST CARD
    ============================================ */
-.card {
+.not-found-card {
   position: relative;
-  border-radius: 24px;
   overflow: hidden;
-  background: rgba(20, 22, 28, 0.3);
-  backdrop-filter: blur(40px) saturate(180%);
-  -webkit-backdrop-filter: blur(40px) saturate(180%);
-  box-shadow: 
-    0 20px 50px -20px rgba(0,0,0,0.6),
-    inset 0 0 0 1px rgba(255, 255, 255, 0.1),
-    inset 0 1px 0 0 rgba(255, 255, 255, 0.15);
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-dark);
   max-width: 500px;
   width: 100%;
-}
-
-.glass-panel {
-  padding: 40px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  text-align: center;
-  z-index: 1;
-}
-
-/* Glow Effect */
-.glow-bg {
-    position: absolute;
-    top: -50%;
-    left: -50%;
-    width: 200%;
-    height: 200%;
-    background: radial-gradient(circle at 50% 50%, rgba(59, 130, 246, 0.15), transparent 60%);
-    pointer-events: none;
-    z-index: 0;
-    animation: pulse 4s ease-in-out infinite alternate;
-}
-
-@keyframes pulse {
-    0% { opacity: 0.5; transform: scale(1); }
-    100% { opacity: 0.8; transform: scale(1.1); }
+  padding: 48px;
 }
 
 .content-wrapper {
-    position: relative;
-    z-index: 2;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    width: 100%;
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
 }
 
 /* ============================================
    TYPOGRAPHY & ELEMENTS
    ============================================ */
 .error-code-container {
-    position: relative;
-    margin-bottom: 24px;
+  position: relative;
+  margin-bottom: 24px;
 }
 
 .error-code {
-    font-size: 96px;
-    font-weight: 800;
-    line-height: 1;
-    font-family: var(--font-family-mono); /* Или monospace */
-    background: linear-gradient(135deg, #fff 30%, rgba(255,255,255,0.2));
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    letter-spacing: -0.05em;
-    filter: drop-shadow(0 0 20px rgba(255,255,255,0.1));
+  font-size: 120px;
+  font-weight: 800;
+  line-height: 1;
+  color: var(--accent-red);
+  letter-spacing: -0.05em;
+  text-shadow: 0 0 60px rgba(220, 38, 38, 0.3);
 }
 
 .scan-line {
-    position: absolute;
-    top: 0; left: 0; right: 0; bottom: 0;
-    background: linear-gradient(to bottom, transparent 50%, rgba(255,255,255,0.05) 50%);
-    background-size: 100% 4px;
-    pointer-events: none;
-    mix-blend-mode: overlay;
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: linear-gradient(to bottom, transparent 50%, rgba(255,255,255,0.02) 50%);
+  background-size: 100% 4px;
+  pointer-events: none;
 }
 
 .error-title {
-    font-size: 24px;
-    font-weight: 700;
-    color: #fff;
-    margin: 0 0 12px 0;
-    letter-spacing: -0.01em;
+  font-size: 24px;
+  font-weight: 700;
+  color: #fff;
+  margin: 0 0 12px 0;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
 }
 
 .error-desc {
-    font-size: 14px;
-    color: rgba(255,255,255,0.6);
-    line-height: 1.5;
-    margin: 0 0 32px 0;
-    max-width: 320px;
+  font-size: 13px;
+  color: var(--text-muted);
+  line-height: 1.6;
+  margin: 0 0 32px 0;
+  max-width: 320px;
+  text-align: center;
 }
 
 /* ============================================
    BUTTONS
    ============================================ */
 .actions {
-    display: flex;
-    gap: 12px;
-    width: 100%;
-    justify-content: center;
+  display: flex;
+  gap: 12px;
+  width: 100%;
+  justify-content: center;
 }
 
 .btn {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    padding: 10px 20px;
-    border-radius: 10px;
-    font-size: 13px;
-    font-weight: 600;
-    cursor: pointer;
-    border: none;
-    color: white;
-    text-decoration: none;
-    transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 24px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  border: 1px solid var(--border-dark);
+  color: white;
+  text-decoration: none;
+  transition: all 0.2s;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-family: var(--font-family-mono);
 }
 
-.btn-primary-gradient {
-    background: linear-gradient(135deg, #0ea5e9, #2563eb);
-    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3), inset 0 1px 0 rgba(255,255,255,0.2);
-    flex: 2;
-}
-.btn-primary-gradient:hover {
-    filter: brightness(1.1);
-    transform: translateY(-1px);
-    box-shadow: 0 6px 16px rgba(37, 99, 235, 0.4);
+.btn-primary {
+  background: var(--accent-red);
+  border-color: var(--accent-red);
+  flex: 2;
 }
 
-.btn-outline {
-    background: rgba(255,255,255,0.05);
-    border: 1px solid rgba(255,255,255,0.1);
-    color: rgba(255,255,255,0.8);
-    flex: 1;
+.btn-primary:hover {
+  background: #b91c1c;
+  transform: translateY(-1px);
 }
-.btn-outline:hover {
-    background: rgba(255,255,255,0.1);
-    color: #fff;
+
+.btn-secondary {
+  background: var(--bg-tertiary);
+  color: var(--text-secondary);
+  flex: 1;
+}
+
+.btn-secondary:hover {
+  background: var(--border-dark);
+  color: #fff;
+  border-color: var(--text-muted);
 }
 
 .divider {
-    height: 1px;
-    width: 100%;
-    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
-    margin: 32px 0;
+  height: 1px;
+  width: 100%;
+  background: var(--border-dark);
+  margin: 32px 0;
 }
 
 /* ============================================
    SUGGESTIONS
    ============================================ */
 .suggestions {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
 }
 
 .suggestions-lbl {
-    font-size: 11px;
-    text-transform: uppercase;
-    color: rgba(255,255,255,0.4);
-    letter-spacing: 0.05em;
-    font-weight: 500;
+  font-size: 10px;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  letter-spacing: 0.1em;
+  font-weight: 500;
 }
 
 .links-row {
-    display: flex;
-    gap: 8px;
-    flex-wrap: wrap;
-    justify-content: center;
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: center;
 }
 
 .link-pill {
-    padding: 6px 12px;
-    font-size: 11px;
-    color: rgba(255,255,255,0.6);
-    background: rgba(255,255,255,0.03);
-    border-radius: 20px;
-    text-decoration: none;
-    border: 1px solid rgba(255,255,255,0.05);
-    transition: all 0.2s;
+  padding: 8px 16px;
+  font-size: 11px;
+  color: var(--text-secondary);
+  background: var(--bg-tertiary);
+  text-decoration: none;
+  border: 1px solid var(--border-dark);
+  transition: all 0.2s;
+  font-family: var(--font-family-mono);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
 }
 
 .link-pill:hover {
-    background: rgba(255,255,255,0.1);
-    color: #fff;
-    border-color: rgba(255,255,255,0.2);
+  background: var(--border-dark);
+  color: #fff;
+  border-color: var(--accent-red);
 }
 
 /* ============================================
@@ -270,36 +235,36 @@ const goBack = () => {
   .page-container {
     padding: 16px;
   }
-  
-  .glass-panel {
+
+  .not-found-card {
     padding: 32px 24px;
   }
-  
+
   .error-code {
-    font-size: 72px;
+    font-size: 80px;
   }
-  
+
   .error-title {
     font-size: 20px;
   }
-  
+
   .error-desc {
-    font-size: 13px;
+    font-size: 12px;
   }
-  
+
   .actions {
     flex-direction: column;
   }
-  
+
   .btn {
     width: 100%;
   }
-  
+
   .links-row {
     flex-direction: column;
     width: 100%;
   }
-  
+
   .link-pill {
     width: 100%;
     text-align: center;
@@ -310,28 +275,27 @@ const goBack = () => {
   .page-container {
     padding: 12px;
   }
-  
-  .glass-panel {
+
+  .not-found-card {
     padding: 24px 16px;
   }
-  
+
   .error-code {
-    font-size: 56px;
+    font-size: 64px;
   }
-  
+
   .error-title {
     font-size: 18px;
   }
-  
+
   .error-desc {
-    font-size: 12px;
+    font-size: 11px;
     max-width: 100%;
   }
-  
+
   .btn {
-    font-size: 12px;
-    padding: 8px 16px;
+    font-size: 11px;
+    padding: 10px 16px;
   }
 }
 </style>
-

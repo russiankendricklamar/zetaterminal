@@ -1,7 +1,7 @@
 <template>
-  <div class="flex-1 flex gap-4 min-h-0 animate-fade-in">
-    <div class="flex-1 glass-panel rounded-3xl p-8 flex flex-col">
-      <h2 class="text-xl font-bold text-white mb-8">Portfolio Overview</h2>
+  <div class="flex-1 flex gap-6 min-h-0">
+    <div class="flex-1 data-panel flex flex-col">
+      <h2 class="section-title font-anton text-xl mb-8">PORTFOLIO OVERVIEW</h2>
       <div class="flex items-center gap-8 mb-8 pb-8 border-b border-white/5">
         <div class="flex-1">
           <div class="text-sm text-gray-400 mb-1 uppercase tracking-wider font-bold">Total Balance</div>
@@ -36,8 +36,8 @@
       </div>
     </div>
 
-    <div class="w-96 glass-panel rounded-3xl p-6 flex flex-col">
-      <h2 class="text-xl font-bold text-white mb-6">Recent Activity</h2>
+    <div class="w-96 data-panel flex flex-col">
+      <h2 class="section-title font-anton text-lg mb-6">RECENT ACTIVITY</h2>
       <div class="space-y-4 overflow-auto custom-scrollbar flex-1 pr-2">
         <div v-for="i in 6" :key="i" class="flex items-center justify-between p-3 rounded-xl hover:bg-white/5 transition-colors cursor-pointer group">
           <div class="flex items-center gap-4">

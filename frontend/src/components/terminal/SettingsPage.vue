@@ -289,6 +289,7 @@ import FooterWidget from './widgets/FooterWidget.vue';
 import MarketsWidget from './widgets/MarketsWidget.vue';
 import AnalyticsWidget from './widgets/AnalyticsWidget.vue';
 import QuantitativeToolWidget from './widgets/QuantitativeToolWidget.vue';
+import WaveSigmaWidget from './widgets/WaveSigmaWidget.vue';
 
 interface Props {
   activeSection: string;
@@ -714,6 +715,16 @@ const availableWidgets = [
     defaultWidth: 3,
     defaultHeight: 3,
   },
+  {
+    type: 'WSIGMA',
+    title: 'WAVE_σ.9',
+    description: 'Топология моментума и режимы торговли',
+    icon: 'ActivityIcon',
+    iconBg: 'bg-orange-500/20',
+    iconColor: 'text-orange-400',
+    defaultWidth: 6,
+    defaultHeight: 4,
+  },
 ];
 
 const loadActiveWidgets = () => {
@@ -841,6 +852,7 @@ const widgetComponentsMap: Record<string, any> = {
   GREEKS3D: QuantitativeToolWidget,
   REGNET: QuantitativeToolWidget,
   TAILCUBE: QuantitativeToolWidget,
+  WSIGMA: WaveSigmaWidget,
 };
 
 const getWidgetComponent = (type: string) => {

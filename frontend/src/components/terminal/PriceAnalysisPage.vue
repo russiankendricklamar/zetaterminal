@@ -1,5 +1,5 @@
 <template>
-  <div class="flex-1 glass-panel rounded-3xl overflow-hidden shadow-2xl shadow-black/20 flex flex-col animate-fade-in h-full">
+  <div class="page-container custom-scrollbar">
     <!-- Header -->
     <div class="flex flex-col md:flex-row items-center justify-between p-6 border-b border-white/5 bg-black/20 gap-4">
       <div class="flex items-center gap-4 self-start md:self-auto">

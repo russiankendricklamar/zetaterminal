@@ -62,6 +62,7 @@ import FooterWidget from './widgets/FooterWidget.vue';
 import MarketsWidget from './widgets/MarketsWidget.vue';
 import AnalyticsWidget from './widgets/AnalyticsWidget.vue';
 import QuantitativeToolWidget from './widgets/QuantitativeToolWidget.vue';
+import WaveSigmaWidget from './widgets/WaveSigmaWidget.vue';
 import { Candle } from '@/types/terminal';
 
 const widgetComponents: Record<string, any> = {
@@ -104,6 +105,7 @@ const widgetComponents: Record<string, any> = {
   GREEKS3D: QuantitativeToolWidget,
   REGNET: QuantitativeToolWidget,
   TAILCUBE: QuantitativeToolWidget,
+  WSIGMA: WaveSigmaWidget,
 };
 
 interface Widget {

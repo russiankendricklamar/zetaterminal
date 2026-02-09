@@ -1,25 +1,25 @@
 <template>
-  <div class="flex-1 glass-panel rounded-3xl overflow-hidden shadow-2xl shadow-black/20 flex flex-col animate-fade-in h-full">
-    <div class="flex flex-col md:flex-row items-center justify-between p-6 border-b border-white/5 bg-black/20 gap-4">
+  <div class="page-container custom-scrollbar">
+    <div class="section-header flex-col md:flex-row gap-4">
       <div class="flex items-center gap-4">
-        <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-gray-700/20 to-zinc-700/20 flex items-center justify-center text-lg font-bold text-gray-300 border border-gray-500/30">
+        <div class="icon-box">
           <component :is="section === 'FLDS' ? DatabaseIcon : HelpCircleIcon" class="w-6 h-6" />
         </div>
         <div>
-          <h2 class="text-2xl font-bold text-white tracking-tight">{{ section === 'FLDS' ? 'Справочные данные' : 'Помощь и поддержка' }}</h2>
-          <p class="text-xs text-gray-400">{{ section === 'FLDS' ? 'Каталог полей данных терминала' : 'Документация, FAQ и поддержка' }}</p>
+          <h2 class="section-title font-anton">{{ section === 'FLDS' ? 'СПРАВОЧНЫЕ ДАННЫЕ' : 'ПОМОЩЬ И ПОДДЕРЖКА' }}</h2>
+          <p class="section-subtitle font-mono">{{ section === 'FLDS' ? 'КАТАЛОГ ПОЛЕЙ ДАННЫХ ТЕРМИНАЛА' : 'ДОКУМЕНТАЦИЯ, FAQ И ПОДДЕРЖКА' }}</p>
         </div>
       </div>
-      <div class="flex bg-black/40 rounded-xl p-1 border border-white/5 overflow-x-auto">
-        <button @click="section = 'FLDS'" :class="['px-3 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap', section === 'FLDS' ? 'bg-gray-600/20 text-gray-200 border border-gray-500/30' : 'text-gray-500 hover:text-white hover:bg-white/5']">
-          Справочные данные
+      <div class="tab-group">
+        <button @click="section = 'FLDS'" :class="['tab-btn', { active: section === 'FLDS' }]">
+          СПРАВОЧНЫЕ ДАННЫЕ
         </button>
-        <button @click="section = 'HL'" :class="['px-3 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap', section === 'HL' ? 'bg-gray-600/20 text-gray-200 border border-gray-500/30' : 'text-gray-500 hover:text-white hover:bg-white/5']">
-          Помощь
+        <button @click="section = 'HL'" :class="['tab-btn', { active: section === 'HL' }]">
+          ПОМОЩЬ
         </button>
       </div>
     </div>
-    <div class="flex-1 overflow-y-auto custom-scrollbar p-6 bg-gradient-to-b from-black/10 to-transparent">
+    <div class="flex-1 flex flex-col gap-6">
       <DataFieldsCatalog v-if="section === 'FLDS'" />
       <HelpCenter v-else />
     </div>

@@ -1,22 +1,22 @@
 <template>
-  <div class="flex-1 glass-panel rounded-3xl overflow-hidden shadow-2xl shadow-black/20 flex flex-col animate-fade-in h-full">
-    <div class="flex flex-col md:flex-row items-center justify-between p-6 border-b border-white/5 bg-black/20 gap-4">
+  <div class="page-container custom-scrollbar">
+    <div class="section-header flex-col md:flex-row gap-4">
       <div class="flex items-center gap-4">
-        <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-orange-600/20 to-amber-600/20 flex items-center justify-center text-lg font-bold text-orange-400 border border-orange-500/30">
+        <div class="icon-box icon-orange">
           <BoxIcon class="w-6 h-6" />
         </div>
         <div>
-          <h2 class="text-2xl font-bold text-white tracking-tight">Сырьё</h2>
-          <p class="text-xs text-gray-400">Энергоресурсы, металлы, агрокомплекс и погода</p>
+          <h2 class="section-title font-anton">СЫРЬЁ</h2>
+          <p class="section-subtitle font-mono">ЭНЕРГОРЕСУРСЫ, МЕТАЛЛЫ, АГРОКОМПЛЕКС И ПОГОДА</p>
         </div>
       </div>
-      <div class="flex bg-black/40 rounded-xl p-1 border border-white/5 overflow-x-auto max-w-full custom-scrollbar">
-        <button v-for="tab in tabs" :key="tab.id" @click="section = tab.id" :class="['px-3 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap', section === tab.id ? 'bg-orange-500/20 text-orange-300 border border-orange-500/30' : 'text-gray-500 hover:text-white hover:bg-white/5']">
+      <div class="tab-group">
+        <button v-for="tab in tabs" :key="tab.id" @click="section = tab.id" :class="['tab-btn', { active: section === tab.id }]">
           {{ tab.label }}
         </button>
       </div>
     </div>
-    <div class="flex-1 overflow-y-auto custom-scrollbar p-6 bg-gradient-to-b from-black/10 to-transparent">
+    <div class="flex-1 flex flex-col gap-6">
       <GlobalCommodities v-if="section === 'GLCO'" />
       <EnergyMarkets v-else-if="section === 'NRG'" />
       <NaturalGas v-else-if="section === 'NGAS'" />

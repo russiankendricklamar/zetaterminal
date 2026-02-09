@@ -1,63 +1,63 @@
 <template>
-  <div class="flex-1 glass-panel rounded-3xl overflow-hidden shadow-2xl shadow-black/20 p-8 flex flex-col animate-fade-in custom-scrollbar overflow-y-auto">
-    
+  <div class="page-container custom-scrollbar">
+
     <!-- Header & Tabs -->
-    <div class="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-6">
+    <div class="section-header flex-col md:flex-row md:items-center gap-6">
       <div class="flex items-center gap-4">
-        <div :class="`p-3 rounded-2xl transition-colors ${getAccentColor()}`">
-          <component :is="getTabIcon()" class="w-8 h-8" />
+        <div :class="`icon-box ${getAccentClass()}`">
+          <component :is="getTabIcon()" class="w-6 h-6" />
         </div>
         <div>
-          <h1 class="text-3xl font-bold text-white tracking-tight">Аналитический хаб</h1>
-          <p class="text-gray-400">
-            <span v-if="activeTab === 'AI'">Продвинутая аналитика рынка на основе ИИ</span>
-            <span v-else-if="activeTab === 'Quant'">Количественные метрики и моделирование рисков</span>
-            <span v-else>Производительность портфеля и распределение активов</span>
+          <h1 class="section-title font-anton">АНАЛИТИЧЕСКИЙ ХАБ</h1>
+          <p class="section-subtitle">
+            <span v-if="activeTab === 'AI'">ПРОДВИНУТАЯ АНАЛИТИКА РЫНКА НА ОСНОВЕ ИИ</span>
+            <span v-else-if="activeTab === 'Quant'">КОЛИЧЕСТВЕННЫЕ МЕТРИКИ И МОДЕЛИРОВАНИЕ РИСКОВ</span>
+            <span v-else>ПРОИЗВОДИТЕЛЬНОСТЬ ПОРТФЕЛЯ И РАСПРЕДЕЛЕНИЕ АКТИВОВ</span>
           </p>
         </div>
       </div>
 
-      <div class="flex bg-white/5 rounded-xl p-1.5 border border-white/5 self-start md:self-center">
-        <button 
-          @click="activeTab = 'AI'" 
-          :class="`px-6 py-2 rounded-lg text-sm font-bold transition-all flex items-center gap-2 ${getTabColor(activeTab === 'AI')}`"
+      <div class="tab-group">
+        <button
+          @click="activeTab = 'AI'"
+          :class="['tab-btn', { active: activeTab === 'AI' }]"
         >
-          <BrainIcon class="w-3.5 h-3.5" /> AI Анализ
+          <BrainIcon class="w-3.5 h-3.5" /> AI АНАЛИЗ
         </button>
-        <button 
-          @click="activeTab = 'Quant'" 
-          :class="`px-6 py-2 rounded-lg text-sm font-bold transition-all flex items-center gap-2 ${getTabColor(activeTab === 'Quant')}`"
+        <button
+          @click="activeTab = 'Quant'"
+          :class="['tab-btn', { active: activeTab === 'Quant' }]"
         >
-          <CalculatorIcon class="w-3.5 h-3.5" /> Количественная аналитика
+          <CalculatorIcon class="w-3.5 h-3.5" /> КОЛИЧЕСТВЕННАЯ АНАЛИТИКА
         </button>
-        <button 
-          @click="activeTab = 'Finance'" 
-          :class="`px-6 py-2 rounded-lg text-sm font-bold transition-all flex items-center gap-2 ${getTabColor(activeTab === 'Finance')}`"
+        <button
+          @click="activeTab = 'Finance'"
+          :class="['tab-btn', { active: activeTab === 'Finance' }]"
         >
-          <PieChartIcon class="w-3.5 h-3.5" /> Финансовый анализ
+          <PieChartIcon class="w-3.5 h-3.5" /> ФИНАНСОВЫЙ АНАЛИЗ
         </button>
       </div>
     </div>
 
 
     <!-- Assets and Instruments Dropdowns for Quantitative Analytics -->
-    <div v-if="activeTab === 'Quant'" class="mb-6 grid grid-cols-1 lg:grid-cols-2 gap-4">
+    <div v-if="activeTab === 'Quant'" class="grid-2 mb-6">
       <!-- Assets Dropdown -->
       <div class="relative" data-dropdown-assets>
         <button
           @click="isAssetsOpen = !isAssetsOpen"
-          class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl hover:border-blue-500/50 transition-all flex items-center justify-between text-left group"
+          class="dropdown-trigger"
         >
           <div class="flex items-center gap-3">
-            <div class="p-2 rounded-lg bg-blue-500/20 text-blue-400">
+            <div class="icon-box-sm icon-blue">
               <ActivityIcon class="w-4 h-4" />
             </div>
             <div>
-              <div class="text-sm font-bold text-white">Активы</div>
-              <div class="text-xs text-gray-400">{{ selectedAsset || 'Выберите актив' }}</div>
+              <div class="dropdown-label font-oswald">АКТИВЫ</div>
+              <div class="dropdown-value font-mono">{{ selectedAsset || 'ВЫБЕРИТЕ АКТИВ' }}</div>
             </div>
           </div>
-          <ChevronDownIcon :class="`w-4 h-4 text-gray-400 transition-transform ${isAssetsOpen ? 'rotate-180' : ''}`" />
+          <ChevronDownIcon :class="['dropdown-chevron', { open: isAssetsOpen }]" />
         </button>
         <div
           v-if="isAssetsOpen"

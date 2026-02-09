@@ -5,7 +5,7 @@
       @click="$emit('close')"
     ></div>
     
-    <div class="relative w-full max-w-lg glass-panel rounded-3xl overflow-hidden shadow-2xl transition-all transform scale-100 flex flex-col max-h-[90vh]">
+    <div class="relative w-full max-w-lg data-panel overflow-hidden transition-all transform scale-100 flex flex-col max-h-[90vh]">
       
       <!-- Header -->
       <div class="p-6 border-b border-white/5 flex items-start justify-between bg-white/5">

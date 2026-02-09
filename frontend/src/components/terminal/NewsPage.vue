@@ -1,27 +1,23 @@
 <template>
-  <div class="flex-1 glass-panel rounded-3xl overflow-hidden shadow-2xl shadow-black/20 flex flex-col animate-fade-in h-full">
+  <div class="page-container custom-scrollbar">
     <!-- Header & Nav -->
-    <div class="flex flex-col md:flex-row items-start md:items-center justify-between p-6 border-b border-white/5 gap-4">
+    <div class="section-header flex-col md:flex-row gap-4">
       <div class="flex items-center gap-4">
-        <div class="p-3 bg-gradient-to-br from-indigo-500/20 to-purple-500/20 rounded-2xl text-indigo-300">
-          <component :is="currentTabData.icon" class="w-4 h-4" />
+        <div class="icon-box icon-indigo">
+          <component :is="currentTabData.icon" class="w-5 h-5" />
         </div>
         <div>
-          <h2 class="text-2xl font-bold text-white tracking-tight">
-            Новости
-          </h2>
-          <p class="text-xs text-gray-400">
-            {{ currentTabData.description }}
-          </p>
+          <h2 class="section-title font-anton">НОВОСТИ</h2>
+          <p class="section-subtitle font-mono">{{ currentTabData.description }}</p>
         </div>
       </div>
-      
-      <div class="flex bg-black/20 rounded-xl p-1 border border-white/5 overflow-x-auto max-w-full custom-scrollbar">
-        <button 
+
+      <div class="tab-group">
+        <button
           v-for="tab in tabs"
           :key="tab.id"
           @click="currentTab = tab.id"
-          :class="`px-4 py-2 rounded-lg text-xs font-bold transition-all whitespace-nowrap ${currentTab === tab.id ? 'bg-white/10 text-white shadow-lg' : 'text-gray-500 hover:text-white hover:bg-white/5'}`"
+          :class="['tab-btn', { active: currentTab === tab.id }]"
         >
           {{ tab.label }}
         </button>
@@ -29,159 +25,149 @@
     </div>
 
     <!-- Content Area -->
-    <div class="flex-1 overflow-y-auto custom-scrollbar p-6 bg-black/10">
+    <div class="flex-1 flex flex-col gap-4">
       <!-- Real-time News -->
-      <div v-if="currentTab === 'TOP'" class="space-y-4">
-        <div class="flex items-center justify-between mb-4">
-          <h3 class="text-sm font-bold text-gray-400 uppercase tracking-wider">Главные новости</h3>
-          <div class="flex gap-2">
-            <span class="px-2 py-1 bg-rose-500/10 text-rose-400 text-[10px] rounded font-bold border border-rose-500/20 animate-pulse">ОНЛАЙН</span>
+      <div v-if="currentTab === 'TOP'" class="flex flex-col gap-4">
+        <div class="flex items-center justify-between">
+          <h3 class="font-oswald text-sm text-text-tertiary uppercase tracking-wider">ГЛАВНЫЕ НОВОСТИ</h3>
+          <div class="badge badge-red">
+            <span class="status-dot"></span> ОНЛАЙН
           </div>
         </div>
-        <div 
-          v-for="item in news" 
+        <div
+          v-for="item in news"
           :key="item.id"
-          class="group relative p-5 rounded-2xl bg-white/5 border border-white/5 hover:bg-white/10 transition-all hover:border-white/20"
+          :class="['news-item', item.importance.toLowerCase()]"
         >
-          <div :class="`absolute left-0 top-0 bottom-0 w-1 rounded-l-2xl ${getImportanceColor(item.importance)}`"></div>
-          <div class="flex justify-between items-start mb-2 pl-2">
-            <div class="flex items-center gap-2">
-              <span :class="`text-[10px] font-bold px-2 py-0.5 rounded ${item.importance === 'Critical' ? 'bg-rose-500 text-white' : 'bg-gray-700 text-gray-300'}`">
-                {{ getImportanceName(item.importance) }}
-              </span>
-              <span class="text-[10px] text-gray-500 font-mono">{{ item.source }}</span>
-            </div>
-            <span class="text-[10px] text-gray-500 flex items-center gap-1">
+          <div class="news-meta">
+            <span :class="['news-badge', { critical: item.importance === 'Critical' }]">
+              {{ getImportanceName(item.importance) }}
+            </span>
+            <span class="news-source">{{ item.source }}</span>
+            <span class="news-source flex items-center gap-1">
               <ClockIcon class="w-2.5 h-2.5" /> {{ item.time }}
             </span>
           </div>
-          <h3 class="text-lg font-bold text-white mb-2 pl-2 leading-snug group-hover:text-indigo-300 transition-colors cursor-pointer">{{ item.title }}</h3>
-          <div class="pl-2 flex items-center gap-4 mt-3 opacity-60 group-hover:opacity-100 transition-opacity">
-            <button class="text-xs text-gray-400 hover:text-white">
-              Читать полностью
-            </button>
-            <button class="text-xs text-gray-400 hover:text-white">
-              Резюмировать
-            </button>
+          <h3 class="news-title">{{ item.title }}</h3>
+          <div class="flex items-center gap-4 mt-3">
+            <button class="btn-ghost text-xs font-mono">ЧИТАТЬ ПОЛНОСТЬЮ</button>
+            <button class="btn-ghost text-xs font-mono">РЕЗЮМИРОВАТЬ</button>
           </div>
         </div>
       </div>
 
       <!-- Company News -->
-      <div v-else-if="currentTab === 'CN'" class="flex flex-col h-full">
-        <div class="flex items-center gap-4 mb-6">
-          <div class="relative flex-1 max-w-md">
-            <SearchIcon class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 w-4 h-4" />
-            <input 
-              type="text" 
-              placeholder="Введите тикер (например, NVDA, TSLA)" 
-              class="w-full bg-black/20 border border-white/10 rounded-xl py-3 pl-10 pr-4 text-sm text-white focus:outline-none focus:border-indigo-500/50 transition-colors"
-              value="NVDA"
-            />
-          </div>
+      <div v-else-if="currentTab === 'CN'" class="flex flex-col gap-6">
+        <div class="search-box max-w-md">
+          <SearchIcon class="search-icon" />
+          <input
+            type="text"
+            placeholder="ВВЕДИТЕ ТИКЕР (НАПРИМЕР, NVDA, TSLA)"
+            value="NVDA"
+          />
         </div>
 
-        <div class="flex items-center gap-6 mb-8 p-6 bg-gradient-to-r from-green-900/20 to-transparent rounded-2xl border border-white/5">
-          <div class="w-16 h-16 bg-white rounded-xl flex items-center justify-center">
-            <span class="text-2xl font-bold text-black">NVDA</span>
+        <div class="data-panel flex items-center gap-6">
+          <div class="icon-box icon-green">
+            <span class="font-anton text-lg">NV</span>
           </div>
           <div>
-            <h3 class="text-2xl font-bold text-white">NVIDIA Corporation</h3>
-            <div class="flex items-center gap-4 mt-1">
-              <span class="text-3xl font-mono font-bold text-emerald-400">$892.10</span>
-              <span class="text-sm font-bold text-emerald-500 bg-emerald-500/10 px-2 py-0.5 rounded">+4.25%</span>
+            <h3 class="font-anton text-2xl text-text-primary">NVIDIA CORPORATION</h3>
+            <div class="flex items-center gap-4 mt-2">
+              <span class="font-mono text-3xl font-bold text-green">$892.10</span>
+              <span class="badge badge-green">+4.25%</span>
             </div>
           </div>
         </div>
 
-        <div class="space-y-6">
-          <div class="flex items-start gap-4">
-            <div class="flex flex-col items-center">
-              <div class="w-3 h-3 rounded-full bg-indigo-500 shadow-[0_0_10px_#6366f1]"></div>
-              <div class="w-0.5 h-full bg-white/10 my-1"></div>
+        <div class="timeline">
+          <div class="timeline-item">
+            <div class="timeline-marker">
+              <div class="timeline-dot active"></div>
+              <div class="timeline-line"></div>
             </div>
-            <div class="flex-1 pb-6">
-              <span class="text-xs text-indigo-300 font-mono mb-1 block">Сегодня, 10:30</span>
-              <h4 class="text-base font-bold text-white mb-2">Подтверждено приобретение Run:ai за $700M</h4>
-              <p class="text-sm text-gray-400 leading-relaxed">NVIDIA официально подтвердила приобретение платформы оркестрации Kubernetes Run:ai для усиления возможностей управления инфраструктурой ИИ.</p>
-            </div>
-          </div>
-          <div class="flex items-start gap-4">
-            <div class="flex flex-col items-center">
-              <div class="w-3 h-3 rounded-full bg-indigo-500 shadow-[0_0_10px_#6366f1]"></div>
-              <div class="w-0.5 h-full bg-white/10 my-1"></div>
-            </div>
-            <div class="flex-1 pb-6">
-              <span class="text-xs text-indigo-300 font-mono mb-1 block">Вчера, 14:20</span>
-              <h4 class="text-base font-bold text-white mb-2">NVIDIA анонсировала революционный AI-чип 'Rubin'</h4>
-              <p class="text-sm text-gray-400 leading-relaxed">Компания представила новый графический процессор следующего поколения с улучшенной производительностью для обучения больших языковых моделей.</p>
+            <div class="timeline-content">
+              <span class="timeline-date">СЕГОДНЯ, 10:30</span>
+              <h4 class="timeline-title">Подтверждено приобретение Run:ai за $700M</h4>
+              <p class="timeline-desc">NVIDIA официально подтвердила приобретение платформы оркестрации Kubernetes Run:ai для усиления возможностей управления инфраструктурой ИИ.</p>
             </div>
           </div>
-          <div class="flex items-start gap-4">
-            <div class="flex flex-col items-center">
-              <div class="w-3 h-3 rounded-full bg-gray-600"></div>
-              <div class="w-0.5 h-full bg-white/10 my-1"></div>
+          <div class="timeline-item">
+            <div class="timeline-marker">
+              <div class="timeline-dot active"></div>
+              <div class="timeline-line"></div>
             </div>
-            <div class="flex-1 pb-6">
-              <span class="text-xs text-gray-500 font-mono mb-1 block">Вчера, 16:15</span>
-              <h4 class="text-base font-bold text-gray-300 mb-2">Директор продал 5,000 акций</h4>
-              <p class="text-sm text-gray-500 leading-relaxed">Форма SEC 4 указывает, что директор продал акции по средней цене $850.20.</p>
-            </div>
-          </div>
-          <div class="flex items-start gap-4">
-            <div class="flex flex-col items-center">
-              <div class="w-3 h-3 rounded-full bg-gray-600"></div>
-              <div class="w-0.5 h-full bg-white/10 my-1"></div>
-            </div>
-            <div class="flex-1 pb-6">
-              <span class="text-xs text-gray-500 font-mono mb-1 block">2 дня назад, 11:45</span>
-              <h4 class="text-base font-bold text-gray-300 mb-2">Отчёт о прибылях и убытках превзошёл ожидания</h4>
-              <p class="text-sm text-gray-500 leading-relaxed">NVIDIA сообщила о выручке $22.1 млрд, что на 15% выше прогнозов аналитиков. Прибыль на акцию составила $4.50.</p>
+            <div class="timeline-content">
+              <span class="timeline-date">ВЧЕРА, 14:20</span>
+              <h4 class="timeline-title">NVIDIA анонсировала революционный AI-чип 'Rubin'</h4>
+              <p class="timeline-desc">Компания представила новый графический процессор следующего поколения с улучшенной производительностью для обучения больших языковых моделей.</p>
             </div>
           </div>
-          <div class="flex items-start gap-4">
-            <div class="flex flex-col items-center">
-              <div class="w-3 h-3 rounded-full bg-gray-600"></div>
-              <div class="w-0.5 h-full bg-white/10 my-1"></div>
+          <div class="timeline-item">
+            <div class="timeline-marker">
+              <div class="timeline-dot"></div>
+              <div class="timeline-line"></div>
             </div>
-            <div class="flex-1 pb-6">
-              <span class="text-xs text-gray-500 font-mono mb-1 block">3 дня назад, 09:30</span>
-              <h4 class="text-base font-bold text-gray-300 mb-2">Партнёрство с крупными облачными провайдерами</h4>
-              <p class="text-sm text-gray-500 leading-relaxed">Компания объявила о расширении сотрудничества с AWS, Microsoft Azure и Google Cloud для развёртывания AI-инфраструктуры.</p>
+            <div class="timeline-content">
+              <span class="timeline-date" style="color: var(--text-muted)">ВЧЕРА, 16:15</span>
+              <h4 class="timeline-title" style="color: var(--text-secondary)">Директор продал 5,000 акций</h4>
+              <p class="timeline-desc">Форма SEC 4 указывает, что директор продал акции по средней цене $850.20.</p>
             </div>
           </div>
-          <div class="flex items-start gap-4">
-            <div class="flex flex-col items-center">
-              <div class="w-3 h-3 rounded-full bg-gray-600"></div>
+          <div class="timeline-item">
+            <div class="timeline-marker">
+              <div class="timeline-dot"></div>
+              <div class="timeline-line"></div>
             </div>
-            <div class="flex-1 pb-6">
-              <span class="text-xs text-gray-500 font-mono mb-1 block">5 дней назад, 15:00</span>
-              <h4 class="text-base font-bold text-gray-300 mb-2">Запуск нового центра разработки в Сингапуре</h4>
-              <p class="text-sm text-gray-500 leading-relaxed">NVIDIA инвестирует $500M в создание нового исследовательского центра, специализирующегося на разработке AI-решений для Азиатско-Тихоокеанского региона.</p>
+            <div class="timeline-content">
+              <span class="timeline-date" style="color: var(--text-muted)">2 ДНЯ НАЗАД, 11:45</span>
+              <h4 class="timeline-title" style="color: var(--text-secondary)">Отчёт о прибылях и убытках превзошёл ожидания</h4>
+              <p class="timeline-desc">NVIDIA сообщила о выручке $22.1 млрд, что на 15% выше прогнозов аналитиков. Прибыль на акцию составила $4.50.</p>
+            </div>
+          </div>
+          <div class="timeline-item">
+            <div class="timeline-marker">
+              <div class="timeline-dot"></div>
+              <div class="timeline-line"></div>
+            </div>
+            <div class="timeline-content">
+              <span class="timeline-date" style="color: var(--text-muted)">3 ДНЯ НАЗАД, 09:30</span>
+              <h4 class="timeline-title" style="color: var(--text-secondary)">Партнёрство с крупными облачными провайдерами</h4>
+              <p class="timeline-desc">Компания объявила о расширении сотрудничества с AWS, Microsoft Azure и Google Cloud для развёртывания AI-инфраструктуры.</p>
+            </div>
+          </div>
+          <div class="timeline-item">
+            <div class="timeline-marker">
+              <div class="timeline-dot"></div>
+            </div>
+            <div class="timeline-content">
+              <span class="timeline-date" style="color: var(--text-muted)">5 ДНЕЙ НАЗАД, 15:00</span>
+              <h4 class="timeline-title" style="color: var(--text-secondary)">Запуск нового центра разработки в Сингапуре</h4>
+              <p class="timeline-desc">NVIDIA инвестирует $500M в создание нового исследовательского центра, специализирующегося на разработке AI-решений для Азиатско-Тихоокеанского региона.</p>
             </div>
           </div>
         </div>
       </div>
 
       <!-- News Search -->
-      <div v-else-if="currentTab === 'NSRC'" class="flex flex-col h-full">
-        <div class="p-8 rounded-3xl bg-white/5 border border-white/5 text-center mb-8">
-          <h3 class="text-2xl font-bold text-white mb-4">Глубокий поиск по рынку</h3>
-          <div class="relative max-w-2xl mx-auto">
-            <input 
-              type="text" 
-              placeholder="Поиск по компании, инвестору, сектору или ключевому слову..." 
-              class="w-full bg-black/40 border border-white/10 rounded-2xl py-4 pl-6 pr-12 text-white focus:outline-none focus:border-indigo-500/50 transition-all shadow-inner"
+      <div v-else-if="currentTab === 'NSRC'" class="flex flex-col gap-6">
+        <div class="data-panel text-center">
+          <h3 class="font-anton text-2xl mb-6">ГЛУБОКИЙ ПОИСК ПО РЫНКУ</h3>
+          <div class="search-box max-w-2xl mx-auto relative">
+            <SearchIcon class="search-icon" />
+            <input
+              type="text"
+              placeholder="ПОИСК ПО КОМПАНИИ, ИНВЕСТОРУ, СЕКТОРУ..."
             />
-            <button class="absolute right-3 top-1/2 -translate-y-1/2 p-2 bg-indigo-500 rounded-xl text-white hover:bg-indigo-600 transition-colors">
+            <button class="btn btn-primary absolute right-2 top-1/2 -translate-y-1/2 h-10">
               <ArrowRightIcon class="w-4 h-4" />
             </button>
           </div>
-          <div class="flex justify-center gap-3 mt-4">
-            <span 
-              v-for="tag in searchTags" 
+          <div class="flex justify-center gap-3 mt-6">
+            <span
+              v-for="tag in searchTags"
               :key="tag"
-              class="px-3 py-1 rounded-full bg-white/5 border border-white/10 text-xs text-gray-400 hover:text-white cursor-pointer hover:bg-white/10 transition-colors"
+              class="badge cursor-pointer hover:border-[var(--accent-red)] hover:color-[var(--accent-red)]"
             >
               {{ tag }}
             </span>
@@ -190,117 +176,115 @@
       </div>
 
       <!-- News Alerts -->
-      <div v-else-if="currentTab === 'SALT'">
-        <div class="flex items-center justify-between mb-6">
+      <div v-else-if="currentTab === 'SALT'" class="flex flex-col gap-6">
+        <div class="flex items-center justify-between">
           <div>
-            <h3 class="text-xl font-bold text-white">Умные уведомления</h3>
-            <p class="text-sm text-gray-400">Управляйте email-уведомлениями и триггерами.</p>
+            <h3 class="font-anton text-xl">УМНЫЕ УВЕДОМЛЕНИЯ</h3>
+            <p class="section-subtitle font-mono mt-1">УПРАВЛЯЙТЕ EMAIL-УВЕДОМЛЕНИЯМИ И ТРИГГЕРАМИ</p>
           </div>
-          <button class="px-4 py-2 bg-indigo-500 hover:bg-indigo-600 text-white text-xs font-bold rounded-xl transition-colors">
-            + Создать уведомление
-          </button>
+          <button class="btn btn-primary">+ СОЗДАТЬ УВЕДОМЛЕНИЕ</button>
         </div>
 
-        <div class="space-y-3">
-          <div 
-            v-for="(alert, i) in alerts" 
+        <div class="flex flex-col gap-3">
+          <div
+            v-for="(alert, i) in alerts"
             :key="i"
-            class="flex items-center justify-between p-4 rounded-xl bg-white/5 border border-white/5"
+            class="data-panel flex items-center justify-between"
           >
             <div class="flex items-center gap-4">
-              <div :class="`w-10 h-10 rounded-full flex items-center justify-center ${alert.active ? 'bg-emerald-500/20 text-emerald-400' : 'bg-gray-700/50 text-gray-500'}`">
+              <div :class="['icon-box-sm', alert.active ? 'icon-green' : '']">
                 <BellIcon class="w-4 h-4" />
               </div>
               <div>
-                <h4 :class="`text-sm font-bold ${alert.active ? 'text-white' : 'text-gray-500'}`">{{ alert.name }}</h4>
-                <p class="text-xs text-gray-500">{{ alert.condition }}</p>
+                <h4 :class="['font-oswald text-sm', alert.active ? 'text-[var(--text-primary)]' : 'text-[var(--text-muted)]']">{{ alert.name }}</h4>
+                <p class="font-mono text-xs text-[var(--text-muted)]">{{ alert.condition }}</p>
               </div>
             </div>
             <div class="flex items-center gap-4">
-              <span class="text-xs text-gray-500">{{ alert.active ? 'Мгновенный Email' : 'Приостановлено' }}</span>
-              <div :class="`w-10 h-5 rounded-full relative cursor-pointer transition-colors ${alert.active ? 'bg-indigo-500' : 'bg-gray-700'}`">
-                <div :class="`absolute top-1 w-3 h-3 bg-white rounded-full transition-all ${alert.active ? 'left-6' : 'left-1'}`"></div>
-              </div>
+              <span class="font-mono text-xs text-[var(--text-muted)]">{{ alert.active ? 'МГНОВЕННЫЙ EMAIL' : 'ПРИОСТАНОВЛЕНО' }}</span>
+              <div :class="['toggle-switch', { active: alert.active }]"></div>
             </div>
           </div>
         </div>
       </div>
 
       <!-- Summaries -->
-      <div v-else-if="currentTab === 'FIRS'" class="grid grid-cols-1 lg:grid-cols-2 gap-6 h-full">
-        <div class="bg-white/5 border border-white/5 rounded-2xl p-6 flex flex-col">
-          <div class="flex items-center gap-2 mb-4">
-            <BotIcon class="w-5 h-5 text-indigo-400" />
-            <h3 class="text-lg font-bold text-white">Факты по запросу</h3>
+      <div v-else-if="currentTab === 'FIRS'" class="grid-2">
+        <div class="data-panel flex flex-col">
+          <div class="data-panel-header">
+            <div class="icon-box-sm icon-indigo">
+              <BotIcon class="w-4 h-4" />
+            </div>
+            <h3 class="data-panel-title">ФАКТЫ ПО ЗАПРОСУ</h3>
           </div>
-          <p class="text-sm text-gray-400 mb-6">Выберите трендовую тему для мгновенной генерации AI-резюме.</p>
-          
-          <div class="flex-1 space-y-3 overflow-y-auto custom-scrollbar">
-            <div 
-              v-for="(topic, i) in summaryTopics" 
+          <p class="section-subtitle font-mono mb-6">ВЫБЕРИТЕ ТРЕНДОВУЮ ТЕМУ ДЛЯ МГНОВЕННОЙ ГЕНЕРАЦИИ AI-РЕЗЮМЕ</p>
+
+          <div class="flex-1 flex flex-col gap-3 overflow-y-auto custom-scrollbar">
+            <div
+              v-for="(topic, i) in summaryTopics"
               :key="i"
-              class="p-4 rounded-xl bg-black/20 border border-white/5 hover:border-indigo-500/50 cursor-pointer group transition-all"
+              class="brutalist-card cursor-pointer group"
             >
-              <h4 class="text-sm font-bold text-gray-200 group-hover:text-white mb-2">{{ topic }}</h4>
+              <h4 class="font-oswald text-sm group-hover:text-[var(--accent-red)] mb-2">{{ topic }}</h4>
               <div class="flex items-center justify-between">
-                <span class="text-[10px] text-gray-500">Включает 12 источников</span>
-                <button class="text-[10px] font-bold text-indigo-400 uppercase tracking-wide opacity-0 group-hover:opacity-100 transition-opacity">Сгенерировать</button>
+                <span class="font-mono text-[10px] text-[var(--text-muted)]">ВКЛЮЧАЕТ 12 ИСТОЧНИКОВ</span>
+                <button class="font-mono text-[10px] text-[var(--accent-red)] opacity-0 group-hover:opacity-100">СГЕНЕРИРОВАТЬ</button>
               </div>
             </div>
           </div>
         </div>
 
-        <div class="bg-gradient-to-br from-indigo-900/20 to-black border border-white/10 rounded-2xl p-6 relative overflow-hidden">
+        <div class="data-panel relative overflow-hidden" style="border-color: rgba(220, 38, 38, 0.3)">
           <div class="absolute top-0 right-0 p-8 opacity-10">
             <FileTextIcon class="w-32 h-32" />
           </div>
-          <h3 class="text-lg font-bold text-white mb-4">Последнее сгенерированное резюме</h3>
-          <div class="space-y-4">
-            <div class="flex items-center gap-2 text-xs text-indigo-300 font-mono">
+          <h3 class="font-anton text-lg mb-6">ПОСЛЕДНЕЕ СГЕНЕРИРОВАННОЕ РЕЗЮМЕ</h3>
+          <div class="flex flex-col gap-4">
+            <div class="flex items-center gap-2 font-mono text-xs text-[var(--accent-red)]">
               <span>ТЕМА:</span>
-              <span class="bg-indigo-500/20 px-2 py-0.5 rounded">EU AI Act</span>
+              <span class="badge badge-red">EU AI Act</span>
             </div>
-            <p class="text-sm text-gray-300 leading-relaxed">
+            <p class="font-mono text-sm text-[var(--text-secondary)] leading-relaxed">
               Европейский парламент одобрил AI Act, устанавливая первую в мире всеобъемлющую правовую основу для искусственного интеллекта.
             </p>
-            <div class="pt-4 mt-4 border-t border-white/5 flex gap-3">
-              <button class="flex-1 py-2 bg-white/10 rounded-lg text-xs font-bold hover:bg-white/20 transition-colors">Поделиться</button>
-              <button class="flex-1 py-2 bg-indigo-500 rounded-lg text-xs font-bold text-white hover:bg-indigo-600 transition-colors">Полный отчёт</button>
+            <div class="pt-4 mt-4 border-t border-[var(--border-dark)] flex gap-3">
+              <button class="btn btn-outline flex-1">ПОДЕЛИТЬСЯ</button>
+              <button class="btn btn-primary flex-1">ПОЛНЫЙ ОТЧЁТ</button>
             </div>
           </div>
         </div>
       </div>
 
       <!-- Briefs -->
-      <div v-else-if="currentTab === 'BRIE'">
-        <div class="flex items-center justify-between mb-6">
-          <h3 class="text-xl font-bold text-white">Рыночные обзоры</h3>
-          <div class="flex gap-2">
-            <button class="text-xs font-bold text-gray-400 hover:text-white px-3 py-1">Ежедневно</button>
-            <button class="text-xs font-bold text-white bg-white/10 rounded-lg px-3 py-1">Еженедельно</button>
+      <div v-else-if="currentTab === 'BRIE'" class="flex flex-col gap-6">
+        <div class="flex items-center justify-between">
+          <h3 class="font-anton text-xl">РЫНОЧНЫЕ ОБЗОРЫ</h3>
+          <div class="tab-group">
+            <button class="tab-btn">ЕЖЕДНЕВНО</button>
+            <button class="tab-btn active">ЕЖЕНЕДЕЛЬНО</button>
           </div>
         </div>
 
-        <div class="grid gap-4">
-          <div 
-            v-for="(brief, i) in briefs" 
+        <div class="flex flex-col gap-4">
+          <div
+            v-for="(brief, i) in briefs"
             :key="i"
-            class="flex items-center justify-between p-5 rounded-2xl bg-white/5 border border-white/5 hover:bg-white/10 transition-colors group"
+            class="data-panel flex items-center justify-between group"
           >
             <div class="flex items-center gap-4">
-              <div class="p-3 bg-gray-800 rounded-xl text-gray-300 group-hover:bg-white group-hover:text-black transition-colors">
+              <div class="icon-box group-hover:icon-red">
                 <BookOpenIcon class="w-5 h-5" />
               </div>
               <div>
-                <h4 class="text-base font-bold text-white mb-1">{{ brief.title }}</h4>
-                <div class="flex items-center gap-2 text-xs text-gray-500">
+                <h4 class="font-oswald text-base mb-1">{{ brief.title }}</h4>
+                <div class="flex items-center gap-3 font-mono text-xs text-[var(--text-muted)]">
                   <span>{{ brief.date }}</span>
-                  <span class="w-1 h-1 bg-gray-600 rounded-full"></span>
+                  <span>•</span>
                   <span class="uppercase tracking-wider">{{ brief.type }}</span>
                 </div>
               </div>
             </div>
-            <button class="p-2 rounded-lg border border-white/10 text-gray-400 hover:text-white hover:border-white/30 transition-all">
+            <button class="btn btn-outline">
               <DownloadIcon class="w-4 h-4" />
             </button>
           </div>
