@@ -6,3 +6,6 @@ Frontend application structure: [Frontend Application] (#frontend-application)
 Backend services and APIs: Backend Services
 Deployment pipelines and infrastructure: Deployment & Operations
 Development setup and workflows: Development Guide
+
+
+## Frontend Application
