@@ -169,12 +169,12 @@
       </header>
 
       <!-- Dynamic View Content (Multi-Window Support) -->
-      <div class="flex-1 relative overflow-hidden min-h-0">
+      <div class="flex-1 overflow-y-auto min-h-0 custom-scrollbar">
         <div
           v-for="window in windows"
           :key="window.id"
           v-show="activeWindowId === window.id"
-          class="absolute inset-0 w-full h-full"
+          class="w-full min-h-full"
         >
           <DashboardPage 
             v-if="window.view === 'Main'"

@@ -312,13 +312,11 @@ watch(() => props.chartData, () => {
    DASHBOARD CONTAINER - BRUTALIST
    ============================================ */
 .dashboard-container {
-  flex: 1;
   display: flex;
   flex-direction: column;
-  height: 100%;
+  min-height: 100%;
   background: #0a0a0a;
   border: 1px solid #1a1a1a;
-  overflow: hidden;
 }
 
 /* ============================================
@@ -352,10 +350,7 @@ watch(() => props.chartData, () => {
    DASHBOARD GRID
    ============================================ */
 .dashboard-grid-wrapper {
-  flex: 1;
   padding: 16px;
-  overflow: auto;
-  position: relative;
 }
 
 .dashboard-grid {

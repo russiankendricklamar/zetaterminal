@@ -953,13 +953,11 @@ const XIcon = defineComponent({ render: () => h('svg', { viewBox: '0 0 24 24', f
    SETTINGS PAGE - BRUTALIST
    ============================================ */
 .settings-container {
-  flex: 1;
   display: flex;
   flex-direction: column;
-  height: 100%;
+  min-height: 100%;
   background: #0a0a0a;
   border: 1px solid #1a1a1a;
-  overflow: hidden;
 }
 
 @media (min-width: 768px) {
@@ -1037,7 +1035,6 @@ const XIcon = defineComponent({ render: () => h('svg', { viewBox: '0 0 24 24', f
 .settings-content {
   flex: 1;
   padding: 32px;
-  overflow-y: auto;
 }
 
 @media (max-width: 768px) {
