@@ -1,9 +1,9 @@
 <template>
   <BaseWidget
-    title="Стакан"
+    title="СТАКАН"
     icon="BookIcon"
-    icon-bg="bg-blue-500/20"
-    icon-color="text-blue-400"
+    icon-bg="icon-bg-blue"
+    icon-color="text-blue-500"
     :width="width"
     :height="height"
     :resizable="resizable"

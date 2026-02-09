@@ -1,9 +1,9 @@
 <template>
   <BaseWidget
-    title="ИИ Аналитик"
+    title="ИИ АНАЛИТИК"
     icon="BrainIcon"
-    icon-bg="bg-indigo-500/20"
-    icon-color="text-indigo-400"
+    icon-bg="icon-bg-purple"
+    icon-color="text-purple-500"
     :width="width"
     :height="height"
     :resizable="resizable"

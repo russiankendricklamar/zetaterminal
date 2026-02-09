@@ -1,12 +1,7 @@
 <template>
-  <div class="relative h-screen w-screen overflow-hidden bg-black text-white font-sans selection:bg-blue-500/30 selection:text-blue-200">
-    <!-- Mesh Gradient Background -->
-    <div class="fixed inset-0 z-0 pointer-events-none">
-      <div class="absolute top-[-10%] left-[-10%] w-[50vw] h-[50vw] bg-blue-950/40 blur-[120px] rounded-full mix-blend-screen animate-blob"></div>
-      <div class="absolute top-[20%] right-[-10%] w-[40vw] h-[40vw] bg-orange-600/15 blur-[120px] rounded-full mix-blend-screen animate-blob animation-delay-2000"></div>
-      <div class="absolute bottom-[-20%] left-[20%] w-[60vw] h-[60vw] bg-slate-900/20 blur-[100px] rounded-full mix-blend-screen animate-blob animation-delay-4000"></div>
-      <div class="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 brightness-100 contrast-150"></div>
-    </div>
+  <div class="terminal-root">
+    <!-- Noise Overlay -->
+    <div class="bg-noise"></div>
 
     <!-- Command Palette -->
     <CommandPalette 
@@ -17,184 +12,155 @@
     />
 
     <!-- Main Content -->
-    <div class="relative z-10 flex flex-col h-full p-4 gap-4">
+    <div class="terminal-content">
       <!-- Windows Tabs Bar -->
-      <div class="flex items-center gap-2 overflow-x-auto custom-scrollbar pb-2 flex-shrink-0">
-        <div 
-          v-for="window in windows" 
+      <div class="tabs-bar">
+        <div
+          v-for="window in windows"
           :key="window.id"
           @click="setActiveWindow(window.id)"
-          :class="`flex items-center gap-2 px-3 py-1.5 rounded-lg border transition-all cursor-pointer group flex-shrink-0 ${
-            activeWindowId === window.id 
-              ? 'bg-indigo-500/20 border-indigo-500/30 text-indigo-300' 
-              : 'bg-white/5 border-white/10 text-gray-400 hover:text-white hover:bg-white/10'
-          }`"
+          :class="['tab-item', { 'tab-active': activeWindowId === window.id }]"
         >
-          <component :is="getWindowIcon(window.view)" :class="`w-3.5 h-3.5 ${activeWindowId === window.id ? 'text-indigo-400' : 'text-gray-500 group-hover:text-white'}`" />
-          <span class="text-xs font-medium whitespace-nowrap">{{ getWindowTitle(window.view) }}</span>
-          <button 
+          <component :is="getWindowIcon(window.view)" class="w-3.5 h-3.5" />
+          <span class="tab-label font-mono">{{ getWindowTitle(window.view) }}</span>
+          <button
             v-if="windows.length > 1"
             @click.stop="closeWindow(window.id)"
-            :class="`ml-1 p-0.5 rounded hover:bg-white/10 transition-colors ${
-              activeWindowId === window.id ? 'text-indigo-400 hover:text-indigo-300' : 'text-gray-500 hover:text-gray-300'
-            }`"
+            class="tab-close"
           >
             <XIcon class="w-3 h-3" />
           </button>
         </div>
-        <button 
+        <button
           @click="() => openNewWindow()"
-          class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-white/10 bg-white/5 text-gray-400 hover:text-white hover:bg-white/10 transition-all flex-shrink-0"
+          class="tab-new"
           title="Открыть новое окно"
         >
           <PlusIcon class="w-3.5 h-3.5" />
-          <span class="text-xs font-medium">Новое окно</span>
+          <span class="font-mono">Новое окно</span>
         </button>
       </div>
 
       <!-- Header -->
-      <header class="h-10 glass-panel rounded-xl flex items-center justify-between px-4 flex-shrink-0 transition-all duration-300 z-50">
-        <div class="flex items-center gap-4 overflow-visible relative">
-          <div class="flex items-center gap-2 text-white cursor-pointer flex-shrink-0" @click="view = 'Main'">
-            <div class="p-1 bg-gradient-to-tr from-blue-600 to-indigo-600 rounded-md shadow-lg shadow-blue-500/20 flex items-center justify-center w-6 h-6">
-              <span class="text-white font-bold text-sm">ζ</span>
+      <header class="terminal-header">
+        <div class="header-left">
+          <div class="logo-area" @click="view = 'Main'">
+            <div class="logo-icon">
+              <span class="font-oswald">ζ</span>
             </div>
-            <span class="font-bold tracking-tight text-sm bg-clip-text text-transparent bg-gradient-to-r from-white to-gray-400 hidden lg:block">Дзета-Терминал</span>
+            <span class="logo-text font-oswald hidden lg:block">ДЗЕТА-ТЕРМИНАЛ</span>
           </div>
-          
+
           <!-- Navigation Dropdown -->
-          <div class="relative z-50">
-            <button 
+          <div class="nav-dropdown-wrapper">
+            <button
               @click="isNavOpen = !isNavOpen"
-              :class="`w-full flex items-center justify-center gap-2 px-2 py-1 rounded-lg border transition-all group ${isNavOpen ? 'bg-white/10 border-white/20 text-white' : 'bg-white/5 border-white/5 text-gray-300 hover:text-white hover:bg-white/10'}`"
+              :class="['nav-dropdown-trigger', { 'is-open': isNavOpen }]"
             >
-              <LayoutTemplateIcon class="w-3.5 h-3.5 text-indigo-400 flex-shrink-0"/>
-              <span class="font-medium text-xs text-center flex-1">
-                {{ navItems.find(i => i.id === view)?.label || view }}
-              </span>
-              <ChevronDownIcon :class="`w-3 h-3 text-gray-500 transition-transform duration-300 flex-shrink-0 ${isNavOpen ? 'rotate-180' : ''}`" />
+              <LayoutTemplateIcon class="w-3.5 h-3.5 text-[#DC2626]" />
+              <span class="font-mono">{{ navItems.find(i => i.id === view)?.label || view }}</span>
+              <ChevronDownIcon :class="['w-3 h-3 transition-transform', { 'rotate-180': isNavOpen }]" />
             </button>
 
-            <div v-if="isNavOpen" class="fixed inset-0 z-40 bg-black/20 backdrop-blur-[1px]" @click="isNavOpen = false"></div>
-            <div v-if="isNavOpen" class="absolute top-full left-0 mt-3 w-72 bg-[#141419] border border-white/10 rounded-2xl shadow-2xl shadow-black/80 overflow-hidden z-50 animate-fade-in flex flex-col p-2 max-h-[80vh] overflow-y-auto">
-              <div class="px-3 py-2 text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1 flex justify-between">
-                <span>Навигация</span>
+            <div v-if="isNavOpen" class="nav-overlay" @click="isNavOpen = false"></div>
+            <div v-if="isNavOpen" class="nav-dropdown">
+              <div class="nav-dropdown-header font-mono">
+                <span>НАВИГАЦИЯ</span>
                 <span>КОД</span>
               </div>
-              <div class="grid grid-cols-1 gap-1">
-                <button 
+              <div class="nav-dropdown-list custom-scrollbar">
+                <button
                   v-for="item in navItems"
                   :key="item.id"
                   @click="setView(item.id)"
-                  :class="`flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold transition-all text-left group ${view === item.id ? 'bg-indigo-500/10 text-indigo-300 border border-indigo-500/20' : 'text-gray-400 hover:text-white hover:bg-white/5 border border-transparent'}`"
+                  :class="['nav-item', { 'nav-item-active': view === item.id }]"
                 >
-                  <component :is="iconMap[item.icon] || ActivityIcon" :class="view === item.id ? 'text-indigo-400' : 'text-gray-500 group-hover:text-white'" />
-                  <span class="flex-1">{{ item.label }}</span>
-                  <span :class="`font-mono text-[10px] px-1.5 py-0.5 rounded border ${view === item.id ? 'bg-indigo-500/20 border-indigo-500/30 text-indigo-300' : 'bg-white/5 border-white/5 text-gray-500 group-hover:text-gray-300'}`">
-                    {{ item.code }}
-                  </span>
+                  <component :is="iconMap[item.icon] || ActivityIcon" class="w-4 h-4" />
+                  <span class="nav-item-label font-oswald">{{ item.label }}</span>
+                  <span class="nav-item-code font-mono">{{ item.code }}</span>
                 </button>
               </div>
             </div>
           </div>
         </div>
         
-        <div class="flex items-center gap-4 flex-shrink-0">
-          <div 
+        <div class="header-right">
+          <div
             @click="isSearchOpen = true"
-            class="hidden xl:flex items-center gap-3 px-3 py-1 bg-black/30 rounded-lg border border-white/10 text-xs text-gray-500 cursor-pointer hover:bg-white/10 hover:text-white transition-colors group"
+            class="search-trigger hidden xl:flex"
           >
             <SearchIcon class="w-3.5 h-3.5" />
-            <span>Поиск</span>
-            <div class="flex items-center gap-1 ml-6 text-[11px] text-gray-500 group-hover:text-gray-300 transition-colors">
-              <span>⌘</span><span>K</span>
-            </div>
+            <span class="font-mono">Поиск</span>
+            <div class="search-hotkey font-mono">⌘K</div>
           </div>
 
-          <div class="h-4 w-[1px] bg-white/10 mx-1 hidden md:block"></div>
+          <div class="header-divider hidden md:block"></div>
 
-          <button 
+          <button
             @click="isAiOpen = !isAiOpen"
-            :class="`hidden md:block relative group px-3 py-1 rounded-lg text-xs font-medium transition-all duration-300 border ${isAiOpen ? 'bg-blue-500/20 border-blue-400/30 text-blue-300 shadow-[0_0_20px_rgba(59,130,246,0.3)]' : 'bg-white/5 border-white/10 text-gray-400 hover:text-white'}`"
+            :class="['ai-btn hidden md:flex', { 'ai-btn-active': isAiOpen }]"
           >
-            <span class="relative z-10 flex items-center gap-2">
-              Spark AI
-              <span v-if="isAiOpen" class="absolute top-0 right-0 -mt-1 -mr-1 flex h-2 w-2">
-                <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
-                <span class="relative inline-flex rounded-full h-2 w-2 bg-blue-500"></span>
-              </span>
-            </span>
+            <span class="font-oswald">SPARK AI</span>
+            <span v-if="isAiOpen" class="ai-indicator"></span>
           </button>
-          
+
           <!-- Profile Dropdown -->
-          <div class="relative">
-            <button 
+          <div class="profile-wrapper">
+            <button
               @click="isProfileOpen = !isProfileOpen"
-              class="w-6 h-6 rounded-full bg-gradient-to-br from-gray-100 to-gray-300 shadow-inner border border-white/20 hover:scale-105 transition-transform flex items-center justify-center"
+              class="profile-avatar font-oswald"
             >
+              AT
             </button>
 
-            <div v-if="isProfileOpen" class="absolute top-12 right-0 w-72 bg-[#141419] rounded-2xl shadow-2xl shadow-black/80 overflow-hidden flex flex-col animate-fade-in z-[100] border border-white/10 max-h-[80vh]">
+            <div v-if="isProfileOpen" class="profile-dropdown">
               <!-- User Header -->
-              <div class="p-4 border-b border-white/5 bg-white/5 relative overflow-hidden flex-shrink-0">
-                <div class="absolute top-0 right-0 -mt-4 -mr-4 w-16 h-16 bg-blue-500/20 blur-xl rounded-full"></div>
-                <div class="relative z-10 flex items-center gap-3">
-                  <div class="w-10 h-10 rounded-full bg-gradient-to-br from-gray-100 to-gray-400 shadow-inner flex items-center justify-center text-black font-bold text-xs">AT</div>
-                  <div>
-                    <div class="font-bold text-white text-sm">Алексей Трейдер</div>
-                    <div class="text-[10px] text-emerald-400 font-mono bg-emerald-500/10 px-1.5 py-0.5 rounded border border-emerald-500/20 inline-block mt-0.5">Pro Аккаунт</div>
-                  </div>
+              <div class="profile-header">
+                <div class="profile-avatar-lg font-oswald">AT</div>
+                <div class="profile-info">
+                  <div class="profile-name font-oswald">АЛЕКСЕЙ ТРЕЙДЕР</div>
+                  <div class="profile-badge font-mono">PRO АККАУНТ</div>
                 </div>
               </div>
-              
-              <div class="p-2 space-y-1">
-                <button 
+
+              <div class="profile-menu">
+                <button
                   @click="$router.push('/profile'); isProfileOpen = false"
-                  class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-medium text-gray-300 hover:bg-white/5 hover:text-white transition-colors text-left group"
+                  class="profile-menu-item"
                 >
-                  <div class="p-1.5 rounded-lg bg-purple-500/20 text-purple-400 group-hover:bg-purple-500/30 transition-colors">
-                    <UserIcon class="w-3.5 h-3.5" />
-                  </div>
-                  Профиль
+                  <UserIcon class="w-4 h-4" />
+                  <span class="font-oswald">Профиль</span>
                 </button>
-                <button 
+                <button
                   @click="setView('Settings'); isProfileOpen = false"
-                  class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-medium text-gray-300 hover:bg-white/5 hover:text-white transition-colors text-left group"
+                  class="profile-menu-item"
                 >
-                  <div class="p-1.5 rounded-lg bg-indigo-500/20 text-indigo-400 group-hover:bg-indigo-500/30 transition-colors">
-                    <SettingsIcon class="w-3.5 h-3.5" />
-                  </div>
-                  Настройки
+                  <SettingsIcon class="w-4 h-4" />
+                  <span class="font-oswald">Настройки</span>
                 </button>
-                <button 
+                <button
                   @click="resourcesSection = 'HL'; setView('Resources'); isProfileOpen = false"
-                  class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-medium text-gray-300 hover:bg-white/5 hover:text-white transition-colors text-left group"
+                  class="profile-menu-item"
                 >
-                  <div class="p-1.5 rounded-lg bg-teal-500/20 text-teal-400 group-hover:bg-teal-500/30 transition-colors">
-                    <HelpCircleIcon class="w-3.5 h-3.5" />
-                  </div>
-                  Помощь
+                  <HelpCircleIcon class="w-4 h-4" />
+                  <span class="font-oswald">Помощь</span>
                 </button>
-                <button 
+                <button
                   @click="resourcesSection = 'FLDS'; setView('Resources'); isProfileOpen = false"
-                  class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-medium text-gray-300 hover:bg-white/5 hover:text-white transition-colors text-left group"
+                  class="profile-menu-item"
                 >
-                  <div class="p-1.5 rounded-lg bg-blue-500/20 text-blue-400 group-hover:bg-blue-500/30 transition-colors">
-                    <DatabaseIcon class="w-3.5 h-3.5" />
-                  </div>
-                  Справочник данных
+                  <DatabaseIcon class="w-4 h-4" />
+                  <span class="font-oswald">Справочник данных</span>
                 </button>
               </div>
 
-              <div class="p-2 border-t border-white/5">
-                <button 
+              <div class="profile-footer">
+                <button
                   @click="$router.push('/'); isProfileOpen = false"
-                  class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-medium text-rose-400 hover:bg-rose-500/10 transition-colors text-left group"
+                  class="profile-logout"
                 >
-                  <div class="p-1.5 rounded-lg bg-rose-500/10 text-rose-400 group-hover:bg-rose-500/20 transition-colors">
-                    <LogOutIcon class="w-3.5 h-3.5" />
-                  </div>
-                  Выйти
+                  <LogOutIcon class="w-4 h-4" />
+                  <span class="font-oswald">Выйти</span>
                 </button>
               </div>
             </div>
@@ -804,202 +770,540 @@ watch(() => activeSymbol.value, () => {
 </script>
 
 <style scoped>
-/* Glass Panel - matching original design */
-.glass-panel {
-  background: rgba(30, 30, 40, 0.6) !important;
-  backdrop-filter: blur(24px);
-  -webkit-backdrop-filter: blur(24px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
-  color: #ffffff;
+/* ============================================
+   TERMINAL ROOT - BRUTALIST
+   ============================================ */
+.terminal-root {
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  background: #050505;
+  color: #f5f5f5;
+  position: relative;
 }
 
-@keyframes blob {
-  0%, 100% { 
-    transform: translate(0px, 0px) scale(1); 
-  }
-  33% { 
-    transform: translate(30px, -50px) scale(1.1); 
-  }
-  66% { 
-    transform: translate(-20px, 20px) scale(0.9); 
-  }
+.terminal-content {
+  position: relative;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding: 16px;
+  gap: 16px;
 }
 
-.animate-blob {
-  animation: blob 7s infinite ease-in-out;
-  will-change: transform;
+/* ============================================
+   TABS BAR - BRUTALIST
+   ============================================ */
+.tabs-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  overflow-x: auto;
+  padding-bottom: 8px;
+  flex-shrink: 0;
 }
 
-.animation-delay-2000 {
-  animation-delay: 2s;
+.tab-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: #0a0a0a;
+  border: 1px solid #1a1a1a;
+  color: #737373;
+  cursor: pointer;
+  transition: all 0.2s;
+  flex-shrink: 0;
 }
 
-.animation-delay-4000 {
-  animation-delay: 4s;
+.tab-item:hover {
+  border-color: #262626;
+  color: #f5f5f5;
 }
 
-.animate-fade-in {
-  animation: fadeIn 0.5s cubic-bezier(0.4, 0, 0.2, 1);
-  will-change: opacity, transform;
+.tab-active {
+  background: #DC2626;
+  border-color: #DC2626;
+  color: #000;
 }
 
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(8px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-  from { opacity: 0; transform: translateY(-10px); }
-  to { opacity: 1; transform: translateY(0); }
+.tab-label {
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  white-space: nowrap;
 }
 
-/* Custom scrollbar - переопределение для терминала */
-:deep(.custom-scrollbar) {
-  scroll-behavior: smooth;
-  -webkit-overflow-scrolling: touch;
+.tab-close {
+  margin-left: 4px;
+  padding: 2px;
+  color: inherit;
+  opacity: 0.5;
+  transition: opacity 0.2s;
 }
 
-:deep(.custom-scrollbar)::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+.tab-close:hover {
+  opacity: 1;
 }
 
-:deep(.custom-scrollbar)::-webkit-scrollbar-track {
+.tab-new {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
   background: transparent;
-  border-radius: 10px;
+  border: 1px solid #262626;
+  color: #737373;
+  cursor: pointer;
+  transition: all 0.2s;
+  flex-shrink: 0;
+  font-size: 11px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
 }
 
-:deep(.custom-scrollbar)::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.15);
-  border-radius: 10px;
-  transition: background 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  border: 1px solid transparent;
-  background-clip: padding-box;
+.tab-new:hover {
+  background: #DC2626;
+  border-color: #DC2626;
+  color: #000;
 }
 
-:deep(.custom-scrollbar)::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.25);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+/* ============================================
+   HEADER - BRUTALIST
+   ============================================ */
+.terminal-header {
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 16px;
+  background: #0a0a0a;
+  border: 1px solid #1a1a1a;
+  flex-shrink: 0;
+  z-index: 50;
 }
 
-:deep(.custom-scrollbar)::-webkit-scrollbar-thumb:active {
-  background: rgba(255, 255, 255, 0.35);
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
 }
 
-/* Mobile Responsive Styles */
+.logo-area {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+}
+
+.logo-icon {
+  width: 28px;
+  height: 28px;
+  background: #DC2626;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  font-weight: 700;
+  color: #000;
+}
+
+.logo-text {
+  font-size: 12px;
+  font-weight: 500;
+  color: #f5f5f5;
+  letter-spacing: 0.1em;
+}
+
+/* Navigation Dropdown */
+.nav-dropdown-wrapper {
+  position: relative;
+  z-index: 50;
+}
+
+.nav-dropdown-trigger {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  background: transparent;
+  border: 1px solid #262626;
+  color: #a3a3a3;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 11px;
+}
+
+.nav-dropdown-trigger:hover,
+.nav-dropdown-trigger.is-open {
+  border-color: #DC2626;
+  color: #f5f5f5;
+}
+
+.nav-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  background: rgba(0, 0, 0, 0.5);
+}
+
+.nav-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  margin-top: 8px;
+  width: 320px;
+  background: #0a0a0a;
+  border: 1px solid #262626;
+  z-index: 50;
+  overflow: hidden;
+}
+
+.nav-dropdown-header {
+  display: flex;
+  justify-content: space-between;
+  padding: 12px 16px;
+  font-size: 10px;
+  font-weight: 600;
+  color: #525252;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  border-bottom: 1px solid #1a1a1a;
+  background: #050505;
+}
+
+.nav-dropdown-list {
+  max-height: 60vh;
+  overflow-y: auto;
+  padding: 8px;
+}
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 10px 12px;
+  background: transparent;
+  border: none;
+  color: #737373;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-align: left;
+}
+
+.nav-item:hover {
+  background: #DC2626;
+  color: #000;
+}
+
+.nav-item-active {
+  background: rgba(220, 38, 38, 0.15);
+  color: #DC2626;
+}
+
+.nav-item-label {
+  flex: 1;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.nav-item-code {
+  font-size: 10px;
+  padding: 2px 6px;
+  background: #1a1a1a;
+  border: 1px solid #262626;
+  color: #525252;
+}
+
+.nav-item:hover .nav-item-code {
+  background: rgba(0, 0, 0, 0.3);
+  border-color: transparent;
+  color: inherit;
+}
+
+/* Header Right */
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.search-trigger {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  background: #050505;
+  border: 1px solid #262626;
+  color: #525252;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 11px;
+}
+
+.search-trigger:hover {
+  border-color: #DC2626;
+  color: #f5f5f5;
+}
+
+.search-hotkey {
+  font-size: 10px;
+  padding: 2px 6px;
+  background: #1a1a1a;
+  border: 1px solid #262626;
+  margin-left: 20px;
+}
+
+.header-divider {
+  width: 1px;
+  height: 20px;
+  background: #262626;
+}
+
+.ai-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background: transparent;
+  border: 1px solid #262626;
+  color: #737373;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  position: relative;
+}
+
+.ai-btn:hover {
+  border-color: #DC2626;
+  color: #f5f5f5;
+}
+
+.ai-btn-active {
+  background: #DC2626;
+  border-color: #DC2626;
+  color: #000;
+}
+
+.ai-indicator {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  width: 8px;
+  height: 8px;
+  background: #22c55e;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+/* Profile */
+.profile-wrapper {
+  position: relative;
+}
+
+.profile-avatar {
+  width: 32px;
+  height: 32px;
+  background: #DC2626;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 600;
+  color: #000;
+  cursor: pointer;
+  transition: transform 0.2s;
+  letter-spacing: 0.05em;
+}
+
+.profile-avatar:hover {
+  transform: scale(1.05);
+}
+
+.profile-dropdown {
+  position: absolute;
+  top: 48px;
+  right: 0;
+  width: 280px;
+  background: #0a0a0a;
+  border: 1px solid #262626;
+  z-index: 100;
+  overflow: hidden;
+}
+
+.profile-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  background: #050505;
+  border-bottom: 1px solid #1a1a1a;
+}
+
+.profile-avatar-lg {
+  width: 44px;
+  height: 44px;
+  background: #DC2626;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 600;
+  color: #000;
+  letter-spacing: 0.05em;
+}
+
+.profile-info {
+  flex: 1;
+}
+
+.profile-name {
+  font-size: 13px;
+  font-weight: 500;
+  color: #f5f5f5;
+  letter-spacing: 0.05em;
+}
+
+.profile-badge {
+  font-size: 10px;
+  color: #22c55e;
+  background: rgba(34, 197, 94, 0.15);
+  border: 1px solid rgba(34, 197, 94, 0.3);
+  padding: 2px 6px;
+  display: inline-block;
+  margin-top: 4px;
+}
+
+.profile-menu {
+  padding: 8px;
+}
+
+.profile-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 10px 12px;
+  background: transparent;
+  border: none;
+  color: #a3a3a3;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-align: left;
+  font-size: 12px;
+  letter-spacing: 0.05em;
+}
+
+.profile-menu-item:hover {
+  background: #DC2626;
+  color: #000;
+}
+
+.profile-footer {
+  padding: 8px;
+  border-top: 1px solid #1a1a1a;
+}
+
+.profile-logout {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 10px 12px;
+  background: transparent;
+  border: none;
+  color: #DC2626;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-align: left;
+  font-size: 12px;
+  letter-spacing: 0.05em;
+}
+
+.profile-logout:hover {
+  background: #DC2626;
+  color: #000;
+}
+
+/* ============================================
+   RESPONSIVE
+   ============================================ */
 @media (max-width: 1024px) {
-  .p-4 {
-    padding: 0.75rem;
-  }
-  .gap-4 {
-    gap: 0.75rem;
+  .terminal-content {
+    padding: 12px;
+    gap: 12px;
   }
 }
 
 @media (max-width: 768px) {
-  /* Reduce blur on mobile for performance */
-  .glass-panel {
-    backdrop-filter: blur(12px) !important;
-    -webkit-backdrop-filter: blur(12px) !important;
+  .terminal-content {
+    padding: 8px;
+    gap: 8px;
   }
 
-  /* Hide mesh gradient blobs on mobile */
-  .fixed.inset-0 .absolute {
-    display: none;
-  }
-
-  /* Tabs bar - horizontal scroll */
-  .flex.items-center.gap-2.overflow-x-auto {
-    padding-bottom: 0.5rem;
-    -webkit-overflow-scrolling: touch;
-  }
-
-  /* Header - compact on mobile */
-  header.h-10 {
+  .terminal-header {
     height: auto;
-    min-height: 2.5rem;
-    padding: 0.5rem !important;
+    min-height: 48px;
+    padding: 8px 12px;
     flex-wrap: wrap;
-    gap: 0.5rem;
+    gap: 8px;
   }
 
-  /* Hide search bar on mobile */
-  .hidden.xl\\:flex {
-    display: none !important;
-  }
-
-  /* Navigation dropdown - full width */
-  .absolute.top-full.left-0 {
-    left: -50px;
-    right: -50px;
-    width: calc(100vw - 32px);
-  }
-
-  /* Profile dropdown - adjust position */
-  .absolute.top-12.right-0 {
-    right: -16px;
+  .nav-dropdown {
+    left: -100px;
     width: calc(100vw - 32px);
     max-width: 320px;
   }
 
-  /* Content area padding */
-  .p-4.gap-4 {
-    padding: 0.5rem;
-    gap: 0.5rem;
+  .profile-dropdown {
+    right: -16px;
+    width: calc(100vw - 32px);
+    max-width: 280px;
   }
 
-  /* Larger touch targets */
-  button {
+  .tab-item,
+  .tab-new {
     min-height: 44px;
-    min-width: 44px;
-  }
-
-  .px-3.py-1\.5 {
-    padding: 0.5rem 0.75rem;
   }
 }
 
 @media (max-width: 480px) {
-  /* Even more compact */
-  .p-4.gap-4 {
-    padding: 0.375rem;
-    gap: 0.375rem;
+  .terminal-content {
+    padding: 6px;
+    gap: 6px;
   }
 
-  header.h-10 {
-    padding: 0.375rem !important;
+  .terminal-header {
+    padding: 6px 10px;
   }
 
-  /* Hide terminal name on small screens */
-  .font-bold.tracking-tight.text-sm {
+  .logo-text {
     display: none;
   }
 
-  /* Tabs - smaller */
-  .px-3.py-1\.5 {
-    padding: 0.375rem 0.5rem;
-    font-size: 0.625rem;
+  .tab-label {
+    font-size: 10px;
   }
 
-  /* Profile dropdown - smaller */
-  .absolute.top-12.right-0 {
-    max-width: 280px;
+  .tab-new span {
+    display: none;
   }
 }
 
 @media (max-width: 375px) {
-  .p-4.gap-4 {
-    padding: 0.25rem;
-    gap: 0.25rem;
-  }
-
-  /* Hide "New window" text */
-  .text-xs.font-medium:not(.whitespace-nowrap) {
-    display: none;
+  .terminal-content {
+    padding: 4px;
+    gap: 4px;
   }
 }
 </style>

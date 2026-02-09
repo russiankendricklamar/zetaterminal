@@ -1,27 +1,23 @@
 <template>
-  <div class="flex-1 glass-panel rounded-3xl overflow-hidden shadow-2xl shadow-black/20 flex flex-col md:flex-row animate-fade-in h-full">
+  <div class="settings-container">
     <!-- Sidebar -->
-    <div class="w-full md:w-64 bg-black/20 border-r border-white/5 p-4 flex flex-col gap-2">
-      <div class="px-4 py-4 mb-2">
-        <h2 class="text-xl font-bold text-white tracking-tight">Настройки</h2>
-        <p class="text-xs text-gray-500">Конфигурация системы</p>
+    <div class="settings-sidebar">
+      <div class="settings-sidebar-header">
+        <h2 class="settings-title font-oswald">НАСТРОЙКИ</h2>
+        <p class="settings-subtitle font-mono">Конфигурация системы</p>
       </div>
       <button
         v-for="item in menuItems"
         :key="item.id"
         @click="section = item.id"
-        :class="`w-full flex items-center justify-center px-4 py-3 rounded-xl text-sm font-bold transition-all text-center ${
-          section === item.id 
-          ? 'bg-indigo-500/20 text-indigo-300 border border-indigo-500/30' 
-          : 'text-gray-400 hover:text-white hover:bg-white/5 border border-transparent'
-        }`"
+        :class="['settings-menu-item font-oswald', { 'settings-menu-active': section === item.id }]"
       >
         {{ item.label }}
       </button>
     </div>
 
     <!-- Content Area -->
-    <div class="flex-1 bg-gradient-to-br from-black/10 to-transparent p-8 overflow-y-auto custom-scrollbar">
+    <div class="settings-content custom-scrollbar">
       <!-- Launchpad -->
       <div v-if="section === 'BLP'" class="space-y-8">
         <div>
@@ -941,17 +937,114 @@ const XIcon = defineComponent({ render: () => h('svg', { viewBox: '0 0 24 24', f
 </script>
 
 <style scoped>
+/* ============================================
+   SETTINGS PAGE - BRUTALIST
+   ============================================ */
+.settings-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: #0a0a0a;
+  border: 1px solid #1a1a1a;
+  overflow: hidden;
+}
+
+@media (min-width: 768px) {
+  .settings-container {
+    flex-direction: row;
+  }
+}
+
+/* Sidebar */
+.settings-sidebar {
+  width: 100%;
+  background: #050505;
+  border-bottom: 1px solid #1a1a1a;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+@media (min-width: 768px) {
+  .settings-sidebar {
+    width: 256px;
+    border-bottom: none;
+    border-right: 1px solid #1a1a1a;
+  }
+}
+
+.settings-sidebar-header {
+  padding: 16px;
+  margin-bottom: 8px;
+}
+
+.settings-title {
+  font-size: 18px;
+  font-weight: 500;
+  color: #f5f5f5;
+  letter-spacing: 0.1em;
+  margin: 0;
+}
+
+.settings-subtitle {
+  font-size: 11px;
+  color: #525252;
+  margin-top: 4px;
+}
+
+.settings-menu-item {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px 16px;
+  background: transparent;
+  border: 1px solid transparent;
+  color: #737373;
+  font-size: 12px;
+  letter-spacing: 0.05em;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-align: center;
+}
+
+.settings-menu-item:hover {
+  background: #111111;
+  color: #f5f5f5;
+}
+
+.settings-menu-active {
+  background: rgba(220, 38, 38, 0.1);
+  border-color: rgba(220, 38, 38, 0.3);
+  color: #DC2626;
+}
+
+/* Content */
+.settings-content {
+  flex: 1;
+  padding: 32px;
+  overflow-y: auto;
+}
+
+@media (max-width: 768px) {
+  .settings-content {
+    padding: 16px;
+  }
+}
+
+/* Dashboard Preview Grid */
 .dashboard-preview-grid {
   display: grid;
-  gap: 1rem;
+  gap: 16px;
   grid-auto-rows: minmax(80px, auto);
 }
 
 .dashboard-preview-grid > * {
-  transition: 
-    grid-column 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94),
-    grid-row 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94),
-    transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-  will-change: grid-column, grid-row, transform;
+  transition:
+    grid-column 0.3s ease,
+    grid-row 0.3s ease,
+    transform 0.2s ease;
 }
 </style>

@@ -1,4 +1,4 @@
-<!-- src/components/layout/Sidebar.vue -->
+<!-- src/components/layout/Sidebar.vue - Brutalist Design -->
 <template>
   <div v-bind="$attrs" class="sidebar-wrapper">
     <!-- Narrow Tab Bar (Left Strip) -->
@@ -27,528 +27,135 @@
       @touchmove="handleTouchMove"
       @touchend="handleTouchEnd"
     >
-    <!-- Lava Lamp Background -->
-    <div class="sidebar-lava-layer"></div>
+      <div class="sidebar-header">
+        <span class="app-logo font-anton">STOCHASTIC</span>
+        <button class="close-btn" @click="closeSidebar">&times;</button>
+      </div>
 
-    <div class="sidebar-header">
-      <span class="app-logo">Quantitative <span class="highlight">Analytics</span></span>
-      <button class="close-btn" @click="closeSidebar">✕</button>
-    </div>
+      <!-- Tools Navigation -->
+      <nav class="sidebar-tools custom-scrollbar">
 
-    <!-- Tools Navigation (SCROLLABLE AREA) -->
-    <nav class="sidebar-tools custom-scroll">
-      
-      <!-- HOME (Landing) -->
+        <!-- HOME -->
+        <router-link
+          to="/"
+          class="nav-entry"
+          :class="{ active: isActive('/') }"
+          @click="closeSidebar"
+        >
+          <div class="nav-indicator"></div>
+          <div class="nav-info">
+            <div class="nav-title font-oswald">ГЛАВНАЯ</div>
+            <div class="nav-subtitle font-mono">Обзор инструментов</div>
+          </div>
+          <span class="nav-arrow font-mono">&rarr;</span>
+        </router-link>
+
+        <!-- Документация -->
+        <router-link
+          to="/docs"
+          class="nav-entry"
+          :class="{ active: isActive('/docs') }"
+          @click="closeSidebar"
+        >
+          <div class="nav-indicator green"></div>
+          <div class="nav-info">
+            <div class="nav-title font-oswald">ДОКУМЕНТАЦИЯ</div>
+            <div class="nav-subtitle font-mono">Как работать с этим приложением?</div>
+          </div>
+          <span class="nav-arrow font-mono">&rarr;</span>
+        </router-link>
+
+        <!-- Терминал -->
+        <router-link
+          to="/terminal"
+          class="nav-entry terminal-entry"
+          :class="{ active: isActive('/terminal') }"
+          @click="closeSidebar"
+        >
+          <div class="zeta-icon font-anton">&zeta;</div>
+          <div class="nav-info">
+            <div class="nav-title font-oswald">ДЗЕТА-ТЕРМИНАЛ</div>
+            <div class="nav-subtitle font-mono">Потоковые данные в реальном времени</div>
+          </div>
+          <span class="nav-arrow font-mono">&rarr;</span>
+        </router-link>
+
+        <!-- Divider -->
+        <div class="sidebar-divider"></div>
+
+        <!-- Tool Groups -->
+        <div
+          v-for="(group, key) in toolGroups"
+          :key="key"
+          class="tool-group"
+        >
+          <button
+            class="tool-header"
+            @click="toggleTool(key)"
+            :class="{ expanded: expandedTools[key] }"
+          >
+            <div class="tool-indicator" :class="group.color"></div>
+            <div class="tool-info">
+              <span class="tool-title font-oswald">{{ group.title }}</span>
+              <span class="tool-subtitle font-mono">{{ group.subtitle }}</span>
+            </div>
+            <div class="chevron">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="6 9 12 15 18 9" />
+              </svg>
+            </div>
+          </button>
+
+          <div
+            class="tool-content-wrapper"
+            :style="{ maxHeight: expandedTools[key] ? '600px' : '0' }"
+          >
+            <div class="tool-content">
+              <router-link
+                v-for="item in group.items"
+                :key="item.path"
+                :to="item.path"
+                class="nav-item"
+                :class="{ active: isActive(item.path), 'coming-soon': item.soon }"
+                @click="closeSidebar"
+              >
+                <span class="nav-label font-mono">{{ item.label }}</span>
+                <span v-if="item.soon" class="nav-soon font-mono">SOON</span>
+              </router-link>
+            </div>
+          </div>
+        </div>
+      </nav>
+
+      <div class="sidebar-divider"></div>
+
+      <!-- Settings Link -->
       <router-link
-        to="/"
-        class="home-entry"
-        :class="{ active: isActive('/') }"
+        to="/settings"
+        class="settings-link"
+        :class="{ active: isActive('/settings') }"
         @click="closeSidebar"
       >
-        <div class="home-icon">
-          <div class="supernova-home"></div>
+        <div class="nav-indicator pink"></div>
+        <div class="nav-info">
+          <span class="nav-title font-oswald">ПАРАМЕТРЫ</span>
+          <span class="nav-subtitle font-mono">Конфигурация</span>
         </div>
-        <div class="home-info">
-          <div class="home-title">Главная</div>
-          <div class="home-subtitle">Обзор инструментов</div>
-        </div>
+        <span class="nav-arrow font-mono">&rarr;</span>
       </router-link>
 
-      <!-- Документация -->
-      <router-link
-        to="/docs"
-        class="docs-entry"
-        :class="{ active: isActive('/docs') }"
-        @click="closeSidebar"
-      >
-        <div class="home-icon">
-          <div class="supernova-home"></div>
+      <!-- Footer Status -->
+      <div class="sidebar-footer">
+        <div class="status-row">
+          <span class="lbl font-mono">API</span>
+          <span class="val online font-mono">● ONLINE</span>
         </div>
-        <div class="home-info">
-          <div class="home-title">Документация</div>
-          <div class="home-subtitle">Как работать с этим приложением?</div>
-        </div>
-      </router-link>
-
-      <router-link
-        to="/terminal"
-        class="data-entry"
-        :class="{ active: isActive('/terminal') }"
-        @click="closeSidebar"
-      >
-        <div class="data-icon">
-          <span class="zeta-logo">ζ</span>
-        </div>
-        <div class="data-info">
-          <div class="data-title">Дзета-Терминал</div>
-          <div class="data-subtitle">Потоковые данные в реальном времени</div>
-        </div>
-      </router-link>
-
-      <!-- 1) Portfolio Analytics -->
-      <div class="tool-group">
-        <button
-          class="tool-header"
-          @click="toggleTool('portfolio')"
-          :class="{ expanded: expandedTools.portfolio }"
-        >
-          <div class="glossy-icon">
-            <div class="supernova purple"></div>
-          </div>
-          <div class="tool-info">
-            <span class="tool-title">Портфельный анализ</span>
-            <span class="tool-subtitle">Анализ и оптимизация</span>
-          </div>
-          <div class="chevron">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <polyline points="6 9 12 15 18 9" />
-            </svg>
-          </div>
-        </button>
-
-        <div
-          class="tool-content-wrapper"
-          :style="{ maxHeight: expandedTools.portfolio ? '1000px' : '0' }"
-        >
-          <div class="tool-content">
-            <router-link
-              v-for="item in portfolioItems"
-              :key="item.path"
-              :to="item.path"
-              class="nav-item"
-              :class="{ active: isActive(item.path) }"
-              @click="closeSidebar"
-            >
-              <span class="nav-label">{{ item.label }}</span>
-            </router-link>
-          </div>
+        <div class="status-row">
+          <span class="lbl font-mono">TIME</span>
+          <span class="val font-mono">{{ marketTime }}</span>
         </div>
       </div>
-
-      <!-- 2) Risk Management -->
-      <div class="tool-group">
-        <button
-          class="tool-header"
-          @click="toggleTool('risk')"
-          :class="{ expanded: expandedTools.risk }"
-        >
-          <div class="glossy-icon">
-            <div class="supernova purple"></div>
-          </div>
-          <div class="tool-info">
-            <span class="tool-title">Риск-менеджмент</span>
-            <span class="tool-subtitle">Бэктестинг, стресс-тестирование</span>
-          </div>
-          <div class="chevron">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <polyline points="6 9 12 15 18 9" />
-            </svg>
-          </div>
-        </button>
-
-        <div
-          class="tool-content-wrapper"
-          :style="{ maxHeight: expandedTools.risk ? '1000px' : '0' }"
-        >
-          <div class="tool-content">
-            <router-link
-              v-for="item in riskItems"
-              :key="item.path"
-              :to="item.path"
-              class="nav-item"
-              :class="{ active: isActive(item.path) }"
-              @click="closeSidebar"
-            >
-              <span class="nav-label">{{ item.label }}</span>
-            </router-link>
-          </div>
-        </div>
-      </div>
-
-      <!-- 3) Hidden Markov Chain -->
-      <div class="tool-group">
-        <button
-          class="tool-header"
-          @click="toggleTool('quant')"
-          :class="{ expanded: expandedTools.quant }"
-        >
-          <div class="glossy-icon">
-            <div class="supernova indigo"></div>
-          </div>
-          <div class="tool-info">
-            <span class="tool-title">Анализ рыночных режимов</span>
-            <span class="tool-subtitle">Модели и режимы</span>
-          </div>
-          <div class="chevron">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <polyline points="6 9 12 15 18 9" />
-            </svg>
-          </div>
-        </button>
-
-        <div
-          class="tool-content-wrapper"
-          :style="{ maxHeight: expandedTools.quant ? '1000px' : '0' }"
-        >
-          <div class="tool-content">
-            <router-link
-              v-for="item in quantItems"
-              :key="item.path"
-              :to="item.path"
-              class="nav-item"
-              :class="{ active: isActive(item.path) }"
-              @click="closeSidebar"
-            >
-              <span class="nav-label">{{ item.label }}</span>
-            </router-link>
-          </div>
-        </div>
-      </div>
-
-      <!-- 4) Bond Valuation -->
-      <div class="tool-group">
-        <button
-          class="tool-header"
-          @click="toggleTool('bonds')"
-          :class="{ expanded: expandedTools.bonds }"
-        >
-          <div class="glossy-icon">
-            <div class="supernova green"></div>
-          </div>
-          <div class="tool-info">
-            <span class="tool-title">Справедливая стоимость облигаций</span>
-            <span class="tool-subtitle">Оценка и анализ</span>
-          </div>
-          <div class="chevron">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <polyline points="6 9 12 15 18 9" />
-            </svg>
-          </div>
-        </button>
-        <div
-          class="tool-content-wrapper"
-          :style="{ maxHeight: expandedTools.bonds ? '1000px' : '0' }"
-        >
-          <div class="tool-content">
-            <router-link 
-              to="/bond-valuation" 
-              class="nav-item"
-              :class="{ active: isActive('/bond-valuation') }"
-              @click="closeSidebar"
-            >
-              <span class="nav-label">Оценка облигаций</span>
-            </router-link>
-            
-            <router-link 
-              to="/zcyc-viewer" 
-              class="nav-item"
-              :class="{ active: isActive('/zcyc-viewer') }"
-              @click="closeSidebar"
-            >
-              <span class="nav-label">Кривая бескупонной доходности</span>
-            </router-link>
-
-            <router-link 
-              to="/bond-report" 
-              class="nav-item"
-              :class="{ active: isActive('/bond-report') }"
-              @click="closeSidebar"
-            >
-              <span class="nav-label">Отчет об оценке</span>
-            </router-link>
-          </div>
-        </div>
-      </div>
-
-      <!-- 6) Option Pricing -->
-      <div class="tool-group">
-        <button
-          class="tool-header"
-          @click="toggleTool('options')"
-          :class="{ expanded: expandedTools.options }"
-        >
-          <div class="glossy-icon">
-            <div class="supernova green"></div>
-          </div>
-          <div class="tool-info">
-            <span class="tool-title">Опционы</span>
-            <span class="tool-subtitle">Справедливая стоимость</span>
-          </div>
-          <div class="chevron">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <polyline points="6 9 12 15 18 9" />
-            </svg>
-          </div>
-        </button>
-        <div
-          class="tool-content-wrapper"
-          :style="{ maxHeight: expandedTools.options ? '1000px' : '0' }"
-        >
-          <div class="tool-content">
-            <router-link 
-              to="/pricing/options" 
-              class="nav-item"
-              :class="{ active: isActive('/pricing/options') }"
-              @click="closeSidebar"
-            >
-              <span class="nav-label">Справедливая стоимость опционов</span>
-            </router-link>
-
-            <router-link 
-              to="/pricing/options/models" 
-              class="nav-item"
-              :class="{ active: isActive('/pricing/options/models') }"
-              @click="closeSidebar"
-            >
-              <span class="nav-label">Сравнение моделей</span>
-            </router-link>
-
-            <router-link 
-              to="/pricing/options/greeks" 
-              class="nav-item"
-              :class="{ active: isActive('/pricing/options/greeks') }"
-              @click="closeSidebar"
-            >
-              <span class="nav-label">Анализ Greeks</span>
-            </router-link>
-
-            <router-link 
-              to="/pricing/options/portfolio" 
-              class="nav-item"
-              :class="{ active: isActive('/pricing/options/portfolio') }"
-              @click="closeSidebar"
-            >
-              <span class="nav-label">Портфель опционов</span>
-            </router-link>
-
-            <router-link
-              to="/analytics/volatility"
-              class="nav-item"
-              :class="{ active: isActive('/analytics/volatility') }"
-              @click="closeSidebar"
-            >
-              <span class="nav-label">Поверхность волатильности</span>
-            </router-link>
-          </div>
-        </div>
-      </div>
-
-      <!-- 7) Swap Valuation -->
-      <div class="tool-group">
-        <button
-          class="tool-header"
-          @click="toggleTool('swaps')"
-          :class="{ expanded: expandedTools.swaps }"
-        >
-          <div class="glossy-icon">
-            <div class="supernova green"></div>
-          </div>
-          <div class="tool-info">
-            <span class="tool-title">СВОПы</span>
-            <span class="tool-subtitle">Greeks, Pricing & Risk</span>
-          </div>
-          <div class="chevron">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <polyline points="6 9 12 15 18 9" />
-            </svg>
-          </div>
-        </button>
-
-        <div
-          class="tool-content-wrapper"
-          :style="{ maxHeight: expandedTools.swaps ? '1000px' : '0' }"
-        >
-          <div class="tool-content">
-            <router-link
-              to="/valuation/swaps"
-              class="nav-item"
-              :class="{ active: isActive('/valuation/swaps') }"
-              @click="closeSidebar"
-            >
-              <span class="nav-label">Справедливая стоимость СВОПов</span>
-            </router-link>
-
-            <router-link
-              to="/swap-greeks"
-              class="nav-item"
-              :class="{ active: isActive('/swap-greeks') }"
-              @click="closeSidebar"
-            >
-              <span class="nav-label">Греки</span>
-            </router-link>
-
-            <router-link
-              to="/analytics/pnl"
-              class="nav-item"
-              :class="{ active: isActive('/analytics/pnl') }"
-              @click="closeSidebar"
-            >
-              <span class="nav-label">Факторная декомпозиция P&L</span>
-            </router-link>
-
-            <router-link
-              to="/hedging"
-              class="nav-item"
-              :class="{ active: isActive('/hedging') }"
-              @click="closeSidebar"
-            >
-              <span class="nav-label">Регрессионное хеджирование</span>
-            </router-link>
-
-            <router-link
-              to="/reports/swaps"
-              class="nav-item coming-soon"
-            >
-              <span class="nav-label">Отчеты по СВОПам</span>
-              <span class="nav-soon">SOON</span>
-            </router-link>
-          </div>
-        </div>
-      </div>
-
-      <div class="tool-group">
-        <button
-          class="tool-header"
-          @click="toggleTool('forwards')"
-          :class="{ expanded: expandedTools.forwards }"
-        >
-          <div class="glossy-icon">
-            <div class="supernova green"></div>
-          </div>
-          <div class="tool-info">
-            <span class="tool-title">Форварды</span>
-            <span class="tool-subtitle">Оценка справедливой стоимости</span>
-          </div>
-          <div class="chevron">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <polyline points="6 9 12 15 18 9" />
-            </svg>
-          </div>
-        </button>
-
-        <div
-          class="tool-content-wrapper"
-          :style="{ maxHeight: expandedTools.forwards ? '1000px' : '0' }"
-        >
-          <div class="tool-content">
-            <router-link
-              to="/valuation/forwards"
-              class="nav-item"
-              :class="{ active: isActive('/valuation/forwards') }"
-              @click="closeSidebar"
-            >
-              <span class="nav-label">Оценка форвардов</span>
-            </router-link>
-
-            <router-link
-              to="/forwards/curve"
-              class="nav-item"
-              :class="{ active: isActive('/forwards/curve') }"
-              @click="closeSidebar"
-            >
-              <span class="nav-label">Построение форвардной кривой</span>
-            </router-link>
-
-            <router-link
-              to="/forwards/greeks"
-              class="nav-item"
-              :class="{ active: isActive('/forwards/greeks') }"
-              @click="closeSidebar"
-            >
-              <span class="nav-label">Греки</span>
-            </router-link>
-
-            <router-link
-              to="/forwards/basis"
-              class="nav-item"
-              :class="{ active: isActive('/forwards/basis') }"
-              @click="closeSidebar"
-            >
-              <span class="nav-label">Анализ спот-форвард базиса</span>
-            </router-link>
-          </div>
-        </div>
-      </div>
-
-      <div class="tool-group">
-        <button
-          class="tool-header"
-          @click="toggleTool('bondReports')"
-          :class="{ expanded: expandedTools.bondReports }"
-        >
-          <div class="glossy-icon">
-            <div class="supernova nova"></div>
-          </div>
-          <div class="tool-info">
-            <span class="tool-title">Отчёты по облигациям</span>
-            <span class="tool-subtitle">Шаблонные отчеты</span>
-          </div>
-          <div class="chevron">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <polyline points="6 9 12 15 18 9" />
-            </svg>
-          </div>
-        </button>
-        <div
-          class="tool-content-wrapper"
-          :style="{ maxHeight: expandedTools.bondReports ? '1000px' : '0' }"
-        >
-          <div class="tool-content">
-            <router-link 
-              to="/vanila-bond-report" 
-              class="nav-item"
-              :class="{ active: isActive('/vanila-bond-report') }"
-              @click="closeSidebar"
-            >
-              <span class="nav-label">Vanila Bond Report</span>
-            </router-link>
-            <router-link 
-              to="/floater-bond-report" 
-              class="nav-item"
-              :class="{ active: isActive('/floater-bond-report') }"
-              @click="closeSidebar"
-            >
-              <span class="nav-label">Floater Bond Report</span>
-            </router-link>
-          </div>
-        </div>
-      </div>
-
-    </nav>
-
-    <div class="sidebar-divider"></div>
-
-    <!-- SETTINGS LINK (Bottom) -->
-    <router-link
-      to="/settings"
-      class="settings-link-button"
-      :class="{ active: isActive('/settings') }"
-      @click="closeSidebar"
-    >
-      <div class="settings-glossy-icon">
-        <div class="supernova pink"></div>
-      </div>
-      <div class="settings-info">
-        <span class="settings-title">Параметры</span>
-        <span class="settings-subtitle">Конфигурация</span>
-      </div>
-      <svg class="settings-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <polyline points="9 18 15 12 9 6" />
-      </svg>
-    </router-link>
-
-    <!-- Footer Status -->
-    <div class="sidebar-footer">
-      <div class="status-row">
-        <span class="lbl">API статус</span>
-        <span class="val connected">● Онлайн</span>
-      </div>
-      <div class="status-row">
-        <span class="lbl">Время</span>
-        <span class="val mono">{{ marketTime }}</span>
-      </div>
-    </div>
-  </aside>
+    </aside>
   </div>
 </template>
 
@@ -560,12 +167,11 @@ const route = useRoute()
 const marketTime = ref('--:--')
 const isSidebarOpen = ref(false)
 
-// Swipe gesture state
 const touchStartX = ref(0)
 const touchEndX = ref(0)
 const sidebarRef = ref<HTMLElement | null>(null)
 
-const expandedTools = reactive({
+const expandedTools = reactive<Record<string, boolean>>({
   portfolio: false,
   risk: false,
   quant: false,
@@ -574,32 +180,100 @@ const expandedTools = reactive({
   options: false,
   swaps: false,
   forwards: false,
-
 })
 
-const toggleTool = (id: keyof typeof expandedTools) => {
-  expandedTools[id] = !expandedTools[id]
+const toolGroups = {
+  portfolio: {
+    title: 'ПОРТФЕЛЬНЫЙ АНАЛИЗ',
+    subtitle: 'Анализ и оптимизация',
+    color: 'purple',
+    items: [
+      { path: '/portfolio', label: 'Состав портфеля' },
+      { path: '/CCMVoptimization', label: 'Оптимизация портфеля' },
+      { path: '/greeks', label: 'Риск-метрики' },
+      { path: '/reports', label: 'Отчёты' },
+    ]
+  },
+  risk: {
+    title: 'РИСК-МЕНЕДЖМЕНТ',
+    subtitle: 'Бэктестинг, стресс-тестирование',
+    color: 'purple',
+    items: [
+      { path: '/backtest', label: 'Бэктестинг' },
+      { path: '/stress', label: 'Стресс-тестирование портфеля облигаций' },
+      { path: '/stress/swaps', label: 'Стресс-тестирование портфеля СВОПов' },
+    ]
+  },
+  quant: {
+    title: 'АНАЛИЗ РЫНОЧНЫХ РЕЖИМОВ',
+    subtitle: 'Модели и режимы',
+    color: 'indigo',
+    items: [
+      { path: '/regimes', label: 'Рыночные режимы' },
+      { path: '/regime-details', label: 'Детальный анализ режимов' },
+      { path: '/spectral-regimes', label: 'Комплексный анализ режимов' },
+      { path: '/fixed-income', label: 'Доходности облигаций' },
+    ]
+  },
+  bonds: {
+    title: 'СПРАВЕДЛИВАЯ СТОИМОСТЬ ОБЛИГАЦИЙ',
+    subtitle: 'Оценка и анализ',
+    color: 'green',
+    items: [
+      { path: '/bond-valuation', label: 'Оценка облигаций' },
+      { path: '/zcyc-viewer', label: 'Кривая бескупонной доходности' },
+      { path: '/bond-report', label: 'Отчет об оценке' },
+    ]
+  },
+  options: {
+    title: 'ОПЦИОНЫ',
+    subtitle: 'Справедливая стоимость',
+    color: 'green',
+    items: [
+      { path: '/pricing/options', label: 'Справедливая стоимость опционов' },
+      { path: '/pricing/options/models', label: 'Сравнение моделей' },
+      { path: '/pricing/options/greeks', label: 'Анализ Greeks' },
+      { path: '/pricing/options/portfolio', label: 'Портфель опционов' },
+      { path: '/analytics/volatility', label: 'Поверхность волатильности' },
+    ]
+  },
+  swaps: {
+    title: 'СВОПЫ',
+    subtitle: 'Greeks, Pricing & Risk',
+    color: 'green',
+    items: [
+      { path: '/valuation/swaps', label: 'Справедливая стоимость СВОПов' },
+      { path: '/swap-greeks', label: 'Греки' },
+      { path: '/analytics/pnl', label: 'Факторная декомпозиция P&L' },
+      { path: '/hedging', label: 'Регрессионное хеджирование' },
+      { path: '/reports/swaps', label: 'Отчеты по СВОПам', soon: true },
+    ]
+  },
+  forwards: {
+    title: 'ФОРВАРДЫ',
+    subtitle: 'Оценка справедливой стоимости',
+    color: 'green',
+    items: [
+      { path: '/valuation/forwards', label: 'Оценка форвардов' },
+      { path: '/forwards/curve', label: 'Построение форвардной кривой' },
+      { path: '/forwards/greeks', label: 'Греки' },
+      { path: '/forwards/basis', label: 'Анализ спот-форвард базиса' },
+    ]
+  },
+  bondReports: {
+    title: 'ОТЧЁТЫ ПО ОБЛИГАЦИЯМ',
+    subtitle: 'Шаблонные отчеты',
+    color: 'red',
+    items: [
+      { path: '/vanila-bond-report', label: 'Vanila Bond Report' },
+      { path: '/floater-bond-report', label: 'Floater Bond Report' },
+    ]
+  },
 }
 
-const portfolioItems = [
-  { path: '/portfolio', label: 'Состав портфеля' },
-  { path: '/CCMVoptimization', label: 'Оптимизация портфеля' },
-  { path: '/greeks', label: 'Риск-метрики' },
-  { path: '/reports', label: 'Отчёты' },
-]
-
-const riskItems = [
-  { path: '/backtest', label: 'Бэктестинг' },
-  { path: '/stress', label: 'Стресс-тестирование портфеля облигаций' },
-  { path: '/stress/swaps', label: 'Стресс-тестирование портфеля СВОПов' },
-]
-
-const quantItems = [
-  { path: '/regimes', label: 'Рыночные режимы' },
-  { path: '/regime-details', label: 'Детальный анализ режимов' },
-  { path: '/spectral-regimes', label: 'Комплексный анализ режимов' },
-  { path: '/fixed-income', label: 'Доходности облигаций' },
-]
+const toggleTool = (id: string) => {
+  expandedTools[id] = !expandedTools[id]
+}
 
 const isActive = (path: string): boolean => {
   return route.path === path
@@ -613,7 +287,6 @@ const closeSidebar = () => {
   isSidebarOpen.value = false
 }
 
-// Swipe gesture handlers
 const handleTouchStart = (e: TouchEvent) => {
   touchStartX.value = e.changedTouches[0].screenX
 }
@@ -624,10 +297,7 @@ const handleTouchMove = (e: TouchEvent) => {
 
 const handleTouchEnd = () => {
   const swipeDistance = touchStartX.value - touchEndX.value
-  const minSwipeDistance = 50 // Minimum distance for swipe
-
-  // Swipe left to close sidebar
-  if (swipeDistance > minSwipeDistance && isSidebarOpen.value) {
+  if (swipeDistance > 50 && isSidebarOpen.value) {
     closeSidebar()
   }
 }
@@ -649,156 +319,15 @@ onUnmounted(() => clearInterval(timer))
 
 <style scoped>
 /* ============================================
-   LAVA LAMP BACKGROUND — СТАТИЧЕСКИЙ ФОН
-   ============================================ */
-.sidebar-lava-layer {
-  position: absolute;
-  inset: 0;
-  background: 
-    radial-gradient(circle 80px at 30% 20%, rgba(99, 102, 241, 0.15), transparent 60%),
-    radial-gradient(circle 60px at 60% 60%, rgba(34, 211, 238, 0.12), transparent 50%),
-    radial-gradient(circle 70px at 20% 80%, rgba(168, 85, 247, 0.12), transparent 55%);
-  filter: blur(30px);
-  pointer-events: none;
-  z-index: 1;
-  backface-visibility: hidden;
-}
-
-/* ============================================
-   GLOSSY ICON
-   ============================================ */
-.glossy-icon {
-  width: 32px;
-  height: 32px;
-  border-radius: 999px;
-  background: radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.02) 80%);
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  position: relative;
-  overflow: hidden;
-  flex-shrink: 0;
-  transition: transform 0.3s ease, border-color 0.3s ease;
-  backface-visibility: hidden;
-}
-
-.tool-header:hover .glossy-icon {
-  transform: translateY(-1px);
-  border-color: rgba(255, 255, 255, 0.3);
-}
-
-/* ============================================
-   SUPERNOVA — БЕЗ АНИМАЦИЙ
-   ============================================ */
-.supernova {
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
-  position: relative;
-  z-index: 2;
-  backface-visibility: hidden;
-}
-
-.supernova.blue { 
-  background: linear-gradient(135deg, #60a5fa 0%, #3b82f6 50%, #1e40af 100%);
-  box-shadow: 0 0 12px 2px rgba(59, 130, 246, 0.8);
-}
-
-.supernova.purple { 
-  background: linear-gradient(135deg, #c084fc 0%, #a855f7 50%, #7e22ce 100%);
-  box-shadow: 0 0 12px 2px rgba(168, 85, 247, 0.8);
-}
-
-.supernova.cyan { 
-  background: linear-gradient(135deg, #67e8f9 0%, #22d3ee 50%, #0891b2 100%);
-  box-shadow: 0 0 12px 2px rgba(34, 211, 238, 0.8);
-}
-
-.supernova.green { 
-  background: linear-gradient(135deg, #4ade80 0%, #22c55e 50%, #15803d 100%);
-  box-shadow: 0 0 12px 2px rgba(34, 197, 94, 0.8);
-}
-
-.supernova.pink { 
-  background: linear-gradient(135deg, #f472b6 0%, #ec4899 50%, #be185d 100%);
-  box-shadow: 0 0 12px 2px rgba(236, 72, 153, 0.8);
-}
-
-.supernova.nova {
-  background: linear-gradient(135deg, #ff3366 0%, #ff99cc 33%, #ff6699 66%, #ff3366 100%);
-  box-shadow: 0 0 12px 2px rgba(255, 51, 102, 0.85), 0 0 20px 4px rgba(255, 102, 153, 0.5);
-}
-
-.supernova.yellow {
-  background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 50%, #d97706 100%);
-  box-shadow: 0 0 12px 2px rgba(251, 191, 36, 0.85);
-}
-
-.supernova.indigo {
-  background: linear-gradient(135deg, #a5b4fc 0%, #818cf8 50%, #4f46e5 100%);
-  box-shadow: 0 0 12px 2px rgba(129, 140, 248, 0.85);
-}
-
-.supernova.red {
-  background: linear-gradient(135deg, #f87171 0%, #ef4444 50%, #b91c1c 100%);
-  box-shadow: 0 0 12px 2px rgba(239, 68, 68, 0.85);
-}
-
-.supernova.violet {
-  background: linear-gradient(135deg, #d8b4fe 0%, #c4b5fd 50%, #7c3aed 100%);
-  box-shadow: 0 0 12px 2px rgba(124, 58, 237, 0.85);
-}
-
-.supernova-home {
-  width: 18px;
-  height: 18px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, #22d3ee, #ffffff, #6366f1);
-  background-size: 200% 200%;
-  box-shadow: 0 0 15px rgba(99, 102, 241, 0.8);
-  backface-visibility: hidden;
-}
-
-/* Hover states — только box-shadow */
-.tool-header:hover .supernova.blue { 
-  box-shadow: 0 0 18px 4px rgba(96, 165, 250, 0.9), 0 0 32px 8px rgba(59, 130, 246, 0.4);
-}
-.tool-header:hover .supernova.purple { 
-  box-shadow: 0 0 18px 4px rgba(192, 132, 252, 0.9), 0 0 32px 8px rgba(168, 85, 247, 0.4);
-}
-.tool-header:hover .supernova.cyan { 
-  box-shadow: 0 0 18px 4px rgba(103, 232, 249, 0.9), 0 0 32px 8px rgba(34, 211, 238, 0.4);
-}
-.tool-header:hover .supernova.green { 
-  box-shadow: 0 0 18px 4px rgba(74, 222, 128, 0.9), 0 0 32px 8px rgba(34, 197, 94, 0.4);
-}
-.tool-header:hover .supernova.pink { 
-  box-shadow: 0 0 18px 4px rgba(244, 114, 182, 0.9), 0 0 32px 8px rgba(236, 72, 153, 0.4);
-}
-.tool-header:hover .supernova.nova { 
-  box-shadow: 0 0 18px 4px rgba(255, 51, 102, 0.95), 0 0 32px 8px rgba(255, 102, 153, 0.5);
-}
-.tool-header:hover .supernova.yellow { 
-  box-shadow: 0 0 18px 4px rgba(251, 191, 36, 0.95), 0 0 32px 8px rgba(251, 191, 36, 0.4);
-}
-.tool-header:hover .supernova.indigo { 
-  box-shadow: 0 0 18px 4px rgba(165, 180, 252, 0.9), 0 0 32px 8px rgba(129, 140, 248, 0.4);
-}
-.tool-header:hover .supernova.red { 
-  box-shadow: 0 0 18px 4px rgba(248, 113, 113, 0.9), 0 0 32px 8px rgba(239, 68, 68, 0.4);
-}
-.tool-header:hover .supernova.violet { 
-  box-shadow: 0 0 18px 4px rgba(216, 180, 254, 0.9), 0 0 32px 8px rgba(124, 58, 237, 0.4);
-}
-
-/* ============================================
-   SIDEBAR LAYOUT
+   SIDEBAR WRAPPER
    ============================================ */
 .sidebar-wrapper {
   position: relative;
 }
 
+/* ============================================
+   SIDEBAR TAB - BRUTALIST
+   ============================================ */
 .sidebar-tab {
   position: fixed;
   top: 0;
@@ -806,21 +335,21 @@ onUnmounted(() => clearInterval(timer))
   bottom: 0;
   width: 64px;
   z-index: 1100;
-  background: rgba(15, 15, 30, 0.6);
-  border-right: 1px solid rgba(255, 255, 255, 0.08);
-  backdrop-filter: blur(12px);
+  background: #050505;
+  border-right: 1px solid #1a1a1a;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-  will-change: transform, opacity;
-  backface-visibility: hidden;
-  touch-action: manipulation;
+  transition: transform 0.3s ease, opacity 0.3s ease;
 }
 
 .sidebar-tab:hover {
-  background: rgba(255, 255, 255, 0.05);
+  background: #0a0a0a;
+}
+
+.sidebar-tab:hover .burger-icon span {
+  background: #DC2626;
 }
 
 .sidebar-tab.hidden {
@@ -839,24 +368,19 @@ onUnmounted(() => clearInterval(timer))
 .burger-icon span {
   width: 20px;
   height: 2px;
-  background: #00d9ff;
-  border-radius: 2px;
-  transition: background 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  backface-visibility: hidden;
+  background: #525252;
+  transition: background 0.2s;
 }
 
-.sidebar-tab:hover span {
-  background: #fff;
-}
-
+/* ============================================
+   BACKDROP
+   ============================================ */
 .sidebar-backdrop {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.6);
+  background: rgba(0, 0, 0, 0.8);
   z-index: 1105;
-  backdrop-filter: blur(2px);
-  animation: fade-in 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  backface-visibility: hidden;
+  animation: fade-in 0.2s ease;
 }
 
 @keyframes fade-in {
@@ -864,66 +388,60 @@ onUnmounted(() => clearInterval(timer))
   to { opacity: 1; }
 }
 
+/* ============================================
+   SIDEBAR PANEL - BRUTALIST
+   ============================================ */
 .sidebar {
   position: fixed;
   top: 0;
   left: 0;
   bottom: 0;
-  width: 280px;
+  width: 300px;
   z-index: 1110;
-  background: rgba(20, 22, 28, 0.95);
-  border-right: 1px solid rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(40px) saturate(180%);
+  background: #050505;
+  border-right: 1px solid #262626;
   display: flex;
   flex-direction: column;
   transform: translateX(-100%);
-  transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-  will-change: transform;
-  box-shadow: 20px 0 50px rgba(0, 0, 0, 0.5);
+  transition: transform 0.3s ease;
   overflow: hidden;
-  backface-visibility: hidden;
 }
 
 .sidebar.sidebar--open {
   transform: translateX(0);
 }
 
+/* ============================================
+   HEADER
+   ============================================ */
 .sidebar-header {
   height: 64px;
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: 0 20px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  border-bottom: 1px solid #1a1a1a;
   flex-shrink: 0;
-  position: relative;
-  z-index: 10;
 }
 
 .app-logo {
-  font-size: 14px;
-  font-weight: 700;
-  color: #fff;
+  font-size: 18px;
+  color: #DC2626;
   letter-spacing: 0.05em;
-}
-
-.highlight {
-  color: #00d9ff;
 }
 
 .close-btn {
   background: none;
   border: none;
-  color: rgba(255, 255, 255, 0.5);
-  font-size: 18px;
+  color: #525252;
+  font-size: 24px;
   cursor: pointer;
-  transition: color 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  padding: 4px;
-  backface-visibility: hidden;
+  transition: color 0.2s;
+  line-height: 1;
 }
 
 .close-btn:hover {
-  color: #fff;
+  color: #DC2626;
 }
 
 /* ============================================
@@ -936,278 +454,126 @@ onUnmounted(() => clearInterval(timer))
   padding: 16px;
   display: flex;
   flex-direction: column;
+  gap: 8px;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* ============================================
+   NAV ENTRY - BRUTALIST
+   ============================================ */
+.nav-entry {
+  display: flex;
+  align-items: center;
   gap: 12px;
-  position: relative;
-  z-index: 5;
-  -webkit-overflow-scrolling: touch;
-}
-
-.custom-scroll {
-  scrollbar-width: thin;
-  scrollbar-color: rgba(255, 255, 255, 0.15) transparent;
-  scroll-behavior: smooth;
-  -webkit-overflow-scrolling: touch;
-}
-
-.custom-scroll::-webkit-scrollbar {
-  width: 6px;
-}
-
-.custom-scroll::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.15);
-  border-radius: 10px;
-  transition: background 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  backface-visibility: hidden;
-  border: 1px solid transparent;
-  background-clip: padding-box;
-}
-
-.custom-scroll::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.25);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.custom-scroll::-webkit-scrollbar-thumb:active {
-  background: rgba(255, 255, 255, 0.35);
-}
-
-.custom-scroll::-webkit-scrollbar-track {
-  background: transparent;
-  border-radius: 10px;
-}
-
-/* HOME ENTRY */
-.home-entry {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 10px 12px;
-  border-radius: 12px;
-  background: radial-gradient(circle at 0 0, rgba(148, 163, 184, 0.25), rgba(15, 23, 42, 0.95));
-  border: 1px solid rgba(148, 163, 184, 0.5);
+  padding: 14px 16px;
+  border: 1px solid #1a1a1a;
   text-decoration: none;
-  color: #e5e7eb;
-  box-shadow: 0 16px 40px rgba(15, 23, 42, 0.9);
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  margin-bottom: 8px;
-  backface-visibility: hidden;
+  color: #e5e5e5;
+  transition: all 0.2s;
 }
 
-.home-entry:hover {
-  background: radial-gradient(circle at 0 0, rgba(248, 250, 252, 0.22), rgba(15, 23, 42, 0.98));
-  border-color: rgba(226, 232, 240, 0.9);
-  transform: translateY(-1px);
+.nav-entry:hover {
+  background: #DC2626;
+  border-color: #DC2626;
+  color: #000;
 }
 
-.home-entry.active {
-  border-color: #38bdf8;
-  box-shadow: 0 18px 45px rgba(56, 189, 248, 0.45);
+.nav-entry:hover .nav-subtitle,
+.nav-entry:hover .nav-arrow {
+  color: #000;
 }
 
-.home-icon {
-  width: 32px;
+.nav-entry.active {
+  border-color: #DC2626;
+  background: rgba(220, 38, 38, 0.1);
+}
+
+.nav-entry.active .nav-title {
+  color: #DC2626;
+}
+
+.nav-indicator {
+  width: 4px;
   height: 32px;
-  border-radius: 999px;
-  border: 1px solid rgba(148, 163, 184, 0.7);
-  background: radial-gradient(circle at 0 0, rgba(248, 250, 252, 0.32), rgba(15, 23, 42, 0.96));
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  position: relative;
-  overflow: hidden;
+  background: #262626;
   flex-shrink: 0;
-  backface-visibility: hidden;
 }
 
-.home-info {
+.nav-indicator.green { background: #22c55e; }
+.nav-indicator.pink { background: #ec4899; }
+
+.nav-entry:hover .nav-indicator,
+.nav-entry.active .nav-indicator {
+  background: #DC2626;
+}
+
+.nav-info {
+  flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 1px;
+  gap: 2px;
+  min-width: 0;
 }
 
-.home-title {
+.nav-title {
   font-size: 13px;
-  font-weight: 600;
+  font-weight: 500;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
 }
 
-.home-subtitle {
-  font-size: 11px;
-  color: rgba(148, 163, 184, 0.9);
+.nav-subtitle {
+  font-size: 10px;
+  color: #525252;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
 }
 
-.docs-entry {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 10px 12px;
-  border-radius: 12px;
-  background: radial-gradient(circle at 0 0, rgba(74, 222, 128, 0.12), rgba(15, 23, 42, 0.95));
-  border: 1px solid rgba(34, 197, 94, 0.6);
-  text-decoration: none;
-  color: #e5e7eb;
-  box-shadow: 0 16px 40px rgba(34, 197, 94, 0.2);
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  margin-bottom: 8px;
-  backface-visibility: hidden;
+.nav-arrow {
+  color: #525252;
+  font-size: 14px;
+  flex-shrink: 0;
 }
 
-.docs-entry:hover {
-  background: radial-gradient(circle at 0 0, rgba(74, 222, 128, 0.18), rgba(15, 23, 42, 0.98));
-  border-color: rgba(34, 197, 94, 0.9);
-  transform: translateY(-1px);
+/* Terminal Entry - Special */
+.terminal-entry {
+  border-color: rgba(220, 38, 38, 0.3);
+  background: rgba(220, 38, 38, 0.05);
 }
 
-.docs-entry.active {
-  border-color: #22c55e;
-  box-shadow: 0 18px 45px rgba(34, 197, 94, 0.45);
+.terminal-entry:hover {
+  background: #DC2626;
+  border-color: #DC2626;
 }
 
-.docs-icon {
+.zeta-icon {
   width: 32px;
   height: 32px;
-  border-radius: 999px;
-  border: 1px solid rgba(148, 163, 184, 0.7);
-  background: radial-gradient(circle at 0 0, rgba(248, 250, 252, 0.32), rgba(15, 23, 42, 0.96));
   display: flex;
   align-items: center;
   justify-content: center;
-  position: relative;
-  overflow: hidden;
-  flex-shrink: 0;
-  backface-visibility: hidden;
-}
-
-.docs-entry .home-icon {
-  border: 1px solid rgba(34, 197, 94, 0.7);
-  background: radial-gradient(circle at 0 0, rgba(74, 222, 128, 0.32), rgba(15, 23, 42, 0.96));
-  box-shadow: 0 0 20px rgba(34, 197, 94, 0.6);
-}
-
-.docs-entry .supernova-home {
-  background: linear-gradient(135deg, #4ade80, #22c55e, #10b981);
-  box-shadow: 0 0 20px rgba(34, 197, 94, 0.9);
-}
-
-.docs-entry:hover .home-icon {
-  border-color: rgba(34, 197, 94, 0.95);
-  box-shadow: 0 0 30px rgba(74, 222, 128, 0.9), 0 0 50px rgba(34, 197, 94, 0.4);
-}
-
-.docs-entry:hover .supernova-home {
-  box-shadow: 0 0 30px rgba(34, 197, 94, 1);
-}
-
-.docs-info {
-  display: flex;
-  flex-direction: column;
-  gap: 1px;
-}
-
-.docs-title {
-  font-size: 13px;
-  font-weight: 600;
-}
-
-.docs-subtitle {
-  font-size: 11px;
-  color: rgba(148, 163, 184, 0.9);
-}
-
-.data-entry {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 10px 12px;
-  border-radius: 12px;
-  background: radial-gradient(circle at 0 0, rgba(239, 68, 68, 0.15), rgba(15, 23, 42, 0.95));
-  border: 1px solid rgba(239, 68, 68, 0.5);
-  text-decoration: none;
-  color: #e5e7eb;
-  box-shadow: 0 16px 40px rgba(15, 23, 42, 0.9);
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  margin-bottom: 8px;
-  backface-visibility: hidden;
-}
-
-.data-entry:hover {
-  background: radial-gradient(circle at 0 0, rgba(248, 113, 113, 0.22), rgba(15, 23, 42, 0.98));
-  border-color: rgba(226, 232, 240, 0.9);
-  transform: translateY(-1px);
-}
-
-.data-entry.active {
-  border-color: #ef4444;
-  box-shadow: 0 18px 45px rgba(239, 68, 68, 0.45);
-}
-
-.data-icon {
-  width: 32px;
-  height: 32px;
-  border-radius: 999px;
-  border: 1px solid rgba(239, 68, 68, 0.7);
-  background: radial-gradient(circle at 0 0, rgba(248, 113, 113, 0.32), rgba(15, 23, 42, 0.96));
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  position: relative;
-  overflow: hidden;
-  flex-shrink: 0;
-  box-shadow: 0 0 15px rgba(239, 68, 68, 0.6);
-  backface-visibility: hidden;
-}
-
-.zeta-logo {
   font-size: 20px;
-  font-weight: bold;
-  font-family: 'Inter', sans-serif;
-  line-height: 1;
-  color: #fff;
-  z-index: 2;
-  position: relative;
-}
-
-.data-entry .supernova-home {
-  display: none;
-}
-
-.data-entry:hover .data-icon {
-  border-color: rgba(239, 68, 68, 0.95);
-  box-shadow: 0 0 30px rgba(248, 113, 113, 0.9), 0 0 50px rgba(239, 68, 68, 0.4);
-}
-
-.data-entry:hover .supernova-home {
-  box-shadow: 0 0 30px rgba(239, 68, 68, 1);
-}
-
-.data-info {
-  display: flex;
-  flex-direction: column;
-  gap: 1px;
-}
-
-.data-title {
-  font-size: 13px;
-  font-weight: 600;
-}
-
-.data-subtitle {
-  font-size: 11px;
-  color: rgba(148, 163, 184, 0.9);
-}
-
-/* TOOL GROUPS */
-.tool-group {
-  background: rgba(255, 255, 255, 0.03);
-  border-radius: 12px;
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  overflow: hidden;
-  transition: background 0.3s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  color: #DC2626;
+  border: 1px solid rgba(220, 38, 38, 0.3);
   flex-shrink: 0;
-  backface-visibility: hidden;
+}
+
+.terminal-entry:hover .zeta-icon {
+  background: #000;
+  border-color: #000;
+}
+
+/* ============================================
+   TOOL GROUPS - BRUTALIST
+   ============================================ */
+.tool-group {
+  border: 1px solid #1a1a1a;
+  overflow: hidden;
+  transition: border-color 0.2s;
 }
 
 .tool-group:hover {
-  border-color: rgba(255, 255, 255, 0.1);
+  border-color: #262626;
 }
 
 .tool-header {
@@ -1215,21 +581,38 @@ onUnmounted(() => clearInterval(timer))
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 12px;
+  padding: 14px 16px;
   background: transparent;
   border: none;
   cursor: pointer;
   text-align: left;
-  transition: background 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  backface-visibility: hidden;
+  transition: background 0.2s;
 }
 
-.tool-header:hover:not(.disabled) {
-  background: rgba(255, 255, 255, 0.05);
+.tool-header:hover {
+  background: #0a0a0a;
 }
 
 .tool-header.expanded {
-  background: rgba(255, 255, 255, 0.02);
+  background: #0a0a0a;
+  border-bottom: 1px solid #1a1a1a;
+}
+
+.tool-indicator {
+  width: 4px;
+  height: 28px;
+  background: #262626;
+  flex-shrink: 0;
+}
+
+.tool-indicator.purple { background: #a855f7; }
+.tool-indicator.indigo { background: #818cf8; }
+.tool-indicator.green { background: #22c55e; }
+.tool-indicator.red { background: #DC2626; }
+.tool-indicator.pink { background: #ec4899; }
+
+.tool-header:hover .tool-indicator {
+  background: #DC2626;
 }
 
 .tool-info {
@@ -1241,26 +624,24 @@ onUnmounted(() => clearInterval(timer))
 }
 
 .tool-title {
-  font-size: 13px;
-  font-weight: 600;
-  color: #fff;
-  line-height: 1.2;
+  font-size: 12px;
+  font-weight: 500;
+  color: #f5f5f5;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
 }
 
 .tool-subtitle {
-  font-size: 11px;
-  color: rgba(255, 255, 255, 0.5);
-  line-height: 1.2;
+  font-size: 10px;
+  color: #525252;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
 }
 
 .chevron {
-  color: rgba(255, 255, 255, 0.3);
-  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  color: #525252;
+  transition: transform 0.2s;
   flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  backface-visibility: hidden;
 }
 
 .tool-header.expanded .chevron {
@@ -1268,46 +649,46 @@ onUnmounted(() => clearInterval(timer))
 }
 
 .tool-content-wrapper {
-  transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: max-height 0.3s ease;
   overflow: hidden;
-  backface-visibility: hidden;
 }
 
 .tool-content {
-  padding: 4px 12px 12px 12px;
+  padding: 8px;
   display: flex;
   flex-direction: column;
   gap: 2px;
-  border-top: 1px solid rgba(255, 255, 255, 0.03);
+  background: #0a0a0a;
 }
 
-/* NAV ITEMS */
+/* ============================================
+   NAV ITEMS - BRUTALIST
+   ============================================ */
 .nav-item {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 8px 10px;
-  border-radius: 8px;
-  color: rgba(255, 255, 255, 0.7);
+  justify-content: space-between;
+  padding: 10px 12px;
+  color: #a3a3a3;
   text-decoration: none;
-  font-size: 12px;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  backface-visibility: hidden;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  transition: all 0.2s;
 }
 
 .nav-item:hover {
-  background: rgba(255, 255, 255, 0.05);
-  color: #fff;
+  background: #DC2626;
+  color: #000;
 }
 
 .nav-item.active {
-  background: rgba(0, 217, 255, 0.15);
-  color: #00d9ff;
-  font-weight: 500;
+  color: #DC2626;
+  background: rgba(220, 38, 38, 0.1);
 }
 
 .nav-item.coming-soon {
-  opacity: 0.6;
+  opacity: 0.5;
   cursor: not-allowed;
 }
 
@@ -1317,95 +698,41 @@ onUnmounted(() => clearInterval(timer))
 
 .nav-soon {
   font-size: 9px;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  color: rgba(255, 255, 255, 0.5);
+  border: 1px solid currentColor;
   padding: 1px 4px;
-  border-radius: 4px;
-  text-transform: uppercase;
   flex-shrink: 0;
 }
 
 /* ============================================
-   SETTINGS LINK BUTTON (Bottom)
+   SETTINGS LINK
    ============================================ */
-.settings-link-button {
+.settings-link {
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 12px 16px;
-  background: rgba(236, 72, 153, 0.08);
-  border: 1px solid rgba(236, 72, 153, 0.2);
+  padding: 14px 20px;
+  border-top: 1px solid #1a1a1a;
   text-decoration: none;
-  color: rgba(255, 255, 255, 0.8);
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  position: relative;
-  z-index: 10;
-  border-radius: 0;
-  margin: 0;
-  backface-visibility: hidden;
+  color: #e5e5e5;
+  transition: all 0.2s;
 }
 
-.settings-link-button:hover {
-  background: rgba(236, 72, 153, 0.12);
-  border-color: rgba(236, 72, 153, 0.4);
-  color: #fff;
+.settings-link:hover {
+  background: #DC2626;
+  color: #000;
 }
 
-.settings-link-button.active {
-  background: rgba(236, 72, 153, 0.15);
-  border-color: rgba(236, 72, 153, 0.6);
-  box-shadow: inset 0 0 20px rgba(236, 72, 153, 0.1);
+.settings-link:hover .nav-subtitle,
+.settings-link:hover .nav-arrow {
+  color: #000;
 }
 
-.settings-glossy-icon {
-  width: 32px;
-  height: 32px;
-  border-radius: 999px;
-  background: radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.02) 80%);
-  border: 1px solid rgba(236, 72, 153, 0.3);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  position: relative;
-  overflow: hidden;
-  transition: transform 0.3s ease, border-color 0.3s ease;
-  flex-shrink: 0;
-  backface-visibility: hidden;
+.settings-link.active {
+  background: rgba(220, 38, 38, 0.1);
 }
 
-.settings-link-button:hover .settings-glossy-icon {
-  transform: translateY(-1px);
-  border-color: rgba(236, 72, 153, 0.6);
-}
-
-.settings-info {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.settings-title {
-  font-size: 13px;
-  font-weight: 600;
-  color: #fff;
-}
-
-.settings-subtitle {
-  font-size: 11px;
-  color: rgba(255, 255, 255, 0.5);
-}
-
-.settings-arrow {
-  color: rgba(236, 72, 153, 0.4);
-  transition: transform 0.3s ease, color 0.3s ease;
-  flex-shrink: 0;
-  backface-visibility: hidden;
-}
-
-.settings-link-button:hover .settings-arrow {
-  transform: translateX(2px);
-  color: rgba(236, 72, 153, 0.8);
+.settings-link.active .nav-title {
+  color: #DC2626;
 }
 
 /* ============================================
@@ -1413,27 +740,25 @@ onUnmounted(() => clearInterval(timer))
    ============================================ */
 .sidebar-divider {
   height: 1px;
-  background: rgba(255, 255, 255, 0.05);
+  background: #1a1a1a;
+  margin: 8px 16px;
   flex-shrink: 0;
-  position: relative;
-  z-index: 10;
 }
 
 .sidebar-footer {
-  padding: 12px 16px;
-  border-top: 1px solid rgba(255, 255, 255, 0.05);
-  background: rgba(0, 0, 0, 0.2);
+  padding: 16px 20px;
+  border-top: 1px solid #1a1a1a;
+  background: #050505;
   flex-shrink: 0;
-  position: relative;
-  z-index: 10;
 }
 
 .status-row {
   display: flex;
   justify-content: space-between;
-  font-size: 11px;
-  margin-bottom: 4px;
-  letter-spacing: 0.5px;
+  font-size: 10px;
+  margin-bottom: 6px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
 }
 
 .status-row:last-child {
@@ -1441,59 +766,29 @@ onUnmounted(() => clearInterval(timer))
 }
 
 .lbl {
-  color: rgba(255, 255, 255, 0.4);
+  color: #525252;
 }
 
 .val {
-  color: #fff;
-  font-weight: 500;
+  color: #a3a3a3;
 }
 
-.val.connected {
-  color: #4ade80;
-}
-
-.val.mono {
-  font-family: 'SF Mono', monospace;
+.val.online {
+  color: #22c55e;
 }
 
 /* ============================================
    RESPONSIVE
    ============================================ */
-@media (max-width: 1024px) {
-  .sidebar {
-    width: 280px;
-  }
-  .tool-title {
-    font-size: 12px;
-  }
-  .tool-subtitle {
-    font-size: 10px;
-  }
-}
-
 @media (max-width: 768px) {
   .sidebar-tab {
-    width: 60px;
-    min-width: 60px;
-    /* Safe area for notch devices */
+    width: 56px;
     padding-top: env(safe-area-inset-top, 0);
-  }
-
-  .burger-icon span {
-    width: 21px;
-    height: 2.5px;
-  }
-
-  .sidebar-backdrop {
-    z-index: 1200; /* Higher than header */
   }
 
   .sidebar {
     width: 85vw;
     max-width: 320px;
-    z-index: 1210; /* Higher than backdrop */
-    /* Safe area padding for notch */
     padding-top: env(safe-area-inset-top, 0);
     padding-bottom: env(safe-area-inset-bottom, 0);
   }
@@ -1503,170 +798,53 @@ onUnmounted(() => clearInterval(timer))
   }
 
   .sidebar-footer {
-    padding-bottom: calc(12px + env(safe-area-inset-bottom, 0));
+    padding-bottom: calc(16px + env(safe-area-inset-bottom, 0));
   }
 
-  .tool-title {
-    font-size: 12px;
-  }
-  .tool-subtitle {
-    font-size: 10px;
-  }
-  .home-title,
-  .data-title {
-    font-size: 13px;
-  }
-  .home-subtitle,
-  .data-subtitle {
-    font-size: 11px;
-  }
-  .nav-label {
-    font-size: 12px;
-  }
-
-  /* Ensure touch targets are at least 44px */
-  .nav-item {
+  .nav-item,
+  .tool-header,
+  .nav-entry {
     min-height: 44px;
-    padding: 10px 12px;
-  }
-
-  .tool-header {
-    min-height: 48px;
-    padding: 14px 12px;
-  }
-
-  .close-btn {
-    min-width: 44px;
-    min-height: 44px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-
-  .home-entry,
-  .docs-entry,
-  .data-entry {
-    min-height: 48px;
-    padding: 12px 14px;
   }
 }
 
 @media (max-width: 480px) {
   .sidebar-tab {
-    width: 56px;
-    min-width: 56px;
-  }
-
-  .burger-icon span {
-    width: 22px;
-    height: 2.5px;
+    width: 48px;
   }
 
   .sidebar {
     width: 100%;
     max-width: none;
-    border-radius: 0;
-    border-right: none;
-  }
-
-  .sidebar-header {
-    padding: 16px;
-    padding-top: calc(20px + env(safe-area-inset-top, 0));
   }
 
   .app-logo {
     font-size: 16px;
   }
 
-  .tool-title {
-    font-size: 11px;
-  }
-  .tool-subtitle {
-    font-size: 9px;
-  }
-  .home-title,
-  .data-title {
-    font-size: 13px;
-  }
-  .home-subtitle,
-  .data-subtitle {
-    font-size: 11px;
-  }
-  .nav-label {
-    font-size: 11px;
-  }
-  .sidebar-footer {
-    padding: 12px 16px;
-    padding-bottom: calc(16px + env(safe-area-inset-bottom, 0));
-  }
-  .status-row {
+  .tool-title,
+  .nav-title {
     font-size: 11px;
   }
 
-  .settings-link-button {
-    min-height: 52px;
-    padding: 14px 16px;
+  .tool-subtitle,
+  .nav-subtitle {
+    font-size: 9px;
   }
 }
 
 @media (max-width: 375px) {
   .sidebar-tab {
-    width: 48px;
-    min-width: 48px;
+    width: 44px;
   }
 
   .burger-icon span {
     width: 18px;
-    height: 2px;
-  }
-
-  .sidebar-header {
-    padding: 12px;
-    padding-top: calc(16px + env(safe-area-inset-top, 0));
-  }
-
-  .app-logo {
-    font-size: 14px;
   }
 
   .sidebar-tools {
     padding: 12px;
-    gap: 10px;
-  }
-
-  .tool-title {
-    font-size: 10px;
-  }
-  .tool-subtitle {
-    font-size: 8px;
-  }
-  .home-title,
-  .data-title {
-    font-size: 12px;
-  }
-  .home-subtitle,
-  .data-subtitle {
-    font-size: 10px;
-  }
-  .nav-label {
-    font-size: 10px;
-  }
-
-  .glossy-icon,
-  .home-icon,
-  .data-icon {
-    width: 28px;
-    height: 28px;
-  }
-
-  .supernova {
-    width: 10px;
-    height: 10px;
-  }
-
-  .supernova-home {
-    width: 14px;
-    height: 14px;
+    gap: 6px;
   }
 }
 </style>

@@ -1,32 +1,27 @@
 <template>
-  <div 
-    :class="`glass-panel rounded-2xl overflow-hidden shadow-2xl shadow-black/20 relative ${isResizing ? 'ring-2 ring-indigo-500/50' : ''}`"
-    :style="{
-      transition: isResizing 
-        ? 'box-shadow 0.2s ease-out, border-color 0.2s ease-out' 
-        : 'all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94)',
-      transform: isResizing ? 'scale(1.005)' : 'scale(1)',
-    }"
+  <div
+    class="widget-container"
+    :class="{ 'is-resizing': isResizing }"
   >
     <!-- Widget Header -->
-    <div class="flex items-center justify-between p-3 border-b border-white/5 bg-black/20 relative z-10">
-      <div class="flex items-center gap-2">
-        <div :class="`p-1.5 rounded-lg ${iconBg}`">
+    <div class="widget-header">
+      <div class="widget-title-area">
+        <div class="widget-icon" :class="iconBg">
           <component :is="icon" class="w-3.5 h-3.5" :class="iconColor" />
         </div>
-        <h3 class="text-xs font-bold text-white">{{ title }}</h3>
+        <h3 class="widget-title font-oswald">{{ title }}</h3>
       </div>
-      <div v-if="showControls" class="flex items-center gap-1.5">
-        <button 
+      <div v-if="showControls" class="widget-controls">
+        <button
           @click.stop="$emit('settings')"
-          class="p-1.5 rounded-lg hover:bg-white/10 text-gray-400 hover:text-white transition-all hover:scale-105 active:scale-95"
+          class="widget-btn"
           title="Настройки"
         >
           <SettingsIcon class="w-3.5 h-3.5" />
         </button>
-        <button 
+        <button
           @click.stop="$emit('remove')"
-          class="p-1.5 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 hover:text-rose-300 border border-rose-500/20 hover:border-rose-500/40 transition-all hover:scale-110 active:scale-95"
+          class="widget-btn widget-btn-danger"
           title="Удалить виджет"
         >
           <XIcon class="w-3.5 h-3.5" />
@@ -35,42 +30,35 @@
     </div>
 
     <!-- Widget Content -->
-    <div class="h-[calc(100%-48px)] overflow-auto custom-scrollbar">
+    <div class="widget-content custom-scrollbar">
       <slot />
     </div>
 
     <!-- Resize Handles -->
-    <div v-if="resizable" class="absolute inset-0 pointer-events-none">
-      <!-- Right edge - resize width -->
-      <div 
-        class="absolute top-0 right-0 w-1 h-full cursor-ew-resize hover:bg-indigo-500/30 transition-colors pointer-events-auto"
+    <div v-if="resizable" class="resize-handles">
+      <div
+        class="resize-handle resize-handle-right"
         @mousedown.stop="(e) => startResize(e, 'width')"
         title="Изменить ширину"
       ></div>
-      <!-- Bottom edge - resize height -->
-      <div 
-        class="absolute bottom-0 left-0 w-full h-1 cursor-ns-resize hover:bg-indigo-500/30 transition-colors pointer-events-auto"
+      <div
+        class="resize-handle resize-handle-bottom"
         @mousedown.stop="(e) => startResize(e, 'height')"
         title="Изменить высоту"
       ></div>
-      <!-- Corner - resize both -->
-      <div 
-        class="absolute bottom-0 right-0 w-6 h-6 cursor-nwse-resize opacity-60 hover:opacity-100 transition-opacity pointer-events-auto group"
+      <div
+        class="resize-handle resize-handle-corner"
         @mousedown.stop="(e) => startResize(e, 'both')"
         title="Изменить размер"
       >
-        <div class="absolute bottom-1 right-1 w-4 h-4 border-r-2 border-b-2 border-indigo-400/50 group-hover:border-indigo-400 rounded-br-lg"></div>
-        <div class="absolute bottom-0.5 right-0.5 w-2 h-2 border-r border-b border-indigo-300/70 group-hover:border-indigo-300 rounded-br-sm"></div>
+        <div class="resize-corner-indicator"></div>
       </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue';
-import { useIsMobile } from '@/composables/useIsMobile';
-
-const { isMobile } = useIsMobile();
+import { ref } from 'vue';
 
 interface Props {
   title: string;
@@ -84,8 +72,8 @@ interface Props {
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  iconBg: 'bg-indigo-500/20',
-  iconColor: 'text-indigo-400',
+  iconBg: 'icon-bg-red',
+  iconColor: 'text-red-500',
   width: 1,
   height: 1,
   resizable: true,
@@ -105,12 +93,10 @@ const startWidth = ref(0);
 const startHeight = ref(0);
 const resizeMode = ref<'width' | 'height' | 'both'>('both');
 
-// Grid styles are applied by parent
-
 const startResize = (e: MouseEvent, mode: 'width' | 'height' | 'both' = 'both') => {
   e.preventDefault();
   e.stopPropagation();
-  
+
   isResizing.value = true;
   resizeMode.value = mode;
   startX.value = e.clientX;
@@ -125,39 +111,31 @@ const startResize = (e: MouseEvent, mode: 'width' | 'height' | 'both' = 'both') 
 
   const handleMouseMove = (e: MouseEvent) => {
     e.preventDefault();
-    
-    // Throttle для более плавного изменения
-    if (throttleTimeout) {
-      return;
-    }
-    
+
+    if (throttleTimeout) return;
+
     throttleTimeout = window.setTimeout(() => {
       throttleTimeout = null;
-    }, 16); // ~60fps
+    }, 16);
 
-    if (rafId) {
-      cancelAnimationFrame(rafId);
-    }
+    if (rafId) cancelAnimationFrame(rafId);
 
     rafId = requestAnimationFrame(() => {
       const deltaX = e.clientX - startX.value;
       const deltaY = e.clientY - startY.value;
-      
-      // Более мелкий шаг для плавного изменения (примерно 1 ячейка = 50px)
       const gridSize = 50;
-      
+
       let newWidth = startWidth.value;
       let newHeight = startHeight.value;
-      
+
       if (resizeMode.value === 'width' || resizeMode.value === 'both') {
         newWidth = Math.max(1, Math.round(startWidth.value + deltaX / gridSize));
       }
-      
+
       if (resizeMode.value === 'height' || resizeMode.value === 'both') {
         newHeight = Math.max(1, Math.round(startHeight.value + deltaY / gridSize));
       }
-      
-      // Эмитим только если значение изменилось
+
       if (newWidth !== lastWidth || newHeight !== lastHeight) {
         lastWidth = newWidth;
         lastHeight = newHeight;
@@ -167,12 +145,8 @@ const startResize = (e: MouseEvent, mode: 'width' | 'height' | 'both' = 'both') 
   };
 
   const handleMouseUp = () => {
-    if (rafId) {
-      cancelAnimationFrame(rafId);
-    }
-    if (throttleTimeout) {
-      clearTimeout(throttleTimeout);
-    }
+    if (rafId) cancelAnimationFrame(rafId);
+    if (throttleTimeout) clearTimeout(throttleTimeout);
     isResizing.value = false;
     document.removeEventListener('mousemove', handleMouseMove);
     document.removeEventListener('mouseup', handleMouseUp);
@@ -187,64 +161,230 @@ const XIcon = { template: '<svg viewBox="0 0 24 24" fill="none" stroke="currentC
 </script>
 
 <style scoped>
-/* Mobile Responsive Styles */
+/* ============================================
+   WIDGET CONTAINER - BRUTALIST
+   ============================================ */
+.widget-container {
+  background: #0a0a0a;
+  border: 1px solid #1a1a1a;
+  overflow: hidden;
+  position: relative;
+  transition: border-color 0.2s;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.widget-container:hover {
+  border-color: #262626;
+}
+
+.widget-container.is-resizing {
+  border-color: #DC2626;
+}
+
+/* ============================================
+   WIDGET HEADER
+   ============================================ */
+.widget-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  border-bottom: 1px solid #1a1a1a;
+  background: #050505;
+  flex-shrink: 0;
+}
+
+.widget-title-area {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.widget-icon {
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.icon-bg-red {
+  background: rgba(220, 38, 38, 0.15);
+  border: 1px solid rgba(220, 38, 38, 0.3);
+}
+
+.icon-bg-green {
+  background: rgba(34, 197, 94, 0.15);
+  border: 1px solid rgba(34, 197, 94, 0.3);
+}
+
+.icon-bg-blue {
+  background: rgba(59, 130, 246, 0.15);
+  border: 1px solid rgba(59, 130, 246, 0.3);
+}
+
+.icon-bg-purple {
+  background: rgba(168, 85, 247, 0.15);
+  border: 1px solid rgba(168, 85, 247, 0.3);
+}
+
+.icon-bg-orange {
+  background: rgba(249, 115, 22, 0.15);
+  border: 1px solid rgba(249, 115, 22, 0.3);
+}
+
+.icon-bg-cyan {
+  background: rgba(34, 211, 238, 0.15);
+  border: 1px solid rgba(34, 211, 238, 0.3);
+}
+
+.widget-title {
+  font-size: 12px;
+  font-weight: 500;
+  color: #f5f5f5;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin: 0;
+}
+
+/* ============================================
+   WIDGET CONTROLS
+   ============================================ */
+.widget-controls {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.widget-btn {
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: 1px solid #262626;
+  color: #525252;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.widget-btn:hover {
+  background: #DC2626;
+  border-color: #DC2626;
+  color: #000;
+}
+
+.widget-btn-danger {
+  border-color: rgba(220, 38, 38, 0.3);
+  color: #DC2626;
+}
+
+.widget-btn-danger:hover {
+  background: #DC2626;
+  border-color: #DC2626;
+  color: #000;
+}
+
+/* ============================================
+   WIDGET CONTENT
+   ============================================ */
+.widget-content {
+  flex: 1;
+  overflow: auto;
+  min-height: 0;
+}
+
+/* ============================================
+   RESIZE HANDLES
+   ============================================ */
+.resize-handles {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.resize-handle {
+  position: absolute;
+  pointer-events: auto;
+  transition: background 0.2s;
+}
+
+.resize-handle-right {
+  top: 0;
+  right: 0;
+  width: 4px;
+  height: 100%;
+  cursor: ew-resize;
+}
+
+.resize-handle-bottom {
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 4px;
+  cursor: ns-resize;
+}
+
+.resize-handle-corner {
+  bottom: 0;
+  right: 0;
+  width: 20px;
+  height: 20px;
+  cursor: nwse-resize;
+}
+
+.resize-handle:hover {
+  background: rgba(220, 38, 38, 0.3);
+}
+
+.resize-corner-indicator {
+  position: absolute;
+  bottom: 4px;
+  right: 4px;
+  width: 8px;
+  height: 8px;
+  border-right: 2px solid #DC2626;
+  border-bottom: 2px solid #DC2626;
+  opacity: 0.5;
+}
+
+.resize-handle-corner:hover .resize-corner-indicator {
+  opacity: 1;
+}
+
+/* ============================================
+   RESPONSIVE
+   ============================================ */
 @media (max-width: 768px) {
-  /* Reduce header padding */
-  .p-3 {
-    padding: 0.5rem;
+  .widget-header {
+    padding: 10px 12px;
   }
 
-  /* Larger touch targets for buttons */
-  .p-1\.5 {
-    padding: 0.5rem;
+  .widget-btn {
     min-width: 44px;
     min-height: 44px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
   }
 
-  /* Slightly larger icons on mobile */
-  .w-3\.5 {
-    width: 1rem;
-    height: 1rem;
-  }
-
-  /* Hide resize handles on mobile (touch-unfriendly) */
-  .cursor-ew-resize,
-  .cursor-ns-resize,
-  .cursor-nwse-resize {
+  .resize-handle {
     display: none;
   }
 }
 
 @media (max-width: 480px) {
-  /* Even smaller header on small mobile */
-  .p-3 {
-    padding: 0.375rem 0.5rem;
+  .widget-header {
+    padding: 8px 10px;
   }
 
-  .text-xs {
-    font-size: 0.625rem;
+  .widget-title {
+    font-size: 10px;
   }
 
-  .gap-2 {
-    gap: 0.375rem;
-  }
-
-  .gap-1\.5 {
-    gap: 0.25rem;
-  }
-}
-
-@media (max-width: 375px) {
-  /* Minimal padding on tiny screens */
-  .p-3 {
-    padding: 0.25rem 0.375rem;
-  }
-
-  .text-xs {
-    font-size: 0.5625rem;
+  .widget-icon {
+    width: 24px;
+    height: 24px;
   }
 }
 </style>

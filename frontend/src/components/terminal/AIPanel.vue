@@ -1,106 +1,93 @@
 <template>
-  <div class="w-full h-full bg-transparent flex flex-col flex-shrink-0 relative">
+  <div class="ai-panel">
     <!-- Header -->
-    <div class="px-5 py-4 border-b border-white/5 flex items-center justify-between">
-      <div class="flex items-center gap-2">
-        <div class="p-1.5 bg-indigo-500/20 rounded-lg border border-indigo-500/30">
-          <BotIcon class="w-4 h-4 text-indigo-300" />
+    <div class="ai-header">
+      <div class="ai-header-left">
+        <div class="ai-icon">
+          <BotIcon class="w-4 h-4" />
         </div>
-        <span class="font-bold text-sm text-white">ИИ Аналитик</span>
+        <span class="ai-title font-oswald">ИИ АНАЛИТИК</span>
       </div>
-      <div class="flex items-center gap-1.5 px-2 py-1 bg-gradient-to-r from-indigo-500/10 to-purple-500/10 border border-indigo-500/20 rounded-full">
-        <span class="w-1.5 h-1.5 rounded-full bg-indigo-400 animate-pulse"></span>
-        <span class="text-[10px] font-bold text-indigo-300">LIVE</span>
+      <div class="ai-status font-mono">
+        <span class="status-dot"></span>
+        <span>LIVE</span>
       </div>
     </div>
 
-    <div class="p-5 flex-1 overflow-y-auto space-y-6 custom-scrollbar">
-      <div v-if="!analysis && !loading" class="flex flex-col items-center justify-center h-48 text-center space-y-4">
-        <div class="w-16 h-16 rounded-full bg-white/5 flex items-center justify-center border border-white/10 shadow-[0_0_30px_rgba(255,255,255,0.05)]">
-          <SparklesIcon class="w-6 h-6 text-gray-400" />
+    <div class="ai-content custom-scrollbar">
+      <!-- Idle State -->
+      <div v-if="!analysis && !loading" class="ai-idle">
+        <div class="idle-icon">
+          <SparklesIcon class="w-6 h-6" />
         </div>
-        <div>
-          <h3 class="text-sm font-bold text-white mb-1">Ожидание команды</h3>
-          <p class="text-xs text-gray-500 max-w-[200px] mx-auto">
-            Анализ рыночных данных для определения трендов и ключевых уровней.
-          </p>
+        <div class="idle-text">
+          <h3 class="font-oswald">ОЖИДАНИЕ КОМАНДЫ</h3>
+          <p class="font-mono">Анализ рыночных данных для определения трендов и ключевых уровней.</p>
         </div>
-        <button 
-          @click="handleAnalyze"
-          class="mt-2 px-6 py-2.5 bg-white text-black rounded-full text-xs font-bold hover:scale-105 transition-transform shadow-[0_0_20px_rgba(255,255,255,0.3)] flex items-center gap-2"
-        >
-          <ZapIcon class="w-3.5 h-3.5 fill-current" /> Запустить анализ
+        <button @click="handleAnalyze" class="ai-btn font-oswald">
+          <ZapIcon class="w-3.5 h-3.5" /> ЗАПУСТИТЬ АНАЛИЗ
         </button>
       </div>
 
-      <div v-if="loading" class="flex flex-col items-center justify-center h-48 space-y-4">
-        <div class="relative w-12 h-12">
-          <div class="absolute inset-0 border-2 border-indigo-500/30 rounded-full"></div>
-          <div class="absolute inset-0 border-t-2 border-indigo-400 rounded-full animate-spin"></div>
-        </div>
-        <span class="text-xs font-mono text-indigo-300 animate-pulse">Обработка рыночных данных...</span>
+      <!-- Loading State -->
+      <div v-if="loading" class="ai-loading">
+        <div class="loading-spinner"></div>
+        <span class="font-mono">ОБРАБОТКА РЫНОЧНЫХ ДАННЫХ...</span>
       </div>
 
       <!-- Results -->
-      <div v-if="analysis" class="space-y-5 animate-fade-in">
+      <div v-if="analysis" class="ai-results">
         <!-- Trend Card -->
-        <div class="relative overflow-hidden p-4 rounded-2xl border border-white/10 bg-gradient-to-br from-white/5 to-transparent">
-          <div class="absolute top-0 right-0 p-3 opacity-10">
-            <component :is="analysis.trend === 'BULLISH' ? 'TrendingUpIcon' : 'TrendingDownIcon'" class="w-15 h-15" />
-          </div>
-          
-          <span class="text-[10px] text-gray-400 uppercase font-bold tracking-widest">Сигнал</span>
-          <div class="flex items-center gap-3 mt-1">
-            <h2 :class="`text-2xl font-bold tracking-tight ${
-              analysis.trend === 'BULLISH' ? 'text-emerald-400 drop-shadow-[0_0_10px_rgba(52,211,153,0.5)]' : 
-              analysis.trend === 'BEARISH' ? 'text-rose-400 drop-shadow-[0_0_10px_rgba(248,113,113,0.5)]' : 'text-gray-200'
-            }`">
+        <div class="trend-card">
+          <span class="trend-label font-mono">СИГНАЛ</span>
+          <div class="trend-value">
+            <h2
+              :class="['trend-text font-anton', {
+                'trend-bullish': analysis.trend === 'BULLISH',
+                'trend-bearish': analysis.trend === 'BEARISH'
+              }]"
+            >
               {{ analysis.trend }}
             </h2>
           </div>
-          
-          <div class="mt-4">
-            <div class="flex justify-between text-[10px] mb-1.5">
-              <span class="text-gray-400">Уверенность</span>
-              <span class="text-white font-mono">{{ analysis.confidence }}%</span>
+
+          <div class="confidence-section">
+            <div class="confidence-header font-mono">
+              <span>УВЕРЕННОСТЬ</span>
+              <span>{{ analysis.confidence }}%</span>
             </div>
-            <div class="h-1.5 w-full bg-black/40 rounded-full overflow-hidden border border-white/5">
-              <div 
-                :class="`h-full rounded-full shadow-[0_0_10px_currentColor] ${analysis.confidence > 70 ? 'bg-emerald-500 text-emerald-500' : 'bg-amber-500 text-amber-500'}`" 
+            <div class="confidence-bar">
+              <div
+                :class="['confidence-fill', { 'high': analysis.confidence > 70 }]"
                 :style="{ width: `${analysis.confidence}%` }"
-              />
+              ></div>
             </div>
           </div>
         </div>
 
         <!-- Reasoning -->
-        <div class="p-4 rounded-2xl bg-black/20 border border-white/5 backdrop-blur-sm">
-          <div class="flex items-center gap-2 mb-2">
-            <div class="w-1 h-3 bg-indigo-500 rounded-full"></div>
-            <span class="text-[10px] text-indigo-300 font-bold uppercase">Анализ</span>
+        <div class="reasoning-card">
+          <div class="reasoning-header">
+            <div class="reasoning-indicator"></div>
+            <span class="font-mono">АНАЛИЗ</span>
           </div>
-          <p class="text-xs text-gray-300 leading-relaxed font-light">
-            {{ analysis.reasoning }}
-          </p>
+          <p class="reasoning-text font-mono">{{ analysis.reasoning }}</p>
         </div>
 
         <!-- Levels -->
-        <div class="grid grid-cols-2 gap-3">
-          <div class="p-3 rounded-2xl bg-emerald-500/5 border border-emerald-500/20 text-center">
-            <span class="text-[10px] text-emerald-300/70 block uppercase font-bold mb-1">Поддержка</span>
-            <span class="text-sm font-mono text-emerald-400 font-bold">{{ analysis.keyLevels.support.toFixed(2) }}</span>
+        <div class="levels-grid">
+          <div class="level-card level-support">
+            <span class="level-label font-mono">ПОДДЕРЖКА</span>
+            <span class="level-value font-mono">{{ analysis.keyLevels.support.toFixed(2) }}</span>
           </div>
-          <div class="p-3 rounded-2xl bg-rose-500/5 border border-rose-500/20 text-center">
-            <span class="text-[10px] text-rose-300/70 block uppercase font-bold mb-1">Сопротивление</span>
-            <span class="text-sm font-mono text-rose-400 font-bold">{{ analysis.keyLevels.resistance.toFixed(2) }}</span>
+          <div class="level-card level-resistance">
+            <span class="level-label font-mono">СОПРОТИВЛЕНИЕ</span>
+            <span class="level-value font-mono">{{ analysis.keyLevels.resistance.toFixed(2) }}</span>
           </div>
         </div>
-        
-        <button 
-          @click="handleAnalyze" 
-          class="w-full py-2 mt-2 text-xs text-gray-500 hover:text-white transition-colors flex items-center justify-center gap-2"
-        >
-          <RefreshCwIcon class="w-3 h-3" /> Обновить анализ
+
+        <button @click="handleAnalyze" class="refresh-btn font-mono">
+          <RefreshCwIcon class="w-3 h-3" /> ОБНОВИТЬ АНАЛИЗ
         </button>
       </div>
     </div>
@@ -133,7 +120,359 @@ const handleAnalyze = async () => {
 const BotIcon = { template: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="10" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>' };
 const SparklesIcon = { template: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v2m0 16v2M4.93 4.93l1.41 1.41m11.32 11.32l1.41 1.41M2 12h2m16 0h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>' };
 const ZapIcon = { template: '<svg viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>' };
-const TrendingUpIcon = { template: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>' };
-const TrendingDownIcon = { template: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 18 13.5 8.5 8.5 13.5 1 6"/><polyline points="17 18 23 18 23 12"/></svg>' };
 const RefreshCwIcon = { template: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>' };
 </script>
+
+<style scoped>
+/* ============================================
+   AI PANEL - BRUTALIST
+   ============================================ */
+.ai-panel {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  background: transparent;
+}
+
+.ai-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  border-bottom: 1px solid #1a1a1a;
+}
+
+.ai-header-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.ai-icon {
+  width: 28px;
+  height: 28px;
+  background: rgba(168, 85, 247, 0.15);
+  border: 1px solid rgba(168, 85, 247, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #a855f7;
+}
+
+.ai-title {
+  font-size: 12px;
+  font-weight: 500;
+  color: #f5f5f5;
+  letter-spacing: 0.1em;
+}
+
+.ai-status {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 10px;
+  color: #DC2626;
+  letter-spacing: 0.1em;
+}
+
+.status-dot {
+  width: 6px;
+  height: 6px;
+  background: #DC2626;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+.ai-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
+}
+
+/* Idle State */
+.ai-idle {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 200px;
+  text-align: center;
+  gap: 16px;
+}
+
+.idle-icon {
+  width: 64px;
+  height: 64px;
+  background: #0a0a0a;
+  border: 1px solid #262626;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #525252;
+}
+
+.idle-text h3 {
+  font-size: 14px;
+  color: #f5f5f5;
+  letter-spacing: 0.1em;
+  margin-bottom: 6px;
+}
+
+.idle-text p {
+  font-size: 11px;
+  color: #525252;
+  max-width: 200px;
+}
+
+.ai-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 24px;
+  background: #DC2626;
+  border: none;
+  color: #000;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.ai-btn:hover {
+  background: #f5f5f5;
+}
+
+/* Loading State */
+.ai-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 200px;
+  gap: 16px;
+}
+
+.loading-spinner {
+  width: 48px;
+  height: 48px;
+  border: 2px solid #1a1a1a;
+  border-top-color: #DC2626;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.ai-loading span {
+  font-size: 11px;
+  color: #DC2626;
+  letter-spacing: 0.1em;
+}
+
+/* Results */
+.ai-results {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.trend-card {
+  padding: 16px;
+  background: #050505;
+  border: 1px solid #1a1a1a;
+}
+
+.trend-label {
+  font-size: 10px;
+  color: #525252;
+  letter-spacing: 0.15em;
+}
+
+.trend-value {
+  margin-top: 8px;
+}
+
+.trend-text {
+  font-size: 28px;
+  font-weight: 400;
+  letter-spacing: 0.05em;
+}
+
+.trend-bullish {
+  color: #22c55e;
+}
+
+.trend-bearish {
+  color: #DC2626;
+}
+
+.confidence-section {
+  margin-top: 16px;
+}
+
+.confidence-header {
+  display: flex;
+  justify-content: space-between;
+  font-size: 10px;
+  color: #525252;
+  letter-spacing: 0.1em;
+  margin-bottom: 8px;
+}
+
+.confidence-header span:last-child {
+  color: #f5f5f5;
+}
+
+.confidence-bar {
+  height: 4px;
+  background: #1a1a1a;
+  overflow: hidden;
+}
+
+.confidence-fill {
+  height: 100%;
+  background: #f59e0b;
+  transition: width 0.3s ease;
+}
+
+.confidence-fill.high {
+  background: #22c55e;
+}
+
+/* Reasoning */
+.reasoning-card {
+  padding: 16px;
+  background: #050505;
+  border: 1px solid #1a1a1a;
+}
+
+.reasoning-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.reasoning-indicator {
+  width: 3px;
+  height: 12px;
+  background: #DC2626;
+}
+
+.reasoning-header span {
+  font-size: 10px;
+  color: #DC2626;
+  letter-spacing: 0.15em;
+}
+
+.reasoning-text {
+  font-size: 12px;
+  color: #a3a3a3;
+  line-height: 1.6;
+}
+
+/* Levels */
+.levels-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.level-card {
+  padding: 12px;
+  text-align: center;
+}
+
+.level-support {
+  background: rgba(34, 197, 94, 0.1);
+  border: 1px solid rgba(34, 197, 94, 0.3);
+}
+
+.level-resistance {
+  background: rgba(220, 38, 38, 0.1);
+  border: 1px solid rgba(220, 38, 38, 0.3);
+}
+
+.level-label {
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  display: block;
+  margin-bottom: 4px;
+}
+
+.level-support .level-label {
+  color: rgba(34, 197, 94, 0.7);
+}
+
+.level-resistance .level-label {
+  color: rgba(220, 38, 38, 0.7);
+}
+
+.level-value {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.level-support .level-value {
+  color: #22c55e;
+}
+
+.level-resistance .level-value {
+  color: #DC2626;
+}
+
+.refresh-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  padding: 10px;
+  background: transparent;
+  border: 1px solid #262626;
+  color: #525252;
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.refresh-btn:hover {
+  border-color: #DC2626;
+  color: #DC2626;
+}
+
+/* ============================================
+   RESPONSIVE
+   ============================================ */
+@media (max-width: 768px) {
+  .ai-content {
+    padding: 12px;
+  }
+
+  .ai-header {
+    padding: 10px 12px;
+  }
+}
+
+@media (max-width: 480px) {
+  .ai-content {
+    padding: 8px;
+  }
+
+  .trend-text {
+    font-size: 24px;
+  }
+
+  .level-value {
+    font-size: 12px;
+  }
+}
+</style>

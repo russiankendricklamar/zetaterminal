@@ -1,17 +1,17 @@
 <template>
-  <div class="flex-1 glass-panel rounded-3xl overflow-hidden shadow-2xl shadow-black/20 flex flex-col animate-fade-in h-full relative">
+  <div class="dashboard-container">
     <!-- Header -->
-    <div class="flex items-center justify-between p-4 border-b border-white/5 bg-black/20 z-10">
+    <div class="dashboard-header">
       <div>
-        <h2 class="text-xl font-bold text-white tracking-tight">Главная панель</h2>
-        <p class="text-xs text-gray-400">Настраиваемая рабочая область</p>
+        <h2 class="dashboard-title font-oswald">ГЛАВНАЯ ПАНЕЛЬ</h2>
+        <p class="dashboard-subtitle font-mono">Настраиваемая рабочая область</p>
       </div>
     </div>
 
     <!-- Dashboard Grid -->
-    <div 
+    <div
       ref="gridRef"
-      class="flex-1 p-4 overflow-auto custom-scrollbar relative z-10"
+      class="dashboard-grid-wrapper custom-scrollbar"
     >
       <div 
         v-if="widgets.length > 0"
@@ -38,11 +38,11 @@
           />
         </div>
       </div>
-      <div v-else class="flex items-center justify-center h-full">
-        <div class="text-center">
-          <p class="text-white text-lg mb-2">Нет виджетов</p>
-          <p class="text-gray-400 text-sm">Загрузка виджетов...</p>
-          <p class="text-gray-500 text-xs mt-2">Количество виджетов: {{ widgets.length }}</p>
+      <div v-else class="dashboard-empty">
+        <div class="empty-content">
+          <p class="empty-title font-oswald">НЕТ ВИДЖЕТОВ</p>
+          <p class="empty-subtitle font-mono">Загрузка виджетов...</p>
+          <p class="empty-count font-mono">Количество виджетов: {{ widgets.length }}</p>
         </div>
       </div>
     </div>
@@ -306,41 +306,129 @@ watch(() => props.chartData, () => {
 </script>
 
 <style scoped>
+/* ============================================
+   DASHBOARD CONTAINER - BRUTALIST
+   ============================================ */
+.dashboard-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: #0a0a0a;
+  border: 1px solid #1a1a1a;
+  overflow: hidden;
+}
+
+/* ============================================
+   DASHBOARD HEADER
+   ============================================ */
+.dashboard-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid #1a1a1a;
+  background: #050505;
+  flex-shrink: 0;
+}
+
+.dashboard-title {
+  font-size: 16px;
+  font-weight: 500;
+  color: #f5f5f5;
+  letter-spacing: 0.1em;
+  margin: 0;
+}
+
+.dashboard-subtitle {
+  font-size: 11px;
+  color: #525252;
+  margin-top: 4px;
+}
+
+/* ============================================
+   DASHBOARD GRID
+   ============================================ */
+.dashboard-grid-wrapper {
+  flex: 1;
+  padding: 16px;
+  overflow: auto;
+  position: relative;
+}
+
 .dashboard-grid {
   display: grid;
-  gap: 1rem;
+  gap: 16px;
   grid-auto-rows: minmax(100px, auto);
 }
 
-/* Плавная анимация изменения размера виджетов */
 .dashboard-grid > * {
   transition:
-    grid-column 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94),
-    grid-row 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94),
-    transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94),
-    opacity 0.3s ease-out;
-  will-change: grid-column, grid-row, transform;
+    grid-column 0.3s ease,
+    grid-row 0.3s ease,
+    transform 0.2s ease;
 }
 
-.dashboard-grid > *:hover {
-  transition-duration: 0.2s;
+/* ============================================
+   EMPTY STATE
+   ============================================ */
+.dashboard-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
 }
 
-/* Mobile Responsive Styles */
+.empty-content {
+  text-align: center;
+}
+
+.empty-title {
+  font-size: 18px;
+  color: #f5f5f5;
+  letter-spacing: 0.1em;
+  margin-bottom: 8px;
+}
+
+.empty-subtitle {
+  font-size: 12px;
+  color: #525252;
+}
+
+.empty-count {
+  font-size: 10px;
+  color: #3f3f3f;
+  margin-top: 8px;
+}
+
+/* ============================================
+   RESPONSIVE
+   ============================================ */
 @media (max-width: 1024px) {
+  .dashboard-grid-wrapper {
+    padding: 12px;
+  }
+
   .dashboard-grid {
-    gap: 0.75rem;
+    gap: 12px;
     grid-auto-rows: minmax(80px, auto);
   }
 }
 
 @media (max-width: 768px) {
+  .dashboard-header {
+    padding: 12px 16px;
+  }
+
+  .dashboard-grid-wrapper {
+    padding: 8px;
+  }
+
   .dashboard-grid {
-    gap: 0.5rem;
+    gap: 8px;
     grid-auto-rows: minmax(120px, auto);
   }
 
-  /* Force widgets to take full width on mobile */
   .widget-container {
     grid-column: span 2 !important;
     min-height: 150px !important;
@@ -348,12 +436,19 @@ watch(() => props.chartData, () => {
 }
 
 @media (max-width: 480px) {
+  .dashboard-header {
+    padding: 10px 12px;
+  }
+
+  .dashboard-title {
+    font-size: 14px;
+  }
+
   .dashboard-grid {
-    gap: 0.5rem;
+    gap: 6px;
     grid-auto-rows: minmax(100px, auto);
   }
 
-  /* Stack all widgets vertically on small mobile */
   .widget-container {
     grid-column: span 1 !important;
     grid-row: span 1 !important;
@@ -363,7 +458,7 @@ watch(() => props.chartData, () => {
 
 @media (max-width: 375px) {
   .dashboard-grid {
-    gap: 0.375rem;
+    gap: 4px;
   }
 
   .widget-container {

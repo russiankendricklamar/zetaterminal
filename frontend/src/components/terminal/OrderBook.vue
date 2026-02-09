@@ -1,22 +1,22 @@
 <template>
-  <div class="flex flex-col h-full bg-transparent w-full">
-    <div class="px-3 py-2 border-b border-white/5 flex justify-between items-center">
-      <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Стакан</span>
-      <div class="flex gap-0.5">
-        <div class="w-1 h-1 rounded-full bg-gray-600"></div>
-        <div class="w-1 h-1 rounded-full bg-gray-600"></div>
-        <div class="w-1 h-1 rounded-full bg-gray-600"></div>
+  <div class="orderbook">
+    <div class="orderbook-header">
+      <span class="orderbook-title font-mono">СТАКАН</span>
+      <div class="orderbook-dots">
+        <div class="dot"></div>
+        <div class="dot"></div>
+        <div class="dot"></div>
       </div>
     </div>
-    
-    <div class="flex-1 flex flex-col overflow-hidden relative min-h-0">
-      <div class="flex justify-between px-2 py-1 text-[8px] text-gray-500 uppercase font-bold tracking-wider flex-shrink-0">
-        <span>Цена</span>
-        <span>Объём</span>
+
+    <div class="orderbook-content">
+      <div class="orderbook-labels font-mono">
+        <span>ЦЕНА</span>
+        <span>ОБЪЁМ</span>
       </div>
 
       <!-- Asks (Sells) -->
-      <div class="flex-1 overflow-hidden flex flex-col min-h-0 justify-end">
+      <div class="orderbook-asks">
         <OrderBookRow
           v-for="(ask, i) in reversedAsks"
           :key="i"
@@ -26,20 +26,16 @@
       </div>
 
       <!-- Current Price Banner -->
-      <div class="py-2 px-2 border-y border-white/5 bg-white/5 backdrop-blur-sm flex items-center justify-between flex-shrink-0">
-        <div class="flex flex-col">
-          <span class="text-sm font-bold text-white font-mono tracking-tight">
-            {{ currentPrice.toFixed(2) }}
-          </span>
-          <span class="text-[8px] text-gray-500">≈ ${{ currentPrice.toFixed(2) }}</span>
+      <div class="orderbook-price">
+        <div class="price-info">
+          <span class="price-value font-mono">{{ currentPrice.toFixed(2) }}</span>
+          <span class="price-usd font-mono">≈ ${{ currentPrice.toFixed(2) }}</span>
         </div>
-        <div class="text-[8px] font-mono text-emerald-400 flex items-center gap-0.5">
-          <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-        </div>
+        <div class="price-indicator"></div>
       </div>
 
       <!-- Bids (Buys) -->
-      <div class="flex-1 overflow-hidden flex flex-col min-h-0">
+      <div class="orderbook-bids">
         <OrderBookRow
           v-for="(bid, i) in displayedBids"
           :key="i"
@@ -79,28 +75,140 @@ const reversedAsks = computed(() => [...props.asks.slice(0, ordersToShow.value)]
 </script>
 
 <style scoped>
-/* Mobile Responsive Styles */
+/* ============================================
+   ORDER BOOK - BRUTALIST
+   ============================================ */
+.orderbook {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: 100%;
+  background: transparent;
+}
+
+.orderbook-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  border-bottom: 1px solid #1a1a1a;
+}
+
+.orderbook-title {
+  font-size: 10px;
+  font-weight: 600;
+  color: #525252;
+  letter-spacing: 0.1em;
+}
+
+.orderbook-dots {
+  display: flex;
+  gap: 3px;
+}
+
+.dot {
+  width: 4px;
+  height: 4px;
+  background: #262626;
+}
+
+.orderbook-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  min-height: 0;
+}
+
+.orderbook-labels {
+  display: flex;
+  justify-content: space-between;
+  padding: 6px 8px;
+  font-size: 8px;
+  font-weight: 600;
+  color: #3f3f3f;
+  letter-spacing: 0.15em;
+  flex-shrink: 0;
+}
+
+.orderbook-asks,
+.orderbook-bids {
+  flex: 1;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.orderbook-asks {
+  justify-content: flex-end;
+}
+
+.orderbook-price {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px;
+  background: #050505;
+  border-top: 1px solid #1a1a1a;
+  border-bottom: 1px solid #1a1a1a;
+  flex-shrink: 0;
+}
+
+.price-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.price-value {
+  font-size: 14px;
+  font-weight: 700;
+  color: #f5f5f5;
+}
+
+.price-usd {
+  font-size: 9px;
+  color: #525252;
+}
+
+.price-indicator {
+  width: 8px;
+  height: 8px;
+  background: #22c55e;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+/* ============================================
+   RESPONSIVE
+   ============================================ */
 @media (max-width: 768px) {
-  .px-3 {
-    padding-left: 0.5rem;
-    padding-right: 0.5rem;
+  .orderbook-header {
+    padding: 6px 8px;
   }
 
-  .py-2 {
-    padding-top: 0.375rem;
-    padding-bottom: 0.375rem;
+  .orderbook-price {
+    padding: 6px;
+  }
+
+  .price-value {
+    font-size: 13px;
   }
 }
 
 @media (max-width: 480px) {
-  .text-sm {
-    font-size: 0.8125rem;
+  .price-value {
+    font-size: 12px;
   }
 }
 
 @media (max-width: 375px) {
-  .text-sm {
-    font-size: 0.75rem;
+  .price-value {
+    font-size: 11px;
   }
 }
 </style>
