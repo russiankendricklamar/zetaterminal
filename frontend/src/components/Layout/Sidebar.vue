@@ -113,8 +113,12 @@
             </div>
           </button>
 
-          <transition name="expand">
-            <div v-show="expandedTools[key]" class="tool-content">
+          <div
+            class="tool-content-wrapper"
+            :class="{ expanded: expandedTools[key] }"
+            :style="{ '--items-count': group.items.length }"
+          >
+            <div class="tool-content">
               <router-link
                 v-for="(item, itemIndex) in group.items"
                 :key="item.path"
@@ -130,7 +134,7 @@
                 <span v-else class="item-arrow font-mono">&rarr;</span>
               </router-link>
             </div>
-          </transition>
+          </div>
         </div>
       </nav>
 
@@ -724,23 +728,15 @@ onUnmounted(() => clearInterval(timer))
   color: #DC2626;
 }
 
-/* Expand Animation */
-.expand-enter-active,
-.expand-leave-active {
-  transition: all 0.3s ease;
-  overflow: hidden;
-}
-
-.expand-enter-from,
-.expand-leave-to {
-  opacity: 0;
+/* Tool Content Wrapper - Animated Height */
+.tool-content-wrapper {
   max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.expand-enter-to,
-.expand-leave-from {
-  opacity: 1;
-  max-height: 500px;
+.tool-content-wrapper.expanded {
+  max-height: calc(var(--items-count, 5) * 44px + 16px);
 }
 
 .tool-content {
@@ -766,13 +762,18 @@ onUnmounted(() => clearInterval(timer))
   letter-spacing: 0.03em;
   transition: all 0.2s;
   position: relative;
+}
+
+.tool-content-wrapper.expanded .nav-item {
   animation: item-slide-in 0.3s ease forwards;
   animation-delay: calc(var(--item-index, 0) * 0.05s);
-  opacity: 0;
-  transform: translateX(-10px);
 }
 
 @keyframes item-slide-in {
+  from {
+    opacity: 0;
+    transform: translateX(-10px);
+  }
   to {
     opacity: 1;
     transform: translateX(0);
