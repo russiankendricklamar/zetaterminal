@@ -5,7 +5,7 @@
 
     <!-- Loading Screen -->
     <div v-if="showLoader" ref="loaderRef" class="loader">
-      <h1 class="loader-text">LOADING</h1>
+      <h1 class="loader-text">LOADING...</h1>
     </div>
 
     <!-- Navigation -->
@@ -52,19 +52,18 @@
         <div class="about-grid">
           <div class="about-left">
             <div class="about-sticky">
-              <h2 class="about-title font-anton">QUANTITATIVE<br/>RISK<br/>MANAGEMENT</h2>
+              <h2 class="about-title font-anton">КОЛИЧЕСТВЕННЫЙ<br/>РИСК<br/>МЕНЕДЖМЕНТ</h2>
               <div class="about-divider"></div>
               <div class="about-meta font-mono">
-                <p>TOOLS: 15</p>
-                <p>MODELS: 8+</p>
-                <p>REAL-TIME</p>
+                <p>ИНСТРУМЕНТОВ: 27</p>
+                <p>МОДЕЛЕЙ: 8+</p>
               </div>
             </div>
           </div>
           <div class="about-right">
             <div ref="aboutBlock1" class="about-block">
               <p class="about-intro font-oswald">Платформа стохастического моделирования для количественного анализа финансовых рынков, ценообразования деривативов и управления рисками.</p>
-              <p class="about-body font-mono">Stochastic Dashboard объединяет классические модели ценообразования с современными вычислительными методами. Блэк-Шоулз, Хестон, Леви-процессы, Monte Carlo симуляции — все инструменты доступны из единого интерфейса с потоковыми данными в реальном времени.</p>
+              <p class="about-body font-mono">Дзета Терминал объединяет классические модели ценообразования с современными вычислительными методами. Модели Блэка-Шоулза-Мертона и Хестона, Случайные процессы Леви, 2D и 3D симуляции Монте-Карло, тепловые карты активов — все инструменты доступны в едином интерфейсе</p>
             </div>
             <div ref="aboutBlock2" class="about-block about-quote">
               <p class="about-quote-text font-anton">СТОХАСТИЧЕСКОЕ МОДЕЛИРОВАНИЕ НА УРОВНЕ ИНСТИТУЦИОНАЛЬНЫХ ПЛАТФОРМ</p>
