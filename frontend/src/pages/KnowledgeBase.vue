@@ -183,11 +183,28 @@
               <p class="section-text font-mono">{{ selectedItem.description }}</p>
             </div>
 
+            <div class="modal-section" v-if="selectedItem.formula">
+              <h4 class="section-title font-oswald">Формула</h4>
+              <code class="formula-code font-mono">{{ selectedItem.formula }}</code>
+            </div>
+
+            <div class="modal-section formula-explanation" v-if="selectedItem.formulaExplanation">
+              <h4 class="section-title font-oswald">Объяснение</h4>
+              <pre class="explanation-text font-mono">{{ selectedItem.formulaExplanation }}</pre>
+            </div>
+
             <div class="modal-section" v-if="selectedItem.features?.length">
               <h4 class="section-title font-oswald">Функции</h4>
               <ul class="feature-list">
                 <li v-for="(f, i) in selectedItem.features" :key="i" class="font-mono">{{ f }}</li>
               </ul>
+            </div>
+
+            <div class="modal-section" v-if="selectedItem.howToUse?.length">
+              <h4 class="section-title font-oswald">Как использовать</h4>
+              <ol class="howto-list">
+                <li v-for="(step, i) in selectedItem.howToUse" :key="i" class="font-mono">{{ step }}</li>
+              </ol>
             </div>
 
             <div class="modal-section" v-if="selectedItem.path">
@@ -214,6 +231,19 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted, watch, defineComponent, h } from 'vue'
 import * as THREE from 'three'
+import {
+  categories as dataCategories,
+  items as dataItems,
+  getCategoryItems as getDataCategoryItems,
+  searchItems as dataSearchItems,
+  type KnowledgeItem,
+  type Category as DataCategory
+} from '@/data/knowledgeBaseData'
+
+// Extended Category with icon component
+interface Category extends DataCategory {
+  icon: any
+}
 
 // Refs
 const rootRef = ref<HTMLElement | null>(null)
@@ -224,25 +254,6 @@ const searchQuery = ref('')
 const isSearchFocused = ref(false)
 const activeCategory = ref<string | null>(null)
 const selectedItem = ref<KnowledgeItem | null>(null)
-
-// Types
-interface KnowledgeItem {
-  id: string
-  code: string
-  title: string
-  category: string
-  description?: string
-  features?: string[]
-  path?: string
-}
-
-interface Category {
-  id: string
-  name: string
-  description: string
-  color: string
-  icon: any
-}
 
 // Icons
 const PortfolioIcon = defineComponent({
@@ -291,80 +302,70 @@ const ModelsIcon = defineComponent({
   ])
 })
 
-// Data
-const categories = ref<Category[]>([
-  { id: 'portfolio', name: 'ПОРТФЕЛЬ', description: 'Управление портфелем, оптимизация, P&L анализ', color: '#22c55e', icon: PortfolioIcon },
-  { id: 'risk', name: 'РИСКИ', description: 'VaR, стресс-тесты, бэктестинг, режимы HMM', color: '#ef4444', icon: RiskIcon },
-  { id: 'pricing', name: 'ЦЕНООБРАЗОВАНИЕ', description: 'Опционы, свопы, форварды, облигации', color: '#3b82f6', icon: PricingIcon },
-  { id: 'terminal', name: 'ТЕРМИНАЛ', description: 'Потоковые данные, количественный анализ', color: '#f59e0b', icon: TerminalIcon },
-  { id: 'analytics', name: 'АНАЛИТИКА', description: 'Отчёты, греки, P&L атрибуция', color: '#8b5cf6', icon: AnalyticsIcon },
-  { id: 'models', name: 'МОДЕЛИ', description: 'Black-Scholes, Heston, Monte Carlo, HMM', color: '#06b6d4', icon: ModelsIcon },
-])
+const RegimesIcon = defineComponent({
+  render: () => h('svg', { viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', 'stroke-width': '2' }, [
+    h('circle', { cx: '12', cy: '12', r: '10' }),
+    h('path', { d: 'M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z' })
+  ])
+})
 
-const items = ref<KnowledgeItem[]>([
-  // Portfolio
-  { id: 'p1', code: 'PORT', title: 'Управление портфелем', category: 'portfolio', path: '/portfolio', description: 'Комплексный анализ портфеля активов с расчетом доходности, рисков и визуализацией позиций.', features: ['Total P&L анализ', 'VaR 95% расчёт', 'Sharpe Ratio', 'Визуализация WAVE_σ.9'] },
-  { id: 'p2', code: 'CCMV', title: 'Оптимизация CCMV', category: 'portfolio', path: '/CCMVoptimization', description: 'Оптимизация весов активов по модели Constant Correlation Matrix.', features: ['Efficient Frontier', 'Целевая доходность', 'Минимальный риск'] },
-  { id: 'p3', code: 'MC', title: 'Монте-Карло симуляция', category: 'portfolio', path: '/monte-carlo', description: 'Стохастические сценарии цен по модели Geometric Brownian Motion.', features: ['GBM модель', 'Распределение цен', 'Квантильный анализ'] },
-  { id: 'p4', code: 'ALLOC', title: 'Asset Allocation', category: 'portfolio', path: '/allocation', description: 'Распределение активов и ребалансировка портфеля.' },
+const SimulationIcon = defineComponent({
+  render: () => h('svg', { viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', 'stroke-width': '2' }, [
+    h('path', { d: 'M2 20h.01' }),
+    h('path', { d: 'M7 20v-4' }),
+    h('path', { d: 'M12 20v-8' }),
+    h('path', { d: 'M17 20V8' }),
+    h('path', { d: 'M22 4v16' })
+  ])
+})
 
-  // Risk
-  { id: 'r1', code: 'VAR', title: 'Value at Risk', category: 'risk', path: '/greeks', description: 'Расчёт VaR историческим и параметрическим методом.', features: ['Historical VaR', 'Parametric VaR', 'Expected Shortfall'] },
-  { id: 'r2', code: 'STRESS', title: 'Стресс-тестирование', category: 'risk', path: '/stress', description: 'Оценка влияния стрессовых сценариев на портфель.', features: ['Ценовые шоки', 'Волатильность', 'Корреляции'] },
-  { id: 'r3', code: 'BACK', title: 'Бэктестинг', category: 'risk', path: '/backtest', description: 'Тестирование стратегий на исторических данных.', features: ['Total Return', 'Sharpe Ratio', 'Max Drawdown'] },
-  { id: 'r4', code: 'HMM', title: 'Режимы HMM', category: 'risk', path: '/regimes', description: 'Скрытые марковские модели для определения режимов рынка.', features: ['Обучение модели', 'Матрица переходов', 'Прогнозирование'] },
-  { id: 'r5', code: 'SPEC', title: 'Спектральный анализ', category: 'risk', path: '/spectral-regime-analysis', description: 'Частотный анализ временных рядов.' },
+const SwapsIcon = defineComponent({
+  render: () => h('svg', { viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', 'stroke-width': '2' }, [
+    h('polyline', { points: '17 1 21 5 17 9' }),
+    h('path', { d: 'M3 5h18' }),
+    h('polyline', { points: '7 23 3 19 7 15' }),
+    h('path', { d: 'M21 19H3' })
+  ])
+})
 
-  // Pricing
-  { id: 'pr1', code: 'BSM', title: 'Black-Scholes', category: 'pricing', path: '/pricing/options', description: 'Классическая модель ценообразования опционов.', features: ['Call/Put pricing', 'Greeks расчёт', 'IV калькулятор'] },
-  { id: 'pr2', code: 'HEST', title: 'Модель Хестона', category: 'pricing', path: '/pricing/options/models', description: 'Стохастическая волатильность для опционов.' },
-  { id: 'pr3', code: 'VOLSURF', title: 'Поверхность волатильности', category: 'pricing', path: '/volatility-surface', description: '3D визуализация implied volatility.', features: ['SABR калибровка', 'SVI параметризация', 'Smile analysis'] },
-  { id: 'pr4', code: 'BOND', title: 'Оценка облигаций', category: 'pricing', path: '/bond-valuation', description: 'DCF оценка, дюрация, convexity.', features: ['Duration', 'DV01', 'Convexity', 'Spread analysis'] },
-  { id: 'pr5', code: 'SWAP', title: 'Свопы IRS/CDS', category: 'pricing', path: '/valuation/swaps', description: 'Ценообразование процентных и кредитных свопов.' },
-  { id: 'pr6', code: 'FWD', title: 'Форварды', category: 'pricing', path: '/valuation/forwards', description: 'Оценка форвардных контрактов.' },
-  { id: 'pr7', code: 'ZCYC', title: 'Кривая доходности', category: 'pricing', path: '/zcyc-viewer', description: 'Zero-coupon yield curve анализ.' },
+// Icon mapping for categories
+const iconMap: Record<string, any> = {
+  'options': PricingIcon,
+  'bonds': AnalyticsIcon,
+  'swaps': SwapsIcon,
+  'risk': RiskIcon,
+  'simulation': SimulationIcon,
+  'regimes': RegimesIcon,
+  'portfolio': PortfolioIcon,
+  'terminal': TerminalIcon
+}
 
-  // Terminal
-  { id: 't1', code: 'ZETA', title: 'Дзета-Терминал', category: 'terminal', path: '/terminal', description: 'Потоковые данные в реальном времени.', features: ['Акции', 'Криптовалюты', 'Фьючерсы', 'Опционы'] },
-  { id: 't2', code: 'CZF', title: 'Citadel Zeta Field', category: 'terminal', path: '/terminal', description: 'Гравитационное поле ликвидности.' },
-  { id: 't3', code: 'PSR', title: 'Phase Space', category: 'terminal', path: '/terminal', description: 'Фазовое пространство, аттракторы.' },
-  { id: 't4', code: 'WSIG', title: 'WAVE_σ.9', category: 'terminal', path: '/terminal', description: 'Momentum-Volatility Surface топология.' },
-  { id: 't5', code: 'LIQ', title: 'Liquidity Model', category: 'terminal', path: '/terminal', description: 'Модель ликвидности рынка.' },
+// Build categories with icons from data
+const categories = computed<Category[]>(() =>
+  dataCategories.map(cat => ({
+    ...cat,
+    icon: iconMap[cat.id] || ModelsIcon
+  }))
+)
 
-  // Analytics
-  { id: 'a1', code: 'GREEK', title: 'Greeks анализ', category: 'analytics', path: '/option-greeks-analyzer', description: 'Комплексный анализ чувствительностей опционов.', features: ['Delta', 'Gamma', 'Theta', 'Vega', 'Rho'] },
-  { id: 'a2', code: 'PNL', title: 'P&L атрибуция', category: 'analytics', path: '/analytics/pnl', description: 'Факторная декомпозиция прибыли и убытков.' },
-  { id: 'a3', code: 'RPT', title: 'PDF отчёты', category: 'analytics', path: '/reports', description: 'Генерация профессиональных отчётов.' },
-  { id: 'a4', code: 'HEDGE', title: 'Хеджирование', category: 'analytics', path: '/hedging-assistant', description: 'Помощник по построению хеджей.' },
-
-  // Models
-  { id: 'm1', code: 'GBM', title: 'Geometric Brownian Motion', category: 'models', description: 'Стохастический процесс для моделирования цен активов.' },
-  { id: 'm2', code: 'LEVY', title: 'Lévy процессы', category: 'models', description: 'Модели со скачками для тяжёлых хвостов распределений.' },
-  { id: 'm3', code: 'SABR', title: 'SABR модель', category: 'models', description: 'Stochastic Alpha Beta Rho для улыбки волатильности.' },
-  { id: 'm4', code: 'FFT', title: 'FFT методы', category: 'models', description: 'Быстрое преобразование Фурье для ценообразования.' },
-  { id: 'm5', code: 'EVT', title: 'Extreme Value Theory', category: 'models', description: 'Теория экстремальных значений для tail risk.' },
-])
+// Items from data
+const items = computed(() => dataItems)
 
 const stats = computed(() => [
   { value: items.value.length + '+', label: 'Документов' },
   { value: categories.value.length, label: 'Категорий' },
-  { value: '15+', label: 'Моделей' },
-  { value: '30+', label: 'Страниц' },
+  { value: items.value.filter(i => i.formula).length + '+', label: 'Формул' },
+  { value: '37+', label: 'Страниц' },
 ])
 
 const totalItems = computed(() => items.value.length)
 
 const filteredItems = computed(() => {
   if (!searchQuery.value) return []
-  const q = searchQuery.value.toLowerCase()
-  return items.value.filter(item =>
-    item.title.toLowerCase().includes(q) ||
-    item.code.toLowerCase().includes(q) ||
-    item.description?.toLowerCase().includes(q)
-  )
+  return dataSearchItems(searchQuery.value)
 })
 
-const getCategoryItems = (catId: string) => items.value.filter(i => i.category === catId)
+const getCategoryItems = (catId: string) => getDataCategoryItems(catId)
 const getCategoryColor = (catId: string) => categories.value.find(c => c.id === catId)?.color || '#666'
 const getCategoryName = (catId: string) => categories.value.find(c => c.id === catId)?.name || ''
 
@@ -1153,8 +1154,8 @@ onUnmounted(() => {
 
 .modal-content {
   width: 100%;
-  max-width: 600px;
-  max-height: 80vh;
+  max-width: 700px;
+  max-height: 85vh;
   background: #0a0a0a;
   border: 1px solid rgba(255, 255, 255, 0.1);
   display: flex;
@@ -1275,6 +1276,70 @@ onUnmounted(() => {
   border: 1px solid rgba(255, 255, 255, 0.05);
   font-size: 13px;
   color: #22c55e;
+}
+
+.formula-code {
+  display: block;
+  padding: 16px 20px;
+  background: rgba(220, 38, 38, 0.08);
+  border: 1px solid rgba(220, 38, 38, 0.2);
+  font-size: 15px;
+  color: #f87171;
+  white-space: pre-wrap;
+  line-height: 1.6;
+}
+
+.formula-explanation {
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.explanation-text {
+  padding: 16px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  font-size: 12px;
+  color: #a3a3a3;
+  white-space: pre-wrap;
+  line-height: 1.7;
+  margin: 0;
+  overflow-x: auto;
+}
+
+.howto-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  counter-reset: step-counter;
+}
+
+.howto-list li {
+  padding: 12px 0 12px 40px;
+  font-size: 13px;
+  color: #a3a3a3;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+  position: relative;
+  counter-increment: step-counter;
+}
+
+.howto-list li::before {
+  content: counter(step-counter);
+  position: absolute;
+  left: 0;
+  top: 12px;
+  width: 24px;
+  height: 24px;
+  background: rgba(220, 38, 38, 0.2);
+  border: 1px solid rgba(220, 38, 38, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  color: #DC2626;
+}
+
+.howto-list li:last-child {
+  border-bottom: none;
 }
 
 .modal-footer {
