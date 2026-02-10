@@ -63,19 +63,19 @@
           <div class="about-right">
             <div ref="aboutBlock1" class="about-block">
               <p class="about-intro font-oswald">Платформа стохастического моделирования для количественного анализа финансовых рынков, ценообразования деривативов и управления рисками.</p>
-              <p class="about-body font-mono">Дзета Терминал объединяет классические модели ценообразования с современными вычислительными методами. Модели Блэка-Шоулза-Мертона и Хестона, Случайные процессы Леви, 2D и 3D симуляции Монте-Карло, тепловые карты активов — все инструменты доступны в едином интерфейсе</p>
+              <p class="about-body font-mono">Дзета Терминал объединяет классические модели ценообразования с современными вычислительными методами. Модели Блэка-Шоулза-Мертона и Хестона, Случайные процессы Леви, 2D и 3D симуляции Монте-Карло, тепловые карты активов — все инструменты доступны в едином интерфейсе.</p>
             </div>
             <div ref="aboutBlock2" class="about-block about-quote">
-              <p class="about-quote-text font-anton">СТОХАСТИЧЕСКОЕ МОДЕЛИРОВАНИЕ НА УРОВНЕ ИНСТИТУЦИОНАЛЬНЫХ ПЛАТФОРМ</p>
+              <p class="about-quote-text font-anton">КОЛИЧЕСТВЕННАЯ АНАЛИТИКА И СТОХАСТИЧЕСКОЕ МОДЕЛИРОВАНИЕ НА УРОВНЕ ИНСТИТУЦИОНАЛЬНЫХ ПЛАТФОРМ</p>
             </div>
             <div ref="aboutBlock3" class="about-block about-cols">
               <div>
                 <h3 class="about-col-title font-oswald">Ценообразование</h3>
-                <p class="about-col-body font-mono">Black-Scholes, Heston, SABR, FFT-методы, implied volatility surface. Полный стек для опционов, свопов, форвардов и структурных продуктов.</p>
+                <p class="about-col-body font-mono">Модели Black-Scholes-Merton и Heston, SABR, FFT-методы, Поверхность волатильности. Полный стек для опционов, свопов, форвардов и структурных продуктов.</p>
               </div>
               <div>
                 <h3 class="about-col-title font-oswald">Риск-менеджмент</h3>
-                <p class="about-col-body font-mono">VaR, Expected Shortfall, стресс-тестирование, бэктестинг, греки, режимы рынка через HMM. Портфельная оптимизация по Марковицу и Black-Litterman.</p>
+                <p class="about-col-body font-mono">VaR, Expected Shortfall, стресс-тестирование, бэктестинг, греки, режимы рынка через Скрытые Марковские цепи и Комплексный анализ. Портфельная оптимизация по модели Хэмилтона-Якоби-Беллмана и CCMV оптимизация</p>
               </div>
             </div>
           </div>
@@ -85,7 +85,7 @@
       <!-- ══════ MARQUEE DARK ══════ -->
       <div class="marquee-strip marquee-dark">
         <div class="marquee-track marquee-reverse">
-          <span v-for="n in 5" :key="'d'+n" class="font-anton">BLACK-SCHOLES &mdash; HESTON &mdash; MONTE CARLO &mdash; L&Eacute;VY &mdash;&nbsp;</span>
+          <span v-for="n in 5" :key="'d'+n" class="font-anton">BLACK-SCHOLES-MERTON MODEL &mdash; HESTON MODEL &mdash; MONTE CARLO SIMULATION &mdash; FAST FOURIER TRANSFORM &mdash; DCF &mdash; ZCYC &mdash; L&Eacute;VY RANDOM PROCESSES &mdash;&nbsp;</span>
         </div>
       </div>
 
@@ -128,8 +128,8 @@
         <div class="terminal-card" @click="navigateTo('/terminal')">
           <div class="terminal-zeta font-anton">&zeta;</div>
           <div class="terminal-info">
-            <div class="terminal-title font-oswald">Дзета-Терминал</div>
-            <div class="terminal-sub font-mono">Потоковые данные в реальном времени &middot; Акции &middot; Крипто &middot; Фьючерсы &middot; Опционы</div>
+            <div class="terminal-title font-oswald">Терминал</div>
+            <div class="terminal-sub font-mono">Данные с бирж &middot; Акции &middot; Крипто &middot; Фьючерсы &middot; Опционы</div>
           </div>
           <div class="terminal-cta font-oswald">Открыть &rarr;</div>
         </div>
@@ -139,7 +139,7 @@
       <footer class="footer">
         <div class="footer-inner">
           <div class="footer-main">
-            <h2 class="footer-title font-anton">STOCHASTIC</h2>
+            <h2 class="footer-title font-anton">ZETA-TERMINAL</h2>
             <p class="footer-subtitle font-oswald">Quantitative Analytics Platform</p>
           </div>
           <div class="footer-credits">
@@ -149,16 +149,10 @@
               <p class="font-mono">GSAP / ECharts</p>
               <p class="font-mono">Three.js</p>
             </div>
-            <div class="footer-col">
-              <h4 class="footer-col-head">Models</h4>
-              <p class="font-mono">Black-Scholes</p>
-              <p class="font-mono">Heston / SABR</p>
-              <p class="font-mono">Monte Carlo</p>
-            </div>
           </div>
         </div>
         <div class="footer-bottom font-mono">
-          <span>&copy; 2026 Stochastic Platform</span>
+          <span>&copy; 2026 Zeta Terminal</span>
           <span>Quantitative Analytics</span>
         </div>
       </footer>
@@ -198,13 +192,9 @@ const tools = [
   { name: 'Волатильность', desc: 'SABR/SVI калибровка, smile', path: '/analytics/volatility' },
   { name: 'Стоимость СВОПов', desc: 'IRS & FX свопы, NPV, DV01', path: '/valuation/swaps' },
   { name: 'Стоимость форвардов', desc: 'Справедливая стоимость, кривая', path: '/valuation/forwards' },
-  { name: 'Отчёты', desc: 'Bond Report, шаблонные отчёты', path: '/vanila-bond-report' },
-  { name: 'Монте-Карло', desc: 'Симуляции, стохастические модели', path: '/monte-carlo' },
-  { name: 'Кривая доходности', desc: 'ZCYC, zero-coupon yield curve', path: '/zcyc-viewer' },
+  { name: 'Отчёты по облигациям', desc: 'Шаблонные отчёты', path: '/vanila-bond-report' },
+  { name: 'Кривая бескупонной доходности', desc: 'ZCYC', path: '/zcyc-viewer' },
   { name: 'P&L Attribution', desc: 'Факторная декомпозиция P&L', path: '/analytics/pnl' },
-  { name: 'Citadel Zeta Field', desc: 'Гравитационное поле ликвидности', path: '/terminal' },
-  { name: 'Phase Space', desc: 'Фазовое пространство, аттракторы', path: '/terminal' },
-  { name: 'Liquidity Model', desc: 'Модель ликвидности рынка', path: '/terminal' },
 ]
 
 // Easing from J. Cole project
