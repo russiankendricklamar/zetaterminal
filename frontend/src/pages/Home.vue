@@ -5,13 +5,13 @@
 
     <!-- Loading Screen -->
     <div v-if="showLoader" ref="loaderRef" class="loader">
-      <h1 class="loader-text">STOCHASTIC</h1>
+      <h1 class="loader-text">LOADING</h1>
     </div>
 
     <!-- Navigation -->
     <nav class="nav">
       <div class="nav-left">
-        <span class="nav-brand font-mono">&#9670; Stochastic / Platform</span>
+        <span class="nav-brand font-mono">&#9670; Quantitative / Dashboard</span>
       </div>
       <div class="nav-links">
         <a href="#tools" class="nav-link font-oswald" @click.prevent="scrollTo('tools')">Инструменты</a>
@@ -26,13 +26,13 @@
       <section ref="heroRef" class="hero">
         <div class="hero-grid-overlay"></div>
         <div ref="heroContentRef" class="hero-content">
-          <h2 ref="heroSubtitleRef" class="hero-subtitle font-mono">Quantitative Platform</h2>
+          <h2 ref="heroSubtitleRef" class="hero-subtitle font-mono">Quantitative Dashboard</h2>
           <div class="hero-titles">
-            <h1 ref="heroTitle1Ref" class="hero-title font-anton">STOCHASTIC</h1>
+            <h1 ref="heroTitle1Ref" class="hero-title font-anton">ZETA TERMINAL</h1>
           </div>
         </div>
         <div ref="heroBottomRef" class="hero-bottom font-oswald">
-          <span>&#9670; Stochastic</span>
+          <span>&#9670; Finance</span>
           <span>2026</span>
           <span class="hide-mobile">Quantitative Analytics</span>
         </div>
@@ -43,7 +43,7 @@
       <!-- ══════ MARQUEE RED ══════ -->
       <div class="marquee-strip marquee-red">
         <div class="marquee-track">
-          <span v-for="n in 5" :key="'r'+n" class="font-anton">STOCHASTIC &mdash; QUANTITATIVE ANALYTICS &mdash; DERIVATIVES &mdash; RISK &mdash;&nbsp;</span>
+          <span v-for="n in 5" :key="'r'+n" class="font-anton">STOCHASTIC ANALYSIS &mdash; QUANTITATIVE ANALYTICS &mdash; DERIVATIVES &mdash; BONDS &mdash; SWAPS &mdash; FORWARDS &mdash; OPTIONS &mdash; MARKET REGIMES &mdash; P&L CALCULATIONS &mdash; RISK-MANAGEMENT &mdash;&nbsp;</span>
         </div>
       </div>
 
@@ -52,7 +52,7 @@
         <div class="about-grid">
           <div class="about-left">
             <div class="about-sticky">
-              <h2 class="about-title font-anton">QUANT<br/>RISK<br/>SIGMA</h2>
+              <h2 class="about-title font-anton">QUANTITATIVE<br/>RISK<br/>MANAGEMENT</h2>
               <div class="about-divider"></div>
               <div class="about-meta font-mono">
                 <p>TOOLS: 15</p>
