@@ -52,7 +52,7 @@
         <div class="about-grid">
           <div class="about-left">
             <div class="about-sticky">
-              <h2 class="about-title font-anton">КОЛИЧЕСТВЕННЫЙ<br/>РИСК<br/>МЕНЕДЖМЕНТ</h2>
+              <h2 class="about-title font-anton">QUANTITATIVE<br/>RISK<br/>MANAGEMENT</h2>
               <div class="about-divider"></div>
               <div class="about-meta font-mono">
                 <p>ИНСТРУМЕНТОВ: 27</p>
