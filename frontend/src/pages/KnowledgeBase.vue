@@ -80,8 +80,7 @@
       </p>
 
       <div class="hero-hint font-mono">
-        <span class="hint-icon">✦</span>
-        Кликните на созвездие для навигации · ⌘K для поиска
+        Выберите категорию ниже или используйте ⌘K для поиска
       </div>
     </section>
 
@@ -235,6 +234,21 @@
         </div>
       </Transition>
     </Teleport>
+
+    <!-- Category Navigation Bar -->
+    <nav class="kb-nav-bar" v-if="!activeCategory">
+      <button
+        v-for="cat in categories"
+        :key="cat.id"
+        class="nav-category"
+        :style="{ '--accent': cat.color }"
+        @click="selectCluster(cat.id)"
+      >
+        <span class="nav-dot" :style="{ background: cat.color }"></span>
+        <span class="nav-name font-oswald">{{ cat.name }}</span>
+        <span class="nav-count font-mono">{{ getCategoryItems(cat.id).length }}</span>
+      </button>
+    </nav>
 
     <!-- Stats Footer -->
     <footer class="kb-footer" v-if="!activeCategory">
@@ -1638,6 +1652,70 @@ watch(showSearch, (val) => {
 }
 
 /* ============================================
+   CATEGORY NAV BAR
+   ============================================ */
+.kb-nav-bar {
+  position: fixed;
+  bottom: 80px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 50;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+  padding: 16px;
+  background: rgba(10, 10, 10, 0.9);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(20px);
+  max-width: 90vw;
+}
+
+.nav-category {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #a3a3a3;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.nav-category:hover {
+  border-color: var(--accent);
+  background: rgba(255, 255, 255, 0.08);
+  color: #f5f5f5;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 20px var(--accent);
+}
+
+.nav-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.nav-name {
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  white-space: nowrap;
+}
+
+.nav-count {
+  font-size: 9px;
+  padding: 2px 6px;
+  background: rgba(255, 255, 255, 0.1);
+  color: #737373;
+}
+
+.nav-category:hover .nav-count {
+  color: var(--accent);
+}
+
+/* ============================================
    FOOTER
    ============================================ */
 .kb-footer {
@@ -1646,15 +1724,15 @@ watch(showSearch, (val) => {
   left: 0;
   right: 0;
   z-index: 10;
-  padding: 24px;
-  background: linear-gradient(to top, rgba(3, 3, 3, 0.9), transparent);
-  pointer-events: none;
+  padding: 16px 24px;
+  background: rgba(3, 3, 3, 0.95);
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 .footer-stats {
   display: flex;
   justify-content: center;
-  gap: 48px;
+  gap: 32px;
 }
 
 .stat-item {
@@ -1662,16 +1740,15 @@ watch(showSearch, (val) => {
 }
 
 .stat-value {
-  font-size: 2rem;
+  font-size: 1.25rem;
   color: #DC2626;
   display: block;
 }
 
 .stat-label {
-  font-size: 10px;
+  font-size: 9px;
   color: #525252;
   letter-spacing: 0.1em;
-  margin-top: 4px;
 }
 
 /* ============================================
@@ -1730,12 +1807,30 @@ watch(showSearch, (val) => {
     font-size: clamp(2rem, 15vw, 4rem);
   }
 
+  .kb-nav-bar {
+    bottom: 60px;
+    padding: 12px;
+    gap: 6px;
+  }
+
+  .nav-category {
+    padding: 8px 12px;
+  }
+
+  .nav-name {
+    font-size: 10px;
+  }
+
+  .nav-count {
+    display: none;
+  }
+
   .footer-stats {
-    gap: 24px;
+    gap: 16px;
   }
 
   .stat-value {
-    font-size: 1.5rem;
+    font-size: 1rem;
   }
 }
 </style>
