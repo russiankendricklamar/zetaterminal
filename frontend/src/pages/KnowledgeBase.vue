@@ -12,224 +12,244 @@
       :style="{
         left: `${mousePos.x}px`,
         top: `${mousePos.y}px`,
-        opacity: isMouseInside ? 1 : 0
+        opacity: isMouseInside ? 1 : 0,
+        background: hoveredCluster ? `radial-gradient(circle, ${hoveredCluster.color}30 0%, transparent 70%)` : undefined
       }"
     ></div>
 
-    <!-- Main Content -->
-    <div class="kb-content">
-      <!-- Header -->
-      <header class="kb-header">
-        <div class="kb-logo" @click="$router.push('/')">
-          <span class="logo-symbol font-anton">ζ</span>
-          <span class="logo-text font-oswald">STOCHASTIC</span>
-        </div>
+    <!-- Cluster Labels (HTML overlay) -->
+    <div
+      v-for="cluster in clusterLabels"
+      :key="cluster.id"
+      class="cluster-label"
+      :class="{ active: activeCategory === cluster.id, hovered: hoveredCluster?.id === cluster.id }"
+      :style="{
+        left: `${cluster.x}px`,
+        top: `${cluster.y}px`,
+        '--accent': cluster.color,
+        opacity: cluster.visible ? 1 : 0,
+        pointerEvents: cluster.visible ? 'auto' : 'none'
+      }"
+      @click="selectCluster(cluster.id)"
+    >
+      <div class="label-dot" :style="{ background: cluster.color }"></div>
+      <span class="label-text font-oswald">{{ cluster.name }}</span>
+      <span class="label-count font-mono">{{ cluster.count }}</span>
+    </div>
 
-        <nav class="kb-nav">
-          <button
-            v-for="cat in categories"
-            :key="cat.id"
-            @click="activeCategory = cat.id"
-            :class="['nav-btn font-mono', { active: activeCategory === cat.id }]"
-          >
-            {{ cat.name }}
-          </button>
-        </nav>
+    <!-- Header -->
+    <header class="kb-header">
+      <div class="kb-logo" @click="$router.push('/')">
+        <span class="logo-symbol font-anton">ζ</span>
+        <span class="logo-text font-oswald">STOCHASTIC</span>
+      </div>
 
+      <div class="header-center">
+        <span class="header-title font-mono">KNOWLEDGE BASE</span>
+        <span class="header-version font-mono">v3.0</span>
+      </div>
+
+      <div class="header-actions">
+        <button class="search-trigger" @click="showSearch = true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="11" cy="11" r="8"></circle>
+            <path d="m21 21-4.35-4.35"></path>
+          </svg>
+          <span class="font-mono">⌘K</span>
+        </button>
         <router-link to="/terminal" class="terminal-btn font-oswald">
           ТЕРМИНАЛ →
         </router-link>
-      </header>
+      </div>
+    </header>
 
-      <!-- Hero Section -->
-      <section class="kb-hero">
-        <div class="hero-badge font-mono">
-          <span class="badge-dot"></span>
-          KNOWLEDGE BASE v2.0
-        </div>
+    <!-- Hero (only when no category selected) -->
+    <section v-if="!activeCategory" class="kb-hero">
+      <div class="hero-badge font-mono">
+        <span class="badge-dot"></span>
+        INTERACTIVE GALAXY
+      </div>
 
-        <h1 class="hero-title font-anton">
-          <span class="title-line">БАЗА</span>
-          <span class="title-line accent">ЗНАНИЙ</span>
-        </h1>
+      <h1 class="hero-title font-anton">
+        <span class="title-line">БАЗА</span>
+        <span class="title-line accent">ЗНАНИЙ</span>
+      </h1>
 
-        <p class="hero-subtitle font-mono">
-          {{ totalItems }} документов · {{ categories.length }} категорий · Интерактивное исследование
-        </p>
+      <p class="hero-subtitle font-mono">
+        {{ totalItems }} документов · {{ categories.length }} созвездий · Кликните на скопление для навигации
+      </p>
 
-        <!-- Search -->
-        <div class="search-container">
-          <div class="search-box">
-            <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <circle cx="11" cy="11" r="8"></circle>
-              <path d="m21 21-4.35-4.35"></path>
-            </svg>
-            <input
-              v-model="searchQuery"
-              type="text"
-              placeholder="Поиск по базе знаний..."
-              class="search-input font-mono"
-              @focus="isSearchFocused = true"
-              @blur="isSearchFocused = false"
-            />
-            <div class="search-shortcut font-mono">⌘K</div>
-          </div>
+      <div class="hero-hint font-mono">
+        <span class="hint-icon">↓</span>
+        Прокрутите вниз или кликните на созвездие
+      </div>
+    </section>
 
-          <!-- Search Results -->
-          <div v-if="searchQuery && filteredItems.length" class="search-results custom-scrollbar">
-            <div
-              v-for="item in filteredItems.slice(0, 8)"
-              :key="item.id"
-              class="search-result"
-              @click="openItem(item)"
-            >
-              <div class="result-icon" :style="{ background: getCategoryColor(item.category) }">
-                {{ item.title.charAt(0) }}
-              </div>
-              <div class="result-info">
-                <span class="result-title font-oswald">{{ item.title }}</span>
-                <span class="result-category font-mono">{{ getCategoryName(item.category) }}</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <!-- Categories Grid -->
-      <section class="kb-categories">
-        <div
-          v-for="(cat, index) in categories"
-          :key="cat.id"
-          class="category-card"
-          :class="{ expanded: activeCategory === cat.id }"
-          :style="{ '--delay': `${index * 0.1}s`, '--accent': cat.color }"
-          @click="toggleCategory(cat.id)"
-        >
-          <div class="card-header">
-            <div class="card-icon" :style="{ background: cat.color }">
-              <component :is="cat.icon" />
-            </div>
-            <div class="card-meta">
-              <h3 class="card-title font-oswald">{{ cat.name }}</h3>
-              <span class="card-count font-mono">{{ getCategoryItems(cat.id).length }} элементов</span>
-            </div>
-            <div class="card-expand">
+    <!-- Category Panel (slides from right when active) -->
+    <Teleport to="body">
+      <Transition name="panel">
+        <div v-if="activeCategory" class="category-panel" @click.self="closePanel">
+          <div class="panel-content custom-scrollbar">
+            <button class="panel-close" @click="closePanel">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <polyline :points="activeCategory === cat.id ? '18 15 12 9 6 15' : '6 9 12 15 18 9'"></polyline>
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
               </svg>
+            </button>
+
+            <div class="panel-header" :style="{ '--accent': activeCategoryData?.color }">
+              <div class="panel-icon" :style="{ background: activeCategoryData?.color }">
+                <component :is="activeCategoryData?.icon" />
+              </div>
+              <div class="panel-meta">
+                <h2 class="panel-title font-anton">{{ activeCategoryData?.name }}</h2>
+                <p class="panel-desc font-mono">{{ activeCategoryData?.longDescription }}</p>
+              </div>
             </div>
-          </div>
 
-          <p class="card-desc font-mono">{{ cat.description }}</p>
-
-          <!-- Expanded Items -->
-          <div v-if="activeCategory === cat.id" class="card-items custom-scrollbar">
-            <div
-              v-for="item in getCategoryItems(cat.id)"
-              :key="item.id"
-              class="item-row"
-              @click.stop="openItem(item)"
-            >
-              <span class="item-code font-mono">{{ item.code }}</span>
-              <span class="item-title font-oswald">{{ item.title }}</span>
-              <span class="item-arrow">→</span>
+            <div class="panel-items">
+              <div
+                v-for="item in getCategoryItems(activeCategory)"
+                :key="item.id"
+                class="panel-item"
+                @click="openItem(item)"
+              >
+                <div class="item-header">
+                  <span class="item-code font-mono" :style="{ color: activeCategoryData?.color }">{{ item.code }}</span>
+                  <span class="item-title font-oswald">{{ item.title }}</span>
+                </div>
+                <p class="item-desc font-mono">{{ item.description?.slice(0, 100) }}...</p>
+                <div class="item-tags">
+                  <span v-if="item.formula" class="item-tag formula font-mono">Формула</span>
+                  <span v-if="item.path" class="item-tag path font-mono">Страница</span>
+                </div>
+              </div>
             </div>
           </div>
         </div>
-      </section>
+      </Transition>
+    </Teleport>
 
-      <!-- Stats Bar -->
-      <section class="kb-stats">
+    <!-- Search Modal -->
+    <Teleport to="body">
+      <Transition name="modal">
+        <div v-if="showSearch" class="search-overlay" @click.self="showSearch = false">
+          <div class="search-modal">
+            <div class="search-box">
+              <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="11" cy="11" r="8"></circle>
+                <path d="m21 21-4.35-4.35"></path>
+              </svg>
+              <input
+                ref="searchInputRef"
+                v-model="searchQuery"
+                type="text"
+                placeholder="Поиск по базе знаний..."
+                class="search-input font-mono"
+                @keydown.escape="showSearch = false"
+              />
+            </div>
+
+            <div v-if="filteredItems.length" class="search-results custom-scrollbar">
+              <div
+                v-for="item in filteredItems.slice(0, 10)"
+                :key="item.id"
+                class="search-result"
+                @click="openItem(item); showSearch = false"
+              >
+                <div class="result-icon" :style="{ background: getCategoryColor(item.category) }">
+                  {{ item.code.slice(0, 2) }}
+                </div>
+                <div class="result-info">
+                  <span class="result-title font-oswald">{{ item.title }}</span>
+                  <span class="result-category font-mono">{{ getCategoryName(item.category) }}</span>
+                </div>
+              </div>
+            </div>
+
+            <div v-else-if="searchQuery" class="search-empty font-mono">
+              Ничего не найдено
+            </div>
+          </div>
+        </div>
+      </Transition>
+    </Teleport>
+
+    <!-- Detail Modal -->
+    <Teleport to="body">
+      <Transition name="modal">
+        <div v-if="selectedItem" class="modal-overlay" @click.self="selectedItem = null">
+          <div class="modal-content custom-scrollbar">
+            <button class="modal-close" @click="selectedItem = null">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
+              </svg>
+            </button>
+
+            <div class="modal-header">
+              <span class="modal-badge font-mono" :style="{ background: getCategoryColor(selectedItem.category) }">
+                {{ getCategoryName(selectedItem.category) }}
+              </span>
+              <h2 class="modal-title font-anton">{{ selectedItem.title }}</h2>
+              <p class="modal-code font-mono">{{ selectedItem.code }}</p>
+            </div>
+
+            <div class="modal-body">
+              <div class="modal-section" v-if="selectedItem.description">
+                <h4 class="section-title font-oswald">Описание</h4>
+                <p class="section-text font-mono">{{ selectedItem.description }}</p>
+              </div>
+
+              <div class="modal-section" v-if="selectedItem.formula">
+                <h4 class="section-title font-oswald">Формула</h4>
+                <code class="formula-code font-mono">{{ selectedItem.formula }}</code>
+              </div>
+
+              <div class="modal-section formula-explanation" v-if="selectedItem.formulaExplanation">
+                <h4 class="section-title font-oswald">Объяснение</h4>
+                <pre class="explanation-text font-mono">{{ selectedItem.formulaExplanation }}</pre>
+              </div>
+
+              <div class="modal-section" v-if="selectedItem.features?.length">
+                <h4 class="section-title font-oswald">Функции</h4>
+                <ul class="feature-list">
+                  <li v-for="(f, i) in selectedItem.features" :key="i" class="font-mono">{{ f }}</li>
+                </ul>
+              </div>
+
+              <div class="modal-section" v-if="selectedItem.howToUse?.length">
+                <h4 class="section-title font-oswald">Как использовать</h4>
+                <ol class="howto-list">
+                  <li v-for="(step, i) in selectedItem.howToUse" :key="i" class="font-mono">{{ step }}</li>
+                </ol>
+              </div>
+            </div>
+
+            <div class="modal-footer" v-if="selectedItem.path">
+              <router-link :to="selectedItem.path" class="modal-btn primary font-oswald">
+                Открыть страницу →
+              </router-link>
+            </div>
+          </div>
+        </div>
+      </Transition>
+    </Teleport>
+
+    <!-- Stats Footer -->
+    <footer class="kb-footer" v-if="!activeCategory">
+      <div class="footer-stats">
         <div class="stat-item" v-for="stat in stats" :key="stat.label">
           <span class="stat-value font-anton">{{ stat.value }}</span>
           <span class="stat-label font-mono">{{ stat.label }}</span>
         </div>
-      </section>
-
-      <!-- Footer -->
-      <footer class="kb-footer">
-        <div class="footer-left">
-          <span class="font-mono">© 2026 STOCHASTIC PLATFORM</span>
-        </div>
-        <div class="footer-right">
-          <router-link to="/" class="footer-link font-mono">Главная</router-link>
-          <router-link to="/terminal" class="footer-link font-mono">Терминал</router-link>
-        </div>
-      </footer>
-    </div>
-
-    <!-- Detail Modal -->
-    <Teleport to="body">
-      <div v-if="selectedItem" class="modal-overlay" @click="selectedItem = null">
-        <div class="modal-content" @click.stop>
-          <button class="modal-close" @click="selectedItem = null">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <line x1="18" y1="6" x2="6" y2="18"></line>
-              <line x1="6" y1="6" x2="18" y2="18"></line>
-            </svg>
-          </button>
-
-          <div class="modal-header">
-            <span class="modal-badge font-mono" :style="{ background: getCategoryColor(selectedItem.category) }">
-              {{ getCategoryName(selectedItem.category) }}
-            </span>
-            <h2 class="modal-title font-anton">{{ selectedItem.title }}</h2>
-            <p class="modal-code font-mono">{{ selectedItem.code }}</p>
-          </div>
-
-          <div class="modal-body custom-scrollbar">
-            <div class="modal-section" v-if="selectedItem.description">
-              <h4 class="section-title font-oswald">Описание</h4>
-              <p class="section-text font-mono">{{ selectedItem.description }}</p>
-            </div>
-
-            <div class="modal-section" v-if="selectedItem.formula">
-              <h4 class="section-title font-oswald">Формула</h4>
-              <code class="formula-code font-mono">{{ selectedItem.formula }}</code>
-            </div>
-
-            <div class="modal-section formula-explanation" v-if="selectedItem.formulaExplanation">
-              <h4 class="section-title font-oswald">Объяснение</h4>
-              <pre class="explanation-text font-mono">{{ selectedItem.formulaExplanation }}</pre>
-            </div>
-
-            <div class="modal-section" v-if="selectedItem.features?.length">
-              <h4 class="section-title font-oswald">Функции</h4>
-              <ul class="feature-list">
-                <li v-for="(f, i) in selectedItem.features" :key="i" class="font-mono">{{ f }}</li>
-              </ul>
-            </div>
-
-            <div class="modal-section" v-if="selectedItem.howToUse?.length">
-              <h4 class="section-title font-oswald">Как использовать</h4>
-              <ol class="howto-list">
-                <li v-for="(step, i) in selectedItem.howToUse" :key="i" class="font-mono">{{ step }}</li>
-              </ol>
-            </div>
-
-            <div class="modal-section" v-if="selectedItem.path">
-              <h4 class="section-title font-oswald">Путь</h4>
-              <code class="path-code font-mono">{{ selectedItem.path }}</code>
-            </div>
-          </div>
-
-          <div class="modal-footer">
-            <router-link
-              v-if="selectedItem.path"
-              :to="selectedItem.path"
-              class="modal-btn primary font-oswald"
-            >
-              Открыть страницу →
-            </router-link>
-          </div>
-        </div>
       </div>
-    </Teleport>
+    </footer>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted, watch, defineComponent, h } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch, defineComponent, h, nextTick } from 'vue'
 import * as THREE from 'three'
 import {
   categories as dataCategories,
@@ -245,15 +265,28 @@ interface Category extends DataCategory {
   icon: any
 }
 
+interface ClusterLabel {
+  id: string
+  name: string
+  count: number
+  color: string
+  x: number
+  y: number
+  visible: boolean
+}
+
 // Refs
 const rootRef = ref<HTMLElement | null>(null)
 const canvasRef = ref<HTMLCanvasElement | null>(null)
+const searchInputRef = ref<HTMLInputElement | null>(null)
 const mousePos = ref({ x: 0, y: 0 })
 const isMouseInside = ref(false)
 const searchQuery = ref('')
-const isSearchFocused = ref(false)
+const showSearch = ref(false)
 const activeCategory = ref<string | null>(null)
 const selectedItem = ref<KnowledgeItem | null>(null)
+const hoveredCluster = ref<{ id: string; color: string } | null>(null)
+const clusterLabels = ref<ClusterLabel[]>([])
 
 // Icons
 const PortfolioIcon = defineComponent({
@@ -291,14 +324,6 @@ const AnalyticsIcon = defineComponent({
     h('line', { x1: '18', y1: '20', x2: '18', y2: '10' }),
     h('line', { x1: '12', y1: '20', x2: '12', y2: '4' }),
     h('line', { x1: '6', y1: '20', x2: '6', y2: '14' })
-  ])
-})
-
-const ModelsIcon = defineComponent({
-  render: () => h('svg', { viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', 'stroke-width': '2' }, [
-    h('polygon', { points: '12 2 2 7 12 12 22 7 12 2' }),
-    h('polyline', { points: '2 17 12 22 22 17' }),
-    h('polyline', { points: '2 12 12 17 22 12' })
   ])
 })
 
@@ -344,8 +369,12 @@ const iconMap: Record<string, any> = {
 const categories = computed<Category[]>(() =>
   dataCategories.map(cat => ({
     ...cat,
-    icon: iconMap[cat.id] || ModelsIcon
+    icon: iconMap[cat.id] || PortfolioIcon
   }))
+)
+
+const activeCategoryData = computed(() =>
+  categories.value.find(c => c.id === activeCategory.value)
 )
 
 // Items from data
@@ -353,7 +382,7 @@ const items = computed(() => dataItems)
 
 const stats = computed(() => [
   { value: items.value.length + '+', label: 'Документов' },
-  { value: categories.value.length, label: 'Категорий' },
+  { value: categories.value.length, label: 'Созвездий' },
   { value: items.value.filter(i => i.formula).length + '+', label: 'Формул' },
   { value: '37+', label: 'Страниц' },
 ])
@@ -369,26 +398,39 @@ const getCategoryItems = (catId: string) => getDataCategoryItems(catId)
 const getCategoryColor = (catId: string) => categories.value.find(c => c.id === catId)?.color || '#666'
 const getCategoryName = (catId: string) => categories.value.find(c => c.id === catId)?.name || ''
 
-const toggleCategory = (catId: string) => {
-  activeCategory.value = activeCategory.value === catId ? null : catId
+const selectCluster = (clusterId: string) => {
+  activeCategory.value = clusterId
+}
+
+const closePanel = () => {
+  activeCategory.value = null
 }
 
 const openItem = (item: KnowledgeItem) => {
   selectedItem.value = item
 }
 
-// Three.js Particle System
+// Three.js Galaxy System
 let scene: THREE.Scene
 let camera: THREE.PerspectiveCamera
 let renderer: THREE.WebGLRenderer
-let particles: THREE.Points
-let particlePositions: Float32Array
-let particleVelocities: Float32Array
-let particleSizes: Float32Array
 let animationId: number
 let mouseWorld = new THREE.Vector3()
+let raycaster = new THREE.Raycaster()
+let mouse = new THREE.Vector2()
 
-const PARTICLE_COUNT = 3000
+interface ClusterData {
+  id: string
+  name: string
+  color: THREE.Color
+  center: THREE.Vector3
+  particles: THREE.Points
+  count: number
+}
+
+let clusters: ClusterData[] = []
+const PARTICLES_PER_CLUSTER = 300
+const BACKGROUND_PARTICLES = 1500
 
 const initThreeJS = () => {
   if (!canvasRef.value) return
@@ -397,8 +439,8 @@ const initThreeJS = () => {
   scene = new THREE.Scene()
 
   // Camera
-  camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000)
-  camera.position.z = 50
+  camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000)
+  camera.position.z = 100
 
   // Renderer
   renderer = new THREE.WebGLRenderer({
@@ -409,86 +451,122 @@ const initThreeJS = () => {
   renderer.setSize(window.innerWidth, window.innerHeight)
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
 
-  // Particles
-  const geometry = new THREE.BufferGeometry()
-  particlePositions = new Float32Array(PARTICLE_COUNT * 3)
-  particleVelocities = new Float32Array(PARTICLE_COUNT * 3)
-  particleSizes = new Float32Array(PARTICLE_COUNT)
-  const colors = new Float32Array(PARTICLE_COUNT * 3)
-
-  const colorPalette = [
-    new THREE.Color('#DC2626'), // Red
-    new THREE.Color('#22c55e'), // Green
-    new THREE.Color('#3b82f6'), // Blue
-    new THREE.Color('#f59e0b'), // Orange
-    new THREE.Color('#8b5cf6'), // Purple
-    new THREE.Color('#06b6d4'), // Cyan
-    new THREE.Color('#ffffff'), // White
+  // Create category clusters
+  const clusterPositions = [
+    { x: -50, y: 30 },   // Top left
+    { x: 0, y: 40 },     // Top center
+    { x: 50, y: 30 },    // Top right
+    { x: -40, y: -5 },   // Middle left
+    { x: 40, y: -5 },    // Middle right
+    { x: -50, y: -35 },  // Bottom left
+    { x: 0, y: -40 },    // Bottom center
+    { x: 50, y: -35 },   // Bottom right
   ]
 
-  for (let i = 0; i < PARTICLE_COUNT; i++) {
+  categories.value.forEach((cat, index) => {
+    const pos = clusterPositions[index % clusterPositions.length]
+    const cluster = createCluster(cat, pos.x, pos.y, index)
+    clusters.push(cluster)
+    scene.add(cluster.particles)
+  })
+
+  // Background stars
+  createBackgroundStars()
+
+  // Update labels initially
+  updateClusterLabels()
+
+  animate()
+}
+
+const createCluster = (category: Category, x: number, y: number, index: number): ClusterData => {
+  const geometry = new THREE.BufferGeometry()
+  const positions = new Float32Array(PARTICLES_PER_CLUSTER * 3)
+  const sizes = new Float32Array(PARTICLES_PER_CLUSTER)
+  const colors = new Float32Array(PARTICLES_PER_CLUSTER * 3)
+  const randoms = new Float32Array(PARTICLES_PER_CLUSTER)
+
+  const color = new THREE.Color(category.color)
+  const center = new THREE.Vector3(x, y, (Math.random() - 0.5) * 20)
+
+  // Spiral galaxy shape
+  for (let i = 0; i < PARTICLES_PER_CLUSTER; i++) {
     const i3 = i * 3
 
-    // Position - spread across the screen
-    particlePositions[i3] = (Math.random() - 0.5) * 150
-    particlePositions[i3 + 1] = (Math.random() - 0.5) * 100
-    particlePositions[i3 + 2] = (Math.random() - 0.5) * 80
+    // Spiral arm pattern
+    const angle = (i / PARTICLES_PER_CLUSTER) * Math.PI * 6 + index * 0.5
+    const radius = 3 + (i / PARTICLES_PER_CLUSTER) * 12 + Math.random() * 3
+    const armOffset = Math.sin(angle * 2) * 2
 
-    // Velocity
-    particleVelocities[i3] = (Math.random() - 0.5) * 0.02
-    particleVelocities[i3 + 1] = (Math.random() - 0.5) * 0.02
-    particleVelocities[i3 + 2] = (Math.random() - 0.5) * 0.01
+    positions[i3] = center.x + Math.cos(angle) * radius + armOffset + (Math.random() - 0.5) * 4
+    positions[i3 + 1] = center.y + Math.sin(angle) * radius * 0.6 + (Math.random() - 0.5) * 3
+    positions[i3 + 2] = center.z + (Math.random() - 0.5) * 8
 
-    // Size
-    particleSizes[i] = Math.random() * 2 + 0.5
+    // Size variation
+    const distFromCenter = Math.sqrt(
+      Math.pow(positions[i3] - center.x, 2) +
+      Math.pow(positions[i3 + 1] - center.y, 2)
+    )
+    sizes[i] = Math.max(0.5, 3 - distFromCenter * 0.15) * (0.5 + Math.random() * 0.5)
 
-    // Color
-    const color = colorPalette[Math.floor(Math.random() * colorPalette.length)]
-    colors[i3] = color.r
-    colors[i3 + 1] = color.g
-    colors[i3 + 2] = color.b
+    // Color with variation
+    const brightness = 0.7 + Math.random() * 0.3
+    colors[i3] = color.r * brightness
+    colors[i3 + 1] = color.g * brightness
+    colors[i3 + 2] = color.b * brightness
+
+    randoms[i] = Math.random()
   }
 
-  geometry.setAttribute('position', new THREE.BufferAttribute(particlePositions, 3))
-  geometry.setAttribute('size', new THREE.BufferAttribute(particleSizes, 1))
+  geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3))
+  geometry.setAttribute('size', new THREE.BufferAttribute(sizes, 1))
   geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3))
+  geometry.setAttribute('aRandom', new THREE.BufferAttribute(randoms, 1))
 
-  // Shader Material
   const material = new THREE.ShaderMaterial({
     uniforms: {
       uTime: { value: 0 },
       uMouse: { value: new THREE.Vector3() },
+      uHovered: { value: 0 },
     },
     vertexShader: `
       attribute float size;
       attribute vec3 color;
+      attribute float aRandom;
       varying vec3 vColor;
       varying float vAlpha;
       uniform float uTime;
       uniform vec3 uMouse;
+      uniform float uHovered;
 
       void main() {
         vColor = color;
-
         vec3 pos = position;
 
-        // Mouse interaction
-        float dist = distance(pos.xy, uMouse.xy);
-        float influence = smoothstep(30.0, 0.0, dist);
+        // Orbital motion
+        float angle = uTime * (0.1 + aRandom * 0.1);
+        float dist = length(pos.xy - vec2(${center.x.toFixed(1)}, ${center.y.toFixed(1)}));
+        pos.x += sin(angle + dist * 0.1) * 0.5;
+        pos.y += cos(angle + dist * 0.1) * 0.3;
 
-        // Repel from mouse
+        // Breathing effect
+        float breathe = sin(uTime * 0.5 + aRandom * 6.28) * 0.3;
+        pos.xy += normalize(pos.xy - vec2(${center.x.toFixed(1)}, ${center.y.toFixed(1)})) * breathe;
+
+        // Mouse repulsion
+        float mouseDist = distance(pos.xy, uMouse.xy);
+        float influence = smoothstep(25.0, 0.0, mouseDist);
         vec2 dir = normalize(pos.xy - uMouse.xy + 0.001);
-        pos.xy += dir * influence * 8.0;
+        pos.xy += dir * influence * 5.0;
 
-        // Subtle wave motion
-        pos.x += sin(uTime * 0.5 + position.y * 0.1) * 0.3;
-        pos.y += cos(uTime * 0.3 + position.x * 0.1) * 0.3;
+        // Hover expansion
+        pos.xy += normalize(pos.xy - vec2(${center.x.toFixed(1)}, ${center.y.toFixed(1)})) * uHovered * 3.0;
 
         vec4 mvPosition = modelViewMatrix * vec4(pos, 1.0);
-        gl_PointSize = size * (300.0 / -mvPosition.z);
+        gl_PointSize = size * (250.0 / -mvPosition.z) * (1.0 + uHovered * 0.5);
         gl_Position = projectionMatrix * mvPosition;
 
-        vAlpha = 1.0 - influence * 0.5;
+        vAlpha = 0.8 + uHovered * 0.2;
       }
     `,
     fragmentShader: `
@@ -499,8 +577,13 @@ const initThreeJS = () => {
         float dist = length(gl_PointCoord - vec2(0.5));
         if (dist > 0.5) discard;
 
-        float alpha = smoothstep(0.5, 0.1, dist) * vAlpha;
-        gl_FragColor = vec4(vColor, alpha * 0.8);
+        float glow = 1.0 - smoothstep(0.0, 0.5, dist);
+        float core = 1.0 - smoothstep(0.0, 0.2, dist);
+
+        vec3 finalColor = vColor * glow + vec3(1.0) * core * 0.3;
+        float alpha = glow * vAlpha;
+
+        gl_FragColor = vec4(finalColor, alpha);
       }
     `,
     transparent: true,
@@ -508,10 +591,115 @@ const initThreeJS = () => {
     blending: THREE.AdditiveBlending,
   })
 
-  particles = new THREE.Points(geometry, material)
-  scene.add(particles)
+  const particles = new THREE.Points(geometry, material)
+  particles.userData = { clusterId: category.id, center }
 
-  animate()
+  return {
+    id: category.id,
+    name: category.name,
+    color,
+    center,
+    particles,
+    count: getCategoryItems(category.id).length
+  }
+}
+
+const createBackgroundStars = () => {
+  const geometry = new THREE.BufferGeometry()
+  const positions = new Float32Array(BACKGROUND_PARTICLES * 3)
+  const sizes = new Float32Array(BACKGROUND_PARTICLES)
+  const colors = new Float32Array(BACKGROUND_PARTICLES * 3)
+
+  for (let i = 0; i < BACKGROUND_PARTICLES; i++) {
+    const i3 = i * 3
+
+    positions[i3] = (Math.random() - 0.5) * 300
+    positions[i3 + 1] = (Math.random() - 0.5) * 200
+    positions[i3 + 2] = -50 - Math.random() * 100
+
+    sizes[i] = Math.random() * 1.5
+
+    const brightness = 0.3 + Math.random() * 0.4
+    colors[i3] = brightness
+    colors[i3 + 1] = brightness
+    colors[i3 + 2] = brightness
+  }
+
+  geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3))
+  geometry.setAttribute('size', new THREE.BufferAttribute(sizes, 1))
+  geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3))
+
+  const material = new THREE.ShaderMaterial({
+    uniforms: {
+      uTime: { value: 0 },
+    },
+    vertexShader: `
+      attribute float size;
+      attribute vec3 color;
+      varying vec3 vColor;
+      varying float vAlpha;
+      uniform float uTime;
+
+      void main() {
+        vColor = color;
+
+        vec3 pos = position;
+        pos.z += sin(uTime * 0.1 + position.x * 0.01) * 2.0;
+
+        vec4 mvPosition = modelViewMatrix * vec4(pos, 1.0);
+        gl_PointSize = size * (150.0 / -mvPosition.z);
+        gl_Position = projectionMatrix * mvPosition;
+
+        float twinkle = sin(uTime * 2.0 + position.x + position.y) * 0.3 + 0.7;
+        vAlpha = twinkle;
+      }
+    `,
+    fragmentShader: `
+      varying vec3 vColor;
+      varying float vAlpha;
+
+      void main() {
+        float dist = length(gl_PointCoord - vec2(0.5));
+        if (dist > 0.5) discard;
+
+        float alpha = smoothstep(0.5, 0.0, dist) * vAlpha * 0.6;
+        gl_FragColor = vec4(vColor, alpha);
+      }
+    `,
+    transparent: true,
+    depthWrite: false,
+    blending: THREE.AdditiveBlending,
+  })
+
+  const stars = new THREE.Points(geometry, material)
+  stars.userData = { isBackground: true }
+  scene.add(stars)
+}
+
+const updateClusterLabels = () => {
+  if (!camera || !renderer) return
+
+  const labels: ClusterLabel[] = []
+
+  clusters.forEach(cluster => {
+    const screenPos = cluster.center.clone().project(camera)
+    const x = (screenPos.x * 0.5 + 0.5) * window.innerWidth
+    const y = (-screenPos.y * 0.5 + 0.5) * window.innerHeight
+
+    const cat = categories.value.find(c => c.id === cluster.id)
+
+    labels.push({
+      id: cluster.id,
+      name: cat?.name || cluster.id,
+      count: cluster.count,
+      color: cat?.color || '#ffffff',
+      x,
+      y,
+      visible: screenPos.z < 1 && x > 0 && x < window.innerWidth && y > 0 && y < window.innerHeight
+    })
+  })
+
+  clusterLabels.value = labels
 }
 
 const animate = () => {
@@ -519,65 +707,95 @@ const animate = () => {
 
   const time = performance.now() * 0.001
 
-  // Update uniforms
-  const material = particles.material as THREE.ShaderMaterial
-  material.uniforms.uTime.value = time
-  material.uniforms.uMouse.value = mouseWorld
+  // Update all cluster materials
+  scene.children.forEach(child => {
+    if (child instanceof THREE.Points && child.material instanceof THREE.ShaderMaterial) {
+      child.material.uniforms.uTime.value = time
+      child.material.uniforms.uMouse.value = mouseWorld
 
-  // Update particle positions
-  const positions = particles.geometry.attributes.position.array as Float32Array
+      if (child.userData.clusterId) {
+        const isHovered = hoveredCluster.value?.id === child.userData.clusterId
+        child.material.uniforms.uHovered.value += (isHovered ? 1 : 0 - child.material.uniforms.uHovered.value) * 0.1
+      }
+    }
+  })
 
-  for (let i = 0; i < PARTICLE_COUNT; i++) {
-    const i3 = i * 3
+  // Subtle camera movement
+  camera.position.x = Math.sin(time * 0.1) * 3
+  camera.position.y = Math.cos(time * 0.08) * 2
+  camera.lookAt(0, 0, 0)
 
-    positions[i3] += particleVelocities[i3]
-    positions[i3 + 1] += particleVelocities[i3 + 1]
-    positions[i3 + 2] += particleVelocities[i3 + 2]
-
-    // Bounds check
-    if (positions[i3] > 75) positions[i3] = -75
-    if (positions[i3] < -75) positions[i3] = 75
-    if (positions[i3 + 1] > 50) positions[i3 + 1] = -50
-    if (positions[i3 + 1] < -50) positions[i3 + 1] = 50
-  }
-
-  particles.geometry.attributes.position.needsUpdate = true
-
-  // Subtle rotation
-  particles.rotation.y = time * 0.02
-  particles.rotation.x = Math.sin(time * 0.1) * 0.05
-
+  updateClusterLabels()
   renderer.render(scene, camera)
 }
 
 const handleMouseMove = (e: MouseEvent) => {
   mousePos.value = { x: e.clientX, y: e.clientY }
 
-  // Convert to 3D coordinates
-  const x = (e.clientX / window.innerWidth) * 2 - 1
-  const y = -(e.clientY / window.innerHeight) * 2 + 1
-  mouseWorld.set(x * 50, y * 30, 0)
+  // Convert to normalized device coordinates
+  mouse.x = (e.clientX / window.innerWidth) * 2 - 1
+  mouse.y = -(e.clientY / window.innerHeight) * 2 + 1
+
+  // Convert to world coordinates
+  mouseWorld.set(mouse.x * 60, mouse.y * 40, 0)
+
+  // Raycast for hover detection
+  if (camera && scene) {
+    raycaster.setFromCamera(mouse, camera)
+
+    let foundHover: { id: string; color: string } | null = null
+
+    for (const cluster of clusters) {
+      const dist = raycaster.ray.distanceToPoint(cluster.center)
+      if (dist < 15) {
+        const cat = categories.value.find(c => c.id === cluster.id)
+        foundHover = { id: cluster.id, color: cat?.color || '#ffffff' }
+        break
+      }
+    }
+
+    hoveredCluster.value = foundHover
+
+    if (canvasRef.value) {
+      canvasRef.value.style.cursor = foundHover ? 'pointer' : 'default'
+    }
+  }
+}
+
+const handleClick = (e: MouseEvent) => {
+  if (hoveredCluster.value) {
+    activeCategory.value = hoveredCluster.value.id
+  }
 }
 
 const handleMouseEnter = () => { isMouseInside.value = true }
-const handleMouseLeave = () => { isMouseInside.value = false }
+const handleMouseLeave = () => {
+  isMouseInside.value = false
+  hoveredCluster.value = null
+}
 
 const handleResize = () => {
   if (!renderer || !camera) return
   camera.aspect = window.innerWidth / window.innerHeight
   camera.updateProjectionMatrix()
   renderer.setSize(window.innerWidth, window.innerHeight)
+  updateClusterLabels()
 }
 
 const handleKeydown = (e: KeyboardEvent) => {
   if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
     e.preventDefault()
-    const input = document.querySelector('.search-input') as HTMLInputElement
-    input?.focus()
+    showSearch.value = true
+    nextTick(() => searchInputRef.value?.focus())
   }
   if (e.key === 'Escape') {
-    selectedItem.value = null
-    searchQuery.value = ''
+    if (showSearch.value) {
+      showSearch.value = false
+    } else if (selectedItem.value) {
+      selectedItem.value = null
+    } else if (activeCategory.value) {
+      activeCategory.value = null
+    }
   }
 }
 
@@ -585,6 +803,7 @@ onMounted(() => {
   initThreeJS()
 
   window.addEventListener('mousemove', handleMouseMove)
+  window.addEventListener('click', handleClick)
   window.addEventListener('resize', handleResize)
   window.addEventListener('keydown', handleKeydown)
 
@@ -598,9 +817,21 @@ onUnmounted(() => {
   if (animationId) cancelAnimationFrame(animationId)
   if (renderer) renderer.dispose()
 
+  clusters = []
+
   window.removeEventListener('mousemove', handleMouseMove)
+  window.removeEventListener('click', handleClick)
   window.removeEventListener('resize', handleResize)
   window.removeEventListener('keydown', handleKeydown)
+})
+
+// Watch for search modal open
+watch(showSearch, (val) => {
+  if (val) {
+    nextTick(() => searchInputRef.value?.focus())
+  } else {
+    searchQuery.value = ''
+  }
 })
 </script>
 
@@ -613,14 +844,13 @@ onUnmounted(() => {
   background: #030303;
   color: #f5f5f5;
   position: relative;
-  overflow-x: hidden;
+  overflow: hidden;
 }
 
 .kb-canvas {
   position: fixed;
   inset: 0;
   z-index: 1;
-  pointer-events: none;
 }
 
 .bg-noise {
@@ -628,47 +858,104 @@ onUnmounted(() => {
   inset: 0;
   z-index: 2;
   pointer-events: none;
-  opacity: 0.03;
+  opacity: 0.02;
   background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
 }
 
 .cursor-glow {
   position: fixed;
-  width: 400px;
-  height: 400px;
+  width: 500px;
+  height: 500px;
   border-radius: 50%;
-  background: radial-gradient(circle, rgba(220, 38, 38, 0.15) 0%, transparent 70%);
+  background: radial-gradient(circle, rgba(220, 38, 38, 0.12) 0%, transparent 70%);
   pointer-events: none;
   transform: translate(-50%, -50%);
   z-index: 3;
-  transition: opacity 0.3s;
+  transition: opacity 0.3s, background 0.5s;
 }
 
 /* ============================================
-   CONTENT LAYER
+   CLUSTER LABELS
    ============================================ */
-.kb-content {
-  position: relative;
-  z-index: 10;
-  min-height: 100vh;
+.cluster-label {
+  position: fixed;
+  z-index: 20;
+  transform: translate(-50%, -50%);
   display: flex;
-  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 16px;
+  background: rgba(0, 0, 0, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  white-space: nowrap;
+}
+
+.cluster-label:hover,
+.cluster-label.hovered {
+  border-color: var(--accent);
+  background: rgba(0, 0, 0, 0.8);
+  transform: translate(-50%, -50%) scale(1.05);
+  box-shadow: 0 0 30px var(--accent);
+}
+
+.cluster-label.active {
+  border-color: var(--accent);
+  background: var(--accent);
+}
+
+.cluster-label.active .label-text,
+.cluster-label.active .label-count {
+  color: #000;
+}
+
+.label-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  animation: labelPulse 2s infinite;
+}
+
+@keyframes labelPulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.6; transform: scale(1.2); }
+}
+
+.label-text {
+  font-size: 13px;
+  letter-spacing: 0.1em;
+  color: #f5f5f5;
+}
+
+.label-count {
+  font-size: 10px;
+  color: #737373;
+  padding: 2px 6px;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.cluster-label.hovered .label-count {
+  color: var(--accent);
 }
 
 /* ============================================
    HEADER
    ============================================ */
 .kb-header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 20px 40px;
+  padding: 16px 32px;
+  background: rgba(3, 3, 3, 0.8);
+  backdrop-filter: blur(20px);
   border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-  backdrop-filter: blur(10px);
-  background: rgba(3, 3, 3, 0.7);
-  position: sticky;
-  top: 0;
-  z-index: 100;
 }
 
 .kb-logo {
@@ -679,55 +966,79 @@ onUnmounted(() => {
 }
 
 .logo-symbol {
-  width: 40px;
-  height: 40px;
+  width: 36px;
+  height: 36px;
   background: #DC2626;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 24px;
+  font-size: 20px;
   color: #000;
 }
 
 .logo-text {
-  font-size: 14px;
+  font-size: 12px;
   letter-spacing: 0.2em;
   color: #f5f5f5;
 }
 
-.kb-nav {
+.header-center {
   display: flex;
-  gap: 8px;
+  align-items: center;
+  gap: 12px;
 }
 
-.nav-btn {
-  padding: 8px 16px;
-  background: transparent;
+.header-title {
+  font-size: 11px;
+  letter-spacing: 0.15em;
+  color: #737373;
+}
+
+.header-version {
+  font-size: 10px;
+  padding: 2px 8px;
+  background: rgba(220, 38, 38, 0.2);
+  color: #DC2626;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.search-trigger {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: rgba(255, 255, 255, 0.05);
   border: 1px solid rgba(255, 255, 255, 0.1);
   color: #737373;
-  font-size: 11px;
-  letter-spacing: 0.05em;
   cursor: pointer;
   transition: all 0.2s;
 }
 
-.nav-btn:hover {
+.search-trigger:hover {
   border-color: #DC2626;
   color: #f5f5f5;
 }
 
-.nav-btn.active {
-  background: #DC2626;
-  border-color: #DC2626;
-  color: #000;
+.search-trigger svg {
+  width: 16px;
+  height: 16px;
+}
+
+.search-trigger span {
+  font-size: 11px;
 }
 
 .terminal-btn {
-  padding: 10px 20px;
+  padding: 8px 16px;
   background: transparent;
   border: 1px solid #DC2626;
   color: #DC2626;
-  font-size: 12px;
+  font-size: 11px;
   letter-spacing: 0.1em;
   text-decoration: none;
   transition: all 0.2s;
@@ -742,11 +1053,13 @@ onUnmounted(() => {
    HERO
    ============================================ */
 .kb-hero {
-  padding: 120px 40px 80px;
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 10;
   text-align: center;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
+  pointer-events: none;
 }
 
 .hero-badge {
@@ -757,9 +1070,9 @@ onUnmounted(() => {
   background: rgba(220, 38, 38, 0.1);
   border: 1px solid rgba(220, 38, 38, 0.3);
   color: #DC2626;
-  font-size: 11px;
+  font-size: 10px;
   letter-spacing: 0.15em;
-  margin-bottom: 32px;
+  margin-bottom: 24px;
 }
 
 .badge-dot {
@@ -776,8 +1089,8 @@ onUnmounted(() => {
 }
 
 .hero-title {
-  font-size: clamp(4rem, 15vw, 12rem);
-  line-height: 0.85;
+  font-size: clamp(3rem, 12vw, 8rem);
+  line-height: 0.9;
   margin: 0;
   text-transform: uppercase;
 }
@@ -794,41 +1107,229 @@ onUnmounted(() => {
 }
 
 .hero-subtitle {
-  font-size: 14px;
+  font-size: 13px;
   color: #525252;
-  margin-top: 24px;
+  margin-top: 20px;
   letter-spacing: 0.1em;
 }
 
+.hero-hint {
+  margin-top: 48px;
+  font-size: 11px;
+  color: #404040;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.hint-icon {
+  animation: bounce 2s infinite;
+}
+
+@keyframes bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(5px); }
+}
+
 /* ============================================
-   SEARCH
+   CATEGORY PANEL
    ============================================ */
-.search-container {
+.category-panel {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(10px);
+  display: flex;
+  justify-content: flex-end;
+}
+
+.panel-content {
+  width: 100%;
+  max-width: 500px;
+  height: 100%;
+  background: #0a0a0a;
+  border-left: 1px solid rgba(255, 255, 255, 0.1);
+  overflow-y: auto;
+  position: relative;
+}
+
+.panel-close {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  width: 40px;
+  height: 40px;
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #525252;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+  z-index: 10;
+}
+
+.panel-close:hover {
+  border-color: #DC2626;
+  color: #DC2626;
+}
+
+.panel-close svg {
+  width: 20px;
+  height: 20px;
+}
+
+.panel-header {
+  padding: 60px 32px 32px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.panel-icon {
+  width: 56px;
+  height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #000;
+  margin-bottom: 20px;
+}
+
+.panel-icon svg {
+  width: 28px;
+  height: 28px;
+}
+
+.panel-title {
+  font-size: 2rem;
+  color: #f5f5f5;
+  margin: 0 0 12px;
+  letter-spacing: 0.05em;
+}
+
+.panel-desc {
+  font-size: 13px;
+  color: #737373;
+  line-height: 1.6;
+  margin: 0;
+}
+
+.panel-items {
+  padding: 24px;
+}
+
+.panel-item {
+  padding: 20px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  margin-bottom: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.panel-item:hover {
+  border-color: var(--accent);
+  background: rgba(255, 255, 255, 0.04);
+  transform: translateX(4px);
+}
+
+.item-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.item-code {
+  font-size: 11px;
+  padding: 2px 8px;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.item-title {
+  font-size: 16px;
+  color: #f5f5f5;
+}
+
+.item-desc {
+  font-size: 12px;
+  color: #525252;
+  margin: 0 0 12px;
+  line-height: 1.5;
+}
+
+.item-tags {
+  display: flex;
+  gap: 8px;
+}
+
+.item-tag {
+  font-size: 9px;
+  padding: 3px 8px;
+  letter-spacing: 0.05em;
+}
+
+.item-tag.formula {
+  background: rgba(220, 38, 38, 0.2);
+  color: #f87171;
+}
+
+.item-tag.path {
+  background: rgba(34, 197, 94, 0.2);
+  color: #4ade80;
+}
+
+/* Panel Transition */
+.panel-enter-active,
+.panel-leave-active {
+  transition: all 0.4s ease;
+}
+
+.panel-enter-from,
+.panel-leave-to {
+  opacity: 0;
+}
+
+.panel-enter-from .panel-content,
+.panel-leave-to .panel-content {
+  transform: translateX(100%);
+}
+
+/* ============================================
+   SEARCH MODAL
+   ============================================ */
+.search-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 300;
+  background: rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(20px);
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 120px 20px 20px;
+}
+
+.search-modal {
   width: 100%;
   max-width: 600px;
-  margin-top: 48px;
-  position: relative;
+  background: #0a0a0a;
+  border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .search-box {
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 16px 20px;
-  background: rgba(10, 10, 10, 0.8);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(10px);
-  transition: all 0.2s;
-}
-
-.search-box:focus-within {
-  border-color: #DC2626;
-  box-shadow: 0 0 30px rgba(220, 38, 38, 0.2);
+  padding: 20px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 .search-icon {
-  width: 20px;
-  height: 20px;
+  width: 24px;
+  height: 24px;
   color: #525252;
 }
 
@@ -837,7 +1338,7 @@ onUnmounted(() => {
   background: transparent;
   border: none;
   color: #f5f5f5;
-  font-size: 14px;
+  font-size: 16px;
   outline: none;
 }
 
@@ -845,32 +1346,16 @@ onUnmounted(() => {
   color: #404040;
 }
 
-.search-shortcut {
-  padding: 4px 8px;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  font-size: 11px;
-  color: #525252;
-}
-
 .search-results {
-  position: absolute;
-  top: 100%;
-  left: 0;
-  right: 0;
-  margin-top: 8px;
-  background: rgba(10, 10, 10, 0.95);
-  border: 1px solid rgba(255, 255, 255, 0.1);
   max-height: 400px;
   overflow-y: auto;
-  backdrop-filter: blur(20px);
 }
 
 .search-result {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 12px 16px;
+  gap: 16px;
+  padding: 16px 20px;
   cursor: pointer;
   transition: background 0.2s;
 }
@@ -880,12 +1365,12 @@ onUnmounted(() => {
 }
 
 .result-icon {
-  width: 36px;
-  height: 36px;
+  width: 40px;
+  height: 40px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 14px;
+  font-size: 12px;
   font-weight: 600;
   color: #000;
 }
@@ -893,11 +1378,11 @@ onUnmounted(() => {
 .result-info {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 4px;
 }
 
 .result-title {
-  font-size: 14px;
+  font-size: 15px;
   color: #f5f5f5;
 }
 
@@ -906,246 +1391,39 @@ onUnmounted(() => {
   color: #525252;
 }
 
-/* ============================================
-   CATEGORIES
-   ============================================ */
-.kb-categories {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
-  gap: 16px;
-  padding: 60px 40px;
-  max-width: 1400px;
-  margin: 0 auto;
-  width: 100%;
-}
-
-.category-card {
-  background: rgba(10, 10, 10, 0.6);
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  padding: 24px;
-  cursor: pointer;
-  transition: all 0.3s;
-  backdrop-filter: blur(10px);
-  animation: fadeInUp 0.6s ease forwards;
-  animation-delay: var(--delay);
-  opacity: 0;
-}
-
-@keyframes fadeInUp {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.category-card:hover {
-  border-color: var(--accent);
-  transform: translateY(-4px);
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
-}
-
-.category-card.expanded {
-  border-color: var(--accent);
-  background: rgba(10, 10, 10, 0.9);
-}
-
-.card-header {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-}
-
-.card-icon {
-  width: 48px;
-  height: 48px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #000;
-}
-
-.card-icon svg {
-  width: 24px;
-  height: 24px;
-}
-
-.card-meta {
-  flex: 1;
-}
-
-.card-title {
-  font-size: 18px;
-  color: #f5f5f5;
-  margin: 0;
-  letter-spacing: 0.1em;
-}
-
-.card-count {
-  font-size: 11px;
-  color: #525252;
-}
-
-.card-expand {
-  width: 32px;
-  height: 32px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  transition: all 0.2s;
-}
-
-.card-expand svg {
-  width: 16px;
-  height: 16px;
-  color: #525252;
-  transition: transform 0.3s;
-}
-
-.category-card:hover .card-expand {
-  border-color: var(--accent);
-}
-
-.category-card:hover .card-expand svg {
-  color: var(--accent);
-}
-
-.card-desc {
-  font-size: 13px;
-  color: #525252;
-  margin: 16px 0 0;
-  line-height: 1.5;
-}
-
-.card-items {
-  margin-top: 20px;
-  padding-top: 20px;
-  border-top: 1px solid rgba(255, 255, 255, 0.05);
-  max-height: 300px;
-  overflow-y: auto;
-}
-
-.item-row {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 12px 0;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.03);
-  transition: all 0.2s;
-}
-
-.item-row:hover {
-  padding-left: 12px;
-  background: rgba(255, 255, 255, 0.02);
-}
-
-.item-row:last-child {
-  border-bottom: none;
-}
-
-.item-code {
-  font-size: 11px;
-  color: var(--accent);
-  min-width: 50px;
-}
-
-.item-title {
-  flex: 1;
-  font-size: 14px;
-  color: #a3a3a3;
-}
-
-.item-row:hover .item-title {
-  color: #f5f5f5;
-}
-
-.item-arrow {
-  color: #525252;
-  opacity: 0;
-  transition: all 0.2s;
-}
-
-.item-row:hover .item-arrow {
-  opacity: 1;
-  transform: translateX(4px);
-  color: var(--accent);
-}
-
-/* ============================================
-   STATS
-   ============================================ */
-.kb-stats {
-  display: flex;
-  justify-content: center;
-  gap: 64px;
-  padding: 60px 40px;
-  border-top: 1px solid rgba(255, 255, 255, 0.05);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-  background: rgba(10, 10, 10, 0.5);
-}
-
-.stat-item {
+.search-empty {
+  padding: 40px 20px;
   text-align: center;
-}
-
-.stat-value {
-  font-size: clamp(2rem, 5vw, 4rem);
-  color: #DC2626;
-  display: block;
-}
-
-.stat-label {
-  font-size: 12px;
   color: #525252;
-  letter-spacing: 0.1em;
-  margin-top: 8px;
+}
+
+/* Modal Transition */
+.modal-enter-active,
+.modal-leave-active {
+  transition: all 0.3s ease;
+}
+
+.modal-enter-from,
+.modal-leave-to {
+  opacity: 0;
+}
+
+.modal-enter-from .search-modal,
+.modal-enter-from .modal-content,
+.modal-leave-to .search-modal,
+.modal-leave-to .modal-content {
+  transform: translateY(-20px) scale(0.95);
 }
 
 /* ============================================
-   FOOTER
-   ============================================ */
-.kb-footer {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 32px 40px;
-  margin-top: auto;
-}
-
-.footer-left {
-  font-size: 12px;
-  color: #404040;
-}
-
-.footer-right {
-  display: flex;
-  gap: 24px;
-}
-
-.footer-link {
-  font-size: 12px;
-  color: #525252;
-  text-decoration: none;
-  transition: color 0.2s;
-}
-
-.footer-link:hover {
-  color: #DC2626;
-}
-
-/* ============================================
-   MODAL
+   DETAIL MODAL
    ============================================ */
 .modal-overlay {
   position: fixed;
   inset: 0;
-  z-index: 1000;
-  background: rgba(0, 0, 0, 0.8);
-  backdrop-filter: blur(10px);
+  z-index: 400;
+  background: rgba(0, 0, 0, 0.85);
+  backdrop-filter: blur(20px);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1161,6 +1439,7 @@ onUnmounted(() => {
   display: flex;
   flex-direction: column;
   position: relative;
+  overflow-y: auto;
 }
 
 .modal-close {
@@ -1177,6 +1456,7 @@ onUnmounted(() => {
   align-items: center;
   justify-content: center;
   transition: all 0.2s;
+  z-index: 10;
 }
 
 .modal-close:hover {
@@ -1218,7 +1498,6 @@ onUnmounted(() => {
 
 .modal-body {
   padding: 24px 32px;
-  overflow-y: auto;
   flex: 1;
 }
 
@@ -1267,15 +1546,6 @@ onUnmounted(() => {
 
 .feature-list li:last-child {
   border-bottom: none;
-}
-
-.path-code {
-  display: block;
-  padding: 12px 16px;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  font-size: 13px;
-  color: #22c55e;
 }
 
 .formula-code {
@@ -1368,6 +1638,43 @@ onUnmounted(() => {
 }
 
 /* ============================================
+   FOOTER
+   ============================================ */
+.kb-footer {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 10;
+  padding: 24px;
+  background: linear-gradient(to top, rgba(3, 3, 3, 0.9), transparent);
+  pointer-events: none;
+}
+
+.footer-stats {
+  display: flex;
+  justify-content: center;
+  gap: 48px;
+}
+
+.stat-item {
+  text-align: center;
+}
+
+.stat-value {
+  font-size: 2rem;
+  color: #DC2626;
+  display: block;
+}
+
+.stat-label {
+  font-size: 10px;
+  color: #525252;
+  letter-spacing: 0.1em;
+  margin-top: 4px;
+}
+
+/* ============================================
    SCROLLBAR
    ============================================ */
 .custom-scrollbar::-webkit-scrollbar {
@@ -1389,84 +1696,46 @@ onUnmounted(() => {
 /* ============================================
    RESPONSIVE
    ============================================ */
-@media (max-width: 1024px) {
+@media (max-width: 768px) {
   .kb-header {
-    padding: 16px 24px;
+    padding: 12px 16px;
   }
 
-  .kb-nav {
+  .header-center {
     display: none;
   }
 
-  .kb-hero {
-    padding: 80px 24px 60px;
+  .search-trigger span {
+    display: none;
   }
 
-  .kb-categories {
-    padding: 40px 24px;
-    grid-template-columns: 1fr;
+  .cluster-label {
+    padding: 6px 12px;
+    gap: 6px;
   }
 
-  .kb-stats {
-    gap: 32px;
-    flex-wrap: wrap;
-  }
-}
-
-@media (max-width: 768px) {
-  .kb-header {
-    flex-wrap: wrap;
-    gap: 16px;
+  .label-text {
+    font-size: 11px;
   }
 
-  .terminal-btn {
-    width: 100%;
-    text-align: center;
-    order: 3;
+  .label-count {
+    display: none;
+  }
+
+  .panel-content {
+    max-width: 100%;
   }
 
   .hero-title {
-    font-size: clamp(3rem, 20vw, 6rem);
+    font-size: clamp(2rem, 15vw, 4rem);
   }
 
-  .search-shortcut {
-    display: none;
+  .footer-stats {
+    gap: 24px;
   }
 
-  .kb-stats {
-    padding: 40px 24px;
-  }
-
-  .kb-footer {
-    flex-direction: column;
-    gap: 16px;
-    text-align: center;
-  }
-}
-
-@media (max-width: 480px) {
-  .category-card {
-    padding: 16px;
-  }
-
-  .card-icon {
-    width: 40px;
-    height: 40px;
-  }
-
-  .card-title {
-    font-size: 16px;
-  }
-
-  .modal-content {
-    max-height: 90vh;
-  }
-
-  .modal-header,
-  .modal-body,
-  .modal-footer {
-    padding-left: 20px;
-    padding-right: 20px;
+  .stat-value {
+    font-size: 1.5rem;
   }
 }
 </style>
