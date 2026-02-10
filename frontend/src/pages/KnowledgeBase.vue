@@ -80,8 +80,8 @@
       </p>
 
       <div class="hero-hint font-mono">
-        <span class="hint-icon">↓</span>
-        Прокрутите вниз или кликните на созвездие
+        <span class="hint-icon">✦</span>
+        Кликните на созвездие для навигации · ⌘K для поиска
       </div>
     </section>
 
@@ -1124,12 +1124,12 @@ watch(showSearch, (val) => {
 }
 
 .hint-icon {
-  animation: bounce 2s infinite;
+  animation: starPulse 2s infinite;
 }
 
-@keyframes bounce {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(5px); }
+@keyframes starPulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.5; transform: scale(1.2); }
 }
 
 /* ============================================
