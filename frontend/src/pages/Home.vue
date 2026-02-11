@@ -246,27 +246,27 @@ onMounted(async () => {
     if (heroSubtitleRef.value) {
       gsap.fromTo(heroSubtitleRef.value,
         { y: 100, opacity: 0 },
-        { y: 0, opacity: 1, duration: 1, delay: 0, ease: 'power4.out' }
+        { y: 0, opacity: 1, duration: 1, delay: 0, ease: 'EASE_CSS' }
       )
     }
     // ZETA - scales from bottom, expanding upward toward center
     if (heroTitle1Ref.value) {
       gsap.fromTo(heroTitle1Ref.value,
         { scaleY: 0 },
-        { scaleY: 1, duration: 1, delay: 0.1, ease: EASE_CSS, transformOrigin: 'bottom center' }
+        { scaleY: 1, duration: 1, delay: 0.2, ease: EASE_CSS, transformOrigin: 'bottom center' }
       )
     }
     // TERMINAL - scales from top, expanding downward toward center
     if (heroTitle2Ref.value) {
       gsap.fromTo(heroTitle2Ref.value,
         { scaleY: 0 },
-        { scaleY: 1, duration: 1, delay: 0.2, ease: EASE_CSS, transformOrigin: 'top center' }
+        { scaleY: 1, duration: 1, delay: 0.4, ease: EASE_CSS, transformOrigin: 'top center' }
       )
     }
     if (heroBottomRef.value) {
       gsap.fromTo(heroBottomRef.value,
         { y: 20, opacity: 0 },
-        { y: 0, opacity: 1, duration: 0.8, delay: 0.3, ease: 'power4.out' }
+        { y: 0, opacity: 1, duration: 0.8, delay: 0.6, ease: 'power4.out' }
       )
     }
   }
