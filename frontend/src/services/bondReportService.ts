@@ -1,15 +1,15 @@
 /**
  * Сервис для генерации отчётов по облигациям (Bond Report).
  *
- * Объединяет данные из:
- *  - MOEX ISS API (напрямую) — спецификация, история торгов, индексы, корп. события
- *  - Backend /api/bond — DCF-оценка, YTM, дюрация, выпуклость, DV01
- *  - Backend /api/zcyc — КБД (кривая бескупонных доходностей) для G-curve / G-spread
- *  - Backend /api/rudata — рейтинги, fintool reference, расчёт для аналогов
- *
- * Логика вычислений соответствует Excel-шаблонам:
+ * Расчёты соответствуют формулам из Excel-шаблонов:
  *  - «Автоматизированный шаблон.xlsm» → VanilaBondReport
- *  - «Автоматизированный шаблон (для флоатеров).xlsm» + «Расчёт доходности флоатера.xlsm» → FloaterBondReport
+ *  - «Автоматизированный шаблон (для флоатеров).xlsm» → FloaterBondReport
+ *
+ * Источники данных (аналоги Excel add-in функций):
+ *  - MOEX ISS API          → _xll.CbondsClosePrice, CbondsCalcYTM, CbondsCalcDuration
+ *  - RuData (Efir) API     → _xll.EfirYields, EfirEndOfDay, EfirHistoryAgg, ReferenceParams, BondDateParams
+ *  - Backend /api/zcyc     → _xll.GCurve
+ *  - Backend /api/bond     → DCF-оценка (fallback)
  */
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || ''
@@ -25,39 +25,47 @@ export interface RatingEntry {
 }
 
 export interface MarketActivityData {
-  trading_days: number
-  trades: number
-  turnover_to_outstanding: number
+  trading_days: number       // DEAL_ACC.CNN (кол-во торговых дней)
+  trades: number             // DEAL_ACC.SUM (кол-во сделок)
+  turnover_to_outstanding: number  // VAL_ACC.SUM / SumMarketVal
   traded_last_30d: boolean
-  avg_volume_per_day?: number
-  total_volume?: number
-  is_active: boolean
+  total_volume?: number      // VAL_ACC.SUM
+  is_active: boolean         // AND(trades>=10, trading_days>=5, turnover>=0.001)
 }
 
 export interface PricingData {
-  clean_price_pct: number
+  clean_price_pct: number    // Рыночная котировка, % от номинала
   dirty_price?: number
-  ytm: number
-  g_spread_bps: number
-  g_curve_yield: number
+  ytm: number                // YTM или YTP (десятичная дробь, например 0.1993)
+  ytm_pct: number            // YTM/YTP в процентах (например 19.93)
+  g_spread_bps: number       // G-spread в б.п. = (ytm_pct - gcurve_pct) * 100
+  g_curve_yield: number      // G-curve в десятичной дроби
+  g_curve_pct: number        // G-curve в процентах
+  yield_type: 'YTM' | 'YTP' // Тип доходности
 }
 
 export interface RiskIndicators {
-  duration: number
-  mod_duration: number
-  convexity: number
-  dv01: number
+  duration: number           // Дюрация в годах (из EfirEndOfDay / 365)
+  mod_duration: number       // Мод. дюрация (из EfirYields duration_n)
+  convexity: number          // Выпуклость (из EfirYields convexity)
+  dv01: number               // DV01 = ABS(1e6 * (-modDur*0.0001 + 0.5*conv*0.0001^2))
   pvbp?: number
 }
 
+export interface OfferInfo {
+  type: 'Call' | 'Put' | 'Нет'  // Тип оферты
+  date: string | null            // Дата оферты
+}
+
 export interface IssueInfo {
-  issue_date: string | null
-  maturity_date: string | null
-  coupon_rate: number | null
-  coupon_per_year: number | null
+  issue_date: string | null        // BegDistDate
+  maturity_date: string | null     // EndMtyDate
+  coupon_rate: number | null       // cpn_rate (текущий купон, доля)
+  coupon_per_year: number | null   // CouponPerYear
   coupon_formula?: string | null
   next_coupon?: number | null
-  nominal?: number | null
+  nominal?: number | null          // current_fv (текущий номинал)
+  offer?: OfferInfo
 }
 
 export interface CorporateEvent {
@@ -70,18 +78,18 @@ export interface AnalogousBond {
   name: string
   duration: number
   yield: number
+  has_offer?: boolean
 }
 
 export interface IndexYields {
   gov_less_1y?: number
   gov_1_3y?: number
+  gov_3_5y?: number
+  gov_5plus?: number
   corp_aaa?: number
   corp_aa?: number
   corp_a?: number
   corp_bbb?: number
-  corp_aaa_1_3y?: number
-  corp_aa_1_3y?: number
-  corp_a_1_3y?: number
 }
 
 export interface PriceHistoryPoint {
@@ -91,15 +99,16 @@ export interface PriceHistoryPoint {
 
 export interface YieldHistoryPoint {
   date: string
-  ytm: number
-  gcurve: number
-  gspread: number
+  ytm: number       // % (например 19.93)
+  gcurve: number     // % (например 19.15)
+  gspread: number    // бп (например 78)
 }
 
 export interface MarginHistoryPoint {
   date: string
-  dm: number
-  qm: number
+  dm: number    // Discount Margin, bps
+  qm: number    // Quoted Margin, bps
+  price?: number
 }
 
 export interface VanillaBondReport {
@@ -130,6 +139,8 @@ export interface FloaterBondReport extends VanillaBondReport {
   analysis_period: string | null
   coupon_formula: string | null
   margin_history: MarginHistoryPoint[]
+  dm_bps: number | null
+  qm_bps: number | null
   analogous_bonds_note?: string
 }
 
@@ -143,7 +154,6 @@ async function moexRequest(endpoint: string, params: Record<string, string> = {}
   for (const [k, v] of Object.entries(params)) {
     url.searchParams.set(k, v)
   }
-
   const resp = await fetch(url.toString())
   if (!resp.ok) throw new Error(`MOEX ISS ${resp.status}: ${endpoint}`)
   return resp.json()
@@ -195,7 +205,6 @@ async function getSecuritySpec(isinOrSecid: string): Promise<SecuritySpec> {
     descMap[key] = row.value || row.VALUE || ''
   })
 
-  // boards table for secid
   const boards = parseISSTable(resp, 'boards')
   const tqcbBoard = boards.find((b: any) => b.boardid === 'TQCB' || b.BOARDID === 'TQCB')
   const firstBoard = boards[0] || {}
@@ -222,7 +231,7 @@ async function getSecuritySpec(isinOrSecid: string): Promise<SecuritySpec> {
   }
 }
 
-// ─── История торгов облигации ──────────────────────────────────────────────────
+// ─── История торгов облигации (MOEX ISS) ────────────────────────────────────
 
 interface BondTradeHistory {
   date: string
@@ -232,6 +241,7 @@ interface BondTradeHistory {
   num_trades: number
   value: number
   waprice: number | null
+  duration: number | null
 }
 
 async function getBondHistory(
@@ -260,6 +270,7 @@ async function getBondHistory(
         num_trades: r.NUMTRADES || r.numtrades || 0,
         value: r.VALUE || r.value || 0,
         waprice: r.WAPRICE ?? r.waprice ?? null,
+        duration: r.DURATION ?? r.duration ?? null,
       })
     }
 
@@ -270,7 +281,7 @@ async function getBondHistory(
   return all
 }
 
-// ─── Текущие рыночные данные ───────────────────────────────────────────────────
+// ─── Текущие рыночные данные (MOEX ISS) ────────────────────────────────────
 
 interface CurrentMarketData {
   last: number | null
@@ -304,208 +315,6 @@ async function getCurrentMarketData(secid: string): Promise<CurrentMarketData> {
     waprice: mkt.WAPRICE ?? mkt.waprice ?? null,
     closeprice: mkt.CLOSEPRICE ?? mkt.closeprice ?? null,
     marketprice: mkt.MARKETPRICE2 ?? sec.PREVWAPRICE ?? sec.prevwaprice ?? null,
-  }
-}
-
-// ─── Купоны облигации (ISS) ────────────────────────────────────────────────────
-
-interface CouponInfo {
-  date: string
-  value: number | null
-  valueprc: number | null
-  period?: number | null
-}
-
-async function getBondCoupons(isinOrSecid: string): Promise<CouponInfo[]> {
-  const resp = await moexRequest(`/securities/${isinOrSecid}/bondization`)
-  const coupons = parseISSTable(resp, 'coupons')
-
-  return coupons.map((c: any) => ({
-    date: c.coupondate || c.COUPONDATE || '',
-    value: c.value ?? c.VALUE ?? null,
-    valueprc: c.valueprc ?? c.VALUEPRC ?? null,
-    period: c.value_rub ?? c.VALUE_RUB ?? null,
-  }))
-}
-
-// ─── Амортизации ───────────────────────────────────────────────────────────────
-
-interface AmortizationInfo {
-  date: string
-  value: number
-  valueprc: number
-}
-
-async function getBondAmortizations(isinOrSecid: string): Promise<AmortizationInfo[]> {
-  const resp = await moexRequest(`/securities/${isinOrSecid}/bondization`)
-  const amorts = parseISSTable(resp, 'amortizations')
-
-  return amorts.map((a: any) => ({
-    date: a.amortdate || a.AMORTDATE || '',
-    value: a.value ?? a.VALUE ?? 0,
-    valueprc: a.valueprc ?? a.VALUEPRC ?? 0,
-  }))
-}
-
-// ─── G-curve (ZCYC) ────────────────────────────────────────────────────────────
-
-async function getGCurveYield(termYears: number, date?: string): Promise<number> {
-  try {
-    const params: Record<string, string> = {
-      term: termYears.toString(),
-      method: 'nelson_siegel',
-    }
-    if (date) params.date = date
-
-    const resp = await fetch(`${API_BASE}/api/zcyc/interpolate`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(params),
-    })
-
-    if (!resp.ok) {
-      // Fallback: use MOEX ISS ZCYC directly
-      return await getGCurveFromMoex(termYears, date)
-    }
-    const data = await resp.json()
-    return (data.value || 0) / 100 // convert from percent to decimal
-  } catch {
-    return await getGCurveFromMoex(termYears, date)
-  }
-}
-
-async function getGCurveFromMoex(termYears: number, date?: string): Promise<number> {
-  try {
-    const params: Record<string, string> = {}
-    if (date) params.date = date
-    const resp = await moexRequest('/statistics/engines/stock/zcyc', params)
-    const rows = parseISSTable(resp, 'yearyields') || parseISSTable(resp, 'params')
-    if (!rows.length) return 0
-
-    // Nelson-Siegel parameters
-    const p = rows[0]
-    const b0 = p.b0 ?? p.B0 ?? 0
-    const b1 = p.b1 ?? p.B1 ?? 0
-    const b2 = p.b2 ?? p.B2 ?? 0
-    const g1 = p.g1 ?? p.G1 ?? 1
-    // g2 optional
-    const tau = termYears || 1
-    const x = tau / g1
-    const expx = Math.exp(-x)
-    const y = b0 + b1 * ((1 - expx) / x) + b2 * (((1 - expx) / x) - expx)
-    return y / 100
-  } catch {
-    return 0
-  }
-}
-
-// ─── Полная ZCYC на дату (массив точек) ───────────────────────────────────────
-
-interface ZCYCDataPoint {
-  term: number
-  value: number
-}
-
-async function getZCYCCurve(date?: string): Promise<ZCYCDataPoint[]> {
-  try {
-    const params = new URLSearchParams()
-    if (date) params.append('date', date)
-    const url = `${API_BASE}/api/zcyc${params.toString() ? '?' + params.toString() : ''}`
-    const resp = await fetch(url)
-    if (!resp.ok) return []
-    const data = await resp.json()
-    return data.data || []
-  } catch {
-    return []
-  }
-}
-
-// ─── Активность рынка ──────────────────────────────────────────────────────────
-
-function computeMarketActivity(
-  history: BondTradeHistory[],
-  outstandingAmount: number,
-  periodDays = 30
-): MarketActivityData {
-  // Берём последние periodDays записей
-  const recent = history.slice(-periodDays)
-  const tradingDays = recent.filter((r) => r.num_trades > 0).length
-  const totalTrades = recent.reduce((s, r) => s + r.num_trades, 0)
-  const totalVolume = recent.reduce((s, r) => s + r.value, 0)
-  const avgVolumePerDay = tradingDays > 0 ? totalVolume / tradingDays : 0
-  const turnoverRatio = outstandingAmount > 0 ? totalVolume / outstandingAmount : 0
-
-  // Проверка: были ли торги за последние 30 дней
-  const today = new Date()
-  const cutoff = new Date(today.getTime() - 30 * 24 * 3600 * 1000)
-  const hasRecent = recent.some((r) => new Date(r.date) >= cutoff && r.num_trades > 0)
-
-  // Критерии активности (из шаблона)
-  const isActive =
-    tradingDays >= 5 && // Минимум 5 торговых дней за месяц
-    totalTrades >= 10 && // Минимум 10 сделок
-    hasRecent
-
-  return {
-    trading_days: tradingDays,
-    trades: totalTrades,
-    turnover_to_outstanding: turnoverRatio,
-    traded_last_30d: hasRecent,
-    avg_volume_per_day: avgVolumePerDay,
-    total_volume: totalVolume,
-    is_active: isActive,
-  }
-}
-
-// ─── DCF оценка через бэкенд ──────────────────────────────────────────────────
-
-interface BackendValuationResult {
-  scenario1: any
-  scenario2: any
-  faceValue: number
-  couponPercent: number
-  accruedInterest: number
-  cashFlows1: any[]
-  cashFlows2: any[]
-  allCoupons: any[]
-}
-
-async function getBackendValuation(
-  secid: string,
-  valuationDate: string,
-  yield1: number,
-  yield2: number,
-  dayCountConvention = 'Actual/365F'
-): Promise<BackendValuationResult | null> {
-  try {
-    const resp = await fetch(`${API_BASE}/api/bond/valuate`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        secid,
-        valuationDate,
-        discountYield1: yield1,
-        discountYield2: yield2,
-        dayCountConvention,
-      }),
-    })
-    if (!resp.ok) return null
-    return resp.json()
-  } catch {
-    return null
-  }
-}
-
-// ─── Рыночная доходность с MOEX ───────────────────────────────────────────────
-
-async function getMarketYield(secid: string, date: string): Promise<number | null> {
-  try {
-    const resp = await fetch(`${API_BASE}/api/bond/market-yield?secid=${secid}&date=${date}`)
-    if (!resp.ok) return null
-    const data = await resp.json()
-    return data.yield ?? null
-  } catch {
-    return null
   }
 }
 
@@ -549,12 +358,14 @@ async function ruDataQuery(pathMethod: string, body: Record<string, any> = {}, c
   }
 }
 
-async function getRuDataBondInfo(isin: string, creds?: RuDataCreds): Promise<any> {
+// ─── RuData: FintoolReferenceData (аналог _xll.ReferenceParams) ─────────────
+
+async function getRuDataFintoolRef(isin: string, creds?: RuDataCreds): Promise<any> {
   const c = creds || getRuDataCreds()
   if (!c) return null
 
   try {
-    const resp = await fetch(`${API_BASE}/api/rudata/bond/info?isin=${isin}`, {
+    const resp = await fetch(`${API_BASE}/api/rudata/fintool/reference?id=${isin}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ login: c.login, password: c.password }),
@@ -567,7 +378,23 @@ async function getRuDataBondInfo(isin: string, creds?: RuDataCreds): Promise<any
   }
 }
 
-async function getRuDataBondCalculation(isin: string, calcDate?: string, price?: number, creds?: RuDataCreds): Promise<any> {
+// ─── RuData: Bond/Calculate (аналог CbondsCalcYTM + EfirYields + EfirEndOfDay) ─
+
+interface RuDataBondCalcResult {
+  ytm: number | null            // YTM (десятичная дробь)
+  ytp: number | null            // YTP (десятичная дробь)
+  duration_days: number | null  // Дюрация в днях
+  duration_years: number | null // Дюрация в годах
+  mod_duration: number | null   // Модифицированная дюрация
+  convexity: number | null      // Выпуклость
+  offer_date: string | null     // Дата оферты
+  coupon_rate: number | null    // Текущая ставка купона
+  facevalue: number | null      // Текущий номинал
+  accrued_interest: number | null
+  dm_bps: number | null         // Дисконтная маржа (для флоатеров)
+}
+
+async function getRuDataBondCalc(isin: string, calcDate?: string, price?: number, creds?: RuDataCreds): Promise<RuDataBondCalcResult | null> {
   const c = creds || getRuDataCreds()
   if (!c) return null
 
@@ -585,11 +412,139 @@ async function getRuDataBondCalculation(isin: string, calcDate?: string, price?:
     })
     if (!resp.ok) return null
     const data = await resp.json()
-    return data.success ? data.data : null
+    if (!data.success || !data.data) return null
+
+    const d = Array.isArray(data.data) ? data.data[0] : data.data
+    if (!d) return null
+
+    return {
+      ytm: d.ytm ?? d.YTM ?? d.yld ?? d.yield_to_maturity ?? null,
+      ytp: d.ytp ?? d.YTP ?? d.yield_to_put ?? d.y2o_last ?? d.Y2O_LAST ?? null,
+      duration_days: d.duration ?? d.DURATION ?? null,
+      duration_years: d.duration ? d.duration / 365 : null,
+      mod_duration: d.duration_n ?? d.modified_duration ?? d.mod_duration ?? null,
+      convexity: d.convexity ?? d.CONVEXITY ?? null,
+      offer_date: d.offer_date ?? d.offerdate ?? null,
+      coupon_rate: d.cpn_rate ?? d.coupon_rate ?? d.couponrate ?? null,
+      facevalue: d.current_fv ?? d.facevalue ?? d.nominal ?? null,
+      accrued_interest: d.accruedint ?? d.accrued_interest ?? null,
+      dm_bps: d.dm ?? d.discount_margin ?? null,
+    }
   } catch {
     return null
   }
 }
+
+// ─── RuData: EfirYields (convexity, duration_n) ────────────────────────────────
+
+async function getRuDataEfirYields(isin: string, date: string, creds?: RuDataCreds): Promise<{
+  convexity: number | null
+  duration_n: number | null
+}> {
+  const c = creds || getRuDataCreds()
+  if (!c) return { convexity: null, duration_n: null }
+
+  try {
+    const data = await ruDataQuery('Efir/Yields', {
+      isin,
+      date,
+      fields: 'convexity,duration_n',
+    }, c)
+
+    if (!data) return { convexity: null, duration_n: null }
+    const d = Array.isArray(data) ? data[0] : data
+
+    return {
+      convexity: d?.convexity ?? null,
+      duration_n: d?.duration_n ?? null,
+    }
+  } catch {
+    return { convexity: null, duration_n: null }
+  }
+}
+
+// ─── RuData: EfirEndOfDay (duration, Y2O_LAST, DURATION_O) ────────────────────
+
+async function getRuDataEfirEndOfDay(isin: string, date: string, fields: string[], creds?: RuDataCreds): Promise<Record<string, any>> {
+  const c = creds || getRuDataCreds()
+  if (!c) return {}
+
+  try {
+    const data = await ruDataQuery('Efir/EndOfDay', {
+      isin,
+      date,
+      fields: fields.join(','),
+    }, c)
+
+    if (!data) return {}
+    const d = Array.isArray(data) ? data[0] : data
+    return d || {}
+  } catch {
+    return {}
+  }
+}
+
+// ─── RuData: EfirHistoryAgg (активность рынка) ────────────────────────────────
+// Аналог: _xll.EfirHistoryAgg(ISIN, from, to, "DO", field)
+
+async function getRuDataEfirHistoryAgg(
+  isin: string,
+  fromDate: string,
+  toDate: string,
+  fields: string[],
+  creds?: RuDataCreds
+): Promise<Record<string, any>> {
+  const c = creds || getRuDataCreds()
+  if (!c) return {}
+
+  try {
+    const data = await ruDataQuery('Efir/HistoryAgg', {
+      isin,
+      dateFrom: fromDate,
+      dateTo: toDate,
+      mode: 'DO',
+      fields: fields.join(','),
+    }, c)
+
+    if (!data) return {}
+    const d = Array.isArray(data) ? data[0] : data
+    return d || {}
+  } catch {
+    return {}
+  }
+}
+
+// ─── RuData: BondDateParams (offer_date, cpn_rate, current_fv) ─────────────────
+
+async function getRuDataBondDateParams(isin: string, date: string, creds?: RuDataCreds): Promise<{
+  offer_date: string | null
+  cpn_rate: number | null
+  current_fv: number | null
+}> {
+  const c = creds || getRuDataCreds()
+  if (!c) return { offer_date: null, cpn_rate: null, current_fv: null }
+
+  try {
+    const data = await ruDataQuery('Bond/DateParams', {
+      isin,
+      date,
+      fields: 'offer_date,cpn_rate,current_fv',
+    }, c)
+
+    if (!data) return { offer_date: null, cpn_rate: null, current_fv: null }
+    const d = Array.isArray(data) ? data[0] : data
+
+    return {
+      offer_date: d?.offer_date ?? null,
+      cpn_rate: d?.cpn_rate ?? null,
+      current_fv: d?.current_fv ?? null,
+    }
+  } catch {
+    return { offer_date: null, cpn_rate: null, current_fv: null }
+  }
+}
+
+// ─── RuData: Рейтинги ─────────────────────────────────────────────────────────
 
 async function getRuDataRatings(isin: string, creds?: RuDataCreds): Promise<RatingEntry[]> {
   const c = creds || getRuDataCreds()
@@ -635,25 +590,7 @@ async function getRuDataIssuerRatings(issuerName: string, creds?: RuDataCreds): 
   }
 }
 
-async function getRuDataFintoolRef(isin: string, creds?: RuDataCreds): Promise<any> {
-  const c = creds || getRuDataCreds()
-  if (!c) return null
-
-  try {
-    const resp = await fetch(`${API_BASE}/api/rudata/fintool/reference?id=${isin}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ login: c.login, password: c.password }),
-    })
-    if (!resp.ok) return null
-    const data = await resp.json()
-    return data.success ? data.data : null
-  } catch {
-    return null
-  }
-}
-
-// ─── Рейтинги с MOEX ISS ──────────────────────────────────────────────────────
+// ─── Рейтинги с MOEX ISS (fallback) ─────────────────────────────────────────
 
 async function getMoexRatings(isin: string): Promise<{ issue: RatingEntry[]; issuer: RatingEntry[] }> {
   try {
@@ -669,7 +606,6 @@ async function getMoexRatings(isin: string): Promise<{ issue: RatingEntry[]; iss
         outlook: r.outlook || r.OUTLOOK || r.forecast || null,
         date: r.date || r.DATE || r.last_dt || null,
       }
-
       const type = (r.type || r.TYPE || '').toLowerCase()
       if (type.includes('issuer') || type.includes('эмитент')) {
         issuerRatings.push(entry)
@@ -677,26 +613,307 @@ async function getMoexRatings(isin: string): Promise<{ issue: RatingEntry[]; iss
         issueRatings.push(entry)
       }
     }
-
     return { issue: issueRatings, issuer: issuerRatings }
   } catch {
     return { issue: [], issuer: [] }
   }
 }
 
-// ─── Индексы MOEX ──────────────────────────────────────────────────────────────
+// ─── Оферта: определение типа ──────────────────────────────────────────────────
+// Формула из шаблона: B23=IF(AND(B25<>"",B24=""),"Call",IF(AND(B25<>"",B24<>""),"Put","Нет"))
+// B24 = offer_date (пут оферта, из BondDateParams)
+// B25 = offer_date (пут+колл, из ReferenceParams)
 
-// Тикеры индексов MOEX по рейтинговым группам
-const INDEX_TICKERS: Record<string, string> = {
-  gov_less_1y: 'RGBITR1Y',    // Индекс гос. облигаций < 1 года
-  gov_1_3y: 'RGBITR3Y',       // Индекс гос. облигаций 1-3 года
-  corp_aaa: 'RUCBITR3YAAA',   // Корп. ААА
-  corp_aa: 'RUCBITR3YAA',     // Корп. АА
-  corp_a: 'RUCBITR3YA',       // Корп. А
-  corp_bbb: 'RUCBITRBBB',     // Корп. ВВВ
-  corp_aaa_1_3y: 'RUCBITR3YAAA',
-  corp_aa_1_3y: 'RUCBITR3YAA',
-  corp_a_1_3y: 'RUCBITR3YA',
+function detectOfferType(
+  offerDatePut: string | null | undefined,
+  offerDatePutCall: string | null | undefined
+): OfferInfo {
+  const hasPut = !!offerDatePut && offerDatePut.trim() !== ''
+  const hasPutCall = !!offerDatePutCall && offerDatePutCall.trim() !== ''
+
+  if (hasPutCall && !hasPut) {
+    return { type: 'Call', date: offerDatePutCall! }
+  }
+  if (hasPutCall && hasPut) {
+    return { type: 'Put', date: offerDatePut! }
+  }
+  return { type: 'Нет', date: null }
+}
+
+// ─── G-curve (ZCYC) ────────────────────────────────────────────────────────────
+// Аналог: _xll.GCurve(date, duration_days, "y") / 100
+// GCurve возвращает % (например 19.15), делим на 100 → десятичная дробь
+
+async function getGCurveYield(termYears: number, date?: string): Promise<number> {
+  try {
+    const params: Record<string, string> = {
+      term: termYears.toString(),
+      method: 'nelson_siegel',
+    }
+    if (date) params.date = date
+
+    const resp = await fetch(`${API_BASE}/api/zcyc/interpolate`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(params),
+    })
+
+    if (!resp.ok) {
+      return await getGCurveFromMoex(termYears, date)
+    }
+    const data = await resp.json()
+    // Backend возвращает значение в %, конвертируем в десятичную дробь
+    return (data.value || 0) / 100
+  } catch {
+    return await getGCurveFromMoex(termYears, date)
+  }
+}
+
+async function getGCurveFromMoex(termYears: number, date?: string): Promise<number> {
+  try {
+    const params: Record<string, string> = {}
+    if (date) params.date = date
+    const resp = await moexRequest('/statistics/engines/stock/zcyc', params)
+    const rows = parseISSTable(resp, 'yearyields') || parseISSTable(resp, 'params')
+    if (!rows.length) return 0
+
+    // Nelson-Siegel параметры
+    const p = rows[0]
+    const b0 = p.b0 ?? p.B0 ?? 0
+    const b1 = p.b1 ?? p.B1 ?? 0
+    const b2 = p.b2 ?? p.B2 ?? 0
+    const g1 = p.g1 ?? p.G1 ?? 1
+    const tau = termYears || 1
+    const x = tau / g1
+    const expx = Math.exp(-x)
+    const y = b0 + b1 * ((1 - expx) / x) + b2 * (((1 - expx) / x) - expx)
+    return y / 100 // из % в десятичную дробь
+  } catch {
+    return 0
+  }
+}
+
+// ─── Активность рынка ──────────────────────────────────────────────────────────
+// Формулы из шаблона (Calculation sheet):
+// I22 = EfirHistoryAgg(ISIN, date-30, date-1, "DO", "DEAL_ACC.SUM")  // кол-во сделок
+// J22 = EfirHistoryAgg(ISIN, date-30, date-1, "DO", "DEAL_ACC.CNN")  // кол-во торговых дней
+// K22 = EfirHistoryAgg(ISIN, date-30, date-1, "DO", "VAL_ACC.SUM")   // объём торгов
+// Критерии: DEAL_ACC.SUM >= 10, DEAL_ACC.CNN >= 5, VAL_ACC.SUM/SumMarketVal >= 0.001
+
+async function computeMarketActivity(
+  isin: string,
+  secid: string,
+  valuationDate: string,
+  outstandingAmount: number,
+  history: BondTradeHistory[]
+): Promise<MarketActivityData> {
+  const valDate = new Date(valuationDate)
+  const fromDate = new Date(valDate.getTime() - 30 * 24 * 3600 * 1000)
+  const fromStr = fromDate.toISOString().split('T')[0]
+  const toStr = new Date(valDate.getTime() - 1 * 24 * 3600 * 1000).toISOString().split('T')[0]
+
+  // Попытка получить из RuData EfirHistoryAgg
+  const efirData = await getRuDataEfirHistoryAgg(
+    isin, fromStr, toStr,
+    ['DEAL_ACC.SUM', 'DEAL_ACC.CNN', 'VAL_ACC.SUM']
+  )
+
+  let trades = 0
+  let tradingDays = 0
+  let totalVolume = 0
+
+  if (efirData && (efirData['DEAL_ACC.SUM'] !== undefined || efirData['DEAL_ACC.CNN'] !== undefined)) {
+    trades = Number(efirData['DEAL_ACC.SUM']) || 0
+    tradingDays = Number(efirData['DEAL_ACC.CNN']) || 0
+    totalVolume = Number(efirData['VAL_ACC.SUM']) || 0
+  } else {
+    // Fallback: вычисляем из истории MOEX ISS
+    const recent = history.filter(h => {
+      const hd = new Date(h.date)
+      return hd >= fromDate && hd <= valDate
+    })
+    tradingDays = recent.filter(r => r.num_trades > 0).length
+    trades = recent.reduce((s, r) => s + r.num_trades, 0)
+    totalVolume = recent.reduce((s, r) => s + r.value, 0)
+  }
+
+  const turnoverRatio = outstandingAmount > 0 ? totalVolume / outstandingAmount : 0
+
+  // Критерии активности (из шаблона):
+  // DEAL_ACC.SUM >= 10, DEAL_ACC.CNN >= 5, VAL_ACC.SUM/SumMarketVal >= 0.001
+  const isActive = trades >= 10 && tradingDays >= 5 && turnoverRatio >= 0.001
+
+  return {
+    trading_days: tradingDays,
+    trades,
+    turnover_to_outstanding: turnoverRatio,
+    traded_last_30d: tradingDays > 0,
+    total_volume: totalVolume,
+    is_active: isActive,
+  }
+}
+
+// ─── DV01 (из шаблона) ─────────────────────────────────────────────────────────
+// B61 = ABS(1000000*((-B59*0.0001)+(0.5*B60*0.0001*0.0001)))
+// B59 = mod_duration, B60 = convexity
+
+function calcDV01(modDuration: number, convexity: number): number {
+  return Math.abs(1_000_000 * ((-modDuration * 0.0001) + (0.5 * convexity * 0.0001 * 0.0001)))
+}
+
+// ─── Fallback: локальные вычисления YTM, дюрации, выпуклости ────────────────
+
+function calcYTMFromPrice(
+  cleanPricePct: number,
+  faceValue: number,
+  couponRate: number,
+  couponPerYear: number,
+  yearsToMaturity: number
+): number {
+  if (yearsToMaturity <= 0 || couponPerYear <= 0) return 0
+  const C = (couponRate * faceValue) / couponPerYear
+  const n = Math.round(couponPerYear * yearsToMaturity)
+  const price = (cleanPricePct / 100) * faceValue
+
+  let y = couponRate || 0.1
+  for (let iter = 0; iter < 200; iter++) {
+    let pv = 0
+    let dpv = 0
+    for (let t = 1; t <= n; t++) {
+      const cf = t === n ? C + faceValue : C
+      const df = Math.pow(1 + y / couponPerYear, -t)
+      pv += cf * df
+      dpv -= (t / couponPerYear) * cf * df / (1 + y / couponPerYear)
+    }
+    const err = pv - price
+    if (Math.abs(err) < 0.0001) break
+    if (Math.abs(dpv) < 1e-12) break
+    y -= err / dpv
+    if (y < -0.5) y = 0.001
+    if (y > 2) y = 1.999
+  }
+  return y
+}
+
+function calcDuration(
+  ytm: number,
+  faceValue: number,
+  couponRate: number,
+  couponPerYear: number,
+  yearsToMaturity: number
+): number {
+  if (yearsToMaturity <= 0 || couponPerYear <= 0) return 0
+  const C = (couponRate * faceValue) / couponPerYear
+  const n = Math.round(couponPerYear * yearsToMaturity)
+  let weightedSum = 0
+  let totalPV = 0
+
+  for (let t = 1; t <= n; t++) {
+    const cf = t === n ? C + faceValue : C
+    const dt = t / couponPerYear
+    const df = Math.pow(1 + ytm / couponPerYear, -t)
+    const pv = cf * df
+    weightedSum += dt * pv
+    totalPV += pv
+  }
+  return totalPV > 0 ? weightedSum / totalPV : 0
+}
+
+function calcConvexity(
+  ytm: number,
+  faceValue: number,
+  couponRate: number,
+  couponPerYear: number,
+  yearsToMaturity: number
+): number {
+  if (yearsToMaturity <= 0 || couponPerYear <= 0) return 0
+  const C = (couponRate * faceValue) / couponPerYear
+  const n = Math.round(couponPerYear * yearsToMaturity)
+  let convexSum = 0
+  let totalPV = 0
+  const r = ytm / couponPerYear
+
+  for (let t = 1; t <= n; t++) {
+    const cf = t === n ? C + faceValue : C
+    const df = Math.pow(1 + r, -(t + 2))
+    convexSum += cf * t * (t + 1) * df
+    totalPV += cf * Math.pow(1 + r, -t)
+  }
+  if (totalPV <= 0) return 0
+  return convexSum / (totalPV * couponPerYear * couponPerYear)
+}
+
+// ─── Индексы (MOEX ISS) ────────────────────────────────────────────────────────
+// Формулы шаблона используют CbondsIndexValue(code, date)
+// Коды Cbonds → тикеры MOEX из столбца CA шаблона:
+
+// Группа "менее 1 года":
+//   CC7 = гос. облигации <1Y → RUGBITR1Y (CB: 9201)
+//   CC8 = корп. AAA <1Y → RUCBTRAAANS (CB: 80471)
+//   CC9 = корп. AA <1Y → RUCBTRAANS (CB: 80479)
+//   CC10 = корп. A <1Y → RUCBTRANS (CB: 80487)
+// Группа "1-3 года":
+//   CC11 = гос. 1-3Y → RUGBITR3Y (CB: 9209)
+//   CC12 = корп. AAA 1-3Y → RUCBTR3A3YNS (CB: 80503)
+//   CC13 = корп. AA 1-3Y → RUCBTRAA3YNS (CB: 80511)
+//   CC14 = корп. A 1-3Y → RUCBTRA3YNS (CB: 80519)
+// Группа "3-5 лет":
+//   CC15 = гос. 3-5Y → RUGBITR5Y (CB: 9217)
+//   CC16 = корп. AAA 3-5Y → RUCBTR3A5YNS (CB: 80527)
+//   CC17 = корп. AA 3-5Y → RUCBTRAA5YNS (CB: 80535)
+//   CC18 = корп. A 3-5Y → RUCBTRA5YNS (CB: 80543)
+// Группа "более 5 лет":
+//   CC19 = гос. 5+Y → RUGBITR5+ (CB: 9225)
+// BBB (без привязки к дюрации):
+//   CC20 = корп. BBB → RUCBTRBBBNS (CB: 80495)
+
+interface IndexConfig {
+  ticker: string
+  name: string
+}
+
+function getIndicesByDuration(durationYears: number): {
+  gov: IndexConfig
+  aaa: IndexConfig
+  aa: IndexConfig
+  a: IndexConfig
+  bbb: IndexConfig
+} {
+  // Логика из шаблона Template:
+  // IF(O6<1, "<1Y", IF(O6<3, "1-3Y", IF(O6<5, "3-5Y", "5+Y")))
+  if (durationYears < 1) {
+    return {
+      gov: { ticker: 'RUGBITR1Y', name: 'Доходность индекса государственных облигаций (менее года)' },
+      aaa: { ticker: 'RUCBTRAAANS', name: 'Доходность индекса корпоративных облигаций с рейтингом AAA' },
+      aa: { ticker: 'RUCBTRAANS', name: 'Доходность индекса корпоративных облигаций с рейтингом AA' },
+      a: { ticker: 'RUCBTRANS', name: 'Доходность индекса корпоративных облигаций с рейтингом A' },
+      bbb: { ticker: 'RUCBTRBBBNS', name: 'Доходность индекса корпоративных облигаций с рейтингом BBB' },
+    }
+  } else if (durationYears < 3) {
+    return {
+      gov: { ticker: 'RUGBITR3Y', name: 'Доходность индекса государственных облигаций (1-3 года)' },
+      aaa: { ticker: 'RUCBTR3A3YNS', name: 'Доходность индекса корпоративных облигаций с рейтингом AAA (1-3 года)' },
+      aa: { ticker: 'RUCBTRAA3YNS', name: 'Доходность индекса корпоративных облигаций с рейтингом AA (1-3 года)' },
+      a: { ticker: 'RUCBTRA3YNS', name: 'Доходность индекса корпоративных облигаций с рейтингом A (1-3 года)' },
+      bbb: { ticker: 'RUCBTRBBBNS', name: 'Доходность индекса корпоративных облигаций с рейтингом BBB' },
+    }
+  } else if (durationYears < 5) {
+    return {
+      gov: { ticker: 'RUGBITR5Y', name: 'Доходность индекса государственных облигаций (3-5 лет)' },
+      aaa: { ticker: 'RUCBTR3A5YNS', name: 'Доходность индекса корпоративных облигаций с рейтингом AAA (3-5 лет)' },
+      aa: { ticker: 'RUCBTRAA5YNS', name: 'Доходность индекса корпоративных облигаций с рейтингом AA (3-5 лет)' },
+      a: { ticker: 'RUCBTRA5YNS', name: 'Доходность индекса корпоративных облигаций с рейтингом A (3-5 лет)' },
+      bbb: { ticker: 'RUCBTRBBBNS', name: 'Доходность индекса корпоративных облигаций с рейтингом BBB' },
+    }
+  } else {
+    return {
+      gov: { ticker: 'RUGBITR5+', name: 'Доходность индекса государственных облигаций (более 5 лет)' },
+      aaa: { ticker: 'RUCBTR3A5YNS', name: 'Доходность индекса корпоративных облигаций с рейтингом AAA (3-5 лет)' },
+      aa: { ticker: 'RUCBTRAA5YNS', name: 'Доходность индекса корпоративных облигаций с рейтингом AA (3-5 лет)' },
+      a: { ticker: 'RUCBTRA5YNS', name: 'Доходность индекса корпоративных облигаций с рейтингом A (3-5 лет)' },
+      bbb: { ticker: 'RUCBTRBBBNS', name: 'Доходность индекса корпоративных облигаций с рейтингом BBB' },
+    }
+  }
 }
 
 async function getIndexYield(indexTicker: string, date?: string): Promise<number | null> {
@@ -711,13 +928,13 @@ async function getIndexYield(indexTicker: string, date?: string): Promise<number
       params
     )
     const rows = parseISSTable(resp, 'analytics') || parseISSTable(resp, 'indices')
-    if (!rows.length) {
-      // Fallback: history approach
-      return await getIndexYieldFallback(indexTicker, date)
+    if (rows.length) {
+      const row = rows[rows.length - 1]
+      const y = row.close ?? row.CLOSE ?? row.currentvalue ?? row.CURRENTVALUE ?? null
+      return y !== null ? y / 100 : null
     }
-    const row = rows[rows.length - 1]
-    const y = row.close ?? row.CLOSE ?? row.currentvalue ?? row.CURRENTVALUE ?? null
-    return y !== null ? y / 100 : null
+    // Fallback: история индекса
+    return await getIndexYieldFallback(indexTicker, date)
   } catch {
     return await getIndexYieldFallback(indexTicker, date)
   }
@@ -734,25 +951,35 @@ async function getIndexYieldFallback(indexTicker: string, date?: string): Promis
     const rows = parseISSTable(resp, 'history')
     if (!rows.length) return null
     const last = rows[rows.length - 1]
-    return (last.CLOSE ?? last.close ?? null) !== null ? (last.CLOSE ?? last.close) / 100 : null
+    const val = last.CLOSE ?? last.close ?? null
+    return val !== null ? val / 100 : null
   } catch {
     return null
   }
 }
 
-async function fetchAllIndices(date?: string): Promise<IndexYields> {
+async function fetchIndicesByDuration(durationYears: number, date?: string): Promise<IndexYields> {
+  const config = getIndicesByDuration(durationYears)
   const results: IndexYields = {}
 
-  const entries = Object.entries(INDEX_TICKERS)
-  const promises = entries.map(([key, ticker]) => getIndexYield(ticker, date))
-  const values = await Promise.allSettled(promises)
+  const [gov, aaa, aa, a, bbb] = await Promise.allSettled([
+    getIndexYield(config.gov.ticker, date),
+    getIndexYield(config.aaa.ticker, date),
+    getIndexYield(config.aa.ticker, date),
+    getIndexYield(config.a.ticker, date),
+    getIndexYield(config.bbb.ticker, date),
+  ])
 
-  entries.forEach(([key], i) => {
-    const result = values[i]
-    if (result.status === 'fulfilled' && result.value !== null) {
-      (results as any)[key] = result.value
-    }
-  })
+  if (gov.status === 'fulfilled' && gov.value !== null) {
+    if (durationYears < 1) results.gov_less_1y = gov.value
+    else if (durationYears < 3) results.gov_1_3y = gov.value
+    else if (durationYears < 5) results.gov_3_5y = gov.value
+    else results.gov_5plus = gov.value
+  }
+  if (aaa.status === 'fulfilled' && aaa.value !== null) results.corp_aaa = aaa.value
+  if (aa.status === 'fulfilled' && aa.value !== null) results.corp_aa = aa.value
+  if (a.status === 'fulfilled' && a.value !== null) results.corp_a = a.value
+  if (bbb.status === 'fulfilled' && bbb.value !== null) results.corp_bbb = bbb.value
 
   return results
 }
@@ -760,7 +987,6 @@ async function fetchAllIndices(date?: string): Promise<IndexYields> {
 // ─── Корпоративные события ─────────────────────────────────────────────────────
 
 async function getCorporateEvents(isin: string): Promise<CorporateEvent[]> {
-  // Try RuData first
   const creds = getRuDataCreds()
   if (creds) {
     try {
@@ -777,276 +1003,128 @@ async function getCorporateEvents(isin: string): Promise<CorporateEvent[]> {
     } catch { /* fallback to ISS */ }
   }
 
-  // Fallback: MOEX ISS corp events
   try {
     const resp = await moexRequest(`/securities/${isin}/bondization`)
     const offers = parseISSTable(resp, 'offers')
     const events: CorporateEvent[] = []
-
     for (const o of offers) {
       events.push({
         date: o.offerdate || o.OFFERDATE || null,
         description: `Оферта: ${o.offertypename || o.OFFERTYPENAME || 'Без типа'}`,
       })
     }
-
     return events
   } catch {
     return []
   }
 }
 
-// ─── Вычисление YTM, дюрации, выпуклости из кэш-флоу ──────────────────────────
-
-/**
- * Расчёт YTM (Yield to Maturity) из чистой цены
- * Метод Ньютона-Рафсона, аналог формулы из шаблона
- */
-function calcYTMFromPrice(
-  cleanPricePct: number,
-  faceValue: number,
-  couponRate: number,
-  couponPerYear: number,
-  yearsToMaturity: number
-): number {
-  if (yearsToMaturity <= 0 || couponPerYear <= 0) return 0
-
-  const C = (couponRate * faceValue) / couponPerYear
-  const n = Math.round(couponPerYear * yearsToMaturity)
-  const price = (cleanPricePct / 100) * faceValue
-
-  // Newton-Raphson
-  let y = couponRate || 0.1 // initial guess
-  for (let iter = 0; iter < 200; iter++) {
-    let pv = 0
-    let dpv = 0
-    for (let t = 1; t <= n; t++) {
-      const cf = t === n ? C + faceValue : C
-      const dt = t / couponPerYear
-      const df = Math.pow(1 + y / couponPerYear, -t)
-      pv += cf * df
-      dpv -= (t / couponPerYear) * cf * df / (1 + y / couponPerYear)
-    }
-    const err = pv - price
-    if (Math.abs(err) < 0.0001) break
-    if (Math.abs(dpv) < 1e-12) break
-    y -= err / dpv
-    if (y < -0.5) y = 0.001
-    if (y > 2) y = 1.999
-  }
-
-  return y
-}
-
-/**
- * Macaulay Duration из потоков
- */
-function calcDuration(
-  ytm: number,
-  faceValue: number,
-  couponRate: number,
-  couponPerYear: number,
-  yearsToMaturity: number
-): number {
-  if (yearsToMaturity <= 0 || couponPerYear <= 0) return 0
-
-  const C = (couponRate * faceValue) / couponPerYear
-  const n = Math.round(couponPerYear * yearsToMaturity)
-  let weightedSum = 0
-  let totalPV = 0
-
-  for (let t = 1; t <= n; t++) {
-    const cf = t === n ? C + faceValue : C
-    const dt = t / couponPerYear
-    const df = Math.pow(1 + ytm / couponPerYear, -t)
-    const pv = cf * df
-    weightedSum += dt * pv
-    totalPV += pv
-  }
-
-  return totalPV > 0 ? weightedSum / totalPV : 0
-}
-
-/**
- * Modified Duration = Macaulay Duration / (1 + y/m)
- */
-function calcModDuration(macaulayDuration: number, ytm: number, couponPerYear: number): number {
-  return macaulayDuration / (1 + ytm / couponPerYear)
-}
-
-/**
- * Convexity
- */
-function calcConvexity(
-  ytm: number,
-  faceValue: number,
-  couponRate: number,
-  couponPerYear: number,
-  yearsToMaturity: number
-): number {
-  if (yearsToMaturity <= 0 || couponPerYear <= 0) return 0
-
-  const C = (couponRate * faceValue) / couponPerYear
-  const n = Math.round(couponPerYear * yearsToMaturity)
-  let convexSum = 0
-  let totalPV = 0
-  const r = ytm / couponPerYear
-
-  for (let t = 1; t <= n; t++) {
-    const cf = t === n ? C + faceValue : C
-    const df = Math.pow(1 + r, -(t + 2))
-    convexSum += cf * t * (t + 1) * df
-    totalPV += cf * Math.pow(1 + r, -t)
-  }
-
-  if (totalPV <= 0) return 0
-  return convexSum / (totalPV * couponPerYear * couponPerYear)
-}
-
-/**
- * DV01 = Modified Duration * Dirty Price * 0.0001
- */
-function calcDV01(modDuration: number, dirtyPrice: number): number {
-  return modDuration * dirtyPrice * 0.0001
-}
-
-// ─── Дисконтная маржа для флоатеров ────────────────────────────────────────────
-
-/**
- * Discount Margin (DM) — маржа поверх форвардной базовой ставки
- * Используется для облигаций с плавающим купоном
- *
- * Алгоритм из «Расчёт доходности флоатера.xlsm»:
- * 1. Для каждого будущего купонного периода берём ожидаемую ставку-базу (forward rate от КБД)
- * 2. Прибавляем фиксированную маржу (QM — quoted margin)
- * 3. Подбираем DM такую, что при дисконтировании CF по (forward + DM) цена = market price
- */
-function calcDiscountMargin(
-  dirtyPricePct: number,
-  faceValue: number,
-  quotedMarginBps: number,
-  couponPerYear: number,
-  yearsToMaturity: number,
-  forwardRates: number[] // массив форвардных ставок для каждого купонного периода
-): number {
-  if (yearsToMaturity <= 0 || couponPerYear <= 0 || forwardRates.length === 0) return 0
-
-  const n = Math.round(couponPerYear * yearsToMaturity)
-  const price = (dirtyPricePct / 100) * faceValue
-  const qm = quotedMarginBps / 10000
-
-  // Newton-Raphson для DM
-  let dm = qm // initial guess = quoted margin
-  for (let iter = 0; iter < 200; iter++) {
-    let pv = 0
-    let dpv = 0
-
-    for (let t = 1; t <= n; t++) {
-      const fwdIdx = Math.min(t - 1, forwardRates.length - 1)
-      const fwdRate = forwardRates[fwdIdx] || 0
-      const couponRate = fwdRate + qm
-      const cf = t === n
-        ? (couponRate * faceValue) / couponPerYear + faceValue
-        : (couponRate * faceValue) / couponPerYear
-      const discountRate = fwdRate + dm
-      const dt = t / couponPerYear
-      const df = Math.pow(1 + discountRate / couponPerYear, -t)
-      pv += cf * df
-      dpv -= (t / couponPerYear) * cf * df / (1 + discountRate / couponPerYear)
-    }
-
-    const err = pv - price
-    if (Math.abs(err) < 0.01) break
-    if (Math.abs(dpv) < 1e-12) break
-    dm -= err / dpv
-  }
-
-  return dm * 10000 // return in bps
-}
-
-// ─── История цен для графика ───────────────────────────────────────────────────
+// ─── История цен ───────────────────────────────────────────────────────────────
 
 function buildPriceHistory(history: BondTradeHistory[]): PriceHistoryPoint[] {
   return history
-    .filter((h) => h.close > 0 || (h.waprice && h.waprice > 0))
-    .map((h) => ({
+    .filter(h => h.close > 0 || (h.waprice && h.waprice > 0))
+    .map(h => ({
       date: h.date,
       price: h.waprice || h.close,
     }))
 }
 
-// ─── История доходности для графика ────────────────────────────────────────────
+// ─── Динамика доходности: 13 месячных точек ─────────────────────────────────
+// Формулы из шаблона (Calculation sheet, столбцы J-Q, строки 6-18):
+// J6 = B2 (дата оценки), J7 = EDATE(J6, -1), ... J18 = EDATE(J6, -12)
+// K = ближайший торговый день (из Help Page)
+// L = CbondsClosePrice(ISIN, K, 135)
+// M = IF(B10="", CbondsCalcYTM, CbondsCalcYTP)(ISIN, K, L) → десятичная дробь
+// N = IF(B10="", CbondsCalcDuration, CbondsCalcDurationToPutCall)(ISIN, K, L) → дни
+// O = N / 365 → годы
+// P = GCurve(K, N, "y") / 100 → десятичная дробь
+// Q = (M - P) * 10000 → бп
+// R = M * 100 → %
+// S = P * 100 → %
 
-async function buildYieldHistory(
+async function buildYieldDynamics(
+  secid: string,
+  valuationDate: string,
   history: BondTradeHistory[],
-  spec: SecuritySpec,
-  valuationDate: string
+  hasOffer: boolean,
+  spec: SecuritySpec
 ): Promise<YieldHistoryPoint[]> {
   const points: YieldHistoryPoint[] = []
+  const valDate = new Date(valuationDate)
   const matDate = new Date(spec.matdate)
 
-  for (const h of history) {
-    if (!h.yield_close && !h.close) continue
+  // Генерируем 13 месячных дат (от текущей назад)
+  const monthlyDates: string[] = []
+  for (let i = 0; i < 13; i++) {
+    const d = new Date(valDate)
+    d.setMonth(d.getMonth() - i)
+    monthlyDates.push(d.toISOString().split('T')[0])
+  }
 
-    const tradeDate = new Date(h.date)
-    const yearsToMat = (matDate.getTime() - tradeDate.getTime()) / (365.25 * 24 * 3600 * 1000)
+  for (const targetDate of monthlyDates) {
+    // Находим ближайший торговый день к этой дате
+    const target = new Date(targetDate)
+    let closest: BondTradeHistory | null = null
+    let minDiff = Infinity
 
-    let ytm = h.yield_close ? h.yield_close / 100 : 0
-    if (!ytm && h.close > 0) {
-      ytm = calcYTMFromPrice(
-        h.close,
+    for (const h of history) {
+      if (!h.close && !h.waprice) continue
+      const hDate = new Date(h.date)
+      const diff = Math.abs(hDate.getTime() - target.getTime())
+      if (diff < minDiff) {
+        minDiff = diff
+        closest = h
+      }
+    }
+
+    // Пропускаем если ближайший день > 10 дней
+    if (!closest || minDiff > 10 * 24 * 3600 * 1000) continue
+
+    const tradeDate = new Date(closest.date)
+    const yrsToMat = (matDate.getTime() - tradeDate.getTime()) / (365 * 24 * 3600 * 1000)
+
+    // Получаем YTM/YTP
+    let ytmDecimal = 0
+    if (closest.yield_close && closest.yield_close > 0) {
+      ytmDecimal = closest.yield_close / 100  // MOEX даёт в процентах
+    } else if (closest.close > 0) {
+      ytmDecimal = calcYTMFromPrice(
+        closest.close,
         spec.facevalue,
         spec.couponpercent / 100,
         spec.couponfrequency || 2,
-        yearsToMat
+        yrsToMat
       )
     }
+    if (ytmDecimal <= 0) continue
 
-    // G-curve yield for this term
-    const gcurve = await getGCurveYield(yearsToMat, h.date)
-    const gspread = ytm - gcurve
+    // Дюрация в днях → годы (для G-curve)
+    let durationDays = closest.duration || 0
+    if (!durationDays && yrsToMat > 0) {
+      durationDays = yrsToMat * 365
+    }
+    const durationYears = durationDays / 365
+
+    // G-curve для этого срока
+    const gcurveDecimal = await getGCurveYield(durationYears, closest.date)
+
+    // R = M * 100, S = P * 100, Q = (M - P) * 10000
+    const ytmPct = ytmDecimal * 100
+    const gcurvePct = gcurveDecimal * 100
+    const gspreadBps = (ytmDecimal - gcurveDecimal) * 10000
 
     points.push({
-      date: h.date,
-      ytm: ytm * 100,
-      gcurve: gcurve * 100,
-      gspread: gspread * 10000, // bps
+      date: closest.date,
+      ytm: ytmPct,
+      gcurve: gcurvePct,
+      gspread: Math.round(gspreadBps * 100) / 100,
     })
   }
 
+  // Сортируем по дате
+  points.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
   return points
-}
-
-// ─── Для флоатера: история DM/QM ──────────────────────────────────────────────
-
-function buildMarginHistory(
-  history: BondTradeHistory[],
-  quotedMarginBps: number
-): MarginHistoryPoint[] {
-  // DM аппроксимация из истории: DM ≈ (YTM - базовая ставка) в bps
-  // QM = константа (фикс. маржа из формулы купона)
-  return history
-    .filter((h) => h.yield_close !== null && h.yield_close !== undefined)
-    .map((h) => ({
-      date: h.date,
-      dm: (h.yield_close || 0) * 100 - quotedMarginBps / 100, // упрощённая аппроксимация
-      qm: quotedMarginBps,
-    }))
-}
-
-// ─── Парсинг формулы купона флоатера ───────────────────────────────────────────
-
-function parseFloaterFormula(formula: string): { baseName: string; marginPct: number } {
-  // Examples:
-  //   "Ключевая ставка ЦБ РФ + 2,2%"
-  //   "КС ЦБ + 3.5%"
-  //   "RUONIA + 1.5%"
-
-  const match = formula.match(/([+-])\s*([\d,.]+)\s*%?\s*$/)
-  const marginPct = match ? parseFloat(match[2].replace(',', '.')) * (match[1] === '-' ? -1 : 1) : 0
-  const baseName = formula.replace(/[+-]\s*[\d,.]+\s*%?\s*$/, '').trim()
-
-  return { baseName, marginPct }
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -1061,129 +1139,170 @@ export async function fetchVanillaBondReport(
   isin: string,
   valuationDate: string
 ): Promise<VanillaBondReport> {
-  // 1. Спецификация бумаги
+  const creds = getRuDataCreds()
+
+  // 1. Спецификация бумаги (MOEX ISS)
   const spec = await getSecuritySpec(isin)
 
-  // 2. Текущие рыночные данные
+  // 2. RuData: FintoolReferenceData (_xll.ReferenceParams)
+  const ruRef = await getRuDataFintoolRef(isin, creds ?? undefined)
+  const ref0 = (ruRef && Array.isArray(ruRef) && ruRef.length > 0) ? ruRef[0] : null
+
+  // B7 = BegDistDate, B8 = SumMarketVal, B9 = EndMtyDate, B13 = CouponPerYear
+  const outstandingAmount = ref0?.sumissueval || ref0?.issueval || ref0?.summarketval || (spec.facevalue * 1000000)
+  const offerDateFromRef = ref0?.offer_date || ref0?.offerdate || null // B25 (put+call)
+
+  // 3. RuData: BondDateParams (_xll.BondDateParams)
+  const dateParams = await getRuDataBondDateParams(isin, valuationDate, creds ?? undefined)
+  // B10 = offer_date (пут), B11 = cpn_rate, B12 = current_fv
+  const offerDatePut = dateParams.offer_date
+  const currentCouponRate = dateParams.cpn_rate ?? (spec.couponpercent / 100)
+  const currentFaceValue = dateParams.current_fv ?? spec.facevalue
+
+  // 4. Определяем тип оферты
+  // B23 = IF(AND(B25<>"",B24=""),"Call",IF(AND(B25<>"",B24<>""),"Put","Нет"))
+  const offer = detectOfferType(offerDatePut, offerDateFromRef)
+  const hasOffer = offer.type !== 'Нет'
+
+  // 5. Текущие рыночные данные (MOEX ISS)
   const marketData = await getCurrentMarketData(spec.secid)
 
-  // 3. История торгов за последний год
+  // 6. История торгов за последний год (для графиков и fallback-расчётов)
   const endDate = valuationDate
-  const startDate = new Date(new Date(endDate).getTime() - 365 * 24 * 3600 * 1000).toISOString().split('T')[0]
+  const startDate = new Date(new Date(endDate).getTime() - 395 * 24 * 3600 * 1000).toISOString().split('T')[0]
   const history = await getBondHistory(spec.secid, startDate, endDate)
 
-  // 4. Оставшийся срок до погашения
+  // 7. Оставшийся срок
   const valDate = new Date(valuationDate)
   const matDate = new Date(spec.matdate)
-  const yearsToMaturity = (matDate.getTime() - valDate.getTime()) / (365.25 * 24 * 3600 * 1000)
+  const yearsToMaturity = (matDate.getTime() - valDate.getTime()) / (365 * 24 * 3600 * 1000)
 
-  // 5. Чистая цена
+  // 8. Чистая цена (аналог L6 = CbondsClosePrice)
   const cleanPricePct = marketData.last ?? marketData.waprice ?? marketData.closeprice ?? marketData.marketprice ?? 100
 
-  // 6. YTM
-  let ytm: number
-  if (marketData.yield && marketData.yield > 0) {
-    ytm = marketData.yield / 100
+  // 9. RuData: Bond/Calculate — получаем YTM/YTP, duration, convexity, mod_duration
+  const ruCalc = await getRuDataBondCalc(isin, valuationDate, cleanPricePct, creds ?? undefined)
+
+  // 10. RuData: EfirYields — convexity, duration_n (B14, B15)
+  const efirYields = await getRuDataEfirYields(isin, valuationDate, creds ?? undefined)
+
+  // 11. RuData: EfirEndOfDay — duration, Y2O_LAST, DURATION_O (B16, B18, B20)
+  const efirEod = await getRuDataEfirEndOfDay(
+    isin, valuationDate,
+    ['duration', 'Y2O_LAST', 'DURATION_O'],
+    creds ?? undefined
+  )
+
+  // ═══ Сборка итоговых значений ═══
+
+  // --- YTM или YTP ---
+  // M6 = IF(B10="", CbondsCalcYTM, CbondsCalcYTP)(ISIN, date, price)
+  let ytmDecimal: number
+  let yieldType: 'YTM' | 'YTP' = 'YTM'
+
+  if (hasOffer) {
+    yieldType = 'YTP'
+    // Приоритет: RuData YTP → EfirEndOfDay Y2O_LAST → MOEX yield → fallback
+    ytmDecimal = (ruCalc?.ytp ?? null) !== null ? ruCalc!.ytp! :
+      (efirEod['Y2O_LAST'] != null ? Number(efirEod['Y2O_LAST']) / 100 :
+        (marketData.yield && marketData.yield > 0 ? marketData.yield / 100 :
+          calcYTMFromPrice(cleanPricePct, currentFaceValue, currentCouponRate, spec.couponfrequency || 2, yearsToMaturity)))
   } else {
-    ytm = calcYTMFromPrice(
-      cleanPricePct,
-      spec.facevalue,
-      spec.couponpercent / 100,
-      spec.couponfrequency || 2,
-      yearsToMaturity
-    )
+    yieldType = 'YTM'
+    // Приоритет: RuData YTM → MOEX yield → fallback
+    ytmDecimal = (ruCalc?.ytm ?? null) !== null ? ruCalc!.ytm! :
+      (marketData.yield && marketData.yield > 0 ? marketData.yield / 100 :
+        calcYTMFromPrice(cleanPricePct, currentFaceValue, currentCouponRate, spec.couponfrequency || 2, yearsToMaturity))
+  }
+  const ytmPct = ytmDecimal * 100
+
+  // --- Дюрация ---
+  // B16 = EfirEndOfDay(duration) / 365 (к погашению, в годах)
+  // B19 = EfirEndOfDay(DURATION_O) / 365 (к оферте, в годах)
+  let durationYears: number
+  if (hasOffer) {
+    // Дюрация к оферте
+    const durO = efirEod['DURATION_O'] ?? efirEod['duration_o'] ?? null
+    durationYears = durO != null ? Number(durO) / 365 :
+      (ruCalc?.duration_years ?? null) !== null ? ruCalc!.duration_years! :
+        (marketData.duration ? marketData.duration / 365 :
+          calcDuration(ytmDecimal, currentFaceValue, currentCouponRate, spec.couponfrequency || 2, yearsToMaturity))
+  } else {
+    // Дюрация к погашению
+    const dur = efirEod['duration'] ?? null
+    durationYears = dur != null ? Number(dur) / 365 :
+      (ruCalc?.duration_years ?? null) !== null ? ruCalc!.duration_years! :
+        (marketData.duration ? marketData.duration / 365 :
+          calcDuration(ytmDecimal, currentFaceValue, currentCouponRate, spec.couponfrequency || 2, yearsToMaturity))
   }
 
-  // 7. G-curve yield и G-spread
-  const gCurveYield = await getGCurveYield(yearsToMaturity, valuationDate)
-  const gSpreadBps = (ytm - gCurveYield) * 10000
-
-  // 8. Дюрация, модифицированная дюрация, выпуклость
-  let duration: number
+  // --- Модифицированная дюрация ---
+  // B15 = EfirYields(duration_n)
   let modDuration: number
+  modDuration = efirYields.duration_n ?? ruCalc?.mod_duration ?? null as any
+  if (modDuration == null) {
+    // Fallback: ModDur = MacaulayDur / (1 + y/m)
+    modDuration = durationYears / (1 + ytmDecimal / (spec.couponfrequency || 2))
+  }
+
+  // --- Выпуклость ---
+  // B14 = EfirYields(convexity)
   let convexity: number
-
-  if (marketData.duration && marketData.duration > 0) {
-    // MOEX предоставляет дюрацию в днях
-    duration = marketData.duration / 365
-    modDuration = duration / (1 + ytm / (spec.couponfrequency || 2))
-    convexity = calcConvexity(ytm, spec.facevalue, spec.couponpercent / 100, spec.couponfrequency || 2, yearsToMaturity)
-  } else {
-    duration = calcDuration(ytm, spec.facevalue, spec.couponpercent / 100, spec.couponfrequency || 2, yearsToMaturity)
-    modDuration = calcModDuration(duration, ytm, spec.couponfrequency || 2)
-    convexity = calcConvexity(ytm, spec.facevalue, spec.couponpercent / 100, spec.couponfrequency || 2, yearsToMaturity)
+  convexity = efirYields.convexity ?? ruCalc?.convexity ?? null as any
+  if (convexity == null) {
+    convexity = calcConvexity(ytmDecimal, currentFaceValue, currentCouponRate, spec.couponfrequency || 2, yearsToMaturity)
   }
 
-  // 9. DV01
-  const accruedInt = marketData.accruedint ?? 0
-  const dirtyPrice = (cleanPricePct / 100) * spec.facevalue + accruedInt
-  const dv01 = calcDV01(modDuration, dirtyPrice)
+  // --- G-curve yield ---
+  // Из шаблона: GCurve(date, N6, "y") / 100 → десятичная дробь
+  // N6 = дюрация в днях; для GCurve нужен срок в годах = N6/365
+  const durationDaysForGCurve = durationYears * 365
+  const gCurveDecimal = await getGCurveYield(durationYears, valuationDate)
+  const gCurvePct = gCurveDecimal * 100
 
-  // 10. Попытка обогатить данные через бэкенд DCF
-  const backendResult = await getBackendValuation(spec.secid, valuationDate, ytm * 100, ytm * 100)
-  if (backendResult?.scenario1) {
-    const s = backendResult.scenario1
-    if (s.duration > 0) duration = s.duration
-    if (s.modifiedDuration && s.modifiedDuration > 0) modDuration = s.modifiedDuration
-    if (s.convexity) convexity = s.convexity
-    if (s.pvbpAbsolute) { /* можно использовать backend DV01 */ }
-  }
+  // --- G-spread ---
+  // B44 = (B42 - B45) * 100 → (ytm_pct - gcurve_pct) * 100 = бп
+  const gSpreadBps = (ytmPct - gCurvePct) * 100
+  const gSpreadBpsRounded = Math.round(gSpreadBps * 100) / 100
 
-  // 11. Рейтинги (MOEX ISS + RuData)
-  const moexRatings = await getMoexRatings(isin)
-  const ruDataIssueRatings = await getRuDataRatings(isin)
-  const ruDataIssuerRatings = spec.issuer ? await getRuDataIssuerRatings(spec.issuer) : []
+  // --- DV01 ---
+  // B61 = ABS(1e6 * (-B59*0.0001 + 0.5*B60*0.0001^2))
+  const dv01 = calcDV01(modDuration, convexity)
 
-  const issueRatings = moexRatings.issue.length > 0 ? moexRatings.issue : ruDataIssueRatings
-  const issuerRatings = moexRatings.issuer.length > 0 ? moexRatings.issuer : ruDataIssuerRatings
+  // --- Dirty price ---
+  const accruedInt = marketData.accruedint ?? (ruCalc?.accrued_interest ?? 0)
+  const dirtyPrice = (cleanPricePct / 100) * currentFaceValue + accruedInt
 
-  // 12. Активность рынка
-  const outstandingAmount = spec.facevalue * 1000000 // приблизительно
-  // Try to get from RuData
-  let actualOutstanding = outstandingAmount
-  const ruRef = await getRuDataFintoolRef(isin)
-  if (ruRef && Array.isArray(ruRef) && ruRef.length > 0) {
-    const ref0 = ruRef[0]
-    if (ref0.sumissueval) actualOutstanding = ref0.sumissueval
-    if (ref0.issueval) actualOutstanding = ref0.issueval
-  }
-  const marketActivity = computeMarketActivity(history, actualOutstanding)
+  // 12. Рейтинги (RuData + MOEX ISS fallback)
+  const [moexRatings, ruDataIssueRatings, ruDataIssuerRatings] = await Promise.all([
+    getMoexRatings(isin),
+    getRuDataRatings(isin, creds ?? undefined),
+    spec.issuer ? getRuDataIssuerRatings(spec.issuer, creds ?? undefined) : Promise.resolve([]),
+  ])
 
-  // 13. Индексы
-  const indices = await fetchAllIndices(valuationDate)
+  const issueRatings = ruDataIssueRatings.length > 0 ? ruDataIssueRatings : moexRatings.issue
+  const issuerRatings = ruDataIssuerRatings.length > 0 ? ruDataIssuerRatings : moexRatings.issuer
 
-  // 14. Корпоративные события
+  // 13. Активность рынка (EfirHistoryAgg → fallback MOEX ISS)
+  const marketActivity = await computeMarketActivity(isin, spec.secid, valuationDate, outstandingAmount, history)
+
+  // 14. Индексы (зависят от дюрации)
+  const indices = await fetchIndicesByDuration(durationYears, valuationDate)
+
+  // 15. Корпоративные события
   const corporateEvents = await getCorporateEvents(isin)
 
-  // 15. История цен и доходности для графиков
+  // 16. История цен
   const priceHistory = buildPriceHistory(history)
 
-  // Yield history - sample evenly
-  const yieldHistorySampled = history.filter((_, i) => i % Math.max(1, Math.floor(history.length / 30)) === 0)
-  const yieldHistoryPoints: YieldHistoryPoint[] = []
-  for (const h of yieldHistorySampled) {
-    if (!h.yield_close && !h.close) continue
-    const tradeDate = new Date(h.date)
-    const yrsToMat = (matDate.getTime() - tradeDate.getTime()) / (365.25 * 24 * 3600 * 1000)
-    let hytm = h.yield_close ? h.yield_close / 100 : 0
-    if (!hytm && h.close > 0) {
-      hytm = calcYTMFromPrice(h.close, spec.facevalue, spec.couponpercent / 100, spec.couponfrequency || 2, yrsToMat)
-    }
-    const gc = await getGCurveYield(yrsToMat, h.date)
-    yieldHistoryPoints.push({
-      date: h.date,
-      ytm: hytm * 100,
-      gcurve: gc * 100,
-      gspread: (hytm - gc) * 10000,
-    })
-  }
+  // 17. Динамика доходности (13 месячных точек)
+  const yieldHistory = await buildYieldDynamics(spec.secid, valuationDate, history, hasOffer, spec)
 
-  // 16. Доп. данные из RuData для общих сведений
+  // 18. Доп. данные из RuData
   let riskCountry = 'Россия'
   let sector = ''
   let industry = ''
-  if (ruRef && Array.isArray(ruRef) && ruRef.length > 0) {
-    const ref0 = ruRef[0]
+  if (ref0) {
     riskCountry = ref0.country || ref0.issuercountry || 'Россия'
     sector = ref0.sectorbond || ref0.sector || ''
     industry = ref0.branch || ref0.industry || ''
@@ -1194,13 +1313,15 @@ export async function fetchVanillaBondReport(
     issuer: spec.name || spec.shortname || spec.issuer || isin,
     risk_country: riskCountry,
     sector: sector || 'Корпоративный',
-    industry: industry,
-    outstanding_amount: actualOutstanding,
+    industry,
+    outstanding_amount: outstandingAmount,
     issue_info: {
-      issue_date: spec.issuedate || null,
-      maturity_date: spec.matdate || null,
-      coupon_rate: spec.couponpercent ? spec.couponpercent / 100 : null,
-      coupon_per_year: spec.couponfrequency || null,
+      issue_date: ref0?.begdistdate || spec.issuedate || null,
+      maturity_date: ref0?.endmtydate || spec.matdate || null,
+      coupon_rate: currentCouponRate,
+      coupon_per_year: ref0?.couponperyear || spec.couponfrequency || null,
+      nominal: currentFaceValue,
+      offer: offer,
     },
     ratings: {
       issue: issueRatings,
@@ -1211,12 +1332,15 @@ export async function fetchVanillaBondReport(
     pricing: {
       clean_price_pct: cleanPricePct,
       dirty_price: dirtyPrice,
-      ytm,
-      g_spread_bps: Math.round(gSpreadBps * 100) / 100,
-      g_curve_yield: gCurveYield,
+      ytm: ytmDecimal,
+      ytm_pct: ytmPct,
+      g_spread_bps: gSpreadBpsRounded,
+      g_curve_yield: gCurveDecimal,
+      g_curve_pct: gCurvePct,
+      yield_type: yieldType,
     },
     risk_indicators: {
-      duration: Math.round(duration * 10000) / 10000,
+      duration: Math.round(durationYears * 10000) / 10000,
       mod_duration: Math.round(modDuration * 10000) / 10000,
       convexity: Math.round(convexity * 100) / 100,
       dv01: Math.round(dv01 * 100) / 100,
@@ -1224,69 +1348,81 @@ export async function fetchVanillaBondReport(
     indices,
     corporate_events: corporateEvents,
     price_history: priceHistory,
-    yield_history: yieldHistoryPoints,
+    yield_history: yieldHistory,
     analogous_bonds: [],
   }
 }
 
 /**
  * Генерация полного отчёта по облигации-флоатеру.
- * Логика соответствует «Автоматизированный шаблон (для флоатеров).xlsm»
- * + «Расчёт доходности флоатера.xlsm».
+ * Логика соответствует «Автоматизированный шаблон (для флоатеров).xlsm».
  */
 export async function fetchFloaterBondReport(
   isin: string,
   valuationDate: string
 ): Promise<FloaterBondReport> {
-  // 1. Базовый отчёт — большинство вычислений идентичны vanilla
+  const creds = getRuDataCreds()
+
+  // 1. Базовый отчёт (vanilla)
   const base = await fetchVanillaBondReport(isin, valuationDate)
 
   // 2. Доп. информация для флоатера
   const spec = await getSecuritySpec(isin)
-  const coupons = await getBondCoupons(isin)
 
-  // Определяем формулу купона
+  // Определяем формулу купона и QM (quoted margin)
   let couponFormula = ''
-  let quotedMarginBps = 0
+  let qmBps = 0 // Quoted Margin в bps
 
-  // Из RuData
-  const ruRef = await getRuDataFintoolRef(isin)
+  const ruRef = await getRuDataFintoolRef(isin, creds ?? undefined)
   if (ruRef && Array.isArray(ruRef) && ruRef.length > 0) {
     const ref0 = ruRef[0]
     couponFormula = ref0.coupon_type_desc || ref0.floatratename || ref0.coupondesc || ''
     if (ref0.floatratemargin) {
-      quotedMarginBps = ref0.floatratemargin * 100 // convert % to bps
+      qmBps = ref0.floatratemargin * 100 // из % в bps
     }
   }
 
-  // Если формула не найдена в RuData, пытаемся угадать из названия
+  // Парсим маржу из формулы если не нашли в RuData
+  if (couponFormula && qmBps === 0) {
+    const match = couponFormula.match(/([+-])\s*([\d,.]+)\s*%?\s*$/)
+    if (match) {
+      qmBps = parseFloat(match[2].replace(',', '.')) * (match[1] === '-' ? -100 : 100)
+    }
+  }
+
   if (!couponFormula && spec.couponpercent > 0) {
     couponFormula = `Переменная ставка (${spec.couponpercent}%)`
   }
 
-  // Парсим маржу из формулы
-  if (couponFormula && quotedMarginBps === 0) {
-    const parsed = parseFloaterFormula(couponFormula)
-    quotedMarginBps = parsed.marginPct * 100
+  // DM (Discount Margin) из RuData Bond/Calculate
+  let dmBps: number | null = null
+  const ruCalc = await getRuDataBondCalc(isin, valuationDate, base.pricing.clean_price_pct, creds ?? undefined)
+  if (ruCalc?.dm_bps != null) {
+    dmBps = ruCalc.dm_bps
   }
 
   // Следующий купон
+  const resp = await moexRequest(`/securities/${isin}/bondization`)
+  const coupons = parseISSTable(resp, 'coupons')
   const today = new Date(valuationDate)
-  const futureCoupons = coupons.filter((c) => new Date(c.date) > today)
-  const nextCoupon = futureCoupons.length > 0
-    ? (futureCoupons[0].valueprc || futureCoupons[0].value || null)
+  const futureCoupons = coupons
+    .filter((c: any) => new Date(c.coupondate || c.COUPONDATE || '') > today)
+    .sort((a: any, b: any) =>
+      new Date(a.coupondate || a.COUPONDATE || '').getTime() -
+      new Date(b.coupondate || b.COUPONDATE || '').getTime()
+    )
+  const nextCouponRate = futureCoupons.length > 0
+    ? ((futureCoupons[0].valueprc ?? futureCoupons[0].VALUEPRC ?? futureCoupons[0].value ?? futureCoupons[0].VALUE ?? 0) / 100)
     : null
-  const nextCouponRate = nextCoupon !== null ? nextCoupon / 100 : null
 
   // Кол-во выпусков эмитента в обращении
   let issuesCount: number | null = null
-  const ruCreds = getRuDataCreds()
-  if (ruCreds && base.issuer) {
+  if (creds && base.issuer) {
     try {
       const data = await ruDataQuery('Bond/List', {
         filter: `issuername LIKE '%${base.issuer.substring(0, 20)}%' AND status = 'В обращении'`,
         count: 200,
-      }, ruCreds)
+      }, creds)
       if (data && Array.isArray(data)) {
         issuesCount = data.length
       }
@@ -1297,19 +1433,17 @@ export async function fetchFloaterBondReport(
   const startDateFormatted = new Date(new Date(valuationDate).getTime() - 30 * 24 * 3600 * 1000)
   const analysisPeriod = `с ${formatDateRu(startDateFormatted)} по ${formatDateRu(new Date(valuationDate))}`
 
-  // 3. История DM/QM
-  const historyForMargin = await getBondHistory(
-    spec.secid,
-    new Date(new Date(valuationDate).getTime() - 365 * 24 * 3600 * 1000).toISOString().split('T')[0],
-    valuationDate
-  )
-  const marginHistory = buildMarginHistory(historyForMargin, quotedMarginBps)
+  // 3. DM/QM история (13 месячных точек)
+  // Из Floater info sheet: DATE, DM, QM, PRICE
+  const marginHistory = await buildMarginHistory(isin, spec.secid, valuationDate, qmBps, spec)
 
   return {
     ...base,
     issues_count: issuesCount,
     analysis_period: analysisPeriod,
     coupon_formula: couponFormula || null,
+    dm_bps: dmBps,
+    qm_bps: qmBps || null,
     issue_info: {
       ...base.issue_info,
       coupon_formula: couponFormula || null,
@@ -1321,27 +1455,122 @@ export async function fetchFloaterBondReport(
   }
 }
 
+// ─── DM/QM история для флоатера ─────────────────────────────────────────────
+
+async function buildMarginHistory(
+  isin: string,
+  secid: string,
+  valuationDate: string,
+  qmBps: number,
+  spec: SecuritySpec
+): Promise<MarginHistoryPoint[]> {
+  const creds = getRuDataCreds()
+  const points: MarginHistoryPoint[] = []
+  const valDate = new Date(valuationDate)
+
+  // 13 месячных дат
+  for (let i = 0; i < 13; i++) {
+    const d = new Date(valDate)
+    d.setMonth(d.getMonth() - i)
+    const dateStr = d.toISOString().split('T')[0]
+
+    // Пытаемся получить DM из RuData Bond/Calculate для каждой даты
+    const ruCalc = await getRuDataBondCalc(isin, dateStr, undefined, creds ?? undefined)
+
+    if (ruCalc?.dm_bps != null) {
+      points.push({
+        date: dateStr,
+        dm: ruCalc.dm_bps,
+        qm: qmBps,
+        price: undefined,
+      })
+    }
+  }
+
+  // Если RuData не дал данных, fallback с аппроксимацией
+  if (points.length === 0) {
+    const startDate = new Date(valDate.getTime() - 395 * 24 * 3600 * 1000).toISOString().split('T')[0]
+    const history = await getBondHistory(secid, startDate, valuationDate)
+
+    for (let i = 0; i < 13; i++) {
+      const d = new Date(valDate)
+      d.setMonth(d.getMonth() - i)
+      const target = d.getTime()
+
+      // Найти ближайший торговый день
+      let closest: BondTradeHistory | null = null
+      let minDiff = Infinity
+      for (const h of history) {
+        const diff = Math.abs(new Date(h.date).getTime() - target)
+        if (diff < minDiff && h.yield_close != null) {
+          minDiff = diff
+          closest = h
+        }
+      }
+
+      if (closest && minDiff < 10 * 24 * 3600 * 1000) {
+        // DM аппроксимация: (YTM - baseRate) в bps
+        // baseRate ≈ YTM - QM (упрощённо)
+        const ytmBps = (closest.yield_close || 0) * 100
+        const dmApprox = ytmBps - qmBps
+
+        points.push({
+          date: closest.date,
+          dm: dmApprox,
+          qm: qmBps,
+          price: closest.close || undefined,
+        })
+      }
+    }
+  }
+
+  // Сортируем по дате
+  points.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+  return points
+}
+
 /**
  * Загрузить данные по облигации-аналогу (для scatter-графика).
+ * Формулы из шаблона (Calculation, I34:T42):
+ *   K = IF(R="O", YTP, YTM) * 100  (доходность в %)
+ *   L = IF(R="O", DurationToPutCall, Duration)  (в годах)
+ *   R = IF(BondDateParams(ISIN, date, "offer_date") exists, "O", "нет")
  */
 export async function fetchAnalogBondData(
   analogIsin: string,
   valuationDate: string
 ): Promise<AnalogousBond | null> {
   try {
+    const creds = getRuDataCreds()
     const spec = await getSecuritySpec(analogIsin)
     const mkt = await getCurrentMarketData(spec.secid)
 
     const matDate = new Date(spec.matdate)
     const valDate = new Date(valuationDate)
-    const yearsToMat = (matDate.getTime() - valDate.getTime()) / (365.25 * 24 * 3600 * 1000)
+    const yearsToMat = (matDate.getTime() - valDate.getTime()) / (365 * 24 * 3600 * 1000)
 
     const cleanPrice = mkt.last ?? mkt.waprice ?? mkt.closeprice ?? mkt.marketprice ?? 100
-    let ytm = 0
-    if (mkt.yield && mkt.yield > 0) {
-      ytm = mkt.yield
+
+    // Проверяем оферту аналога
+    const dateParams = await getRuDataBondDateParams(analogIsin, valuationDate, creds ?? undefined)
+    const ruRef = await getRuDataFintoolRef(analogIsin, creds ?? undefined)
+    const refOfferDate = (ruRef && Array.isArray(ruRef) && ruRef.length > 0) ? (ruRef[0].offer_date || ruRef[0].offerdate || null) : null
+    const offer = detectOfferType(dateParams.offer_date, refOfferDate)
+    const hasOffer = offer.type !== 'Нет'
+
+    // Получаем расчёт из RuData
+    const ruCalc = await getRuDataBondCalc(analogIsin, valuationDate, cleanPrice, creds ?? undefined)
+
+    // Доходность
+    let bondYield: number
+    if (hasOffer && ruCalc?.ytp != null) {
+      bondYield = ruCalc.ytp * 100
+    } else if (ruCalc?.ytm != null) {
+      bondYield = ruCalc.ytm * 100
+    } else if (mkt.yield && mkt.yield > 0) {
+      bondYield = mkt.yield
     } else {
-      ytm = calcYTMFromPrice(
+      bondYield = calcYTMFromPrice(
         cleanPrice,
         spec.facevalue,
         spec.couponpercent / 100,
@@ -1350,12 +1579,15 @@ export async function fetchAnalogBondData(
       ) * 100
     }
 
-    let duration = 0
-    if (mkt.duration && mkt.duration > 0) {
+    // Дюрация
+    let duration: number
+    if (ruCalc?.duration_years != null) {
+      duration = ruCalc.duration_years
+    } else if (mkt.duration && mkt.duration > 0) {
       duration = mkt.duration / 365
     } else {
       duration = calcDuration(
-        ytm / 100,
+        bondYield / 100,
         spec.facevalue,
         spec.couponpercent / 100,
         spec.couponfrequency || 2,
@@ -1367,7 +1599,8 @@ export async function fetchAnalogBondData(
       isin: spec.isin || analogIsin,
       name: spec.shortname || spec.name || analogIsin,
       duration,
-      yield: ytm,
+      yield: bondYield,
+      has_offer: hasOffer,
     }
   } catch {
     return null

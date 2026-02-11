@@ -162,6 +162,19 @@
                 <span v-else>{{ report.issue_info?.coupon_per_year ?? '—' }}</span>
               </td>
             </tr>
+            <tr>
+              <td class="label">Номинал</td>
+              <td class="value mono">{{ report.issue_info?.nominal ? formatNumber(report.issue_info.nominal) : '—' }}</td>
+            </tr>
+            <tr>
+              <td class="label">Оферта</td>
+              <td class="value">
+                <span v-if="report.issue_info?.offer && report.issue_info.offer.type !== 'Нет'" class="accent">
+                  {{ report.issue_info.offer.type }} — {{ formatDate(report.issue_info.offer.date) }}
+                </span>
+                <span v-else>Нет</span>
+              </td>
+            </tr>
           </table>
         </div>
       </div>
@@ -243,10 +256,10 @@
               </span>
             </div>
             <div class="metric">
-              <span>YTM</span>
+              <span>{{ report.pricing?.yield_type || 'YTM' }}</span>
               <span class="val accent">
                 <input v-if="editMode && editableReport?.pricing" v-model.number="editableReport.pricing.ytm" type="number" step="0.0001" class="edit-input-inline" />
-                <span v-else>{{ report.pricing?.ytm ? ((report.pricing.ytm * 100).toFixed(2) + '%') : '—' }}</span>
+                <span v-else>{{ report.pricing?.ytm_pct != null ? (report.pricing.ytm_pct.toFixed(2) + '%') : (report.pricing?.ytm ? ((report.pricing.ytm * 100).toFixed(2) + '%') : '—') }}</span>
               </span>
             </div>
             <div class="metric">
@@ -260,7 +273,7 @@
               <span>G-curve</span>
               <span class="val mono">
                 <input v-if="editMode && editableReport?.pricing" v-model.number="editableReport.pricing.g_curve_yield" type="number" step="0.0001" class="edit-input-inline" />
-                <span v-else>{{ report.pricing?.g_curve_yield ? ((report.pricing.g_curve_yield * 100).toFixed(2) + '%') : '—' }}</span>
+                <span v-else>{{ report.pricing?.g_curve_pct != null ? (report.pricing.g_curve_pct.toFixed(2) + '%') : (report.pricing?.g_curve_yield ? ((report.pricing.g_curve_yield * 100).toFixed(2) + '%') : '—') }}</span>
               </span>
             </div>
           </div>
@@ -340,8 +353,8 @@
             </thead>
             <tbody>
               <tr>
-                <td>Доходность индекса государственных облигаций (менее года)</td>
-                <td class="mono">{{ report.indices?.gov_less_1y != null ? ((report.indices.gov_less_1y * 100).toFixed(2) + '%') : '—' }}</td>
+                <td>Доходность индекса государственных облигаций</td>
+                <td class="mono">{{ govIndexYield != null ? ((govIndexYield * 100).toFixed(2) + '%') : '—' }}</td>
               </tr>
               <tr>
                 <td>Доходность индекса корпоративных облигаций с рейтингом ААА</td>
@@ -352,8 +365,8 @@
                 <td class="mono">{{ report.indices?.corp_aa != null ? ((report.indices.corp_aa * 100).toFixed(2) + '%') : '—' }}</td>
               </tr>
               <tr class="highlight-row">
-                <td><strong>Оцениваемая облигация</strong></td>
-                <td class="mono accent"><strong>{{ report.pricing?.ytm ? ((report.pricing.ytm * 100).toFixed(2) + '%') : '—' }}</strong></td>
+                <td><strong>Оцениваемая облигация ({{ report.pricing?.yield_type || 'YTM' }})</strong></td>
+                <td class="mono accent"><strong>{{ report.pricing?.ytm_pct != null ? (report.pricing.ytm_pct.toFixed(2) + '%') : (report.pricing?.ytm ? ((report.pricing.ytm * 100).toFixed(2) + '%') : '—') }}</strong></td>
               </tr>
               <tr>
                 <td>Доходность индекса корпоративных облигаций с рейтингом А</td>
@@ -444,6 +457,12 @@ const router = useRouter()
 
 const isin = computed(() => (route.params.isin as string) || '')
 const localIsin = ref(isin.value)
+
+const govIndexYield = computed(() => {
+  if (!report.value?.indices) return null
+  const idx = report.value.indices
+  return idx.gov_less_1y ?? idx.gov_1_3y ?? idx.gov_3_5y ?? idx.gov_5plus ?? null
+})
 
 const loading = ref(false)
 const loadingMessage = ref('Загрузка данных...')
@@ -564,7 +583,7 @@ const initCharts = () => {
         labels,
         datasets: [
           {
-            label: 'YTM, %',
+            label: `${report.value?.pricing?.yield_type || 'YTM'}, %`,
             data: yh.map(p => p.ytm),
             borderColor: '#38bdf8',
             backgroundColor: 'rgba(56, 189, 248, 0.08)',
@@ -654,13 +673,15 @@ const initCharts = () => {
   // Indices Comparison Chart
   if (indicesComparisonRef.value?.getContext('2d') && report.value?.indices && report.value?.pricing) {
     const indices = report.value.indices
-    const bondYtm = (report.value.pricing.ytm || 0) * 100
+    const bondYtm = report.value.pricing.ytm_pct ?? ((report.value.pricing.ytm || 0) * 100)
+
+    const govYield = (indices.gov_less_1y ?? indices.gov_1_3y ?? indices.gov_3_5y ?? indices.gov_5plus ?? 0) * 100
 
     const dataPoints = [
-      { label: 'Индекс гос. облигаций', value: (indices.gov_less_1y || 0) * 100, color: '#9ca3af' },
+      { label: 'Индекс гос. облигаций', value: govYield, color: '#9ca3af' },
       { label: 'Индекс корп. облигаций (ААА)', value: (indices.corp_aaa || 0) * 100, color: '#9ca3af' },
       { label: 'Индекс корп. облигаций (АА)', value: (indices.corp_aa || 0) * 100, color: '#9ca3af' },
-      { label: 'Оцениваемая облигация', value: bondYtm, color: '#ef4444' },
+      { label: `Оцениваемая облигация (${report.value.pricing.yield_type || 'YTM'})`, value: bondYtm, color: '#ef4444' },
       { label: 'Индекс корп. облигаций (А)', value: (indices.corp_a || 0) * 100, color: '#9ca3af' },
       { label: 'Индекс корп. облигаций (ВВВ)', value: (indices.corp_bbb || 0) * 100, color: '#9ca3af' }
     ].filter(p => p.value > 0)
@@ -671,10 +692,10 @@ const initCharts = () => {
         datasets: dataPoints.map((point, index) => ({
           label: point.label,
           data: [{ x: point.value, y: 0 }],
-          backgroundColor: point.label === 'Оцениваемая облигация' ? 'rgba(239, 68, 68, 0)' : point.color,
-          borderColor: point.label === 'Оцениваемая облигация' ? 'rgba(239, 68, 68, 0)' : point.color,
-          pointRadius: point.label === 'Оцениваемая облигация' ? 1 : 10,
-          pointHoverRadius: point.label === 'Оцениваемая облигация' ? 14 : 12,
+          backgroundColor: point.label.startsWith('Оцениваемая облигация') ? 'rgba(239, 68, 68, 0)' : point.color,
+          borderColor: point.label.startsWith('Оцениваемая облигация') ? 'rgba(239, 68, 68, 0)' : point.color,
+          pointRadius: point.label.startsWith('Оцениваемая облигация') ? 1 : 10,
+          pointHoverRadius: point.label.startsWith('Оцениваемая облигация') ? 14 : 12,
           showLine: false
         }))
       },
@@ -741,7 +762,7 @@ const initCharts = () => {
         id: 'blinkingRedPoint',
         afterDraw: (chart: any) => {
           const ctx = chart.ctx
-          const redIdx = dataPoints.findIndex(p => p.label === 'Оцениваемая облигация')
+          const redIdx = dataPoints.findIndex(p => p.label.startsWith('Оцениваемая облигация'))
           if (redIdx < 0) return
           const meta = chart.getDatasetMeta(redIdx)
           if (!meta?.data?.length) return
@@ -1004,7 +1025,7 @@ const exportToExcel = () => {
       if (dataToExport.indices.gov_less_1y) data.push(['Индекс гос. облигаций (менее года)', (dataToExport.indices.gov_less_1y * 100).toFixed(2) + '%'])
       if (dataToExport.indices.corp_aaa) data.push(['Индекс корп. облигаций (ААА)', (dataToExport.indices.corp_aaa * 100).toFixed(2) + '%'])
       if (dataToExport.indices.corp_aa) data.push(['Индекс корп. облигаций (АА)', (dataToExport.indices.corp_aa * 100).toFixed(2) + '%'])
-      data.push(['Оцениваемая облигация', dataToExport.pricing?.ytm ? (dataToExport.pricing.ytm * 100).toFixed(2) + '%' : ''])
+      data.push([`Оцениваемая облигация (${dataToExport.pricing?.yield_type || 'YTM'})`, dataToExport.pricing?.ytm_pct ? dataToExport.pricing.ytm_pct.toFixed(2) + '%' : (dataToExport.pricing?.ytm ? (dataToExport.pricing.ytm * 100).toFixed(2) + '%' : '')])
       if (dataToExport.indices.corp_a) data.push(['Индекс корп. облигаций (А)', (dataToExport.indices.corp_a * 100).toFixed(2) + '%'])
       if (dataToExport.indices.corp_bbb) data.push(['Индекс корп. облигаций (ВВВ)', (dataToExport.indices.corp_bbb * 100).toFixed(2) + '%'])
       data.push([])
