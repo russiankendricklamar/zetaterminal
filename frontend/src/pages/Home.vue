@@ -28,7 +28,8 @@
         <div ref="heroContentRef" class="hero-content">
           <h2 ref="heroSubtitleRef" class="hero-subtitle font-mono">Quantitative Dashboard</h2>
           <div class="hero-titles">
-            <h1 ref="heroTitle1Ref" class="hero-title font-anton">ZETA TERMINAL</h1>
+            <h1 ref="heroTitle1Ref" class="hero-title hero-title-top font-anton">ZETA</h1>
+            <h1 ref="heroTitle2Ref" class="hero-title hero-title-bottom font-anton">TERMINAL</h1>
           </div>
         </div>
         <div ref="heroBottomRef" class="hero-bottom font-oswald">
@@ -176,6 +177,7 @@ const heroRef = ref<HTMLElement | null>(null)
 const heroContentRef = ref<HTMLElement | null>(null)
 const heroSubtitleRef = ref<HTMLElement | null>(null)
 const heroTitle1Ref = ref<HTMLElement | null>(null)
+const heroTitle2Ref = ref<HTMLElement | null>(null)
 const heroBottomRef = ref<HTMLElement | null>(null)
 const aboutBlock1 = ref<HTMLElement | null>(null)
 const aboutBlock2 = ref<HTMLElement | null>(null)
@@ -247,10 +249,18 @@ onMounted(async () => {
         { y: 0, opacity: 1, duration: 1, delay: 0, ease: 'power4.out' }
       )
     }
+    // ZETA - scales from bottom, expanding upward toward center
     if (heroTitle1Ref.value) {
       gsap.fromTo(heroTitle1Ref.value,
         { scaleY: 0 },
-        { scaleY: 1, duration: 1, delay: 0.1, ease: 'power4.out', transformOrigin: 'bottom center' }
+        { scaleY: 1, duration: 1, delay: 0.1, ease: EASE_CSS, transformOrigin: 'bottom center' }
+      )
+    }
+    // TERMINAL - scales from top, expanding downward toward center
+    if (heroTitle2Ref.value) {
+      gsap.fromTo(heroTitle2Ref.value,
+        { scaleY: 0 },
+        { scaleY: 1, duration: 1, delay: 0.2, ease: EASE_CSS, transformOrigin: 'top center' }
       )
     }
     if (heroBottomRef.value) {
@@ -478,6 +488,15 @@ onUnmounted(() => {
   text-transform: uppercase;
   mix-blend-mode: multiply;
   margin: 0;
+}
+
+/* J. Cole style center-reveal animation origins */
+.hero-title-top {
+  transform-origin: bottom center;
+}
+
+.hero-title-bottom {
+  transform-origin: top center;
 }
 
 .hero-bottom {
