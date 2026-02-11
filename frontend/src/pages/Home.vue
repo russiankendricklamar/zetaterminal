@@ -244,6 +244,19 @@ onMounted(async () => {
   // 2. Hero entrance
   function animateHero() {
     if (heroSubtitleRef.value) {
+    gsap.set(heroSubtitleRef.value, { y: 100, opacity: 0 })
+    }
+    if (heroTitle1Ref.value) {
+      gsap.set(heroTitle1Ref.value, { scaleY: 0 })
+    }
+    if (heroTitle2Ref.value) {
+      gsap.set(heroTitle2Ref.value, { scaleY: 0 })
+    }
+    if (heroBottomRef.value) {
+      gsap.set(heroBottomRef.value, { y: 20, opacity: 0 })
+    }
+    
+    if (heroSubtitleRef.value) {
       gsap.fromTo(heroSubtitleRef.value,
         { y: 100, opacity: 0 },
         { y: 0, opacity: 1, duration: 1, delay: 0, ease: 'EASE_CSS' }
