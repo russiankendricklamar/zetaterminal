@@ -278,22 +278,40 @@
           </div>
         </div>
 
-        <!-- Extended API Keys by Group -->
-        <div v-for="group in apiKeyGroups" :key="group" class="glass-panel settings-block">
-          <h3 class="block-title">{{ group }}</h3>
-          <div class="control-group">
-            <template v-for="(cfg, idx) in getGroupKeys(group)" :key="cfg.key">
-              <div class="control-row vertical">
-                <label>{{ cfg.label }}</label>
-                <input
-                  :type="cfg.key.toLowerCase().includes('secret') || cfg.key.toLowerCase().includes('password') ? 'password' : 'text'"
-                  v-model="extendedApiKeys[cfg.key]"
-                  class="glass-input full"
-                  :placeholder="cfg.placeholder"
-                />
+        <!-- Extended API Keys — Collapsible Accordion -->
+        <div class="glass-panel settings-block api-accordion">
+          <h3 class="block-title">API Ключи</h3>
+          <div class="accordion-list">
+            <div
+              v-for="group in apiKeyGroups"
+              :key="group"
+              class="accordion-item"
+              :class="{ expanded: expandedApiGroups[group] }"
+            >
+              <button class="accordion-header" @click="toggleApiGroup(group)">
+                <span class="accordion-label">{{ group }}</span>
+                <span class="accordion-count">{{ getGroupKeys(group).length }}</span>
+                <svg class="accordion-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="6 9 12 15 18 9" />
+                </svg>
+              </button>
+              <div class="accordion-body" v-show="expandedApiGroups[group]">
+                <div class="control-group">
+                  <template v-for="(cfg, idx) in getGroupKeys(group)" :key="cfg.key">
+                    <div class="control-row vertical">
+                      <label>{{ cfg.label }}</label>
+                      <input
+                        :type="cfg.key.toLowerCase().includes('secret') || cfg.key.toLowerCase().includes('password') ? 'password' : 'text'"
+                        v-model="extendedApiKeys[cfg.key]"
+                        class="glass-input full"
+                        :placeholder="cfg.placeholder"
+                      />
+                    </div>
+                    <div v-if="idx < getGroupKeys(group).length - 1" class="divider"></div>
+                  </template>
+                </div>
               </div>
-              <div v-if="idx < getGroupKeys(group).length - 1" class="divider"></div>
-            </template>
+            </div>
           </div>
         </div>
 
@@ -387,7 +405,12 @@ const settings = reactive({
 // ─── Extended API Keys ───────────────────────────────────────────────────────
 const apiKeyGroups = getApiKeyGroups()
 const extendedApiKeys = reactive<Record<string, string>>({})
+const expandedApiGroups = reactive<Record<string, boolean>>({})
 const apiHealthStatus = ref<Record<string, boolean>>({})
+
+function toggleApiGroup(group: string) {
+  expandedApiGroups[group] = !expandedApiGroups[group]
+}
 
 function loadExtendedKeys() {
   const saved = loadApiKeys()
@@ -1014,6 +1037,85 @@ input:checked + .slider:before {
 
 .status-indicator.connected {
   color: #4ade80;
+}
+
+/* ============================================
+   API ACCORDION
+   ============================================ */
+.api-accordion {
+  grid-column: 1 / -1;
+}
+
+.accordion-list {
+  padding: 0 16px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.accordion-item {
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 10px;
+  overflow: hidden;
+  transition: border-color 0.2s;
+}
+
+.accordion-item.expanded {
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+.accordion-header {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  background: rgba(255, 255, 255, 0.03);
+  border: none;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.accordion-header:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.accordion-label {
+  flex: 1;
+  text-align: left;
+  font-size: 12px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.8);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.accordion-count {
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.3);
+  background: rgba(255, 255, 255, 0.06);
+  padding: 2px 7px;
+  border-radius: 8px;
+  font-weight: 600;
+}
+
+.accordion-chevron {
+  color: rgba(255, 255, 255, 0.3);
+  transition: transform 0.25s ease;
+  flex-shrink: 0;
+}
+
+.accordion-item.expanded .accordion-chevron {
+  transform: rotate(180deg);
+  color: #3b82f6;
+}
+
+.accordion-body {
+  padding: 0 4px 4px;
+}
+
+.accordion-body .control-group {
+  margin: 0 8px 8px;
 }
 
 /* ============================================
