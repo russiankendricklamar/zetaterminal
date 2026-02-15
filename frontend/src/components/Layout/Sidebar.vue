@@ -195,8 +195,6 @@ const expandedTools = reactive<Record<string, boolean>>({
   options: false,
   swaps: false,
   forwards: false,
-  marketData: false,
-  tools: false,
 })
 
 const toolGroups = {
@@ -276,22 +274,6 @@ const toolGroups = {
     items: [
       { path: '/vanila-bond-report', label: 'Vanila Bond Report' },
       { path: '/floater-bond-report', label: 'Floater Bond Report' },
-    ]
-  },
-  marketData: {
-    title: 'РЫНОЧНЫЕ ДАННЫЕ',
-    subtitle: 'Внешние источники данных',
-    items: [
-      { path: '/macro', label: 'Макроэкономика' },
-      { path: '/crypto', label: 'Крипто рынки' },
-      { path: '/news', label: 'Новостной хаб' },
-    ]
-  },
-  tools: {
-    title: 'ИНСТРУМЕНТЫ',
-    subtitle: 'Безопасность и утилиты',
-    items: [
-      { path: '/security', label: 'Безопасность' },
     ]
   },
 }

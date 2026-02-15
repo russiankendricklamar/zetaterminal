@@ -34,10 +34,6 @@ import ForwardsGreeksDashboard from '@/pages/ForwardsGreeksDashboard.vue'
 import BasisAnalysis from '@/pages/BasisAnalysis.vue'
 import VolatilitySurface from '@/pages/VolatilitySurface.vue'
 import CCMVOptimizationPage from '@/pages/CCMVOptimization.vue'
-import MacroDashboard from '@/pages/MacroDashboard.vue'
-import CryptoMarkets from '@/pages/CryptoMarkets.vue'
-import NewsHub from '@/pages/NewsHub.vue'
-import SecurityCenter from '@/pages/SecurityCenter.vue'
 import DocumentationPage from '@/pages/DocumentationPage.vue'
 import KnowledgeBase from '@/pages/KnowledgeBase.vue'
 import Terminal from '@/pages/Terminal.vue'
@@ -265,30 +261,6 @@ const routes = [
         name: 'CCMVOptimization',
         component: CCMVOptimizationPage,
         meta: { title: 'CCMV Оптимизация' }
-      },
-      {
-        path: 'macro',
-        name: 'MacroDashboard',
-        component: MacroDashboard,
-        meta: { title: 'Макроэкономика' }
-      },
-      {
-        path: 'crypto',
-        name: 'CryptoMarkets',
-        component: CryptoMarkets,
-        meta: { title: 'Крипто рынки' }
-      },
-      {
-        path: 'news',
-        name: 'NewsHub',
-        component: NewsHub,
-        meta: { title: 'Новостной хаб' }
-      },
-      {
-        path: 'security',
-        name: 'SecurityCenter',
-        component: SecurityCenter,
-        meta: { title: 'Центр безопасности' }
       },
     ]
   },
