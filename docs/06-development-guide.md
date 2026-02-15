@@ -14,8 +14,8 @@
 ### 1. Клонирование
 
 ```bash
-git clone https://github.com/russiankendricklamar/stochastic-dashbord-v1.git
-cd stochastic-dashbord-v1
+git clone https://github.com/russiankendricklamar/zetaterminal.git
+cd zetaterminal
 ```
 
 ### 2. Backend

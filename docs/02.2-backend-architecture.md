@@ -73,8 +73,8 @@ async def lifespan(app: FastAPI):
     await close_session()  # Закрытие shared HTTP-сессии
 
 app = FastAPI(
-    title="Stochastic Dashboard API",
-    description="Backend API для Stochastic Dashboard",
+    title="Zeta Terminal API",
+    description="Backend API для Zeta Terminal",
     version="1.0.0",
     lifespan=lifespan,
 )

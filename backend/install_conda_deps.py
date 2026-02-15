@@ -39,7 +39,7 @@ def install_requirements():
 
 def main():
     """Главная функция"""
-    print("🚀 Установка зависимостей для Stochastic Dashboard Backend")
+    print("🚀 Установка зависимостей для Zeta Terminal Backend")
     print(f"📍 Окружение: {os.environ.get('CONDA_DEFAULT_ENV', 'системное')}")
     print("=" * 60)
     print()

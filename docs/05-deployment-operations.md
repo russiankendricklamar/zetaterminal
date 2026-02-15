@@ -67,7 +67,7 @@ Path filtering сокращает ненужные деплои и расход 
 
 ```typescript
 export default defineConfig({
-  base: '/stochastic-dashbord-v1/',    // GitHub Pages path
+  base: '/zetaterminal/',    // GitHub Pages path
   build: {
     target: 'esnext',
     minify: 'terser',
@@ -118,9 +118,9 @@ exec uvicorn src.main:app --host 0.0.0.0 --port $PORT
 | Настройка | Значение |
 |-----------|----------|
 | Source | gh-pages branch |
-| URL | `russiankendricklamar.github.io/stochastic-dashbord-v1/` |
+| URL | `russiankendricklamar.github.io/zetaterminal/` |
 | Routing | Hash-based (`#/`) |
-| Base path | `/stochastic-dashbord-v1/` |
+| Base path | `/zetaterminal/` |
 | 404 handling | `404.html` → hash redirect |
 
 ### Railway (Backend)

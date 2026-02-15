@@ -1,4 +1,4 @@
-# Backend API — Stochastic Dashboard
+# Backend API — Zeta Terminal
 
 FastAPI-бэкенд для количественного финансового анализа: DCF-оценка облигаций, GARCH, HMM, спектральный анализ, оптимизация портфелей (CCMV/HJB), интеграция с 38 внешними API.
 

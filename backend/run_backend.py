@@ -45,7 +45,7 @@ def check_and_install_dependencies():
 
 def main():
     """Главная функция запуска"""
-    print("🚀 Запуск Stochastic Dashboard Backend")
+    print("🚀 Запуск Zeta Terminal Backend")
     print(f"🐍 Python: {sys.executable}")
     print("=" * 60)
     

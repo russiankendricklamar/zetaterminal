@@ -3,7 +3,7 @@ import vue from '@vitejs/plugin-vue'
 import { fileURLToPath } from 'node:url'
 
 export default defineConfig({
-  base: '/stochastic-dashbord-v1/',
+  base: '/zetaterminal/',
   plugins: [vue()],
   resolve: {
     alias: {

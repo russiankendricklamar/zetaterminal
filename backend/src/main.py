@@ -1,5 +1,5 @@
 """
-FastAPI приложение для Stochastic Dashboard Backend.
+FastAPI приложение для Zeta Terminal Backend.
 """
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
@@ -40,8 +40,8 @@ async def lifespan(app: FastAPI):
 
 # Создаем FastAPI приложение
 app = FastAPI(
-    title="Stochastic Dashboard API",
-    description="Backend API для Stochastic Dashboard",
+    title="Zeta Terminal API",
+    description="Backend API для Zeta Terminal",
     version="1.0.0",
     lifespan=lifespan,
 )
@@ -84,7 +84,7 @@ app.include_router(platform_services.router, prefix="/api/platform", tags=["Plat
 async def root():
     """Корневой endpoint"""
     return {
-        "message": "Stochastic Dashboard API",
+        "message": "Zeta Terminal API",
         "version": "1.0.0",
         "status": "running"
     }

@@ -1,6 +1,6 @@
 # Overview
 
-This space provides a high-level introduction to the Stochastic Dashboard / v1 system: its purpose, architecture, technology stack, and key modules. This page serves as the entry point to understanding the codebase structure and how the major components interact.
+This space provides a high-level introduction to the Zeta Terminal system: its purpose, architecture, technology stack, and key modules. This page serves as the entry point to understanding the codebase structure and how the major components interact.
 
 For detailed information about specific subsystems, see:
 
@@ -11,7 +11,7 @@ For detailed information about specific subsystems, see:
 
 ## System Purpose
 
-Stochastic Dashboard / v1 is a production-ready quantitative financial analysis platform designed for:
+Zeta Terminal is a production-ready quantitative financial analysis platform designed for:
 
 - **Derivatives Pricing**: Valuation of bonds, swaps, forwards, and options using DCF, Black-Scholes, Heston, and Lévy process models
 - **Risk Management**: Stress testing, VaR/CVaR calculation, Greeks analysis, and portfolio hedging
@@ -244,7 +244,7 @@ The system integrates with three primary external data sources:
 
 Production environment layout:
 
-- GitHub Repository: `github.com/russiankendricklamar/stochastic-dashbord-v1`
+- GitHub Repository: `github.com/russiankendricklamar/zetaterminal`
 - CI/CD Pipelines: `.github/workflows/`
   - `pages.yml` — frontend build and deploy
   - `deploy-backend.yml` — backend deploy to Railway
@@ -260,7 +260,7 @@ Production environment layout:
 
 Runtime:
 
-- GitHub Pages: `russiankendricklamar.github.io/stochastic-dashbord-v1/`
+- GitHub Pages: `russiankendricklamar.github.io/zetaterminal/`
 - Railway platform: `backend-production.up.railway.app`
 - `VITE_API_BASE_URL` used by frontend to call backend API
 
@@ -270,7 +270,7 @@ Runtime:
 |-------------------------------|---------------------------------|-------------------------------------------------------------------------------|
 | `.github/workflows/pages.yml` | Frontend deployment pipeline    | Triggers on push to main, builds with Vite, deploys to gh-pages branch        |
 | `.github/workflows/deploy-backend.yml` | Backend deployment pipeline | Path filter for `backend/**`, deploys to Railway                              |
-| `frontend/vite.config.ts`     | Vite build configuration        | Base path `/stochastic-dashbord-v1/`, terser minification, code splitting     |
+| `frontend/vite.config.ts`     | Vite build configuration        | Base path `/zetaterminal/`, terser minification, code splitting     |
 | `backend/Procfile`            | Railway process configuration   | `web: uvicorn src.main:app --host 0.0.0.0 --port $PORT`                       |
 | `backend/start.sh`            | Backend startup script          | Installs requirements, starts Uvicorn server                                  |
 | `frontend/404.html`           | SPA redirect handler            | Converts 404 errors to hash-based routes for client-side routing              |
@@ -330,7 +330,7 @@ app.add_middleware(
 
 # Architecture
 
-This space describes the overall system architecture of the Stochastic Dashboard v1, including the separation between frontend and backend components, communication patterns, deployment infrastructure, and key architectural decisions.
+This space describes the overall system architecture of Zeta Terminal, including the separation between frontend and backend components, communication patterns, deployment infrastructure, and key architectural decisions.
 
 For detailed information about specific layers (in separate docs):
 
@@ -350,7 +350,7 @@ This space focuses on:
 
 ## System Overview
 
-The Stochastic Dashboard follows a **decoupled client–server architecture** with a Vue.js 3 SPA frontend communicating with a Python FastAPI backend over HTTPS. The frontend is statically hosted on GitHub Pages, while the backend runs on Railway PaaS.
+Zeta Terminal follows a **decoupled client–server architecture** with a Vue.js 3 SPA frontend communicating with a Python FastAPI backend over HTTPS. The frontend is statically hosted on GitHub Pages, while the backend runs on Railway PaaS.
 
 High-level layers:
 
@@ -513,7 +513,7 @@ Build pipeline:
 
 Runtime characteristics:
 
-- Base path: `/stochastic-dashbord-v1/` (configured in `frontend/vite.config.ts`).
+- Base path: `/zetaterminal/` (configured in `frontend/vite.config.ts`).
 - Code splitting:
   - Separate chunks for vendor libraries, chart libraries, and PDF generation.
 - Hash routing:

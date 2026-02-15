@@ -113,7 +113,7 @@ export async function calculateGarch(params: GarchRequest): Promise<GarchRespons
 ```typescript
 // vite.config.ts
 export default defineConfig({
-  base: '/stochastic-dashbord-v1/',   // GitHub Pages
+  base: '/zetaterminal/',   // GitHub Pages
   build: {
     target: 'esnext',
     minify: 'terser',

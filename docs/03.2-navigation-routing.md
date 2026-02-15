@@ -24,7 +24,7 @@ const router = createRouter({
 ### Навигационный guard
 ```typescript
 router.beforeEach((to) => {
-  document.title = `${to.meta?.title || to.name} — Stochastic Dashboard`
+  document.title = `${to.meta?.title || to.name} — Zeta Terminal`
 })
 ```
 

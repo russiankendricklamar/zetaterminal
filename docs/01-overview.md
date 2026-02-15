@@ -2,7 +2,7 @@
 
 ## Назначение
 
-Stochastic Dashboard v1 — платформа для количественного финансового анализа, включающая:
+Zeta Terminal — платформа для количественного финансового анализа, включающая:
 
 - **Ценообразование деривативов** — опционы (Black-Scholes, Heston, VG, CGMY), свопы, форварды
 - **Управление рисками** — VaR, CVaR, стресс-тестирование, сценарный анализ
@@ -65,7 +65,7 @@ Stochastic Dashboard v1 — платформа для количественно
 ## Структура проекта
 
 ```
-stochastic-dashbord-v1/
+zetaterminal/
 ├── frontend/
 │   └── src/
 │       ├── pages/              # Страницы (Route-level компоненты)
@@ -108,6 +108,6 @@ stochastic-dashbord-v1/
 
 | Компонент | Хостинг | URL |
 |-----------|---------|-----|
-| Frontend | GitHub Pages | `russiankendricklamar.github.io/stochastic-dashbord-v1/` |
+| Frontend | GitHub Pages | `russiankendricklamar.github.io/zetaterminal/` |
 | Backend | Railway | `backend-production.up.railway.app` |
 | Database | Supabase | PostgreSQL + TimescaleDB + Storage |
