@@ -278,6 +278,44 @@
           </div>
         </div>
 
+        <!-- Extended API Keys by Group -->
+        <div v-for="group in apiKeyGroups" :key="group" class="glass-panel settings-block">
+          <h3 class="block-title">{{ group }}</h3>
+          <div class="control-group">
+            <template v-for="(cfg, idx) in getGroupKeys(group)" :key="cfg.key">
+              <div class="control-row vertical">
+                <label>{{ cfg.label }}</label>
+                <input
+                  :type="cfg.key.toLowerCase().includes('secret') || cfg.key.toLowerCase().includes('password') ? 'password' : 'text'"
+                  v-model="extendedApiKeys[cfg.key]"
+                  class="glass-input full"
+                  :placeholder="cfg.placeholder"
+                />
+              </div>
+              <div v-if="idx < getGroupKeys(group).length - 1" class="divider"></div>
+            </template>
+          </div>
+        </div>
+
+        <!-- Backend Health -->
+        <div class="glass-panel settings-block">
+          <h3 class="block-title">Backend API Health</h3>
+          <div class="services-list">
+            <div v-for="(ok, svc) in apiHealthStatus" :key="svc" class="service-item">
+              <div class="srv-left">
+                <span class="srv-dot" :class="{ connected: ok }"></span>
+                <span class="srv-name font-mono" style="font-size:12px">{{ svc }}</span>
+              </div>
+              <span class="status-indicator" :class="{ connected: ok }">
+                {{ ok ? 'OK' : 'Down' }}
+              </span>
+            </div>
+          </div>
+          <div class="status-footer">
+            <button class="btn-glass xs" @click="checkApiServices">Обновить статус</button>
+          </div>
+        </div>
+
       </div>
       </transition>
 
@@ -292,6 +330,10 @@ import {
   saveCredentials as saveRuDataCredentials,
   loadCredentials as loadRuDataCredentials
 } from '@/services/rudataService'
+import {
+  API_KEYS_CONFIG, getApiKeyGroups, getKeysForGroup,
+  saveApiKeys, loadApiKeys, checkAllApiHealth
+} from '@/services/apiConfigService'
 
 const activeTab = ref('general')
 const hasChanges = ref(true)
@@ -328,9 +370,53 @@ const settings = reactive({
     { id: 1, name: 'Cbonds API', connected: false },
     { id: 2, name: 'RuData Reference', connected: false },
     { id: 3, name: 'Bloomberg Data', connected: false },
-    { id: 4, name: 'MOEX ISS', connected: true }
+    { id: 4, name: 'MOEX ISS', connected: true },
+    { id: 5, name: 'Alpha Vantage', connected: false },
+    { id: 6, name: 'Twelve Data', connected: false },
+    { id: 7, name: 'Polygon.io', connected: false },
+    { id: 8, name: 'FRED', connected: false },
+    { id: 9, name: 'CoinGecko', connected: false },
+    { id: 10, name: 'NewsAPI', connected: false },
+    { id: 11, name: 'Hugging Face', connected: false },
+    { id: 12, name: 'Frankfurter (ECB)', connected: true },
+    { id: 13, name: 'Bank of Russia', connected: true },
+    { id: 14, name: 'Nager.Date', connected: true },
   ]
 })
+
+// ─── Extended API Keys ───────────────────────────────────────────────────────
+const apiKeyGroups = getApiKeyGroups()
+const extendedApiKeys = reactive<Record<string, string>>({})
+const apiHealthStatus = ref<Record<string, boolean>>({})
+
+function loadExtendedKeys() {
+  const saved = loadApiKeys()
+  for (const cfg of API_KEYS_CONFIG) {
+    extendedApiKeys[cfg.key] = saved[cfg.key] || ''
+  }
+}
+
+function saveExtendedKeys() {
+  const keysToSave: Record<string, string> = {}
+  for (const cfg of API_KEYS_CONFIG) {
+    if (extendedApiKeys[cfg.key]) {
+      keysToSave[cfg.key] = extendedApiKeys[cfg.key]
+    }
+  }
+  saveApiKeys(keysToSave)
+}
+
+async function checkApiServices() {
+  try {
+    apiHealthStatus.value = await checkAllApiHealth()
+  } catch {
+    // ignore
+  }
+}
+
+function getGroupKeys(group: string) {
+  return getKeysForGroup(group)
+}
 
 // Загрузка сохраненных credentials при монтировании
 onMounted(() => {
@@ -356,6 +442,10 @@ onMounted(() => {
       console.error('Failed to load settings:', e)
     }
   }
+
+  // Загружаем extended API keys
+  loadExtendedKeys()
+  checkApiServices()
 
   hasChanges.value = false
 })
@@ -451,6 +541,9 @@ const saveSettings = () => {
   }
 
   localStorage.setItem('app_settings', JSON.stringify(settingsToSave))
+
+  // Сохраняем extended API keys
+  saveExtendedKeys()
 
   hasChanges.value = false
   setTimeout(() => hasChanges.value = true, 2000)

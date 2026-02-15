@@ -123,6 +123,14 @@
                 <span v-else>{{ report.issues_count || '—' }}</span>
               </td>
             </tr>
+            <tr>
+              <td class="label">Уровень листинга</td>
+              <td class="value">{{ report.listing_level ? (report.listing_level + ' уровень') : '—' }}</td>
+            </tr>
+            <tr>
+              <td class="label">Валюта</td>
+              <td class="value">{{ report.currency || '—' }}</td>
+            </tr>
           </table>
         </div>
 
@@ -157,6 +165,16 @@
               <td class="value accent">
                 <input v-if="editMode && editableReport?.issue_info" v-model="editableReport.issue_info.coupon_formula" type="text" class="edit-input" />
                 <span v-else>{{ report.issue_info?.coupon_formula || '—' }}</span>
+              </td>
+            </tr>
+            <tr>
+              <td class="label">Базовая ставка</td>
+              <td class="value">
+                <span v-if="report.base_rate_name" class="accent">
+                  {{ report.base_rate_name }}
+                  <span v-if="report.base_rate_value != null"> ({{ report.base_rate_value.toFixed(2) }}%)</span>
+                </span>
+                <span v-else>—</span>
               </td>
             </tr>
             <tr>
@@ -305,6 +323,10 @@
                 <span v-else>{{ report.pricing?.g_curve_pct != null ? (report.pricing.g_curve_pct.toFixed(2) + '%') : (report.pricing?.g_curve_yield ? ((report.pricing.g_curve_yield * 100).toFixed(2) + '%') : '—') }}</span>
               </span>
             </div>
+            <div class="metric">
+              <span>НКД</span>
+              <span class="val mono">{{ report.nkd != null ? report.nkd.toFixed(2) : '—' }}</span>
+            </div>
           </div>
           <p class="note-text">* Доходность, дюрация и следующий купон рассчитаны на основе рыночных значений форвардной кривой к ключевой ставке ЦБ РФ</p>
         </div>
@@ -450,7 +472,66 @@
         <p v-if="report.analogous_bonds_note" class="note-text">{{ report.analogous_bonds_note }}</p>
       </div>
 
-      <!-- BLOCK 6: Corporate Events -->
+      <!-- BLOCK 6: Coupon Schedule -->
+      <div class="glass-card full-width" v-if="report.coupon_schedule?.length">
+        <div class="card-header">
+          <h3>Купонное расписание (предстоящие)</h3>
+          <span class="muted">{{ report.coupon_schedule.length }} выплат</span>
+        </div>
+        <div class="schedule-table-wrap">
+          <table class="schedule-table">
+            <thead>
+              <tr>
+                <th>Дата</th>
+                <th>Ставка, %</th>
+                <th>Сумма, руб.</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="(cpn, idx) in report.coupon_schedule.slice(0, showAllCoupons ? undefined : 6)" :key="idx">
+                <td class="mono">{{ formatDate(cpn.date) }}</td>
+                <td class="mono">{{ cpn.valueprc ? cpn.valueprc.toFixed(2) : '—' }}</td>
+                <td class="mono">{{ cpn.value ? cpn.value.toFixed(2) : '—' }}</td>
+              </tr>
+            </tbody>
+          </table>
+          <button
+            v-if="report.coupon_schedule.length > 6"
+            class="btn-show-more"
+            @click="showAllCoupons = !showAllCoupons"
+          >
+            {{ showAllCoupons ? 'Свернуть' : `Показать все (${report.coupon_schedule.length})` }}
+          </button>
+        </div>
+      </div>
+
+      <!-- BLOCK 6b: Amortization Schedule -->
+      <div class="glass-card full-width" v-if="report.amortization_schedule?.length">
+        <div class="card-header">
+          <h3>График амортизации</h3>
+          <span class="muted">{{ report.amortization_schedule.length }} выплат</span>
+        </div>
+        <div class="schedule-table-wrap">
+          <table class="schedule-table">
+            <thead>
+              <tr>
+                <th>Дата</th>
+                <th>% от номинала</th>
+                <th>Сумма, руб.</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="(amort, idx) in report.amortization_schedule" :key="idx">
+                <td class="mono">{{ formatDate(amort.date) }}</td>
+                <td class="mono">{{ amort.valueprc ? amort.valueprc.toFixed(2) + '%' : '—' }}</td>
+                <td class="mono">{{ amort.value ? amort.value.toFixed(2) : '—' }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- BLOCK 7: Corporate Events -->
       <div class="glass-card full-width">
         <div class="card-header">
           <h3>Корпоративные события</h3>
@@ -477,6 +558,7 @@ import {
   fetchFloaterBondReport,
   fetchAnalogBondData,
   type FloaterBondReport,
+  type CouponPayment,
 } from '@/services/bondReportService'
 
 const route = useRoute()
@@ -508,6 +590,8 @@ const analogBondsList = ref<Array<{
   duration?: number
   yield?: number
 }>>([])
+
+const showAllCoupons = ref(false)
 
 const priceHistoryRef = ref<HTMLCanvasElement | null>(null)
 const marginDynamicsRef = ref<HTMLCanvasElement | null>(null)
@@ -606,6 +690,10 @@ const exportToExcel = () => {
     data.push(['QM (Quoted Margin)', dataToExport.qm_bps != null ? dataToExport.qm_bps.toFixed(2) + ' б.п.' : ''])
     data.push(['G-spread', dataToExport.pricing?.g_spread_bps ? dataToExport.pricing.g_spread_bps + ' bps' : ''])
     data.push(['G-curve', dataToExport.pricing?.g_curve_pct ? dataToExport.pricing.g_curve_pct.toFixed(2) + '%' : (dataToExport.pricing?.g_curve_yield ? (dataToExport.pricing.g_curve_yield * 100).toFixed(2) + '%' : '')])
+    data.push(['НКД', dataToExport.nkd != null ? dataToExport.nkd.toFixed(2) : ''])
+    if (dataToExport.base_rate_name) {
+      data.push(['Базовая ставка', `${dataToExport.base_rate_name}${dataToExport.base_rate_value != null ? ' (' + dataToExport.base_rate_value.toFixed(2) + '%)' : ''}`])
+    }
     data.push([])
     data.push(['РИСК-МЕТРИКИ'])
     data.push(['Мод. дюрация', dataToExport.risk_indicators?.mod_duration?.toFixed(4) || ''])
@@ -644,6 +732,20 @@ const exportToExcel = () => {
       data.push(['ДИНАМИКА DM/QM'])
       data.push(['Дата', 'DM (б.п.)', 'QM (б.п.)'])
       dataToExport.margin_history.forEach(m => data.push([m.date, m.dm?.toFixed(2) || '', m.qm?.toFixed(2) || '']))
+      data.push([])
+    }
+
+    if (dataToExport.coupon_schedule?.length) {
+      data.push(['КУПОННОЕ РАСПИСАНИЕ'])
+      data.push(['Дата', 'Ставка, %', 'Сумма, руб.'])
+      dataToExport.coupon_schedule.forEach(c => data.push([c.date || '', c.valueprc?.toFixed(2) || '', c.value?.toFixed(2) || '']))
+      data.push([])
+    }
+
+    if (dataToExport.amortization_schedule?.length) {
+      data.push(['ГРАФИК АМОРТИЗАЦИИ'])
+      data.push(['Дата', '% от номинала', 'Сумма, руб.'])
+      dataToExport.amortization_schedule.forEach(a => data.push([a.date || '', a.valueprc?.toFixed(2) || '', a.value?.toFixed(2) || '']))
       data.push([])
     }
 
@@ -1316,6 +1418,14 @@ onBeforeUnmount(() => {
 .muted { color: rgba(255, 255, 255, 0.4); margin: 0; font-size: 12px; }
 .spinner { display: inline-block; width: 14px; height: 14px; border: 2px solid rgba(56, 189, 248, 0.3); border-top-color: #38bdf8; border-radius: 50%; animation: spin 1s linear infinite; margin-right: 8px; }
 @keyframes spin { to { transform: rotate(360deg); } }
+
+.schedule-table-wrap { max-height: 400px; overflow-y: auto; }
+.schedule-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.schedule-table thead th { text-align: left; padding: 10px 16px; color: rgba(255, 255, 255, 0.5); font-weight: 600; text-transform: uppercase; font-size: 10px; letter-spacing: 0.05em; border-bottom: 1px solid rgba(255, 255, 255, 0.1); position: sticky; top: 0; background: rgba(30, 32, 40, 0.95); z-index: 1; }
+.schedule-table tbody td { padding: 8px 16px; color: rgba(255, 255, 255, 0.9); border-bottom: 1px solid rgba(255, 255, 255, 0.05); }
+.schedule-table tbody tr:hover td { background: rgba(255, 255, 255, 0.03); }
+.btn-show-more { display: block; width: 100%; margin-top: 8px; padding: 8px; background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 6px; color: rgba(255, 255, 255, 0.5); font-size: 11px; cursor: pointer; transition: all 0.2s; }
+.btn-show-more:hover { background: rgba(255, 255, 255, 0.06); color: rgba(255, 255, 255, 0.7); }
 
 .comparison-section { display: flex; flex-direction: column; gap: 24px; }
 .comparison-table { width: 100%; border-collapse: collapse; font-size: 12px; }

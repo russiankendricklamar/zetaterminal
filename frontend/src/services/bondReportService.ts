@@ -111,6 +111,19 @@ export interface MarginHistoryPoint {
   price?: number
 }
 
+export interface CouponPayment {
+  date: string
+  value: number          // Сумма купона в руб.
+  valueprc: number       // Ставка купона, %
+  value_rub: number      // Купон в рублях на одну облигацию
+}
+
+export interface AmortizationPayment {
+  date: string
+  value: number         // Сумма амортизации в руб.
+  valueprc: number      // % от номинала
+}
+
 export interface VanillaBondReport {
   isin: string
   issuer: string
@@ -118,6 +131,10 @@ export interface VanillaBondReport {
   sector: string | null
   industry: string | null
   outstanding_amount: number | null
+  listing_level: number | null
+  currency: string
+  nkd: number | null                  // НКД (Накопленный купонный доход)
+  current_yield: number | null        // Текущая доходность CY = (coupon_rate / clean_price) * 100
   issue_info: IssueInfo
   ratings: {
     issue: RatingEntry[]
@@ -132,12 +149,16 @@ export interface VanillaBondReport {
   price_history: PriceHistoryPoint[]
   yield_history: YieldHistoryPoint[]
   analogous_bonds: AnalogousBond[]
+  coupon_schedule: CouponPayment[]
+  amortization_schedule: AmortizationPayment[]
 }
 
 export interface FloaterBondReport extends VanillaBondReport {
   issues_count: number | null
   analysis_period: string | null
   coupon_formula: string | null
+  base_rate_name: string | null        // Название базовой ставки (КС, RUONIA и т.д.)
+  base_rate_value: number | null       // Текущее значение базовой ставки, %
   margin_history: MarginHistoryPoint[]
   dm_bps: number | null
   qm_bps: number | null
@@ -843,6 +864,122 @@ function calcConvexity(
   return convexSum / (totalPV * couponPerYear * couponPerYear)
 }
 
+// ─── Discount Margin (DM) — Newton's method для флоатеров ────────────────────
+// Уравнение: Pd = Σ[(Ci + Ni) / (1 + Indexi/(100*n) + DM/n)^(yfi*n)]
+// DM в базисных пунктах (bps)
+
+function calcDiscountMargin(
+  dirtyPrice: number,
+  faceValue: number,
+  couponPayments: Array<{ yearFraction: number; amount: number; refRate: number }>,
+  paymentsPerYear: number,
+  maxIter = 100,
+  tol = 1e-8
+): number {
+  if (!couponPayments.length || dirtyPrice <= 0 || paymentsPerYear <= 0) return 0
+  const n = paymentsPerYear
+
+  let dmBps = 0
+
+  for (let iter = 0; iter < maxIter; iter++) {
+    let pCalc = 0
+    let pDeriv = 0
+    const dmDecimal = dmBps / 10000
+
+    for (const cf of couponPayments) {
+      const indexRate = cf.refRate / 100
+      const discountRate = indexRate / n + dmDecimal / n
+      const exponent = cf.yearFraction * n
+      const discFactor = Math.pow(1 + discountRate, exponent)
+
+      if (discFactor <= 0) continue
+      pCalc += cf.amount / discFactor
+      pDeriv += -cf.amount * exponent * (1 / n) / Math.pow(1 + discountRate, exponent + 1)
+    }
+
+    const err = pCalc - dirtyPrice
+    if (Math.abs(err) < tol) break
+    if (Math.abs(pDeriv) < 1e-12) break
+
+    dmBps -= err / pDeriv
+
+    if (dmBps < -5000) dmBps = -4999
+    if (dmBps > 50000) dmBps = 49999
+  }
+
+  return dmBps
+}
+
+// ─── Board auto-detection для облигаций ────────────────────────────────────────
+// Пробуем TQCB (корп.), TQOB (ОФЗ), TQIR (ИЦБ), затем без доски
+
+const BOND_BOARDS = ['TQCB', 'TQOB', 'TQIR'] as const
+
+async function getBondHistoryAutoBoard(
+  secid: string,
+  startDate: string,
+  endDate: string
+): Promise<{ history: BondTradeHistory[]; board: string }> {
+  for (const board of BOND_BOARDS) {
+    const history = await getBondHistory(secid, startDate, endDate, board)
+    if (history.length > 0) {
+      return { history, board }
+    }
+  }
+  return { history: [], board: 'TQCB' }
+}
+
+// ─── Получение купонного расписания из bondization ─────────────────────────────
+
+async function getCouponSchedule(isin: string): Promise<{
+  coupons: CouponPayment[]
+  amortizations: AmortizationPayment[]
+  offers: Array<{ date: string; type: string }>
+}> {
+  try {
+    const resp = await moexRequest(`/securities/${isin}/bondization`)
+    const couponsRaw = parseISSTable(resp, 'coupons')
+    const amortRaw = parseISSTable(resp, 'amortizations')
+    const offersRaw = parseISSTable(resp, 'offers')
+
+    const coupons: CouponPayment[] = couponsRaw.map((c: any) => ({
+      date: c.coupondate || c.COUPONDATE || '',
+      value: c.value || c.VALUE || 0,
+      valueprc: c.valueprc || c.VALUEPRC || 0,
+      value_rub: c.value_rub || c.VALUE_RUB || c.value || c.VALUE || 0,
+    }))
+
+    const amortizations: AmortizationPayment[] = amortRaw.map((a: any) => ({
+      date: a.amortdate || a.AMORTDATE || '',
+      value: a.value || a.VALUE || 0,
+      valueprc: a.valueprc || a.VALUEPRC || 0,
+    }))
+
+    const offers = offersRaw.map((o: any) => ({
+      date: o.offerdate || o.OFFERDATE || '',
+      type: o.offertypename || o.OFFERTYPENAME || '',
+    }))
+
+    return { coupons, amortizations, offers }
+  } catch {
+    return { coupons: [], amortizations: [], offers: [] }
+  }
+}
+
+// ─── Текущая доходность (Current Yield) ─────────────────────────────────────
+// CY = (annual_coupon / clean_price_rub) * 100
+
+function calcCurrentYield(
+  couponRate: number,
+  faceValue: number,
+  cleanPricePct: number
+): number {
+  if (cleanPricePct <= 0) return 0
+  const annualCoupon = couponRate * faceValue
+  const cleanPriceRub = (cleanPricePct / 100) * faceValue
+  return (annualCoupon / cleanPriceRub) * 100
+}
+
 // ─── Индексы (MOEX ISS) ────────────────────────────────────────────────────────
 // Формулы шаблона используют CbondsIndexValue(code, date)
 // Коды Cbonds → тикеры MOEX из столбца CA шаблона:
@@ -1167,10 +1304,13 @@ export async function fetchVanillaBondReport(
   // 5. Текущие рыночные данные (MOEX ISS)
   const marketData = await getCurrentMarketData(spec.secid)
 
-  // 6. История торгов за последний год (для графиков и fallback-расчётов)
+  // 6. История торгов за последний год (с авто-выбором борда)
   const endDate = valuationDate
   const startDate = new Date(new Date(endDate).getTime() - 395 * 24 * 3600 * 1000).toISOString().split('T')[0]
-  const history = await getBondHistory(spec.secid, startDate, endDate)
+  const { history } = await getBondHistoryAutoBoard(spec.secid, startDate, endDate)
+
+  // 6b. Купонное расписание и амортизация
+  const bondization = await getCouponSchedule(isin)
 
   // 7. Оставшийся срок
   const valDate = new Date(valuationDate)
@@ -1308,6 +1448,16 @@ export async function fetchVanillaBondReport(
     industry = ref0.branch || ref0.industry || ''
   }
 
+  // 19. НКД
+  const nkd = marketData.accruedint ?? (ruCalc?.accrued_interest ?? null)
+
+  // 20. Текущая доходность (CY)
+  const currentYield = calcCurrentYield(currentCouponRate, currentFaceValue, cleanPricePct)
+
+  // 21. Фильтрация купонов: будущие и прошедшие
+  const futureCoupons = bondization.coupons.filter(c => new Date(c.date) > valDate)
+  const pastCoupons = bondization.coupons.filter(c => new Date(c.date) <= valDate)
+
   return {
     isin: spec.isin || isin,
     issuer: spec.name || spec.shortname || spec.issuer || isin,
@@ -1315,6 +1465,10 @@ export async function fetchVanillaBondReport(
     sector: sector || 'Корпоративный',
     industry,
     outstanding_amount: outstandingAmount,
+    listing_level: spec.listlevel || null,
+    currency: spec.faceunit || 'RUB',
+    nkd,
+    current_yield: currentYield > 0 ? Math.round(currentYield * 100) / 100 : null,
     issue_info: {
       issue_date: ref0?.begdistdate || spec.issuedate || null,
       maturity_date: ref0?.endmtydate || spec.matdate || null,
@@ -1350,6 +1504,8 @@ export async function fetchVanillaBondReport(
     price_history: priceHistory,
     yield_history: yieldHistory,
     analogous_bonds: [],
+    coupon_schedule: futureCoupons,
+    amortization_schedule: bondization.amortizations.filter(a => new Date(a.date) > valDate),
   }
 }
 
@@ -1366,12 +1522,15 @@ export async function fetchFloaterBondReport(
   // 1. Базовый отчёт (vanilla)
   const base = await fetchVanillaBondReport(isin, valuationDate)
 
-  // 2. Доп. информация для флоатера
+  // 2. Доп. информация для флоатера (используем spec из base отчёта через повторный запрос,
+  //    RuData ref уже подгружен в base)
   const spec = await getSecuritySpec(isin)
 
-  // Определяем формулу купона и QM (quoted margin)
+  // Определяем формулу купона, QM (quoted margin) и базовую ставку
   let couponFormula = ''
   let qmBps = 0 // Quoted Margin в bps
+  let baseRateName: string | null = null
+  let baseRateValue: number | null = null
 
   const ruRef = await getRuDataFintoolRef(isin, creds ?? undefined)
   if (ruRef && Array.isArray(ruRef) && ruRef.length > 0) {
@@ -1380,6 +1539,19 @@ export async function fetchFloaterBondReport(
     if (ref0.floatratemargin) {
       qmBps = ref0.floatratemargin * 100 // из % в bps
     }
+    // Определяем базовую ставку
+    baseRateName = ref0.floatratename || ref0.base_rate_name || null
+    if (ref0.floatratevalue != null) {
+      baseRateValue = ref0.floatratevalue
+    }
+  }
+
+  // Определяем название базовой ставки из формулы купона
+  if (!baseRateName && couponFormula) {
+    if (/КС|ключев/i.test(couponFormula)) baseRateName = 'Ключевая ставка ЦБ РФ'
+    else if (/RUONIA/i.test(couponFormula)) baseRateName = 'RUONIA'
+    else if (/MosPrime/i.test(couponFormula)) baseRateName = 'MosPrime Rate'
+    else if (/ИПЦ|CPI/i.test(couponFormula)) baseRateName = 'ИПЦ'
   }
 
   // Парсим маржу из формулы если не нашли в RuData
@@ -1399,6 +1571,33 @@ export async function fetchFloaterBondReport(
   const ruCalc = await getRuDataBondCalc(isin, valuationDate, base.pricing.clean_price_pct, creds ?? undefined)
   if (ruCalc?.dm_bps != null) {
     dmBps = ruCalc.dm_bps
+  }
+
+  // Fallback: вычисляем DM через Newton's method в браузере
+  if (dmBps == null && base.pricing.dirty_price && base.coupon_schedule.length > 0) {
+    const valDate = new Date(valuationDate)
+    const refRate = baseRateValue ?? (base.pricing.ytm_pct - (qmBps / 100)) // Приблизительная ref rate
+    const cfForDM = base.coupon_schedule.map(c => {
+      const cfDate = new Date(c.date)
+      const yf = (cfDate.getTime() - valDate.getTime()) / (365 * 24 * 3600 * 1000)
+      return {
+        yearFraction: yf,
+        amount: c.value || (c.valueprc / 100) * (spec.facevalue || 1000),
+        refRate: refRate > 0 ? refRate : 15, // Fallback: 15% (типичная КС)
+      }
+    })
+    // Добавляем погашение номинала в последний поток
+    if (cfForDM.length > 0) {
+      cfForDM[cfForDM.length - 1].amount += spec.facevalue || 1000
+    }
+    const cpnPerYear = base.issue_info.coupon_per_year || spec.couponfrequency || 4
+    dmBps = calcDiscountMargin(
+      base.pricing.dirty_price,
+      spec.facevalue || 1000,
+      cfForDM,
+      cpnPerYear
+    )
+    dmBps = Math.round(dmBps * 100) / 100
   }
 
   // Следующий купон
@@ -1442,6 +1641,8 @@ export async function fetchFloaterBondReport(
     issues_count: issuesCount,
     analysis_period: analysisPeriod,
     coupon_formula: couponFormula || null,
+    base_rate_name: baseRateName,
+    base_rate_value: baseRateValue,
     dm_bps: dmBps,
     qm_bps: qmBps || null,
     issue_info: {

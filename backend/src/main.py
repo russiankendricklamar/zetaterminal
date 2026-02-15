@@ -21,6 +21,13 @@ from src.api import spectral_regime
 from src.api import stress
 from src.api import swap
 from src.api import zcyc
+from src.api import market_feeds
+from src.api import macro_data
+from src.api import crypto_data
+from src.api import news_ai
+from src.api import calendar_utils
+from src.api import security_tools
+from src.api import platform_services
 
 # Создаем FastAPI приложение
 app = FastAPI(
@@ -54,6 +61,13 @@ app.include_router(rudata.router, prefix="/api/rudata", tags=["RuData"])
 app.include_router(spectral_regime.router, prefix="/api/spectral-regime", tags=["Spectral Regime"])
 app.include_router(multivariate_hmm.router, prefix="/api/multivariate-hmm", tags=["Multivariate HMM"])
 app.include_router(database.router, prefix="/api/database", tags=["Database"])
+app.include_router(market_feeds.router, prefix="/api/market-feeds", tags=["Market Feeds"])
+app.include_router(macro_data.router, prefix="/api/macro-data", tags=["Macro Data"])
+app.include_router(crypto_data.router, prefix="/api/crypto-data", tags=["Crypto Data"])
+app.include_router(news_ai.router, prefix="/api/news-ai", tags=["News & AI"])
+app.include_router(calendar_utils.router, prefix="/api/calendar", tags=["Calendar"])
+app.include_router(security_tools.router, prefix="/api/security", tags=["Security Tools"])
+app.include_router(platform_services.router, prefix="/api/platform", tags=["Platform Services"])
 
 
 @app.get("/")
