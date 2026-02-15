@@ -2,6 +2,8 @@
  * Сервис для работы с бэктестингом портфеля
  */
 
+import { getApiHeaders } from '@/utils/apiHeaders'
+
 // Используем относительный путь для работы с Vite proxy
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
 
@@ -79,9 +81,7 @@ export const runPortfolioBacktest = async (request: BacktestRequest): Promise<Ba
   try {
     const response = await fetch(`${API_BASE_URL}/api/backtest/run`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: getApiHeaders(),
       body: JSON.stringify(request),
     });
 

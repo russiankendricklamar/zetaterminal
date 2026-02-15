@@ -2,6 +2,8 @@
  * Сервис для работы с рыночными данными через yfinance API
  */
 
+import { getApiHeaders } from '@/utils/apiHeaders'
+
 // В dev режиме используем относительные пути для работы через Vite proxy
 // В production используем переменную окружения
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
@@ -87,9 +89,7 @@ export const getStockInfo = async (ticker: string): Promise<StockInfo> => {
   try {
     const response = await fetch(`${API_BASE_URL}/api/market/stock/${ticker}`, {
       method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: getApiHeaders(),
     });
 
     if (!response.ok) {
@@ -115,9 +115,7 @@ export const getStockHistory = async (
   try {
     const response = await fetch(`${API_BASE_URL}/api/market/stock/history`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: getApiHeaders(),
       body: JSON.stringify({ ticker, period, interval }),
     });
 
@@ -140,9 +138,7 @@ export const getMultipleStocks = async (tickers: string[]): Promise<StockInfo[]>
   try {
     const response = await fetch(`${API_BASE_URL}/api/market/stocks/multiple`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: getApiHeaders(),
       body: JSON.stringify({ tickers }),
     });
 
@@ -165,9 +161,7 @@ export const getCurrencyRate = async (base: string, quote: string = 'USD'): Prom
   try {
     const response = await fetch(`${API_BASE_URL}/api/market/currency/${base}/${quote}`, {
       method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: getApiHeaders(),
     });
 
     if (!response.ok) {
@@ -189,9 +183,7 @@ export const getCryptoInfo = async (symbol: string): Promise<CryptoInfo> => {
   try {
     const response = await fetch(`${API_BASE_URL}/api/market/crypto/${symbol}`, {
       method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: getApiHeaders(),
     });
 
     if (!response.ok) {
@@ -213,9 +205,7 @@ export const getIndexInfo = async (symbol: string): Promise<IndexInfo> => {
   try {
     const response = await fetch(`${API_BASE_URL}/api/market/index/${symbol}`, {
       method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: getApiHeaders(),
     });
 
     if (!response.ok) {
@@ -237,9 +227,7 @@ export const getPopularTickers = async (): Promise<string[]> => {
   try {
     const response = await fetch(`${API_BASE_URL}/api/market/tickers/popular`, {
       method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: getApiHeaders(),
     });
 
     if (!response.ok) {
@@ -261,9 +249,7 @@ export const getPopularCryptos = async (): Promise<string[]> => {
   try {
     const response = await fetch(`${API_BASE_URL}/api/market/crypto/popular`, {
       method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: getApiHeaders(),
     });
 
     if (!response.ok) {

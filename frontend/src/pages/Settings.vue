@@ -217,7 +217,23 @@
       <!-- Tab: API -->
       <transition name="fade" mode="out-in">
       <div v-show="activeTab === 'api'" class="grid-content">
-        
+
+        <!-- Backend API Key -->
+        <div class="glass-panel settings-block">
+          <h3 class="block-title">Backend API Key</h3>
+          <div class="control-group">
+            <div class="control-row vertical">
+              <label>X-API-Key</label>
+              <input type="password" v-model="backendApiKey" class="glass-input full" placeholder="Введите API ключ для аутентификации">
+            </div>
+          </div>
+          <div class="status-footer">
+            <span class="sub-label" style="font-size:11px; color: rgba(255,255,255,0.4)">
+              Ключ передаётся в заголовке X-API-Key для всех запросов к бэкенду
+            </span>
+          </div>
+        </div>
+
         <!-- Cbonds API Section -->
         <div class="glass-panel settings-block">
           <h3 class="block-title">Cbonds API</h3>
@@ -352,10 +368,12 @@ import {
   API_KEYS_CONFIG, getApiKeyGroups, getKeysForGroup,
   saveApiKeys, loadApiKeys, checkAllApiHealth
 } from '@/services/apiConfigService'
+import { getApiKey, setApiKey } from '@/utils/apiHeaders'
 
 const activeTab = ref('general')
 const hasChanges = ref(true)
 const apiError = ref(false)
+const backendApiKey = ref('')
 
 const tabs = [
   { id: 'general', name: 'Общие', iconClass: 'icon-gen' },
@@ -466,6 +484,9 @@ onMounted(() => {
     }
   }
 
+  // Загружаем backend API key
+  backendApiKey.value = getApiKey()
+
   // Загружаем extended API keys
   loadExtendedKeys()
   checkApiServices()
@@ -564,6 +585,9 @@ const saveSettings = () => {
   }
 
   localStorage.setItem('app_settings', JSON.stringify(settingsToSave))
+
+  // Сохраняем backend API key
+  setApiKey(backendApiKey.value)
 
   // Сохраняем extended API keys
   saveExtendedKeys()

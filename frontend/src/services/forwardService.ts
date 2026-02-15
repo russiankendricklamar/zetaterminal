@@ -2,6 +2,8 @@
  * Сервис для работы с оценкой форвардов различных типов
  */
 
+import { getApiHeaders } from '@/utils/apiHeaders'
+
 // Используем относительный путь для работы с Vite proxy
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
 
@@ -114,9 +116,7 @@ export const valuateForward = async (
   try {
     const response = await fetch(`${API_BASE_URL}/api/forward/valuate`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: getApiHeaders(),
       body: JSON.stringify(request),
     });
 
@@ -141,9 +141,7 @@ export const saveRegistryToParquet = async (
   try {
     const response = await fetch(`${API_BASE_URL}/api/database/export/registry/parquet`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: getApiHeaders(),
       body: JSON.stringify({
         registry_type: 'forward',
         data: data

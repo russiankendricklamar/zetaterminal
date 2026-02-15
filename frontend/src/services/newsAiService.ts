@@ -4,6 +4,8 @@
  * Proxied through backend at /api/news-ai/*
  */
 
+import { getApiHeaders } from '@/utils/apiHeaders'
+
 const API_BASE = import.meta.env.VITE_API_BASE_URL || ''
 
 export interface NewsArticle {
@@ -59,7 +61,7 @@ async function fetchJson<T>(url: string): Promise<T> {
 async function postJson<T>(url: string, body: unknown): Promise<T> {
   const response = await fetch(url, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: getApiHeaders(),
     body: JSON.stringify(body),
   })
   if (!response.ok) {

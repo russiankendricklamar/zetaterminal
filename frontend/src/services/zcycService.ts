@@ -2,6 +2,8 @@
  * Сервис для работы с кривой бескупонных доходностей (КБД) из MOEX ISS API.
  */
 
+import { getApiHeaders } from '@/utils/apiHeaders'
+
 const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
 
 export interface ZCYCPoint {
@@ -43,9 +45,7 @@ export async function getZCYC(date?: string): Promise<ZCYCResponse> {
   try {
     const response = await fetch(url, {
       method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: getApiHeaders(),
     })
     
     if (!response.ok) {
@@ -181,9 +181,7 @@ export async function curveToDiscount(
 ) {
   const response = await fetch(`${API_BASE}/api/zcyc/discount?col_term=${colTerm}&col_yield=${colYield}`, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
+    headers: getApiHeaders(),
     body: JSON.stringify(data)
   })
   

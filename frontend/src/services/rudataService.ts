@@ -4,6 +4,8 @@
  * Документация API: https://docs.efir-net.ru/dh2/#/
  */
 
+import { getApiHeaders } from '@/utils/apiHeaders'
+
 const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
 
 // Типы
@@ -87,9 +89,7 @@ export function clearCredentials(): void {
 export async function testConnection(credentials: RuDataCredentials): Promise<ConnectionTestResponse> {
   const response = await fetch(`${API_BASE}/api/rudata/test-connection`, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
+    headers: getApiHeaders(),
     body: JSON.stringify(credentials)
   })
 
@@ -109,9 +109,7 @@ export async function executeQuery<T = Record<string, any>>(
 ): Promise<RuDataResponse<T>> {
   const response = await fetch(`${API_BASE}/api/rudata/query`, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
+    headers: getApiHeaders(),
     body: JSON.stringify({
       ...query,
       body: query.body || {},
@@ -137,9 +135,7 @@ export async function getBondInfo(
 ): Promise<RuDataResponse> {
   const response = await fetch(`${API_BASE}/api/rudata/bond/info?isin=${encodeURIComponent(isin)}`, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
+    headers: getApiHeaders(),
     body: JSON.stringify(credentials)
   })
 
@@ -160,9 +156,7 @@ export async function getBondCashflows(
 ): Promise<RuDataResponse> {
   const response = await fetch(`${API_BASE}/api/rudata/bond/cashflows?isin=${encodeURIComponent(isin)}`, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
+    headers: getApiHeaders(),
     body: JSON.stringify(credentials)
   })
 
@@ -180,9 +174,7 @@ export async function getBondCashflows(
 export async function calculateBond(request: BondCalculateRequest): Promise<RuDataResponse> {
   const response = await fetch(`${API_BASE}/api/rudata/bond/calculate`, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
+    headers: getApiHeaders(),
     body: JSON.stringify(request)
   })
 
@@ -200,9 +192,7 @@ export async function calculateBond(request: BondCalculateRequest): Promise<RuDa
 export async function searchBonds(request: BondSearchRequest): Promise<RuDataResponse> {
   const response = await fetch(`${API_BASE}/api/rudata/bonds/search`, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
+    headers: getApiHeaders(),
     body: JSON.stringify(request)
   })
 
@@ -230,9 +220,7 @@ export async function getZCYC(
 
   const response = await fetch(url, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
+    headers: getApiHeaders(),
     body: JSON.stringify(credentials)
   })
 
@@ -259,9 +247,7 @@ export async function getFintoolReference(
 
   const response = await fetch(`${API_BASE}/api/rudata/fintool/reference?${params.toString()}`, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
+    headers: getApiHeaders(),
     body: JSON.stringify(credentials)
   })
 

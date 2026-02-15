@@ -1,6 +1,8 @@
 /**
  * Service for option pricing operations
  */
+import { getApiHeaders } from '@/utils/apiHeaders'
+
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
 
 /**
@@ -13,9 +15,7 @@ export const saveRegistryToParquet = async (
   try {
     const response = await fetch(`${API_BASE_URL}/api/database/export/registry/parquet`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: getApiHeaders(),
       body: JSON.stringify({
         registry_type: registryType,
         data: data

@@ -4,6 +4,8 @@
  * Proxied through backend at /api/crypto-data/*
  */
 
+import { getApiHeaders } from '@/utils/apiHeaders'
+
 const API_BASE = import.meta.env.VITE_API_BASE_URL || ''
 
 export interface CoinMarket {

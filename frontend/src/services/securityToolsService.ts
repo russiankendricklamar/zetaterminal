@@ -5,6 +5,8 @@
  * Network security and IP intelligence utilities.
  */
 
+import { getApiHeaders } from '@/utils/apiHeaders'
+
 const API_BASE = import.meta.env.VITE_API_BASE_URL || ''
 
 async function fetchJson<T>(url: string): Promise<T> {
@@ -16,7 +18,7 @@ async function fetchJson<T>(url: string): Promise<T> {
 async function postJson<T>(url: string, body: unknown): Promise<T> {
   const resp = await fetch(url, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: getApiHeaders(),
     body: JSON.stringify(body),
   })
   if (!resp.ok) throw new Error(`HTTP ${resp.status}: ${resp.statusText}`)

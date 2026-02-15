@@ -2,11 +2,12 @@
 FastAPI приложение для Zeta Terminal Backend.
 """
 from contextlib import asynccontextmanager
-from fastapi import FastAPI
+from fastapi import FastAPI, Depends
 from fastapi.middleware.cors import CORSMiddleware
 import os
 
 from src.utils.http_client import close_session
+from src.middleware.auth import require_api_key
 
 # Импортируем все роутеры
 from src.api import backtest
@@ -30,7 +31,6 @@ from src.api import crypto_data
 from src.api import news_ai
 from src.api import calendar_utils
 from src.api import security_tools
-from src.api import platform_services
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -47,37 +47,54 @@ app = FastAPI(
 )
 
 # Настройка CORS
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=os.getenv("CORS_ORIGINS", "*").split(","),
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+cors_origins_env = os.getenv("CORS_ORIGINS", "")
+cors_origins = [o.strip() for o in cors_origins_env.split(",") if o.strip()]
 
-# Подключаем все роутеры
-app.include_router(portfolio.router, prefix="/api/portfolio", tags=["Portfolio"])
-app.include_router(bond.router, prefix="/api/bond", tags=["Bond"])
-app.include_router(swap.router, prefix="/api/swap", tags=["Swap"])
-app.include_router(forward.router, prefix="/api/forward", tags=["Forward"])
-app.include_router(compute.router, prefix="/api/compute", tags=["Compute"])
-app.include_router(backtest.router, prefix="/api/backtest", tags=["Backtest"])
-app.include_router(stress.router, prefix="/api/stress", tags=["Stress"])
-app.include_router(ccmv.router, prefix="/api/ccmv", tags=["CCMV"])
-app.include_router(hjb.router, prefix="/api/hjb", tags=["HJB"])
-app.include_router(market_data.router, prefix="/api/market-data", tags=["Market Data"])
-app.include_router(zcyc.router, prefix="/api/zcyc", tags=["ZCYC"])
-app.include_router(rudata.router, prefix="/api/rudata", tags=["RuData"])
-app.include_router(spectral_regime.router, prefix="/api/spectral-regime", tags=["Spectral Regime"])
-app.include_router(multivariate_hmm.router, prefix="/api/multivariate-hmm", tags=["Multivariate HMM"])
-app.include_router(database.router, prefix="/api/database", tags=["Database"])
-app.include_router(market_feeds.router, prefix="/api/market-feeds", tags=["Market Feeds"])
-app.include_router(macro_data.router, prefix="/api/macro-data", tags=["Macro Data"])
-app.include_router(crypto_data.router, prefix="/api/crypto-data", tags=["Crypto Data"])
-app.include_router(news_ai.router, prefix="/api/news-ai", tags=["News & AI"])
-app.include_router(calendar_utils.router, prefix="/api/calendar", tags=["Calendar"])
-app.include_router(security_tools.router, prefix="/api/security", tags=["Security Tools"])
-app.include_router(platform_services.router, prefix="/api/platform", tags=["Platform Services"])
+if cors_origins:
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=cors_origins,
+        allow_credentials=True,
+        allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+        allow_headers=["Content-Type", "X-API-Key"],
+    )
+else:
+    # Dev mode: allow all origins but WITHOUT credentials
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=["*"],
+        allow_credentials=False,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
+
+# Подключаем все роутеры (с обязательной аутентификацией по API-ключу)
+_auth = [Depends(require_api_key)]
+
+app.include_router(portfolio.router, prefix="/api/portfolio", tags=["Portfolio"], dependencies=_auth)
+app.include_router(bond.router, prefix="/api/bond", tags=["Bond"], dependencies=_auth)
+app.include_router(swap.router, prefix="/api/swap", tags=["Swap"], dependencies=_auth)
+app.include_router(forward.router, prefix="/api/forward", tags=["Forward"], dependencies=_auth)
+app.include_router(compute.router, prefix="/api/compute", tags=["Compute"], dependencies=_auth)
+app.include_router(backtest.router, prefix="/api/backtest", tags=["Backtest"], dependencies=_auth)
+app.include_router(stress.router, prefix="/api/stress", tags=["Stress"], dependencies=_auth)
+app.include_router(ccmv.router, prefix="/api/ccmv", tags=["CCMV"], dependencies=_auth)
+app.include_router(hjb.router, prefix="/api/hjb", tags=["HJB"], dependencies=_auth)
+app.include_router(market_data.router, prefix="/api/market-data", tags=["Market Data"], dependencies=_auth)
+app.include_router(zcyc.router, prefix="/api/zcyc", tags=["ZCYC"], dependencies=_auth)
+app.include_router(rudata.router, prefix="/api/rudata", tags=["RuData"], dependencies=_auth)
+app.include_router(spectral_regime.router, prefix="/api/spectral-regime", tags=["Spectral Regime"], dependencies=_auth)
+app.include_router(multivariate_hmm.router, prefix="/api/multivariate-hmm", tags=["Multivariate HMM"], dependencies=_auth)
+app.include_router(database.router, prefix="/api/database", tags=["Database"], dependencies=_auth)
+app.include_router(market_feeds.router, prefix="/api/market-feeds", tags=["Market Feeds"], dependencies=_auth)
+app.include_router(macro_data.router, prefix="/api/macro-data", tags=["Macro Data"], dependencies=_auth)
+app.include_router(crypto_data.router, prefix="/api/crypto-data", tags=["Crypto Data"], dependencies=_auth)
+app.include_router(news_ai.router, prefix="/api/news-ai", tags=["News & AI"], dependencies=_auth)
+app.include_router(calendar_utils.router, prefix="/api/calendar", tags=["Calendar"], dependencies=_auth)
+app.include_router(security_tools.router, prefix="/api/security", tags=["Security Tools"], dependencies=_auth)
+
+# REMOVED: platform_services router — contains dangerous endpoints:
+# open email relay, SSRF vectors, auth token proxy, open storage
 
 
 @app.get("/")

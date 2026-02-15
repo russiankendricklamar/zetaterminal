@@ -618,6 +618,7 @@
 import { ref } from 'vue'
 import * as XLSX from 'xlsx'
 import { valuateBond, saveRegistryToParquet, type BondValuationResponse } from '@/services/bondService'
+import { getApiHeaders } from '@/utils/apiHeaders'
 
 // --- Types ---
 interface CashFlow {
@@ -717,9 +718,7 @@ const fetchMarketYield = async () => {
       `${API_BASE_URL}/api/bond/market-yield?secid=${params.value.secid.trim()}&date=${params.value.valuationDate}`,
       {
         method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: getApiHeaders(),
       }
     )
 
@@ -898,7 +897,7 @@ const calculateAllBonds = async () => {
                 `${API_BASE_URL}/api/bond/market-yield?secid=${bond.secid.trim()}&date=${bond.valuationDate}`,
                 {
                   method: 'GET',
-                  headers: { 'Content-Type': 'application/json' }
+                  headers: getApiHeaders()
                 }
               )
               

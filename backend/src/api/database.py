@@ -269,22 +269,8 @@ async def export_market_data_parquet(
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.post("/export/table/{table_name}/parquet", response_model=dict)
-async def export_table_parquet(
-    table_name: str,
-    file_name: Optional[str] = None
-):
-    """Export table to Parquet format."""
-    try:
-        exporter = ParquetExporter()
-        result = exporter.export_table_to_parquet(
-            table_name=table_name,
-            file_name=file_name
-        )
-        return {"success": True, "data": result}
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
+# REMOVED: POST /export/table/{table_name}/parquet
+# Arbitrary table exfiltration vulnerability — allowed SELECT * on any table name.
 
 # Registry export endpoints
 class RegistryParquetRequest(BaseModel):

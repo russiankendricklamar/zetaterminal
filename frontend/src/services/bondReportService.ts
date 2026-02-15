@@ -12,6 +12,8 @@
  *  - Backend /api/bond     → DCF-оценка (fallback)
  */
 
+import { getApiHeaders } from '@/utils/apiHeaders'
+
 const API_BASE = import.meta.env.VITE_API_BASE_URL || ''
 const MOEX_ISS = 'https://iss.moex.com/iss'
 
@@ -363,7 +365,7 @@ async function ruDataQuery(pathMethod: string, body: Record<string, any> = {}, c
   try {
     const resp = await fetch(`${API_BASE}/api/rudata/query`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getApiHeaders(),
       body: JSON.stringify({
         login: c.login,
         password: c.password,
@@ -388,7 +390,7 @@ async function getRuDataFintoolRef(isin: string, creds?: RuDataCreds): Promise<a
   try {
     const resp = await fetch(`${API_BASE}/api/rudata/fintool/reference?id=${isin}`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getApiHeaders(),
       body: JSON.stringify({ login: c.login, password: c.password }),
     })
     if (!resp.ok) return null
@@ -422,7 +424,7 @@ async function getRuDataBondCalc(isin: string, calcDate?: string, price?: number
   try {
     const resp = await fetch(`${API_BASE}/api/rudata/bond/calculate`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getApiHeaders(),
       body: JSON.stringify({
         login: c.login,
         password: c.password,
@@ -675,7 +677,7 @@ async function getGCurveYield(termYears: number, date?: string): Promise<number>
 
     const resp = await fetch(`${API_BASE}/api/zcyc/interpolate`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getApiHeaders(),
       body: JSON.stringify(params),
     })
 

@@ -2,6 +2,8 @@
  * Сервис для работы с многомерной HMM моделью анализа рыночных режимов.
  */
 
+import { getApiHeaders } from '@/utils/apiHeaders'
+
 const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
 
 export interface FitRequest {
@@ -81,9 +83,7 @@ export interface ChartDataResponse {
 export async function fitModel(request: FitRequest): Promise<FitResponse> {
   const response = await fetch(`${API_BASE}/api/multivariate-hmm/fit`, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
+    headers: getApiHeaders(),
     body: JSON.stringify(request)
   })
   
@@ -101,9 +101,7 @@ export async function fitModel(request: FitRequest): Promise<FitResponse> {
 export async function predictStates(data?: number[][]): Promise<PredictResponse> {
   const response = await fetch(`${API_BASE}/api/multivariate-hmm/predict`, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
+    headers: getApiHeaders(),
     body: JSON.stringify({ data: data || null })
   })
   
@@ -177,9 +175,7 @@ export async function getChartData(): Promise<ChartDataResponse> {
 export async function simulateTrajectories(nSteps: number = 100): Promise<{ trajectories: number[][]; n_steps: number; n_assets: number }> {
   const response = await fetch(`${API_BASE}/api/multivariate-hmm/simulate`, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
+    headers: getApiHeaders(),
     body: JSON.stringify({ n_steps: nSteps })
   })
   

@@ -4,6 +4,8 @@
  * Provides utilities for the Settings page API key management tab.
  */
 
+import { getApiHeaders } from '@/utils/apiHeaders'
+
 const API_BASE = import.meta.env.VITE_API_BASE_URL || ''
 
 export interface ApiKeyConfig {
@@ -109,13 +111,13 @@ export function getKeysForGroup(group: string): ApiKeyConfig[] {
 export async function checkAllApiHealth(): Promise<Record<string, boolean>> {
   const services = [
     'market-feeds', 'macro-data', 'crypto-data', 'news-ai',
-    'calendar', 'security', 'platform',
+    'calendar', 'security',
   ]
   const results: Record<string, boolean> = {}
 
   await Promise.all(services.map(async (svc) => {
     try {
-      const resp = await fetch(`${API_BASE}/api/${svc}/health`)
+      const resp = await fetch(`${API_BASE}/api/${svc}/health`, { headers: getApiHeaders() })
       results[svc] = resp.ok
     } catch {
       results[svc] = false

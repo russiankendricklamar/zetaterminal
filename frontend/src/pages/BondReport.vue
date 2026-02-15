@@ -382,6 +382,7 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
+import { getApiHeaders } from '@/utils/apiHeaders'
 
 interface BondParams {
   secid: string
@@ -499,7 +500,7 @@ const calculateBond = async () => {
   try {
     const response = await fetch(`${API_BASE_URL}/api/bond/valuate`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getApiHeaders(),
       body: JSON.stringify({
         secid: params.value.secid,
         valuation_date: params.value.valuationDate,

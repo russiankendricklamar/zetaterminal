@@ -7,6 +7,8 @@
  * - Запуска спектрального анализа режимов
  */
 
+import { getApiHeaders } from '@/utils/apiHeaders'
+
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000'
 
 export interface Asset {
@@ -184,9 +186,7 @@ export async function fetchAssetData(
 ): Promise<FetchDataResponse> {
   const response = await fetch(`${API_BASE}/api/spectral-regime/fetch-data`, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json'
-    },
+    headers: getApiHeaders(),
     body: JSON.stringify({
       ticker,
       period_days: periodDays,
@@ -215,9 +215,7 @@ export async function analyzeSpectralRegimes(
 ): Promise<SpectralAnalysisResponse> {
   const response = await fetch(`${API_BASE}/api/spectral-regime/analyze`, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json'
-    },
+    headers: getApiHeaders(),
     body: JSON.stringify({
       returns,
       n_poles: nPoles ?? null,
@@ -264,9 +262,7 @@ export async function analyzeAssetRegimes(
   
   const response = await fetch(`${API_BASE}/api/spectral-regime/analyze-asset?${params}`, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json'
-    }
+    headers: getApiHeaders()
   })
   
   if (!response.ok) {
