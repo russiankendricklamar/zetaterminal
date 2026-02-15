@@ -278,6 +278,7 @@ const regimeStats = ref<any[]>([])
 const playbackIndex = ref(0)
 const isPlaying = ref(false)
 let animationFrame: number | null = null
+let autoPlayTimeout: ReturnType<typeof setTimeout> | null = null
 
 const progressPercent = computed(() => {
     if (!chartData.value.length) return 0
@@ -352,7 +353,7 @@ const runHMM = async () => {
         taskStore.updateProgress(taskId, 100)
         
         // Автоматически запускаем воспроизведение
-        setTimeout(() => {
+        autoPlayTimeout = setTimeout(() => {
             togglePlay()
         }, 500)
 
@@ -522,6 +523,7 @@ const currentRegimeColor = computed(() => {
 
 onUnmounted(() => {
     if (animationFrame) cancelAnimationFrame(animationFrame)
+    if (autoPlayTimeout) clearTimeout(autoPlayTimeout)
 })
 </script>
 

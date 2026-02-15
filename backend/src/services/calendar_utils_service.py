@@ -6,9 +6,9 @@ Public holiday data and work calendar information.
 
 import xml.etree.ElementTree as ET
 from typing import Dict, Any, List
-import aiohttp
 
 from src.services.cache_service import cache_get, cache_set, make_cache_key
+from src.utils.http_client import get_session
 
 NAGER_BASE = "https://date.nager.at/api/v3"
 XMLCAL_BASE = "https://xmlcalendar.ru/data/ru"
@@ -23,10 +23,10 @@ async def nager_public_holidays(country_code: str, year: int) -> List[Dict[str, 
     if cached is not None:
         return cached
 
-    async with aiohttp.ClientSession() as session:
-        async with session.get(f"{NAGER_BASE}/PublicHolidays/{year}/{country_code}") as resp:
-            resp.raise_for_status()
-            data = await resp.json(content_type=None)
+    session = await get_session()
+    async with session.get(f"{NAGER_BASE}/PublicHolidays/{year}/{country_code}") as resp:
+        resp.raise_for_status()
+        data = await resp.json(content_type=None)
 
     holidays = []
     for h in data:
@@ -51,10 +51,10 @@ async def nager_next_holidays(country_code: str) -> List[Dict[str, Any]]:
     if cached is not None:
         return cached
 
-    async with aiohttp.ClientSession() as session:
-        async with session.get(f"{NAGER_BASE}/NextPublicHolidays/{country_code}") as resp:
-            resp.raise_for_status()
-            data = await resp.json(content_type=None)
+    session = await get_session()
+    async with session.get(f"{NAGER_BASE}/NextPublicHolidays/{country_code}") as resp:
+        resp.raise_for_status()
+        data = await resp.json(content_type=None)
 
     cache_set(key, data, ttl_seconds=86400)
     return data
@@ -67,10 +67,10 @@ async def nager_is_today_holiday(country_code: str) -> Dict[str, Any]:
     if cached is not None:
         return cached
 
-    async with aiohttp.ClientSession() as session:
-        async with session.get(f"{NAGER_BASE}/IsTodayPublicHoliday/{country_code}") as resp:
-            # 200 = today is a holiday, 204 = not a holiday
-            result = {"is_holiday": resp.status == 200, "country_code": country_code}
+    session = await get_session()
+    async with session.get(f"{NAGER_BASE}/IsTodayPublicHoliday/{country_code}") as resp:
+        # 200 = today is a holiday, 204 = not a holiday
+        result = {"is_holiday": resp.status == 200, "country_code": country_code}
 
     cache_set(key, result, ttl_seconds=3600)
     return result
@@ -92,10 +92,10 @@ async def russian_calendar(year: int) -> Dict[str, Any]:
         return cached
 
     url = f"{XMLCAL_BASE}/{year}/calendar.xml"
-    async with aiohttp.ClientSession() as session:
-        async with session.get(url) as resp:
-            resp.raise_for_status()
-            text = await resp.text()
+    session = await get_session()
+    async with session.get(url) as resp:
+        resp.raise_for_status()
+        text = await resp.text()
 
     root = ET.fromstring(text)
     days = []

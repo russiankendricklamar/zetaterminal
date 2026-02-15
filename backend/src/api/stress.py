@@ -5,8 +5,6 @@ from fastapi import APIRouter, HTTPException
 from typing import List, Optional, Dict, Any
 from pydantic import BaseModel, Field
 from src.services.stress_service import run_stress_test
-from datetime import datetime
-import numpy as np
 
 router = APIRouter()
 

@@ -1,9 +1,12 @@
 """
 FastAPI приложение для Stochastic Dashboard Backend.
 """
+from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 import os
+
+from src.utils.http_client import close_session
 
 # Импортируем все роутеры
 from src.api import backtest
@@ -29,11 +32,18 @@ from src.api import calendar_utils
 from src.api import security_tools
 from src.api import platform_services
 
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    yield
+    await close_session()
+
+
 # Создаем FastAPI приложение
 app = FastAPI(
     title="Stochastic Dashboard API",
     description="Backend API для Stochastic Dashboard",
     version="1.0.0",
+    lifespan=lifespan,
 )
 
 # Настройка CORS

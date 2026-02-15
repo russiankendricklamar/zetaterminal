@@ -1,5 +1,5 @@
 """
-Simple in-memory TTL cache for external API responses.
+Simple in-memory TTL cache for external API responses with size limit.
 
 Usage:
     from src.services.cache_service import cache_get, cache_set, make_cache_key
@@ -16,8 +16,17 @@ Usage:
 import time
 from typing import Any, Optional, Dict, Tuple
 
+MAX_CACHE_SIZE = 2000
 
 _cache: Dict[str, Tuple[Any, float]] = {}
+
+
+def _evict_expired() -> None:
+    """Remove all expired entries."""
+    now = time.time()
+    expired = [k for k, (_, exp) in _cache.items() if now >= exp]
+    for k in expired:
+        del _cache[k]
 
 
 def cache_get(key: str) -> Optional[Any]:
@@ -32,6 +41,11 @@ def cache_get(key: str) -> Optional[Any]:
 
 def cache_set(key: str, value: Any, ttl_seconds: int = 300) -> None:
     """Store a value in cache with a TTL in seconds."""
+    if len(_cache) >= MAX_CACHE_SIZE:
+        _evict_expired()
+    if len(_cache) >= MAX_CACHE_SIZE:
+        oldest_key = min(_cache, key=lambda k: _cache[k][1])
+        del _cache[oldest_key]
     _cache[key] = (value, time.time() + ttl_seconds)
 
 

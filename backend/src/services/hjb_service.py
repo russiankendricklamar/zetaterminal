@@ -155,11 +155,12 @@ def simulate_monte_carlo(
     horizon_years: float,
     n_paths: int,
     n_steps: int = 252,
-    random_seed: Optional[int] = None
+    random_seed: Optional[int] = None,
+    risk_free_rate: float = 0.0
 ) -> Dict:
     """
     Монте-Карло симуляция портфеля.
-    
+
     Args:
         mu: Ожидаемые доходности активов
         cov_matrix: Ковариационная матрица
@@ -169,7 +170,8 @@ def simulate_monte_carlo(
         n_paths: Количество траекторий
         n_steps: Количество временных шагов (торговых дней)
         random_seed: Seed для воспроизводимости
-    
+        risk_free_rate: Безрисковая ставка (для расчёта Sharpe ratio)
+
     Returns:
         Результаты симуляции
     """
@@ -242,8 +244,8 @@ def simulate_monte_carlo(
     median_return = float(np.median(returns))
     std_return = float(np.std(returns))
     
-    # Sharpe ratio
-    sharpe = mean_return / std_return if std_return > 1e-10 else 0.0
+    # Sharpe ratio: (E[R] - R_f) / σ
+    sharpe = (mean_return - risk_free_rate) / std_return if std_return > 1e-10 else 0.0
     
     # Квантили траекторий
     t_grid = np.linspace(0, horizon_years, n_steps + 1)
@@ -324,7 +326,8 @@ def optimize_hjb(
             horizon_years=monte_carlo_params.get('horizon_years', 1.0),
             n_paths=monte_carlo_params.get('n_paths', 5000),
             n_steps=monte_carlo_params.get('n_steps', 252),
-            random_seed=monte_carlo_params.get('random_seed', 42)
+            random_seed=monte_carlo_params.get('random_seed', 42),
+            risk_free_rate=risk_free_rate
         )
     
     result = {

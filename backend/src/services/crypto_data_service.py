@@ -6,9 +6,9 @@ Proxies crypto market data and arbitrage opportunities.
 
 import os
 from typing import Optional, Dict, Any, List
-import aiohttp
 
 from src.services.cache_service import cache_get, cache_set, make_cache_key
+from src.utils.http_client import get_session
 
 COINGECKO_KEY = os.getenv("COINGECKO_API_KEY", "")
 COINGECKO_BASE = "https://api.coingecko.com/api/v3"
@@ -43,15 +43,15 @@ async def coingecko_markets(
     if COINGECKO_KEY:
         headers["x-cg-demo-api-key"] = COINGECKO_KEY
 
-    async with aiohttp.ClientSession() as session:
-        async with session.get(f"{COINGECKO_BASE}/coins/markets", params=params, headers=headers) as resp:
-            if resp.status == 429:
-                cached_fallback = cache_get(make_cache_key("cg", "markets", vs_currency, per_page, page, order, "fallback"))
-                if cached_fallback is not None:
-                    return cached_fallback
-                return []
-            resp.raise_for_status()
-            data = await resp.json(content_type=None)
+    session = await get_session()
+    async with session.get(f"{COINGECKO_BASE}/coins/markets", params=params, headers=headers) as resp:
+        if resp.status == 429:
+            cached_fallback = cache_get(make_cache_key("cg", "markets", vs_currency, per_page, page, order, "fallback"))
+            if cached_fallback is not None:
+                return cached_fallback
+            return []
+        resp.raise_for_status()
+        data = await resp.json(content_type=None)
 
     cache_set(key, data, ttl_seconds=120)
     cache_set(make_cache_key("cg", "markets", vs_currency, per_page, page, order, "fallback"), data, ttl_seconds=600)
@@ -76,10 +76,10 @@ async def coingecko_coin(coin_id: str) -> Dict[str, Any]:
     if COINGECKO_KEY:
         headers["x-cg-demo-api-key"] = COINGECKO_KEY
 
-    async with aiohttp.ClientSession() as session:
-        async with session.get(f"{COINGECKO_BASE}/coins/{coin_id}", params=params, headers=headers) as resp:
-            resp.raise_for_status()
-            data = await resp.json(content_type=None)
+    session = await get_session()
+    async with session.get(f"{COINGECKO_BASE}/coins/{coin_id}", params=params, headers=headers) as resp:
+        resp.raise_for_status()
+        data = await resp.json(content_type=None)
 
     result = {
         "id": data.get("id", ""),
@@ -112,10 +112,10 @@ async def coingecko_market_chart(
     if COINGECKO_KEY:
         headers["x-cg-demo-api-key"] = COINGECKO_KEY
 
-    async with aiohttp.ClientSession() as session:
-        async with session.get(f"{COINGECKO_BASE}/coins/{coin_id}/market_chart", params=params, headers=headers) as resp:
-            resp.raise_for_status()
-            data = await resp.json(content_type=None)
+    session = await get_session()
+    async with session.get(f"{COINGECKO_BASE}/coins/{coin_id}/market_chart", params=params, headers=headers) as resp:
+        resp.raise_for_status()
+        data = await resp.json(content_type=None)
 
     result = {
         "coin_id": coin_id,
@@ -140,10 +140,10 @@ async def coingecko_trending() -> Dict[str, Any]:
     if COINGECKO_KEY:
         headers["x-cg-demo-api-key"] = COINGECKO_KEY
 
-    async with aiohttp.ClientSession() as session:
-        async with session.get(f"{COINGECKO_BASE}/search/trending", headers=headers) as resp:
-            resp.raise_for_status()
-            data = await resp.json(content_type=None)
+    session = await get_session()
+    async with session.get(f"{COINGECKO_BASE}/search/trending", headers=headers) as resp:
+        resp.raise_for_status()
+        data = await resp.json(content_type=None)
 
     cache_set(key, data, ttl_seconds=300)
     return data
@@ -160,10 +160,10 @@ async def coingecko_global() -> Dict[str, Any]:
     if COINGECKO_KEY:
         headers["x-cg-demo-api-key"] = COINGECKO_KEY
 
-    async with aiohttp.ClientSession() as session:
-        async with session.get(f"{COINGECKO_BASE}/global", headers=headers) as resp:
-            resp.raise_for_status()
-            data = await resp.json(content_type=None)
+    session = await get_session()
+    async with session.get(f"{COINGECKO_BASE}/global", headers=headers) as resp:
+        resp.raise_for_status()
+        data = await resp.json(content_type=None)
 
     result = data.get("data", {})
     result["provider"] = "coingecko"
@@ -184,10 +184,10 @@ async def coingap_arbitrage() -> List[Dict[str, Any]]:
     if COINGAP_KEY:
         headers["Authorization"] = f"Bearer {COINGAP_KEY}"
 
-    async with aiohttp.ClientSession() as session:
-        async with session.get(f"{COINGAP_BASE}/v1/arbitrage", headers=headers) as resp:
-            resp.raise_for_status()
-            data = await resp.json(content_type=None)
+    session = await get_session()
+    async with session.get(f"{COINGAP_BASE}/v1/arbitrage", headers=headers) as resp:
+        resp.raise_for_status()
+        data = await resp.json(content_type=None)
 
     result = data if isinstance(data, list) else data.get("data", [])
     cache_set(key, result, ttl_seconds=60)

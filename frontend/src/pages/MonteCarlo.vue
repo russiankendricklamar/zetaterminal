@@ -254,6 +254,7 @@ const params = reactive({
 const playbackStep = ref(0)
 const isPlaying = ref(false)
 let animationFrame: number | null = null
+let progressInterval: ReturnType<typeof setInterval> | null = null
 
 const results = ref<any>(null)
 const chartData = reactive({
@@ -278,12 +279,13 @@ const runSimulationFull = async () => {
 
   try {
     let progress = 0
-    const interval = setInterval(() => {
+    progressInterval = setInterval(() => {
       progress += 10
       taskStore.updateProgress(taskId, progress)
 
       if (progress >= 100) {
-        clearInterval(interval)
+        clearInterval(progressInterval!)
+        progressInterval = null
         generateData()
         calculateMetrics()
         isRunning.value = false
@@ -456,6 +458,7 @@ const formatCurrency = (val: number): string =>
 
 onUnmounted(() => {
   if (animationFrame) cancelAnimationFrame(animationFrame)
+  if (progressInterval) clearInterval(progressInterval)
 })
 </script>
 

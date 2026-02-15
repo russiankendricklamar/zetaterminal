@@ -6,7 +6,7 @@ Proxies news feeds and ML inference endpoints.
 
 import os
 from typing import Optional, Dict, Any, List
-import aiohttp
+from src.utils.http_client import get_session
 
 from src.services.cache_service import cache_get, cache_set, make_cache_key
 
@@ -44,10 +44,10 @@ async def newsapi_top_headlines(
     if q:
         params["q"] = q
 
-    async with aiohttp.ClientSession() as session:
-        async with session.get(f"{NEWSAPI_BASE}/top-headlines", params=params) as resp:
-            resp.raise_for_status()
-            data = await resp.json(content_type=None)
+    session = await get_session()
+    async with session.get(f"{NEWSAPI_BASE}/top-headlines", params=params) as resp:
+        resp.raise_for_status()
+        data = await resp.json(content_type=None)
 
     articles = []
     for a in data.get("articles", []):
@@ -97,10 +97,10 @@ async def newsapi_everything(
     if to_date:
         params["to"] = to_date
 
-    async with aiohttp.ClientSession() as session:
-        async with session.get(f"{NEWSAPI_BASE}/everything", params=params) as resp:
-            resp.raise_for_status()
-            data = await resp.json(content_type=None)
+    session = await get_session()
+    async with session.get(f"{NEWSAPI_BASE}/everything", params=params) as resp:
+        resp.raise_for_status()
+        data = await resp.json(content_type=None)
 
     articles = []
     for a in data.get("articles", []):
@@ -145,10 +145,10 @@ async def currents_latest(
     if category:
         params["category"] = category
 
-    async with aiohttp.ClientSession() as session:
-        async with session.get(f"{CURRENTS_BASE}/latest-news", params=params) as resp:
-            resp.raise_for_status()
-            data = await resp.json(content_type=None)
+    session = await get_session()
+    async with session.get(f"{CURRENTS_BASE}/latest-news", params=params) as resp:
+        resp.raise_for_status()
+        data = await resp.json(content_type=None)
 
     articles = []
     for n in data.get("news", []):
@@ -188,10 +188,10 @@ async def currents_search(
         "apiKey": CURRENTS_KEY,
     }
 
-    async with aiohttp.ClientSession() as session:
-        async with session.get(f"{CURRENTS_BASE}/search", params=params) as resp:
-            resp.raise_for_status()
-            data = await resp.json(content_type=None)
+    session = await get_session()
+    async with session.get(f"{CURRENTS_BASE}/search", params=params) as resp:
+        resp.raise_for_status()
+        data = await resp.json(content_type=None)
 
     articles = []
     for n in data.get("news", []):
@@ -214,22 +214,22 @@ async def currents_search(
 async def hf_inference(model_id: str, inputs: str) -> Any:
     """Run inference on a Hugging Face model."""
     headers = {"Authorization": f"Bearer {HF_TOKEN}"}
-    async with aiohttp.ClientSession() as session:
-        async with session.post(
-            f"{HF_BASE}/{model_id}",
-            json={"inputs": inputs},
-            headers=headers
-        ) as resp:
-            data = await resp.json(content_type=None)
-            # HF returns 503 with estimated_time when model is loading
-            if resp.status == 503:
-                return {
-                    "loading": True,
-                    "estimated_time": data.get("estimated_time", 30),
-                    "error": "Model is loading, please retry",
-                }
-            resp.raise_for_status()
-            return data
+    session = await get_session()
+    async with session.post(
+        f"{HF_BASE}/{model_id}",
+        json={"inputs": inputs},
+        headers=headers
+    ) as resp:
+        data = await resp.json(content_type=None)
+        # HF returns 503 with estimated_time when model is loading
+        if resp.status == 503:
+            return {
+                "loading": True,
+                "estimated_time": data.get("estimated_time", 30),
+                "error": "Model is loading, please retry",
+            }
+        resp.raise_for_status()
+        return data
 
 
 async def hf_sentiment(text: str) -> Dict[str, Any]:
@@ -250,16 +250,16 @@ async def hf_sentiment(text: str) -> Dict[str, Any]:
 async def hf_summarize(text: str, max_length: int = 150) -> Dict[str, Any]:
     """Summarize text using facebook/bart-large-cnn."""
     headers = {"Authorization": f"Bearer {HF_TOKEN}"}
-    async with aiohttp.ClientSession() as session:
-        async with session.post(
-            f"{HF_BASE}/facebook/bart-large-cnn",
-            json={"inputs": text, "parameters": {"max_length": max_length}},
-            headers=headers
-        ) as resp:
-            data = await resp.json(content_type=None)
-            if resp.status == 503:
-                return {"loading": True, "estimated_time": data.get("estimated_time", 30)}
-            resp.raise_for_status()
+    session = await get_session()
+    async with session.post(
+        f"{HF_BASE}/facebook/bart-large-cnn",
+        json={"inputs": text, "parameters": {"max_length": max_length}},
+        headers=headers
+    ) as resp:
+        data = await resp.json(content_type=None)
+        if resp.status == 503:
+            return {"loading": True, "estimated_time": data.get("estimated_time", 30)}
+        resp.raise_for_status()
 
     summary = data[0].get("summary_text", "") if isinstance(data, list) and len(data) > 0 else ""
     return {

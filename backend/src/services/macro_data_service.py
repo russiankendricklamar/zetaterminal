@@ -7,7 +7,7 @@ Proxies macroeconomic and regulatory data from five providers.
 import os
 import xml.etree.ElementTree as ET
 from typing import Optional, Dict, Any, List
-import aiohttp
+from src.utils.http_client import get_session
 
 from src.services.cache_service import cache_get, cache_set, make_cache_key
 
@@ -53,10 +53,10 @@ async def fred_series_observations(
     if observation_end:
         params["observation_end"] = observation_end
 
-    async with aiohttp.ClientSession() as session:
-        async with session.get(f"{FRED_BASE}/series/observations", params=params) as resp:
-            resp.raise_for_status()
-            data = await resp.json(content_type=None)
+    session = await get_session()
+    async with session.get(f"{FRED_BASE}/series/observations", params=params) as resp:
+        resp.raise_for_status()
+        data = await resp.json(content_type=None)
 
     observations = []
     for obs in data.get("observations", []):
@@ -89,10 +89,10 @@ async def fred_search(query: str, limit: int = 20) -> Dict[str, Any]:
         "file_type": "json",
         "limit": limit,
     }
-    async with aiohttp.ClientSession() as session:
-        async with session.get(f"{FRED_BASE}/series/search", params=params) as resp:
-            resp.raise_for_status()
-            data = await resp.json(content_type=None)
+    session = await get_session()
+    async with session.get(f"{FRED_BASE}/series/search", params=params) as resp:
+        resp.raise_for_status()
+        data = await resp.json(content_type=None)
 
     series_list = []
     for s in data.get("seriess", []):
@@ -120,10 +120,10 @@ async def ecb_latest_rates(base: str = "EUR") -> Dict[str, Any]:
     if cached is not None:
         return cached
 
-    async with aiohttp.ClientSession() as session:
-        async with session.get(f"{FRANKFURTER_BASE}/latest", params={"base": base}) as resp:
-            resp.raise_for_status()
-            data = await resp.json(content_type=None)
+    session = await get_session()
+    async with session.get(f"{FRANKFURTER_BASE}/latest", params={"base": base}) as resp:
+        resp.raise_for_status()
+        data = await resp.json(content_type=None)
 
     result = {
         "base": data.get("base", base),
@@ -155,10 +155,10 @@ async def ecb_historical_rates(
     if symbols:
         params["symbols"] = symbols
 
-    async with aiohttp.ClientSession() as session:
-        async with session.get(url, params=params) as resp:
-            resp.raise_for_status()
-            data = await resp.json(content_type=None)
+    session = await get_session()
+    async with session.get(url, params=params) as resp:
+        resp.raise_for_status()
+        data = await resp.json(content_type=None)
 
     result = {
         "base": data.get("base", base),
@@ -180,10 +180,10 @@ async def cbr_daily_rates() -> Dict[str, Any]:
     if cached is not None:
         return cached
 
-    async with aiohttp.ClientSession() as session:
-        async with session.get(CBR_DAILY_URL) as resp:
-            resp.raise_for_status()
-            raw = await resp.read()
+    session = await get_session()
+    async with session.get(CBR_DAILY_URL) as resp:
+        resp.raise_for_status()
+        raw = await resp.read()
 
     text = raw.decode("windows-1251")
     root = ET.fromstring(text)
@@ -230,10 +230,10 @@ async def cbr_key_rate() -> Dict[str, Any]:
     </soap12:Envelope>"""
 
     headers = {"Content-Type": "application/soap+xml; charset=utf-8"}
-    async with aiohttp.ClientSession() as session:
-        async with session.post(CBR_KEY_RATE_URL, data=soap_body, headers=headers) as resp:
-            resp.raise_for_status()
-            text = await resp.text()
+    session = await get_session()
+    async with session.post(CBR_KEY_RATE_URL, data=soap_body, headers=headers) as resp:
+        resp.raise_for_status()
+        text = await resp.text()
 
     # Parse the SOAP XML response
     history = []
@@ -277,10 +277,10 @@ async def sec_company_filings(cik: str) -> Dict[str, Any]:
 
     headers = {"User-Agent": SEC_USER_AGENT, "Accept": "application/json"}
     url = f"{SEC_BASE}/submissions/CIK{cik_padded}.json"
-    async with aiohttp.ClientSession() as session:
-        async with session.get(url, headers=headers) as resp:
-            resp.raise_for_status()
-            data = await resp.json(content_type=None)
+    session = await get_session()
+    async with session.get(url, headers=headers) as resp:
+        resp.raise_for_status()
+        data = await resp.json(content_type=None)
 
     recent = data.get("filings", {}).get("recent", {})
     filings = []
@@ -321,10 +321,10 @@ async def sec_company_facts(cik: str) -> Dict[str, Any]:
 
     headers = {"User-Agent": SEC_USER_AGENT, "Accept": "application/json"}
     url = f"{SEC_BASE}/api/xbrl/companyfacts/CIK{cik_padded}.json"
-    async with aiohttp.ClientSession() as session:
-        async with session.get(url, headers=headers) as resp:
-            resp.raise_for_status()
-            data = await resp.json(content_type=None)
+    session = await get_session()
+    async with session.get(url, headers=headers) as resp:
+        resp.raise_for_status()
+        data = await resp.json(content_type=None)
 
     result = {
         "cik": cik_padded,
@@ -354,10 +354,10 @@ async def openfigi_map(
     if OPENFIGI_KEY:
         headers["X-OPENFIGI-APIKEY"] = OPENFIGI_KEY
 
-    async with aiohttp.ClientSession() as session:
-        async with session.post(OPENFIGI_URL, json=jobs, headers=headers) as resp:
-            resp.raise_for_status()
-            data = await resp.json(content_type=None)
+    session = await get_session()
+    async with session.post(OPENFIGI_URL, json=jobs, headers=headers) as resp:
+        resp.raise_for_status()
+        data = await resp.json(content_type=None)
 
     result = data if isinstance(data, list) else []
     cache_set(key, result, ttl_seconds=86400)

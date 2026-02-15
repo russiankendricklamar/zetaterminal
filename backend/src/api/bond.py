@@ -1,6 +1,7 @@
 """
 API endpoints для оценки облигаций (DCF).
 """
+import asyncio
 from fastapi import APIRouter, HTTPException, Query
 from typing import Optional, Dict, Any
 from pydantic import BaseModel, Field
@@ -28,13 +29,14 @@ async def valuate_bond(request: BondValuationRequest):
     Выполняет оценку облигации для двух сценариев доходности.
     """
     try:
-        result = calculate_bond_valuation(
+        result = await asyncio.to_thread(
+            calculate_bond_valuation,
             secid=request.secid,
             valuation_date=request.valuationDate,
             discount_yield1=request.discountYield1,
             discount_yield2=request.discountYield2,
             day_count=request.dayCount,
-            day_count_convention=request.dayCountConvention
+            day_count_convention=request.dayCountConvention,
         )
         return result
     except ValueError as e:
@@ -61,7 +63,7 @@ async def get_market_yield(
         Словарь с рыночной доходностью (в процентах)
     """
     try:
-        yield_value = get_market_yield_from_moex(secid, date)
+        yield_value = await asyncio.to_thread(get_market_yield_from_moex, secid, date)
         return {
             "secid": secid,
             "date": date,

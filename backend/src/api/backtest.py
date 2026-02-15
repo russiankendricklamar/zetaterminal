@@ -5,8 +5,6 @@ from fastapi import APIRouter, HTTPException
 from typing import List, Optional, Dict, Any
 from pydantic import BaseModel, Field
 from src.services.backtest_service import run_backtest
-from datetime import datetime
-import numpy as np
 
 router = APIRouter()
 

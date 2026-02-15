@@ -1088,13 +1088,13 @@ class BondPricer:
             clean_price = dirty_price - nkd
             
             # Детализация для фронтенда
-            for _, row in cf_df.iterrows():
+            for row in cf_df.itertuples(index=False):
                 cash_flows_detailed.append({
-                    "date": row["date"].isoformat(),
-                    "t": float(row["t"]),
-                    "cf": float(row["cf"]),
-                    "df": float(row["df"]),
-                    "pv": float(row["pv"])
+                    "date": row.date.isoformat(),
+                    "t": float(row.t),
+                    "cf": float(row.cf),
+                    "df": float(row.df),
+                    "pv": float(row.pv)
                 })
         
         # Полный список купонов для отображения
@@ -1184,12 +1184,10 @@ class BondPricer:
         
         if valuation_date < mat_date and dirty_price > 0 and not cf_df.empty:
             # Подготовка денежных потоков для расчета YTM
-            ytm_cash_flows = []
-            for _, row in cf_df.iterrows():
-                ytm_cash_flows.append({
-                    "date": row["date"],
-                    "cf": row["cf"]
-                })
+            ytm_cash_flows = [
+                {"date": row.date, "cf": row.cf}
+                for row in cf_df.itertuples(index=False)
+            ]
             
             # Определяем параметры для расчета базиса (для ISMA)
             coupon_start_for_ytm = past_coupons[-1] if past_coupons else None
@@ -1220,12 +1218,12 @@ class BondPricer:
             ytm = discount_yield
         
         # Расчет дюрации Маколея (Macaulay Duration, D)
-        # Формула: D (в днях) = sum [ (ti - t0) * (Ci + Ni) / (1 + YTM)^((ti - t0) / B) ] / (P + A)
+        # Формула: D = Σ[ t_i * CF_i / (1 + YTM)^t_i ] / Pd
         # где:
-        #   (ti - t0) = абсолютные дни до платежа
-        #   (ti - t0) / B = годовая доля для дисконтирования
-        #   P + A = грязная цена (dirty_price)
-        # Результат: D (в годах) = D (в днях) / 365 (или используя базис расчета дней)
+        #   t_i = (ti - t0) / B = годовая доля до платежа (year-fraction)
+        #   CF_i = денежный поток i-го периода
+        #   Pd = грязная цена (dirty_price)
+        # Результат: D в годах (year-fractions используются на всех этапах)
         # Для бессрочной облигации (perpetuity): D = (1 + 1/YTM) лет
         # На международных рынках (Bloomberg) дюрацию обычно измеряют в годах
         if dirty_price > 0 and not cf_df.empty and ytm > -0.99:  # Разрешаем отрицательные YTM в разумных пределах
@@ -1233,7 +1231,10 @@ class BondPricer:
             # Если нет даты погашения или она очень далека в будущем (> 100 лет)
             if mat_date is None or (valuation_date < mat_date and (mat_date - valuation_date).days > 36500):
                 # Для бессрочной облигации: D = (1 + 1/YTM) лет
-                duration = 1.0 + (1.0 / ytm)
+                if abs(ytm) < 1e-10:
+                    duration = float('inf')
+                else:
+                    duration = 1.0 + (1.0 / ytm)
             elif not cf_df.empty:
                 # Базовая формула для обычной облигации
                 # Параметры для расчета базиса
@@ -1244,100 +1245,72 @@ class BondPricer:
                     'coupon_period_months': coupon_period_months
                 }
                 
-                # Формула дюрации Маколея (согласно документации):
-                # D (в днях) = sum [ (ti - t0) * (Ci + Ni) / (1 + YTM)^((ti - t0) / B) ] / (P + A)
-                # где:
-                #   (ti - t0) = абсолютные дни до платежа
-                #   (ti - t0) / B = годовая доля для дисконтирования
-                #   P + A = грязная цена (dirty_price)
-                duration_numerator_days = 0.0
-                
-                for _, row in cf_df.iterrows():
-                    cf_date = row["date"]
-                    cf_amount = row["cf"]
-                    
-                    # Абсолютные дни до платежа (ti - t0) в днях
-                    days_to_payment = (cf_date - valuation_date).days
-                    
-                    # Годовая доля для дисконтирования (ti - t0) / B
+                # Формула дюрации Маколея:
+                # D = Σ[ t_i * CF_i / (1 + YTM)^t_i ] / Pd
+                # где t_i — year-fraction (годовая доля) до i-го платежа
+                # Результат сразу в годах (year-fractions на всех этапах)
+                duration_numerator = 0.0
+
+                for row in cf_df.itertuples(index=False):
+                    cf_date = row.date
+                    cf_amount = row.cf
+
+                    # Годовая доля до платежа t_i = (ti - t0) / B
                     time_fraction = DayCountCalculator.calculate_year_fraction(
                         valuation_date,
                         cf_date,
                         day_count_convention,
                         **kwargs_for_duration
                     )
-                    
-                    # Дисконтированный денежный поток
-                    # Проверяем, что (1 + ytm) > 0 для корректного возведения в степень
-                    if (1.0 + ytm) > 0 and time_fraction >= 0 and days_to_payment >= 0:
+
+                    # Дисконтированный денежный поток: CF_i / (1 + YTM)^t_i
+                    if (1.0 + ytm) > 0 and time_fraction >= 0:
                         discount_factor = (1.0 + ytm) ** time_fraction
                         if discount_factor > 0:
                             discounted_cf = cf_amount / discount_factor
-                            
-                            # Накопление: (ti - t0) * дисконтированный поток
-                            # где (ti - t0) - абсолютные дни до платежа
-                            duration_numerator_days += days_to_payment * discounted_cf
-                
-                # Дюрация в днях = числитель / грязная цена
-                if dirty_price > 0:
-                    if duration_numerator_days > 0:
-                        duration_days = duration_numerator_days / dirty_price
-                        # Дюрация в годах = дюрация в днях / 365
-                        # На международных рынках (Bloomberg) дюрацию обычно измеряют в годах
-                        duration = duration_days / 365.0
-                    else:
-                        # Если числитель <= 0, дюрация = 0
-                        duration = 0.0
+
+                            # Накопление: t_i * PV_i (year-fractions throughout)
+                            duration_numerator += time_fraction * discounted_cf
+
+                # Дюрация в годах = числитель / грязная цена
+                if dirty_price > 0 and duration_numerator > 0:
+                    duration = duration_numerator / dirty_price
                 else:
                     duration = 0.0
                 
                 # Расчет выпуклости (Convexity, CONV)
-                # Формула: CONV = sum [ (ti - t0) * ((ti - t0) + 1) * (Ci + Ni) / (1 + YTM)^(((ti - t0) / B) + 2) ] / Pd
-                # где переменные те же, что в дюрации
+                # Формула: CONV = Σ[ t_i * (t_i + 1) * CF_i / (1 + YTM)^(t_i + 2) ] / Pd
+                # где:
+                #   t_i = year-fraction до i-го платежа
+                #   CF_i = денежный поток
+                #   Pd = грязная цена
+                # Получается из второй производной цены по YTM:
+                #   d²P/dy² = Σ[ t_i * (t_i + 1) * CF_i / (1 + y)^(t_i + 2) ]
+                #   CONV = (1/P) * d²P/dy²
                 # Интерпретация: CONV показывает кривизну кривой цена-доходность
-                # Для обычных купонных облигаций CONV > 0 (всегда положительна)
-                # Улучшенная формула изменения цены: ΔPd / Pd ≈ -MD * ΔYTM + 0.5 * CONV * (ΔYTM)^2
+                # Улучшенная формула изменения цены: ΔPd/Pd ≈ -MD * ΔYTM + 0.5 * CONV * (ΔYTM)²
                 convexity_numerator = 0.0
-                
-                for _, row in cf_df.iterrows():
-                    cf_date = row["date"]
-                    cf_amount = row["cf"]
-                    
-                    # Абсолютные дни до платежа (ti - t0)
-                    days_to_payment = (cf_date - valuation_date).days
-                    
-                    # Годовая доля для дисконтирования (ti - t0) / B
+
+                for row in cf_df.itertuples(index=False):
+                    cf_date = row.date
+                    cf_amount = row.cf
+
+                    # Годовая доля до платежа t_i = (ti - t0) / B
                     time_fraction = DayCountCalculator.calculate_year_fraction(
                         valuation_date,
                         cf_date,
                         day_count_convention,
                         **kwargs_for_duration
                     )
-                    
-                    # Формула выпуклости использует абсолютные дни в числителе
-                    # CONV = sum [ (ti - t0) * ((ti - t0) + 1) * (Ci + Ni) / (1 + YTM)^(((ti - t0) / B) + 2) ] / Pd
-                    # где:
-                    #   (ti - t0) = дни до платежа (абсолютные дни)
-                    #   ((ti - t0) + 1) = дни + 1 день
-                    #   (ti - t0) / B = доля года для дисконтирования
-                    
-                    # Абсолютные дни (ti - t0)
-                    days_to_payment_abs = days_to_payment
-                    
-                    # ((ti - t0) + 1) - дни + 1 день
-                    days_plus_one = days_to_payment_abs + 1
-                    
-                    # Дисконтированный денежный поток с дополнительной степенью +2
-                    # (1 + YTM)^(((ti - t0) / B) + 2)
-                    # где (ti - t0) / B - это time_fraction (доля года)
-                    discount_exponent = time_fraction + 2.0
-                    discounted_cf = cf_amount / ((1.0 + ytm) ** discount_exponent)
-                    
-                    # Накопление: (ti - t0) * ((ti - t0) + 1) * дисконтированный поток
-                    # Используем абсолютные дни (нормализованные на 365 для получения правильной размерности)
-                    # Для получения выпуклости в правильных единицах нужно нормировать на (365)^2
-                    convexity_numerator += (days_to_payment_abs * days_plus_one / (365.0 ** 2)) * discounted_cf
-                
+
+                    # CF_i / (1 + YTM)^(t_i + 2)
+                    if (1.0 + ytm) > 0 and time_fraction >= 0:
+                        discount_exponent = time_fraction + 2.0
+                        discounted_cf = cf_amount / ((1.0 + ytm) ** discount_exponent)
+
+                        # t_i * (t_i + 1) * PV_i  (year-fractions throughout)
+                        convexity_numerator += time_fraction * (time_fraction + 1.0) * discounted_cf
+
                 # Выпуклость = числитель / грязная цена
                 convexity = convexity_numerator / dirty_price if dirty_price > 0 else 0.0
             else:
@@ -1400,16 +1373,16 @@ class BondPricer:
         if reference_rates and len(reference_rates) > 0 and dirty_price > 0 and not cf_df.empty:
             # Подготовка денежных потоков с референсными ставками для расчета DM
             dm_cash_flows = []
-            for idx, (_, row) in enumerate(cf_df.iterrows()):
+            for idx, row in enumerate(cf_df.itertuples(index=False)):
                 # Используем соответствующую референсную ставку для периода
                 if idx < len(reference_rates):
                     index_rate = reference_rates[idx]
                 else:
                     index_rate = reference_rates[-1]  # Используем последнюю доступную ставку
-                
+
                 dm_cash_flows.append({
-                    "date": row["date"],
-                    "cf": row["cf"],
+                    "date": row.date,
+                    "cf": row.cf,
                     "index_rate": index_rate
                 })
             

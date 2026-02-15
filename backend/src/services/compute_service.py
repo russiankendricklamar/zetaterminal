@@ -40,48 +40,80 @@ class ComputeService:
     ) -> Dict[str, Any]:
         """
         Вычисляет GARCH(1,1) модель волатильности.
-        
+
+        Stationarity constraint: α + β < 1
+        Positivity constraints: ω > 0, α ≥ 0, β ≥ 0
+
         Args:
             returns: Список доходностей (returns)
-            omega: Параметр ω (константа)
-            alpha: Параметр α (ARCH)
-            beta: Параметр β (GARCH)
+            omega: Параметр ω (константа), должен быть > 0
+            alpha: Параметр α (ARCH), должен быть ≥ 0
+            beta: Параметр β (GARCH), должен быть ≥ 0
             initial_variance: Начальная дисперсия (опционально)
-            
+
         Returns:
             Словарь с результатами GARCH моделирования
+
+        Raises:
+            ValueError: Если параметры нарушают constraints
         """
         returns_array = np.array(returns)
         n = len(returns_array)
-        
-        # Инициализация дисперсии
+
+        if n < 2:
+            raise ValueError(f"Требуется минимум 2 наблюдения, получено: {n}")
+
+        # Валидация параметров
+        if omega <= 0:
+            raise ValueError(f"omega должна быть > 0, получено: {omega}")
+        if alpha < 0:
+            raise ValueError(f"alpha должна быть >= 0, получено: {alpha}")
+        if beta < 0:
+            raise ValueError(f"beta должна быть >= 0, получено: {beta}")
+
+        persistence = alpha + beta
+        is_stationary = persistence < 1.0
+
+        if not is_stationary:
+            raise ValueError(
+                f"Нарушено условие стационарности: α + β = {persistence:.6f} >= 1. "
+                f"Дисперсия не сходится. Уменьшите alpha ({alpha}) или beta ({beta})."
+            )
+
+        # Минимальный порог дисперсии для численной стабильности
+        variance_floor = 1e-12
+
+        # Инициализация дисперсии: используем long-run variance если стационарна
         if initial_variance is None:
-            initial_variance = float(np.var(returns_array))
-        
+            long_run_var = omega / (1.0 - persistence)
+            initial_variance = float(long_run_var)
+
+        initial_variance = max(initial_variance, variance_floor)
+
         # Массивы для хранения результатов
         variances = np.zeros(n)
         volatilities = np.zeros(n)
         residuals = np.zeros(n)
-        
+
         # Начальное значение
         variances[0] = initial_variance
         volatilities[0] = np.sqrt(initial_variance)
-        residuals[0] = returns_array[0] / volatilities[0] if volatilities[0] > 0 else 0
-        
-        # GARCH(1,1) рекурсия
+        residuals[0] = returns_array[0] / volatilities[0] if volatilities[0] > 0 else 0.0
+
+        # GARCH(1,1) рекурсия: σ²_t = ω + α*r²_{t-1} + β*σ²_{t-1}
         for t in range(1, n):
-            # Обновление дисперсии: σ²_t = ω + α*ε²_{t-1} + β*σ²_{t-1}
-            variances[t] = omega + alpha * (residuals[t-1] ** 2) + beta * variances[t-1]
+            variances[t] = omega + alpha * (returns_array[t-1] ** 2) + beta * variances[t-1]
+
+            # Enforce variance floor для численной стабильности
+            variances[t] = max(variances[t], variance_floor)
+
             volatilities[t] = np.sqrt(variances[t])
-            
-            # Вычисление остатков
-            if volatilities[t] > 0:
-                residuals[t] = returns_array[t] / volatilities[t]
-            else:
-                residuals[t] = 0
-        
-        # Долгосрочная волатильность
-        long_term_variance = omega / (1 - alpha - beta) if (1 - alpha - beta) > 0 else initial_variance
+
+            # Стандартизированные остатки: z_t = r_t / σ_t
+            residuals[t] = returns_array[t] / volatilities[t]
+
+        # Долгосрочная волатильность (гарантированно корректна т.к. is_stationary = True)
+        long_term_variance = omega / (1.0 - persistence)
         long_term_volatility = np.sqrt(long_term_variance)
         
         return {

@@ -21,6 +21,7 @@ class CCMVRequest(BaseModel):
     gamma: float = Field(..., gt=0, description="Коэффициент неприятия риска (γ > 0)")
     method: str = Field(default='delta', description="Метод оптимизации: 'delta' или 'alpha'")
     asset_names: Optional[List[str]] = Field(None, description="Названия активов")
+    risk_free_rate: float = Field(default=0.0, description="Безрисковая ставка (для Sharpe ratio)")
     
     class Config:
         schema_extra = {
@@ -97,7 +98,8 @@ async def optimize_ccmv_portfolio(request: CCMVRequest):
             bar_w=request.bar_w,
             gamma=request.gamma,
             method=request.method,
-            asset_names=request.asset_names
+            asset_names=request.asset_names,
+            risk_free_rate=request.risk_free_rate
         )
         
         return CCMVResponse(

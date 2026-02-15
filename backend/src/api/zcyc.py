@@ -7,6 +7,7 @@ Endpoints:
 - GET /zcyc/dates - Получить список доступных дат
 """
 
+import asyncio
 from fastapi import APIRouter, HTTPException, Query
 from pydantic import BaseModel, Field
 from typing import List, Optional, Dict, Any
@@ -98,7 +99,7 @@ async def get_zcyc(
                     detail="Неверный формат даты. Используйте YYYY-MM-DD"
                 )
         
-        result = fetch_zcyc_from_moex(date=date)
+        result = await asyncio.to_thread(fetch_zcyc_from_moex, date=date)
         
         if result['status'] == 'error':
             raise HTTPException(
@@ -142,7 +143,7 @@ async def interpolate_zcyc_rate(
         from src.services.zcyc_service import fetch_zcyc_from_moex, interpolate_zcyc_rate
         
         # Получаем кривую
-        zcyc_result = fetch_zcyc_from_moex(date=date)
+        zcyc_result = await asyncio.to_thread(fetch_zcyc_from_moex, date=date)
         
         if zcyc_result['status'] == 'error':
             raise HTTPException(
@@ -204,7 +205,7 @@ async def get_available_dates():
     try:
         from src.services.zcyc_service import get_available_zcyc_dates
         
-        dates = get_available_zcyc_dates()
+        dates = await asyncio.to_thread(get_available_zcyc_dates)
         return {
             "success": True,
             "dates": dates,
@@ -231,7 +232,7 @@ async def get_maxdates_endpoint(
     try:
         from src.services.zcyc_service import get_maxdates
         
-        df = get_maxdates(engine=engine)
+        df = await asyncio.to_thread(get_maxdates, engine=engine)
         return {
             "success": True,
             "data": df.to_dict(orient="records"),
@@ -269,7 +270,7 @@ async def get_yearyields_endpoint(
                     detail="Неверный формат даты. Используйте YYYY-MM-DD"
                 )
         
-        df = get_yearyields(date=date, engine=engine)
+        df = await asyncio.to_thread(get_yearyields, date=date, engine=engine)
         return {
             "success": True,
             "data": df.to_dict(orient="records"),
@@ -300,7 +301,7 @@ async def get_yearyields_dates_endpoint(
     try:
         from src.services.zcyc_service import get_yearyields_dates
         
-        df = get_yearyields_dates(date=date, engine=engine)
+        df = await asyncio.to_thread(get_yearyields_dates, date=date, engine=engine)
         return {
             "success": True,
             "data": df.to_dict(orient="records"),
@@ -327,7 +328,7 @@ async def get_latest_curve_endpoint(
     try:
         from src.services.zcyc_service import get_latest_curve
         
-        df = get_latest_curve(engine=engine)
+        df = await asyncio.to_thread(get_latest_curve, engine=engine)
         return {
             "success": True,
             "data": df.to_dict(orient="records"),

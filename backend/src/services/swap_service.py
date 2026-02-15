@@ -104,8 +104,17 @@ def calculate_swap_valuation(
     # DV01 (Dollar Value of 01) - изменение стоимости при изменении ставки на 1bp
     dv01 = duration * pv_fixed * 0.0001
     
-    # Spread DV01
-    spread_dv01 = dv01 * 0.7  # Упрощенная оценка
+    # Spread DV01: чувствительность плавающей ноги к изменению спреда на 1bp
+    # Пересчитываем PV плавающей ноги при спреде + 1bp
+    spread_bump = 0.01  # 1 basis point в процентных пунктах
+    floating_rate_bumped = (floating_rate + (spread + spread_bump) / 100) / 100.0
+    floating_coupon_bumped = notional * floating_rate_bumped / coupons_per_year
+    pv_floating_bumped = 0.0
+    for i in range(1, periods + 1):
+        discount_factor = 1.0 / (1.0 + period_rate) ** i
+        pv_floating_bumped += floating_coupon_bumped * discount_factor
+    pv_floating_bumped += notional * final_discount
+    spread_dv01 = abs(pv_floating_bumped - pv_floating)
     
     # Convexity
     convexity = 0.0
@@ -117,7 +126,7 @@ def calculate_swap_valuation(
     
     # Анализ сценариев
     scenarios = []
-    rate_shifts = [-2.0, -1.0, 0.0, 1.0, 2.0]  # в процентах
+    rate_shifts = [-2.0, -1.0, 0.0, 1.0, 2.0]  # в процентных пунктах (п.п.)
     
     for shift in rate_shifts:
         shifted_fixed = fixed_rate + shift
@@ -146,7 +155,7 @@ def calculate_swap_valuation(
         pnl = scenario_swap_value - base_swap_value
         
         scenarios.append({
-            "name": f"{'+' if shift >= 0 else ''}{shift:.0f}bp" if shift != 0 else "Base Case",
+            "name": f"{'+' if shift >= 0 else ''}{shift:.0f}%" if shift != 0 else "Base Case",
             "fixedRate": float(shifted_fixed),
             "floatingRate": float(shifted_floating),
             "pvFixed": float(scenario_pv_fixed),

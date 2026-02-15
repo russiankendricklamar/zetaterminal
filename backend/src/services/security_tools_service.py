@@ -7,9 +7,9 @@ Network security and IP intelligence utilities.
 
 import os
 from typing import Dict, Any
-import aiohttp
 
 from src.services.cache_service import cache_get, cache_set, make_cache_key
+from src.utils.http_client import get_session
 
 VIRUSTOTAL_KEY = os.getenv("VIRUSTOTAL_API_KEY", "")
 ABUSEIPDB_KEY = os.getenv("ABUSEIPDB_API_KEY", "")
@@ -30,10 +30,10 @@ async def ipinfo_lookup(ip: str) -> Dict[str, Any]:
 
     url = f"https://ipinfo.io/{ip}"
     params = {"token": IPINFO_TOKEN} if IPINFO_TOKEN else {}
-    async with aiohttp.ClientSession() as session:
-        async with session.get(url, params=params) as resp:
-            resp.raise_for_status()
-            data = await resp.json(content_type=None)
+    session = await get_session()
+    async with session.get(url, params=params) as resp:
+        resp.raise_for_status()
+        data = await resp.json(content_type=None)
 
     data["provider"] = "ipinfo"
     cache_set(key, data, ttl_seconds=3600)
@@ -50,10 +50,10 @@ async def ip2location_lookup(ip: str) -> Dict[str, Any]:
         return cached
 
     params = {"key": IP2LOCATION_KEY, "ip": ip, "format": "json"}
-    async with aiohttp.ClientSession() as session:
-        async with session.get("https://api.ip2location.io/", params=params) as resp:
-            resp.raise_for_status()
-            data = await resp.json(content_type=None)
+    session = await get_session()
+    async with session.get("https://api.ip2location.io/", params=params) as resp:
+        resp.raise_for_status()
+        data = await resp.json(content_type=None)
 
     data["provider"] = "ip2location"
     cache_set(key, data, ttl_seconds=3600)
@@ -70,13 +70,13 @@ async def bigdatacloud_lookup(ip: str) -> Dict[str, Any]:
         return cached
 
     params = {"ip": ip, "localityLanguage": "en"}
-    async with aiohttp.ClientSession() as session:
-        async with session.get(
-            "https://api.bigdatacloud.net/data/ip-geolocation-full",
-            params=params
-        ) as resp:
-            resp.raise_for_status()
-            data = await resp.json(content_type=None)
+    session = await get_session()
+    async with session.get(
+        "https://api.bigdatacloud.net/data/ip-geolocation-full",
+        params=params
+    ) as resp:
+        resp.raise_for_status()
+        data = await resp.json(content_type=None)
 
     data["provider"] = "bigdatacloud"
     cache_set(key, data, ttl_seconds=3600)
@@ -89,14 +89,14 @@ async def virustotal_scan_url(url_to_scan: str) -> Dict[str, Any]:
     """Submit a URL for scanning to VirusTotal."""
     import base64
     headers = {"x-apikey": VIRUSTOTAL_KEY}
-    async with aiohttp.ClientSession() as session:
-        async with session.post(
-            "https://www.virustotal.com/api/v3/urls",
-            headers=headers,
-            data={"url": url_to_scan}
-        ) as resp:
-            resp.raise_for_status()
-            data = await resp.json(content_type=None)
+    session = await get_session()
+    async with session.post(
+        "https://www.virustotal.com/api/v3/urls",
+        headers=headers,
+        data={"url": url_to_scan}
+    ) as resp:
+        resp.raise_for_status()
+        data = await resp.json(content_type=None)
 
     return {
         "analysis_id": data.get("data", {}).get("id", ""),
@@ -114,13 +114,13 @@ async def virustotal_analysis(analysis_id: str) -> Dict[str, Any]:
         return cached
 
     headers = {"x-apikey": VIRUSTOTAL_KEY}
-    async with aiohttp.ClientSession() as session:
-        async with session.get(
-            f"https://www.virustotal.com/api/v3/analyses/{analysis_id}",
-            headers=headers
-        ) as resp:
-            resp.raise_for_status()
-            data = await resp.json(content_type=None)
+    session = await get_session()
+    async with session.get(
+        f"https://www.virustotal.com/api/v3/analyses/{analysis_id}",
+        headers=headers
+    ) as resp:
+        resp.raise_for_status()
+        data = await resp.json(content_type=None)
 
     attrs = data.get("data", {}).get("attributes", {})
     stats = attrs.get("stats", {})
@@ -152,14 +152,14 @@ async def abuseipdb_check(ip: str) -> Dict[str, Any]:
 
     headers = {"Key": ABUSEIPDB_KEY, "Accept": "application/json"}
     params = {"ipAddress": ip, "maxAgeInDays": "90", "verbose": ""}
-    async with aiohttp.ClientSession() as session:
-        async with session.get(
-            "https://api.abuseipdb.com/api/v2/check",
-            headers=headers,
-            params=params
-        ) as resp:
-            resp.raise_for_status()
-            data = await resp.json(content_type=None)
+    session = await get_session()
+    async with session.get(
+        "https://api.abuseipdb.com/api/v2/check",
+        headers=headers,
+        params=params
+    ) as resp:
+        resp.raise_for_status()
+        data = await resp.json(content_type=None)
 
     d = data.get("data", {})
     result = {
@@ -184,14 +184,14 @@ async def urlscan_submit(url_to_scan: str) -> Dict[str, Any]:
     """Submit a URL for scanning to URLScan.io."""
     headers = {"API-Key": URLSCAN_KEY, "Content-Type": "application/json"}
     body = {"url": url_to_scan, "visibility": "public"}
-    async with aiohttp.ClientSession() as session:
-        async with session.post(
-            "https://urlscan.io/api/v1/scan/",
-            headers=headers,
-            json=body
-        ) as resp:
-            resp.raise_for_status()
-            data = await resp.json(content_type=None)
+    session = await get_session()
+    async with session.post(
+        "https://urlscan.io/api/v1/scan/",
+        headers=headers,
+        json=body
+    ) as resp:
+        resp.raise_for_status()
+        data = await resp.json(content_type=None)
 
     return {
         "uuid": data.get("uuid", ""),
@@ -210,12 +210,12 @@ async def urlscan_result(uuid: str) -> Dict[str, Any]:
     if cached is not None:
         return cached
 
-    async with aiohttp.ClientSession() as session:
-        async with session.get(f"https://urlscan.io/api/v1/result/{uuid}/") as resp:
-            if resp.status == 404:
-                return {"status": "pending", "uuid": uuid, "provider": "urlscan"}
-            resp.raise_for_status()
-            data = await resp.json(content_type=None)
+    session = await get_session()
+    async with session.get(f"https://urlscan.io/api/v1/result/{uuid}/") as resp:
+        if resp.status == 404:
+            return {"status": "pending", "uuid": uuid, "provider": "urlscan"}
+        resp.raise_for_status()
+        data = await resp.json(content_type=None)
 
     page = data.get("page", {})
     verdicts = data.get("verdicts", {}).get("overall", {})
@@ -252,10 +252,10 @@ async def ip2whois_lookup(domain: str) -> Dict[str, Any]:
         return cached
 
     params = {"key": IP2WHOIS_KEY, "domain": domain}
-    async with aiohttp.ClientSession() as session:
-        async with session.get("https://api.ip2whois.com/v2", params=params) as resp:
-            resp.raise_for_status()
-            data = await resp.json(content_type=None)
+    session = await get_session()
+    async with session.get("https://api.ip2whois.com/v2", params=params) as resp:
+        resp.raise_for_status()
+        data = await resp.json(content_type=None)
 
     data["provider"] = "ip2whois"
     cache_set(key, data, ttl_seconds=86400)

@@ -251,7 +251,8 @@ def run_backtest(
         horizon_years=horizon_years,
         n_paths=n_paths,
         n_steps=n_steps,
-        random_seed=seed
+        random_seed=seed,
+        risk_free_rate=risk_free_rate
     )
     
     # Используем медианную траекторию как equity curve

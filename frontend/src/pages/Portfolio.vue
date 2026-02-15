@@ -710,6 +710,32 @@ import CorrelationScatter3D from '../components/common/CorrelationScatter3D.vue'
 import { usePortfolioStore, defaultBank } from '../stores/portfolio'
 import { calculatePortfolioMetrics, type PortfolioMetricsResponse } from '../services/portfolioService'
 
+// Timer cleanup tracking
+const activeTimerIds: Set<ReturnType<typeof setTimeout>> = new Set()
+const activeIntervalIds: Set<ReturnType<typeof setInterval>> = new Set()
+
+const trackTimeout = (fn: () => void, delay: number): ReturnType<typeof setTimeout> => {
+  const id = setTimeout(() => {
+    activeTimerIds.delete(id)
+    fn()
+  }, delay)
+  activeTimerIds.add(id)
+  return id
+}
+
+const trackInterval = (fn: () => void, delay: number): ReturnType<typeof setInterval> => {
+  const id = setInterval(fn, delay)
+  activeIntervalIds.add(id)
+  return id
+}
+
+const clearAllTimers = () => {
+  activeTimerIds.forEach(id => clearTimeout(id))
+  activeTimerIds.clear()
+  activeIntervalIds.forEach(id => clearInterval(id))
+  activeIntervalIds.clear()
+}
+
 // Динамический импорт Plotly
 let Plotly: any = null
 const loadPlotly = async () => {
@@ -729,18 +755,20 @@ const loadPlotly = async () => {
   const existingScript = document.querySelector('script[src*="plotly"]')
   if (existingScript) {
     return new Promise((resolve) => {
-      const checkInterval = setInterval(() => {
+      const checkInterval = trackInterval(() => {
         if ((window as any).Plotly) {
           clearInterval(checkInterval)
+          activeIntervalIds.delete(checkInterval)
           Plotly = (window as any).Plotly
           console.log('Plotly loaded from existing script')
           resolve(Plotly)
         }
       }, 100)
-      
+
       // Таймаут на случай, если скрипт не загрузится
-      setTimeout(() => {
+      trackTimeout(() => {
         clearInterval(checkInterval)
+        activeIntervalIds.delete(checkInterval)
         console.error('Plotly script timeout')
         resolve(null)
       }, 10000)
@@ -1525,7 +1553,7 @@ const initCorrelation3DHeatmap = async () => {
 // Обновляем график при изменении портфеля (только при смене банка)
 watch([positions, selectedBank], () => {
   if (positions.length > 0) {
-    setTimeout(() => {
+    trackTimeout(() => {
       initCorrelation3DHeatmap()
     }, 200)
   }
@@ -1713,8 +1741,8 @@ const initLatentVol3D = async () => {
 // Sync heights of metrics panels
 const syncPanelHeights = () => {
   if (typeof window === 'undefined') return
-  
-  setTimeout(() => {
+
+  trackTimeout(() => {
     // Больше не синхронизируем heatmap-panel, чтобы она не растягивалась под правую колонку
     const metricsPanel = document.querySelector('.metrics-panel') as HTMLElement
     // Можно добавить синхронизацию других панелей здесь, если нужно
@@ -1735,7 +1763,7 @@ onMounted(async () => {
   syncPanelHeights()
   
   // Инициализируем 3D тепловую карту корреляций
-  setTimeout(async () => {
+  trackTimeout(async () => {
     try {
       await initCorrelation3DHeatmap()
       console.log('3D Correlation Heatmap initialized')
@@ -1785,7 +1813,7 @@ const recalcPortfolio = async () => {
     latentVolAlert.value.isActive = true
     latentVolAlert.value.severity = 'critical'
   }
-  await new Promise(resolve => setTimeout(resolve, 1500))
+  await new Promise(resolve => trackTimeout(resolve, 1500))
   lastUpdate.value = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})
   isRecalcing.value = false
   showToast('Портфель пересчитан (Latent Vol обновлен)', 'success')
@@ -1793,7 +1821,7 @@ const recalcPortfolio = async () => {
 
 const exportPdf = () => {
   showToast('PDF экспорт инициирован...', 'info')
-  setTimeout(() => {
+  trackTimeout(() => {
     showToast('Файл portfolio_2026-01-06.pdf загружен', 'success')
   }, 1200)
 }
@@ -1810,7 +1838,7 @@ const openAnalysis = () => {
 
 const showToast = (message: string, type: 'success' | 'error' | 'info' = 'success') => {
   toast.value = { show: true, message, type }
-  setTimeout(() => {
+  trackTimeout(() => {
     toast.value.show = false
   }, 3000)
 }

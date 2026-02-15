@@ -311,7 +311,8 @@ def solve_intracluster_miqp(mu_cluster: np.ndarray, Sigma_cluster: np.ndarray,
 
 
 def delta_ccmv(R: np.ndarray, mu: np.ndarray, Sigma: np.ndarray, Delta: int,
-               bar_w: float, gamma: float, asset_names: Optional[List[str]] = None) -> Dict:
+               bar_w: float, gamma: float, asset_names: Optional[List[str]] = None,
+               risk_free_rate: float = 0.0) -> Dict:
     """
     Решает CCMV задачу с предварительным назначением количества активов в каждом кластере.
     
@@ -337,18 +338,23 @@ def delta_ccmv(R: np.ndarray, mu: np.ndarray, Sigma: np.ndarray, Delta: int,
     Dict
         Результаты оптимизации с весами, кластерами и статистикой
     """
+    # Валидация: обеспечиваем положительную полуопределенность ковариационной матрицы
+    eigenvalues = np.linalg.eigvalsh(Sigma)
+    if np.any(eigenvalues < -1e-10):
+        Sigma = Sigma + (abs(np.min(eigenvalues)) + 1e-8) * np.eye(len(Sigma))
+
     # Шаг 1: Получаем кластеры из R
     labels = hierarchical_clustering(R)
-    
+
     # Преобразуем метки в список кластеров
     num_clusters = len(np.unique(labels))
     clusters = [[] for _ in range(num_clusters)]
     for asset_idx, cluster_id in enumerate(labels):
         clusters[cluster_id].append(asset_idx)
-    
+
     # Фильтруем пустые кластеры
     clusters = [c for c in clusters if len(c) > 0]
-    
+
     # Шаг 2: Предварительное распределение Delta
     Delta_k = allocate_cardinality(clusters, mu, Sigma, Delta, gamma)
     
@@ -381,11 +387,11 @@ def delta_ccmv(R: np.ndarray, mu: np.ndarray, Sigma: np.ndarray, Delta: int,
     portfolio_return = np.dot(w, mu)
     portfolio_variance = np.dot(w, np.dot(Sigma, w))
     portfolio_volatility = np.sqrt(portfolio_variance)
-    sharpe_ratio = portfolio_return / portfolio_volatility if portfolio_volatility > 1e-10 else 0.0
-    
+    sharpe_ratio = (portfolio_return - risk_free_rate) / portfolio_volatility if portfolio_volatility > 1e-10 else 0.0
+
     # Объективная функция
     objective_value = portfolio_variance - gamma * portfolio_return
-    
+
     return {
         'optimal_weights': w.tolist(),
         'clusters': cluster_info,
@@ -404,7 +410,8 @@ def delta_ccmv(R: np.ndarray, mu: np.ndarray, Sigma: np.ndarray, Delta: int,
 
 def alpha_ccmv(R: np.ndarray, mu: np.ndarray, Sigma: np.ndarray, Delta: int,
                bar_w: float, gamma: float, asset_names: Optional[List[str]] = None,
-               alpha_k: Optional[List[float]] = None) -> Dict:
+               alpha_k: Optional[List[float]] = None,
+               risk_free_rate: float = 0.0) -> Dict:
     """
     Решает CCMV задачу с предварительным назначением распределения весов по кластерам.
     
@@ -432,9 +439,14 @@ def alpha_ccmv(R: np.ndarray, mu: np.ndarray, Sigma: np.ndarray, Delta: int,
     Dict
         Результаты оптимизации с весами, кластерами и статистикой
     """
+    # Валидация: обеспечиваем положительную полуопределенность ковариационной матрицы
+    eigenvalues = np.linalg.eigvalsh(Sigma)
+    if np.any(eigenvalues < -1e-10):
+        Sigma = Sigma + (abs(np.min(eigenvalues)) + 1e-8) * np.eye(len(Sigma))
+
     # Шаг 1: Получаем кластеры из R
     clusters = hierarchical_clustering_to_clusters(R)
-    
+
     # Шаг 2: Распределяем Delta по кластерам (пропорционально alpha_k)
     if alpha_k is None:
         alpha_k = [1.0 / len(clusters) for _ in clusters]
@@ -478,11 +490,11 @@ def alpha_ccmv(R: np.ndarray, mu: np.ndarray, Sigma: np.ndarray, Delta: int,
     portfolio_return = np.dot(w, mu)
     portfolio_variance = np.dot(w, np.dot(Sigma, w))
     portfolio_volatility = np.sqrt(portfolio_variance)
-    sharpe_ratio = portfolio_return / portfolio_volatility if portfolio_volatility > 1e-10 else 0.0
-    
+    sharpe_ratio = (portfolio_return - risk_free_rate) / portfolio_volatility if portfolio_volatility > 1e-10 else 0.0
+
     # Объективная функция
     objective_value = portfolio_variance - gamma * portfolio_return
-    
+
     return {
         'optimal_weights': w.tolist(),
         'clusters': cluster_info,
@@ -501,7 +513,8 @@ def alpha_ccmv(R: np.ndarray, mu: np.ndarray, Sigma: np.ndarray, Delta: int,
 
 def optimize_ccmv(R: np.ndarray, mu: np.ndarray, Sigma: np.ndarray, Delta: int,
                   bar_w: float, gamma: float, method: str = 'delta',
-                  asset_names: Optional[List[str]] = None) -> Dict:
+                  asset_names: Optional[List[str]] = None,
+                  risk_free_rate: float = 0.0) -> Dict:
     """
     Полная CCMV оптимизация с выбором метода.
     
@@ -530,8 +543,8 @@ def optimize_ccmv(R: np.ndarray, mu: np.ndarray, Sigma: np.ndarray, Delta: int,
         Результаты оптимизации
     """
     if method == 'delta':
-        return delta_ccmv(R, mu, Sigma, Delta, bar_w, gamma, asset_names)
+        return delta_ccmv(R, mu, Sigma, Delta, bar_w, gamma, asset_names, risk_free_rate=risk_free_rate)
     elif method == 'alpha':
-        return alpha_ccmv(R, mu, Sigma, Delta, bar_w, gamma, asset_names)
+        return alpha_ccmv(R, mu, Sigma, Delta, bar_w, gamma, asset_names, risk_free_rate=risk_free_rate)
     else:
         raise ValueError(f"Unknown method: {method}. Must be 'delta' or 'alpha'")

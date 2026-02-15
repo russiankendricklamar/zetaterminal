@@ -6,7 +6,7 @@ Proxies real-time and historical market data from three providers.
 
 import os
 from typing import Optional, Dict, Any, List
-import aiohttp
+from src.utils.http_client import get_session
 
 from src.services.cache_service import cache_get, cache_set, make_cache_key
 
@@ -34,10 +34,10 @@ async def alpha_vantage_quote(symbol: str) -> Dict[str, Any]:
         "symbol": symbol,
         "apikey": ALPHA_VANTAGE_KEY,
     }
-    async with aiohttp.ClientSession() as session:
-        async with session.get(ALPHA_VANTAGE_BASE, params=params) as resp:
-            resp.raise_for_status()
-            data = await resp.json(content_type=None)
+    session = await get_session()
+    async with session.get(ALPHA_VANTAGE_BASE, params=params) as resp:
+        resp.raise_for_status()
+        data = await resp.json(content_type=None)
 
     quote_raw = data.get("Global Quote", {})
     result = {
@@ -87,10 +87,10 @@ async def alpha_vantage_time_series(
         "outputsize": outputsize,
         "apikey": ALPHA_VANTAGE_KEY,
     }
-    async with aiohttp.ClientSession() as session:
-        async with session.get(ALPHA_VANTAGE_BASE, params=params) as resp:
-            resp.raise_for_status()
-            data = await resp.json(content_type=None)
+    session = await get_session()
+    async with session.get(ALPHA_VANTAGE_BASE, params=params) as resp:
+        resp.raise_for_status()
+        data = await resp.json(content_type=None)
 
     raw_series = data.get(ts_key, {})
     series = []
@@ -122,10 +122,10 @@ async def alpha_vantage_forex(from_currency: str, to_currency: str) -> Dict[str,
         "to_currency": to_currency,
         "apikey": ALPHA_VANTAGE_KEY,
     }
-    async with aiohttp.ClientSession() as session:
-        async with session.get(ALPHA_VANTAGE_BASE, params=params) as resp:
-            resp.raise_for_status()
-            data = await resp.json(content_type=None)
+    session = await get_session()
+    async with session.get(ALPHA_VANTAGE_BASE, params=params) as resp:
+        resp.raise_for_status()
+        data = await resp.json(content_type=None)
 
     raw = data.get("Realtime Currency Exchange Rate", {})
     result = {
@@ -160,10 +160,10 @@ async def alpha_vantage_technicals(
         "series_type": series_type,
         "apikey": ALPHA_VANTAGE_KEY,
     }
-    async with aiohttp.ClientSession() as session:
-        async with session.get(ALPHA_VANTAGE_BASE, params=params) as resp:
-            resp.raise_for_status()
-            data = await resp.json(content_type=None)
+    session = await get_session()
+    async with session.get(ALPHA_VANTAGE_BASE, params=params) as resp:
+        resp.raise_for_status()
+        data = await resp.json(content_type=None)
 
     # Find the technical analysis key in the response
     ta_key = None
@@ -202,10 +202,10 @@ async def twelve_data_quote(symbol: str) -> Dict[str, Any]:
         return cached
 
     params = {"symbol": symbol, "apikey": TWELVE_DATA_KEY}
-    async with aiohttp.ClientSession() as session:
-        async with session.get(f"{TWELVE_DATA_BASE}/quote", params=params) as resp:
-            resp.raise_for_status()
-            data = await resp.json(content_type=None)
+    session = await get_session()
+    async with session.get(f"{TWELVE_DATA_BASE}/quote", params=params) as resp:
+        resp.raise_for_status()
+        data = await resp.json(content_type=None)
 
     result = {
         "symbol": data.get("symbol", symbol),
@@ -243,10 +243,10 @@ async def twelve_data_time_series(
         "outputsize": outputsize,
         "apikey": TWELVE_DATA_KEY,
     }
-    async with aiohttp.ClientSession() as session:
-        async with session.get(f"{TWELVE_DATA_BASE}/time_series", params=params) as resp:
-            resp.raise_for_status()
-            data = await resp.json(content_type=None)
+    session = await get_session()
+    async with session.get(f"{TWELVE_DATA_BASE}/time_series", params=params) as resp:
+        resp.raise_for_status()
+        data = await resp.json(content_type=None)
 
     values = data.get("values", [])
     series = []
@@ -273,10 +273,10 @@ async def twelve_data_forex_pairs() -> List[Dict[str, str]]:
         return cached
 
     params = {"apikey": TWELVE_DATA_KEY}
-    async with aiohttp.ClientSession() as session:
-        async with session.get(f"{TWELVE_DATA_BASE}/forex_pairs", params=params) as resp:
-            resp.raise_for_status()
-            data = await resp.json(content_type=None)
+    session = await get_session()
+    async with session.get(f"{TWELVE_DATA_BASE}/forex_pairs", params=params) as resp:
+        resp.raise_for_status()
+        data = await resp.json(content_type=None)
 
     result = data.get("data", [])
     cache_set(key, result, ttl_seconds=86400)
@@ -293,13 +293,13 @@ async def polygon_ticker_details(ticker: str) -> Dict[str, Any]:
         return cached
 
     headers = {"Authorization": f"Bearer {POLYGON_KEY}"}
-    async with aiohttp.ClientSession() as session:
-        async with session.get(
-            f"{POLYGON_BASE}/v3/reference/tickers/{ticker}",
-            headers=headers
-        ) as resp:
-            resp.raise_for_status()
-            data = await resp.json(content_type=None)
+    session = await get_session()
+    async with session.get(
+        f"{POLYGON_BASE}/v3/reference/tickers/{ticker}",
+        headers=headers
+    ) as resp:
+        resp.raise_for_status()
+        data = await resp.json(content_type=None)
 
     result = data.get("results", {})
     result["provider"] = "polygon"
@@ -322,10 +322,10 @@ async def polygon_aggregates(
 
     headers = {"Authorization": f"Bearer {POLYGON_KEY}"}
     url = f"{POLYGON_BASE}/v2/aggs/ticker/{ticker}/range/{multiplier}/{timespan}/{from_date}/{to_date}"
-    async with aiohttp.ClientSession() as session:
-        async with session.get(url, headers=headers) as resp:
-            resp.raise_for_status()
-            data = await resp.json(content_type=None)
+    session = await get_session()
+    async with session.get(url, headers=headers) as resp:
+        resp.raise_for_status()
+        data = await resp.json(content_type=None)
 
     results_raw = data.get("results", [])
     series = []
@@ -376,14 +376,14 @@ async def polygon_options_chain(
     if contract_type:
         params["contract_type"] = contract_type
 
-    async with aiohttp.ClientSession() as session:
-        async with session.get(
-            f"{POLYGON_BASE}/v3/reference/options/contracts",
-            headers=headers,
-            params=params
-        ) as resp:
-            resp.raise_for_status()
-            data = await resp.json(content_type=None)
+    session = await get_session()
+    async with session.get(
+        f"{POLYGON_BASE}/v3/reference/options/contracts",
+        headers=headers,
+        params=params
+    ) as resp:
+        resp.raise_for_status()
+        data = await resp.json(content_type=None)
 
     result = {
         "ticker": ticker,
@@ -409,14 +409,14 @@ async def polygon_news(
     if ticker:
         params["ticker"] = ticker
 
-    async with aiohttp.ClientSession() as session:
-        async with session.get(
-            f"{POLYGON_BASE}/v2/reference/news",
-            headers=headers,
-            params=params
-        ) as resp:
-            resp.raise_for_status()
-            data = await resp.json(content_type=None)
+    session = await get_session()
+    async with session.get(
+        f"{POLYGON_BASE}/v2/reference/news",
+        headers=headers,
+        params=params
+    ) as resp:
+        resp.raise_for_status()
+        data = await resp.json(content_type=None)
 
     result = data.get("results", [])
     cache_set(key, result, ttl_seconds=120)

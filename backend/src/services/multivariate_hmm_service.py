@@ -282,7 +282,11 @@ class MultivariateHMMRegimeAnalyzer:
             alpha[0, i] = self.pi[i] * pdf_val[0]
         
         # Нормализация для численной стабильности
-        alpha[0] = alpha[0] / (np.sum(alpha[0]) + 1e-10)
+        alpha_sum = np.sum(alpha[0])
+        if alpha_sum > 0:
+            alpha[0] = alpha[0] / alpha_sum
+        else:
+            alpha[0] = np.ones(M) / M
         
         # t=2..T
         for t in range(1, T):
@@ -295,7 +299,11 @@ class MultivariateHMMRegimeAnalyzer:
                 alpha[t, i] = prob * sum_term
             
             # Нормализация
-            alpha[t] = alpha[t] / (np.sum(alpha[t]) + 1e-10)
+            alpha_sum = np.sum(alpha[t])
+            if alpha_sum > 0:
+                alpha[t] = alpha[t] / alpha_sum
+            else:
+                alpha[t] = np.ones(M) / M
         
         # Backward pass
         beta = np.ones((T, M))
@@ -309,7 +317,11 @@ class MultivariateHMMRegimeAnalyzer:
                 beta[t, i] = sum_term
             
             # Нормализация
-            beta[t] = beta[t] / (np.sum(beta[t]) + 1e-10)
+            beta_sum = np.sum(beta[t])
+            if beta_sum > 0:
+                beta[t] = beta[t] / beta_sum
+            else:
+                beta[t] = np.ones(M) / M
         
         return alpha, beta
     
@@ -404,7 +416,8 @@ class MultivariateHMMRegimeAnalyzer:
         
         # Новое начальное распределение
         pi_new = gamma[0, :].copy()
-        pi_new = pi_new / (np.sum(pi_new) + 1e-10)
+        pi_sum = np.sum(pi_new)
+        pi_new = pi_new / pi_sum if pi_sum > 0 else np.ones(M) / M
         
         # Новая матрица переходов
         P_new = np.zeros((M, M))
@@ -420,7 +433,7 @@ class MultivariateHMMRegimeAnalyzer:
         
         # Нормализация строк матрицы переходов
         row_sums = np.sum(P_new, axis=1, keepdims=True)
-        row_sums = np.where(row_sums < 1e-10, 1.0, row_sums)
+        row_sums = np.where(row_sums > 0, row_sums, 1.0)
         P_new = P_new / row_sums
         
         # Новые средние
@@ -475,7 +488,7 @@ class MultivariateHMMRegimeAnalyzer:
             likelihood_t = np.sum(alpha[t, :])
             if likelihood_t <= 0:
                 return -np.inf
-            log_likelihood += np.log(likelihood_t + 1e-10)
+            log_likelihood += np.log(max(likelihood_t, 1e-300))
         
         return log_likelihood
     
@@ -526,7 +539,7 @@ class MultivariateHMMRegimeAnalyzer:
             
             # Ожидаемая длительность (в днях)
             if persistence < 1.0:
-                duration_days = -1.0 / np.log(persistence + 1e-10)
+                duration_days = -1.0 / np.log(max(persistence, 1e-300))
             else:
                 duration_days = np.inf
             
@@ -590,7 +603,7 @@ class MultivariateHMMRegimeAnalyzer:
         
         # Энтропия (мера неопределенности)
         probs_positive = regime_probs[regime_probs > 1e-10]
-        entropy = -np.sum(probs_positive * np.log(probs_positive + 1e-10))
+        entropy = -np.sum(probs_positive * np.log(probs_positive))
         
         return {
             'time_index': t,

@@ -11,6 +11,8 @@ from datetime import datetime
 import aiohttp
 import pandas as pd
 
+from src.utils.http_client import get_session
+
 
 class RuDataService:
     """
@@ -84,21 +86,21 @@ class RuDataService:
 
     async def test_connection(self) -> Dict[str, Any]:
         """Проверить подключение к RuData API."""
-        async with aiohttp.ClientSession() as session:
-            token = await self._get_token(session)
+        session = await get_session()
+        token = await self._get_token(session)
 
-            if token:
-                return {
-                    'success': True,
-                    'message': 'Успешное подключение к RuData API',
-                    'login': self._login
-                }
-            else:
-                return {
-                    'success': False,
-                    'message': 'Ошибка авторизации. Проверьте логин и пароль.',
-                    'login': self._login
-                }
+        if token:
+            return {
+                'success': True,
+                'message': 'Успешное подключение к RuData API',
+                'login': self._login
+            }
+        else:
+            return {
+                'success': False,
+                'message': 'Ошибка авторизации. Проверьте логин и пароль.',
+                'login': self._login
+            }
 
     async def extract_data(
         self,
@@ -131,72 +133,72 @@ class RuDataService:
         if path_method.startswith('v2/'):
             path_method = path_method[3:]
 
-        async with aiohttp.ClientSession() as session:
-            token = await self._get_token(session)
-            if not token:
-                return {
-                    'success': False,
-                    'data': [],
-                    'count': 0,
-                    'error': 'Ошибка авторизации'
-                }
+        session = await get_session()
+        token = await self._get_token(session)
+        if not token:
+            return {
+                'success': False,
+                'data': [],
+                'count': 0,
+                'error': 'Ошибка авторизации'
+            }
 
-            results: List[dict] = []
+        results: List[dict] = []
 
-            try:
-                if search_array is None:
-                    # Простая выгрузка без массива поиска
-                    results = await self._extract_simple(
-                        session, token, path_method, body_json, post
-                    )
-                else:
-                    # Выгрузка с массивом поиска
-                    if search_param == 'filter' and search_field is None:
-                        return {
-                            'success': False,
-                            'data': [],
-                            'count': 0,
-                            'error': "search_field обязателен при search_param='filter'"
-                        }
-
-                    results = await self._extract_with_array(
-                        session, token, path_method, body_json, post,
-                        search_array, search_param, search_field
-                    )
-
-                if not results:
+        try:
+            if search_array is None:
+                # Простая выгрузка без массива поиска
+                results = await self._extract_simple(
+                    session, token, path_method, body_json, post
+                )
+            else:
+                # Выгрузка с массивом поиска
+                if search_param == 'filter' and search_field is None:
                     return {
-                        'success': True,
+                        'success': False,
                         'data': [],
                         'count': 0,
-                        'message': 'Данные не найдены'
+                        'error': "search_field обязателен при search_param='filter'"
                     }
 
-                # Преобразуем в DataFrame для обработки
-                df = pd.DataFrame(results)
+                results = await self._extract_with_array(
+                    session, token, path_method, body_json, post,
+                    search_array, search_param, search_field
+                )
 
-                if not keep_duplicates:
-                    try:
-                        df = df.drop_duplicates()
-                    except TypeError:
-                        pass  # Некоторые типы не поддерживают drop_duplicates
-
-                df = df.replace([r'\r', r'\n'], [' ', ' '], regex=True)
-
+            if not results:
                 return {
                     'success': True,
-                    'data': df.to_dict(orient='records'),
-                    'count': len(df),
-                    'columns': df.columns.tolist()
-                }
-
-            except Exception as e:
-                return {
-                    'success': False,
                     'data': [],
                     'count': 0,
-                    'error': str(e)
+                    'message': 'Данные не найдены'
                 }
+
+            # Преобразуем в DataFrame для обработки
+            df = pd.DataFrame(results)
+
+            if not keep_duplicates:
+                try:
+                    df = df.drop_duplicates()
+                except TypeError:
+                    pass  # Некоторые типы не поддерживают drop_duplicates
+
+            df = df.replace([r'\r', r'\n'], [' ', ' '], regex=True)
+
+            return {
+                'success': True,
+                'data': df.to_dict(orient='records'),
+                'count': len(df),
+                'columns': df.columns.tolist()
+            }
+
+        except Exception as e:
+            return {
+                'success': False,
+                'data': [],
+                'count': 0,
+                'error': str(e)
+            }
 
     async def _extract_simple(
         self,

@@ -84,16 +84,18 @@ def get_stock_history(ticker: str, period: str = "1mo", interval: str = "1d") ->
         if hist.empty:
             return []
         
+        hist_reset = hist.reset_index()
         result = []
-        for date, row in hist.iterrows():
+        for row in hist_reset.itertuples(index=False):
+            date_val = row.Date if hasattr(row, 'Date') else row[0]
             result.append({
-                "date": date.strftime("%Y-%m-%d"),
-                "open": float(row['Open']),
-                "high": float(row['High']),
-                "low": float(row['Low']),
-                "close": float(row['Close']),
-                "volume": int(row['Volume']),
-                "adjClose": float(row['Close']) if 'Adj Close' not in row else float(row['Adj Close'])
+                "date": date_val.strftime("%Y-%m-%d"),
+                "open": float(row.Open),
+                "high": float(row.High),
+                "low": float(row.Low),
+                "close": float(row.Close),
+                "volume": int(row.Volume),
+                "adjClose": float(row.Close)
             })
         
         return result

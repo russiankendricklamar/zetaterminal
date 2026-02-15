@@ -15,11 +15,12 @@ class PortfolioService:
         positions: List[Dict[str, Any]],
         risk_free_rate: float = 0.042,
         market_return: float = 0.10,
-        market_volatility: float = 0.15
+        market_volatility: float = 0.15,
+        market_correlation: float = 0.7
     ) -> Dict[str, Any]:
         """
         Вычисляет все метрики портфеля на основе позиций.
-        
+
         Args:
             positions: Список позиций портфеля с полями:
                 - symbol: символ актива
@@ -31,7 +32,8 @@ class PortfolioService:
             risk_free_rate: Безрисковая ставка (по умолчанию 4.2%)
             market_return: Ожидаемая доходность рынка (по умолчанию 10%)
             market_volatility: Волатильность рынка (по умолчанию 15%)
-            
+            market_correlation: Корреляция портфеля с рынком (по умолчанию 0.7)
+
         Returns:
             Словарь со всеми метриками портфеля
         """
@@ -120,11 +122,12 @@ class PortfolioService:
             risk_free_rate
         )
         
-        # Beta (упрощенный расчет)
+        # Beta: β = (σ_p / σ_m) × ρ(p, m)
         beta = PortfolioService._calculate_beta(
             positions,
             volatilities,
-            market_volatility
+            market_volatility,
+            market_correlation
         )
         
         # Alpha
@@ -139,8 +142,10 @@ class PortfolioService:
         # Diversification (коэффициент диверсификации)
         diversification = PortfolioService._calculate_diversification(positions)
         
-        # Средняя корреляция
-        avg_correlation = PortfolioService._calculate_avg_correlation(positions)
+        # Средняя корреляция (обратная оценка из портфельной волатильности)
+        avg_correlation = PortfolioService._calculate_avg_correlation(
+            positions, volatilities, portfolio_volatility
+        )
         
         return {
             "total_pnl": float(total_pnl),
@@ -197,22 +202,24 @@ class PortfolioService:
         return excess_return / downside_std
     
     @staticmethod
-    def _calculate_beta(positions: List[Dict], volatilities: List[float], market_volatility: float) -> float:
-        """Вычисляет бета портфеля."""
-        if market_volatility == 0:
+    def _calculate_beta(positions: List[Dict], volatilities: List[float],
+                        market_volatility: float, market_correlation: float = 0.7) -> float:
+        """
+        Вычисляет бета портфеля: β = (σ_p / σ_m) × ρ(p, m).
+
+        Без исторических рядов используется оценка через волатильности и
+        предполагаемую корреляцию с рынком (market_correlation).
+        """
+        if market_volatility <= 0:
             return 1.0
-        
-        # Упрощенный расчет: средневзвешенная волатильность / волатильность рынка
+
         weighted_vol = sum(
             (pos.get('allocation', 0) / 100.0) * vol
             for pos, vol in zip(positions, volatilities)
         )
-        
-        # Предполагаем корреляцию с рынком 0.7
-        correlation = 0.7
-        beta = (weighted_vol / market_volatility) * correlation
-        
-        return max(0.5, min(beta, 2.0))  # Ограничиваем между 0.5 и 2.0
+
+        beta = (weighted_vol / market_volatility) * market_correlation
+        return float(beta)
     
     @staticmethod
     def _calculate_skewness(returns: List[float]) -> float:
@@ -250,22 +257,42 @@ class PortfolioService:
         return float(diversification)
     
     @staticmethod
-    def _calculate_avg_correlation(positions: List[Dict]) -> float:
-        """Вычисляет среднюю корреляцию между активами."""
-        if len(positions) <= 1:
+    def _calculate_avg_correlation(positions: List[Dict], volatilities: List[float] = None,
+                                   portfolio_volatility: float = None) -> float:
+        """
+        Оценивает среднюю корреляцию между активами.
+
+        Без исторических рядов используется обратная оценка из соотношения
+        портфельной и средневзвешенной волатильностей:
+            σ_p² = Σ(w_i² σ_i²) + Σ_{i≠j}(w_i w_j σ_i σ_j ρ̄)
+        Решая для ρ̄:
+            ρ̄ = (σ_p² - Σ(w_i² σ_i²)) / (Σ(w_i σ_i)² - Σ(w_i² σ_i²))
+        """
+        n = len(positions)
+        if n <= 1:
             return 1.0
-        
-        # Упрощенный расчет: для облигаций корреляция выше, для акций ниже
-        bonds = sum(1 for pos in positions if 'SU' in pos.get('symbol', '') or 'RU000' in pos.get('symbol', ''))
-        stocks = len(positions) - bonds
-        
-        # Средняя корреляция зависит от состава портфеля
-        if bonds > stocks:
-            avg_corr = 0.6 + 0.2 * (bonds / len(positions))
-        else:
-            avg_corr = 0.3 + 0.3 * (stocks / len(positions))
-        
-        return float(avg_corr)
+
+        if volatilities is None or portfolio_volatility is None:
+            # Без данных возвращаем разумную оценку для диверсифицированного портфеля
+            return 1.0 / n + (1.0 - 1.0 / n) * 0.5
+
+        weights = [pos.get('allocation', 0) / 100.0 for pos in positions]
+
+        # Σ(w_i² σ_i²)
+        sum_w2_s2 = sum(w ** 2 * s ** 2 for w, s in zip(weights, volatilities))
+
+        # (Σ w_i σ_i)²
+        sum_ws_sq = sum(w * s for w, s in zip(weights, volatilities)) ** 2
+
+        denominator = sum_ws_sq - sum_w2_s2
+        if abs(denominator) < 1e-14:
+            return 1.0
+
+        numerator = portfolio_volatility ** 2 - sum_w2_s2
+        avg_corr = numerator / denominator
+
+        # Ограничиваем результат в допустимом диапазоне [-1, 1]
+        return float(np.clip(avg_corr, -1.0, 1.0))
     
     @staticmethod
     def _get_default_metrics() -> Dict[str, Any]:
