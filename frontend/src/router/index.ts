@@ -38,6 +38,7 @@ import DocumentationPage from '@/pages/DocumentationPage.vue'
 import KnowledgeBase from '@/pages/KnowledgeBase.vue'
 import Terminal from '@/pages/Terminal.vue'
 import Profile from '@/pages/Profile.vue'
+import SharpeStats from '@/pages/SharpeStats.vue'
 
 const routes = [
   {
@@ -261,6 +262,12 @@ const routes = [
         name: 'CCMVOptimization',
         component: CCMVOptimizationPage,
         meta: { title: 'CCMV Оптимизация' }
+      },
+      {
+        path: 'analytics/sharpe-stats',
+        name: 'SharpeStats',
+        component: SharpeStats,
+        meta: { title: 'Статистика Шарпа', icon: '📐' }
       },
     ]
   },
