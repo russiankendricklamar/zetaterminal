@@ -42,6 +42,7 @@ import SharpeStats from '@/pages/SharpeStats.vue'
 import RealizedKernels from '@/pages/RealizedKernels.vue'
 import HARModel from '@/pages/HARModel.vue'
 import FactorAnalysis from '@/pages/FactorAnalysis.vue'
+import Eigenportfolio from '@/pages/Eigenportfolio.vue'
 
 const routes = [
   {
@@ -289,6 +290,12 @@ const routes = [
         name: 'FactorAnalysis',
         component: FactorAnalysis,
         meta: { title: 'TS vs CS Factor Analysis', icon: '🧮' }
+      },
+      {
+        path: 'analytics/eigenportfolio',
+        name: 'Eigenportfolio',
+        component: Eigenportfolio,
+        meta: { title: 'Eigenportfolios (PCA)', icon: '🔬' }
       },
     ]
   },

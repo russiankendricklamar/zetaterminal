@@ -35,6 +35,7 @@ from src.api import sharpe_stats
 from src.api import realized_kernels
 from src.api import har
 from src.api import factor_analysis
+from src.api import eigenportfolio
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -100,6 +101,7 @@ app.include_router(sharpe_stats.router, prefix="/api/sharpe-stats", tags=["Sharp
 app.include_router(realized_kernels.router, prefix="/api/realized-kernels", tags=["Realized Kernels"], dependencies=_auth)
 app.include_router(har.router, prefix="/api/har", tags=["HAR Model"], dependencies=_auth)
 app.include_router(factor_analysis.router, prefix="/api/factor-analysis", tags=["Factor Analysis"], dependencies=_auth)
+app.include_router(eigenportfolio.router, prefix="/api/eigenportfolio", tags=["Eigenportfolio"], dependencies=_auth)
 
 # REMOVED: platform_services router — contains dangerous endpoints:
 # open email relay, SSRF vectors, auth token proxy, open storage
