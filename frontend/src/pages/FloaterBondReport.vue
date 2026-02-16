@@ -44,7 +44,7 @@
           class="btn-export-excel"
           :disabled="!report"
         >
-          📊 Excel
+          Excel
         </button>
 
         <!-- Search Control -->
