@@ -39,6 +39,7 @@ import KnowledgeBase from '@/pages/KnowledgeBase.vue'
 import Terminal from '@/pages/Terminal.vue'
 import Profile from '@/pages/Profile.vue'
 import SharpeStats from '@/pages/SharpeStats.vue'
+import RealizedKernels from '@/pages/RealizedKernels.vue'
 
 const routes = [
   {
@@ -268,6 +269,12 @@ const routes = [
         name: 'SharpeStats',
         component: SharpeStats,
         meta: { title: 'Статистика Шарпа', icon: '📐' }
+      },
+      {
+        path: 'analytics/realized-kernels',
+        name: 'RealizedKernels',
+        component: RealizedKernels,
+        meta: { title: 'Realized Kernels', icon: '📡' }
       },
     ]
   },
