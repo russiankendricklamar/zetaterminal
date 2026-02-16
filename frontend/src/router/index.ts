@@ -41,6 +41,7 @@ import Profile from '@/pages/Profile.vue'
 import SharpeStats from '@/pages/SharpeStats.vue'
 import RealizedKernels from '@/pages/RealizedKernels.vue'
 import HARModel from '@/pages/HARModel.vue'
+import FactorAnalysis from '@/pages/FactorAnalysis.vue'
 
 const routes = [
   {
@@ -282,6 +283,12 @@ const routes = [
         name: 'HARModel',
         component: HARModel,
         meta: { title: 'HAR Model', icon: '📊' }
+      },
+      {
+        path: 'analytics/factor-analysis',
+        name: 'FactorAnalysis',
+        component: FactorAnalysis,
+        meta: { title: 'TS vs CS Factor Analysis', icon: '🧮' }
       },
     ]
   },
