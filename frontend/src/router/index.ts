@@ -43,6 +43,7 @@ import RealizedKernels from '@/pages/RealizedKernels.vue'
 import HARModel from '@/pages/HARModel.vue'
 import FactorAnalysis from '@/pages/FactorAnalysis.vue'
 import Eigenportfolio from '@/pages/Eigenportfolio.vue'
+import PBOAnalysis from '@/pages/PBOAnalysis.vue'
 
 const routes = [
   {
@@ -296,6 +297,12 @@ const routes = [
         name: 'Eigenportfolio',
         component: Eigenportfolio,
         meta: { title: 'Eigenportfolios (PCA)', icon: '🔬' }
+      },
+      {
+        path: 'analytics/pbo',
+        name: 'PBOAnalysis',
+        component: PBOAnalysis,
+        meta: { title: 'PBO / DSR', icon: '🧪' }
       },
     ]
   },

@@ -36,6 +36,7 @@ from src.api import realized_kernels
 from src.api import har
 from src.api import factor_analysis
 from src.api import eigenportfolio
+from src.api import pbo
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -102,6 +103,7 @@ app.include_router(realized_kernels.router, prefix="/api/realized-kernels", tags
 app.include_router(har.router, prefix="/api/har", tags=["HAR Model"], dependencies=_auth)
 app.include_router(factor_analysis.router, prefix="/api/factor-analysis", tags=["Factor Analysis"], dependencies=_auth)
 app.include_router(eigenportfolio.router, prefix="/api/eigenportfolio", tags=["Eigenportfolio"], dependencies=_auth)
+app.include_router(pbo.router, prefix="/api/pbo", tags=["PBO/DSR"], dependencies=_auth)
 
 # REMOVED: platform_services router — contains dangerous endpoints:
 # open email relay, SSRF vectors, auth token proxy, open storage
