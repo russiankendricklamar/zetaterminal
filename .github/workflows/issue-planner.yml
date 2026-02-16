@@ -1,0 +1,70 @@
+name: Issue Planner
+
+on:
+  issues:
+    types: [opened]
+
+jobs:
+  plan:
+    name: Generate implementation plan
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+
+    steps:
+      - name: Generate plan and comment
+        uses: actions/github-script@v7
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        with:
+          script: |
+            const title = context.payload.issue.title;
+            const body = context.payload.issue.body || '';
+            const issueNumber = context.payload.issue.number;
+
+            const systemPrompt = `You are a senior quant engineer working on Zeta Terminal — a quantitative finance platform built with Vue 3 + TypeScript (frontend) and Python FastAPI (backend).
+
+            Architecture pattern for every feature:
+            - backend/src/services/<name>_service.py — math/algorithms (NumPy, SciPy, CVXPy, sklearn)
+            - backend/src/api/<name>.py — FastAPI router + Pydantic request/response schemas
+            - main.py — router registration
+            - frontend/src/pages/<Name>.vue — Vue 3 UI with ECharts/Three.js
+
+            When given a GitHub issue, write a concise implementation plan comment in Markdown covering:
+            1. Backend service: math formulas (LaTeX-style), key algorithms, numerical methods
+            2. API endpoints: HTTP method, path, request/response fields
+            3. Frontend page: input controls, charts, output panels
+
+            Be specific about math. Use formulas. Keep it under 80 lines.`;
+
+            const userMessage = `Issue #${issueNumber}: ${title}\n\n${body}`;
+
+            const response = await fetch('https://api.anthropic.com/v1/messages', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'x-api-key': process.env.ANTHROPIC_API_KEY,
+                'anthropic-version': '2023-06-01'
+              },
+              body: JSON.stringify({
+                model: 'claude-opus-4-6',
+                max_tokens: 1024,
+                system: systemPrompt,
+                messages: [{ role: 'user', content: userMessage }]
+              })
+            });
+
+            if (!response.ok) {
+              const err = await response.text();
+              throw new Error(`Anthropic API error: ${response.status} ${err}`);
+            }
+
+            const data = await response.json();
+            const plan = data.content[0].text;
+
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: issueNumber,
+              body: `## Implementation Plan\n\n${plan}`
+            });
