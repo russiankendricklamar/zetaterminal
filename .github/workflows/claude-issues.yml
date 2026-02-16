@@ -3,6 +3,9 @@ name: Claude Responds to Issues
 on:
   issues:
     types: [opened, edited]
+permissions:
+  issues: write
+  contents: read
 
 jobs:
   respond:
