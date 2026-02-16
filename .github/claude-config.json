@@ -1,0 +1,10 @@
+{
+  "context_files": [
+    "CONTRIBUTING.md",
+    "ARCHITECTURE.md",
+    "docs/API.md"
+  ],
+  "max_file_size": 100000,
+  "respond_to_labels": ["question", "bug", "enhancement"],
+  "skip_labels": ["wontfix", "duplicate"]
+}
