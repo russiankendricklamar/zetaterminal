@@ -40,6 +40,7 @@ import Terminal from '@/pages/Terminal.vue'
 import Profile from '@/pages/Profile.vue'
 import SharpeStats from '@/pages/SharpeStats.vue'
 import RealizedKernels from '@/pages/RealizedKernels.vue'
+import HARModel from '@/pages/HARModel.vue'
 
 const routes = [
   {
@@ -275,6 +276,12 @@ const routes = [
         name: 'RealizedKernels',
         component: RealizedKernels,
         meta: { title: 'Realized Kernels', icon: '📡' }
+      },
+      {
+        path: 'analytics/har-model',
+        name: 'HARModel',
+        component: HARModel,
+        meta: { title: 'HAR Model', icon: '📊' }
       },
     ]
   },

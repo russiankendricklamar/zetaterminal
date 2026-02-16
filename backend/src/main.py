@@ -33,6 +33,7 @@ from src.api import calendar_utils
 from src.api import security_tools
 from src.api import sharpe_stats
 from src.api import realized_kernels
+from src.api import har
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -96,6 +97,7 @@ app.include_router(calendar_utils.router, prefix="/api/calendar", tags=["Calenda
 app.include_router(security_tools.router, prefix="/api/security", tags=["Security Tools"], dependencies=_auth)
 app.include_router(sharpe_stats.router, prefix="/api/sharpe-stats", tags=["Sharpe Statistics"], dependencies=_auth)
 app.include_router(realized_kernels.router, prefix="/api/realized-kernels", tags=["Realized Kernels"], dependencies=_auth)
+app.include_router(har.router, prefix="/api/har", tags=["HAR Model"], dependencies=_auth)
 
 # REMOVED: platform_services router — contains dangerous endpoints:
 # open email relay, SSRF vectors, auth token proxy, open storage
