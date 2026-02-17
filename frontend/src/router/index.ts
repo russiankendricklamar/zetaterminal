@@ -45,6 +45,7 @@ import FactorAnalysis from '@/pages/FactorAnalysis.vue'
 import Eigenportfolio from '@/pages/Eigenportfolio.vue'
 import PBOAnalysis from '@/pages/PBOAnalysis.vue'
 import AlphaStacking from '@/pages/AlphaStacking.vue'
+import MetaLabeling from '@/pages/MetaLabeling.vue'
 
 const routes = [
   {
@@ -310,6 +311,12 @@ const routes = [
         name: 'AlphaStacking',
         component: AlphaStacking,
         meta: { title: 'Orthogonal Alpha Stacking', icon: '🔗' }
+      },
+      {
+        path: 'analytics/meta-labeling',
+        name: 'MetaLabeling',
+        component: MetaLabeling,
+        meta: { title: 'Meta-Labeling', icon: '🏷️' }
       },
     ]
   },

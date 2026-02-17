@@ -38,6 +38,7 @@ from src.api import factor_analysis
 from src.api import eigenportfolio
 from src.api import pbo
 from src.api import alpha_stacking
+from src.api import meta_labeling
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -106,6 +107,7 @@ app.include_router(factor_analysis.router, prefix="/api/factor-analysis", tags=[
 app.include_router(eigenportfolio.router, prefix="/api/eigenportfolio", tags=["Eigenportfolio"], dependencies=_auth)
 app.include_router(pbo.router, prefix="/api/pbo", tags=["PBO/DSR"], dependencies=_auth)
 app.include_router(alpha_stacking.router, prefix="/api/alpha-stacking", tags=["Alpha Stacking"], dependencies=_auth)
+app.include_router(meta_labeling.router, prefix="/api/meta-labeling", tags=["Meta Labeling"], dependencies=_auth)
 
 # REMOVED: platform_services router — contains dangerous endpoints:
 # open email relay, SSRF vectors, auth token proxy, open storage
