@@ -46,6 +46,7 @@ import Eigenportfolio from '@/pages/Eigenportfolio.vue'
 import PBOAnalysis from '@/pages/PBOAnalysis.vue'
 import AlphaStacking from '@/pages/AlphaStacking.vue'
 import MetaLabeling from '@/pages/MetaLabeling.vue'
+import ConvexPortfolio from '@/pages/ConvexPortfolio.vue'
 
 const routes = [
   {
@@ -317,6 +318,12 @@ const routes = [
         name: 'MetaLabeling',
         component: MetaLabeling,
         meta: { title: 'Meta-Labeling', icon: '🏷️' }
+      },
+      {
+        path: 'analytics/convex-portfolio',
+        name: 'ConvexPortfolio',
+        component: ConvexPortfolio,
+        meta: { title: 'Convex Portfolio', icon: '📐' }
       },
     ]
   },
