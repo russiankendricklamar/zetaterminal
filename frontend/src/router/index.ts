@@ -34,6 +34,7 @@ import ForwardsGreeksDashboard from '@/pages/ForwardsGreeksDashboard.vue'
 import BasisAnalysis from '@/pages/BasisAnalysis.vue'
 import VolatilitySurface from '@/pages/VolatilitySurface.vue'
 import CCMVOptimizationPage from '@/pages/CCMVOptimization.vue'
+import PortfolioOptimization from '@/pages/PortfolioOptimization.vue'
 import DocumentationPage from '@/pages/DocumentationPage.vue'
 import KnowledgeBase from '@/pages/KnowledgeBase.vue'
 import Terminal from '@/pages/Terminal.vue'
@@ -271,6 +272,12 @@ const routes = [
         name: 'CCMVOptimization',
         component: CCMVOptimizationPage,
         meta: { title: 'CCMV Оптимизация' }
+      },
+      {
+        path: 'optimization',
+        name: 'PortfolioOptimization',
+        component: PortfolioOptimization,
+        meta: { title: 'Оптимизация портфеля', icon: '📊' }
       },
       {
         path: 'analytics/sharpe-stats',

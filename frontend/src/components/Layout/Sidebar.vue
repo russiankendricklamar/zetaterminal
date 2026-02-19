@@ -190,6 +190,7 @@ const expandedTools = reactive<Record<string, boolean>>({
   portfolio: false,
   risk: false,
   quant: false,
+  analytics: false,
   bonds: false,
   bondReports: false,
   options: false,
@@ -203,7 +204,7 @@ const toolGroups = {
     subtitle: 'Анализ и оптимизация',
     items: [
       { path: '/portfolio', label: 'Состав портфеля' },
-      { path: '/CCMVoptimization', label: 'Оптимизация портфеля' },
+      { path: '/optimization', label: 'Оптимизация портфеля' },
       { path: '/greeks', label: 'Риск-метрики' },
       { path: '/reports', label: 'Отчёты' },
     ]
@@ -215,6 +216,7 @@ const toolGroups = {
       { path: '/backtest', label: 'Бэктестинг' },
       { path: '/stress', label: 'Стресс-тестирование облигаций' },
       { path: '/stress/swaps', label: 'Стресс-тестирование СВОПов' },
+      { path: '/analytics/adversarial-stress', label: 'Adversarial Stress Testing' },
     ]
   },
   quant: {
@@ -225,6 +227,21 @@ const toolGroups = {
       { path: '/regime-details', label: 'Детальный анализ режимов' },
       { path: '/spectral-regimes', label: 'Комплексный анализ режимов' },
       { path: '/fixed-income', label: 'Доходности облигаций' },
+    ]
+  },
+  analytics: {
+    title: 'КОЛИЧЕСТВЕННЫЙ АНАЛИЗ',
+    subtitle: 'Статистика, факторы, PCA',
+    items: [
+      { path: '/analytics/sharpe-stats', label: 'Статистика Шарпа' },
+      { path: '/analytics/realized-kernels', label: 'Realized Kernels' },
+      { path: '/analytics/har-model', label: 'HAR Model' },
+      { path: '/analytics/factor-analysis', label: 'Factor Analysis' },
+      { path: '/analytics/eigenportfolio', label: 'Eigenportfolios (PCA)' },
+      { path: '/analytics/pbo', label: 'PBO / DSR' },
+      { path: '/analytics/alpha-stacking', label: 'Alpha Stacking' },
+      { path: '/analytics/meta-labeling', label: 'Meta-Labeling' },
+      { path: '/analytics/convex-portfolio', label: 'Convex Portfolio' },
     ]
   },
   bonds: {
