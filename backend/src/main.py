@@ -40,6 +40,7 @@ from src.api import pbo
 from src.api import alpha_stacking
 from src.api import meta_labeling
 from src.api import convex_portfolio
+from src.api import black_litterman
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -110,6 +111,7 @@ app.include_router(pbo.router, prefix="/api/pbo", tags=["PBO/DSR"], dependencies
 app.include_router(alpha_stacking.router, prefix="/api/alpha-stacking", tags=["Alpha Stacking"], dependencies=_auth)
 app.include_router(meta_labeling.router, prefix="/api/meta-labeling", tags=["Meta Labeling"], dependencies=_auth)
 app.include_router(convex_portfolio.router, prefix="/api/convex-portfolio", tags=["Convex Portfolio"], dependencies=_auth)
+app.include_router(black_litterman.router, prefix="/api/black-litterman", tags=["Black-Litterman"], dependencies=_auth)
 
 # REMOVED: platform_services router — contains dangerous endpoints:
 # open email relay, SSRF vectors, auth token proxy, open storage
