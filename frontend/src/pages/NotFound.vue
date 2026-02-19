@@ -30,9 +30,8 @@
         <div class="suggestions">
           <span class="suggestions-lbl font-mono">БЫСТРЫЙ ПЕРЕХОД:</span>
           <div class="links-row">
-            <router-link to="/risk-metrics" class="link-pill">Риск-метрики</router-link>
-            <router-link to="/monte-carlo" class="link-pill">Монте-Карло</router-link>
-            <router-link to="/stress-testing" class="link-pill">Стресс-тесты</router-link>
+            <router-link to="/greeks" class="link-pill">Риск-метрики</router-link>
+            <router-link to="/stress" class="link-pill">Стресс-тесты</router-link>
           </div>
         </div>
       </div>

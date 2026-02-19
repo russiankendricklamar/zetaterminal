@@ -265,6 +265,223 @@ async def cbr_key_rate() -> Dict[str, Any]:
     return result
 
 
+# ─── CBR Extended: RUONIA, Precious Metals, Deposit/Credit Rates ─────────────
+
+async def cbr_ruonia(
+    from_date: str = "2024-01-01",
+    to_date: str = "2026-12-31",
+) -> Dict[str, Any]:
+    """Get RUONIA rates from CBR SOAP API."""
+    key = make_cache_key("cbr", "ruonia", from_date, to_date)
+    cached = cache_get(key)
+    if cached is not None:
+        return cached
+
+    soap_body = f"""<?xml version="1.0" encoding="utf-8"?>
+    <soap12:Envelope xmlns:soap12="http://www.w3.org/2003/05/soap-envelope"
+                     xmlns:web="http://web.cbr.ru/">
+      <soap12:Body>
+        <web:RuoniaXML>
+          <web:fromDate>{from_date}</web:fromDate>
+          <web:ToDate>{to_date}</web:ToDate>
+        </web:RuoniaXML>
+      </soap12:Body>
+    </soap12:Envelope>"""
+
+    headers = {"Content-Type": "application/soap+xml; charset=utf-8"}
+    session = await get_session()
+    async with session.post(CBR_KEY_RATE_URL, data=soap_body, headers=headers) as resp:
+        resp.raise_for_status()
+        text = await resp.text()
+
+    rates: List[Dict[str, Any]] = []
+    try:
+        root = ET.fromstring(text)
+        for el in root.iter():
+            if el.tag.endswith("ro"):
+                dt = ""
+                rate = 0.0
+                vol = 0.0
+                for child in el:
+                    tag = child.tag.split("}")[-1] if "}" in child.tag else child.tag
+                    if tag == "D0":
+                        dt = (child.text or "").strip()
+                    elif tag == "ruo":
+                        rate = float((child.text or "0").strip())
+                    elif tag == "vol":
+                        vol = float((child.text or "0").strip())
+                if dt:
+                    rates.append({"date": dt, "rate": rate, "volume": vol})
+    except ET.ParseError:
+        pass
+
+    current_rate = rates[-1]["rate"] if rates else 0.0
+    result = {"current_rate": current_rate, "history": rates, "provider": "cbr"}
+    cache_set(key, result, ttl_seconds=3600)
+    return result
+
+
+async def cbr_precious_metals(
+    from_date: str = "2024-01-01",
+    to_date: str = "2026-12-31",
+) -> Dict[str, Any]:
+    """Get precious metals prices from CBR SOAP API."""
+    key = make_cache_key("cbr", "metals", from_date, to_date)
+    cached = cache_get(key)
+    if cached is not None:
+        return cached
+
+    soap_body = f"""<?xml version="1.0" encoding="utf-8"?>
+    <soap12:Envelope xmlns:soap12="http://www.w3.org/2003/05/soap-envelope"
+                     xmlns:web="http://web.cbr.ru/">
+      <soap12:Body>
+        <web:DragMetDynamicXML>
+          <web:fromDate>{from_date}</web:fromDate>
+          <web:ToDate>{to_date}</web:ToDate>
+        </web:DragMetDynamicXML>
+      </soap12:Body>
+    </soap12:Envelope>"""
+
+    headers = {"Content-Type": "application/soap+xml; charset=utf-8"}
+    session = await get_session()
+    async with session.post(CBR_KEY_RATE_URL, data=soap_body, headers=headers) as resp:
+        resp.raise_for_status()
+        text = await resp.text()
+
+    metals: List[Dict[str, Any]] = []
+    try:
+        root = ET.fromstring(text)
+        for el in root.iter():
+            if el.tag.endswith("DrgMet"):
+                entry: Dict[str, Any] = {}
+                for child in el:
+                    tag = child.tag.split("}")[-1] if "}" in child.tag else child.tag
+                    val = (child.text or "").strip()
+                    if tag == "DateMet":
+                        entry["date"] = val
+                    elif tag == "CodMet":
+                        entry["code"] = int(val) if val else 0
+                    elif tag == "price":
+                        entry["price"] = float(val) if val else 0.0
+                if entry.get("date"):
+                    metals.append(entry)
+    except ET.ParseError:
+        pass
+
+    # Group by code: 1=Gold, 2=Silver, 3=Platinum, 4=Palladium
+    metal_names = {1: "Золото", 2: "Серебро", 3: "Платина", 4: "Палладий"}
+    grouped: Dict[str, List[Dict[str, Any]]] = {}
+    for m in metals:
+        name = metal_names.get(m.get("code", 0), f"Metal_{m.get('code')}")
+        grouped.setdefault(name, []).append({"date": m["date"], "price": m.get("price", 0)})
+
+    result = {"metals": grouped, "provider": "cbr"}
+    cache_set(key, result, ttl_seconds=3600)
+    return result
+
+
+async def cbr_deposit_rates(
+    from_date: str = "2024-01-01",
+    to_date: str = "2026-12-31",
+) -> Dict[str, Any]:
+    """Get average deposit rates from CBR SOAP API (DepoDynamicXML)."""
+    key = make_cache_key("cbr", "depo_rates", from_date, to_date)
+    cached = cache_get(key)
+    if cached is not None:
+        return cached
+
+    soap_body = f"""<?xml version="1.0" encoding="utf-8"?>
+    <soap12:Envelope xmlns:soap12="http://www.w3.org/2003/05/soap-envelope"
+                     xmlns:web="http://web.cbr.ru/">
+      <soap12:Body>
+        <web:DepoDynamicXML>
+          <web:fromDate>{from_date}</web:fromDate>
+          <web:ToDate>{to_date}</web:ToDate>
+        </web:DepoDynamicXML>
+      </soap12:Body>
+    </soap12:Envelope>"""
+
+    headers = {"Content-Type": "application/soap+xml; charset=utf-8"}
+    session = await get_session()
+    async with session.post(CBR_KEY_RATE_URL, data=soap_body, headers=headers) as resp:
+        resp.raise_for_status()
+        text = await resp.text()
+
+    rates: List[Dict[str, Any]] = []
+    try:
+        root = ET.fromstring(text)
+        for el in root.iter():
+            if el.tag.endswith("Depo"):
+                entry: Dict[str, Any] = {}
+                for child in el:
+                    tag = child.tag.split("}")[-1] if "}" in child.tag else child.tag
+                    val = (child.text or "").strip()
+                    if tag == "DateDepo":
+                        entry["date"] = val
+                    elif tag == "Overnight":
+                        entry["overnight"] = float(val) if val else None
+                if entry.get("date"):
+                    rates.append(entry)
+    except ET.ParseError:
+        pass
+
+    result = {"rates": rates, "provider": "cbr"}
+    cache_set(key, result, ttl_seconds=3600)
+    return result
+
+
+async def cbr_repo_rates(
+    from_date: str = "2024-01-01",
+    to_date: str = "2026-12-31",
+) -> Dict[str, Any]:
+    """Get repo debt data from CBR SOAP API (RepoDebtXML)."""
+    key = make_cache_key("cbr", "repo", from_date, to_date)
+    cached = cache_get(key)
+    if cached is not None:
+        return cached
+
+    soap_body = f"""<?xml version="1.0" encoding="utf-8"?>
+    <soap12:Envelope xmlns:soap12="http://www.w3.org/2003/05/soap-envelope"
+                     xmlns:web="http://web.cbr.ru/">
+      <soap12:Body>
+        <web:RepoDebtXML>
+          <web:fromDate>{from_date}</web:fromDate>
+          <web:ToDate>{to_date}</web:ToDate>
+        </web:RepoDebtXML>
+      </soap12:Body>
+    </soap12:Envelope>"""
+
+    headers = {"Content-Type": "application/soap+xml; charset=utf-8"}
+    session = await get_session()
+    async with session.post(CBR_KEY_RATE_URL, data=soap_body, headers=headers) as resp:
+        resp.raise_for_status()
+        text = await resp.text()
+
+    entries: List[Dict[str, Any]] = []
+    try:
+        root = ET.fromstring(text)
+        for el in root.iter():
+            if el.tag.endswith("Repo"):
+                entry: Dict[str, Any] = {}
+                for child in el:
+                    tag = child.tag.split("}")[-1] if "}" in child.tag else child.tag
+                    val = (child.text or "").strip()
+                    if tag == "dt":
+                        entry["date"] = val
+                    elif tag == "debt":
+                        entry["debt"] = float(val) if val else 0.0
+                    elif tag == "debt_fix":
+                        entry["debt_fix"] = float(val) if val else 0.0
+                if entry.get("date"):
+                    entries.append(entry)
+    except ET.ParseError:
+        pass
+
+    result = {"entries": entries, "provider": "cbr"}
+    cache_set(key, result, ttl_seconds=3600)
+    return result
+
+
 # ─── SEC EDGAR ────────────────────────────────────────────────────────────────
 
 async def sec_company_filings(cik: str) -> Dict[str, Any]:
@@ -333,6 +550,52 @@ async def sec_company_facts(cik: str) -> Dict[str, Any]:
         "provider": "sec_edgar",
     }
     cache_set(key, result, ttl_seconds=3600)
+    return result
+
+
+async def sec_full_text_search(
+    query: str,
+    date_range: str = "",
+    forms: str = "",
+    limit: int = 20,
+) -> Dict[str, Any]:
+    """Full-text search of SEC EDGAR filings via EFTS."""
+    key = make_cache_key("sec", "search", query, date_range, forms, limit)
+    cached = cache_get(key)
+    if cached is not None:
+        return cached
+
+    params: Dict[str, Any] = {
+        "q": query,
+        "dateRange": date_range or "custom",
+        "startdt": "2020-01-01",
+        "enddt": "2026-12-31",
+    }
+    if forms:
+        params["forms"] = forms
+
+    headers = {"User-Agent": SEC_USER_AGENT, "Accept": "application/json"}
+    session = await get_session()
+    async with session.get("https://efts.sec.gov/LATEST/search-index", params=params, headers=headers) as resp:
+        resp.raise_for_status()
+        data = await resp.json(content_type=None)
+
+    hits = data.get("hits", {}).get("hits", [])
+    filings = []
+    for hit in hits[:limit]:
+        src = hit.get("_source", {})
+        filings.append({
+            "file_num": src.get("file_num", ""),
+            "form_type": src.get("form_type", ""),
+            "entity_name": src.get("entity_name", ""),
+            "file_date": src.get("file_date", ""),
+            "period_of_report": src.get("period_of_report", ""),
+            "file_description": src.get("file_description", ""),
+            "display_names": src.get("display_names", []),
+        })
+
+    result = {"query": query, "total": data.get("hits", {}).get("total", {}).get("value", 0), "filings": filings, "provider": "sec_edgar"}
+    cache_set(key, result, ttl_seconds=1800)
     return result
 
 

@@ -9,644 +9,438 @@
         </div>
         <div class="tab-group">
           <button
-            v-for="filter in filters"
-            :key="filter"
-            @click="activeFilter = filter"
-            :class="['tab-btn', { active: activeFilter === filter }]"
+            v-for="tab in mainTabs"
+            :key="tab.id"
+            @click="activeTab = tab.id"
+            :class="['tab-btn', { active: activeTab === tab.id }]"
           >
-            {{ filter }}
+            {{ tab.label }}
           </button>
         </div>
       </div>
-      
-      <!-- Фильтры по типу и капитализации -->
-      <div class="flex flex-wrap items-center gap-3">
-        <!-- Тип криптовалюты Dropdown -->
-        <div class="relative" data-dropdown-type>
-          <span class="text-xs font-bold text-gray-500 uppercase mb-2 block">Тип</span>
-          <div class="relative">
-            <button
-              @click="isTypeOpen = !isTypeOpen"
-              class="px-4 py-2.5 bg-black/20 border border-white/10 rounded-xl text-sm text-white hover:border-indigo-500/50 transition-all flex items-center justify-between gap-3 min-w-[180px]"
-            >
-              <span>{{ selectedType === 'All' ? 'Все типы' : getTypeName(selectedType) }}</span>
-              <ChevronDownIcon :class="`w-4 h-4 transition-transform ${isTypeOpen ? 'rotate-180' : ''}`" />
-            </button>
-            <div
-              v-if="isTypeOpen"
-              @click.stop
-              class="absolute top-full left-0 mt-2 w-full bg-black/90 backdrop-blur-xl border border-white/10 rounded-xl shadow-2xl z-50 max-h-64 overflow-y-auto custom-scrollbar"
-            >
-              <button
-                @click="selectType('All')"
-                :class="`w-full px-4 py-3 text-left text-sm transition-colors ${
-                  selectedType === 'All' 
-                    ? 'bg-indigo-500/20 text-indigo-300' 
-                    : 'text-gray-300 hover:bg-white/5 hover:text-white'
-                }`"
-              >
-                Все типы
-              </button>
-              <button
-                v-for="type in availableTypes"
-                :key="type"
-                @click="selectType(type)"
-                :class="`w-full px-4 py-3 text-left text-sm transition-colors ${
-                  selectedType === type 
-                    ? 'bg-indigo-500/20 text-indigo-300' 
-                    : 'text-gray-300 hover:bg-white/5 hover:text-white'
-                }`"
-              >
-                {{ getTypeName(type) }}
-              </button>
-            </div>
-          </div>
-        </div>
-        
-        <!-- Капитализация Dropdown -->
-        <div class="relative" data-dropdown-cap>
-          <span class="text-xs font-bold text-gray-500 uppercase mb-2 block">Капитализация</span>
-          <div class="relative">
-            <button
-              @click="isCapOpen = !isCapOpen"
-              class="px-4 py-2.5 bg-black/20 border border-white/10 rounded-xl text-sm text-white hover:border-indigo-500/50 transition-all flex items-center justify-between gap-3 min-w-[180px]"
-            >
-              <span>{{ selectedCap === 'All' ? 'Все' : getCapName(selectedCap) }}</span>
-              <ChevronDownIcon :class="`w-4 h-4 transition-transform ${isCapOpen ? 'rotate-180' : ''}`" />
-            </button>
-            <div
-              v-if="isCapOpen"
-              @click.stop
-              class="absolute top-full left-0 mt-2 w-full bg-black/90 backdrop-blur-xl border border-white/10 rounded-xl shadow-2xl z-50 max-h-64 overflow-y-auto custom-scrollbar"
-            >
-              <button
-                @click="selectCap('All')"
-                :class="`w-full px-4 py-3 text-left text-sm transition-colors ${
-                  selectedCap === 'All' 
-                    ? 'bg-indigo-500/20 text-indigo-300' 
-                    : 'text-gray-300 hover:bg-white/5 hover:text-white'
-                }`"
-              >
-                Все
-              </button>
-              <button
-                v-for="cap in capRanges"
-                :key="cap"
-                @click="selectCap(cap)"
-                :class="`w-full px-4 py-3 text-left text-sm transition-colors ${
-                  selectedCap === cap 
-                    ? 'bg-indigo-500/20 text-indigo-300' 
-                    : 'text-gray-300 hover:bg-white/5 hover:text-white'
-                }`"
-              >
-                {{ getCapName(cap) }}
-              </button>
-            </div>
-          </div>
-        </div>
-        
-        <div class="flex items-end">
-          <button 
-            v-if="selectedType !== 'All' || selectedCap !== 'All'"
-            @click="clearFilters"
-            class="px-4 py-2.5 text-xs font-bold text-gray-400 hover:text-white hover:bg-white/5 rounded-xl border border-white/5 hover:border-white/20 transition-all"
+
+      <!-- Global Stats Bar -->
+      <div v-if="globalStats && activeTab === 'MARKET'" class="flex flex-wrap gap-4 text-xs font-mono">
+        <span class="text-gray-500">
+          Крипто: <span class="text-white font-bold">{{ globalStats.active_cryptocurrencies.toLocaleString() }}</span>
+        </span>
+        <span class="text-gray-500">
+          Биржи: <span class="text-white font-bold">{{ globalStats.markets }}</span>
+        </span>
+        <span class="text-gray-500">
+          Капитализация: <span class="text-white font-bold">${{ formatLargeNum(globalStats.total_market_cap?.usd) }}</span>
+        </span>
+        <span class="text-gray-500">
+          Объём 24ч: <span class="text-white font-bold">${{ formatLargeNum(globalStats.total_volume?.usd) }}</span>
+        </span>
+        <span :class="globalStats.market_cap_change_percentage_24h_usd >= 0 ? 'text-emerald-400' : 'text-rose-400'">
+          {{ globalStats.market_cap_change_percentage_24h_usd >= 0 ? '+' : '' }}{{ globalStats.market_cap_change_percentage_24h_usd?.toFixed(2) }}% 24ч
+        </span>
+        <span class="text-gray-500">
+          BTC: <span class="text-orange-400 font-bold">{{ globalStats.market_cap_percentage?.btc?.toFixed(1) }}%</span>
+        </span>
+        <span class="text-gray-500">
+          ETH: <span class="text-blue-400 font-bold">{{ globalStats.market_cap_percentage?.eth?.toFixed(1) }}%</span>
+        </span>
+      </div>
+
+      <!-- Filters (Market tab only) -->
+      <div v-if="activeTab === 'MARKET'" class="flex flex-wrap items-center gap-3">
+        <div class="flex gap-2">
+          <button
+            v-for="filter in sortFilters"
+            :key="filter.id"
+            @click="activeSort = filter.id"
+            :class="['tab-btn text-xs', { active: activeSort === filter.id }]"
           >
-            Сбросить
+            {{ filter.label }}
           </button>
         </div>
       </div>
     </div>
 
-    <!-- Индикатор загрузки -->
-    <div v-if="loading" class="flex items-center justify-center py-8 text-gray-400 flex-shrink-0">
-      <div class="flex items-center gap-2">
-        <div class="w-4 h-4 border-2 border-orange-500 border-t-transparent rounded-full animate-spin"></div>
-        <span class="text-xs font-bold">Загрузка реальных данных...</span>
+    <!-- ═══ MARKET TAB ═══ -->
+    <div v-if="activeTab === 'MARKET'">
+      <!-- Loading -->
+      <div v-if="loading" class="flex items-center justify-center py-8 text-gray-400 flex-shrink-0">
+        <div class="flex items-center gap-2">
+          <div class="w-4 h-4 border-2 border-orange-500 border-t-transparent rounded-full animate-spin"></div>
+          <span class="text-xs font-bold">Загрузка данных CoinGecko...</span>
+        </div>
       </div>
-    </div>
 
-    <div class="overflow-auto custom-scrollbar flex-1" :class="{ 'opacity-50': loading }">
-      <table class="w-full text-left border-collapse">
-        <thead>
-          <tr class="text-xs text-gray-500 border-b border-white/5 uppercase tracking-wider">
-            <th class="font-bold py-4 px-4 pl-0">Инструмент</th>
-            <th class="font-bold py-4 px-4 text-right">Цена</th>
-            <th class="font-bold py-4 px-4 text-right">Изменение 24ч</th>
-            <th class="font-bold py-4 px-4 text-right hidden md:table-cell">Детали</th>
-          </tr>
-        </thead>
-        <tbody class="text-sm font-medium">
-          <tr 
-            v-for="asset in cryptoAssets" 
-            :key="asset.symbol"
-            @click="$emit('assetClick', asset)"
-            class="border-b border-white/5 hover:bg-white/5 transition-colors group cursor-pointer"
-          >
-            <td class="py-4 px-4 pl-0">
-              <div class="flex items-center gap-4">
-                <button 
-                  class="text-gray-600 hover:text-yellow-400 transition-colors"
-                  @click.stop
-                >
-                  <StarIcon class="w-4 h-4" />
-                </button>
-                <div class="w-10 h-10 rounded-xl flex items-center justify-center text-xs font-bold shadow-lg bg-gradient-to-br from-orange-500/20 to-yellow-500/20 text-orange-400">
-                  {{ asset.symbol.substring(0, 2) }}
-                </div>
-                <div>
-                  <div class="text-white font-bold text-base">{{ asset.symbol }}</div>
-                  <div class="text-xs text-gray-500 flex items-center gap-2">
-                    {{ asset.name }}
-                    <span class="px-1.5 py-0.5 rounded bg-white/5 text-[10px] uppercase text-gray-400">Крипто</span>
+      <!-- Error -->
+      <div v-if="loadError" class="p-4 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400 text-sm font-mono mb-4">
+        {{ loadError }}
+      </div>
+
+      <div class="overflow-auto custom-scrollbar flex-1" :class="{ 'opacity-50': loading }">
+        <table class="w-full text-left border-collapse">
+          <thead>
+            <tr class="text-xs text-gray-500 border-b border-white/5 uppercase tracking-wider">
+              <th class="font-bold py-4 px-4 pl-0 w-8">#</th>
+              <th class="font-bold py-4 px-4">Инструмент</th>
+              <th class="font-bold py-4 px-4 text-right">Цена</th>
+              <th class="font-bold py-4 px-4 text-right">1ч</th>
+              <th class="font-bold py-4 px-4 text-right">24ч</th>
+              <th class="font-bold py-4 px-4 text-right hidden md:table-cell">7д</th>
+              <th class="font-bold py-4 px-4 text-right hidden lg:table-cell">Капитализация</th>
+              <th class="font-bold py-4 px-4 text-right hidden lg:table-cell">Объём 24ч</th>
+              <th class="font-bold py-4 px-4 text-right hidden xl:table-cell w-[120px]">7д график</th>
+            </tr>
+          </thead>
+          <tbody class="text-sm font-medium">
+            <tr
+              v-for="coin in sortedCoins"
+              :key="coin.id"
+              class="border-b border-white/5 hover:bg-white/5 transition-colors group cursor-pointer"
+            >
+              <td class="py-3 px-4 pl-0 text-gray-500 text-xs font-mono">{{ coin.market_cap_rank }}</td>
+              <td class="py-3 px-4">
+                <div class="flex items-center gap-3">
+                  <img v-if="coin.image" :src="coin.image" :alt="coin.symbol" class="w-8 h-8 rounded-full" loading="lazy" />
+                  <div v-else class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold bg-gradient-to-br from-orange-500/20 to-yellow-500/20 text-orange-400">
+                    {{ coin.symbol.substring(0, 2).toUpperCase() }}
+                  </div>
+                  <div>
+                    <div class="text-white font-bold">{{ coin.symbol.toUpperCase() }}</div>
+                    <div class="text-xs text-gray-500 truncate max-w-[140px]">{{ coin.name }}</div>
                   </div>
                 </div>
-              </div>
-            </td>
-            <td class="py-4 px-4 text-right font-mono text-white text-base">{{ asset.price }}</td>
-            <td class="py-4 px-4 text-right">
-              <div :class="`inline-flex items-center gap-1 px-2 py-1 rounded-lg ${asset.change.startsWith('+') ? 'bg-emerald-500/10 text-emerald-400' : 'bg-rose-500/10 text-rose-400'}`">
-                <component :is="asset.change.startsWith('+') ? 'TrendingUpIcon' : 'TrendingDownIcon'" class="w-3 h-3" />
-                <span class="font-mono font-bold">{{ asset.change }}</span>
-              </div>
-            </td>
-            <td class="py-4 px-4 text-right text-gray-400 hidden md:table-cell font-mono">
-              {{ asset.cap ? `Кап: ${asset.cap}` : '-' }}
-            </td>
-          </tr>
-        </tbody>
-      </table>
+              </td>
+              <td class="py-3 px-4 text-right font-mono text-white">${{ formatPrice(coin.current_price) }}</td>
+              <td class="py-3 px-4 text-right">
+                <span :class="changeClass(coin.price_change_percentage_1h_in_currency)">
+                  {{ formatPct(coin.price_change_percentage_1h_in_currency) }}
+                </span>
+              </td>
+              <td class="py-3 px-4 text-right">
+                <span :class="changeClass(coin.price_change_percentage_24h)">
+                  {{ formatPct(coin.price_change_percentage_24h) }}
+                </span>
+              </td>
+              <td class="py-3 px-4 text-right hidden md:table-cell">
+                <span :class="changeClass(coin.price_change_percentage_7d_in_currency)">
+                  {{ formatPct(coin.price_change_percentage_7d_in_currency) }}
+                </span>
+              </td>
+              <td class="py-3 px-4 text-right hidden lg:table-cell font-mono text-gray-400">
+                ${{ formatLargeNum(coin.market_cap) }}
+              </td>
+              <td class="py-3 px-4 text-right hidden lg:table-cell font-mono text-gray-400">
+                ${{ formatLargeNum(coin.total_volume) }}
+              </td>
+              <td class="py-3 px-4 text-right hidden xl:table-cell">
+                <svg v-if="coin.sparkline_in_7d?.price" :viewBox="`0 0 120 40`" class="w-[100px] h-[32px] inline-block">
+                  <polyline
+                    :points="sparklinePoints(coin.sparkline_in_7d.price)"
+                    fill="none"
+                    :stroke="(coin.price_change_percentage_7d_in_currency ?? 0) >= 0 ? '#10b981' : '#f43f5e'"
+                    stroke-width="1.5"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  />
+                </svg>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ═══ TRENDING TAB ═══ -->
+    <div v-else-if="activeTab === 'TRENDING'" class="flex flex-col gap-6">
+      <div v-if="trendingLoading" class="flex items-center gap-2 text-gray-400 text-xs">
+        <div class="w-3 h-3 border-2 border-orange-500 border-t-transparent rounded-full animate-spin"></div>
+        Загрузка трендов...
+      </div>
+
+      <div v-if="trendingCoins.length > 0" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div
+          v-for="(coin, idx) in trendingCoins"
+          :key="coin.id"
+          class="p-4 rounded-xl bg-white/5 border border-white/5 hover:border-white/20 transition-all"
+        >
+          <div class="flex items-center gap-3 mb-3">
+            <span class="text-xs font-bold text-gray-500">#{{ idx + 1 }}</span>
+            <img v-if="coin.thumb" :src="coin.thumb" :alt="coin.name" class="w-6 h-6 rounded-full" />
+            <div>
+              <span class="text-sm text-white font-bold">{{ coin.name }}</span>
+              <span class="text-xs text-gray-500 ml-2 uppercase">{{ coin.symbol }}</span>
+            </div>
+          </div>
+          <div class="flex items-center justify-between text-xs font-mono">
+            <span class="text-gray-500">Ранг: <span class="text-white">{{ coin.market_cap_rank ?? '—' }}</span></span>
+            <span v-if="coin.price_btc" class="text-orange-400">{{ coin.price_btc.toFixed(8) }} BTC</span>
+          </div>
+        </div>
+      </div>
+
+      <div v-if="!trendingLoading && trendingCoins.length === 0" class="flex items-center justify-center h-64 text-gray-500 font-mono text-sm">
+        Нет данных о трендах
+      </div>
+    </div>
+
+    <!-- ═══ GLOBAL TAB ═══ -->
+    <div v-else-if="activeTab === 'GLOBAL'" class="flex flex-col gap-6">
+      <div v-if="!globalStats" class="flex items-center gap-2 text-gray-400 text-xs">
+        <div class="w-3 h-3 border-2 border-orange-500 border-t-transparent rounded-full animate-spin"></div>
+        Загрузка глобальной статистики...
+      </div>
+
+      <div v-if="globalStats" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div class="p-6 rounded-2xl bg-white/5 border border-white/5">
+          <h3 class="text-xs font-bold text-gray-400 uppercase mb-2">Общая капитализация</h3>
+          <div class="text-3xl font-bold text-white">${{ formatLargeNum(globalStats.total_market_cap?.usd) }}</div>
+          <div :class="['text-xs mt-1', globalStats.market_cap_change_percentage_24h_usd >= 0 ? 'text-emerald-400' : 'text-rose-400']">
+            {{ globalStats.market_cap_change_percentage_24h_usd >= 0 ? '+' : '' }}{{ globalStats.market_cap_change_percentage_24h_usd?.toFixed(2) }}% за 24ч
+          </div>
+        </div>
+        <div class="p-6 rounded-2xl bg-white/5 border border-white/5">
+          <h3 class="text-xs font-bold text-gray-400 uppercase mb-2">Объём торгов 24ч</h3>
+          <div class="text-3xl font-bold text-white">${{ formatLargeNum(globalStats.total_volume?.usd) }}</div>
+        </div>
+        <div class="p-6 rounded-2xl bg-white/5 border border-white/5">
+          <h3 class="text-xs font-bold text-gray-400 uppercase mb-2">Активных криптовалют</h3>
+          <div class="text-3xl font-bold text-white">{{ globalStats.active_cryptocurrencies?.toLocaleString() }}</div>
+          <div class="text-xs text-gray-500 mt-1">{{ globalStats.markets }} бирж</div>
+        </div>
+      </div>
+
+      <!-- Dominance -->
+      <div v-if="globalStats?.market_cap_percentage" class="flex flex-col gap-3">
+        <h3 class="font-oswald text-sm text-gray-400 uppercase tracking-wider">ДОМИНАЦИЯ ПО КАПИТАЛИЗАЦИИ</h3>
+        <div class="flex flex-wrap gap-3">
+          <div
+            v-for="(pct, symbol) in topDominance"
+            :key="symbol"
+            class="px-4 py-3 rounded-xl bg-white/5 border border-white/5 text-center min-w-[100px]"
+          >
+            <div class="text-xs text-gray-500 uppercase font-bold mb-1">{{ symbol }}</div>
+            <div class="text-lg font-bold text-white font-mono">{{ pct.toFixed(1) }}%</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ ARBITRAGE TAB ═══ -->
+    <div v-else-if="activeTab === 'ARB'" class="flex flex-col gap-6">
+      <div v-if="arbLoading" class="flex items-center gap-2 text-gray-400 text-xs">
+        <div class="w-3 h-3 border-2 border-orange-500 border-t-transparent rounded-full animate-spin"></div>
+        Поиск арбитражных возможностей...
+      </div>
+
+      <div v-if="arbError" class="p-4 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400 text-sm font-mono">
+        {{ arbError }}
+      </div>
+
+      <div v-if="arbOpportunities.length > 0" class="overflow-auto rounded-2xl border border-white/5 bg-black/20">
+        <table class="w-full text-left border-collapse">
+          <thead>
+            <tr class="text-xs text-gray-400 uppercase bg-white/5 sticky top-0">
+              <th class="p-3">Пара</th>
+              <th class="p-3 text-right">Биржа 1</th>
+              <th class="p-3 text-right">Биржа 2</th>
+              <th class="p-3 text-right">Спред</th>
+            </tr>
+          </thead>
+          <tbody class="text-sm font-mono text-gray-300">
+            <tr v-for="(opp, idx) in arbOpportunities" :key="idx" class="border-b border-white/5 hover:bg-white/5">
+              <td class="p-3 text-white font-bold">{{ opp.symbol || opp.pair || '—' }}</td>
+              <td class="p-3 text-right text-gray-400">{{ opp.exchange1 || opp.buy_exchange || '—' }}</td>
+              <td class="p-3 text-right text-gray-400">{{ opp.exchange2 || opp.sell_exchange || '—' }}</td>
+              <td class="p-3 text-right font-bold text-emerald-400">{{ opp.spread || opp.profit_pct || '—' }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div v-if="!arbLoading && arbOpportunities.length === 0 && !arbError" class="flex items-center justify-center h-64 text-gray-500 font-mono text-sm">
+        Нет доступных арбитражных возможностей
+      </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed, ref, onMounted, onBeforeUnmount } from 'vue';
-import { AssetInfo } from '@/types/terminal';
-import { getPopularCryptos, getCryptoInfo, type CryptoInfo } from '@/services/marketDataService';
+import { computed, ref, onMounted, onBeforeUnmount } from 'vue'
+import {
+  getCoinGeckoMarkets,
+  getTrendingCoins,
+  getGlobalStats,
+  getArbitrageOpportunities,
+  type CoinMarket,
+  type GlobalStats,
+} from '@/services/cryptoDataService'
 
 const emit = defineEmits<{
-  navigate: [page: string];
-  assetClick: [asset: AssetInfo];
-}>();
+  navigate: [page: string]
+}>()
 
-const filters = ['Топ роста', 'Топ падения', 'Высокий объём'];
-const activeFilter = ref('Топ роста');
-const selectedType = ref('All');
-const selectedCap = ref('All');
-const isTypeOpen = ref(false);
-const isCapOpen = ref(false);
+// ─── Tabs ───────────────────────────────────────────────────────────────────
+const mainTabs = [
+  { id: 'MARKET', label: 'Рынок' },
+  { id: 'TRENDING', label: 'Тренды' },
+  { id: 'GLOBAL', label: 'Глобал' },
+  { id: 'ARB', label: 'Арбитраж' },
+]
+const activeTab = ref('MARKET')
 
-const capRanges = ['Mega', 'Large', 'Mid', 'Small', 'Micro'];
+const sortFilters = [
+  { id: 'market_cap', label: 'Капитализация' },
+  { id: 'gainers', label: 'Топ роста' },
+  { id: 'losers', label: 'Топ падения' },
+  { id: 'volume', label: 'Объём' },
+]
+const activeSort = ref('market_cap')
 
-const loading = ref(false);
-const useRealData = ref(true);
+// ─── MARKET: CoinGecko Markets ──────────────────────────────────────────────
+const coins = ref<CoinMarket[]>([])
+const loading = ref(false)
+const loadError = ref<string | null>(null)
 
-// Инициализируем allCryptoAssets как реактивный массив
-const allCryptoAssets = ref<AssetInfo[]>([
-  // Layer 1 - Основные блокчейны
-  { name: 'Bitcoin', symbol: 'BTC', price: '64,230.50', change: '+2.45%', cap: '1.2T', vol: '35B', category: 'Crypto', region: 'Layer1' },
-  { name: 'Ethereum', symbol: 'ETH', price: '3,450.20', change: '-1.12%', cap: '400B', vol: '15B', category: 'Crypto', region: 'Layer1' },
-  { name: 'Solana', symbol: 'SOL', price: '148.50', change: '+5.67%', cap: '65B', vol: '4B', category: 'Crypto', region: 'Layer1' },
-  { name: 'Cardano', symbol: 'ADA', price: '0.45', change: '+1.20%', cap: '16B', vol: '400M', category: 'Crypto', region: 'Layer1' },
-  { name: 'Avalanche', symbol: 'AVAX', price: '38.50', change: '+4.20%', cap: '14.5B', vol: '320M', category: 'Crypto', region: 'Layer1' },
-  { name: 'Polkadot', symbol: 'DOT', price: '7.25', change: '+3.10%', cap: '9.5B', vol: '250M', category: 'Crypto', region: 'Layer1' },
-  { name: 'Cosmos', symbol: 'ATOM', price: '8.45', change: '+2.15%', cap: '3.2B', vol: '85M', category: 'Crypto', region: 'Layer1' },
-  { name: 'Near Protocol', symbol: 'NEAR', price: '5.80', change: '+1.85%', cap: '6.1B', vol: '120M', category: 'Crypto', region: 'Layer1' },
-  { name: 'Algorand', symbol: 'ALGO', price: '0.18', change: '+0.95%', cap: '1.4B', vol: '45M', category: 'Crypto', region: 'Layer1' },
-  { name: 'Tezos', symbol: 'XTZ', price: '0.95', change: '-0.25%', cap: '950M', vol: '28M', category: 'Crypto', region: 'Layer1' },
-  { name: 'Hedera', symbol: 'HBAR', price: '0.08', change: '+1.45%', cap: '2.8B', vol: '65M', category: 'Crypto', region: 'Layer1' },
-  { name: 'Fantom', symbol: 'FTM', price: '0.42', change: '+3.25%', cap: '1.2B', vol: '55M', category: 'Crypto', region: 'Layer1' },
-  { name: 'Aptos', symbol: 'APT', price: '9.25', change: '+2.60%', cap: '4.1B', vol: '180M', category: 'Crypto', region: 'Layer1' },
-  { name: 'Sui', symbol: 'SUI', price: '1.85', change: '+1.95%', cap: '2.3B', vol: '95M', category: 'Crypto', region: 'Layer1' },
-  { name: 'Shiba Inu', symbol: 'SHIB', price: '0.000025', change: '+4.50%', cap: '14.8B', vol: '850M', category: 'Crypto', region: 'Meme' },
-  
-  // Layer 2 - Решения масштабирования
-  { name: 'Polygon', symbol: 'MATIC', price: '0.85', change: '-0.30%', cap: '7.8B', vol: '150M', category: 'Crypto', region: 'Layer2' },
-  { name: 'Arbitrum', symbol: 'ARB', price: '1.25', change: '+2.15%', cap: '3.2B', vol: '280M', category: 'Crypto', region: 'Layer2' },
-  { name: 'Optimism', symbol: 'OP', price: '2.45', change: '+1.85%', cap: '2.8B', vol: '185M', category: 'Crypto', region: 'Layer2' },
-  { name: 'Immutable X', symbol: 'IMX', price: '2.15', change: '+3.40%', cap: '3.1B', vol: '95M', category: 'Crypto', region: 'Layer2' },
-  { name: 'Loopring', symbol: 'LRC', price: '0.28', change: '+1.25%', cap: '380M', vol: '25M', category: 'Crypto', region: 'Layer2' },
-  { name: 'Starknet', symbol: 'STRK', price: '1.15', change: '+2.85%', cap: '1.6B', vol: '120M', category: 'Crypto', region: 'Layer2' },
-  
-  // DeFi - Децентрализованные финансы
-  { name: 'Uniswap', symbol: 'UNI', price: '6.20', change: '+2.50%', cap: '4.6B', vol: '95M', category: 'Crypto', region: 'DeFi' },
-  { name: 'Chainlink', symbol: 'LINK', price: '14.80', change: '+1.85%', cap: '8.2B', vol: '180M', category: 'Crypto', region: 'DeFi' },
-  { name: 'Aave', symbol: 'AAVE', price: '95.40', change: '+1.45%', cap: '1.4B', vol: '85M', category: 'Crypto', region: 'DeFi' },
-  { name: 'Maker', symbol: 'MKR', price: '2,850.60', change: '+0.95%', cap: '2.7B', vol: '45M', category: 'Crypto', region: 'DeFi' },
-  { name: 'Compound', symbol: 'COMP', price: '58.20', change: '+1.25%', cap: '450M', vol: '28M', category: 'Crypto', region: 'DeFi' },
-  { name: 'Curve', symbol: 'CRV', price: '0.65', change: '+2.15%', cap: '680M', vol: '42M', category: 'Crypto', region: 'DeFi' },
-  { name: 'SushiSwap', symbol: 'SUSHI', price: '1.25', change: '+1.85%', cap: '240M', vol: '35M', category: 'Crypto', region: 'DeFi' },
-  { name: 'PancakeSwap', symbol: 'CAKE', price: '2.85', change: '+3.25%', cap: '750M', vol: '95M', category: 'Crypto', region: 'DeFi' },
-  { name: '1inch', symbol: '1INCH', price: '0.45', change: '+1.15%', cap: '540M', vol: '38M', category: 'Crypto', region: 'DeFi' },
-  { name: 'Yearn Finance', symbol: 'YFI', price: '8,450.20', change: '+0.85%', cap: '280M', vol: '18M', category: 'Crypto', region: 'DeFi' },
-  { name: 'Synthetix', symbol: 'SNX', price: '2.95', change: '+2.45%', cap: '950M', vol: '55M', category: 'Crypto', region: 'DeFi' },
-  { name: 'Balancer', symbol: 'BAL', price: '4.25', change: '+1.65%', cap: '240M', vol: '15M', category: 'Crypto', region: 'DeFi' },
-  { name: 'Convex Finance', symbol: 'CVX', price: '3.85', change: '+2.25%', cap: '380M', vol: '28M', category: 'Crypto', region: 'DeFi' },
-  { name: 'Frax', symbol: 'FRAX', price: '0.998', change: '+0.05%', cap: '650M', vol: '45M', category: 'Crypto', region: 'DeFi' },
-  { name: 'Lido', symbol: 'LDO', price: '2.15', change: '+1.95%', cap: '1.9B', vol: '85M', category: 'Crypto', region: 'DeFi' },
-  
-  // Stablecoins
-  { name: 'Tether', symbol: 'USDT', price: '1.00', change: '+0.01%', cap: '95B', vol: '45B', category: 'Crypto', region: 'Stablecoin' },
-  { name: 'USD Coin', symbol: 'USDC', price: '1.00', change: '+0.01%', cap: '28B', vol: '4.5B', category: 'Crypto', region: 'Stablecoin' },
-  { name: 'Dai', symbol: 'DAI', price: '0.999', change: '+0.02%', cap: '5.2B', vol: '280M', category: 'Crypto', region: 'Stablecoin' },
-  { name: 'Binance USD', symbol: 'BUSD', price: '1.00', change: '0.00%', cap: '1.8B', vol: '450M', category: 'Crypto', region: 'Stablecoin' },
-  { name: 'TrueUSD', symbol: 'TUSD', price: '1.00', change: '+0.01%', cap: '480M', vol: '85M', category: 'Crypto', region: 'Stablecoin' },
-  
-  // Платежные и переводы
-  { name: 'Ripple', symbol: 'XRP', price: '0.62', change: '-0.45%', cap: '34B', vol: '1.2B', category: 'Crypto', region: 'Payment' },
-  { name: 'Litecoin', symbol: 'LTC', price: '82.40', change: '+0.95%', cap: '6.1B', vol: '280M', category: 'Crypto', region: 'Payment' },
-  { name: 'Bitcoin Cash', symbol: 'BCH', price: '245.60', change: '-0.15%', cap: '4.8B', vol: '120M', category: 'Crypto', region: 'Payment' },
-  { name: 'Stellar', symbol: 'XLM', price: '0.12', change: '+0.85%', cap: '3.5B', vol: '95M', category: 'Crypto', region: 'Payment' },
-  { name: 'Dash', symbol: 'DASH', price: '28.50', change: '+1.25%', cap: '320M', vol: '28M', category: 'Crypto', region: 'Payment' },
-  { name: 'Monero', symbol: 'XMR', price: '145.80', change: '+0.65%', cap: '2.6B', vol: '85M', category: 'Crypto', region: 'Payment' },
-  { name: 'Zcash', symbol: 'ZEC', price: '24.85', change: '+1.15%', cap: '380M', vol: '35M', category: 'Crypto', region: 'Payment' },
-  
-  // NFT и Metaverse
-  { name: 'The Sandbox', symbol: 'SAND', price: '0.45', change: '+2.85%', cap: '950M', vol: '85M', category: 'Crypto', region: 'NFT' },
-  { name: 'Decentraland', symbol: 'MANA', price: '0.42', change: '+1.95%', cap: '780M', vol: '65M', category: 'Crypto', region: 'NFT' },
-  { name: 'Axie Infinity', symbol: 'AXS', price: '7.25', change: '+3.15%', cap: '980M', vol: '95M', category: 'Crypto', region: 'NFT' },
-  { name: 'Enjin Coin', symbol: 'ENJ', price: '0.28', change: '+1.45%', cap: '420M', vol: '35M', category: 'Crypto', region: 'NFT' },
-  { name: 'Flow', symbol: 'FLOW', price: '0.85', change: '+2.25%', cap: '880M', vol: '55M', category: 'Crypto', region: 'NFT' },
-  { name: 'Immutable X', symbol: 'IMX', price: '2.15', change: '+3.40%', cap: '3.1B', vol: '95M', category: 'Crypto', region: 'NFT' },
-  { name: 'ApeCoin', symbol: 'APE', price: '1.85', change: '+4.25%', cap: '680M', vol: '120M', category: 'Crypto', region: 'NFT' },
-  
-  // Meme Coins
-  { name: 'Dogecoin', symbol: 'DOGE', price: '0.15', change: '+5.25%', cap: '21.5B', vol: '1.2B', category: 'Crypto', region: 'Meme' },
-  { name: 'Shiba Inu', symbol: 'SHIB', price: '0.000025', change: '+4.50%', cap: '14.8B', vol: '850M', category: 'Crypto', region: 'Meme' },
-  { name: 'Pepe', symbol: 'PEPE', price: '0.0000085', change: '+8.95%', cap: '3.6B', vol: '450M', category: 'Crypto', region: 'Meme' },
-  { name: 'Floki', symbol: 'FLOKI', price: '0.00018', change: '+6.25%', cap: '1.7B', vol: '180M', category: 'Crypto', region: 'Meme' },
-  { name: 'Bonk', symbol: 'BONK', price: '0.000025', change: '+12.50%', cap: '1.6B', vol: '280M', category: 'Crypto', region: 'Meme' },
-  { name: 'Dogwifhat', symbol: 'WIF', price: '2.85', change: '+9.85%', cap: '2.8B', vol: '380M', category: 'Crypto', region: 'Meme' },
-  
-  // Exchange Tokens
-  { name: 'Binance Coin', symbol: 'BNB', price: '585.40', change: '+1.25%', cap: '88B', vol: '1.8B', category: 'Crypto', region: 'Exchange' },
-  { name: 'Cronos', symbol: 'CRO', price: '0.12', change: '+1.85%', cap: '3.2B', vol: '45M', category: 'Crypto', region: 'Exchange' },
-  { name: 'KuCoin Token', symbol: 'KCS', price: '10.25', change: '+0.95%', cap: '980M', vol: '18M', category: 'Crypto', region: 'Exchange' },
-  { name: 'Huobi Token', symbol: 'HT', price: '4.85', change: '+1.45%', cap: '780M', vol: '25M', category: 'Crypto', region: 'Exchange' },
-  { name: 'OKB', symbol: 'OKB', price: '52.40', change: '+0.85%', cap: '3.1B', vol: '35M', category: 'Crypto', region: 'Exchange' },
-  { name: 'FTX Token', symbol: 'FTT', price: '1.25', change: '-2.15%', cap: '420M', vol: '15M', category: 'Crypto', region: 'Exchange' },
-  
-  // Gaming
-  { name: 'Gala', symbol: 'GALA', price: '0.042', change: '+3.85%', cap: '1.1B', vol: '95M', category: 'Crypto', region: 'Gaming' },
-  { name: 'The Sandbox', symbol: 'SAND', price: '0.45', change: '+2.85%', cap: '950M', vol: '85M', category: 'Crypto', region: 'Gaming' },
-  { name: 'Axie Infinity', symbol: 'AXS', price: '7.25', change: '+3.15%', cap: '980M', vol: '95M', category: 'Crypto', region: 'Gaming' },
-  { name: 'Illuvium', symbol: 'ILV', price: '85.40', change: '+2.45%', cap: '380M', vol: '28M', category: 'Crypto', region: 'Gaming' },
-  { name: 'Star Atlas', symbol: 'ATLAS', price: '0.0085', change: '+1.95%', cap: '180M', vol: '12M', category: 'Crypto', region: 'Gaming' },
-  
-  // AI & Big Data
-  { name: 'Fetch.ai', symbol: 'FET', price: '1.85', change: '+4.25%', cap: '1.5B', vol: '120M', category: 'Crypto', region: 'AI' },
-  { name: 'SingularityNET', symbol: 'AGIX', price: '0.42', change: '+3.15%', cap: '540M', vol: '65M', category: 'Crypto', region: 'AI' },
-  { name: 'Ocean Protocol', symbol: 'OCEAN', price: '0.85', change: '+2.45%', cap: '480M', vol: '45M', category: 'Crypto', region: 'AI' },
-  { name: 'Render', symbol: 'RNDR', price: '8.25', change: '+5.85%', cap: '3.2B', vol: '280M', category: 'Crypto', region: 'AI' },
-  { name: 'The Graph', symbol: 'GRT', price: '0.28', change: '+1.85%', cap: '2.6B', vol: '95M', category: 'Crypto', region: 'AI' },
-  { name: 'Bittensor', symbol: 'TAO', price: '425.60', change: '+6.25%', cap: '2.8B', vol: '85M', category: 'Crypto', region: 'AI' },
-  
-  // Privacy
-  { name: 'Monero', symbol: 'XMR', price: '145.80', change: '+0.65%', cap: '2.6B', vol: '85M', category: 'Crypto', region: 'Privacy' },
-  { name: 'Zcash', symbol: 'ZEC', price: '24.85', change: '+1.15%', cap: '380M', vol: '35M', category: 'Crypto', region: 'Privacy' },
-  { name: 'Dash', symbol: 'DASH', price: '28.50', change: '+1.25%', cap: '320M', vol: '28M', category: 'Crypto', region: 'Privacy' },
-  { name: 'Horizen', symbol: 'ZEN', price: '8.45', change: '+0.95%', cap: '125M', vol: '8M', category: 'Crypto', region: 'Privacy' },
-  
-  // Infrastructure
-  { name: 'Filecoin', symbol: 'FIL', price: '5.85', change: '+2.15%', cap: '3.1B', vol: '180M', category: 'Crypto', region: 'Infrastructure' },
-  { name: 'Arweave', symbol: 'AR', price: '28.50', change: '+3.45%', cap: '1.9B', vol: '65M', category: 'Crypto', region: 'Infrastructure' },
-  { name: 'Helium', symbol: 'HNT', price: '4.25', change: '+1.85%', cap: '680M', vol: '35M', category: 'Crypto', region: 'Infrastructure' },
-  { name: 'Theta Network', symbol: 'THETA', price: '1.85', change: '+2.25%', cap: '1.8B', vol: '55M', category: 'Crypto', region: 'Infrastructure' },
-  { name: 'Basic Attention Token', symbol: 'BAT', price: '0.28', change: '+1.15%', cap: '420M', vol: '28M', category: 'Crypto', region: 'Infrastructure' },
-  
-  // Дополнительные популярные
-  { name: 'Tron', symbol: 'TRX', price: '0.12', change: '+1.45%', cap: '10.5B', vol: '450M', category: 'Crypto', region: 'Layer1' },
-  { name: 'Toncoin', symbol: 'TON', price: '6.25', change: '+3.85%', cap: '14.2B', vol: '280M', category: 'Crypto', region: 'Layer1' },
-  { name: 'Internet Computer', symbol: 'ICP', price: '12.85', change: '+2.15%', cap: '5.8B', vol: '95M', category: 'Crypto', region: 'Layer1' },
-  { name: 'VeChain', symbol: 'VET', price: '0.035', change: '+1.95%', cap: '2.5B', vol: '65M', category: 'Crypto', region: 'Layer1' },
-  { name: 'Theta Fuel', symbol: 'TFUEL', price: '0.085', change: '+2.45%', cap: '450M', vol: '18M', category: 'Crypto', region: 'Layer1' },
-  { name: 'EOS', symbol: 'EOS', price: '0.75', change: '+0.85%', cap: '850M', vol: '45M', category: 'Crypto', region: 'Layer1' },
-  { name: 'Waves', symbol: 'WAVES', price: '2.45', change: '+1.25%', cap: '280M', vol: '25M', category: 'Crypto', region: 'Layer1' },
-  { name: 'Zilliqa', symbol: 'ZIL', price: '0.025', change: '+1.65%', cap: '450M', vol: '35M', category: 'Crypto', region: 'Layer1' },
-  { name: 'Harmony', symbol: 'ONE', price: '0.018', change: '+2.85%', cap: '240M', vol: '18M', category: 'Crypto', region: 'Layer1' },
-  { name: 'Elrond', symbol: 'EGLD', price: '42.50', change: '+1.45%', cap: '1.1B', vol: '45M', category: 'Crypto', region: 'Layer1' },
-  { name: 'MultiversX', symbol: 'EGLD', price: '42.50', change: '+1.45%', cap: '1.1B', vol: '45M', category: 'Crypto', region: 'Layer1' },
-  { name: 'Celo', symbol: 'CELO', price: '0.85', change: '+1.95%', cap: '450M', vol: '28M', category: 'Crypto', region: 'Layer1' },
-  { name: 'Klaytn', symbol: 'KLAY', price: '0.18', change: '+1.25%', cap: '680M', vol: '35M', category: 'Crypto', region: 'Layer1' },
-  { name: 'Terra Classic', symbol: 'LUNC', price: '0.00012', change: '+3.25%', cap: '720M', vol: '85M', category: 'Crypto', region: 'Layer1' },
-  { name: 'Terra', symbol: 'LUNA', price: '0.65', change: '+2.15%', cap: '450M', vol: '45M', category: 'Crypto', region: 'Layer1' },
-]);
-
-// Функция для определения типа криптовалюты на основе символа
-const getCryptoType = (symbol: string): string => {
-  const symbolUpper = symbol.toUpperCase();
-  
-  // Layer 1
-  if (['BTC', 'ETH', 'SOL', 'ADA', 'AVAX', 'DOT', 'ATOM', 'NEAR', 'ALGO', 'XTZ', 'HBAR', 'FTM', 'APT', 'SUI', 'TRX', 'TON', 'ICP', 'VET', 'EOS', 'WAVES', 'ZIL', 'ONE', 'EGLD', 'CELO', 'KLAY', 'LUNC', 'LUNA'].includes(symbolUpper)) {
-    return 'Layer1';
-  }
-  // Layer 2
-  if (['MATIC', 'ARB', 'OP', 'IMX', 'LRC', 'STRK'].includes(symbolUpper)) {
-    return 'Layer2';
-  }
-  // DeFi
-  if (['UNI', 'LINK', 'AAVE', 'MKR', 'COMP', 'CRV', 'SUSHI', 'CAKE', '1INCH', 'YFI', 'SNX', 'BAL', 'CVX', 'FRAX', 'LDO'].includes(symbolUpper)) {
-    return 'DeFi';
-  }
-  // Stablecoin
-  if (['USDT', 'USDC', 'DAI', 'BUSD', 'TUSD', 'USDP', 'GUSD', 'HUSD'].includes(symbolUpper)) {
-    return 'Stablecoin';
-  }
-  // Payment
-  if (['XRP', 'LTC', 'BCH', 'XLM', 'DASH', 'XMR', 'ZEC'].includes(symbolUpper)) {
-    return 'Payment';
-  }
-  // NFT
-  if (['SAND', 'MANA', 'AXS', 'ENJ', 'FLOW', 'IMX', 'APE'].includes(symbolUpper)) {
-    return 'NFT';
-  }
-  // Meme
-  if (['DOGE', 'SHIB', 'PEPE', 'FLOKI', 'BONK', 'WIF', 'MEME', 'MYRO', 'POPCAT', 'MEW'].includes(symbolUpper)) {
-    return 'Meme';
-  }
-  // Exchange
-  if (['BNB', 'CRO', 'KCS', 'HT', 'OKB', 'FTT', 'LEO', 'GT'].includes(symbolUpper)) {
-    return 'Exchange';
-  }
-  // Gaming
-  if (['GALA', 'ILV', 'ATLAS', 'POLIS', 'MAGIC', 'GMT', 'GFT', 'HOOK', 'HFT'].includes(symbolUpper)) {
-    return 'Gaming';
-  }
-  // AI
-  if (['FET', 'AGIX', 'OCEAN', 'RNDR', 'TAO', 'AI', 'OLAS', 'ARKM', 'GLM', 'NMR', 'CTXC', 'DBC', 'VXV', 'COTI', 'GRT'].includes(symbolUpper)) {
-    return 'AI';
-  }
-  // Privacy
-  if (['XMR', 'ZEC', 'DASH', 'ZEN'].includes(symbolUpper)) {
-    return 'Privacy';
-  }
-  // Infrastructure
-  if (['FIL', 'AR', 'HNT', 'THETA', 'BAT'].includes(symbolUpper)) {
-    return 'Infrastructure';
-  }
-  
-  return 'Layer1'; // По умолчанию
-};
-
-// Функция для загрузки популярных криптовалют и расширения списка
-const loadPopularCryptos = async () => {
+const loadMarkets = async () => {
+  loading.value = true
+  loadError.value = null
   try {
-    console.log('🔄 Loading popular cryptos from API...');
-    const cryptoTickers = await getPopularCryptos();
-    console.log(`✅ Loaded ${cryptoTickers.length} popular cryptos from API`);
-    
-    // Создаем мапу существующих символов для быстрой проверки
-    const existingSymbols = new Set(allCryptoAssets.value.map(a => a.symbol));
-    
-    // Добавляем новые криптовалюты, которых еще нет в списке
-    let addedCount = 0;
-    cryptoTickers.forEach(ticker => {
-      // Извлекаем символ из формата SYMBOL-USD
-      const symbol = ticker.replace('-USD', '');
-      
-      if (!existingSymbols.has(symbol)) {
-        const cryptoType = getCryptoType(symbol);
-        
-        allCryptoAssets.value.push({
-          name: symbol,
-          symbol: symbol,
-          price: '0.00',
-          change: '+0.00%',
-          cap: '-',
-          vol: '-',
-          category: 'Crypto',
-          region: cryptoType
-        });
-        existingSymbols.add(symbol);
-        addedCount++;
-      }
-    });
-    
-    console.log(`✅ Added ${addedCount} new cryptos to the list`);
-  } catch (error: any) {
-    console.error('❌ Error loading popular cryptos:', error);
-    console.warn('⚠️ Using static cryptos only');
-  }
-};
-
-// Функция для загрузки реальных данных о криптовалютах
-const loadRealData = async () => {
-  if (!useRealData.value) {
-    console.log('Real data loading is disabled');
-    return;
-  }
-  
-  loading.value = true;
-  try {
-    // Сначала загружаем популярные криптовалюты и расширяем список
-    await loadPopularCryptos();
-    
-    // Получаем список всех криптовалют
-    const allCryptoTickers = allCryptoAssets.value.map(asset => `${asset.symbol}-USD`);
-    
-    console.log('🔄 Loading market data for', allCryptoTickers.length, 'cryptos...');
-    
-    // Загружаем данные батчами по 20 криптовалют для оптимизации
-    const batchSize = 20;
-    let updatedCount = 0;
-    
-    for (let i = 0; i < allCryptoTickers.length; i += batchSize) {
-      const batch = allCryptoTickers.slice(i, i + batchSize);
-      console.log(`📦 Loading batch ${Math.floor(i / batchSize) + 1}/${Math.ceil(allCryptoTickers.length / batchSize)} (${batch.length} cryptos)...`);
-      
-      // Загружаем данные для каждого тикера в батче
-      const promises = batch.map(async (ticker) => {
-        try {
-          const cryptoData = await getCryptoInfo(ticker);
-          const symbol = ticker.replace('-USD', '');
-          
-          const assetIndex = allCryptoAssets.value.findIndex(a => a.symbol === symbol);
-          if (assetIndex !== -1) {
-            allCryptoAssets.value[assetIndex].price = cryptoData.price.toFixed(2);
-            allCryptoAssets.value[assetIndex].change = `${cryptoData.changePercent >= 0 ? '+' : ''}${cryptoData.changePercent.toFixed(2)}%`;
-            allCryptoAssets.value[assetIndex].name = cryptoData.name || symbol;
-            if (cryptoData.marketCap) {
-              const capB = cryptoData.marketCap / 1e9;
-              allCryptoAssets.value[assetIndex].cap = capB >= 1000 ? `${(capB / 1000).toFixed(1)}T` : `${capB.toFixed(2)}B`;
-            }
-            if (cryptoData.volume) {
-              const volM = cryptoData.volume / 1e6;
-              allCryptoAssets.value[assetIndex].vol = volM >= 1000 ? `${(volM / 1000).toFixed(2)}B` : `${volM.toFixed(2)}M`;
-            }
-            updatedCount++;
-          }
-        } catch (error: any) {
-          console.warn(`⚠️ Error loading ${ticker}:`, error.message);
-        }
-      });
-      
-      await Promise.all(promises);
-      
-      // Небольшая задержка между батчами
-      if (i + batchSize < allCryptoTickers.length) {
-        await new Promise(resolve => setTimeout(resolve, 500));
-      }
-    }
-    
-    console.log(`✅ Updated ${updatedCount} cryptos with real data`);
-  } catch (error: any) {
-    console.error('❌ Error loading real crypto data:', error);
-    console.warn('⚠️ Falling back to static data');
-    useRealData.value = false;
+    coins.value = await getCoinGeckoMarkets('usd', 100, 1)
+  } catch (e: unknown) {
+    loadError.value = e instanceof Error ? e.message : 'Ошибка загрузки данных CoinGecko'
   } finally {
-    loading.value = false;
-    console.log('🏁 Crypto data loading finished');
+    loading.value = false
   }
-};
+}
 
-// Получаем доступные типы
-const availableTypes = computed(() => {
-  const types = new Set(allCryptoAssets.value.map(a => a.region).filter(Boolean));
-  return Array.from(types).sort();
-});
-
-// Фильтрация по типу и капитализации
-const cryptoAssets = computed(() => {
-  let filtered = [...allCryptoAssets.value];
-  
-  // Фильтр по типу
-  if (selectedType.value !== 'All') {
-    filtered = filtered.filter(a => a.region === selectedType.value);
+const sortedCoins = computed(() => {
+  const list = [...coins.value]
+  switch (activeSort.value) {
+    case 'gainers':
+      return list.sort((a, b) => (b.price_change_percentage_24h ?? 0) - (a.price_change_percentage_24h ?? 0))
+    case 'losers':
+      return list.sort((a, b) => (a.price_change_percentage_24h ?? 0) - (b.price_change_percentage_24h ?? 0))
+    case 'volume':
+      return list.sort((a, b) => (b.total_volume ?? 0) - (a.total_volume ?? 0))
+    default:
+      return list.sort((a, b) => (a.market_cap_rank ?? 999) - (b.market_cap_rank ?? 999))
   }
-  
-  // Фильтр по капитализации
-  if (selectedCap.value !== 'All') {
-    filtered = filtered.filter(a => {
-      const capValue = parseCapValue(a.cap || '0');
-      switch (selectedCap.value) {
-        case 'Mega': return capValue >= 100; // >= 100B
-        case 'Large': return capValue >= 10 && capValue < 100; // 10B - 100B
-        case 'Mid': return capValue >= 1 && capValue < 10; // 1B - 10B
-        case 'Small': return capValue >= 0.1 && capValue < 1; // 100M - 1B
-        case 'Micro': return capValue < 0.1; // < 100M
-        default: return true;
-      }
-    });
+})
+
+// ─── TRENDING ───────────────────────────────────────────────────────────────
+interface TrendingCoin {
+  id: string
+  name: string
+  symbol: string
+  thumb?: string
+  market_cap_rank?: number
+  price_btc?: number
+}
+
+const trendingCoins = ref<TrendingCoin[]>([])
+const trendingLoading = ref(false)
+
+const loadTrending = async () => {
+  trendingLoading.value = true
+  try {
+    const data = await getTrendingCoins()
+    const items = (data as Record<string, unknown>).coins as Array<{ item: TrendingCoin }> | undefined
+    trendingCoins.value = items?.map(c => c.item) ?? []
+  } catch {
+    trendingCoins.value = []
+  } finally {
+    trendingLoading.value = false
   }
-  
-  // Сортировка
-  if (activeFilter.value === 'Топ роста') {
-    filtered = filtered.sort((a, b) => {
-      const aChange = parseFloat(a.change.replace('%', ''));
-      const bChange = parseFloat(b.change.replace('%', ''));
-      return bChange - aChange;
-    });
-  } else if (activeFilter.value === 'Топ падения') {
-    filtered = filtered.sort((a, b) => {
-      const aChange = parseFloat(a.change.replace('%', ''));
-      const bChange = parseFloat(b.change.replace('%', ''));
-      return aChange - bChange;
-    });
-  } else if (activeFilter.value === 'Высокий объём') {
-    filtered = filtered.sort((a, b) => {
-      const aVol = parseVolValue(a.vol || '0');
-      const bVol = parseVolValue(b.vol || '0');
-      return bVol - aVol;
-    });
+}
+
+// ─── GLOBAL ─────────────────────────────────────────────────────────────────
+const globalStats = ref<GlobalStats | null>(null)
+
+const loadGlobal = async () => {
+  try {
+    globalStats.value = await getGlobalStats()
+  } catch {
+    globalStats.value = null
   }
-  
-  return filtered;
-});
+}
 
-const parseCapValue = (cap: string): number => {
-  if (cap.includes('T')) return parseFloat(cap.replace('T', '')) * 1000;
-  if (cap.includes('B')) return parseFloat(cap.replace('B', ''));
-  if (cap.includes('M')) return parseFloat(cap.replace('M', '')) / 1000;
-  return 0;
-};
+const topDominance = computed(() => {
+  if (!globalStats.value?.market_cap_percentage) return {}
+  const entries = Object.entries(globalStats.value.market_cap_percentage)
+    .sort(([, a], [, b]) => b - a)
+    .slice(0, 10)
+  return Object.fromEntries(entries)
+})
 
-const parseVolValue = (vol: string): number => {
-  if (vol.includes('B')) return parseFloat(vol.replace('B', '')) * 1000;
-  if (vol.includes('M')) return parseFloat(vol.replace('M', ''));
-  return 0;
-};
+// ─── ARBITRAGE ──────────────────────────────────────────────────────────────
+const arbOpportunities = ref<Record<string, unknown>[]>([])
+const arbLoading = ref(false)
+const arbError = ref<string | null>(null)
 
-const getTypeName = (type: string) => {
-  const names: Record<string, string> = {
-    'Layer1': 'Layer 1',
-    'Layer2': 'Layer 2',
-    'DeFi': 'DeFi',
-    'Stablecoin': 'Стейблкоины',
-    'Payment': 'Платежи',
-    'NFT': 'NFT & Metaverse',
-    'Meme': 'Мем-коины',
-    'Exchange': 'Биржевые токены',
-    'Gaming': 'Игровые',
-    'AI': 'AI & Big Data',
-    'Privacy': 'Приватность',
-    'Infrastructure': 'Инфраструктура',
-  };
-  return names[type] || type;
-};
+const loadArbitrage = async () => {
+  arbLoading.value = true
+  arbError.value = null
+  try {
+    arbOpportunities.value = await getArbitrageOpportunities()
+  } catch (e: unknown) {
+    arbError.value = e instanceof Error ? e.message : 'Ошибка загрузки арбитражных данных'
+  } finally {
+    arbLoading.value = false
+  }
+}
 
-const getCapName = (cap: string) => {
-  const names: Record<string, string> = {
-    'Mega': 'Мега (>100B)',
-    'Large': 'Крупные (10B-100B)',
-    'Mid': 'Средние (1B-10B)',
-    'Small': 'Малые (100M-1B)',
-    'Micro': 'Микро (<100M)',
-  };
-  return names[cap] || cap;
-};
+// ─── Helpers ────────────────────────────────────────────────────────────────
+const formatPrice = (price: number): string => {
+  if (price >= 1) return price.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+  if (price >= 0.01) return price.toFixed(4)
+  return price.toFixed(8)
+}
 
-const selectType = (type: string) => {
-  selectedType.value = type;
-  isTypeOpen.value = false;
-};
+const formatPct = (pct?: number): string => {
+  if (pct == null) return '—'
+  return `${pct >= 0 ? '+' : ''}${pct.toFixed(2)}%`
+}
 
-const selectCap = (cap: string) => {
-  selectedCap.value = cap;
-  isCapOpen.value = false;
-};
+const changeClass = (pct?: number): string => {
+  if (pct == null) return 'text-gray-500 font-mono text-xs'
+  return pct >= 0
+    ? 'text-emerald-400 font-mono text-xs'
+    : 'text-rose-400 font-mono text-xs'
+}
 
-const clearFilters = () => {
-  selectedType.value = 'All';
-  selectedCap.value = 'All';
-};
+const formatLargeNum = (num?: number): string => {
+  if (num == null) return '—'
+  if (num >= 1e12) return `${(num / 1e12).toFixed(2)}T`
+  if (num >= 1e9) return `${(num / 1e9).toFixed(2)}B`
+  if (num >= 1e6) return `${(num / 1e6).toFixed(2)}M`
+  return num.toLocaleString()
+}
 
-// Закрытие выпадающих меню при клике вне их
-let clickOutsideHandler: ((e: MouseEvent) => void) | null = null;
+const sparklinePoints = (prices: number[]): string => {
+  if (!prices || prices.length === 0) return ''
+  const step = 120 / (prices.length - 1)
+  const min = Math.min(...prices)
+  const max = Math.max(...prices)
+  const range = max - min || 1
+  return prices
+    .map((p, i) => `${(i * step).toFixed(1)},${(40 - ((p - min) / range) * 36).toFixed(1)}`)
+    .join(' ')
+}
 
-let updateInterval: NodeJS.Timeout | null = null;
+// ─── Lifecycle ──────────────────────────────────────────────────────────────
+let updateInterval: ReturnType<typeof setInterval> | null = null
 
 onMounted(() => {
-  clickOutsideHandler = (e: MouseEvent) => {
-    const target = e.target as HTMLElement;
-    if (!target.closest('[data-dropdown-type]') && !target.closest('[data-dropdown-cap]')) {
-      isTypeOpen.value = false;
-      isCapOpen.value = false;
-    }
-  };
-  document.addEventListener('click', clickOutsideHandler);
-  
-  // Загружаем реальные данные о криптовалютах
-  loadRealData();
-  
-  // Обновляем данные каждые 60 секунд
+  loadMarkets()
+  loadGlobal()
+  loadTrending()
+
   updateInterval = setInterval(() => {
-    loadRealData();
-  }, 60000);
-});
+    loadMarkets()
+  }, 60000)
+})
 
 onBeforeUnmount(() => {
-  if (clickOutsideHandler) {
-    document.removeEventListener('click', clickOutsideHandler);
-  }
   if (updateInterval) {
-    clearInterval(updateInterval);
+    clearInterval(updateInterval)
   }
-});
-
-
-// Icon components
-const StarIcon = { template: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>' };
-const TrendingUpIcon = { template: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>' };
-const TrendingDownIcon = { template: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 18 13.5 8.5 8.5 13.5 1 6"/><polyline points="17 18 23 18 23 12"/></svg>' };
-const ChevronDownIcon = { template: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>' };
+})
 </script>

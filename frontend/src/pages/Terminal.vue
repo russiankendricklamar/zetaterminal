@@ -335,8 +335,13 @@
             :activeSection="resourcesSection"
           />
 
+          <!-- ETF Page -->
+          <EtfPage
+            v-else-if="window.view === 'ETF'"
+          />
+
           <!-- Swaps Page -->
-          <SwapsPage 
+          <SwapsPage
             v-else-if="window.view === 'Swaps'" 
             :symbol="activeSymbol"
             :activeSection="swapsSection"
@@ -391,6 +396,7 @@ import ResearchPage from '@/components/terminal/ResearchPage.vue';
 import ResourcesPage from '@/components/terminal/ResourcesPage.vue';
 import SwapsPage from '@/components/terminal/SwapsPage.vue';
 import DashboardPage from '@/components/terminal/DashboardPage.vue';
+import EtfPage from '@/components/terminal/EtfPage.vue';
 
 // State
 const data = ref<Candle[]>([]);
@@ -475,6 +481,7 @@ const navItems = [
   { id: 'Options', label: 'Опционы', icon: 'FilterIcon', code: 'OMON' },
   { id: 'Research', label: 'Исследования', icon: 'SearchIcon', code: 'RES' },
   { id: 'Resources', label: 'Ресурсы', icon: 'DatabaseIcon', code: 'FLDS' },
+  { id: 'ETF', label: 'ETF', icon: 'TrendingUpIcon', code: 'ETF' },
   { id: 'Swaps', label: 'Свопы', icon: 'ActivityIcon', code: 'SWPM' },
 ];
 
@@ -503,6 +510,7 @@ const systemCommands: SearchResult[] = [
   { id: 'OMON', label: 'Опционы', code: 'OMON', type: 'command', description: 'Опционные цепочки и греки' },
   { id: 'RES', label: 'Исследования', code: 'RES', type: 'command', description: 'Инвестиционные исследования' },
   { id: 'FLDS', label: 'Ресурсы', code: 'FLDS', type: 'command', description: 'Справочник данных и помощь' },
+  { id: 'ETF', label: 'ETF', code: 'ETF', type: 'command', description: 'Биржевые фонды MOEX и международные' },
   { id: 'SWPM', label: 'Свопы', code: 'SWPM', type: 'command', description: 'Ценообразование IRS и CDS' },
   { id: 'SET', label: 'Настройки', code: 'SET', type: 'command', description: 'Настройка терминала' },
   // Quantitative Analysis Tools Commands
@@ -675,6 +683,7 @@ const handleCommandSelect = (item: SearchResult) => {
     else if (code === 'OMON') targetView = 'Options';
     else if (code === 'RES') targetView = 'Research';
     else if (code === 'FLDS') targetView = 'Resources';
+    else if (code === 'ETF') targetView = 'ETF';
     else if (code === 'SWPM') targetView = 'Swaps';
     else if (['VOL', 'VOLG', 'CZF', 'CVRC', 'PSR', 'LVM', 'MVS', 'LIQ', 'HMM', 'TSIG', 'CORR', 'HMMD', 'ZSCR', 'OBHM', 'ENSD', 'FEAT', 'DDSH', 'EXEC', 'EXPO', 'OB3D', 'TVCN', 'CTENSOR', 'HELIX', 'HYPERCUBE', 'VORTEX', 'PLASMA', 'LATTICE', 'TICKCORE', 'GREEKS3D', 'REGNET', 'TAILCUBE'].includes(code)) {
       targetView = 'Analytics';

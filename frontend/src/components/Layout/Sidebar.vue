@@ -118,20 +118,22 @@
             :class="{ expanded: expandedTools[key] }"
           >
             <div class="tool-content">
-              <router-link
-                v-for="(item, itemIndex) in group.items"
-                :key="item.path"
-                :to="item.path"
-                class="nav-item"
-                :class="{ active: isActive(item.path), 'coming-soon': item.soon }"
-                :style="{ '--item-index': itemIndex }"
-                @click.native="!item.soon && handleNavClick($event)"
-              >
-                <span class="item-dot"></span>
-                <span class="nav-label font-mono">{{ item.label }}</span>
-                <span v-if="item.soon" class="nav-soon font-mono">SOON</span>
-                <span v-else class="item-arrow font-mono">&rarr;</span>
-              </router-link>
+              <template v-for="(item, itemIndex) in group.items" :key="item.path || item.label">
+                <div v-if="item.section" class="section-label font-mono">{{ item.label }}</div>
+                <router-link
+                  v-else
+                  :to="item.path"
+                  class="nav-item"
+                  :class="{ active: isActive(item.path), 'coming-soon': item.soon }"
+                  :style="{ '--item-index': itemIndex }"
+                  @click.native="!item.soon && handleNavClick($event)"
+                >
+                  <span class="item-dot"></span>
+                  <span class="nav-label font-mono">{{ item.label }}</span>
+                  <span v-if="item.soon" class="nav-soon font-mono">SOON</span>
+                  <span v-else class="item-arrow font-mono">&rarr;</span>
+                </router-link>
+              </template>
             </div>
           </div>
         </div>
@@ -188,19 +190,15 @@ const sidebarRef = ref<HTMLElement | null>(null)
 
 const expandedTools = reactive<Record<string, boolean>>({
   portfolio: false,
-  risk: false,
-  quant: false,
-  analytics: false,
+  riskAnalytics: false,
+  signalsModels: false,
   bonds: false,
-  bondReports: false,
-  options: false,
-  swaps: false,
-  forwards: false,
+  derivatives: false,
 })
 
 const toolGroups = {
   portfolio: {
-    title: 'ПОРТФЕЛЬНЫЙ АНАЛИЗ',
+    title: 'ПОРТФЕЛЬ',
     subtitle: 'Анализ и оптимизация',
     items: [
       { path: '/portfolio', label: 'Состав портфеля' },
@@ -209,88 +207,59 @@ const toolGroups = {
       { path: '/reports', label: 'Отчёты' },
     ]
   },
-  risk: {
-    title: 'РИСК-МЕНЕДЖМЕНТ',
-    subtitle: 'Бэктестинг, стресс-тестирование',
+  riskAnalytics: {
+    title: 'РИСК И АНАЛИТИКА',
+    subtitle: 'Стресс-тесты, статистика, факторы',
     items: [
       { path: '/backtest', label: 'Бэктестинг' },
-      { path: '/stress', label: 'Стресс-тестирование облигаций' },
-      { path: '/stress/swaps', label: 'Стресс-тестирование СВОПов' },
-      { path: '/analytics/adversarial-stress', label: 'Adversarial Stress Testing' },
-    ]
-  },
-  quant: {
-    title: 'АНАЛИЗ РЫНОЧНЫХ РЕЖИМОВ',
-    subtitle: 'Модели и режимы',
-    items: [
-      { path: '/regimes', label: 'Рыночные режимы' },
-      { path: '/regime-details', label: 'Детальный анализ режимов' },
-      { path: '/spectral-regimes', label: 'Комплексный анализ режимов' },
-      { path: '/fixed-income', label: 'Доходности облигаций' },
-    ]
-  },
-  analytics: {
-    title: 'КОЛИЧЕСТВЕННЫЙ АНАЛИЗ',
-    subtitle: 'Статистика, факторы, PCA',
-    items: [
+      { path: '/stress', label: 'Стресс-тестирование' },
+      { path: '/analytics/adversarial-stress', label: 'Adversarial Stress' },
+      { path: '/analytics/pbo', label: 'PBO / DSR' },
       { path: '/analytics/sharpe-stats', label: 'Статистика Шарпа' },
       { path: '/analytics/realized-kernels', label: 'Realized Kernels' },
       { path: '/analytics/har-model', label: 'HAR Model' },
       { path: '/analytics/factor-analysis', label: 'Factor Analysis' },
+    ]
+  },
+  signalsModels: {
+    title: 'СИГНАЛЫ И МОДЕЛИ',
+    subtitle: 'Режимы, PCA, стэкинг',
+    items: [
+      { path: '/regimes', label: 'Рыночные режимы' },
+      { path: '/spectral-regimes', label: 'Спектральный анализ режимов' },
       { path: '/analytics/eigenportfolio', label: 'Eigenportfolios (PCA)' },
-      { path: '/analytics/pbo', label: 'PBO / DSR' },
       { path: '/analytics/alpha-stacking', label: 'Alpha Stacking' },
       { path: '/analytics/meta-labeling', label: 'Meta-Labeling' },
-      { path: '/analytics/convex-portfolio', label: 'Convex Portfolio' },
     ]
   },
   bonds: {
-    title: 'СПРАВЕДЛИВАЯ СТОИМОСТЬ',
-    subtitle: 'Оценка облигаций',
+    title: 'ОБЛИГАЦИИ',
+    subtitle: 'Доходности, оценка, отчёты',
     items: [
+      { path: '/fixed-income', label: 'Доходности облигаций' },
       { path: '/bond-valuation', label: 'Оценка облигаций' },
       { path: '/zcyc-viewer', label: 'Кривая бескупонной доходности' },
-      { path: '/bond-report', label: 'Отчет об оценке' },
+      { path: '/vanila-bond-report', label: 'Vanila Bond Report' },
+      { path: '/floater-bond-report', label: 'Floater Bond Report' },
     ]
   },
-  options: {
-    title: 'ОПЦИОНЫ',
-    subtitle: 'Ценообразование и Greeks',
+  derivatives: {
+    title: 'ДЕРИВАТИВЫ',
+    subtitle: 'Опционы, свопы, форварды',
     items: [
-      { path: '/pricing/options', label: 'Справедливая стоимость' },
+      { label: 'ОПЦИОНЫ', section: true },
+      { path: '/pricing/options', label: 'Ценообразование' },
       { path: '/pricing/options/models', label: 'Сравнение моделей' },
       { path: '/pricing/options/greeks', label: 'Анализ Greeks' },
-      { path: '/pricing/options/portfolio', label: 'Портфель опционов' },
       { path: '/analytics/volatility', label: 'Поверхность волатильности' },
-    ]
-  },
-  swaps: {
-    title: 'СВОПЫ',
-    subtitle: 'Greeks, Pricing & Risk',
-    items: [
+      { label: 'СВОПЫ', section: true },
       { path: '/valuation/swaps', label: 'Справедливая стоимость' },
       { path: '/swap-greeks', label: 'Греки СВОПов' },
       { path: '/analytics/pnl', label: 'Факторная декомпозиция P&L' },
       { path: '/hedging', label: 'Регрессионное хеджирование' },
-      { path: '/reports/swaps', label: 'Отчеты по СВОПам', soon: true },
-    ]
-  },
-  forwards: {
-    title: 'ФОРВАРДЫ',
-    subtitle: 'Оценка и анализ',
-    items: [
+      { label: 'ФОРВАРДЫ', section: true },
       { path: '/valuation/forwards', label: 'Оценка форвардов' },
       { path: '/forwards/curve', label: 'Форвардная кривая' },
-      { path: '/forwards/greeks', label: 'Греки форвардов' },
-      { path: '/forwards/basis', label: 'Спот-форвард базис' },
-    ]
-  },
-  bondReports: {
-    title: 'ОТЧЁТЫ ПО ОБЛИГАЦИЯМ',
-    subtitle: 'Шаблонные отчеты',
-    items: [
-      { path: '/vanila-bond-report', label: 'Vanila Bond Report' },
-      { path: '/floater-bond-report', label: 'Floater Bond Report' },
     ]
   },
 }
@@ -872,6 +841,20 @@ onUnmounted(() => clearInterval(timer))
   border: 1px solid currentColor;
   padding: 1px 4px;
   flex-shrink: 0;
+}
+
+.section-label {
+  font-size: 9px;
+  color: #525252;
+  letter-spacing: 0.1em;
+  padding: 8px 12px 4px;
+  text-transform: uppercase;
+  border-top: 1px solid #1a1a1a;
+}
+
+.section-label:first-child {
+  border-top: none;
+  padding-top: 4px;
 }
 
 .item-arrow {

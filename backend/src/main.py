@@ -42,6 +42,9 @@ from src.api import meta_labeling
 from src.api import convex_portfolio
 from src.api import black_litterman
 from src.api import adversarial_stress
+from src.api import moexalgo
+from src.api import dadata
+from src.api import etf
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -114,6 +117,9 @@ app.include_router(meta_labeling.router, prefix="/api/meta-labeling", tags=["Met
 app.include_router(convex_portfolio.router, prefix="/api/convex-portfolio", tags=["Convex Portfolio"], dependencies=_auth)
 app.include_router(black_litterman.router, prefix="/api/black-litterman", tags=["Black-Litterman"], dependencies=_auth)
 app.include_router(adversarial_stress.router, prefix="/api/adversarial-stress", tags=["Adversarial Stress"], dependencies=_auth)
+app.include_router(moexalgo.router, prefix="/api/moexalgo", tags=["MOEX ISS"], dependencies=_auth)
+app.include_router(dadata.router, prefix="/api/dadata", tags=["DaData"], dependencies=_auth)
+app.include_router(etf.router, prefix="/api/etf", tags=["ETF"], dependencies=_auth)
 
 # REMOVED: platform_services router — contains dangerous endpoints:
 # open email relay, SSRF vectors, auth token proxy, open storage

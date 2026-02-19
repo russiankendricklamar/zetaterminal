@@ -17,8 +17,6 @@ export default defineConfig(({ command }) => ({
       output: {
         manualChunks: {
           'vendor': ['vue', 'vue-router', 'pinia', 'axios'],
-          'charts': ['echarts', 'vue-echarts', 'chart.js'],
-          'three-vendor': ['three']
         }
       }
     },

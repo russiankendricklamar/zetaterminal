@@ -191,6 +191,65 @@ export async function getCbrKeyRate(): Promise<CbrKeyRate> {
   return fetchJson(`${API_BASE}/api/macro-data/cbr/key-rate`)
 }
 
+// ─── CBR Extended ──────────────────────────────────────────────────────────
+
+export interface CbrRuonia {
+  current_rate: number
+  history: Array<{ date: string; rate: number; volume: number }>
+  provider: string
+}
+
+export interface CbrPreciousMetals {
+  metals: Record<string, Array<{ date: string; price: number }>>
+  provider: string
+}
+
+export interface CbrDepositRates {
+  rates: Array<{ date: string; overnight: number | null }>
+  provider: string
+}
+
+export interface CbrRepoRates {
+  entries: Array<{ date: string; debt: number; debt_fix: number }>
+  provider: string
+}
+
+export async function getCbrRuonia(fromDate?: string, toDate?: string): Promise<CbrRuonia> {
+  let url = `${API_BASE}/api/macro-data/cbr/ruonia`
+  const params: string[] = []
+  if (fromDate) params.push(`from_date=${fromDate}`)
+  if (toDate) params.push(`to_date=${toDate}`)
+  if (params.length) url += `?${params.join('&')}`
+  return fetchJson(url)
+}
+
+export async function getCbrPreciousMetals(fromDate?: string, toDate?: string): Promise<CbrPreciousMetals> {
+  let url = `${API_BASE}/api/macro-data/cbr/metals`
+  const params: string[] = []
+  if (fromDate) params.push(`from_date=${fromDate}`)
+  if (toDate) params.push(`to_date=${toDate}`)
+  if (params.length) url += `?${params.join('&')}`
+  return fetchJson(url)
+}
+
+export async function getCbrDepositRates(fromDate?: string, toDate?: string): Promise<CbrDepositRates> {
+  let url = `${API_BASE}/api/macro-data/cbr/deposit-rates`
+  const params: string[] = []
+  if (fromDate) params.push(`from_date=${fromDate}`)
+  if (toDate) params.push(`to_date=${toDate}`)
+  if (params.length) url += `?${params.join('&')}`
+  return fetchJson(url)
+}
+
+export async function getCbrRepoRates(fromDate?: string, toDate?: string): Promise<CbrRepoRates> {
+  let url = `${API_BASE}/api/macro-data/cbr/repo-rates`
+  const params: string[] = []
+  if (fromDate) params.push(`from_date=${fromDate}`)
+  if (toDate) params.push(`to_date=${toDate}`)
+  if (params.length) url += `?${params.join('&')}`
+  return fetchJson(url)
+}
+
 // ─── SEC EDGAR ──────────────────────────────────────────────────────────────
 
 export async function getSecFilings(cik: string): Promise<SecCompanyFilings> {
@@ -199,6 +258,31 @@ export async function getSecFilings(cik: string): Promise<SecCompanyFilings> {
 
 export async function getSecCompanyFacts(cik: string): Promise<SecCompanyFacts> {
   return fetchJson(`${API_BASE}/api/macro-data/sec/company-facts/${encodeURIComponent(cik)}`)
+}
+
+export interface SecSearchResult {
+  query: string
+  total: number
+  filings: Array<{
+    file_num: string
+    form_type: string
+    entity_name: string
+    file_date: string
+    period_of_report: string
+    file_description: string
+    display_names: string[]
+  }>
+  provider: string
+}
+
+export async function searchSecFilings(
+  query: string,
+  forms?: string,
+  limit: number = 20
+): Promise<SecSearchResult> {
+  let url = `${API_BASE}/api/macro-data/sec/search?q=${encodeURIComponent(query)}&limit=${limit}`
+  if (forms) url += `&forms=${encodeURIComponent(forms)}`
+  return fetchJson(url)
 }
 
 // ─── OpenFIGI ───────────────────────────────────────────────────────────────
