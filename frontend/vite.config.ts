@@ -2,8 +2,8 @@ import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
 import { fileURLToPath } from 'node:url'
 
-export default defineConfig({
-  base: '/zetaterminal/',
+export default defineConfig(({ command }) => ({
+  base: command === 'build' ? '/zetaterminal/' : '/',
   plugins: [vue()],
   resolve: {
     alias: {
@@ -28,4 +28,4 @@ export default defineConfig({
     port: 5173,
     strictPort: false
   }
-})
+}))
