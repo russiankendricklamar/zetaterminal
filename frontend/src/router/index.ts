@@ -47,6 +47,7 @@ import PBOAnalysis from '@/pages/PBOAnalysis.vue'
 import AlphaStacking from '@/pages/AlphaStacking.vue'
 import MetaLabeling from '@/pages/MetaLabeling.vue'
 import ConvexPortfolio from '@/pages/ConvexPortfolio.vue'
+import AdversarialStress from '@/pages/AdversarialStress.vue'
 
 const routes = [
   {
@@ -324,6 +325,12 @@ const routes = [
         name: 'ConvexPortfolio',
         component: ConvexPortfolio,
         meta: { title: 'Convex Portfolio', icon: '📐' }
+      },
+      {
+        path: 'analytics/adversarial-stress',
+        name: 'AdversarialStress',
+        component: AdversarialStress,
+        meta: { title: 'Adversarial Stress Testing', icon: '🛡️' }
       },
     ]
   },
