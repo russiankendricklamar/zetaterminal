@@ -1,6 +1,5 @@
 <template>
   <div class="page-container custom-scrollbar">
-    <!-- Header -->
     <div class="section-header flex-col md:flex-row gap-4">
       <div class="flex items-center gap-4">
         <div class="icon-box icon-blue">
@@ -8,184 +7,193 @@
         </div>
         <div>
           <h2 class="section-title font-anton">ФЬЮЧЕРСЫ</h2>
-          <p class="section-subtitle font-mono">КОНТРАКТЫ, СПРЕДЫ И ФОРВАРДНЫЕ КРИВЫЕ</p>
+          <p class="section-subtitle font-mono">КОНТРАКТЫ MOEX FORTS, ОИ И ОБЪЁМ</p>
         </div>
       </div>
-
       <div class="tab-group">
-        <button
-          v-for="tab in tabs"
-          :key="tab.id"
-          @click="section = tab.id"
-          :class="['tab-btn', { active: section === tab.id || (section === 'CURV' && tab.id === 'FWCV') }]"
-        >
-          <component :is="tab.icon" class="w-3.5 h-3.5" /> {{ tab.label }}
+        <button v-for="tab in tabs" :key="tab.id" @click="section = tab.id" :class="['tab-btn', { active: section === tab.id }]">
+          {{ tab.label }}
         </button>
       </div>
     </div>
 
-    <!-- Content -->
+    <div v-if="loading" class="flex items-center gap-2 text-gray-400 text-xs p-4">
+      <div class="w-3 h-3 border-2 border-cyan-500 border-t-transparent rounded-full animate-spin"></div>
+      Загрузка фьючерсов MOEX...
+    </div>
+
+    <div v-if="loadError" class="p-4 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400 text-sm font-mono mx-4">
+      {{ loadError }}
+    </div>
+
     <div class="flex-1 flex flex-col gap-6">
-      <FuturesContracts v-if="section === 'FUT'" :symbol="symbol" />
-      <ForwardCurves v-else-if="section === 'FWCV' || section === 'CURV'" :symbol="symbol" />
-      <FuturesContracts v-else :symbol="symbol" />
+      <!-- ═══ Futures Contracts ═══ -->
+      <div v-if="section === 'FUT'" class="flex flex-col h-full gap-6">
+        <div class="flex justify-between items-center">
+          <h3 class="text-lg font-bold text-white">Фьючерсы MOEX (RFUD)</h3>
+          <button @click="loadFutures" class="px-3 py-1.5 bg-white/10 hover:bg-white/20 text-xs font-bold text-white rounded-lg transition-colors">
+            Обновить
+          </button>
+        </div>
+
+        <div v-if="futuresContracts.length > 0" class="flex-1 overflow-auto rounded-2xl border border-white/5 bg-black/20">
+          <table class="w-full text-left border-collapse">
+            <thead>
+              <tr class="text-xs text-gray-400 uppercase bg-white/5 sticky top-0 backdrop-blur-md z-10">
+                <th class="p-4 font-bold">Тикер</th>
+                <th class="p-4 font-bold">Название</th>
+                <th class="p-4 font-bold text-right">Последняя</th>
+                <th class="p-4 font-bold text-right">Изменение</th>
+                <th class="p-4 font-bold text-right">Объём</th>
+                <th class="p-4 font-bold text-right">OI</th>
+              </tr>
+            </thead>
+            <tbody class="text-sm font-mono text-gray-300">
+              <tr v-for="c in futuresContracts" :key="c.ticker" class="border-b border-white/5 hover:bg-white/5 transition-colors cursor-pointer">
+                <td class="p-4">
+                  <span class="text-xs font-bold bg-white/10 px-2 py-1 rounded text-white">{{ c.ticker }}</span>
+                </td>
+                <td class="p-4 text-xs text-gray-400">{{ c.name }}</td>
+                <td class="p-4 text-right font-bold text-white">{{ c.last != null ? c.last.toLocaleString() : '—' }}</td>
+                <td class="p-4 text-right">
+                  <span v-if="c.change_pct != null" :class="c.change_pct >= 0 ? 'text-emerald-400' : 'text-rose-400'" class="font-mono text-xs">
+                    {{ c.change_pct >= 0 ? '+' : '' }}{{ c.change_pct.toFixed(2) }}%
+                  </span>
+                  <span v-else class="text-gray-500 text-xs">—</span>
+                </td>
+                <td class="p-4 text-right text-gray-400 text-xs">{{ c.volume != null ? formatVolume(c.volume) : '—' }}</td>
+                <td class="p-4 text-right text-cyan-400 text-xs">{{ c.oi != null ? formatVolume(c.oi) : '—' }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div v-if="!loading && futuresContracts.length === 0 && !loadError" class="flex items-center justify-center h-64 text-gray-500 font-mono text-sm">
+          Нет данных по фьючерсам
+        </div>
+      </div>
+
+      <!-- ═══ Open Interest Detail ═══ -->
+      <div v-else-if="section === 'FWCV'" class="flex flex-col h-full gap-6">
+        <h3 class="text-lg font-bold text-white">Открытый интерес — детали</h3>
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div class="p-4 rounded-xl bg-white/5 border border-white/5 text-center cursor-pointer hover:bg-white/10 transition-colors"
+               v-for="ticker in oiTickers" :key="ticker"
+               @click="loadOI(ticker)">
+            <span class="text-sm font-bold text-white">{{ ticker }}</span>
+          </div>
+        </div>
+
+        <div v-if="oiData.length > 0" class="flex-1 overflow-auto rounded-2xl border border-white/5 bg-black/20">
+          <div class="p-4 bg-white/5 border-b border-white/5">
+            <h3 class="font-bold text-white">OI: {{ selectedOiTicker }}</h3>
+          </div>
+          <table class="w-full text-left border-collapse">
+            <thead>
+              <tr class="text-xs text-gray-500 uppercase">
+                <th class="p-4">Дата</th>
+                <th class="p-4 text-right">OI</th>
+                <th class="p-4 text-right">Объём</th>
+              </tr>
+            </thead>
+            <tbody class="text-sm font-mono text-gray-300">
+              <tr v-for="(item, i) in oiData" :key="i" class="border-t border-white/5 hover:bg-white/5">
+                <td class="p-4 text-white">{{ item.date }}</td>
+                <td class="p-4 text-right text-cyan-400">{{ formatVolume(item.oi) }}</td>
+                <td class="p-4 text-right text-gray-400">{{ formatVolume(item.volume) }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div v-else class="flex items-center justify-center h-64 text-gray-500 font-mono text-sm">
+        Выберите раздел
+      </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, watch, defineComponent, h } from 'vue';
+import { ref, watch, onMounted, defineComponent, h } from 'vue'
+import { getMoexSecurities, getMoexFuturesOI, type MoexSecurity } from '@/services/moexalgoService'
 
-const GitCommitIcon = defineComponent({ render: () => h('svg', { xmlns: 'http://www.w3.org/2000/svg', viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', 'stroke-width': '2' }, [h('circle', { cx: '12', cy: '12', r: '4' }), h('line', { x1: '1.05', y1: '12', x2: '7', y2: '12' }), h('line', { x1: '17.01', y1: '12', x2: '22.96', y2: '12' })]) });
-const LayersIcon = defineComponent({ render: () => h('svg', { xmlns: 'http://www.w3.org/2000/svg', viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', 'stroke-width': '2' }, [h('polygon', { points: '12 2 2 7 12 12 22 7 12 2' }), h('polyline', { points: '2 17 12 22 22 17' }), h('polyline', { points: '2 12 12 17 22 12' })]) });
-const TrendingUpIcon = defineComponent({ render: () => h('svg', { xmlns: 'http://www.w3.org/2000/svg', viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', 'stroke-width': '2' }, [h('polyline', { points: '23 6 13.5 15.5 8.5 10.5 1 18' }), h('polyline', { points: '17 6 23 6 23 12' })]) });
+const GitCommitIcon = defineComponent({ render: () => h('svg', { xmlns: 'http://www.w3.org/2000/svg', viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', 'stroke-width': '2' }, [h('circle', { cx: '12', cy: '12', r: '4' }), h('line', { x1: '1.05', y1: '12', x2: '7', y2: '12' }), h('line', { x1: '17.01', y1: '12', x2: '22.96', y2: '12' })]) })
 
-const props = defineProps<{
-  symbol?: string;
-  activeSection?: string;
-}>();
-
-const section = ref(props.activeSection || 'FUT');
-const symbol = ref(props.symbol || 'ES');
-
-watch(() => props.activeSection, (newVal) => {
-  if (newVal) section.value = newVal;
-});
+const props = defineProps<{ symbol?: string; activeSection?: string }>()
+const section = ref(props.activeSection || 'FUT')
+watch(() => props.activeSection, (v) => { if (v) section.value = v })
 
 const tabs = [
-  { id: 'FUT', label: 'Фьючерсы'},
-  { id: 'FWCV', label: 'Форвардные кривые'},
-];
+  { id: 'FUT', label: 'Фьючерсы' },
+  { id: 'FWCV', label: 'Открытый интерес' },
+]
 
-const FuturesContracts = defineComponent({
-  props: ['symbol'],
-  setup() {
-    const contracts = [
-      { code: 'ESZ5', name: 'E-mini S&P 500 Dec 25', last: 5845.50, change: '+1.25%', vol: '1.2M', oi: '2.4M', roll: '12 Days' },
-      { code: 'NQZ5', name: 'E-mini Nasdaq Dec 25', last: 20150.25, change: '+1.80%', vol: '850K', oi: '950K', roll: '12 Days' },
-      { code: 'CLX5', name: 'Crude Oil Nov 25', last: 74.25, change: '-0.45%', vol: '450K', oi: '620K', roll: '4 Days' },
-      { code: 'GCZ5', name: 'Gold Dec 25', last: 2685.10, change: '+0.15%', vol: '220K', oi: '410K', roll: '25 Days' },
-      { code: 'BTCX5', name: 'Bitcoin Nov 25', last: 64550.00, change: '+2.10%', vol: '15K', oi: '45K', roll: '18 Days' },
-      { code: 'ZB Z5', name: 'US Treasury Bond Dec 25', last: 118.15, change: '-0.10%', vol: '380K', oi: '750K', roll: '20 Days' },
-    ];
-    return { contracts };
-  },
-  template: `
-    <div class="flex flex-col h-full gap-6">
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div class="p-6 rounded-2xl bg-white/5 border border-white/5">
-          <h3 class="text-sm font-bold text-gray-400 uppercase mb-2">Total Open Interest</h3>
-          <div class="text-3xl font-bold text-cyan-400">$2.4T</div>
-          <div class="text-xs text-cyan-500 mt-1">+1.5% (DoD)</div>
-        </div>
-        <div class="p-6 rounded-2xl bg-white/5 border border-white/5">
-          <h3 class="text-sm font-bold text-gray-400 uppercase mb-2">Roll Activity</h3>
-          <div class="text-3xl font-bold text-white">High</div>
-          <div class="text-xs text-gray-500 mt-1">Approaching Expiry (Equity)</div>
-        </div>
-        <div class="p-6 rounded-2xl bg-white/5 border border-white/5">
-          <h3 class="text-sm font-bold text-gray-400 uppercase mb-2">Basis (Spot-Fut)</h3>
-          <div class="text-3xl font-bold text-white">+12.5</div>
-          <div class="text-xs text-gray-500 mt-1">Contango</div>
-        </div>
-      </div>
+const loading = ref(false)
+const loadError = ref<string | null>(null)
 
-      <div class="flex-1 overflow-auto rounded-2xl border border-white/5 bg-black/20">
-        <table class="w-full text-left border-collapse">
-          <thead>
-            <tr class="text-xs text-gray-400 uppercase bg-white/5 sticky top-0 backdrop-blur-md z-10">
-              <th class="p-4 font-bold">Code</th>
-              <th class="p-4 font-bold">Contract Name</th>
-              <th class="p-4 font-bold text-right">Last Price</th>
-              <th class="p-4 font-bold text-right">Change</th>
-              <th class="p-4 font-bold text-right">Volume</th>
-              <th class="p-4 font-bold text-right">Open Int.</th>
-              <th class="p-4 font-bold text-right">Days to Roll</th>
-            </tr>
-          </thead>
-          <tbody class="text-sm font-mono text-gray-300">
-            <tr v-for="(cont, i) in contracts" :key="i" class="border-b border-white/5 hover:bg-white/5 transition-colors group cursor-pointer">
-              <td class="p-4 font-bold text-white group-hover:text-cyan-400">{{ cont.code }}</td>
-              <td class="p-4 text-xs font-sans text-gray-400">{{ cont.name }}</td>
-              <td class="p-4 text-right font-bold text-white">{{ cont.last.toLocaleString() }}</td>
-              <td :class="['p-4 text-right font-bold', cont.change.startsWith('+') ? 'text-emerald-400' : 'text-rose-400']">
-                {{ cont.change }}
-              </td>
-              <td class="p-4 text-right">{{ cont.vol }}</td>
-              <td class="p-4 text-right">{{ cont.oi }}</td>
-              <td class="p-4 text-right">
-                <span :class="['px-2 py-1 rounded text-xs border', parseInt(cont.roll) < 5 ? 'bg-rose-500/10 border-rose-500/20 text-rose-400' : 'bg-gray-700/30 border-gray-600/30 text-gray-400']">
-                  {{ cont.roll }}
-                </span>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
-  `
-});
+interface FutureContract {
+  ticker: string
+  name: string
+  last: number | null
+  change_pct: number | null
+  volume: number | null
+  oi: number | null
+}
 
-const ForwardCurves = defineComponent({
-  props: ['symbol'],
-  setup() {
-    const asset = ref('Crude Oil (WTI)');
-    const assets = ['Crude Oil (WTI)', 'Natural Gas', 'Corn', 'Gold', 'VIX'];
-    const data = [
-      { term: 'M1', current: 74.25, prev: 73.10 },
-      { term: 'M2', current: 73.80, prev: 72.90 },
-      { term: 'M3', current: 73.45, prev: 72.80 },
-      { term: 'M6', current: 72.50, prev: 72.20 },
-      { term: 'M12', current: 70.10, prev: 70.50 },
-      { term: 'M18', current: 68.50, prev: 69.20 },
-      { term: 'M24', current: 66.80, prev: 68.10 },
-    ];
-    return { asset, assets, data };
-  },
-  template: `
-    <div class="flex flex-col h-full gap-6">
-      <div class="flex justify-between items-center">
-        <div class="flex items-center gap-4">
-          <h3 class="text-lg font-bold text-white">Term Structure</h3>
-          <div class="flex bg-black/30 rounded-lg p-1 border border-white/10">
-            <button 
-              v-for="a in assets" 
-              :key="a"
-              @click="asset = a"
-              :class="['px-3 py-1 rounded-md text-xs font-bold transition-all', asset === a ? 'bg-cyan-600 text-white shadow-lg' : 'text-gray-400 hover:text-white']"
-            >
-              {{ a }}
-            </button>
-          </div>
-        </div>
-        <div class="flex gap-4 text-xs font-bold">
-          <span class="flex items-center gap-2"><div class="w-3 h-1 bg-cyan-400"></div> Current Curve</span>
-          <span class="flex items-center gap-2"><div class="w-3 h-1 bg-gray-500"></div> 1 Month Ago</span>
-        </div>
-      </div>
+const futuresContracts = ref<FutureContract[]>([])
 
-      <div class="flex-1 bg-black/20 rounded-2xl border border-white/5 p-6 flex flex-col items-center justify-center text-gray-500">
-        [Forward Curve Chart]
-      </div>
+// OI tab
+const oiTickers = ['SiZ5', 'RIZ5', 'BRX5', 'GDZ5', 'EDZ5', 'EuZ5', 'SRZ5', 'GZZ5']
+const selectedOiTicker = ref('')
+const oiData = ref<Array<{ date: string; oi: number; volume: number }>>([])
 
-      <div class="grid grid-cols-3 gap-6">
-        <div class="p-4 rounded-xl bg-white/5 border border-white/5 text-center">
-          <div class="text-xs text-gray-500 uppercase font-bold mb-1">Structure</div>
-          <div class="text-xl font-bold text-white">Backwardation</div>
-          <div class="text-[10px] text-gray-400">Bullish Indicator</div>
-        </div>
-        <div class="p-4 rounded-xl bg-white/5 border border-white/5 text-center">
-          <div class="text-xs text-gray-500 uppercase font-bold mb-1">M1-M12 Spread</div>
-          <div class="text-xl font-bold text-cyan-400">+$4.15</div>
-          <div class="text-[10px] text-gray-400">Roll Yield Positive</div>
-        </div>
-        <div class="p-4 rounded-xl bg-white/5 border border-white/5 text-center">
-          <div class="text-xs text-gray-500 uppercase font-bold mb-1">Inventory Levels</div>
-          <div class="text-xl font-bold text-white">-2.5M Bbls</div>
-          <div class="text-[10px] text-gray-400">Below Avg</div>
-        </div>
-      </div>
-    </div>
-  `
-});
+const loadFutures = async () => {
+  loading.value = true
+  loadError.value = null
+  try {
+    const res = await getMoexSecurities('RFUD', 'futures', 'stock')
+    futuresContracts.value = res.securities
+      .filter((s: MoexSecurity) => s.last != null || s.volume != null)
+      .sort((a: MoexSecurity, b: MoexSecurity) => (b.volume ?? 0) - (a.volume ?? 0))
+      .slice(0, 30)
+      .map((s: MoexSecurity) => ({
+        ticker: s.secid,
+        name: s.name || s.secid,
+        last: s.last,
+        change_pct: s.change_pct,
+        volume: s.volume,
+        oi: null,
+      }))
+  } catch (e: unknown) {
+    loadError.value = e instanceof Error ? e.message : 'Ошибка загрузки фьючерсов'
+  } finally {
+    loading.value = false
+  }
+}
+
+const loadOI = async (ticker: string) => {
+  selectedOiTicker.value = ticker
+  try {
+    const res = await getMoexFuturesOI(ticker) as { data: Array<{ date: string; oi: number; volume: number }> }
+    oiData.value = res.data.slice(0, 20).map((d) => ({
+      date: d.date,
+      oi: d.oi,
+      volume: d.volume,
+    }))
+  } catch {
+    oiData.value = []
+  }
+}
+
+const formatVolume = (vol: number): string => {
+  if (vol >= 1e9) return `${(vol / 1e9).toFixed(2)}B`
+  if (vol >= 1e6) return `${(vol / 1e6).toFixed(2)}M`
+  if (vol >= 1e3) return `${(vol / 1e3).toFixed(1)}K`
+  return vol.toString()
+}
+
+onMounted(() => {
+  loadFutures()
+})
 </script>

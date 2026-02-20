@@ -6,80 +6,65 @@
         <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-emerald-500/20 to-teal-500/20 flex items-center justify-center text-lg font-bold text-emerald-300 border border-emerald-500/30">
           {{ (localSymbol || 'BT').substring(0, 2) }}
         </div>
-        
-        <div class="relative group" data-dropdown-asset>
-          <div 
-            @click="isAssetOpen = !isAssetOpen"
-            class="cursor-pointer"
-          >
-            <div class="flex items-center gap-3 mb-1">
-              <h2 class="text-2xl font-bold text-white tracking-tight group-hover:text-emerald-300 transition-colors">{{ localSymbol }}</h2>
-              <div class="p-1 rounded-lg bg-white/5 group-hover:bg-emerald-500/20 transition-colors">
-                <ChevronDownIcon :class="`w-3.5 h-3.5 text-gray-500 group-hover:text-emerald-300 transition-colors ${isAssetOpen ? 'rotate-180' : ''}`" />
-              </div>
-            </div>
-            <div class="flex items-center gap-4 text-xs text-gray-400">
-              <span class="font-mono text-white">$145.32</span>
-              <span class="text-emerald-400 font-bold">+1.24%</span>
-              <span class="px-1.5 py-0.5 rounded bg-white/5 text-[10px] uppercase">Анализ цен</span>
-            </div>
+        <div>
+          <div class="flex items-center gap-3 mb-1">
+            <h2 class="text-2xl font-bold text-white tracking-tight">{{ localSymbol }}</h2>
           </div>
-          
-          <!-- Выпадающее меню с поиском -->
-          <div
-            v-if="isAssetOpen"
-            @click.stop
-            class="absolute top-full left-0 mt-2 w-80 bg-black/90 backdrop-blur-xl border border-white/10 rounded-xl shadow-2xl z-50 max-h-96 flex flex-col"
-          >
-            <!-- Поиск -->
-            <div class="p-3 border-b border-white/5">
-              <input
-                v-model="assetSearchQuery"
-                type="text"
-                placeholder="Поиск актива..."
-                class="w-full px-3 py-2 bg-black/40 border border-white/10 rounded-lg text-sm text-white placeholder-gray-500 focus:border-emerald-500/50 outline-none"
-                @input="assetSearchQuery = ($event.target as HTMLInputElement).value"
-              />
-            </div>
-            
-            <!-- Список активов -->
-            <div class="overflow-y-auto custom-scrollbar max-h-64">
-              <button
-                v-for="asset in filteredAssets"
-                :key="asset.symbol"
-                @click="selectAsset(asset)"
-                :class="`w-full px-4 py-3 text-left text-sm transition-colors flex items-center gap-3 ${
-                  localSymbol === asset.symbol 
-                    ? 'bg-emerald-500/20 text-emerald-300' 
-                    : 'text-gray-300 hover:bg-white/5 hover:text-white'
-                }`"
-              >
-                <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-500/20 to-teal-500/20 flex items-center justify-center text-xs font-bold text-emerald-300">
-                  {{ asset.symbol.substring(0, 2) }}
-                </div>
-                <div class="flex-1">
-                  <div class="font-bold">{{ asset.symbol }}</div>
-                  <div class="text-xs text-gray-500">{{ asset.name }}</div>
-                </div>
-              </button>
-              <div v-if="filteredAssets.length === 0" class="px-4 py-3 text-sm text-gray-500 text-center">
-                Активы не найдены
-              </div>
-            </div>
+          <div class="flex items-center gap-4 text-xs text-gray-400">
+            <span v-if="currentPrice != null" class="font-mono text-white">${{ currentPrice.toFixed(2) }}</span>
+            <span v-if="currentChange != null" :class="currentChange >= 0 ? 'text-emerald-400' : 'text-rose-400'" class="font-bold">
+              {{ currentChange >= 0 ? '+' : '' }}{{ currentChange.toFixed(2) }}%
+            </span>
+            <span class="px-1.5 py-0.5 rounded bg-white/5 text-[10px] uppercase">Анализ цен</span>
           </div>
         </div>
       </div>
 
-      <div class="flex bg-black/40 rounded-xl p-1 border border-white/5 overflow-x-auto max-w-full custom-scrollbar self-stretch md:self-auto">
-        <button 
-          v-for="tab in tabs"
-          :key="tab.id"
-          @click="section = tab.id"
-          :class="`px-3 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap ${section === tab.id ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' : 'text-gray-500 hover:text-white hover:bg-white/5'}`"
-        >
-          {{ tab.label }}
-        </button>
+      <div class="flex items-center gap-4 self-stretch md:self-auto">
+        <div class="flex items-center gap-2">
+          <input
+            v-model="tickerInput"
+            type="text"
+            placeholder="Тикер..."
+            class="w-32 bg-black/40 border border-white/10 rounded-lg py-1.5 px-3 text-white font-mono text-sm focus:border-emerald-500/50 outline-none"
+            @keydown.enter="changeSymbol"
+          />
+          <button @click="changeSymbol" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-bold transition-colors">
+            Загрузить
+          </button>
+        </div>
+        <div class="flex bg-black/40 rounded-xl p-1 border border-white/5 overflow-x-auto max-w-full custom-scrollbar">
+          <button
+            v-for="tab in tabs"
+            :key="tab.id"
+            @click="section = tab.id"
+            :class="`px-3 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap ${section === tab.id ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' : 'text-gray-500 hover:text-white hover:bg-white/5'}`"
+          >
+            {{ tab.label }}
+          </button>
+        </div>
       </div>
+    </div>
+
+    <!-- Quick picks -->
+    <div class="flex flex-wrap gap-2 px-6 pt-4">
+      <button
+        v-for="t in quickTickers"
+        :key="t"
+        @click="tickerInput = t; changeSymbol()"
+        class="px-3 py-1 bg-white/5 hover:bg-white/10 text-xs font-bold text-gray-300 rounded-lg border border-white/5 transition-colors"
+      >
+        {{ t }}
+      </button>
+    </div>
+
+    <div v-if="loading" class="flex items-center gap-2 text-gray-400 text-xs px-6 pt-4">
+      <div class="w-3 h-3 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin"></div>
+      Загрузка данных для {{ localSymbol }}...
+    </div>
+
+    <div v-if="loadError" class="mx-6 mt-4 p-4 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400 text-sm font-mono">
+      {{ loadError }}
     </div>
 
     <!-- Content -->
@@ -89,12 +74,17 @@
         <div class="flex justify-between items-center">
           <h3 class="text-lg font-bold text-white">Исторические данные (OHLCV)</h3>
           <div class="flex gap-2">
-            <button class="px-3 py-1 bg-white/10 rounded-lg text-xs hover:bg-white/20">День</button>
-            <button class="px-3 py-1 text-gray-500 hover:text-white text-xs">Неделя</button>
-            <button class="px-3 py-1 text-gray-500 hover:text-white text-xs">Месяц</button>
+            <button
+              v-for="p in periodOptions"
+              :key="p.value"
+              @click="selectedPeriod = p.value; loadHistoricalData()"
+              :class="`px-3 py-1 rounded-lg text-xs font-bold border transition-all ${selectedPeriod === p.value ? 'bg-emerald-500/20 border-emerald-500/50 text-emerald-300' : 'border-white/10 text-gray-500 hover:text-white'}`"
+            >
+              {{ p.label }}
+            </button>
           </div>
         </div>
-        <div class="overflow-x-auto rounded-xl border border-white/5">
+        <div v-if="historyData.length > 0" class="overflow-x-auto rounded-xl border border-white/5">
           <table class="w-full text-left border-collapse">
             <thead>
               <tr class="bg-white/5 text-xs text-gray-400 uppercase">
@@ -108,19 +98,22 @@
               </tr>
             </thead>
             <tbody class="text-sm font-mono text-gray-300">
-              <tr v-for="(row, i) in historicalData" :key="i" class="border-t border-white/5 hover:bg-white/5 transition-colors">
+              <tr v-for="(row, i) in historyData" :key="i" class="border-t border-white/5 hover:bg-white/5 transition-colors">
                 <td class="p-4">{{ row.date }}</td>
-                <td class="p-4 text-right">{{ row.open }}</td>
-                <td class="p-4 text-right text-emerald-400/80">{{ row.high }}</td>
-                <td class="p-4 text-right text-rose-400/80">{{ row.low }}</td>
-                <td class="p-4 text-right font-bold text-white">{{ row.close }}</td>
-                <td class="p-4 text-right text-gray-500">{{ row.vol }}</td>
-                <td :class="`p-4 text-right font-bold ${parseFloat(row.change) >= 0 ? 'text-emerald-400' : 'text-rose-400'}`">
-                  {{ parseFloat(row.change) >= 0 ? '+' : '' }}{{ row.change }}%
+                <td class="p-4 text-right">{{ row.open.toFixed(2) }}</td>
+                <td class="p-4 text-right text-emerald-400/80">{{ row.high.toFixed(2) }}</td>
+                <td class="p-4 text-right text-rose-400/80">{{ row.low.toFixed(2) }}</td>
+                <td class="p-4 text-right font-bold text-white">{{ row.close.toFixed(2) }}</td>
+                <td class="p-4 text-right text-gray-500">{{ formatVolume(row.volume) }}</td>
+                <td :class="`p-4 text-right font-bold ${row.changePct >= 0 ? 'text-emerald-400' : 'text-rose-400'}`">
+                  {{ row.changePct >= 0 ? '+' : '' }}{{ row.changePct.toFixed(2) }}%
                 </td>
               </tr>
             </tbody>
           </table>
+        </div>
+        <div v-else-if="!loading" class="flex items-center justify-center h-64 text-gray-500 font-mono text-sm">
+          Нет данных
         </div>
       </div>
 
@@ -129,13 +122,13 @@
         <div class="flex justify-between items-center mb-4">
           <h3 class="text-lg font-bold text-white">Технический график цены</h3>
           <div class="flex gap-2">
-            <button 
+            <button
               @click="showMA = !showMA"
               :class="`px-3 py-1 rounded-lg text-xs font-bold border transition-all ${showMA ? 'bg-indigo-500/20 border-indigo-500/50 text-indigo-300' : 'border-white/10 text-gray-500'}`"
             >
               MA (20)
             </button>
-            <button 
+            <button
               @click="showBB = !showBB"
               :class="`px-3 py-1 rounded-lg text-xs font-bold border transition-all ${showBB ? 'bg-indigo-500/20 border-indigo-500/50 text-indigo-300' : 'border-white/10 text-gray-500'}`"
             >
@@ -144,7 +137,8 @@
           </div>
         </div>
         <div class="flex-1 bg-black/20 rounded-xl border border-white/5 p-4 min-h-[400px]">
-          <v-chart class="w-full h-full" :option="priceChartOption" autoresize />
+          <v-chart v-if="historyData.length > 0" class="w-full h-full" :option="priceChartOption" autoresize />
+          <div v-else class="w-full h-full flex items-center justify-center text-gray-500 text-sm">Нет данных для графика</div>
         </div>
       </div>
 
@@ -153,13 +147,13 @@
         <div class="flex justify-between items-center mb-4">
           <h3 class="text-lg font-bold text-white">Внутридневной график</h3>
           <div class="flex gap-2">
-            <button 
+            <button
               v-for="interval in intradayIntervals"
               :key="interval.value"
-              @click="selectedIntradayInterval = interval.value"
+              @click="selectedIntradayInterval = interval.value; loadIntradayData()"
               :class="`px-3 py-1 rounded-lg text-xs font-bold border transition-all ${
-                selectedIntradayInterval === interval.value 
-                  ? 'bg-emerald-500/20 border-emerald-500/50 text-emerald-300' 
+                selectedIntradayInterval === interval.value
+                  ? 'bg-emerald-500/20 border-emerald-500/50 text-emerald-300'
                   : 'border-white/10 text-gray-500 hover:text-white hover:bg-white/5'
               }`"
             >
@@ -168,9 +162,10 @@
           </div>
         </div>
         <div class="flex-1 bg-black/20 rounded-xl border border-white/5 p-4 min-h-[400px]">
-          <v-chart class="w-full h-full" :option="intradayChartOption" autoresize />
+          <v-chart v-if="intradayData.length > 0" class="w-full h-full" :option="intradayChartOption" autoresize />
+          <div v-else class="w-full h-full flex items-center justify-center text-gray-500 text-sm">Нет данных</div>
         </div>
-        <div class="mt-4 grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div v-if="intradayData.length > 0" class="mt-4 grid grid-cols-2 md:grid-cols-4 gap-4">
           <div class="bg-black/20 rounded-xl border border-white/5 p-4 text-center">
             <div class="text-xs text-gray-400 mb-1">Открытие</div>
             <div class="text-lg font-bold text-white font-mono">{{ intradayStats.open }}</div>
@@ -184,7 +179,7 @@
             <div class="text-lg font-bold text-rose-400 font-mono">{{ intradayStats.low }}</div>
           </div>
           <div class="bg-black/20 rounded-xl border border-white/5 p-4 text-center">
-            <div class="text-xs text-gray-400 mb-1">Текущая</div>
+            <div class="text-xs text-gray-400 mb-1">Последняя</div>
             <div class="text-lg font-bold text-white font-mono">{{ intradayStats.current }}</div>
           </div>
         </div>
@@ -195,23 +190,24 @@
         <div class="lg:col-span-2 bg-black/20 rounded-xl border border-white/5 p-6 flex flex-col min-h-[400px]">
           <h3 class="text-lg font-bold text-white mb-4">Регрессионный анализ (vs SPX)</h3>
           <div class="flex-1">
-            <v-chart class="w-full h-full" :option="scatterChartOption" autoresize />
+            <v-chart v-if="scatterPoints.length > 0" class="w-full h-full" :option="scatterChartOption" autoresize />
+            <div v-else class="w-full h-full flex items-center justify-center text-gray-500 text-sm">Загрузите данные</div>
           </div>
         </div>
         <div class="space-y-4">
           <div class="p-6 rounded-2xl bg-white/5 border border-white/5 flex flex-col items-center justify-center text-center">
             <span class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Коэффициент Бета</span>
-            <span class="text-5xl font-bold text-emerald-400 mb-2">1.42</span>
-            <span class="text-xs text-gray-500">Высокая волатильность к рынку</span>
+            <span class="text-5xl font-bold text-emerald-400 mb-2">{{ betaStats.beta }}</span>
+            <span class="text-xs text-gray-500">{{ betaStats.beta !== '—' ? (parseFloat(betaStats.beta) > 1 ? 'Высокая волатильность к рынку' : 'Низкая волатильность к рынку') : '' }}</span>
           </div>
           <div class="p-6 rounded-2xl bg-white/5 border border-white/5 flex flex-col items-center justify-center text-center">
             <span class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Альфа (Дженсен)</span>
-            <span class="text-5xl font-bold text-white mb-2">2.1%</span>
+            <span class="text-5xl font-bold text-white mb-2">{{ betaStats.alpha }}</span>
             <span class="text-xs text-gray-500">Избыточная доходность</span>
           </div>
           <div class="p-6 rounded-2xl bg-white/5 border border-white/5 flex flex-col items-center justify-center text-center">
             <span class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">R-квадрат</span>
-            <span class="text-5xl font-bold text-indigo-400 mb-2">0.65</span>
+            <span class="text-5xl font-bold text-indigo-400 mb-2">{{ betaStats.r2 }}</span>
             <span class="text-xs text-gray-500">Сила корреляции</span>
           </div>
         </div>
@@ -219,13 +215,10 @@
 
       <!-- Technical Analysis Hub -->
       <div v-else-if="section === 'TECH'" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        <!-- Oscillators -->
         <div class="p-6 rounded-2xl bg-white/5 border border-white/5 col-span-1 lg:col-span-2">
-          <h3 class="text-sm font-bold text-white uppercase mb-6 flex items-center gap-2">
-            <ActivityIcon class="w-4 h-4 text-indigo-400" /> Осцилляторы
-          </h3>
+          <h3 class="text-sm font-bold text-white uppercase mb-6">Осцилляторы</h3>
           <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div v-for="osc in oscillators" :key="osc.name" class="bg-black/20 p-4 rounded-xl text-center border border-white/5">
+            <div v-for="osc in computedOscillators" :key="osc.name" class="bg-black/20 p-4 rounded-xl text-center border border-white/5">
               <div class="text-xs text-gray-500 mb-1">{{ osc.name }}</div>
               <div :class="`text-xl font-bold ${osc.color}`">{{ osc.value }}</div>
               <div :class="`text-[10px] mt-1 ${osc.color}`">{{ osc.signal }}</div>
@@ -233,21 +226,17 @@
           </div>
         </div>
 
-        <!-- Summary Gauge -->
         <div class="p-6 rounded-2xl bg-gradient-to-br from-indigo-900/30 to-black border border-white/5 flex flex-col items-center justify-center text-center">
           <h3 class="text-sm font-bold text-white uppercase mb-4">Общий сигнал</h3>
           <div class="relative w-32 h-32 flex items-center justify-center mb-4">
-            <div class="absolute inset-0 rounded-full border-4 border-white/5 border-t-emerald-500 border-r-emerald-500 transform rotate-45"></div>
-            <div class="text-2xl font-bold text-emerald-400">СИЛЬНАЯ<br/>ПОКУПКА</div>
+            <div :class="`absolute inset-0 rounded-full border-4 border-white/5 ${overallSignal.borderClass} transform rotate-45`"></div>
+            <div :class="`text-2xl font-bold ${overallSignal.color}`">{{ overallSignal.label }}</div>
           </div>
-          <p class="text-xs text-gray-400 px-4">На основе 12 осцилляторов и 8 скользящих средних</p>
+          <p class="text-xs text-gray-400 px-4">На основе осцилляторов и скользящих средних</p>
         </div>
 
-        <!-- Moving Averages -->
         <div class="p-6 rounded-2xl bg-white/5 border border-white/5 col-span-1 lg:col-span-3">
-          <h3 class="text-sm font-bold text-white uppercase mb-4 flex items-center gap-2">
-            <TrendingUpIcon class="w-4 h-4 text-indigo-400" /> Скользящие средние
-          </h3>
+          <h3 class="text-sm font-bold text-white uppercase mb-4">Скользящие средние</h3>
           <div class="overflow-x-auto">
             <table class="w-full text-left">
               <thead>
@@ -259,11 +248,11 @@
                 </tr>
               </thead>
               <tbody class="text-sm font-mono">
-                <tr v-for="ma in movingAverages" :key="ma.period" class="border-b border-white/5">
+                <tr v-for="ma in computedMAs" :key="ma.period" class="border-b border-white/5">
                   <td class="py-3 font-bold text-white">{{ ma.period }}</td>
                   <td class="py-3 text-gray-300">{{ ma.sma }}</td>
                   <td class="py-3 text-gray-300">{{ ma.ema }}</td>
-                  <td class="py-3 text-right text-emerald-400 font-bold">{{ ma.action }}</td>
+                  <td :class="`py-3 text-right font-bold ${ma.action === 'ПОКУПКА' ? 'text-emerald-400' : 'text-rose-400'}`">{{ ma.action }}</td>
                 </tr>
               </tbody>
             </table>
@@ -271,10 +260,9 @@
         </div>
       </div>
 
-      <!-- Default placeholder -->
       <div v-else class="flex items-center justify-center h-full">
         <div class="text-center">
-          <h3 class="text-xl font-bold text-white mb-2">{{ getSectionName(section) }}</h3>
+          <h3 class="text-xl font-bold text-white mb-2">{{ tabs.find(t => t.id === section)?.label || section }}</h3>
           <p class="text-gray-400">Содержимое появится в ближайшее время</p>
         </div>
       </div>
@@ -283,387 +271,418 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue';
-import { use } from 'echarts/core';
-import { CanvasRenderer } from 'echarts/renderers';
-import { LineChart, ScatterChart } from 'echarts/charts';
-import { TitleComponent, TooltipComponent, GridComponent } from 'echarts/components';
-import VChart from 'vue-echarts';
-import { AssetInfo } from '@/types/terminal';
+import { ref, computed, watch, onMounted } from 'vue'
+import { use } from 'echarts/core'
+import { CanvasRenderer } from 'echarts/renderers'
+import { LineChart, ScatterChart, BarChart } from 'echarts/charts'
+import { TitleComponent, TooltipComponent, GridComponent, MarkLineComponent } from 'echarts/components'
+import VChart from 'vue-echarts'
+import { getStockHistory, getStockInfo, type StockHistoryPoint } from '@/services/marketDataService'
 
-use([CanvasRenderer, LineChart, ScatterChart, BarChart, TitleComponent, TooltipComponent, GridComponent]);
+use([CanvasRenderer, LineChart, ScatterChart, BarChart, TitleComponent, TooltipComponent, GridComponent, MarkLineComponent])
 
-interface Props {
-  symbol: string;
-  activeSection: string;
-}
+const props = defineProps<{ symbol?: string; activeSection?: string }>()
 
-const props = defineProps<Props>();
+const section = ref(props.activeSection || 'HP')
+const localSymbol = ref(props.symbol || 'AAPL')
+const tickerInput = ref(props.symbol || 'AAPL')
+const showMA = ref(true)
+const showBB = ref(false)
+const selectedIntradayInterval = ref('1h')
+const selectedPeriod = ref('1mo')
 
-const section = ref(props.activeSection || 'HP');
-const localSymbol = ref(props.symbol || 'BTC/USDT');
-const showMA = ref(true);
-const showBB = ref(false);
-const isAssetOpen = ref(false);
-const assetSearchQuery = ref('');
-const selectedIntradayInterval = ref('1h');
+const loading = ref(false)
+const loadError = ref<string | null>(null)
+const currentPrice = ref<number | null>(null)
+const currentChange = ref<number | null>(null)
 
-watch(() => props.activeSection, (val) => { section.value = val; });
-watch(() => props.symbol, (val) => { localSymbol.value = val; });
+watch(() => props.activeSection, (val) => { if (val) section.value = val })
+watch(() => props.symbol, (val) => { if (val) { localSymbol.value = val; tickerInput.value = val; loadAllData() } })
+
+const quickTickers = ['AAPL', 'NVDA', 'MSFT', 'TSLA', 'AMZN', 'GOOGL', 'SBER.ME', 'GAZP.ME']
 
 const tabs = [
-  { id: 'HP', label: 'Историческая цена', icon: 'CalendarIcon' },
-  { id: 'GP', label: 'График цены', icon: 'ActivityIcon' },
-  { id: 'GIP', label: 'Внутридневной график', icon: 'ClockIcon' },
-  { id: 'BETA', label: 'Анализ Бета', icon: 'LayersIcon' },
-  { id: 'RG', label: 'Историческая доходность', icon: 'TrendingUpIcon' },
-  { id: 'TECH', label: 'Технический анализ', icon: 'BarChart2Icon' },
-];
+  { id: 'HP', label: 'Историческая цена' },
+  { id: 'GP', label: 'График цены' },
+  { id: 'GIP', label: 'Внутридневной' },
+  { id: 'BETA', label: 'Анализ Бета' },
+  { id: 'TECH', label: 'Технический анализ' },
+]
 
-// Список всех активов из терминала (акции + криптовалюты)
-const allTerminalAssets: AssetInfo[] = [
-  // Криптовалюты
-  { name: 'Bitcoin', symbol: 'BTC/USDT', price: '64,230.50', change: '+2.45%', cap: '1.2T', vol: '35B', category: 'Crypto' },
-  { name: 'Ethereum', symbol: 'ETH/USDT', price: '3,450.20', change: '-1.12%', cap: '400B', vol: '15B', category: 'Crypto' },
-  { name: 'Solana', symbol: 'SOL/USDT', price: '148.50', change: '+5.67%', cap: '65B', vol: '4B', category: 'Crypto' },
-  { name: 'Ripple', symbol: 'XRP/USDT', price: '0.62', change: '-0.45%', cap: '34B', vol: '1.2B', category: 'Crypto' },
-  { name: 'Cardano', symbol: 'ADA/USDT', price: '0.45', change: '+1.20%', cap: '16B', vol: '400M', category: 'Crypto' },
-  { name: 'Polkadot', symbol: 'DOT/USDT', price: '7.25', change: '+3.10%', cap: '9.5B', vol: '250M', category: 'Crypto' },
-  { name: 'Chainlink', symbol: 'LINK/USDT', price: '14.80', change: '+1.85%', cap: '8.2B', vol: '180M', category: 'Crypto' },
-  { name: 'Polygon', symbol: 'MATIC/USDT', price: '0.85', change: '-0.30%', cap: '7.8B', vol: '150M', category: 'Crypto' },
-  { name: 'Avalanche', symbol: 'AVAX/USDT', price: '38.50', change: '+4.20%', cap: '14.5B', vol: '320M', category: 'Crypto' },
-  { name: 'Uniswap', symbol: 'UNI/USDT', price: '6.20', change: '+2.50%', cap: '4.6B', vol: '95M', category: 'Crypto' },
-  { name: 'Litecoin', symbol: 'LTC/USDT', price: '82.40', change: '+0.95%', cap: '6.1B', vol: '280M', category: 'Crypto' },
-  { name: 'Bitcoin Cash', symbol: 'BCH/USDT', price: '245.60', change: '-0.15%', cap: '4.8B', vol: '120M', category: 'Crypto' },
-  { name: 'Dogecoin', symbol: 'DOGE/USDT', price: '0.15', change: '+5.25%', cap: '21.5B', vol: '1.2B', category: 'Crypto' },
-  { name: 'Shiba Inu', symbol: 'SHIB/USDT', price: '0.000025', change: '+4.50%', cap: '14.8B', vol: '850M', category: 'Crypto' },
-  { name: 'Binance Coin', symbol: 'BNB/USDT', price: '585.40', change: '+1.25%', cap: '88B', vol: '1.8B', category: 'Crypto' },
-  
-  // Акции - топ
-  { name: 'Apple Inc.', symbol: 'AAPL', price: '173.50', change: '+1.20%', category: 'Equities', vol: '55M', cap: '2.7T' },
-  { name: 'NVIDIA Corp', symbol: 'NVDA', price: '892.10', change: '+4.25%', category: 'Equities', vol: '42M', cap: '2.2T' },
-  { name: 'Microsoft', symbol: 'MSFT', price: '420.55', change: '-0.45%', category: 'Equities', vol: '22M', cap: '3.1T' },
-  { name: 'Tesla Inc', symbol: 'TSLA', price: '175.30', change: '+2.10%', category: 'Equities', vol: '95M', cap: '550B' },
-  { name: 'Amazon', symbol: 'AMZN', price: '180.25', change: '+0.95%', category: 'Equities', vol: '38M', cap: '1.8T' },
-  { name: 'Meta Platforms', symbol: 'META', price: '495.10', change: '+1.85%', category: 'Equities', vol: '18M', cap: '1.2T' },
-  { name: 'Google', symbol: 'GOOGL', price: '156.40', change: '-0.20%', category: 'Equities', vol: '24M', cap: '1.9T' },
-  { name: 'AMD', symbol: 'AMD', price: '142.50', change: '+3.15%', category: 'Equities', vol: '65M', cap: '230B' },
-  { name: 'Netflix', symbol: 'NFLX', price: '485.20', change: '+2.30%', category: 'Equities', vol: '8M', cap: '215B' },
-  { name: 'JPMorgan Chase', symbol: 'JPM', price: '185.40', change: '+0.55%', category: 'Equities', vol: '15M', cap: '540B' },
-  { name: 'Bank of America', symbol: 'BAC', price: '38.50', change: '+0.40%', category: 'Equities', vol: '45M', cap: '305B' },
-  { name: 'Walmart', symbol: 'WMT', price: '165.30', change: '+0.45%', category: 'Equities', vol: '8M', cap: '445B' },
-  { name: 'Johnson & Johnson', symbol: 'JNJ', price: '158.40', change: '+0.30%', category: 'Equities', vol: '9M', cap: '420B' },
-  { name: 'Exxon Mobil', symbol: 'XOM', price: '118.50', change: '+0.85%', category: 'Equities', vol: '22M', cap: '495B' },
-  { name: 'Boeing', symbol: 'BA', price: '185.40', change: '+1.85%', category: 'Equities', vol: '8M', cap: '115B' },
-  
-  // Российские акции
-  { name: 'Сбербанк', symbol: 'SBER', price: '285.40', change: '+1.85%', category: 'Equities', vol: '125M', cap: '6.5T' },
-  { name: 'Газпром', symbol: 'GAZP', price: '168.50', change: '+0.95%', category: 'Equities', vol: '85M', cap: '4.2T' },
-  { name: 'Лукойл', symbol: 'LKOH', price: '7850.60', change: '+1.25%', category: 'Equities', vol: '1.2M', cap: '8.1T' },
-  { name: 'Яндекс', symbol: 'YNDX', price: '2840.50', change: '+1.45%', category: 'Equities', vol: '2.5M', cap: '1.1T' },
-  
-  // Валютные пары
-  { name: 'Euro / USD', symbol: 'EUR/USD', price: '1.0850', change: '-0.10%', category: 'FX' },
-  { name: 'USD / JPY', symbol: 'USD/JPY', price: '151.20', change: '+0.30%', category: 'FX' },
-  { name: 'GBP / USD', symbol: 'GBP/USD', price: '1.2640', change: '+0.05%', category: 'FX' },
-  { name: 'AUD / USD', symbol: 'AUD/USD', price: '0.6520', change: '+0.15%', category: 'FX' },
-];
+const periodOptions = [
+  { label: '1Н', value: '5d' },
+  { label: '1М', value: '1mo' },
+  { label: '3М', value: '3mo' },
+  { label: '6М', value: '6mo' },
+  { label: '1Г', value: '1y' },
+]
 
-const filteredAssets = computed(() => {
-  if (!assetSearchQuery.value) {
-    return allTerminalAssets;
-  }
-  const query = assetSearchQuery.value.toLowerCase();
-  return allTerminalAssets.filter(asset => 
-    asset.symbol.toLowerCase().includes(query) || 
-    asset.name.toLowerCase().includes(query)
-  );
-});
+const intradayIntervals = [
+  { label: '5 мин', value: '5m' },
+  { label: '15 мин', value: '15m' },
+  { label: '1 час', value: '1h' },
+]
 
-const selectAsset = (asset: AssetInfo) => {
-  localSymbol.value = asset.symbol;
-  isAssetOpen.value = false;
-  assetSearchQuery.value = '';
-};
+// ─── Data refs ─────────────────────────────────────────────────────────────────
 
-const getSectionName = (sectionId: string) => {
-  const section = tabs.find(t => t.id === sectionId);
-  return section ? section.label : sectionId;
-};
+interface HistoryRow {
+  date: string
+  open: number
+  high: number
+  low: number
+  close: number
+  volume: number
+  changePct: number
+}
 
-// Закрытие выпадающего меню при клике вне его
-let clickOutsideHandler: ((e: MouseEvent) => void) | null = null;
+const historyData = ref<HistoryRow[]>([])
+const intradayData = ref<StockHistoryPoint[]>([])
+const benchmarkData = ref<StockHistoryPoint[]>([])
 
-onMounted(() => {
-  clickOutsideHandler = (e: MouseEvent) => {
-    const target = e.target as HTMLElement;
-    if (!target.closest('[data-dropdown-asset]')) {
-      isAssetOpen.value = false;
+// ─── Data loading ──────────────────────────────────────────────────────────────
+
+const changeSymbol = () => {
+  const t = tickerInput.value.trim().toUpperCase()
+  if (!t) return
+  localSymbol.value = t
+  loadAllData()
+}
+
+const loadAllData = async () => {
+  loading.value = true
+  loadError.value = null
+  try {
+    const [infoRes, histRes] = await Promise.allSettled([
+      getStockInfo(localSymbol.value),
+      getStockHistory(localSymbol.value, selectedPeriod.value, '1d'),
+    ])
+    if (infoRes.status === 'fulfilled') {
+      currentPrice.value = infoRes.value.price
+      currentChange.value = infoRes.value.changePercent
     }
-  };
-  document.addEventListener('click', clickOutsideHandler);
-});
-
-onBeforeUnmount(() => {
-  if (clickOutsideHandler) {
-    document.removeEventListener('click', clickOutsideHandler);
+    if (histRes.status === 'fulfilled') {
+      const raw = histRes.value
+      historyData.value = raw.map((p, i) => ({
+        date: p.date,
+        open: p.open,
+        high: p.high,
+        low: p.low,
+        close: p.close,
+        volume: p.volume,
+        changePct: i > 0 ? ((p.close - raw[i - 1].close) / raw[i - 1].close) * 100 : 0,
+      }))
+    } else {
+      loadError.value = 'Не удалось загрузить историю цен'
+    }
+  } catch (e: unknown) {
+    loadError.value = e instanceof Error ? e.message : 'Ошибка загрузки'
+  } finally {
+    loading.value = false
   }
-});
+}
 
-const historicalData = computed(() => {
-  return Array.from({ length: 15 }, (_, i) => {
-    const date = new Date();
-    date.setDate(date.getDate() - i);
-    const open = 140 + Math.random() * 10;
-    const close = open + (Math.random() - 0.5) * 5;
-    return {
-      date: date.toLocaleDateString(),
-      open: open.toFixed(2),
-      high: (Math.max(open, close) + Math.random()).toFixed(2),
-      low: (Math.min(open, close) - Math.random()).toFixed(2),
-      close: close.toFixed(2),
-      vol: (Math.random() * 10 + 5).toFixed(2) + 'M',
-      change: ((close - open) / open * 100).toFixed(2)
-    };
-  });
-});
+const loadHistoricalData = async () => {
+  loading.value = true
+  loadError.value = null
+  try {
+    const raw = await getStockHistory(localSymbol.value, selectedPeriod.value, '1d')
+    historyData.value = raw.map((p, i) => ({
+      date: p.date,
+      open: p.open,
+      high: p.high,
+      low: p.low,
+      close: p.close,
+      volume: p.volume,
+      changePct: i > 0 ? ((p.close - raw[i - 1].close) / raw[i - 1].close) * 100 : 0,
+    }))
+  } catch (e: unknown) {
+    loadError.value = e instanceof Error ? e.message : 'Ошибка загрузки'
+  } finally {
+    loading.value = false
+  }
+}
 
-const priceChartData = computed(() => {
-  return Array.from({ length: 50 }, (_, i) => ({
-    time: `Day ${i + 1}`,
-    close: 140 + Math.sin(i * 0.2) * 10 + Math.random() * 5,
-    ma20: 140 + Math.sin(i * 0.2) * 8,
-    upperBB: 140 + Math.sin(i * 0.2) * 10 + 8,
-    lowerBB: 140 + Math.sin(i * 0.2) * 10 - 8
-  }));
-});
+const loadIntradayData = async () => {
+  loading.value = true
+  try {
+    const intervalMap: Record<string, string> = { '5m': '5m', '15m': '15m', '1h': '1h' }
+    const interval = intervalMap[selectedIntradayInterval.value] || '1h'
+    intradayData.value = await getStockHistory(localSymbol.value, '1d', interval)
+  } catch {
+    intradayData.value = []
+  } finally {
+    loading.value = false
+  }
+}
 
-const priceChartOption = computed(() => ({
-  grid: { left: 40, right: 40, top: 20, bottom: 30 },
-  xAxis: {
-    type: 'category',
-    data: priceChartData.value.map(d => d.time),
-    axisLabel: { color: 'rgba(255,255,255,0.3)', fontSize: 10 },
-    axisLine: { show: false },
-    axisTick: { show: false }
-  },
-  yAxis: {
-    type: 'value',
-    position: 'right',
-    axisLabel: { color: 'rgba(255,255,255,0.3)', fontSize: 10 },
-    axisLine: { show: false },
-    axisTick: { show: false },
-    splitLine: { lineStyle: { color: 'rgba(255,255,255,0.05)' } }
-  },
-  series: [
+const loadBetaData = async () => {
+  loading.value = true
+  try {
+    const [assetRes, benchRes] = await Promise.allSettled([
+      getStockHistory(localSymbol.value, '1y', '1d'),
+      getStockHistory('^GSPC', '1y', '1d'),
+    ])
+    if (assetRes.status === 'fulfilled') {
+      historyData.value = assetRes.value.map((p, i) => ({
+        date: p.date,
+        open: p.open,
+        high: p.high,
+        low: p.low,
+        close: p.close,
+        volume: p.volume,
+        changePct: i > 0 ? ((p.close - assetRes.value[i - 1].close) / assetRes.value[i - 1].close) * 100 : 0,
+      }))
+    }
+    if (benchRes.status === 'fulfilled') {
+      benchmarkData.value = benchRes.value
+    }
+  } catch {
+    // silent
+  } finally {
+    loading.value = false
+  }
+}
+
+// ─── Chart computations ────────────────────────────────────────────────────────
+
+const formatVolume = (vol: number): string => {
+  if (vol >= 1e9) return `${(vol / 1e9).toFixed(2)}B`
+  if (vol >= 1e6) return `${(vol / 1e6).toFixed(2)}M`
+  if (vol >= 1e3) return `${(vol / 1e3).toFixed(1)}K`
+  return vol.toString()
+}
+
+const computeMA = (data: number[], period: number): (number | null)[] => {
+  return data.map((_, i) => {
+    if (i < period - 1) return null
+    const slice = data.slice(i - period + 1, i + 1)
+    return slice.reduce((a, b) => a + b, 0) / period
+  })
+}
+
+const computeEMA = (data: number[], period: number): (number | null)[] => {
+  const k = 2 / (period + 1)
+  const result: (number | null)[] = []
+  let ema: number | null = null
+  for (let i = 0; i < data.length; i++) {
+    if (i < period - 1) {
+      result.push(null)
+    } else if (ema === null) {
+      ema = data.slice(0, period).reduce((a, b) => a + b, 0) / period
+      result.push(ema)
+    } else {
+      ema = data[i] * k + ema * (1 - k)
+      result.push(ema)
+    }
+  }
+  return result
+}
+
+const priceChartOption = computed(() => {
+  const closes = historyData.value.map(d => d.close)
+  const dates = historyData.value.map(d => d.date)
+  const ma20 = computeMA(closes, 20)
+  const ma20Num = ma20.filter((v): v is number => v !== null)
+  const stdDev = ma20Num.length > 0 ? Math.sqrt(ma20Num.reduce((sum, v) => sum + Math.pow(v - ma20Num.reduce((a, b) => a + b, 0) / ma20Num.length, 2), 0) / ma20Num.length) : 0
+
+  const series: unknown[] = [
     {
       type: 'line',
-      data: priceChartData.value.map(d => d.close),
+      data: closes,
       smooth: true,
       symbol: 'none',
       lineStyle: { color: '#10b981', width: 2 },
       areaStyle: {
-        color: {
-          type: 'linear',
-          x: 0, y: 0, x2: 0, y2: 1,
-          colorStops: [
-            { offset: 0, color: 'rgba(16, 185, 129, 0.3)' },
-            { offset: 1, color: 'rgba(16, 185, 129, 0)' }
-          ]
-        }
+        color: { type: 'linear', x: 0, y: 0, x2: 0, y2: 1, colorStops: [{ offset: 0, color: 'rgba(16, 185, 129, 0.3)' }, { offset: 1, color: 'rgba(16, 185, 129, 0)' }] }
       }
     },
-    ...(showMA.value ? [{
-      type: 'line',
-      data: priceChartData.value.map(d => d.ma20),
-      smooth: true,
-      symbol: 'none',
-      lineStyle: { color: '#fbbf24', width: 2 }
-    }] : []),
-    ...(showBB.value ? [
-      { type: 'line', data: priceChartData.value.map(d => d.upperBB), smooth: true, symbol: 'none', lineStyle: { color: '#60a5fa', width: 1, type: 'dashed' } },
-      { type: 'line', data: priceChartData.value.map(d => d.lowerBB), smooth: true, symbol: 'none', lineStyle: { color: '#60a5fa', width: 1, type: 'dashed' } }
-    ] : [])
-  ],
-  tooltip: { backgroundColor: '#18181b', borderColor: '#27272a', textStyle: { color: '#fff' } }
-}));
+  ]
 
-const scatterData = computed(() => {
-  return Array.from({ length: 50 }, () => [(Math.random() - 0.5) * 2, (Math.random() - 0.5) * 3]);
-});
+  if (showMA.value) {
+    series.push({ type: 'line', data: ma20, smooth: true, symbol: 'none', lineStyle: { color: '#fbbf24', width: 2 } })
+  }
 
-const scatterChartOption = computed(() => ({
-  grid: { left: 40, right: 20, top: 20, bottom: 40 },
-  xAxis: {
-    type: 'value',
-    name: 'Доходность SPX %',
-    nameLocation: 'middle',
-    nameGap: 25,
-    nameTextStyle: { color: '#6b7280', fontSize: 10 },
-    axisLabel: { color: '#9ca3af', fontSize: 10 },
-    axisLine: { show: false },
-    axisTick: { show: false },
-    splitLine: { lineStyle: { color: 'rgba(255,255,255,0.05)' } }
-  },
-  yAxis: {
-    type: 'value',
-    name: 'Доходность актива %',
-    nameLocation: 'middle',
-    nameGap: 30,
-    nameTextStyle: { color: '#6b7280', fontSize: 10 },
-    axisLabel: { color: '#9ca3af', fontSize: 10 },
-    axisLine: { show: false },
-    axisTick: { show: false },
-    splitLine: { lineStyle: { color: 'rgba(255,255,255,0.05)' } }
-  },
-  series: [{
-    type: 'scatter',
-    data: scatterData.value,
-    symbolSize: 8,
-    itemStyle: { color: '#34d399' }
-  }],
-  tooltip: { backgroundColor: '#18181b', borderColor: '#27272a', textStyle: { color: '#fff' } }
-}));
+  if (showBB.value) {
+    const upper = ma20.map(v => v != null ? v + 2 * stdDev : null)
+    const lower = ma20.map(v => v != null ? v - 2 * stdDev : null)
+    series.push(
+      { type: 'line', data: upper, smooth: true, symbol: 'none', lineStyle: { color: '#60a5fa', width: 1, type: 'dashed' } },
+      { type: 'line', data: lower, smooth: true, symbol: 'none', lineStyle: { color: '#60a5fa', width: 1, type: 'dashed' } },
+    )
+  }
 
-const oscillators = [
-  { name: 'RSI (14)', value: '64.5', signal: 'Нейтрально', color: 'text-emerald-400' },
-  { name: 'Stoch (9,6)', value: '82.1', signal: 'Перекупленность', color: 'text-rose-400' },
-  { name: 'CCI (20)', value: '110.2', signal: 'Покупка', color: 'text-emerald-400' },
-  { name: 'MACD (12,26)', value: '2.45', signal: 'Бычий крест', color: 'text-emerald-400' },
-];
-
-const movingAverages = [
-  { period: 'MA10', sma: '142.50', ema: '143.10', action: 'ПОКУПКА' },
-  { period: 'MA20', sma: '138.20', ema: '139.50', action: 'ПОКУПКА' },
-  { period: 'MA50', sma: '125.00', ema: '128.40', action: 'ПОКУПКА' },
-  { period: 'MA200', sma: '110.10', ema: '115.20', action: 'ПОКУПКА' },
-];
-
-// Intraday intervals
-const intradayIntervals = [
-  { label: '1 мин', value: '1m' },
-  { label: '5 мин', value: '5m' },
-  { label: '15 мин', value: '15m' },
-  { label: '1 час', value: '1h' },
-  { label: '4 часа', value: '4h' },
-];
-
-// Intraday data
-const intradayData = computed(() => {
-  const now = new Date();
-  const points = selectedIntradayInterval.value === '1m' ? 390 : 
-                 selectedIntradayInterval.value === '5m' ? 78 :
-                 selectedIntradayInterval.value === '15m' ? 26 :
-                 selectedIntradayInterval.value === '1h' ? 6.5 : 1.5;
-  
-  const basePrice = 145.32;
-  return Array.from({ length: Math.floor(points) }, (_, i) => {
-    const time = new Date(now);
-    if (selectedIntradayInterval.value === '1m') {
-      time.setMinutes(time.getMinutes() - (Math.floor(points) - i));
-    } else if (selectedIntradayInterval.value === '5m') {
-      time.setMinutes(time.getMinutes() - (Math.floor(points) - i) * 5);
-    } else if (selectedIntradayInterval.value === '15m') {
-      time.setMinutes(time.getMinutes() - (Math.floor(points) - i) * 15);
-    } else if (selectedIntradayInterval.value === '1h') {
-      time.setHours(time.getHours() - (Math.floor(points) - i));
-    } else {
-      time.setHours(time.getHours() - (Math.floor(points) - i) * 4);
-    }
-    
-    const price = basePrice + Math.sin(i * 0.1) * 2 + (Math.random() - 0.5) * 1.5;
-    return {
-      time: time.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' }),
-      price: price,
-      volume: Math.random() * 1000000
-    };
-  });
-});
+  return {
+    grid: { left: 40, right: 40, top: 20, bottom: 30 },
+    xAxis: { type: 'category', data: dates, axisLabel: { color: 'rgba(255,255,255,0.3)', fontSize: 10 }, axisLine: { show: false }, axisTick: { show: false } },
+    yAxis: { type: 'value', position: 'right', axisLabel: { color: 'rgba(255,255,255,0.3)', fontSize: 10 }, axisLine: { show: false }, axisTick: { show: false }, splitLine: { lineStyle: { color: 'rgba(255,255,255,0.05)' } } },
+    series,
+    tooltip: { backgroundColor: '#18181b', borderColor: '#27272a', textStyle: { color: '#fff' } }
+  }
+})
 
 const intradayStats = computed(() => {
-  const prices = intradayData.value.map(d => d.price);
-  if (prices.length === 0) {
-    return {
-      open: '0.00',
-      high: '0.00',
-      low: '0.00',
-      current: '0.00'
-    };
-  }
+  const prices = intradayData.value.map(d => d.close)
+  if (prices.length === 0) return { open: '—', high: '—', low: '—', current: '—' }
   return {
-    open: prices[0]?.toFixed(2) || '0.00',
+    open: prices[0].toFixed(2),
     high: Math.max(...prices).toFixed(2),
     low: Math.min(...prices).toFixed(2),
-    current: prices[prices.length - 1]?.toFixed(2) || '0.00'
-  };
-});
+    current: prices[prices.length - 1].toFixed(2),
+  }
+})
 
 const intradayChartOption = computed(() => ({
   grid: { left: 50, right: 50, top: 20, bottom: 40 },
   xAxis: {
     type: 'category',
-    data: intradayData.value.map(d => d.time),
-    axisLabel: { 
-      color: 'rgba(255,255,255,0.3)', 
-      fontSize: 10,
-      rotate: 45,
-      interval: selectedIntradayInterval.value === '1m' ? 'auto' : 0
-    },
-    axisLine: { show: false },
-    axisTick: { show: false }
+    data: intradayData.value.map(d => d.date),
+    axisLabel: { color: 'rgba(255,255,255,0.3)', fontSize: 10, rotate: 45 },
+    axisLine: { show: false }, axisTick: { show: false }
+  },
+  yAxis: { type: 'value', position: 'right', axisLabel: { color: 'rgba(255,255,255,0.3)', fontSize: 10 }, axisLine: { show: false }, axisTick: { show: false }, splitLine: { lineStyle: { color: 'rgba(255,255,255,0.05)' } } },
+  series: [{
+    type: 'line',
+    data: intradayData.value.map(d => d.close),
+    smooth: false,
+    symbol: 'none',
+    lineStyle: { color: '#10b981', width: 2 },
+    areaStyle: { color: { type: 'linear', x: 0, y: 0, x2: 0, y2: 1, colorStops: [{ offset: 0, color: 'rgba(16, 185, 129, 0.3)' }, { offset: 1, color: 'rgba(16, 185, 129, 0)' }] } }
+  }],
+  tooltip: { backgroundColor: '#18181b', borderColor: '#27272a', textStyle: { color: '#fff' }, trigger: 'axis' }
+}))
+
+// ─── Beta / Regression ─────────────────────────────────────────────────────────
+
+const computeReturns = (data: { close: number }[]) => {
+  return data.slice(1).map((d, i) => ((d.close - data[i].close) / data[i].close) * 100)
+}
+
+const scatterPoints = computed(() => {
+  if (historyData.value.length < 10 || benchmarkData.value.length < 10) return []
+  const assetReturns = computeReturns(historyData.value)
+  const benchReturns = computeReturns(benchmarkData.value)
+  const minLen = Math.min(assetReturns.length, benchReturns.length)
+  return Array.from({ length: minLen }, (_, i) => [benchReturns[i], assetReturns[i]])
+})
+
+const betaStats = computed(() => {
+  if (scatterPoints.value.length < 5) return { beta: '—', alpha: '—', r2: '—' }
+  const pts = scatterPoints.value
+  const n = pts.length
+  const sumX = pts.reduce((s, p) => s + p[0], 0)
+  const sumY = pts.reduce((s, p) => s + p[1], 0)
+  const sumXY = pts.reduce((s, p) => s + p[0] * p[1], 0)
+  const sumX2 = pts.reduce((s, p) => s + p[0] * p[0], 0)
+  const sumY2 = pts.reduce((s, p) => s + p[1] * p[1], 0)
+  const beta = (n * sumXY - sumX * sumY) / (n * sumX2 - sumX * sumX)
+  const alpha = (sumY - beta * sumX) / n
+  const ssRes = pts.reduce((s, p) => s + Math.pow(p[1] - alpha - beta * p[0], 2), 0)
+  const ssTot = pts.reduce((s, p) => s + Math.pow(p[1] - sumY / n, 2), 0)
+  const r2 = ssTot > 0 ? 1 - ssRes / ssTot : 0
+  return {
+    beta: beta.toFixed(2),
+    alpha: `${alpha >= 0 ? '+' : ''}${alpha.toFixed(2)}%`,
+    r2: r2.toFixed(2),
+  }
+})
+
+const scatterChartOption = computed(() => ({
+  grid: { left: 40, right: 20, top: 20, bottom: 40 },
+  xAxis: {
+    type: 'value', name: 'Доходность SPX %', nameLocation: 'middle', nameGap: 25,
+    nameTextStyle: { color: '#6b7280', fontSize: 10 }, axisLabel: { color: '#9ca3af', fontSize: 10 },
+    axisLine: { show: false }, axisTick: { show: false }, splitLine: { lineStyle: { color: 'rgba(255,255,255,0.05)' } }
   },
   yAxis: {
-    type: 'value',
-    position: 'right',
-    axisLabel: { color: 'rgba(255,255,255,0.3)', fontSize: 10 },
-    axisLine: { show: false },
-    axisTick: { show: false },
-    splitLine: { lineStyle: { color: 'rgba(255,255,255,0.05)' } }
+    type: 'value', name: 'Доходность актива %', nameLocation: 'middle', nameGap: 30,
+    nameTextStyle: { color: '#6b7280', fontSize: 10 }, axisLabel: { color: '#9ca3af', fontSize: 10 },
+    axisLine: { show: false }, axisTick: { show: false }, splitLine: { lineStyle: { color: 'rgba(255,255,255,0.05)' } }
   },
-  series: [
-    {
-      type: 'line',
-      data: intradayData.value.map(d => d.price),
-      smooth: false,
-      symbol: 'none',
-      lineStyle: { color: '#10b981', width: 2 },
-      areaStyle: {
-        color: {
-          type: 'linear',
-          x: 0, y: 0, x2: 0, y2: 1,
-          colorStops: [
-            { offset: 0, color: 'rgba(16, 185, 129, 0.3)' },
-            { offset: 1, color: 'rgba(16, 185, 129, 0)' }
-          ]
-        }
-      },
-      markLine: {
-        silent: true,
-        data: [
-          { yAxis: parseFloat(intradayStats.value.open), name: 'Открытие', lineStyle: { color: '#60a5fa', type: 'dashed', width: 1 } },
-          { yAxis: parseFloat(intradayStats.value.high), name: 'Максимум', lineStyle: { color: '#10b981', type: 'dashed', width: 1 } },
-          { yAxis: parseFloat(intradayStats.value.low), name: 'Минимум', lineStyle: { color: '#ef4444', type: 'dashed', width: 1 } }
-        ]
-      }
-    }
-  ],
-  tooltip: { 
-    backgroundColor: '#18181b', 
-    borderColor: '#27272a', 
-    textStyle: { color: '#fff' },
-    trigger: 'axis',
-    axisPointer: {
-      type: 'cross'
-    }
-  }
-}));
+  series: [{ type: 'scatter', data: scatterPoints.value, symbolSize: 8, itemStyle: { color: '#34d399' } }],
+  tooltip: { backgroundColor: '#18181b', borderColor: '#27272a', textStyle: { color: '#fff' } }
+}))
 
-// Icon components
-const CalendarIcon = { template: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>' };
-const ActivityIcon = { template: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>' };
-const ClockIcon = { template: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>' };
-const LayersIcon = { template: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>' };
-const TrendingUpIcon = { template: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>' };
-const BarChart2Icon = { template: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>' };
-const ChevronDownIcon = { template: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>' };
+// ─── Technical Analysis ────────────────────────────────────────────────────────
+
+const computedOscillators = computed(() => {
+  const closes = historyData.value.map(d => d.close)
+  if (closes.length < 14) return [
+    { name: 'RSI (14)', value: '—', signal: 'Нет данных', color: 'text-gray-400' },
+    { name: 'Stoch %K', value: '—', signal: 'Нет данных', color: 'text-gray-400' },
+    { name: 'CCI (20)', value: '—', signal: 'Нет данных', color: 'text-gray-400' },
+    { name: 'Momentum', value: '—', signal: 'Нет данных', color: 'text-gray-400' },
+  ]
+
+  // RSI
+  const gains: number[] = []
+  const losses: number[] = []
+  for (let i = 1; i < closes.length; i++) {
+    const diff = closes[i] - closes[i - 1]
+    gains.push(diff > 0 ? diff : 0)
+    losses.push(diff < 0 ? -diff : 0)
+  }
+  const avgGain = gains.slice(-14).reduce((a, b) => a + b, 0) / 14
+  const avgLoss = losses.slice(-14).reduce((a, b) => a + b, 0) / 14
+  const rsi = avgLoss === 0 ? 100 : 100 - 100 / (1 + avgGain / avgLoss)
+
+  // Stochastic %K
+  const last14 = closes.slice(-14)
+  const stochK = last14.length > 0 ? ((closes[closes.length - 1] - Math.min(...last14)) / (Math.max(...last14) - Math.min(...last14))) * 100 : 50
+
+  // CCI
+  const last20 = closes.slice(-20)
+  const meanPrice = last20.reduce((a, b) => a + b, 0) / last20.length
+  const meanDev = last20.reduce((a, b) => a + Math.abs(b - meanPrice), 0) / last20.length
+  const cci = meanDev > 0 ? (closes[closes.length - 1] - meanPrice) / (0.015 * meanDev) : 0
+
+  // Momentum (10-day)
+  const mom = closes.length >= 10 ? ((closes[closes.length - 1] / closes[closes.length - 10]) - 1) * 100 : 0
+
+  const rsiSignal = rsi > 70 ? 'Перекупленность' : rsi < 30 ? 'Перепроданность' : 'Нейтрально'
+  const rsiColor = rsi > 70 ? 'text-rose-400' : rsi < 30 ? 'text-emerald-400' : 'text-emerald-400'
+
+  return [
+    { name: 'RSI (14)', value: rsi.toFixed(1), signal: rsiSignal, color: rsiColor },
+    { name: 'Stoch %K', value: stochK.toFixed(1), signal: stochK > 80 ? 'Перекупленность' : stochK < 20 ? 'Перепроданность' : 'Нейтрально', color: stochK > 80 ? 'text-rose-400' : stochK < 20 ? 'text-emerald-400' : 'text-emerald-400' },
+    { name: 'CCI (20)', value: cci.toFixed(1), signal: cci > 100 ? 'Покупка' : cci < -100 ? 'Продажа' : 'Нейтрально', color: cci > 100 ? 'text-emerald-400' : cci < -100 ? 'text-rose-400' : 'text-white' },
+    { name: 'Momentum', value: `${mom >= 0 ? '+' : ''}${mom.toFixed(2)}%`, signal: mom > 0 ? 'Бычий' : 'Медвежий', color: mom > 0 ? 'text-emerald-400' : 'text-rose-400' },
+  ]
+})
+
+const overallSignal = computed(() => {
+  const buys = computedOscillators.value.filter(o => o.color === 'text-emerald-400').length
+  const sells = computedOscillators.value.filter(o => o.color === 'text-rose-400').length
+  if (buys > sells + 1) return { label: 'ПОКУПКА', color: 'text-emerald-400', borderClass: 'border-t-emerald-500 border-r-emerald-500' }
+  if (sells > buys + 1) return { label: 'ПРОДАЖА', color: 'text-rose-400', borderClass: 'border-t-rose-500 border-r-rose-500' }
+  return { label: 'НЕЙТРАЛЬНО', color: 'text-white', borderClass: 'border-t-gray-500 border-r-gray-500' }
+})
+
+const computedMAs = computed(() => {
+  const closes = historyData.value.map(d => d.close)
+  const lastPrice = closes.length > 0 ? closes[closes.length - 1] : 0
+  const periods = [10, 20, 50, 200]
+  return periods.map(p => {
+    const sma = closes.length >= p ? closes.slice(-p).reduce((a, b) => a + b, 0) / p : null
+    const emaArr = computeEMA(closes, p)
+    const ema = emaArr.length > 0 ? emaArr[emaArr.length - 1] : null
+    const action = sma != null && lastPrice > sma ? 'ПОКУПКА' : sma != null ? 'ПРОДАЖА' : '—'
+    return {
+      period: `MA${p}`,
+      sma: sma != null ? sma.toFixed(2) : '—',
+      ema: ema != null ? ema.toFixed(2) : '—',
+      action,
+    }
+  })
+})
+
+// ─── Section watchers ──────────────────────────────────────────────────────────
+
+watch(section, (newSection) => {
+  if (newSection === 'GIP' && intradayData.value.length === 0) loadIntradayData()
+  if (newSection === 'BETA' && benchmarkData.value.length === 0) loadBetaData()
+})
+
+onMounted(() => {
+  loadAllData()
+})
 </script>
