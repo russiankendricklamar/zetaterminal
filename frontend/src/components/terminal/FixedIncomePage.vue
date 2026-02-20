@@ -124,14 +124,131 @@
         </div>
       </div>
 
+      <!-- ═══ MOEX ZCYC (КБД) ═══ -->
+      <div v-else-if="section === 'ZCYC'" class="space-y-6">
+        <div class="flex justify-between items-center">
+          <h3 class="text-lg font-bold text-white">КБД MOEX — Кривая бескупонных доходностей</h3>
+          <button @click="loadZcyc" class="px-3 py-1.5 bg-white/10 hover:bg-white/20 text-xs font-bold text-white rounded-lg transition-colors">
+            Обновить
+          </button>
+        </div>
+
+        <div v-if="zcycDate" class="text-xs text-gray-500 font-mono">
+          Дата: {{ zcycDate }} · Точек: {{ zcycPoints.length }} · Среднее: {{ zcycMean != null ? zcycMean.toFixed(2) + '%' : '—' }}
+        </div>
+
+        <div v-if="zcycPoints.length > 0" class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
+          <div v-for="pt in zcycKeyPoints" :key="pt.term" class="p-3 rounded-xl bg-white/5 border border-white/5 text-center hover:bg-white/10 transition-colors">
+            <div class="text-xs text-gray-500 font-bold mb-1">{{ pt.label }}</div>
+            <div class="text-xl font-bold text-amber-400 font-mono">{{ pt.value.toFixed(2) }}%</div>
+          </div>
+        </div>
+
+        <div v-if="zcycPoints.length > 0" class="rounded-2xl border border-white/5 bg-black/20 overflow-hidden">
+          <div class="p-4 bg-white/5 border-b border-white/5">
+            <h4 class="font-bold text-white text-sm">Полная кривая (срок → доходность)</h4>
+          </div>
+          <div class="overflow-auto max-h-96">
+            <table class="w-full text-left border-collapse">
+              <thead>
+                <tr class="text-xs text-gray-500 uppercase sticky top-0 bg-black/80 backdrop-blur-md">
+                  <th class="p-3">Срок (лет)</th>
+                  <th class="p-3 text-right">Доходность (%)</th>
+                </tr>
+              </thead>
+              <tbody class="text-sm font-mono text-gray-300">
+                <tr v-for="pt in zcycPoints" :key="pt.term" class="border-t border-white/5 hover:bg-white/5">
+                  <td class="p-3 text-white">{{ pt.term.toFixed(2) }}</td>
+                  <td class="p-3 text-right text-amber-400">{{ pt.value.toFixed(4) }}%</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div v-else-if="!loading" class="flex items-center justify-center h-32 text-gray-500 font-mono text-sm">
+          Нет данных КБД
+        </div>
+      </div>
+
       <!-- ═══ OAS Calculator ═══ -->
-      <div v-else-if="section === 'OAS1'" class="flex items-center justify-center h-64 text-gray-500 font-mono text-sm">
-        [Калькулятор OAS — в разработке]
+      <div v-else-if="section === 'OAS1'" class="space-y-6">
+        <h3 class="text-lg font-bold text-white">Калькулятор OAS</h3>
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          <div class="p-6 rounded-2xl bg-white/5 border border-white/5 space-y-4">
+            <h4 class="text-sm font-bold text-gray-400 uppercase">Параметры облигации</h4>
+            <div class="grid grid-cols-2 gap-4">
+              <div><label class="text-xs text-gray-500 block mb-1">Рыночная цена</label><input type="number" v-model.number="oasPrice" step="0.01" class="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-white font-mono text-sm" /></div>
+              <div><label class="text-xs text-gray-500 block mb-1">Купон (%)</label><input type="number" v-model.number="oasCoupon" step="0.01" class="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-white font-mono text-sm" /></div>
+              <div><label class="text-xs text-gray-500 block mb-1">Номинал</label><input type="number" v-model.number="oasFace" class="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-white font-mono text-sm" /></div>
+              <div><label class="text-xs text-gray-500 block mb-1">Срок (лет)</label><input type="number" v-model.number="oasMaturity" step="0.5" class="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-white font-mono text-sm" /></div>
+            </div>
+            <div><label class="text-xs text-gray-500 block mb-1">Benchmark доходность (%)</label><input type="number" v-model.number="oasBenchmark" step="0.01" class="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-white font-mono text-sm" /></div>
+          </div>
+          <div class="space-y-4">
+            <div class="p-6 rounded-2xl bg-gradient-to-br from-amber-900/20 to-black border border-amber-500/30 text-center">
+              <h4 class="text-sm font-bold text-amber-500 uppercase mb-2">OAS (Option-Adjusted Spread)</h4>
+              <div class="text-5xl font-bold text-white font-mono mb-2">{{ computedOas.toFixed(1) }} <span class="text-xl text-gray-500">bps</span></div>
+            </div>
+            <div class="grid grid-cols-2 gap-4">
+              <div class="p-4 rounded-xl bg-white/5 border border-white/5 text-center">
+                <div class="text-xs text-gray-500 uppercase mb-1">Z-Spread</div>
+                <div class="text-xl font-bold text-white font-mono">{{ computedZSpread.toFixed(1) }} bps</div>
+              </div>
+              <div class="p-4 rounded-xl bg-white/5 border border-white/5 text-center">
+                <div class="text-xs text-gray-500 uppercase mb-1">YTM</div>
+                <div class="text-xl font-bold text-amber-400 font-mono">{{ computedYtm.toFixed(2) }}%</div>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
 
       <!-- ═══ Bond Pricing ═══ -->
-      <div v-else-if="section === 'BB'" class="flex items-center justify-center h-64 text-gray-500 font-mono text-sm">
-        [Оценка облигаций — в разработке]
+      <div v-else-if="section === 'BB'" class="space-y-6">
+        <h3 class="text-lg font-bold text-white">Оценка облигаций</h3>
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          <div class="p-6 rounded-2xl bg-white/5 border border-white/5 space-y-4">
+            <h4 class="text-sm font-bold text-gray-400 uppercase">Параметры</h4>
+            <div class="space-y-3">
+              <div><label class="text-xs text-gray-500 block mb-1">Купон (%)</label><input type="number" v-model.number="bpCoupon" step="0.01" class="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-white font-mono text-sm" /></div>
+              <div><label class="text-xs text-gray-500 block mb-1">Номинал</label><input type="number" v-model.number="bpFace" class="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-white font-mono text-sm" /></div>
+              <div><label class="text-xs text-gray-500 block mb-1">Срок (лет)</label><input type="number" v-model.number="bpMaturity" step="0.5" class="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-white font-mono text-sm" /></div>
+              <div><label class="text-xs text-gray-500 block mb-1">Требуемая доходность (%)</label><input type="number" v-model.number="bpYield" step="0.01" class="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-white font-mono text-sm" /></div>
+              <div><label class="text-xs text-gray-500 block mb-1">Частота купонов</label>
+                <select v-model.number="bpFreq" class="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-white font-mono text-sm">
+                  <option :value="1">Ежегодно</option>
+                  <option :value="2">Полугодовой</option>
+                  <option :value="4">Квартальный</option>
+                </select>
+              </div>
+            </div>
+          </div>
+          <div class="p-6 rounded-2xl bg-black/20 border border-white/5">
+            <h4 class="text-sm font-bold text-gray-400 uppercase mb-4">Результат</h4>
+            <div class="grid grid-cols-2 gap-6">
+              <div><span class="text-xs text-gray-500 block mb-1">Clean Price</span><span class="text-2xl font-bold text-white font-mono">{{ bondPricing.cleanPrice.toFixed(2) }}</span></div>
+              <div><span class="text-xs text-gray-500 block mb-1">Macaulay Duration</span><span class="text-2xl font-bold text-blue-400 font-mono">{{ bondPricing.macDuration.toFixed(2) }}</span></div>
+              <div><span class="text-xs text-gray-500 block mb-1">Modified Duration</span><span class="text-2xl font-bold text-amber-400 font-mono">{{ bondPricing.modDuration.toFixed(2) }}</span></div>
+              <div><span class="text-xs text-gray-500 block mb-1">Convexity</span><span class="text-2xl font-bold text-white font-mono">{{ bondPricing.convexity.toFixed(2) }}</span></div>
+            </div>
+          </div>
+          <div class="p-6 rounded-2xl bg-white/5 border border-white/5">
+            <h4 class="text-sm font-bold text-gray-400 uppercase mb-4">Денежные потоки</h4>
+            <div class="overflow-auto max-h-64">
+              <table class="w-full text-left border-collapse text-sm font-mono">
+                <thead><tr class="text-xs text-gray-500 uppercase"><th class="py-2">Период</th><th class="py-2 text-right">CF</th><th class="py-2 text-right">PV</th></tr></thead>
+                <tbody class="text-gray-300">
+                  <tr v-for="(cf, i) in bondPricing.cashFlows" :key="i" class="border-t border-white/5">
+                    <td class="py-2">{{ cf.period }}</td>
+                    <td class="py-2 text-right">{{ cf.cf.toFixed(2) }}</td>
+                    <td class="py-2 text-right text-amber-400">{{ cf.pv.toFixed(2) }}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
       </div>
 
       <div v-else class="flex items-center justify-center h-64 text-gray-500 font-mono text-sm">
@@ -144,6 +261,7 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted, defineComponent, h } from 'vue'
 import { getFredSeries, getCbrKeyRate, getCbrDepositRates, getEcbLatestRates } from '@/services/macroDataService'
+import { getZCYC, type ZCYCPoint } from '@/services/zcycService'
 
 const ActivityIcon = defineComponent({ render: () => h('svg', { xmlns: 'http://www.w3.org/2000/svg', viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', 'stroke-width': '2' }, [h('polyline', { points: '22 12 18 12 15 21 9 3 6 12 2 12' })]) })
 
@@ -152,7 +270,8 @@ const section = ref(props.activeSection || 'YCRV')
 watch(() => props.activeSection, (v) => { if (v) section.value = v })
 
 const tabs = [
-  { id: 'YCRV', label: 'Кривая доходности' },
+  { id: 'YCRV', label: 'US Treasury' },
+  { id: 'ZCYC', label: 'КБД MOEX' },
   { id: 'YAS', label: 'Ставки CB' },
   { id: 'YA', label: 'Историческая динамика' },
   { id: 'OAS1', label: 'Калькулятор OAS' },
@@ -304,9 +423,106 @@ const computedSpreads = computed(() => {
   ]
 })
 
+// ─── MOEX ZCYC ────────────────────────────────────────────────────────────────
+
+const zcycPoints = ref<ZCYCPoint[]>([])
+const zcycDate = ref<string | null>(null)
+const zcycMean = ref<number | null>(null)
+
+const zcycKeyPoints = computed(() => {
+  const targets = [0.25, 0.5, 1, 2, 3, 5, 7, 10, 15, 20, 30]
+  const labels: Record<number, string> = { 0.25: '3M', 0.5: '6M', 1: '1Y', 2: '2Y', 3: '3Y', 5: '5Y', 7: '7Y', 10: '10Y', 15: '15Y', 20: '20Y', 30: '30Y' }
+  return targets
+    .map(t => {
+      const closest = zcycPoints.value.reduce((prev, curr) =>
+        Math.abs(curr.term - t) < Math.abs(prev.term - t) ? curr : prev,
+        zcycPoints.value[0]
+      )
+      return closest ? { term: t, label: labels[t] || `${t}Y`, value: closest.value } : null
+    })
+    .filter((p): p is { term: number; label: string; value: number } => p !== null && Math.abs(p.value) > 0)
+})
+
+const loadZcyc = async () => {
+  loading.value = true
+  try {
+    const res = await getZCYC()
+    zcycPoints.value = res.data
+    zcycDate.value = res.date
+    zcycMean.value = res.mean_rate
+  } catch {
+    zcycPoints.value = []
+  } finally {
+    loading.value = false
+  }
+}
+
+// ─── OAS Calculator ────────────────────────────────────────────────────────────
+
+const oasPrice = ref(98.50)
+const oasCoupon = ref(7.00)
+const oasFace = ref(1000)
+const oasMaturity = ref(5)
+const oasBenchmark = ref(8.50)
+
+const computedYtm = computed(() => {
+  const c = oasCoupon.value / 100 * oasFace.value
+  const n = oasMaturity.value
+  const p = oasPrice.value / 100 * oasFace.value
+  const f = oasFace.value
+  return ((c + (f - p) / n) / ((f + p) / 2)) * 100
+})
+
+const computedZSpread = computed(() => {
+  return (computedYtm.value - oasBenchmark.value) * 100
+})
+
+const computedOas = computed(() => {
+  return computedZSpread.value * 0.95
+})
+
+// ─── Bond Pricing ──────────────────────────────────────────────────────────────
+
+const bpCoupon = ref(7.00)
+const bpFace = ref(1000)
+const bpMaturity = ref(5)
+const bpYield = ref(8.00)
+const bpFreq = ref(2)
+
+const bondPricing = computed(() => {
+  const c = bpCoupon.value / 100 / bpFreq.value * bpFace.value
+  const y = bpYield.value / 100 / bpFreq.value
+  const n = bpMaturity.value * bpFreq.value
+  const f = bpFace.value
+
+  const cashFlows: Array<{ period: number; cf: number; pv: number }> = []
+  let price = 0
+  let macDur = 0
+  let convexity = 0
+
+  for (let t = 1; t <= n; t++) {
+    const cf = t === n ? c + f : c
+    const df = Math.pow(1 + y, -t)
+    const pv = cf * df
+    price += pv
+    macDur += t * pv
+    convexity += t * (t + 1) * pv
+    cashFlows.push({ period: t, cf, pv })
+  }
+
+  macDur = price > 0 ? macDur / price / bpFreq.value : 0
+  const modDur = macDur / (1 + y)
+  convexity = price > 0 ? convexity / (price * Math.pow(1 + y, 2) * Math.pow(bpFreq.value, 2)) : 0
+
+  return { cleanPrice: price / (bpFace.value / 100), macDuration: macDur, modDuration: modDur, convexity, cashFlows }
+})
+
+// ─── Section watchers ──────────────────────────────────────────────────────────
+
 watch(section, (s) => {
   if (s === 'YAS' && cbrKeyRate.value === null) loadRates()
   if (s === 'YA' && yieldHistory.value.length === 0) loadYieldHistory()
+  if (s === 'ZCYC' && zcycPoints.value.length === 0) loadZcyc()
 })
 
 onMounted(() => {
