@@ -1,1 +1,0 @@
-const t="zeta_api_key";function e(){const e={"Content-Type":"application/json"},o=localStorage.getItem(t);return o&&(e["X-API-Key"]=o),e}function o(){return localStorage.getItem(t)||""}function a(e){e?localStorage.setItem(t,e):localStorage.removeItem(t)}export{o as a,e as g,a as s};
