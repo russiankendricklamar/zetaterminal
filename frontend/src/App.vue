@@ -13,6 +13,7 @@ import { useRoute } from 'vue-router'
 import { useThemeStore } from '@/stores'
 import CommandPalette from '@/components/common/CommandPalette.vue'
 import TaskContainer from '@/components/common/TaskContainer.vue'
+import { warmupBackend } from '@/services/apiConfigService'
 
 const route = useRoute()
 const themeStore = useThemeStore()
@@ -22,6 +23,7 @@ const isTerminalPage = computed(() => route.path === '/terminal')
 
 onMounted(() => {
   themeStore.initTheme()
+  warmupBackend()
 })
 </script>
 

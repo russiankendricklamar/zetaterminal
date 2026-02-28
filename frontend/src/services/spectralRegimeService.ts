@@ -9,7 +9,7 @@
 
 import { getApiHeaders } from '@/utils/apiHeaders'
 
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000'
+const API_BASE = import.meta.env.VITE_API_BASE_URL || ''
 
 export interface Asset {
   ticker: string

@@ -106,6 +106,16 @@ export function getKeysForGroup(group: string): ApiKeyConfig[] {
 }
 
 /**
+ * Warm up the backend on Render free tier (sleeps after 15min idle).
+ * Called from App.vue on mount — fires a silent GET /health to wake the server.
+ */
+export async function warmupBackend(): Promise<void> {
+  try {
+    await fetch(`${API_BASE}/health`, { method: 'GET' })
+  } catch { /* silent — best-effort warmup */ }
+}
+
+/**
  * Check backend health endpoints for all API services.
  */
 export async function checkAllApiHealth(): Promise<Record<string, boolean>> {

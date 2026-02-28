@@ -1,7 +1,7 @@
 # Zeta Terminal — CLAUDE.md
 
 Production-ready quantitative financial analysis platform (SaaS).
-Frontend on **GitHub Pages**, backend on **Railway**.
+Frontend on **GitHub Pages**, backend on **Render** (free tier).
 
 ---
 
@@ -12,7 +12,7 @@ zetaterminal/
 ├── .github/
 │   ├── workflows/
 │   │   ├── pages.yml              # Frontend CI/CD → GitHub Pages
-│   │   └── deploy-backend.yml     # Backend CI/CD → Railway (triggers on backend/**)
+│   │   └── deploy-backend.yml     # Backend CI (verify imports; Render auto-deploys)
 │   └── scripts/
 │       └── claude_responder.py    # GitHub Issues auto-responder (Claude AI)
 ├── backend/
@@ -223,11 +223,13 @@ URL:     russiankendricklamar.github.io/zetaterminal/
 Notes:   base path /zetaterminal/ | hash routing | 404.html SPA redirect
 ```
 
-### Backend → Railway
+### Backend → Render (free tier)
 ```
-Trigger: push to main with changes in backend/** → deploy-backend.yml
+Deploy:  Render auto-deploys on push to main (render.yaml Blueprint)
+CI:      deploy-backend.yml verifies imports only
 Runtime: Python 3.11.0
-Start:   uvicorn src.main:app --host 0.0.0.0 --port $PORT  (Procfile)
+Start:   uvicorn src.main:app --host 0.0.0.0 --port $PORT
+Note:    Free tier sleeps after 15min idle; App.vue calls warmupBackend() on mount
 ```
 
 ### Database — Supabase
@@ -236,10 +238,10 @@ PostgreSQL + TimescaleDB. Storage: Parquet (bond registries, portfolios).
 ### Environment Variables
 ```bash
 # Frontend (build-time via GitHub Actions)
-VITE_API_BASE_URL        # Railway backend URL
+VITE_API_BASE_URL        # Render backend URL
 
-# Backend (Railway env)
-PORT                     # provided by Railway
+# Backend (Render env)
+PORT                     # provided by Render
 CORS_ORIGINS             # allowed origins (default: *)
 DATABASE_URL
 SUPABASE_URL
@@ -247,7 +249,6 @@ SUPABASE_ANON_KEY
 
 # GitHub Actions secrets
 ANTHROPIC_API_KEY        # for claude_responder.py
-RAILWAY_TOKEN            # for deploy-backend.yml
 # GITHUB_TOKEN is auto-provided
 ```
 
