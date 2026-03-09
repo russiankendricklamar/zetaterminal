@@ -1,5 +1,5 @@
 """
-Local file storage utilities (replaces Supabase Storage).
+Local file storage utilities.
 """
 import os
 from typing import Optional

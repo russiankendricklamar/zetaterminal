@@ -133,7 +133,7 @@ export const valuateForward = async (
 };
 
 /**
- * Сохраняет реестр форвардов в Supabase Storage в формате parquet
+ * Сохраняет реестр форвардов в серверное хранилище в формате parquet
  */
 export const saveRegistryToParquet = async (
   data: Record<string, unknown>[]

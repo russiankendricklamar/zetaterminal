@@ -2,22 +2,25 @@
 
 ## Обзор
 
-Слой данных реализует **Repository Pattern** поверх Supabase (PostgreSQL + TimescaleDB). Управляет персистентным хранением финансовых данных, результатов расчётов и метаданных файлов.
+Слой данных реализует **Repository Pattern** поверх SQLAlchemy async ORM с Neon PostgreSQL. Управляет персистентным хранением финансовых данных, результатов расчётов и метаданных файлов.
 
-## Supabase Client
+## SQLAlchemy Client
 
 ### Инициализация
 ```python
-from supabase import create_client
+from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession
 
-def get_supabase_client():
-    return create_client(
-        os.getenv("SUPABASE_URL"),
-        os.getenv("SUPABASE_ANON_KEY")
-    )
+DATABASE_URL = os.getenv("DATABASE_URL", "postgresql+asyncpg://localhost/zetaterminal")
+
+engine = create_async_engine(DATABASE_URL, echo=False)
+async_session_factory = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
 ```
 
-Таймаут подключения: 30 секунд. Все репозитории получают клиент через эту фабричную функцию.
+Таблицы создаются автоматически при старте через `init_db()` в FastAPI lifespan.
+
+## ORM-модели (sa_models.py)
+
+5 моделей: `BondValuation`, `Portfolio`, `CalculationHistory`, `MarketDataDaily`, `FileRecord`.
 
 ## Репозитории
 
@@ -27,7 +30,7 @@ def get_supabase_client():
 
 **Операции:**
 - CRUD с auto-generated timestamps
-- Фильтрация по ISIN: `get_by_isin(isin)`
+- Фильтрация по SECID: `get_by_secid(secid)`
 - Date range: `get_by_date_range(start, end)`
 - Сортировка: по дате оценки (DESC)
 
@@ -36,19 +39,8 @@ def get_supabase_client():
 **Таблица:** `portfolios`
 
 **Особенности:**
-- JSONB для гибкой схемы аллокаций
+- JSON для гибкой схемы аллокаций
 - Simplified CRUD (create, list, get by ID)
-
-```json
-{
-  "name": "Conservative Portfolio",
-  "assets": [
-    {"symbol": "SBER", "weight": 0.15},
-    {"symbol": "GAZP", "weight": 0.10},
-    {"symbol": "OFZ-26238", "weight": 0.30}
-  ]
-}
-```
 
 ### CalculationHistoryRepository
 
@@ -65,23 +57,15 @@ def get_supabase_client():
 
 ### MarketDataRepository
 
-**Таблица:** `market_data` (TimescaleDB hypertable)
+**Таблица:** `market_data_daily`
 
 **Особенности:**
 - Upsert по композитному ключу `(ticker, data_type, date)`
 - Идемпотентная запись: обновление существующих записей
 
-```python
-def create_or_update(self, ticker, data_type, date, data):
-    """Upsert с conflict resolution"""
-    response = self.client.table("market_data") \
-        .upsert(record, on_conflict="ticker,data_type,date") \
-        .execute()
-```
-
 ### FileRepository
 
-**Таблица:** `files`
+**Таблица:** `file_records`
 
 **Категории файлов:**
 - `bond_registry`
@@ -90,65 +74,25 @@ def create_or_update(self, ticker, data_type, date, data):
 - `parquet_export`
 - `pdf_report`
 
-## TimescaleDB
-
-### Оптимизации для временных рядов
-- Chunk-based partitioning (автоматическое)
-- Time-based компрессия для исторических данных
-- Continuous aggregates для агрегированных метрик
-- Оптимизированные range queries по дате
-
-### Пагинация
-По умолчанию 100 записей на запрос с настраиваемым лимитом.
-
 ## Parquet Export System
 
 ### Процесс
-
 ```
 1. Данные реестра собираются из Pydantic-моделей
 2. Конвертация в Pandas DataFrame
 3. Сериализация через PyArrow в Parquet
-4. Загрузка в Supabase Storage bucket
+4. Сохранение на локальный диск (exports/)
 5. Метаданные сохраняются в FileRepository
 ```
 
-### Характеристики
-- Сжатие: 5-10x vs CSV
-- Сохранение типов данных (даты, decimal)
-- Встроенная схема метаданных
-- Поддержка Pandas, DuckDB, Spark
-
 ### Именование файлов
 ```
-files/registries/{type}_registry_{date}.parquet
-```
-
-Примеры:
-- `files/registries/bond_registry_2026-01-15.parquet`
-- `files/registries/swap_registry_2026-01-15.parquet`
-
-## Pydantic модели данных
-
-Type-safe валидация на уровне приложения перед персистентностью:
-
-```python
-class BondValuationRecord(BaseModel):
-    secid: str
-    valuation_date: date
-    clean_price: float
-    dirty_price: float
-    duration: float
-    convexity: float
-    ytm: float
-    day_count: str
-    created_at: Optional[datetime] = None
+exports/registries/{type}_registry_{date}.parquet
 ```
 
 ## Переменные окружения
 
 | Переменная | Описание |
 |-----------|----------|
-| `SUPABASE_URL` | URL проекта Supabase |
-| `SUPABASE_ANON_KEY` | Anonymous key для клиента |
-| `DATABASE_URL` | PostgreSQL connection string (альтернативно) |
+| `DATABASE_URL` | PostgreSQL connection string (Neon) |
+| `API_KEY` | API authentication key |

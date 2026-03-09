@@ -6,7 +6,6 @@ from datetime import datetime
 
 from sqlalchemy import select, delete as sa_delete
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.dialects.sqlite import insert as sqlite_insert
 
 from .sa_models import (
     BondValuation,

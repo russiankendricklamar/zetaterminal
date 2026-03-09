@@ -54,7 +54,7 @@
             class="btn-glass secondary"
             :disabled="registryBonds.length === 0 || savingParquet"
             style="font-size: 11px; padding: 6px 12px;"
-            title="Сохранить реестр в Supabase (parquet)"
+            title="Сохранить реестр (parquet)"
           >
             <span v-if="!savingParquet">💾 Сохранить в БД</span>
             <span v-else>↺ Сохранение...</span>

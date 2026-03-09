@@ -67,10 +67,10 @@ External infrastructure:
 - MOEX ISS API — `iss.moex.com`
 - RuData/Interfax — `dh2.efir-net.ru`
 - Yahoo Finance — `yfinance`
-- Supabase — PostgreSQL + TimescaleDB
-- Supabase Storage — Parquet files
+- Neon PostgreSQL — database (SQLAlchemy async ORM)
+- Local storage — Parquet files
 
-The frontend is a static SPA hosted on **GitHub Pages** and built with **Vite**. The backend runs on **Railway** and is built with **FastAPI** and **Uvicorn**. All inter-service communication occurs over HTTPS with CORS configured in the backend.
+The frontend is a static SPA hosted on **GitHub Pages** and built with **Vite**. The backend runs on **Render** and is built with **FastAPI** and **Uvicorn**. All inter-service communication occurs over HTTPS with CORS configured in the backend.
 
 ## Technology Stack
 
@@ -102,7 +102,7 @@ The frontend is a static SPA hosted on **GitHub Pages** and built with **Vite**.
 | **SciPy**           | ≥1.11.0  | Scientific computing (optimization, interpolation) | CCMV, HJB solvers                        |
 | **PyArrow**         | ≥14.0.0  | Parquet file I/O                          | `backend/src/database/repositories.py`           |
 | **CVXPy**           | ≥1.3.0   | Convex optimization                       | Portfolio optimization                           |
-| **Supabase Client** | ≥2.0.0   | Database and storage client               | `backend/src/database/client.py`                 |
+| **SQLAlchemy**      | 2.0.*    | Async ORM (Neon PostgreSQL via asyncpg)   | `backend/src/database/client.py`                 |
 | **aiohttp**         | ≥3.9.0   | Async HTTP client for MOEX and RuData     | `backend/src/services/rudata_service.py`         |
 | **yfinance**        | ≥0.2.0   | Yahoo Finance data fetching               | `backend/src/services/spectral_regime_service.py`|
 
@@ -224,8 +224,8 @@ The system implements several data flow patterns depending on the operation type
 
 1. **User Input**: User uploads bond registry via `BondValuation.vue`.
 2. **Calculation**: Backend `bond.py` router invokes pricing engine.
-3. **Persistence**: `BondValuationRepository` saves results to Supabase PostgreSQL.
-4. **File Export**: Optional Parquet export to Supabase Storage.
+3. **Persistence**: `BondValuationRepository` saves results to Neon PostgreSQL.
+4. **File Export**: Optional Parquet export to local storage.
 5. **Retrieval**: Subsequent queries fetch from database cache.
 
 ### External API Integration Pattern
@@ -394,7 +394,7 @@ Backend:
   - `RuDataService` (RuData API client).
   - `ZCYCService` (yield curve processing).
 - Data access layer (`backend/src/database/`):
-  - `client.py` with `get_supabase_client()`.
+  - `client.py` with SQLAlchemy async engine.
   - `repositories.py`:
     - `BondValuationRepository`
     - `PortfolioRepository`
@@ -403,7 +403,7 @@ Backend:
 
 External infrastructure:
 
-- Supabase: PostgreSQL + TimescaleDB, plus Storage (Parquet).
+- Neon PostgreSQL (SQLAlchemy async ORM), local storage (Parquet).
 - MOEX ISS API (`iss.moex.com`) for market yields & ZCYC.
 - RuData/Interfax API (`dh2.efir-net.ru`) for bond reference data.
 - Yahoo Finance (via `yfinance`) for historical prices.
@@ -451,7 +451,7 @@ The FastAPI backend (`backend/` directory) handles:
 - **Computational Services**:
   - Heavy numerical computations (spectral analysis, regime detection, optimization).
 - **File Export**:
-  - Parquet file generation and Supabase Storage uploads.
+  - Parquet file generation and local storage uploads.
 
 ## Communication Patterns
 
@@ -466,7 +466,7 @@ Typical flow (example: bond valuation):
 3. FastAPI router `backend/src/api/bond.py`:
    - Validates request using Pydantic models.
    - Delegates to bond pricing logic (e.g. `bond_pricing.calculate_dcf()`).
-4. Repository (`BondValuationRepository`) reads/writes data in Supabase.
+4. Repository (`BondValuationRepository`) reads/writes data in Neon PostgreSQL.
 5. FastAPI returns JSON response with results:
    - `clean_price`, `dirty_price`, `duration`, etc.
 6. Service parses response into typed result.
@@ -556,7 +556,7 @@ Environment variables:
 - `PORT` (provided by Railway).
 - `CORS_ORIGINS` (allowed origins, default `*`).
 - `DATABASE_URL` (PostgreSQL connection).
-- `SUPABASE_URL`, `SUPABASE_ANON_KEY` (Supabase).
+- `API_KEY` (API authentication key).
 
 CORS configuration in `backend/src/main.py`:
 
@@ -613,7 +613,7 @@ Scientific computing:
 
 Data storage:
 
-- Supabase client 2.0.0+ — PostgreSQL access.
+- SQLAlchemy 2.0 + asyncpg — Neon PostgreSQL access.
 - PyArrow 14.0.0+ — Parquet I/O.
 
 HTTP & utilities:
@@ -662,7 +662,7 @@ HTTP & utilities:
 
 ### 3. Parquet for Registry Export
 
-**Decision**: Use Apache Parquet (via PyArrow) for exporting registries to Supabase Storage.
+**Decision**: Use Apache Parquet (via PyArrow) for exporting registries to local storage.
 
 **Rationale**:
 
@@ -716,8 +716,8 @@ Backend:
 
 - `CORS_ORIGINS` — allowed origins.
 - `DATABASE_URL` — DB connection string.
-- `SUPABASE_URL`, `SUPABASE_ANON_KEY` — Supabase credentials.
-- `PORT` — server port (provided by Railway).
+- `API_KEY` — API authentication key.
+- `PORT` — server port (provided by Render).
 
 **Rationale**:
 
@@ -744,11 +744,11 @@ End-to-end flow (example: market regime analysis, bond valuation):
 6. **Business Logic (Python Services)**:
    - HMM processing, bond pricing, RuData client logic.
 7. **Data Access (Repositories)**:
-   - CRUD operations on Supabase: insert/read valuations, portfolios, market data.
+   - CRUD operations on Neon PostgreSQL: insert/read valuations, portfolios, market data.
 8. **External Systems**:
    - MOEX ISS for yields.
    - RuData for reference data.
-   - Supabase PostgreSQL & Storage for persistence.
+   - Neon PostgreSQL & Storage for persistence.
 9. **Response Flow**:
    - Results returned to frontend as JSON.
    - TS services parse and update Pinia stores.

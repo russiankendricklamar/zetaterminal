@@ -1,9 +1,5 @@
 """
-SQLAlchemy async database connection.
-
-Supports:
-- Neon (cloud): postgresql+asyncpg://user:pass@ep-xxx.neon.tech/neondb?sslmode=require
-- SQLite (local/desktop): sqlite+aiosqlite:///./zeta.db
+SQLAlchemy async database connection (Neon PostgreSQL).
 """
 import os
 from typing import AsyncGenerator
@@ -12,7 +8,7 @@ from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, Asyn
 
 from .sa_models import Base
 
-DATABASE_URL = os.getenv("DATABASE_URL", "sqlite+aiosqlite:///./zeta.db")
+DATABASE_URL = os.getenv("DATABASE_URL", "postgresql+asyncpg://localhost/zetaterminal")
 
 engine = create_async_engine(DATABASE_URL, echo=False)
 async_session_factory = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)

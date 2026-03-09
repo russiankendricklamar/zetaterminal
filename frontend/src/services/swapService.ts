@@ -75,7 +75,7 @@ export const valuateSwap = async (
 };
 
 /**
- * Сохраняет реестр свопов в Supabase Storage в формате parquet
+ * Сохраняет реестр свопов в серверное хранилище в формате parquet
  */
 export const saveRegistryToParquet = async (
   data: Record<string, unknown>[]

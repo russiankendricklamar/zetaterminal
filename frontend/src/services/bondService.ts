@@ -97,7 +97,7 @@ export const valuateBond = async (request: BondValuationRequest): Promise<BondVa
 };
 
 /**
- * Сохраняет реестр в Supabase Storage в формате parquet
+ * Сохраняет реестр в серверное хранилище в формате parquet
  */
 export const saveRegistryToParquet = async (
   registryType: 'bond' | 'swap' | 'forward',

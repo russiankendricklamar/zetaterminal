@@ -187,7 +187,6 @@ async def valuate_bond(request: BondValuationRequest):
 | Переменная | Назначение | Где используется |
 |-----------|------------|------------------|
 | `CORS_ORIGINS` | Разрешённые origins | main.py |
-| `DATABASE_URL` | PostgreSQL строка подключения | repositories.py |
-| `SUPABASE_URL` | Supabase project URL | repositories.py |
-| `SUPABASE_ANON_KEY` | Supabase anonymous key | repositories.py |
-| `PORT` | Порт сервера (Railway) | start.sh |
+| `DATABASE_URL` | Neon PostgreSQL connection string | client.py |
+| `API_KEY` | API authentication key | auth.py |
+| `PORT` | Порт сервера (Render) | start.sh |

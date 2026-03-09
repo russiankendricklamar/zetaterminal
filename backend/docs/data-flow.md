@@ -7,7 +7,7 @@
 ### 1. External API → Service → Repository → DB
 Персистентное хранение рыночных данных.
 ```
-Yahoo Finance → yfinance_service → MarketDataRepository → Supabase
+Yahoo Finance → yfinance_service → MarketDataRepository → Neon PostgreSQL
 ```
 
 ### 2. External API → Service → Direct Response
@@ -22,10 +22,10 @@ MOEX ISS → zcyc_service → JSON Response → Frontend
 Vue Component → computeService.ts → POST /api/compute/garch → compute_service.py → JSON
 ```
 
-### 4. Bulk Export → Parquet → Supabase Storage
+### 4. Bulk Export → Parquet → Local Storage
 Экспорт реестров в колоночный формат.
 ```
-Registry Data → PyArrow → .parquet → Supabase Storage Bucket
+Registry Data → PyArrow → .parquet → Local filesystem (exports/)
 ```
 
 ## Пример: ZCYC (кривая бескупонных доходностей)

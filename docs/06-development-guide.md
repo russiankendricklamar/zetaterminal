@@ -34,9 +34,8 @@ pip install -r requirements.txt
 # Создание .env файла
 cat > .env << 'EOF'
 CORS_ORIGINS=http://localhost:5173
-SUPABASE_URL=your_supabase_url
-SUPABASE_ANON_KEY=your_supabase_key
-DATABASE_URL=your_postgresql_url
+DATABASE_URL=postgresql+asyncpg://user:pass@ep-xxx.neon.tech/neondb?sslmode=require
+API_KEY=your-api-key
 
 # API ключи (опционально)
 ALPHA_VANTAGE_API_KEY=
@@ -89,12 +88,12 @@ npm run dev
 - **Производительность** — один из самых быстрых Python-фреймворков
 - **Type hints** — IDE-поддержка, автодополнение
 
-### Почему Supabase?
+### Почему Neon PostgreSQL?
 
 - **PostgreSQL** — мощная реляционная БД
-- **TimescaleDB** — оптимизация для временных рядов
-- **Storage** — Parquet файлы
-- **Client SDK** — простой Python/JS клиент
+- **Serverless** — автомасштабирование, бесплатный тариф
+- **SQLAlchemy** — async ORM с asyncpg
+- **Branching** — изоляция dev/prod
 
 ## State Management (Pinia)
 

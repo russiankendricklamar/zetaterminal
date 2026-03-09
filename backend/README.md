@@ -9,18 +9,18 @@ backend/
 ├── src/
 │   ├── api/            # FastAPI роутеры (15+ модулей)
 │   ├── services/       # Бизнес-логика и вычисления
-│   ├── database/       # Repository pattern (Supabase)
+│   ├── database/       # SQLAlchemy ORM + Neon PostgreSQL
 │   └── utils/          # Shared HTTP-клиент, кеш
 ├── docs/               # Документация
 │   ├── architecture.md       # Архитектура бэкенда
 │   ├── api-routes.md         # Все API endpoints
 │   ├── financial-services.md # Bond Pricing, GARCH, Spectral, HMM
 │   ├── external-apis.md      # 38 внешних API интеграций
-│   ├── database.md           # Supabase, репозитории, Parquet
+│   ├── database.md           # Neon PostgreSQL, репозитории, Parquet
 │   └── data-flow.md          # Потоки данных
 ├── requirements.txt
 ├── runtime.txt         # Python 3.11.0
-├── Procfile            # Railway deployment
+├── Procfile            # Render deployment
 ├── start.sh            # Startup script
 └── .env.example
 ```
@@ -37,9 +37,8 @@ pip install -r requirements.txt
 
 ```env
 CORS_ORIGINS=http://localhost:5173
-SUPABASE_URL=your_supabase_url
-SUPABASE_ANON_KEY=your_supabase_key
-DATABASE_URL=your_postgresql_url
+DATABASE_URL=postgresql+asyncpg://user:pass@ep-xxx.neon.tech/neondb?sslmode=require
+API_KEY=your-api-key
 
 # API-ключи (опционально)
 ALPHA_VANTAGE_API_KEY=

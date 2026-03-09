@@ -1,5 +1,5 @@
 """
-Database models and schemas for Supabase tables.
+Pydantic schemas for database records.
 """
 from pydantic import BaseModel, Field
 from datetime import datetime

@@ -23,7 +23,7 @@
 | 4.1 | [Структура API-роутеров](./04.1-api-router-structure.md) | 15+ роутеров, эндпоинты, валидация |
 | 4.2 | [Сервисы финансовой аналитики](./04.2-financial-analytics-services.md) | Bond Pricing, Spectral, GARCH, HMM |
 | 4.3 | [Интеграция с внешними API](./04.3-external-api-integrations.md) | MOEX, RuData, Yahoo Finance |
-| 4.4 | [Слой базы данных](./04.4-database-layer.md) | Supabase, репозитории, Parquet |
+| 4.4 | [Слой базы данных](./04.4-database-layer.md) | Neon PostgreSQL, репозитории, Parquet |
 | 5 | [Деплой и операции](./05-deployment-operations.md) | CI/CD, хостинг, мониторинг |
 | 6 | [Руководство разработчика](./06-development-guide.md) | Локальная настройка, стек, стилизация |
 
@@ -49,7 +49,7 @@ uvicorn src.main:app --reload
 | Backend | FastAPI + Python | ≥0.104.0 |
 | Вычисления | NumPy / SciPy / Pandas | ≥1.24 / ≥1.11 / ≥2.0 |
 | Оптимизация | CVXPy | ≥1.3.0 |
-| База данных | Supabase (PostgreSQL) | — |
+| База данных | Neon PostgreSQL | — |
 | Хостинг | GitHub Pages + Railway | — |
 
 ## Лицензия

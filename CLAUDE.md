@@ -42,9 +42,12 @@ zetaterminal/
 │   │   │   ├── rudata_service.py           # RuDataService — RuData/Interfax API client
 │   │   │   └── zcyc_service.py             # ZCYCService — yield curve from MOEX
 │   │   └── database/
-│   │       ├── client.py           # get_supabase_client()
-│   │       └── repositories.py     # BondValuationRepository, PortfolioRepository,
-│   │                               # MarketDataRepository, FileRepository
+│   │       ├── client.py           # SQLAlchemy async engine (Neon PostgreSQL)
+│   │       ├── sa_models.py        # ORM models (Base, BondValuation, Portfolio, etc.)
+│   │       ├── models.py           # Pydantic schemas
+│   │       ├── repositories.py     # BondValuationRepository, PortfolioRepository,
+│   │       │                       # MarketDataRepository, FileRepository
+│   │       └── storage.py          # Local file storage
 │   ├── Procfile                    # web: uvicorn src.main:app --host 0.0.0.0 --port $PORT
 │   ├── start.sh
 │   └── requirements.txt
@@ -98,14 +101,15 @@ zetaterminal/
 ### Backend
 | Technology | Purpose |
 |---|---|
-| FastAPI 0.104+ + Uvicorn 0.24+ | ASGI web framework |
+| FastAPI 0.115+ + Uvicorn 0.34+ | ASGI web framework |
 | Pydantic v2 | Request/response validation |
-| NumPy 1.24, Pandas 2.0, SciPy 1.11 | Numerical computations |
+| SQLAlchemy 2.0 + asyncpg | Async ORM + Neon PostgreSQL |
+| NumPy 1.26, Pandas 2.2, SciPy 1.14 | Numerical computations |
 | CVXPy 1.3 | Convex optimization |
-| Supabase client 2.0 | PostgreSQL + TimescaleDB |
-| PyArrow 14.0 | Parquet export to Supabase Storage |
+| PyArrow 14.0 | Parquet export |
 | aiohttp 3.9 | Async HTTP (MOEX, RuData) |
 | yfinance 0.2 | Yahoo Finance historical prices |
+| slowapi 0.1 | Rate limiting (per-IP) |
 
 ---
 
@@ -232,8 +236,8 @@ Start:   uvicorn src.main:app --host 0.0.0.0 --port $PORT
 Note:    Free tier sleeps after 15min idle; App.vue calls warmupBackend() on mount
 ```
 
-### Database — Supabase
-PostgreSQL + TimescaleDB. Storage: Parquet (bond registries, portfolios).
+### Database — Neon PostgreSQL
+Neon free tier. SQLAlchemy async ORM with `asyncpg`. Tables auto-created via `init_db()` on startup.
 
 ### Environment Variables
 ```bash
@@ -243,9 +247,8 @@ VITE_API_BASE_URL        # Render backend URL
 # Backend (Render env)
 PORT                     # provided by Render
 CORS_ORIGINS             # allowed origins (default: *)
-DATABASE_URL
-SUPABASE_URL
-SUPABASE_ANON_KEY
+DATABASE_URL             # postgresql+asyncpg://user:pass@ep-xxx.neon.tech/neondb?sslmode=require
+API_KEY                  # API authentication key
 
 # GitHub Actions secrets
 ANTHROPIC_API_KEY        # for claude_responder.py

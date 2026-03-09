@@ -134,13 +134,12 @@ exec uvicorn src.main:app --host 0.0.0.0 --port $PORT
 | Health check | Auto HTTP GET / 30s interval |
 | Restart | 3 consecutive failures → restart |
 
-### Supabase (Database)
+### Neon PostgreSQL (Database)
 
 | Компонент | Назначение |
 |-----------|------------|
 | PostgreSQL | Основное хранилище |
-| TimescaleDB | Временные ряды |
-| Storage | Parquet файлы |
+| SQLAlchemy async ORM | Доступ к данным |
 
 ## Переменные окружения
 
@@ -156,9 +155,8 @@ exec uvicorn src.main:app --host 0.0.0.0 --port $PORT
 | Переменная | Назначение |
 |-----------|------------|
 | `PORT` | Порт (auto) |
-| `DATABASE_URL` | PostgreSQL |
-| `SUPABASE_URL` | Supabase URL |
-| `SUPABASE_ANON_KEY` | Supabase key |
+| `DATABASE_URL` | Neon PostgreSQL connection string |
+| `API_KEY` | API authentication key |
 | `CORS_ORIGINS` | Разрешённые origins |
 | + API keys | 15+ ключей внешних API |
 
