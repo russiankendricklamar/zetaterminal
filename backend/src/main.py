@@ -128,6 +128,8 @@ if not cors_origins:
     cors_origins = [
         "http://localhost:5173",
         "https://russiankendricklamar.github.io",
+        "tauri://localhost",
+        "https://tauri.localhost",
     ]
 
 app.add_middleware(

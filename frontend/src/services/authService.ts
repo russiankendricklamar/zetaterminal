@@ -53,12 +53,58 @@ export interface UserInfo {
 
 const AUTH_USER_KEY = 'zeta_auth_user'
 
+const MAX_RETRIES = 2
+const RETRY_DELAY_MS = 3000
+
+function isNetworkError(error: unknown): boolean {
+  if (error instanceof TypeError && String(error.message).toLowerCase().includes('load failed')) {
+    return true
+  }
+  if (error instanceof TypeError && String(error.message).toLowerCase().includes('failed to fetch')) {
+    return true
+  }
+  return false
+}
+
+function delay(ms: number): Promise<void> {
+  return new Promise(resolve => setTimeout(resolve, ms))
+}
+
+async function fetchWithRetry(
+  url: string,
+  options: RequestInit,
+  fallbackDetail: string,
+): Promise<Response> {
+  let lastError: unknown
+  for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+    try {
+      const res = await fetch(url, options)
+      return res
+    } catch (error: unknown) {
+      lastError = error
+      if (isNetworkError(error) && attempt < MAX_RETRIES) {
+        await delay(RETRY_DELAY_MS)
+        continue
+      }
+      break
+    }
+  }
+  if (isNetworkError(lastError)) {
+    throw new Error('Сервер запускается, попробуйте через несколько секунд')
+  }
+  throw new Error(fallbackDetail)
+}
+
 export async function register(data: RegisterRequest): Promise<RegisterResponse> {
-  const res = await fetch(`${API_BASE_URL}/api/auth/register`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(data),
-  })
+  const res = await fetchWithRetry(
+    `${API_BASE_URL}/api/auth/register`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    },
+    'Registration failed',
+  )
   if (!res.ok) {
     const err = await res.json().catch(() => ({ detail: 'Registration failed' }))
     throw new Error(err.detail || 'Registration failed')
@@ -67,11 +113,15 @@ export async function register(data: RegisterRequest): Promise<RegisterResponse>
 }
 
 export async function activate(code: string): Promise<ActivateResponse> {
-  const res = await fetch(`${API_BASE_URL}/api/auth/activate`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ code }),
-  })
+  const res = await fetchWithRetry(
+    `${API_BASE_URL}/api/auth/activate`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ code }),
+    },
+    'Activation failed',
+  )
   if (!res.ok) {
     const err = await res.json().catch(() => ({ detail: 'Activation failed' }))
     throw new Error(err.detail || 'Activation failed')
@@ -80,11 +130,15 @@ export async function activate(code: string): Promise<ActivateResponse> {
 }
 
 export async function login(data: LoginRequest): Promise<LoginResponse> {
-  const res = await fetch(`${API_BASE_URL}/api/auth/login`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(data),
-  })
+  const res = await fetchWithRetry(
+    `${API_BASE_URL}/api/auth/login`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    },
+    'Login failed',
+  )
   if (!res.ok) {
     const err = await res.json().catch(() => ({ detail: 'Login failed' }))
     throw new Error(err.detail || 'Login failed')
@@ -100,9 +154,11 @@ export async function login(data: LoginRequest): Promise<LoginResponse> {
 }
 
 export async function fetchUsers(): Promise<UserInfo[]> {
-  const res = await fetch(`${API_BASE_URL}/api/auth/users`, {
-    headers: getApiHeaders(),
-  })
+  const res = await fetchWithRetry(
+    `${API_BASE_URL}/api/auth/users`,
+    { headers: getApiHeaders() },
+    'Failed to fetch users',
+  )
   if (!res.ok) {
     const err = await res.json().catch(() => ({ detail: 'Failed to fetch users' }))
     throw new Error(err.detail || 'Failed to fetch users')

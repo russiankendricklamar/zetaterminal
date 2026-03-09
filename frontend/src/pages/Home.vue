@@ -34,7 +34,7 @@
         </div>
         <div ref="heroBottomRef" class="hero-bottom font-oswald">
           <span>&#9670; Finance</span>
-          <span>2026</span>
+          <button class="hero-login-btn font-oswald" @click="navigateTo('/auth')">ВОЙТИ &rarr;</button>
           <span class="hide-mobile">Quantitative Analytics</span>
         </div>
         <div class="hero-line hero-line-left"></div>
@@ -136,82 +136,6 @@
         </div>
       </section>
 
-      <!-- ══════ AUTH ══════ -->
-      <section id="auth" class="auth-section">
-        <div class="auth-inner">
-          <h2 class="auth-title font-anton">ACCESS</h2>
-          <div class="auth-underline"></div>
-
-          <!-- Auth tabs -->
-          <div class="auth-tabs">
-            <button
-              v-for="tab in authTabs"
-              :key="tab.id"
-              class="auth-tab font-oswald"
-              :class="{ active: authMode === tab.id }"
-              @click="authMode = tab.id"
-            >{{ tab.label }}</button>
-          </div>
-
-          <!-- Login form -->
-          <form v-if="authMode === 'login'" class="auth-form" @submit.prevent="handleLogin">
-            <div class="auth-field">
-              <label class="auth-label font-mono">USERNAME</label>
-              <input v-model="loginForm.username" type="text" class="auth-input font-mono" placeholder="username" autocomplete="username" required />
-            </div>
-            <div class="auth-field">
-              <label class="auth-label font-mono">PASSWORD</label>
-              <input v-model="loginForm.password" type="password" class="auth-input font-mono" placeholder="password" autocomplete="current-password" required />
-            </div>
-            <button type="submit" class="auth-submit font-oswald" :disabled="authLoading">
-              {{ authLoading ? 'LOADING...' : 'ВОЙТИ' }}
-            </button>
-            <p class="auth-switch font-mono" @click="authMode = 'register'">Нет аккаунта? Регистрация &rarr;</p>
-          </form>
-
-          <!-- Register form -->
-          <form v-if="authMode === 'register'" class="auth-form" @submit.prevent="handleRegister">
-            <div class="auth-field">
-              <label class="auth-label font-mono">USERNAME</label>
-              <input v-model="registerForm.username" type="text" class="auth-input font-mono" placeholder="username" autocomplete="username" required />
-              <span v-if="registerForm.username" class="auth-hint font-mono">{{ registerForm.username.toLowerCase() }}@zetaterminal.dev</span>
-            </div>
-            <div class="auth-field">
-              <label class="auth-label font-mono">EMAIL</label>
-              <input v-model="registerForm.email" type="email" class="auth-input font-mono" placeholder="email@example.com" autocomplete="email" required />
-            </div>
-            <div class="auth-field">
-              <label class="auth-label font-mono">PASSWORD</label>
-              <input v-model="registerForm.password" type="password" class="auth-input font-mono" placeholder="min 6 chars" autocomplete="new-password" required />
-            </div>
-            <div class="auth-field">
-              <label class="auth-label font-mono">CONFIRM PASSWORD</label>
-              <input v-model="registerForm.confirmPassword" type="password" class="auth-input font-mono" placeholder="repeat password" autocomplete="new-password" required />
-            </div>
-            <button type="submit" class="auth-submit font-oswald" :disabled="authLoading">
-              {{ authLoading ? 'LOADING...' : 'ЗАРЕГИСТРИРОВАТЬСЯ' }}
-            </button>
-            <p class="auth-switch font-mono" @click="authMode = 'login'">&larr; Уже есть аккаунт? Войти</p>
-          </form>
-
-          <!-- Activate form -->
-          <form v-if="authMode === 'activate'" class="auth-form" @submit.prevent="handleActivate">
-            <div class="auth-field">
-              <label class="auth-label font-mono">INVITE CODE</label>
-              <input v-model="activateCode" type="text" class="auth-input auth-input-code font-mono" placeholder="XXXXXXXX" maxlength="8" required />
-            </div>
-            <button type="submit" class="auth-submit font-oswald" :disabled="authLoading">
-              {{ authLoading ? 'LOADING...' : 'АКТИВИРОВАТЬ' }}
-            </button>
-            <p class="auth-switch font-mono" @click="authMode = 'login'">&larr; Войти</p>
-          </form>
-
-          <!-- Messages -->
-          <div v-if="authError" class="auth-message auth-error font-mono">{{ authError }}</div>
-          <div v-if="authSuccess" class="auth-message auth-success font-mono">{{ authSuccess }}</div>
-        </div>
-      </section>
-
       <!-- ══════ FOOTER ══════ -->
       <footer class="footer">
         <div class="footer-inner">
@@ -238,11 +162,10 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted, onUnmounted, nextTick } from 'vue'
+import { ref, onMounted, onUnmounted, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 import { gsap } from 'gsap'
 import { ScrollTrigger } from 'gsap/dist/ScrollTrigger'
-import { register as authRegister, activate as authActivate, login as authLogin } from '@/services/authService'
 
 gsap.registerPlugin(ScrollTrigger)
 
@@ -275,80 +198,6 @@ const tools = [
   { name: 'Кривая бескупонной доходности', desc: 'ZCYC', path: '/zcyc-viewer' },
   { name: 'P&L Attribution', desc: 'Факторная декомпозиция P&L', path: '/analytics/pnl' },
 ]
-
-// ── Auth ──
-const authMode = ref<'login' | 'register' | 'activate'>('login')
-const authLoading = ref(false)
-const authError = ref('')
-const authSuccess = ref('')
-
-const authTabs = [
-  { id: 'login' as const, label: 'Вход' },
-  { id: 'register' as const, label: 'Регистрация' },
-  { id: 'activate' as const, label: 'Активация' },
-]
-
-const loginForm = reactive({ username: '', password: '' })
-const registerForm = reactive({ username: '', email: '', password: '', confirmPassword: '' })
-const activateCode = ref('')
-
-function clearAuthMessages() {
-  authError.value = ''
-  authSuccess.value = ''
-}
-
-async function handleLogin() {
-  clearAuthMessages()
-  authLoading.value = true
-  try {
-    await authLogin({ username: loginForm.username, password: loginForm.password })
-    router.push('/portfolio')
-  } catch (e: unknown) {
-    authError.value = e instanceof Error ? e.message : 'Login failed'
-  } finally {
-    authLoading.value = false
-  }
-}
-
-async function handleRegister() {
-  clearAuthMessages()
-  if (registerForm.password !== registerForm.confirmPassword) {
-    authError.value = 'Passwords do not match'
-    return
-  }
-  authLoading.value = true
-  try {
-    const result = await authRegister({
-      username: registerForm.username,
-      email: registerForm.email,
-      password: registerForm.password,
-    })
-    authSuccess.value = result.message
-    registerForm.username = ''
-    registerForm.email = ''
-    registerForm.password = ''
-    registerForm.confirmPassword = ''
-  } catch (e: unknown) {
-    authError.value = e instanceof Error ? e.message : 'Registration failed'
-  } finally {
-    authLoading.value = false
-  }
-}
-
-async function handleActivate() {
-  clearAuthMessages()
-  authLoading.value = true
-  try {
-    const result = await authActivate(activateCode.value)
-    authSuccess.value = result.message
-    activateCode.value = ''
-    authMode.value = 'login'
-  } catch (e: unknown) {
-    authError.value = e instanceof Error ? e.message : 'Activation failed'
-  } finally {
-    authLoading.value = false
-  }
-}
 
 // Easing from J. Cole project
 const EASE = [0.76, 0, 0.24, 1]
@@ -686,6 +535,24 @@ onUnmounted(() => {
 }
 .hero-line-left { left: 48px; }
 .hero-line-right { right: 48px; }
+
+.hero-login-btn {
+  padding: 8px 24px;
+  background: #000;
+  color: #fff;
+  border: 2px solid #000;
+  font-size: 14px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.hero-login-btn:hover {
+  background: transparent;
+  border-color: #000;
+}
 
 /* ══════ MARQUEE STRIP ══════ */
 .marquee-strip {
@@ -1025,174 +892,6 @@ onUnmounted(() => {
 
 @media (min-width: 768px) {
   .terminal-section { padding: 0 48px 48px; }
-}
-
-/* ══════ AUTH ══════ */
-.auth-section {
-  background: #050505;
-  padding: 96px 24px;
-  border-top: 1px solid #1A1A1A;
-}
-
-.auth-inner {
-  max-width: 480px;
-  margin: 0 auto;
-  text-align: center;
-}
-
-.auth-title {
-  font-size: clamp(2.5rem, 6vw, 5rem);
-  color: #DC2626;
-  text-transform: uppercase;
-  margin: 0;
-}
-
-.auth-underline {
-  width: 64px;
-  height: 4px;
-  background: #DC2626;
-  margin: 16px auto 48px;
-}
-
-.auth-tabs {
-  display: flex;
-  border-bottom: 1px solid #262626;
-  margin-bottom: 32px;
-}
-
-.auth-tab {
-  flex: 1;
-  padding: 12px 0;
-  background: transparent;
-  border: none;
-  color: #888;
-  font-size: 14px;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  cursor: pointer;
-  border-bottom: 2px solid transparent;
-  transition: color 0.2s, border-color 0.2s;
-}
-
-.auth-tab:hover {
-  color: #f5f5f5;
-}
-
-.auth-tab.active {
-  color: #f5f5f5;
-  border-bottom-color: #DC2626;
-}
-
-.auth-form {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-  text-align: left;
-}
-
-.auth-field {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.auth-label {
-  font-size: 10px;
-  color: #888;
-  text-transform: uppercase;
-  letter-spacing: 0.15em;
-}
-
-.auth-input {
-  background: #0A0A0A;
-  border: 1px solid #262626;
-  color: #f5f5f5;
-  padding: 12px 14px;
-  font-size: 14px;
-  border-radius: 3px;
-  outline: none;
-  transition: border-color 0.2s;
-}
-
-.auth-input:focus {
-  border-color: #DC2626;
-}
-
-.auth-input::placeholder {
-  color: #555;
-}
-
-.auth-input-code {
-  text-align: center;
-  font-size: 20px;
-  letter-spacing: 0.3em;
-  text-transform: uppercase;
-}
-
-.auth-hint {
-  font-size: 11px;
-  color: #DC2626;
-  opacity: 0.8;
-}
-
-.auth-submit {
-  padding: 14px;
-  background: #DC2626;
-  color: #000;
-  border: none;
-  font-size: 14px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  cursor: pointer;
-  border-radius: 3px;
-  transition: background 0.2s, opacity 0.2s;
-}
-
-.auth-submit:hover:not(:disabled) {
-  background: #ef4444;
-}
-
-.auth-submit:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.auth-switch {
-  text-align: center;
-  font-size: 12px;
-  color: #888;
-  cursor: pointer;
-  margin: 8px 0 0;
-  transition: color 0.2s;
-}
-
-.auth-switch:hover {
-  color: #DC2626;
-}
-
-.auth-message {
-  margin-top: 16px;
-  padding: 12px 14px;
-  border-radius: 3px;
-  font-size: 12px;
-  text-align: center;
-}
-
-.auth-error {
-  background: rgba(220, 38, 38, 0.1);
-  border: 1px solid rgba(220, 38, 38, 0.3);
-  color: #DC2626;
-}
-
-.auth-success {
-  background: rgba(34, 197, 94, 0.1);
-  border: 1px solid rgba(34, 197, 94, 0.3);
-  color: #22C55E;
-}
-
-@media (min-width: 768px) {
-  .auth-section { padding: 96px 48px; }
 }
 
 /* ══════ FOOTER ══════ */

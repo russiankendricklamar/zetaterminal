@@ -49,6 +49,7 @@ const AlphaStacking = () => import('@/pages/AlphaStacking.vue')
 const MetaLabeling = () => import('@/pages/MetaLabeling.vue')
 const AdversarialStress = () => import('@/pages/AdversarialStress.vue')
 const RepoAnalysis = () => import('@/pages/RepoAnalysis.vue')
+const Auth = () => import('@/pages/Auth.vue')
 
 const routes = [
   {
@@ -56,6 +57,12 @@ const routes = [
     name: 'Home',
     component: Home,
     meta: { title: 'Главная', icon: '🏠', bare: true }
+  },
+  {
+    path: '/auth',
+    name: 'Auth',
+    component: Auth,
+    meta: { title: 'Доступ', bare: true }
   },
   {
     path: '/docs',
@@ -139,9 +146,9 @@ router.beforeEach((to, from, next) => {
   document.title = `${title} | Risk Management`
 
   const apiKey = getApiKey()
-  const isPublic = to.path === '/' || to.meta?.bare === true
+  const isPublic = to.path === '/' || to.path === '/auth' || to.meta?.bare === true
   if (!apiKey && !isPublic) {
-    next('/')
+    next('/auth')
   } else {
     next()
   }

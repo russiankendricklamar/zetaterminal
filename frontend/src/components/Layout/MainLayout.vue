@@ -73,8 +73,17 @@
                   <span v-if="unreadCount" class="notification-badge">{{ unreadCount }}</span>
                 </button>
 
-                <div class="user-avatar font-oswald">
-                  <span>RK</span>
+                <div class="user-avatar-wrapper">
+                  <div class="user-avatar font-oswald" @click.stop="toggleUserMenu">
+                    <span>{{ userInitials }}</span>
+                  </div>
+                  <transition name="slide">
+                    <div v-if="showUserMenu" class="user-menu" @click.stop>
+                      <button class="user-menu-item font-mono" @click="goToProfile">ПРОФИЛЬ</button>
+                      <div class="user-menu-divider"></div>
+                      <button class="user-menu-item user-menu-logout font-mono" @click="handleLogout">ВЫХОД &rarr;</button>
+                    </div>
+                  </transition>
                 </div>
               </div>
             </div>
@@ -125,14 +134,17 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
-import { useRoute } from 'vue-router'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import Sidebar from '@/components/Layout/Sidebar.vue'
 import TaskWidget from '@/components/common/TaskWidget.vue'
+import { getAuthUser, logout } from '@/services/authService'
 
 const route = useRoute()
+const router = useRouter()
 const searchQuery = ref('')
 const showNotifications = ref(false)
+const showUserMenu = ref(false)
 const unreadCount = ref(2)
 const latency = ref(14)
 
@@ -140,12 +152,50 @@ const currentRouteName = computed(() => {
   return route.name ? String(route.name).toUpperCase() : 'OVERVIEW'
 })
 
-const toggleNotifications = () => showNotifications.value = !showNotifications.value
+const userInitials = computed(() => {
+  const user = getAuthUser()
+  if (!user?.username) return '??'
+  return user.username.slice(0, 2).toUpperCase()
+})
+
+const toggleNotifications = () => {
+  showNotifications.value = !showNotifications.value
+  showUserMenu.value = false
+}
+
+const toggleUserMenu = () => {
+  showUserMenu.value = !showUserMenu.value
+  showNotifications.value = false
+}
+
+function handleLogout() {
+  logout()
+  showUserMenu.value = false
+  router.push('/auth')
+}
+
+function goToProfile() {
+  showUserMenu.value = false
+  router.push('/profile')
+}
+
+function handleClickOutside(e: MouseEvent) {
+  const target = e.target as HTMLElement
+  if (!target.closest('.actions-group')) {
+    showUserMenu.value = false
+    showNotifications.value = false
+  }
+}
 
 onMounted(() => {
   setInterval(() => {
     latency.value = 12 + Math.floor(Math.random() * 8)
   }, 2000)
+  document.addEventListener('click', handleClickOutside)
+})
+
+onUnmounted(() => {
+  document.removeEventListener('click', handleClickOutside)
 })
 </script>
 
@@ -403,6 +453,10 @@ onMounted(() => {
   padding: 0 4px;
 }
 
+.user-avatar-wrapper {
+  position: relative;
+}
+
 .user-avatar {
   width: 40px;
   height: 40px;
@@ -414,6 +468,51 @@ onMounted(() => {
   font-weight: 600;
   color: #000;
   letter-spacing: 0.05em;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.user-avatar:hover {
+  opacity: 0.85;
+}
+
+.user-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  width: 160px;
+  background: #0a0a0a;
+  border: 1px solid #262626;
+  z-index: 50;
+}
+
+.user-menu-item {
+  width: 100%;
+  padding: 12px 16px;
+  background: transparent;
+  border: none;
+  color: #a3a3a3;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.2s;
+}
+
+.user-menu-item:hover {
+  background: #111111;
+  color: #f5f5f5;
+}
+
+.user-menu-logout:hover {
+  background: #DC2626;
+  color: #000;
+}
+
+.user-menu-divider {
+  height: 1px;
+  background: #1a1a1a;
 }
 
 /* ============================================
