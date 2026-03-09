@@ -120,6 +120,22 @@
       <!-- Messages -->
       <div v-if="errorMsg" class="auth-message auth-error font-mono">{{ errorMsg }}</div>
       <div v-if="successMsg" class="auth-message auth-success font-mono">{{ successMsg }}</div>
+
+      <!-- Backend URL override -->
+      <div class="server-toggle font-mono" @click="showServerUrl = !showServerUrl">
+        SERVER {{ showServerUrl ? '▾' : '▸' }}
+      </div>
+      <div v-if="showServerUrl" class="server-field">
+        <input
+          v-model="serverUrl"
+          type="text"
+          class="auth-input font-mono"
+          placeholder="https://zeta-terminal-backend.onrender.com"
+          @blur="saveServerUrl"
+          @keydown.enter="saveServerUrl"
+        />
+        <span class="auth-hint font-mono">URL бэкенда (пустое = по умолчанию)</span>
+      </div>
     </div>
 
     <!-- Activation Modal -->
@@ -166,8 +182,17 @@ import {
   activate as authActivate,
   login as authLogin,
 } from '@/services/authService'
+import { getApiBaseUrl, setApiBaseUrl } from '@/utils/apiBase'
 
 const router = useRouter()
+
+const showServerUrl = ref(false)
+const serverUrl = ref(getApiBaseUrl())
+
+function saveServerUrl() {
+  setApiBaseUrl(serverUrl.value.trim())
+  window.location.reload()
+}
 
 const mode = ref<'login' | 'register'>('login')
 const loading = ref(false)
@@ -451,6 +476,28 @@ async function handleActivate() {
   background: rgba(34, 197, 94, 0.1);
   border: 1px solid rgba(34, 197, 94, 0.3);
   color: #22c55e;
+}
+
+/* ══════ SERVER URL ══════ */
+.server-toggle {
+  margin-top: 24px;
+  font-size: 10px;
+  color: var(--text-muted);
+  letter-spacing: 0.15em;
+  cursor: pointer;
+  text-align: center;
+  transition: color var(--transition-fast);
+}
+
+.server-toggle:hover {
+  color: var(--text-tertiary);
+}
+
+.server-field {
+  margin-top: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
 }
 
 /* ══════ MODAL ══════ */
