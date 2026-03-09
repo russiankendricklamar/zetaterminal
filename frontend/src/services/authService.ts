@@ -1,5 +1,6 @@
 import { getApiHeaders, setApiKey } from '@/utils/apiHeaders'
 import { getApiBaseUrl } from '@/utils/apiBase'
+import { appFetch } from '@/utils/tauriFetch'
 
 const API_BASE_URL = getApiBaseUrl()
 
@@ -78,7 +79,7 @@ async function fetchWithRetry(
   let lastError: unknown
   for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
     try {
-      const res = await fetch(url, options)
+      const res = await appFetch(url, options)
       return res
     } catch (error: unknown) {
       lastError = error
