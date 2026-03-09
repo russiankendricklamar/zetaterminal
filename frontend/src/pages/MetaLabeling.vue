@@ -200,8 +200,9 @@ import { TooltipComponent, LegendComponent, GridComponent } from 'echarts/compon
 
 use([CanvasRenderer, LineChart, BarChart, ScatterChart, TooltipComponent, LegendComponent, GridComponent])
 import { getApiHeaders } from '@/utils/apiHeaders'
+import { getApiBaseUrl } from '@/utils/apiBase'
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL || ''
+const API_BASE = getApiBaseUrl()
 
 const params = ref({
   pt_multiplier: 1.5,

@@ -2,8 +2,9 @@
  * Service for option pricing operations
  */
 import { getApiHeaders } from '@/utils/apiHeaders'
+import { getApiBaseUrl } from '@/utils/apiBase'
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
+const API_BASE_URL = getApiBaseUrl();
 
 /**
  * Сохраняет реестр опционов или поверхности волатильности в серверное хранилище в формате parquet

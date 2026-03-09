@@ -619,6 +619,7 @@ import { ref } from 'vue'
 import * as XLSX from 'xlsx'
 import { valuateBond, saveRegistryToParquet, type BondValuationResponse } from '@/services/bondService'
 import { getApiHeaders } from '@/utils/apiHeaders'
+import { getApiBaseUrl } from '@/utils/apiBase'
 
 // --- Types ---
 interface CashFlow {
@@ -713,7 +714,7 @@ const fetchMarketYield = async () => {
   error.value = ''
 
   try {
-    const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || ''
+    const API_BASE_URL = getApiBaseUrl()
     const response = await fetch(
       `${API_BASE_URL}/api/bond/market-yield?secid=${params.value.secid.trim()}&date=${params.value.valuationDate}`,
       {
@@ -892,7 +893,7 @@ const calculateAllBonds = async () => {
           if (!bond.marketYield || bond.marketYield <= 0) {
             // Загружаем из MOEX
             try {
-              const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || ''
+              const API_BASE_URL = getApiBaseUrl()
               const yieldResponse = await fetch(
                 `${API_BASE_URL}/api/bond/market-yield?secid=${bond.secid.trim()}&date=${bond.valuationDate}`,
                 {

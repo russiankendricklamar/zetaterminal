@@ -3,9 +3,10 @@
  */
 
 import { getApiHeaders } from '@/utils/apiHeaders'
+import { getApiBaseUrl } from '@/utils/apiBase'
 
 // Используем относительный путь для работы с Vite proxy
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
+const API_BASE_URL = getApiBaseUrl();
 
 export interface CCMVRequest {
   R: number[][];  // Матрица доходностей (time_steps x num_assets)

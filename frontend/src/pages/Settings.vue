@@ -218,6 +218,39 @@
       <transition name="fade" mode="out-in">
       <div v-show="activeTab === 'api'" class="grid-content">
 
+        <!-- Backend URL -->
+        <div class="glass-panel settings-block">
+          <h3 class="block-title">Backend URL</h3>
+          <div class="control-group">
+            <div class="control-row">
+              <label>Режим подключения</label>
+              <div class="segmented-control">
+                <button :class="{ active: backendMode === 'cloud' }" @click="setBackendMode('cloud')">Cloud</button>
+                <button :class="{ active: backendMode === 'local' }" @click="setBackendMode('local')">Local</button>
+              </div>
+            </div>
+            <div class="divider"></div>
+            <div class="control-row vertical">
+              <label>URL бэкенда</label>
+              <input
+                type="text"
+                v-model="backendUrl"
+                class="glass-input full font-mono"
+                :placeholder="backendMode === 'cloud' ? 'https://zetaterminal.onrender.com' : 'http://localhost:8000'"
+                :disabled="backendMode === 'cloud'"
+              >
+            </div>
+          </div>
+          <div class="status-footer">
+            <button class="btn-glass xs" @click="testBackendConnection" :disabled="backendTestLoading">
+              {{ backendTestLoading ? 'Проверка...' : 'Проверить' }}
+            </button>
+            <span class="status-text" :class="backendTestStatus.class">
+              {{ backendTestStatus.text }}
+            </span>
+          </div>
+        </div>
+
         <!-- Backend API Key -->
         <div class="glass-panel settings-block">
           <h3 class="block-title">Backend API Key</h3>
@@ -621,6 +654,7 @@ import {
   saveApiKeys, loadApiKeys, checkAllApiHealth
 } from '@/services/apiConfigService'
 import { getApiKey, setApiKey } from '@/utils/apiHeaders'
+import { getApiBaseUrl, setApiBaseUrl } from '@/utils/apiBase'
 import {
   ipInfoLookup,
   ip2LocationLookup,
@@ -648,6 +682,55 @@ const activeTab = ref('general')
 const hasChanges = ref(true)
 const apiError = ref(false)
 const backendApiKey = ref('')
+
+// Backend URL state
+const backendMode = ref<'cloud' | 'local'>('cloud')
+const backendUrl = ref('')
+const backendTestLoading = ref(false)
+const backendTestResult = ref<'idle' | 'success' | 'error'>('idle')
+const backendTestMessage = ref('')
+
+const backendTestStatus = computed(() => {
+  if (backendTestResult.value === 'success') return { text: 'OK', class: 'text-green' }
+  if (backendTestResult.value === 'error') return { text: backendTestMessage.value || 'Error', class: 'text-red' }
+  return { text: '', class: 'text-muted' }
+})
+
+function setBackendMode(mode: 'cloud' | 'local') {
+  backendMode.value = mode
+  backendTestResult.value = 'idle'
+  if (mode === 'cloud') {
+    backendUrl.value = import.meta.env.VITE_API_BASE_URL || ''
+    setApiBaseUrl('')
+  } else {
+    backendUrl.value = 'http://localhost:8000'
+  }
+}
+
+async function testBackendConnection() {
+  const url = backendMode.value === 'cloud'
+    ? (import.meta.env.VITE_API_BASE_URL || '')
+    : backendUrl.value.replace(/\/+$/, '')
+  backendTestLoading.value = true
+  backendTestResult.value = 'idle'
+  try {
+    const resp = await fetch(`${url}/health`, { method: 'GET' })
+    if (resp.ok) {
+      backendTestResult.value = 'success'
+      if (backendMode.value === 'local') {
+        setApiBaseUrl(backendUrl.value.replace(/\/+$/, ''))
+      }
+    } else {
+      backendTestResult.value = 'error'
+      backendTestMessage.value = `HTTP ${resp.status}`
+    }
+  } catch {
+    backendTestResult.value = 'error'
+    backendTestMessage.value = 'Connection failed'
+  } finally {
+    backendTestLoading.value = false
+  }
+}
 
 // Admin panel state
 const isAdminUser = ref(false)
@@ -989,6 +1072,17 @@ onMounted(() => {
     }
   }
 
+  // Загружаем backend URL state
+  const savedUrl = getApiBaseUrl()
+  const defaultUrl = import.meta.env.VITE_API_BASE_URL || ''
+  if (savedUrl && savedUrl !== defaultUrl) {
+    backendMode.value = 'local'
+    backendUrl.value = savedUrl
+  } else {
+    backendMode.value = 'cloud'
+    backendUrl.value = defaultUrl
+  }
+
   // Загружаем backend API key
   backendApiKey.value = getApiKey()
 
@@ -1088,6 +1182,13 @@ const saveSettings = () => {
   }
 
   localStorage.setItem('app_settings', JSON.stringify(settingsToSave))
+
+  // Сохраняем backend URL
+  if (backendMode.value === 'local' && backendUrl.value) {
+    setApiBaseUrl(backendUrl.value.replace(/\/+$/, ''))
+  } else {
+    setApiBaseUrl('')
+  }
 
   // Сохраняем backend API key
   setApiKey(backendApiKey.value)

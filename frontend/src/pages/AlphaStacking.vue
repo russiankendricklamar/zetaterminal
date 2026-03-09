@@ -192,8 +192,9 @@ import { TooltipComponent, LegendComponent, GridComponent, VisualMapComponent } 
 
 use([CanvasRenderer, BarChart, LineChart, PieChart, HeatmapChart, TooltipComponent, LegendComponent, GridComponent, VisualMapComponent])
 import { getApiHeaders } from '@/utils/apiHeaders'
+import { getApiBaseUrl } from '@/utils/apiBase'
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL || ''
+const API_BASE = getApiBaseUrl()
 
 // --- State ---
 const params = ref({ ortho_method: 'sequential', shrinkage: 0.3 })

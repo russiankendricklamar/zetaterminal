@@ -221,8 +221,9 @@ import { TooltipComponent, GridComponent, VisualMapComponent } from 'echarts/com
 
 use([CanvasRenderer, BarChart, HeatmapChart, TooltipComponent, GridComponent, VisualMapComponent])
 import { getApiHeaders } from '@/utils/apiHeaders'
+import { getApiBaseUrl } from '@/utils/apiBase'
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL || ''
+const API_BASE = getApiBaseUrl()
 
 // ── State ──────────────────────────────────────────────────────────────────────
 const returnsRaw = ref('')

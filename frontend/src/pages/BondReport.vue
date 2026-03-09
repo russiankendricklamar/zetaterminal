@@ -383,6 +383,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { getApiHeaders } from '@/utils/apiHeaders'
+import { getApiBaseUrl } from '@/utils/apiBase'
 
 interface BondParams {
   secid: string
@@ -496,7 +497,7 @@ const calculateBond = async () => {
   error.value = ''
   results.value = null
 
-  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
+  const API_BASE_URL = getApiBaseUrl();
   try {
     const response = await fetch(`${API_BASE_URL}/api/bond/valuate`, {
       method: 'POST',

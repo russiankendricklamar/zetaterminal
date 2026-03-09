@@ -186,12 +186,13 @@ import { TooltipComponent, LegendComponent, GridComponent } from 'echarts/compon
 
 use([CanvasRenderer, BarChart, PieChart, LineChart, ScatterChart, TooltipComponent, LegendComponent, GridComponent])
 import { getApiHeaders } from '@/utils/apiHeaders'
+import { getApiBaseUrl } from '@/utils/apiBase'
 
 const emit = defineEmits<{
   toast: [payload: { message: string; type: 'success' | 'error' | 'info' }]
 }>()
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL || ''
+const API_BASE = getApiBaseUrl()
 
 const ALL_OBJECTIVES = [
   { key: 'min_variance', label: 'Min Variance' },

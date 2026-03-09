@@ -1,7 +1,8 @@
 import { Candle, AIAnalysisResult } from '@/types/terminal'
 import { getApiHeaders } from '@/utils/apiHeaders'
+import { getApiBaseUrl } from '@/utils/apiBase'
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL || ''
+const API_BASE = getApiBaseUrl()
 
 export const analyzeMarketData = async (candles: Candle[]): Promise<AIAnalysisResult> => {
   try {

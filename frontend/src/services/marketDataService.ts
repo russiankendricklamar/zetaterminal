@@ -3,10 +3,11 @@
  */
 
 import { getApiHeaders } from '@/utils/apiHeaders'
+import { getApiBaseUrl } from '@/utils/apiBase'
 
 // В dev режиме используем относительные пути для работы через Vite proxy
 // В production используем переменную окружения
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
+const API_BASE_URL = getApiBaseUrl();
 
 export interface StockInfo {
   ticker: string;

@@ -4,7 +4,9 @@
  * Proxied through backend at /api/moexalgo/*
  */
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL || ''
+import { getApiBaseUrl } from '@/utils/apiBase'
+
+const API_BASE = getApiBaseUrl()
 
 export interface MoexSecurity {
   secid: string

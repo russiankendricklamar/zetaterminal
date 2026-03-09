@@ -163,8 +163,9 @@ import { TooltipComponent, LegendComponent, GridComponent, VisualMapComponent, M
 
 use([CanvasRenderer, BarChart, LineChart, HeatmapChart, TooltipComponent, LegendComponent, GridComponent, VisualMapComponent, MarkLineComponent])
 import { getApiHeaders } from '@/utils/apiHeaders'
+import { getApiBaseUrl } from '@/utils/apiBase'
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL || ''
+const API_BASE = getApiBaseUrl()
 
 // ── State ──────────────────────────────────────────────────────────────────────
 const returnsRaw = ref('')

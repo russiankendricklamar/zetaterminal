@@ -162,8 +162,9 @@ import { TooltipComponent, GridComponent, MarkLineComponent } from 'echarts/comp
 
 use([CanvasRenderer, ScatterChart, LineChart, BarChart, TooltipComponent, GridComponent, MarkLineComponent])
 import { getApiHeaders } from '@/utils/apiHeaders'
+import { getApiBaseUrl } from '@/utils/apiBase'
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL || ''
+const API_BASE = getApiBaseUrl()
 
 // --- State ---
 const params = ref({ n_splits: 16, annualize: 252, sr_benchmark: 0.0 })

@@ -2,8 +2,10 @@ import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
 import { fileURLToPath } from 'node:url'
 
+const isTauri = !!process.env.TAURI_ENV_PLATFORM
+
 export default defineConfig(({ command }) => ({
-  base: command === 'build' ? '/zetaterminal/' : '/',
+  base: isTauri ? '/' : (command === 'build' ? '/zetaterminal/' : '/'),
   plugins: [vue()],
   resolve: {
     alias: {
@@ -11,7 +13,7 @@ export default defineConfig(({ command }) => ({
     }
   },
   build: {
-    target: 'esnext',
+    target: isTauri ? ['es2021', 'chrome100', 'safari15'] : 'esnext',
     minify: 'terser',
     rollupOptions: {
       output: {
@@ -26,8 +28,9 @@ export default defineConfig(({ command }) => ({
     },
     chunkSizeWarningLimit: 1000
   },
+  clearScreen: !isTauri,
   server: {
     port: 5173,
-    strictPort: false
+    strictPort: isTauri
   }
 }))

@@ -152,8 +152,9 @@ import { TooltipComponent, LegendComponent, GridComponent } from 'echarts/compon
 use([CanvasRenderer, BarChart, LineChart, ScatterChart, TooltipComponent, LegendComponent, GridComponent])
 import { usePortfolioStore } from '@/stores/portfolio'
 import { getApiHeaders } from '@/utils/apiHeaders'
+import { getApiBaseUrl } from '@/utils/apiBase'
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL || ''
+const API_BASE = getApiBaseUrl()
 const portfolioStore = usePortfolioStore()
 
 const positions = computed(() => portfolioStore.positions)
