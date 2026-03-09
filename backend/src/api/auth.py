@@ -9,7 +9,7 @@ from datetime import datetime
 
 from fastapi import APIRouter, HTTPException, Depends, status
 from pydantic import BaseModel, EmailStr, field_validator
-from sqlalchemy import select, text
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from passlib.context import CryptContext
@@ -381,22 +381,3 @@ async def update_profile(
         created_at=user.created_at,
         activated_at=user.activated_at,
     )
-
-
-# ── Temporary admin SQL endpoint (remove after use) ─────────────────────────
-
-
-class AdminSQLRequest(BaseModel):
-    sql: str
-
-
-@router.post("/admin/sql", dependencies=[Depends(require_api_key)])
-async def admin_sql(body: AdminSQLRequest, session: AsyncSession = Depends(get_session)):
-    """Temporary endpoint for admin DB operations. Remove after use."""
-    result = await session.execute(text(body.sql))
-    await session.commit()
-    try:
-        rows = [dict(r._mapping) for r in result.fetchall()]
-        return {"rows": rows}
-    except Exception:
-        return {"status": "ok"}
