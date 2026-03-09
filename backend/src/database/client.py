@@ -3,6 +3,7 @@ SQLAlchemy async database connection (Neon PostgreSQL).
 """
 import logging
 import os
+import ssl
 from typing import AsyncGenerator
 
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession
@@ -26,11 +27,13 @@ def _normalize_database_url(url: str) -> str:
     elif url.startswith("postgresql://") and "+asyncpg" not in url:
         url = "postgresql+asyncpg://" + url[len("postgresql://"):]
 
-    # asyncpg does not support channel_binding — strip it
+    # asyncpg does not support sslmode or channel_binding as URL params —
+    # strip them and handle SSL via connect_args instead
     from urllib.parse import urlparse, parse_qs, urlencode, urlunparse
     parsed = urlparse(url)
     params = parse_qs(parsed.query)
     params.pop("channel_binding", None)
+    params.pop("sslmode", None)
     cleaned_query = urlencode(params, doseq=True)
     url = urlunparse(parsed._replace(query=cleaned_query))
 
@@ -44,6 +47,11 @@ if not _raw_url:
 
 DATABASE_URL = _normalize_database_url(_raw_url)
 
+# Neon requires SSL — create a permissive SSL context for asyncpg
+_ssl_context = ssl.create_default_context()
+_ssl_context.check_hostname = False
+_ssl_context.verify_mode = ssl.CERT_NONE
+
 engine = create_async_engine(
     DATABASE_URL,
     echo=False,
@@ -51,6 +59,7 @@ engine = create_async_engine(
     pool_size=5,
     max_overflow=10,
     pool_recycle=300,
+    connect_args={"ssl": _ssl_context},
 )
 async_session_factory = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
 
