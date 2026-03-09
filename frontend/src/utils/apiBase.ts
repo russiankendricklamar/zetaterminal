@@ -1,5 +1,5 @@
 const STORAGE_KEY = 'zeta_backend_url'
-const PRODUCTION_URL = 'https://zetaterminal.onrender.com'
+const PRODUCTION_URL = 'https://zeta-terminal-backend.onrender.com'
 const BUILD_TIME_DEFAULT = import.meta.env.VITE_API_BASE_URL || PRODUCTION_URL
 
 export function getApiBaseUrl(): string {

@@ -236,7 +236,7 @@
                 type="text"
                 v-model="backendUrl"
                 class="glass-input full font-mono"
-                :placeholder="backendMode === 'cloud' ? 'https://zetaterminal.onrender.com' : 'http://localhost:8000'"
+                :placeholder="backendMode === 'cloud' ? 'https://zeta-terminal-backend.onrender.com' : 'http://localhost:8000'"
                 :disabled="backendMode === 'cloud'"
               >
             </div>

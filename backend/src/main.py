@@ -80,6 +80,7 @@ async def _seed_admin() -> None:
     """Create default admin user if no admin exists."""
     from sqlalchemy import select
     from src.database.sa_models import User
+    from src.database.client import async_session_factory
     from passlib.context import CryptContext
 
     pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
