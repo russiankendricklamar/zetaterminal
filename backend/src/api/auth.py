@@ -223,6 +223,28 @@ async def login(body: LoginRequest, session: AsyncSession = Depends(get_session)
     )
 
 
+class UpdateRoleRequest(BaseModel):
+    role: str
+
+    @field_validator("role")
+    @classmethod
+    def validate_role(cls, v: str) -> str:
+        if v not in ("admin", "user"):
+            raise ValueError("Role must be 'admin' or 'user'")
+        return v
+
+
+@router.put("/users/{user_id}/role", dependencies=[Depends(require_api_key)])
+async def update_user_role(user_id: int, body: UpdateRoleRequest, session: AsyncSession = Depends(get_session)):
+    result = await session.execute(select(User).where(User.id == user_id))
+    user = result.scalar_one_or_none()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    user.role = body.role
+    await session.commit()
+    return {"id": user.id, "username": user.username, "role": user.role}
+
+
 @router.get("/users", response_model=list[UserOut], dependencies=[Depends(require_api_key)])
 async def list_users(session: AsyncSession = Depends(get_session)):
     result = await session.execute(select(User).order_by(User.created_at.desc()))
