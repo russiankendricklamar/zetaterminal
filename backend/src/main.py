@@ -55,10 +55,19 @@ from src.api import moexalgo
 from src.api import dadata
 from src.api import etf
 from src.api import gemini
+from src.api import secrets
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     await init_db()
+    # Load API keys from DB into memory cache
+    from src.database.client import async_session_factory
+    from src.services import secrets_service
+    async with async_session_factory() as session:
+        try:
+            await secrets_service.load_all(session)
+        except Exception as e:
+            logger.warning("Could not load API keys from DB: %s", e)
     yield
     await close_session()
 
@@ -131,6 +140,7 @@ app.include_router(moexalgo.router, prefix="/api/moexalgo", tags=["MOEX ISS"], d
 app.include_router(dadata.router, prefix="/api/dadata", tags=["DaData"], dependencies=_auth)
 app.include_router(etf.router, prefix="/api/etf", tags=["ETF"], dependencies=_auth)
 app.include_router(gemini.router, prefix="/api/gemini", tags=["Gemini AI"], dependencies=_auth)
+app.include_router(secrets.router, prefix="/api/secrets", tags=["Secrets"], dependencies=_auth)
 
 # REMOVED: platform_services router — contains dangerous endpoints:
 # open email relay, SSRF vectors, auth token proxy, open storage

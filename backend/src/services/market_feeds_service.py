@@ -4,20 +4,20 @@ Market Feeds Service — Alpha Vantage, Twelve Data, Polygon.io
 Proxies real-time and historical market data from three providers.
 """
 
-import os
 from typing import Optional, Dict, Any, List
 from src.utils.http_client import get_session
 
 from src.services.cache_service import cache_get, cache_set, make_cache_key
+from src.services.secrets_service import get_key_sync
 
-ALPHA_VANTAGE_KEY = os.getenv("ALPHA_VANTAGE_API_KEY", "")
 ALPHA_VANTAGE_BASE = "https://www.alphavantage.co/query"
-
-TWELVE_DATA_KEY = os.getenv("TWELVE_DATA_API_KEY", "")
 TWELVE_DATA_BASE = "https://api.twelvedata.com"
-
-POLYGON_KEY = os.getenv("POLYGON_API_KEY", "")
 POLYGON_BASE = "https://api.polygon.io"
+
+
+def _av_key() -> str: return get_key_sync("ALPHA_VANTAGE_API_KEY")
+def _td_key() -> str: return get_key_sync("TWELVE_DATA_API_KEY")
+def _pg_key() -> str: return get_key_sync("POLYGON_API_KEY")
 
 
 # ─── Alpha Vantage ────────────────────────────────────────────────────────────
@@ -32,7 +32,7 @@ async def alpha_vantage_quote(symbol: str) -> Dict[str, Any]:
     params = {
         "function": "GLOBAL_QUOTE",
         "symbol": symbol,
-        "apikey": ALPHA_VANTAGE_KEY,
+        "apikey": _av_key(),
     }
     session = await get_session()
     async with session.get(ALPHA_VANTAGE_BASE, params=params) as resp:
@@ -85,7 +85,7 @@ async def alpha_vantage_time_series(
         "function": function,
         "symbol": symbol,
         "outputsize": outputsize,
-        "apikey": ALPHA_VANTAGE_KEY,
+        "apikey": _av_key(),
     }
     session = await get_session()
     async with session.get(ALPHA_VANTAGE_BASE, params=params) as resp:
@@ -120,7 +120,7 @@ async def alpha_vantage_forex(from_currency: str, to_currency: str) -> Dict[str,
         "function": "CURRENCY_EXCHANGE_RATE",
         "from_currency": from_currency,
         "to_currency": to_currency,
-        "apikey": ALPHA_VANTAGE_KEY,
+        "apikey": _av_key(),
     }
     session = await get_session()
     async with session.get(ALPHA_VANTAGE_BASE, params=params) as resp:
@@ -158,7 +158,7 @@ async def alpha_vantage_technicals(
         "interval": interval,
         "time_period": time_period,
         "series_type": series_type,
-        "apikey": ALPHA_VANTAGE_KEY,
+        "apikey": _av_key(),
     }
     session = await get_session()
     async with session.get(ALPHA_VANTAGE_BASE, params=params) as resp:
@@ -201,7 +201,7 @@ async def twelve_data_quote(symbol: str) -> Dict[str, Any]:
     if cached is not None:
         return cached
 
-    params = {"symbol": symbol, "apikey": TWELVE_DATA_KEY}
+    params = {"symbol": symbol, "apikey": _td_key()}
     session = await get_session()
     async with session.get(f"{TWELVE_DATA_BASE}/quote", params=params) as resp:
         resp.raise_for_status()
@@ -241,7 +241,7 @@ async def twelve_data_time_series(
         "symbol": symbol,
         "interval": interval,
         "outputsize": outputsize,
-        "apikey": TWELVE_DATA_KEY,
+        "apikey": _td_key(),
     }
     session = await get_session()
     async with session.get(f"{TWELVE_DATA_BASE}/time_series", params=params) as resp:
@@ -272,7 +272,7 @@ async def twelve_data_forex_pairs() -> List[Dict[str, str]]:
     if cached is not None:
         return cached
 
-    params = {"apikey": TWELVE_DATA_KEY}
+    params = {"apikey": _td_key()}
     session = await get_session()
     async with session.get(f"{TWELVE_DATA_BASE}/forex_pairs", params=params) as resp:
         resp.raise_for_status()
@@ -292,7 +292,7 @@ async def polygon_ticker_details(ticker: str) -> Dict[str, Any]:
     if cached is not None:
         return cached
 
-    headers = {"Authorization": f"Bearer {POLYGON_KEY}"}
+    headers = {"Authorization": f"Bearer {_pg_key()}"}
     session = await get_session()
     async with session.get(
         f"{POLYGON_BASE}/v3/reference/tickers/{ticker}",
@@ -320,7 +320,7 @@ async def polygon_aggregates(
     if cached is not None:
         return cached
 
-    headers = {"Authorization": f"Bearer {POLYGON_KEY}"}
+    headers = {"Authorization": f"Bearer {_pg_key()}"}
     url = f"{POLYGON_BASE}/v2/aggs/ticker/{ticker}/range/{multiplier}/{timespan}/{from_date}/{to_date}"
     session = await get_session()
     async with session.get(url, headers=headers) as resp:
@@ -364,7 +364,7 @@ async def polygon_options_chain(
     if cached is not None:
         return cached
 
-    headers = {"Authorization": f"Bearer {POLYGON_KEY}"}
+    headers = {"Authorization": f"Bearer {_pg_key()}"}
     params: Dict[str, Any] = {
         "underlying_ticker": ticker,
         "limit": limit,
@@ -404,7 +404,7 @@ async def polygon_news(
     if cached is not None:
         return cached
 
-    headers = {"Authorization": f"Bearer {POLYGON_KEY}"}
+    headers = {"Authorization": f"Bearer {_pg_key()}"}
     params: Dict[str, Any] = {"limit": limit}
     if ticker:
         params["ticker"] = ticker

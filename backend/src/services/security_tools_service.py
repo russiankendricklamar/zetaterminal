@@ -5,18 +5,19 @@ Security Tools Service — VirusTotal, AbuseIPDB, URLScan.io, IP2WHOIS,
 Network security and IP intelligence utilities.
 """
 
-import os
 from typing import Dict, Any
 
 from src.services.cache_service import cache_get, cache_set, make_cache_key
+from src.services.secrets_service import get_key_sync
 from src.utils.http_client import get_session
 
-VIRUSTOTAL_KEY = os.getenv("VIRUSTOTAL_API_KEY", "")
-ABUSEIPDB_KEY = os.getenv("ABUSEIPDB_API_KEY", "")
-URLSCAN_KEY = os.getenv("URLSCAN_API_KEY", "")
-IP2WHOIS_KEY = os.getenv("IP2WHOIS_API_KEY", "")
-IPINFO_TOKEN = os.getenv("IPINFO_TOKEN", "")
-IP2LOCATION_KEY = os.getenv("IP2LOCATION_API_KEY", "")
+
+def _vt_key() -> str: return get_key_sync("VIRUSTOTAL_API_KEY")
+def _abuse_key() -> str: return get_key_sync("ABUSEIPDB_API_KEY")
+def _urlscan_key() -> str: return get_key_sync("URLSCAN_API_KEY")
+def _whois_key() -> str: return get_key_sync("IP2WHOIS_API_KEY")
+def _ipinfo_key() -> str: return get_key_sync("IPINFO_TOKEN")
+def _ip2loc_key() -> str: return get_key_sync("IP2LOCATION_API_KEY")
 
 
 # ─── ipinfo.io ────────────────────────────────────────────────────────────────
@@ -29,7 +30,8 @@ async def ipinfo_lookup(ip: str) -> Dict[str, Any]:
         return cached
 
     url = f"https://ipinfo.io/{ip}"
-    params = {"token": IPINFO_TOKEN} if IPINFO_TOKEN else {}
+    ipinfo_token = _ipinfo_key()
+    params = {"token": ipinfo_token} if ipinfo_token else {}
     session = await get_session()
     async with session.get(url, params=params) as resp:
         resp.raise_for_status()
@@ -49,7 +51,7 @@ async def ip2location_lookup(ip: str) -> Dict[str, Any]:
     if cached is not None:
         return cached
 
-    params = {"key": IP2LOCATION_KEY, "ip": ip, "format": "json"}
+    params = {"key": _ip2loc_key(), "ip": ip, "format": "json"}
     session = await get_session()
     async with session.get("https://api.ip2location.io/", params=params) as resp:
         resp.raise_for_status()
@@ -88,7 +90,7 @@ async def bigdatacloud_lookup(ip: str) -> Dict[str, Any]:
 async def virustotal_scan_url(url_to_scan: str) -> Dict[str, Any]:
     """Submit a URL for scanning to VirusTotal."""
     import base64
-    headers = {"x-apikey": VIRUSTOTAL_KEY}
+    headers = {"x-apikey": _vt_key()}
     session = await get_session()
     async with session.post(
         "https://www.virustotal.com/api/v3/urls",
@@ -113,7 +115,7 @@ async def virustotal_analysis(analysis_id: str) -> Dict[str, Any]:
     if cached is not None:
         return cached
 
-    headers = {"x-apikey": VIRUSTOTAL_KEY}
+    headers = {"x-apikey": _vt_key()}
     session = await get_session()
     async with session.get(
         f"https://www.virustotal.com/api/v3/analyses/{analysis_id}",
@@ -150,7 +152,7 @@ async def abuseipdb_check(ip: str) -> Dict[str, Any]:
     if cached is not None:
         return cached
 
-    headers = {"Key": ABUSEIPDB_KEY, "Accept": "application/json"}
+    headers = {"Key": _abuse_key(), "Accept": "application/json"}
     params = {"ipAddress": ip, "maxAgeInDays": "90", "verbose": ""}
     session = await get_session()
     async with session.get(
@@ -182,7 +184,7 @@ async def abuseipdb_check(ip: str) -> Dict[str, Any]:
 
 async def urlscan_submit(url_to_scan: str) -> Dict[str, Any]:
     """Submit a URL for scanning to URLScan.io."""
-    headers = {"API-Key": URLSCAN_KEY, "Content-Type": "application/json"}
+    headers = {"API-Key": _urlscan_key(), "Content-Type": "application/json"}
     body = {"url": url_to_scan, "visibility": "public"}
     session = await get_session()
     async with session.post(
@@ -251,7 +253,7 @@ async def ip2whois_lookup(domain: str) -> Dict[str, Any]:
     if cached is not None:
         return cached
 
-    params = {"key": IP2WHOIS_KEY, "domain": domain}
+    params = {"key": _whois_key(), "domain": domain}
     session = await get_session()
     async with session.get("https://api.ip2whois.com/v2", params=params) as resp:
         resp.raise_for_status()

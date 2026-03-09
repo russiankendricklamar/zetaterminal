@@ -4,20 +4,22 @@ News & AI Service — NewsAPI, Currents API, Hugging Face Inference
 Proxies news feeds and ML inference endpoints.
 """
 
-import os
 from typing import Optional, Dict, Any, List
 from src.utils.http_client import get_session
 
 from src.services.cache_service import cache_get, cache_set, make_cache_key
+from src.services.secrets_service import get_key_sync
 
-NEWSAPI_KEY = os.getenv("NEWSAPI_KEY", "")
 NEWSAPI_BASE = "https://newsapi.org/v2"
 
-CURRENTS_KEY = os.getenv("CURRENTS_API_KEY", "")
 CURRENTS_BASE = "https://api.currentsapi.services/v1"
 
-HF_TOKEN = os.getenv("HUGGINGFACE_TOKEN", "")
 HF_BASE = "https://api-inference.huggingface.co/models"
+
+
+def _newsapi_key() -> str: return get_key_sync("NEWSAPI_KEY")
+def _currents_key() -> str: return get_key_sync("CURRENTS_API_KEY")
+def _hf_token() -> str: return get_key_sync("HUGGINGFACE_TOKEN")
 
 
 # ─── NewsAPI ──────────────────────────────────────────────────────────────────
@@ -37,7 +39,7 @@ async def newsapi_top_headlines(
     params: Dict[str, Any] = {
         "country": country,
         "pageSize": page_size,
-        "apiKey": NEWSAPI_KEY,
+        "apiKey": _newsapi_key(),
     }
     if category:
         params["category"] = category
@@ -90,7 +92,7 @@ async def newsapi_everything(
         "sortBy": sort_by,
         "pageSize": page_size,
         "language": language,
-        "apiKey": NEWSAPI_KEY,
+        "apiKey": _newsapi_key(),
     }
     if from_date:
         params["from"] = from_date
@@ -138,7 +140,7 @@ async def currents_latest(
 
     params: Dict[str, Any] = {
         "language": language,
-        "apiKey": CURRENTS_KEY,
+        "apiKey": _currents_key(),
     }
     if keywords:
         params["keywords"] = keywords
@@ -185,7 +187,7 @@ async def currents_search(
     params: Dict[str, Any] = {
         "keywords": keywords,
         "language": language,
-        "apiKey": CURRENTS_KEY,
+        "apiKey": _currents_key(),
     }
 
     session = await get_session()
@@ -213,7 +215,7 @@ async def currents_search(
 
 async def hf_inference(model_id: str, inputs: str) -> Any:
     """Run inference on a Hugging Face model."""
-    headers = {"Authorization": f"Bearer {HF_TOKEN}"}
+    headers = {"Authorization": f"Bearer {_hf_token()}"}
     session = await get_session()
     async with session.post(
         f"{HF_BASE}/{model_id}",
@@ -249,7 +251,7 @@ async def hf_sentiment(text: str) -> Dict[str, Any]:
 
 async def hf_summarize(text: str, max_length: int = 150) -> Dict[str, Any]:
     """Summarize text using facebook/bart-large-cnn."""
-    headers = {"Authorization": f"Bearer {HF_TOKEN}"}
+    headers = {"Authorization": f"Bearer {_hf_token()}"}
     session = await get_session()
     async with session.post(
         f"{HF_BASE}/facebook/bart-large-cnn",

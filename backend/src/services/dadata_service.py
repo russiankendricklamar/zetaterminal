@@ -4,15 +4,17 @@ DaData Service — Russian company and bank data.
 Suggestions API: https://suggestions.dadata.ru/suggestions/api/4_1/rs
 """
 
-import os
 from typing import Optional, Dict, Any, List
 
 from src.services.cache_service import cache_get, cache_set, make_cache_key
+from src.services.secrets_service import get_key_sync
 from src.utils.http_client import get_session
 
-DADATA_TOKEN = os.getenv("DADATA_API_TOKEN", "")
-DADATA_SECRET = os.getenv("DADATA_SECRET_KEY", "")
 DADATA_BASE = "https://suggestions.dadata.ru/suggestions/api/4_1/rs"
+
+
+def _dadata_token() -> str: return get_key_sync("DADATA_API_TOKEN")
+def _dadata_secret() -> str: return get_key_sync("DADATA_SECRET_KEY")
 
 
 def _dadata_headers() -> Dict[str, str]:
@@ -20,8 +22,9 @@ def _dadata_headers() -> Dict[str, str]:
         "Content-Type": "application/json",
         "Accept": "application/json",
     }
-    if DADATA_TOKEN:
-        headers["Authorization"] = f"Token {DADATA_TOKEN}"
+    token = _dadata_token()
+    if token:
+        headers["Authorization"] = f"Token {token}"
     return headers
 
 

@@ -10,8 +10,8 @@ from typing import Optional, Dict, Any, List
 from src.utils.http_client import get_session
 
 from src.services.cache_service import cache_get, cache_set, make_cache_key
+from src.services.secrets_service import get_key_sync
 
-FRED_KEY = os.getenv("FRED_API_KEY", "")
 FRED_BASE = "https://api.stlouisfed.org/fred"
 
 FRANKFURTER_BASE = "https://api.frankfurter.app"
@@ -22,8 +22,11 @@ CBR_KEY_RATE_URL = "https://www.cbr.ru/DailyInfoWebServ/DailyInfo.asmx"
 SEC_BASE = "https://data.sec.gov"
 SEC_USER_AGENT = os.getenv("SEC_USER_AGENT", "StochasticDashboard/1.0 (contact@example.com)")
 
-OPENFIGI_KEY = os.getenv("OPENFIGI_API_KEY", "")
 OPENFIGI_URL = "https://api.openfigi.com/v3/mapping"
+
+
+def _fred_key() -> str: return get_key_sync("FRED_API_KEY")
+def _openfigi_key() -> str: return get_key_sync("OPENFIGI_API_KEY")
 
 
 # ─── FRED ─────────────────────────────────────────────────────────────────────
@@ -43,7 +46,7 @@ async def fred_series_observations(
 
     params: Dict[str, Any] = {
         "series_id": series_id,
-        "api_key": FRED_KEY,
+        "api_key": _fred_key(),
         "file_type": "json",
         "limit": limit,
         "sort_order": sort_order,
@@ -85,7 +88,7 @@ async def fred_search(query: str, limit: int = 20) -> Dict[str, Any]:
 
     params = {
         "search_text": query,
-        "api_key": FRED_KEY,
+        "api_key": _fred_key(),
         "file_type": "json",
         "limit": limit,
     }
@@ -614,8 +617,9 @@ async def openfigi_map(
         return cached
 
     headers: Dict[str, str] = {"Content-Type": "application/json"}
-    if OPENFIGI_KEY:
-        headers["X-OPENFIGI-APIKEY"] = OPENFIGI_KEY
+    figi_key = _openfigi_key()
+    if figi_key:
+        headers["X-OPENFIGI-APIKEY"] = figi_key
 
     session = await get_session()
     async with session.post(OPENFIGI_URL, json=jobs, headers=headers) as resp:

@@ -1,7 +1,6 @@
 """
 API proxy for Gemini AI — keeps API key server-side.
 """
-import os
 import logging
 
 from fastapi import APIRouter, HTTPException, Request
@@ -9,12 +8,14 @@ from pydantic import BaseModel, Field
 from typing import List, Optional
 
 from src.middleware.rate_limit import limiter
+from src.services.secrets_service import get_key_sync
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+
+def _gemini_key() -> str: return get_key_sync("GEMINI_API_KEY")
 
 
 class CandleInput(BaseModel):
@@ -35,7 +36,8 @@ class GenerateRequest(BaseModel):
 @limiter.limit("10/minute")
 async def analyze_market(http_request: Request, request: GenerateRequest):
     """Proxy market analysis to Gemini API with server-side key."""
-    if not GEMINI_API_KEY:
+    gemini_api_key = _gemini_key()
+    if not gemini_api_key:
         raise HTTPException(status_code=503, detail="Gemini API not configured")
 
     try:
@@ -66,7 +68,7 @@ async def analyze_market(http_request: Request, request: GenerateRequest):
             async with session.post(
                 url,
                 json=payload,
-                params={"key": GEMINI_API_KEY},
+                params={"key": gemini_api_key},
                 timeout=aiohttp.ClientTimeout(total=30),
             ) as resp:
                 if resp.status != 200:
@@ -88,4 +90,4 @@ async def analyze_market(http_request: Request, request: GenerateRequest):
 
 @router.get("/health")
 async def gemini_health():
-    return {"status": "healthy", "configured": GEMINI_API_KEY is not None}
+    return {"status": "healthy", "configured": bool(_gemini_key())}

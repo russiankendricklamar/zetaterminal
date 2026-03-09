@@ -72,6 +72,18 @@ class MarketDataDaily(Base):
     )
 
 
+class ApiKey(Base):
+    """Stores third-party API keys (replaces env vars)."""
+    __tablename__ = "api_keys"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    service = Column(String, nullable=False, unique=True, index=True)
+    key_value = Column(String, nullable=False)
+    description = Column(Text, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+
 class FileRecord(Base):
     __tablename__ = "file_records"
 

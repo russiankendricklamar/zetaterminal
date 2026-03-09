@@ -4,17 +4,19 @@ Crypto Data Service — CoinGecko, CoinGap
 Proxies crypto market data and arbitrage opportunities.
 """
 
-import os
 from typing import Optional, Dict, Any, List
 
 from src.services.cache_service import cache_get, cache_set, make_cache_key
+from src.services.secrets_service import get_key_sync
 from src.utils.http_client import get_session
 
-COINGECKO_KEY = os.getenv("COINGECKO_API_KEY", "")
 COINGECKO_BASE = "https://api.coingecko.com/api/v3"
 
-COINGAP_KEY = os.getenv("COINGAP_API_KEY", "")
 COINGAP_BASE = "https://api.coingap.io"
+
+
+def _cg_key() -> str: return get_key_sync("COINGECKO_API_KEY")
+def _gap_key() -> str: return get_key_sync("COINGAP_API_KEY")
 
 
 # ─── CoinGecko ────────────────────────────────────────────────────────────────
@@ -40,8 +42,9 @@ async def coingecko_markets(
         "price_change_percentage": "1h,24h,7d",
     }
     headers: Dict[str, str] = {}
-    if COINGECKO_KEY:
-        headers["x-cg-demo-api-key"] = COINGECKO_KEY
+    cg_key = _cg_key()
+    if cg_key:
+        headers["x-cg-demo-api-key"] = cg_key
 
     session = await get_session()
     async with session.get(f"{COINGECKO_BASE}/coins/markets", params=params, headers=headers) as resp:
@@ -73,8 +76,9 @@ async def coingecko_coin(coin_id: str) -> Dict[str, Any]:
         "developer_data": "false",
     }
     headers: Dict[str, str] = {}
-    if COINGECKO_KEY:
-        headers["x-cg-demo-api-key"] = COINGECKO_KEY
+    cg_key = _cg_key()
+    if cg_key:
+        headers["x-cg-demo-api-key"] = cg_key
 
     session = await get_session()
     async with session.get(f"{COINGECKO_BASE}/coins/{coin_id}", params=params, headers=headers) as resp:
@@ -109,8 +113,9 @@ async def coingecko_market_chart(
 
     params = {"vs_currency": vs_currency, "days": days}
     headers: Dict[str, str] = {}
-    if COINGECKO_KEY:
-        headers["x-cg-demo-api-key"] = COINGECKO_KEY
+    cg_key = _cg_key()
+    if cg_key:
+        headers["x-cg-demo-api-key"] = cg_key
 
     session = await get_session()
     async with session.get(f"{COINGECKO_BASE}/coins/{coin_id}/market_chart", params=params, headers=headers) as resp:
@@ -137,8 +142,9 @@ async def coingecko_trending() -> Dict[str, Any]:
         return cached
 
     headers: Dict[str, str] = {}
-    if COINGECKO_KEY:
-        headers["x-cg-demo-api-key"] = COINGECKO_KEY
+    cg_key = _cg_key()
+    if cg_key:
+        headers["x-cg-demo-api-key"] = cg_key
 
     session = await get_session()
     async with session.get(f"{COINGECKO_BASE}/search/trending", headers=headers) as resp:
@@ -157,8 +163,9 @@ async def coingecko_global() -> Dict[str, Any]:
         return cached
 
     headers: Dict[str, str] = {}
-    if COINGECKO_KEY:
-        headers["x-cg-demo-api-key"] = COINGECKO_KEY
+    cg_key = _cg_key()
+    if cg_key:
+        headers["x-cg-demo-api-key"] = cg_key
 
     session = await get_session()
     async with session.get(f"{COINGECKO_BASE}/global", headers=headers) as resp:
@@ -181,8 +188,9 @@ async def coingap_arbitrage() -> List[Dict[str, Any]]:
         return cached
 
     headers: Dict[str, str] = {}
-    if COINGAP_KEY:
-        headers["Authorization"] = f"Bearer {COINGAP_KEY}"
+    gap_key = _gap_key()
+    if gap_key:
+        headers["Authorization"] = f"Bearer {gap_key}"
 
     session = await get_session()
     async with session.get(f"{COINGAP_BASE}/v1/arbitrage", headers=headers) as resp:
