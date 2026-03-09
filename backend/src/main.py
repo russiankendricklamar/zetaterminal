@@ -56,6 +56,7 @@ from src.api import dadata
 from src.api import etf
 from src.api import gemini
 from src.api import secrets
+from src.api import auth
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -68,8 +69,43 @@ async def lifespan(app: FastAPI):
             await secrets_service.load_all(session)
         except Exception as e:
             logger.warning("Could not load API keys from DB: %s", e)
+    # Seed admin user if none exists
+    await _seed_admin()
     yield
     await close_session()
+
+
+async def _seed_admin() -> None:
+    """Create default admin user if no admin exists."""
+    from sqlalchemy import select
+    from src.database.sa_models import User
+    from passlib.context import CryptContext
+
+    pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
+    try:
+        async with async_session_factory() as session:
+            result = await session.execute(
+                select(User).where(User.role == "admin")
+            )
+            if result.scalar_one_or_none():
+                return
+
+            admin_password = os.getenv("ADMIN_PASSWORD", "admin")
+            admin = User(
+                username="admin",
+                domain_handle="admin@zetaterminal.dev",
+                email="admin@zetaterminal.io",
+                password_hash=pwd_context.hash(admin_password),
+                role="admin",
+                status="active",
+                invite_code="ADMIN000",
+            )
+            session.add(admin)
+            await session.commit()
+            logger.info("Default admin user seeded")
+    except Exception as e:
+        logger.warning("Could not seed admin user: %s", e)
 
 
 # Создаем FastAPI приложение
@@ -104,6 +140,7 @@ app.add_middleware(
 # Подключаем все роутеры (с обязательной аутентификацией по API-ключу)
 _auth = [Depends(require_api_key)]
 
+app.include_router(auth.router, prefix="/api/auth", tags=["Auth"])
 app.include_router(portfolio.router, prefix="/api/portfolio", tags=["Portfolio"], dependencies=_auth)
 app.include_router(bond.router, prefix="/api/bond", tags=["Bond"], dependencies=_auth)
 app.include_router(swap.router, prefix="/api/swap", tags=["Swap"], dependencies=_auth)

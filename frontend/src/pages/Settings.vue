@@ -553,12 +553,63 @@
       </div>
       </transition>
 
+      <!-- Tab: USERS (admin only) -->
+      <transition name="fade" mode="out-in">
+      <div v-show="activeTab === 'users'" class="grid-content">
+        <div class="glass-panel settings-block users-panel">
+          <h3 class="block-title">Зарегистрированные пользователи</h3>
+          <div v-if="usersLoading" class="users-loading font-mono">LOADING...</div>
+          <div v-else class="users-table-wrap">
+            <table class="users-table">
+              <thead>
+                <tr>
+                  <th class="font-mono">USERNAME</th>
+                  <th class="font-mono">EMAIL</th>
+                  <th class="font-mono">STATUS</th>
+                  <th class="font-mono">INVITE CODE</th>
+                  <th class="font-mono">REGISTERED</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="u in usersList" :key="u.id">
+                  <td>
+                    <div class="user-cell">
+                      <span class="user-name">{{ u.username }}</span>
+                      <span class="user-domain font-mono">{{ u.domain_handle }}</span>
+                    </div>
+                  </td>
+                  <td class="font-mono">{{ u.email }}</td>
+                  <td>
+                    <span class="user-status-badge" :class="'status-' + u.status">{{ u.status.toUpperCase() }}</span>
+                  </td>
+                  <td class="font-mono">
+                    <span v-if="u.status === 'pending'" class="invite-code">{{ u.invite_code }}</span>
+                    <span v-else class="invite-used">&mdash;</span>
+                  </td>
+                  <td class="font-mono">{{ formatDate(u.created_at) }}</td>
+                </tr>
+                <tr v-if="!usersList.length">
+                  <td colspan="5" class="users-empty font-mono">No users found</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="status-footer">
+            <button class="btn-glass xs" @click="loadUsers">Обновить</button>
+            <span class="status-text text-muted font-mono">{{ usersList.length }} users</span>
+          </div>
+        </div>
+      </div>
+      </transition>
+
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, watch, reactive, computed, onMounted } from 'vue'
+import { isAdmin as checkIsAdmin, fetchUsers } from '@/services/authService'
+import type { UserInfo } from '@/services/authService'
 import {
   createSession as createRuDataSession,
   hasActiveSession as hasRuDataSession,
@@ -598,13 +649,24 @@ const hasChanges = ref(true)
 const apiError = ref(false)
 const backendApiKey = ref('')
 
-const tabs = [
+// Admin panel state
+const isAdminUser = ref(false)
+const usersList = ref<UserInfo[]>([])
+const usersLoading = ref(false)
+
+const allTabs = [
   { id: 'general', name: 'Общие', iconClass: 'icon-gen' },
   { id: 'models', name: 'Модели', iconClass: 'icon-mod' },
   { id: 'risk', name: 'Риск', iconClass: 'icon-risk' },
   { id: 'api', name: 'API', iconClass: 'icon-api' },
   { id: 'security', name: 'Безопасность', iconClass: 'icon-sec' },
+  { id: 'users', name: 'Пользователи', iconClass: 'icon-usr', adminOnly: true },
 ]
+
+const tabs = computed(() => {
+  if (isAdminUser.value) return allTabs
+  return allTabs.filter(t => !(t as { adminOnly?: boolean }).adminOnly)
+})
 
 // Connection States
 const connectionStates = reactive({
@@ -881,6 +943,26 @@ async function runWhois() {
   }
 }
 
+async function loadUsers() {
+  usersLoading.value = true
+  try {
+    usersList.value = await fetchUsers()
+  } catch {
+    usersList.value = []
+  } finally {
+    usersLoading.value = false
+  }
+}
+
+function formatDate(dateStr: string): string {
+  try {
+    const d = new Date(dateStr)
+    return d.toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric' })
+  } catch {
+    return dateStr
+  }
+}
+
 // Загрузка сохраненных credentials при монтировании
 onMounted(() => {
   // Check if a server-side RuData session is active (memory-only)
@@ -913,6 +995,12 @@ onMounted(() => {
   // Загружаем extended API keys
   loadExtendedKeys()
   checkApiServices()
+
+  // Check admin status
+  isAdminUser.value = checkIsAdmin()
+  if (isAdminUser.value) {
+    loadUsers()
+  }
 
   hasChanges.value = false
 })
@@ -1671,6 +1759,118 @@ input:checked + .slider:before {
 
 .ns-list { display: flex; flex-direction: column; gap: 3px; }
 .ns-item { font-size: 12px; color: rgba(255,255,255,0.7); }
+
+/* ============================================
+   USERS ADMIN PANEL
+   ============================================ */
+.users-panel {
+  grid-column: 1 / -1;
+}
+
+.users-loading {
+  padding: 32px 20px;
+  text-align: center;
+  color: rgba(255,255,255,0.4);
+  font-size: 12px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.users-table-wrap {
+  overflow-x: auto;
+  padding: 0 16px 8px;
+}
+
+.users-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.users-table th {
+  text-align: left;
+  font-size: 9px;
+  color: rgba(255,255,255,0.35);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 10px 12px;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+  white-space: nowrap;
+}
+
+.users-table td {
+  padding: 12px 12px;
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+  color: rgba(255,255,255,0.8);
+  vertical-align: middle;
+}
+
+.users-table tbody tr:hover {
+  background: rgba(255,255,255,0.02);
+}
+
+.user-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.user-name {
+  font-weight: 600;
+  color: #fff;
+}
+
+.user-domain {
+  font-size: 10px;
+  color: rgba(255,255,255,0.35);
+}
+
+.user-status-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 3px;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+}
+
+.status-pending {
+  background: rgba(245,158,11,0.15);
+  color: #F59E0B;
+  border: 1px solid rgba(245,158,11,0.3);
+}
+
+.status-active {
+  background: rgba(34,197,94,0.15);
+  color: #22C55E;
+  border: 1px solid rgba(34,197,94,0.3);
+}
+
+.status-blocked {
+  background: rgba(239,68,68,0.15);
+  color: #ef4444;
+  border: 1px solid rgba(239,68,68,0.3);
+}
+
+.invite-code {
+  background: rgba(255,255,255,0.06);
+  padding: 3px 8px;
+  border-radius: 3px;
+  letter-spacing: 0.1em;
+  font-size: 12px;
+  color: #F59E0B;
+  user-select: all;
+}
+
+.invite-used {
+  color: rgba(255,255,255,0.2);
+}
+
+.users-empty {
+  text-align: center;
+  color: rgba(255,255,255,0.3);
+  padding: 24px !important;
+}
 
 /* ============================================
    RESPONSIVE

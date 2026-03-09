@@ -2,6 +2,7 @@
 import { createRouter, createWebHashHistory } from 'vue-router'
 import MainLayout from '@/components/Layout/MainLayout.vue'
 import Home from '@/pages/Home.vue'
+import { getApiKey } from '@/utils/apiHeaders'
 
 // Everything else is lazy-loaded for code splitting
 const NotFound = () => import('@/pages/NotFound.vue')
@@ -134,7 +135,14 @@ const router = createRouter({
 router.beforeEach((to, from, next) => {
   const title = (to.meta?.title as string) || 'QuantPro'
   document.title = `${title} | Risk Management`
-  next()
+
+  const apiKey = getApiKey()
+  const isPublic = to.path === '/' || to.meta?.bare === true
+  if (!apiKey && !isPublic) {
+    next('/')
+  } else {
+    next()
+  }
 })
 
 export default router
