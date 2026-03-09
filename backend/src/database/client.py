@@ -1,6 +1,7 @@
 """
 SQLAlchemy async database connection (Neon PostgreSQL).
 """
+import logging
 import os
 from typing import AsyncGenerator
 
@@ -8,16 +9,61 @@ from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, Asyn
 
 from .sa_models import Base
 
-DATABASE_URL = os.getenv("DATABASE_URL", "postgresql+asyncpg://localhost/zetaterminal")
+logger = logging.getLogger(__name__)
 
-engine = create_async_engine(DATABASE_URL, echo=False)
+
+def _normalize_database_url(url: str) -> str:
+    """Ensure the URL uses the asyncpg driver.
+
+    Neon/Render provide URLs like ``postgresql://...`` which default to
+    the sync ``psycopg2`` driver.  This helper rewrites the scheme so
+    SQLAlchemy uses ``asyncpg`` instead.
+
+    Also strips ``channel_binding`` which asyncpg does not support.
+    """
+    if url.startswith("postgres://"):
+        url = "postgresql+asyncpg://" + url[len("postgres://"):]
+    elif url.startswith("postgresql://") and "+asyncpg" not in url:
+        url = "postgresql+asyncpg://" + url[len("postgresql://"):]
+
+    # asyncpg does not support channel_binding — strip it
+    from urllib.parse import urlparse, parse_qs, urlencode, urlunparse
+    parsed = urlparse(url)
+    params = parse_qs(parsed.query)
+    params.pop("channel_binding", None)
+    cleaned_query = urlencode(params, doseq=True)
+    url = urlunparse(parsed._replace(query=cleaned_query))
+
+    return url
+
+
+_raw_url = os.getenv("DATABASE_URL", "")
+if not _raw_url:
+    logger.warning("DATABASE_URL is not set — using local fallback")
+    _raw_url = "postgresql+asyncpg://localhost/zetaterminal"
+
+DATABASE_URL = _normalize_database_url(_raw_url)
+
+engine = create_async_engine(
+    DATABASE_URL,
+    echo=False,
+    pool_pre_ping=True,
+    pool_size=5,
+    max_overflow=10,
+    pool_recycle=300,
+)
 async_session_factory = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
 
 
 async def init_db() -> None:
     """Create tables if they don't exist."""
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
+    try:
+        async with engine.begin() as conn:
+            await conn.run_sync(Base.metadata.create_all)
+        logger.info("Database tables initialized successfully")
+    except Exception as e:
+        logger.error("Failed to initialize database: %s", e)
+        raise
 
 
 async def get_session() -> AsyncGenerator[AsyncSession, None]:
