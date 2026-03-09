@@ -6,7 +6,7 @@
         <div class="flex items-center gap-4">
           <router-link to="/terminal" class="flex items-center gap-2 text-white cursor-pointer flex-shrink-0">
             <div class="w-8 h-8 bg-[var(--accent-red)] flex items-center justify-center">
-              <span class="text-white font-bold text-sm">ζ</span>
+              <span class="text-white font-bold text-sm">&zeta;</span>
             </div>
             <span class="font-anton tracking-tight text-sm hidden lg:block">ДЗЕТА-ТЕРМИНАЛ</span>
           </router-link>
@@ -20,13 +20,29 @@
 
       <!-- Content -->
       <div class="flex-1 bg-[var(--bg-secondary)] border border-[var(--border-dark)] overflow-hidden flex flex-col overflow-y-auto custom-scrollbar">
-        <div class="p-8 max-w-4xl mx-auto w-full space-y-8">
+        <!-- Loading -->
+        <div v-if="loading" class="flex-1 flex items-center justify-center">
+          <span class="text-[var(--text-muted)] font-mono text-sm">Загрузка профиля...</span>
+        </div>
+
+        <!-- Error -->
+        <div v-else-if="loadError" class="flex-1 flex items-center justify-center">
+          <div class="text-center space-y-4">
+            <p class="text-[var(--accent-red)] font-mono text-sm">{{ loadError }}</p>
+            <button @click="loadProfile" class="px-4 py-2 text-xs text-white bg-[var(--accent-red)] hover:bg-red-700 transition-colors font-oswald uppercase">
+              Повторить
+            </button>
+          </div>
+        </div>
+
+        <!-- Profile form -->
+        <div v-else class="p-8 max-w-4xl mx-auto w-full space-y-8">
           <!-- Profile Header -->
           <div class="flex flex-col md:flex-row items-center md:items-start gap-6 pb-8 border-b border-[var(--border-dark)]">
             <div class="relative group">
               <div class="w-32 h-32 bg-[var(--bg-tertiary)] border-2 border-[var(--border-dark)] flex items-center justify-center text-[var(--accent-red)] font-bold text-2xl font-anton relative overflow-hidden">
-                <span v-if="!profile.avatar">{{ profile.name.substring(0, 2).toUpperCase() }}</span>
-                <img v-else :src="profile.avatar" alt="Avatar" class="w-full h-full object-cover" />
+                <span v-if="!avatarPreview">{{ initials }}</span>
+                <img v-else :src="avatarPreview" alt="Avatar" class="w-full h-full object-cover" />
               </div>
               <button @click="triggerAvatarUpload" class="absolute bottom-0 right-0 w-10 h-10 bg-[var(--accent-red)] hover:bg-red-700 flex items-center justify-center transition-colors border border-[var(--border-dark)]">
                 <CameraIcon class="w-5 h-5 text-white" />
@@ -34,13 +50,13 @@
               <input ref="avatarInput" type="file" accept="image/*" @change="handleAvatarChange" class="hidden" />
             </div>
             <div class="flex-1 text-center md:text-left">
-              <h2 class="text-2xl font-anton text-white mb-2 uppercase tracking-wider">{{ profile.name }}</h2>
+              <h2 class="text-2xl font-anton text-white mb-2 uppercase tracking-wider">{{ form.display_name || form.username }}</h2>
               <div class="flex flex-wrap items-center justify-center md:justify-start gap-2 mb-4">
-                <span class="text-xs text-[var(--accent-red)] font-mono bg-[var(--accent-red)]/10 px-2 py-1 border border-[var(--accent-red)]/30">{{ profile.accountType }}</span>
-                <span class="text-xs text-[var(--text-muted)]">•</span>
-                <span class="text-xs text-[var(--text-muted)] font-mono">ID: {{ profile.userId }}</span>
+                <span class="text-xs text-[var(--accent-red)] font-mono bg-[var(--accent-red)]/10 px-2 py-1 border border-[var(--accent-red)]/30">{{ form.role === 'admin' ? 'Admin' : 'User' }}</span>
+                <span class="text-xs text-[var(--text-muted)]">&bull;</span>
+                <span class="text-xs text-[var(--text-muted)] font-mono">{{ form.domain_handle }}</span>
               </div>
-              <p class="text-sm text-[var(--text-secondary)]">{{ profile.bio || 'Добавьте описание профиля' }}</p>
+              <p class="text-sm text-[var(--text-secondary)]">{{ form.bio || 'Добавьте описание профиля' }}</p>
             </div>
           </div>
 
@@ -53,7 +69,7 @@
               <div>
                 <label class="block text-xs font-bold text-[var(--text-muted)] uppercase mb-2 font-mono">Имя</label>
                 <input
-                  v-model="profile.name"
+                  v-model="form.display_name"
                   type="text"
                   class="w-full bg-[var(--bg-tertiary)] border border-[var(--border-dark)] py-2.5 px-4 text-sm text-white focus:border-[var(--accent-red)] outline-none transition-colors font-mono"
                   placeholder="Введите имя"
@@ -63,7 +79,7 @@
               <div>
                 <label class="block text-xs font-bold text-[var(--text-muted)] uppercase mb-2 font-mono">Email</label>
                 <input
-                  v-model="profile.email"
+                  v-model="form.email"
                   type="email"
                   class="w-full bg-[var(--bg-tertiary)] border border-[var(--border-dark)] py-2.5 px-4 text-sm text-white focus:border-[var(--accent-red)] outline-none transition-colors font-mono"
                   placeholder="email@example.com"
@@ -73,7 +89,7 @@
               <div>
                 <label class="block text-xs font-bold text-[var(--text-muted)] uppercase mb-2 font-mono">Телефон</label>
                 <input
-                  v-model="profile.phone"
+                  v-model="form.phone"
                   type="tel"
                   class="w-full bg-[var(--bg-tertiary)] border border-[var(--border-dark)] py-2.5 px-4 text-sm text-white focus:border-[var(--accent-red)] outline-none transition-colors font-mono"
                   placeholder="+7 (999) 123-45-67"
@@ -88,7 +104,7 @@
               <div>
                 <label class="block text-xs font-bold text-[var(--text-muted)] uppercase mb-2 font-mono">Описание</label>
                 <textarea
-                  v-model="profile.bio"
+                  v-model="form.bio"
                   rows="3"
                   class="w-full bg-[var(--bg-tertiary)] border border-[var(--border-dark)] py-2.5 px-4 text-sm text-white focus:border-[var(--accent-red)] outline-none transition-colors resize-none font-mono"
                   placeholder="Краткое описание о себе..."
@@ -98,7 +114,7 @@
               <div>
                 <label class="block text-xs font-bold text-[var(--text-muted)] uppercase mb-2 font-mono">Часовой пояс</label>
                 <select
-                  v-model="profile.timezone"
+                  v-model="prefs.timezone"
                   class="w-full bg-[var(--bg-tertiary)] border border-[var(--border-dark)] py-2.5 px-4 text-sm text-white focus:border-[var(--accent-red)] outline-none transition-colors font-mono"
                 >
                   <option value="UTC+03:00">UTC+03:00 (Москва)</option>
@@ -111,7 +127,7 @@
               <div>
                 <label class="block text-xs font-bold text-[var(--text-muted)] uppercase mb-2 font-mono">Язык интерфейса</label>
                 <select
-                  v-model="profile.language"
+                  v-model="prefs.language"
                   class="w-full bg-[var(--bg-tertiary)] border border-[var(--border-dark)] py-2.5 px-4 text-sm text-white focus:border-[var(--accent-red)] outline-none transition-colors font-mono"
                 >
                   <option value="ru">Русский</option>
@@ -128,7 +144,7 @@
               <div>
                 <label class="block text-xs font-bold text-[var(--text-muted)] uppercase mb-2 font-mono">Валюта по умолчанию</label>
                 <select
-                  v-model="profile.currency"
+                  v-model="prefs.currency"
                   class="w-full bg-[var(--bg-tertiary)] border border-[var(--border-dark)] py-2.5 px-4 text-sm text-white focus:border-[var(--accent-red)] outline-none transition-colors font-mono"
                 >
                   <option value="RUB">RUB - Российский рубль</option>
@@ -141,20 +157,25 @@
                 <label class="block text-xs font-bold text-[var(--text-muted)] uppercase mb-2 font-mono">Уведомления</label>
                 <div class="space-y-2">
                   <label class="flex items-center gap-3 text-sm text-[var(--text-secondary)] cursor-pointer group">
-                    <input type="checkbox" v-model="profile.notifications.email" class="w-4 h-4 border border-[var(--border-dark)] bg-[var(--bg-tertiary)] accent-[var(--accent-red)]" />
+                    <input type="checkbox" v-model="prefs.notifications.email" class="w-4 h-4 border border-[var(--border-dark)] bg-[var(--bg-tertiary)] accent-[var(--accent-red)]" />
                     <span class="group-hover:text-white transition-colors">Email уведомления</span>
                   </label>
                   <label class="flex items-center gap-3 text-sm text-[var(--text-secondary)] cursor-pointer group">
-                    <input type="checkbox" v-model="profile.notifications.push" class="w-4 h-4 border border-[var(--border-dark)] bg-[var(--bg-tertiary)] accent-[var(--accent-red)]" />
+                    <input type="checkbox" v-model="prefs.notifications.push" class="w-4 h-4 border border-[var(--border-dark)] bg-[var(--bg-tertiary)] accent-[var(--accent-red)]" />
                     <span class="group-hover:text-white transition-colors">Push уведомления</span>
                   </label>
                   <label class="flex items-center gap-3 text-sm text-[var(--text-secondary)] cursor-pointer group">
-                    <input type="checkbox" v-model="profile.notifications.sms" class="w-4 h-4 border border-[var(--border-dark)] bg-[var(--bg-tertiary)] accent-[var(--accent-red)]" />
+                    <input type="checkbox" v-model="prefs.notifications.sms" class="w-4 h-4 border border-[var(--border-dark)] bg-[var(--bg-tertiary)] accent-[var(--accent-red)]" />
                     <span class="group-hover:text-white transition-colors">SMS уведомления</span>
                   </label>
                 </div>
               </div>
             </div>
+          </div>
+
+          <!-- Status message -->
+          <div v-if="saveMessage" class="text-center">
+            <span :class="saveError ? 'text-[var(--accent-red)]' : 'text-green-500'" class="font-mono text-sm">{{ saveMessage }}</span>
           </div>
 
           <!-- Save Button -->
@@ -167,10 +188,11 @@
             </button>
             <button
               @click="saveProfile"
-              class="px-6 py-2.5 bg-[var(--accent-red)] hover:bg-red-700 text-white text-sm font-bold transition-colors border border-[var(--accent-red)] flex items-center gap-2 font-oswald uppercase tracking-wider"
+              :disabled="saving"
+              class="px-6 py-2.5 bg-[var(--accent-red)] hover:bg-red-700 text-white text-sm font-bold transition-colors border border-[var(--accent-red)] flex items-center gap-2 font-oswald uppercase tracking-wider disabled:opacity-50"
             >
               <SaveIcon class="w-4 h-4" />
-              Сохранить
+              {{ saving ? 'Сохранение...' : 'Сохранить' }}
             </button>
           </div>
         </div>
@@ -180,50 +202,125 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
-import { useRouter } from 'vue-router';
-import { defineComponent, h } from 'vue';
+import { ref, reactive, computed, onMounted, defineComponent, h } from 'vue'
+import { getAuthUser, getProfile, updateProfile } from '@/services/authService'
 
-const router = useRouter();
-const avatarInput = ref<HTMLInputElement | null>(null);
+const avatarInput = ref<HTMLInputElement | null>(null)
+const avatarPreview = ref<string | null>(null)
 
-const profile = ref({
-  name: 'Алексей Трейдер',
-  email: 'alex.trader@example.com',
-  phone: '+7 (999) 123-45-67',
-  bio: 'Профессиональный трейдер с опытом работы на финансовых рынках',
-  avatar: null as string | null,
-  accountType: 'Pro Аккаунт',
-  userId: 'AT-2024-001',
+const loading = ref(true)
+const loadError = ref('')
+const saving = ref(false)
+const saveMessage = ref('')
+const saveError = ref(false)
+
+const form = reactive({
+  username: '',
+  domain_handle: '',
+  display_name: '',
+  email: '',
+  phone: '',
+  bio: '',
+  role: '',
+})
+
+const prefs = reactive({
   timezone: 'UTC+03:00',
   language: 'ru',
   currency: 'RUB',
   notifications: {
     email: true,
     push: true,
-    sms: false
+    sms: false,
+  },
+})
+
+const initials = computed(() => {
+  const name = form.display_name || form.username || ''
+  return name.substring(0, 2).toUpperCase()
+})
+
+async function loadProfile() {
+  const authUser = getAuthUser()
+  if (!authUser) {
+    loadError.value = 'Необходимо авторизоваться'
+    loading.value = false
+    return
   }
-});
 
-const triggerAvatarUpload = () => {
-  avatarInput.value?.click();
-};
+  loading.value = true
+  loadError.value = ''
+  try {
+    const data = await getProfile(authUser.username)
+    form.username = data.username
+    form.domain_handle = data.domain_handle
+    form.display_name = data.display_name || ''
+    form.email = data.email
+    form.phone = data.phone || ''
+    form.bio = data.bio || ''
+    form.role = data.role
 
-const handleAvatarChange = (event: Event) => {
-  const input = event.target as HTMLInputElement;
+    if (data.preferences) {
+      prefs.timezone = data.preferences.timezone || 'UTC+03:00'
+      prefs.language = data.preferences.language || 'ru'
+      prefs.currency = data.preferences.currency || 'RUB'
+      if (data.preferences.notifications) {
+        prefs.notifications.email = data.preferences.notifications.email ?? true
+        prefs.notifications.push = data.preferences.notifications.push ?? true
+        prefs.notifications.sms = data.preferences.notifications.sms ?? false
+      }
+    }
+  } catch (err) {
+    loadError.value = err instanceof Error ? err.message : 'Ошибка загрузки профиля'
+  } finally {
+    loading.value = false
+  }
+}
+
+async function saveProfile() {
+  saving.value = true
+  saveMessage.value = ''
+  saveError.value = false
+  try {
+    await updateProfile(form.username, {
+      display_name: form.display_name || null,
+      email: form.email || null,
+      phone: form.phone || null,
+      bio: form.bio || null,
+      preferences: {
+        timezone: prefs.timezone,
+        language: prefs.language,
+        currency: prefs.currency,
+        notifications: { ...prefs.notifications },
+      },
+    })
+    saveMessage.value = 'Профиль сохранён'
+    saveError.value = false
+    setTimeout(() => { saveMessage.value = '' }, 3000)
+  } catch (err) {
+    saveMessage.value = err instanceof Error ? err.message : 'Ошибка сохранения'
+    saveError.value = true
+  } finally {
+    saving.value = false
+  }
+}
+
+function triggerAvatarUpload() {
+  avatarInput.value?.click()
+}
+
+function handleAvatarChange(event: Event) {
+  const input = event.target as HTMLInputElement
   if (input.files && input.files[0]) {
-    const reader = new FileReader();
+    const reader = new FileReader()
     reader.onload = (e) => {
-      profile.value.avatar = e.target?.result as string;
-    };
-    reader.readAsDataURL(input.files[0]);
+      avatarPreview.value = e.target?.result as string
+    }
+    reader.readAsDataURL(input.files[0])
   }
-};
+}
 
-const saveProfile = () => {
-  // Здесь должна быть логика сохранения профиля
-  alert('Профиль успешно сохранён!');
-};
+onMounted(loadProfile)
 
 // Icon components
 const CameraIcon = defineComponent({
@@ -231,7 +328,7 @@ const CameraIcon = defineComponent({
     h('path', { d: 'M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z' }),
     h('circle', { cx: '12', cy: '13', r: '4' })
   ])
-});
+})
 
 const SaveIcon = defineComponent({
   render: () => h('svg', { viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', 'stroke-width': '2' }, [
@@ -239,7 +336,7 @@ const SaveIcon = defineComponent({
     h('polyline', { points: '17 21 17 13 7 13 7 21' }),
     h('polyline', { points: '7 3 7 8 15 8' })
   ])
-});
+})
 </script>
 
 <style scoped>

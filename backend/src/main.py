@@ -62,6 +62,7 @@ from src.api import repo
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     await init_db()
+    await _migrate_user_profile_columns()
     # Load API keys from DB into memory cache
     from src.database.client import async_session_factory
     from src.services import secrets_service
@@ -74,6 +75,27 @@ async def lifespan(app: FastAPI):
     await _seed_admin()
     yield
     await close_session()
+
+
+async def _migrate_user_profile_columns() -> None:
+    """Add profile columns to users table if they don't exist."""
+    from src.database.client import engine
+    from sqlalchemy import text
+
+    columns = [
+        ("phone", "VARCHAR"),
+        ("bio", "TEXT"),
+        ("preferences", "JSONB"),
+    ]
+    try:
+        async with engine.begin() as conn:
+            for col_name, col_type in columns:
+                await conn.execute(text(
+                    f"ALTER TABLE users ADD COLUMN IF NOT EXISTS {col_name} {col_type}"
+                ))
+        logger.info("User profile columns migration complete")
+    except Exception as e:
+        logger.warning("Could not migrate user profile columns: %s", e)
 
 
 async def _seed_admin() -> None:

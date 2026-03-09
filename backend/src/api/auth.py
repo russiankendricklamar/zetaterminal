@@ -9,7 +9,7 @@ from datetime import datetime
 
 from fastapi import APIRouter, HTTPException, Depends, status
 from pydantic import BaseModel, EmailStr, field_validator
-from sqlalchemy import select
+from sqlalchemy import select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from passlib.context import CryptContext
@@ -79,6 +79,7 @@ class LoginRequest(BaseModel):
 
 
 class LoginResponse(BaseModel):
+    user_id: int
     username: str
     domain_handle: str
     role: str
@@ -216,6 +217,7 @@ async def login(body: LoginRequest, session: AsyncSession = Depends(get_session)
         )
 
     return LoginResponse(
+        user_id=user.id,
         username=user.username,
         domain_handle=user.domain_handle,
         role=user.role,
@@ -264,3 +266,137 @@ async def list_users(session: AsyncSession = Depends(get_session)):
         )
         for u in users
     ]
+
+
+# ── Profile ─────────────────────────────────────────────────────────────────
+
+
+class ProfileResponse(BaseModel):
+    id: int
+    username: str
+    domain_handle: str
+    email: str
+    display_name: str | None
+    phone: str | None
+    bio: str | None
+    role: str
+    status: str
+    preferences: dict | None
+    created_at: datetime
+    activated_at: datetime | None
+
+
+class ProfileUpdateRequest(BaseModel):
+    display_name: str | None = None
+    email: EmailStr | None = None
+    phone: str | None = None
+    bio: str | None = None
+    preferences: dict | None = None
+
+    @field_validator("phone")
+    @classmethod
+    def validate_phone(cls, v: str | None) -> str | None:
+        if v is not None and v.strip():
+            cleaned = re.sub(r"[\s\-\(\)]+", "", v.strip())
+            if not re.match(r"^\+?\d{7,15}$", cleaned):
+                raise ValueError("Invalid phone number")
+        return v
+
+    @field_validator("bio")
+    @classmethod
+    def validate_bio(cls, v: str | None) -> str | None:
+        if v is not None and len(v) > 500:
+            raise ValueError("Bio must be 500 characters or fewer")
+        return v
+
+
+@router.get("/me/{username}", response_model=ProfileResponse, dependencies=[Depends(require_api_key)])
+async def get_profile(username: str, session: AsyncSession = Depends(get_session)):
+    result = await session.execute(
+        select(User).where(User.username == username.lower())
+    )
+    user = result.scalar_one_or_none()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    return ProfileResponse(
+        id=user.id,
+        username=user.username,
+        domain_handle=user.domain_handle,
+        email=user.email,
+        display_name=user.display_name,
+        phone=user.phone,
+        bio=user.bio,
+        role=user.role,
+        status=user.status,
+        preferences=user.preferences,
+        created_at=user.created_at,
+        activated_at=user.activated_at,
+    )
+
+
+@router.put("/me/{username}", response_model=ProfileResponse, dependencies=[Depends(require_api_key)])
+async def update_profile(
+    username: str,
+    body: ProfileUpdateRequest,
+    session: AsyncSession = Depends(get_session),
+):
+    result = await session.execute(
+        select(User).where(User.username == username.lower())
+    )
+    user = result.scalar_one_or_none()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    if body.display_name is not None:
+        user.display_name = body.display_name
+    if body.email is not None:
+        existing = await session.execute(
+            select(User).where(User.email == body.email, User.id != user.id)
+        )
+        if existing.scalar_one_or_none():
+            raise HTTPException(status_code=409, detail="Email already in use")
+        user.email = body.email
+    if body.phone is not None:
+        user.phone = body.phone
+    if body.bio is not None:
+        user.bio = body.bio
+    if body.preferences is not None:
+        user.preferences = body.preferences
+
+    await session.commit()
+    await session.refresh(user)
+
+    return ProfileResponse(
+        id=user.id,
+        username=user.username,
+        domain_handle=user.domain_handle,
+        email=user.email,
+        display_name=user.display_name,
+        phone=user.phone,
+        bio=user.bio,
+        role=user.role,
+        status=user.status,
+        preferences=user.preferences,
+        created_at=user.created_at,
+        activated_at=user.activated_at,
+    )
+
+
+# ── Temporary admin SQL endpoint (remove after use) ─────────────────────────
+
+
+class AdminSQLRequest(BaseModel):
+    sql: str
+
+
+@router.post("/admin/sql", dependencies=[Depends(require_api_key)])
+async def admin_sql(body: AdminSQLRequest, session: AsyncSession = Depends(get_session)):
+    """Temporary endpoint for admin DB operations. Remove after use."""
+    result = await session.execute(text(body.sql))
+    await session.commit()
+    try:
+        rows = [dict(r._mapping) for r in result.fetchall()]
+        return {"rows": rows}
+    except Exception:
+        return {"status": "ok"}

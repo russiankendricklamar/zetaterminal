@@ -33,6 +33,7 @@ export interface LoginRequest {
 }
 
 export interface LoginResponse {
+  user_id: number
   username: string
   domain_handle: string
   role: string
@@ -147,6 +148,7 @@ export async function login(data: LoginRequest): Promise<LoginResponse> {
   const result: LoginResponse = await res.json()
   setApiKey(result.api_key)
   localStorage.setItem(AUTH_USER_KEY, JSON.stringify({
+    user_id: result.user_id,
     username: result.username,
     domain_handle: result.domain_handle,
     role: result.role,
@@ -167,7 +169,7 @@ export async function fetchUsers(): Promise<UserInfo[]> {
   return res.json()
 }
 
-export function getAuthUser(): { username: string; domain_handle: string; role: string } | null {
+export function getAuthUser(): { user_id: number; username: string; domain_handle: string; role: string } | null {
   const raw = localStorage.getItem(AUTH_USER_KEY)
   if (!raw) return null
   try {
@@ -185,4 +187,62 @@ export function logout(): void {
 export function isAdmin(): boolean {
   const user = getAuthUser()
   return user?.role === 'admin'
+}
+
+export interface ProfileData {
+  id: number
+  username: string
+  domain_handle: string
+  email: string
+  display_name: string | null
+  phone: string | null
+  bio: string | null
+  role: string
+  status: string
+  preferences: {
+    timezone?: string
+    language?: string
+    currency?: string
+    notifications?: { email?: boolean; push?: boolean; sms?: boolean }
+  } | null
+  created_at: string
+  activated_at: string | null
+}
+
+export interface ProfileUpdateData {
+  display_name?: string | null
+  email?: string | null
+  phone?: string | null
+  bio?: string | null
+  preferences?: Record<string, unknown> | null
+}
+
+export async function getProfile(username: string): Promise<ProfileData> {
+  const res = await fetchWithRetry(
+    `${API_BASE_URL}/api/auth/me/${encodeURIComponent(username)}`,
+    { headers: getApiHeaders() },
+    'Failed to fetch profile',
+  )
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ detail: 'Failed to fetch profile' }))
+    throw new Error(err.detail || 'Failed to fetch profile')
+  }
+  return res.json()
+}
+
+export async function updateProfile(username: string, data: ProfileUpdateData): Promise<ProfileData> {
+  const res = await fetchWithRetry(
+    `${API_BASE_URL}/api/auth/me/${encodeURIComponent(username)}`,
+    {
+      method: 'PUT',
+      headers: getApiHeaders(),
+      body: JSON.stringify(data),
+    },
+    'Failed to update profile',
+  )
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ detail: 'Failed to update profile' }))
+    throw new Error(err.detail || 'Failed to update profile')
+  }
+  return res.json()
 }
