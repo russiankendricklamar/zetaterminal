@@ -75,6 +75,81 @@ export const valuateSwap = async (
   }
 };
 
+// ============================================
+// FX Swap types
+// ============================================
+
+export interface FxSwapLeg {
+  buyCurrency: string;
+  sellCurrency: string;
+  nominalBuy: number;
+  nominalSell: number;
+  date: string;
+}
+
+export interface FxSwapValuationRequest {
+  nearLeg: FxSwapLeg;
+  farLeg: FxSwapLeg;
+  valuationDate: string;
+  settlementCurrency: string;
+  spotMin: number;
+  spotMax: number;
+  rateInternal: number;
+  rateExternal: number;
+}
+
+export interface FxSwapValuationResponse {
+  currencyPair: string;
+  direction: string;
+  spotMin: number;
+  spotMax: number;
+  spotDiff: number;
+  daysNear: number;
+  daysFar: number;
+  dfInternalNear: number;
+  dfExternalNear: number;
+  dfInternalFar: number;
+  dfExternalFar: number;
+  fxNear: number;
+  fxFar: number;
+  swapPointsDeal: number;
+  swapPointsCalc: number;
+  divergence: number;
+  fvNearMin: number;
+  fvNearMax: number;
+  fvFarMin: number;
+  fvFarMax: number;
+  fvTotalMin: number;
+  fvTotalMax: number;
+  rateInternal: number;
+  rateExternal: number;
+}
+
+/**
+ * Выполняет оценку FX-свопа
+ */
+export const valuateFxSwap = async (
+  request: FxSwapValuationRequest
+): Promise<FxSwapValuationResponse> => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/swap/valuate-fx`, {
+      method: 'POST',
+      headers: getApiHeaders(),
+      body: JSON.stringify(request),
+    });
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ detail: 'Unknown error' }));
+      throw new Error(error.detail || `HTTP error! status: ${response.status}`);
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error('FX Swap Valuation Failed:', error);
+    throw error;
+  }
+};
+
 /**
  * Сохраняет реестр свопов в серверное хранилище в формате parquet
  */

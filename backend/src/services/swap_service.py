@@ -1,10 +1,17 @@
 """
-Сервис для оценки свопов (IRS, CDS, Basis Swaps).
+Сервис для оценки свопов (IRS, CDS, Basis Swaps, FX Swaps).
 Основан на логике из _SWAP для переноса на внутренний_.ipynb
 """
 import numpy as np
 from typing import Dict, List, Optional
 from datetime import datetime, timedelta
+
+from src.services.forward_service import (
+    CURRENCY_PRIORITY,
+    CURRENCY_CURVES,
+    currency_pair,
+    tenor_for_days,
+)
 
 
 def calculate_swap_valuation(
@@ -175,4 +182,153 @@ def calculate_swap_valuation(
         "convexity": float(convexity),
         "cashflows": cashflows,
         "scenarios": scenarios
+    }
+
+
+def _diff_spot(spot_min: float, spot_max: float) -> float:
+    """Разница между макс и мин спотом."""
+    return spot_max - spot_min
+
+
+def _diff_swap_points(sp_deal: float, sp_calc: float) -> float:
+    """Расхождение swap points (deal vs calculated)."""
+    return sp_deal - sp_calc
+
+
+def _swap_points_from_rates(
+    spot: float,
+    rate_internal: float,
+    rate_external: float,
+    days: int,
+) -> float:
+    """
+    Расчёт swap points из ставок.
+    sp = spot * ((1 + r_int/100) / (1 + r_ext/100))^(T/365) - spot
+    """
+    t = days / 365.0
+    return spot * ((1 + rate_internal / 100) / (1 + rate_external / 100)) ** t - spot
+
+
+def calculate_fx_swap_valuation(
+    buy_currency_near: str,
+    sell_currency_near: str,
+    nominal_buy_near: float,
+    nominal_sell_near: float,
+    date_near: str,
+    buy_currency_far: str,
+    sell_currency_far: str,
+    nominal_buy_far: float,
+    nominal_sell_far: float,
+    date_far: str,
+    valuation_date: str,
+    settlement_currency: str,
+    spot_min: float,
+    spot_max: float,
+    rate_internal: float,
+    rate_external: float,
+) -> Dict:
+    """
+    Оценка FX-свопа (две ноги: near + far).
+
+    Args:
+        buy/sell_currency_near/far: валюты ближней/дальней ног
+        nominal_buy/sell_near/far: суммы покупки/продажи
+        date_near/far: даты расчёта ног (YYYY-MM-DD)
+        valuation_date: дата оценки
+        settlement_currency: валюта расчёта
+        spot_min/max: диапазон спота
+        rate_internal/external: ставки внутренней / внешней валюты (%)
+
+    Returns:
+        FV min/max, swap points deal vs calc, divergence, DFs, currency pair
+    """
+    if spot_min > spot_max:
+        raise ValueError("spotMin must be less than or equal to spotMax")
+
+    if buy_currency_near != sell_currency_far or sell_currency_near != buy_currency_far:
+        raise ValueError(
+            "FX swap legs inconsistent: near buy/sell currencies must be reversed in far leg"
+        )
+
+    val_dt = datetime.strptime(valuation_date, "%Y-%m-%d")
+    near_dt = datetime.strptime(date_near, "%Y-%m-%d")
+    far_dt = datetime.strptime(date_far, "%Y-%m-%d")
+
+    days_near = max((near_dt - val_dt).days, 0)
+    days_far = max((far_dt - val_dt).days, 0)
+
+    # Discount factors: DF = 1 / (1 + rate/100 * days/365)
+    df_int_near = 1.0 / (1 + rate_internal / 100 * days_near / 365)
+    df_ext_near = 1.0 / (1 + rate_external / 100 * days_near / 365)
+    df_int_far = 1.0 / (1 + rate_internal / 100 * days_far / 365)
+    df_ext_far = 1.0 / (1 + rate_external / 100 * days_far / 365)
+
+    # Currency pair by priority
+    pair = currency_pair(buy_currency_near, sell_currency_near)
+
+    # Deal FX rates (implied from nominal amounts)
+    fx_near = nominal_sell_near / nominal_buy_near if nominal_buy_near != 0 else 0
+    fx_far = nominal_sell_far / nominal_buy_far if nominal_buy_far != 0 else 0
+
+    # Swap points deal = far rate - near rate
+    sp_deal = fx_far - fx_near
+
+    # Calculated swap points from rates (using mid spot)
+    spot_mid = (spot_min + spot_max) / 2.0
+    sp_calc_near = _swap_points_from_rates(spot_mid, rate_internal, rate_external, days_near)
+    sp_calc_far = _swap_points_from_rates(spot_mid, rate_internal, rate_external, days_far)
+    sp_calc = sp_calc_far - sp_calc_near
+
+    divergence = _diff_swap_points(sp_deal, sp_calc)
+
+    # Fair value for NEAR leg
+    # FV = (nom_buy * DF_buy * fx_buy - nom_sell * DF_sell * fx_sell) / 1000
+    # For near leg buy_currency is settlement vs foreign
+    is_rub_buy_near = buy_currency_near == "RUB"
+
+    def _fv_near(spot: float) -> float:
+        if is_rub_buy_near:
+            return (nominal_buy_near * df_int_near - nominal_sell_near * spot * df_ext_near) / 1000
+        return (nominal_buy_near * spot * df_ext_near - nominal_sell_near * df_int_near) / 1000
+
+    is_rub_buy_far = buy_currency_far == "RUB"
+
+    def _fv_far(spot: float) -> float:
+        if is_rub_buy_far:
+            return (nominal_buy_far * df_int_far - nominal_sell_far * spot * df_ext_far) / 1000
+        return (nominal_buy_far * spot * df_ext_far - nominal_sell_far * df_int_far) / 1000
+
+    fv_near_min = _fv_near(spot_min)
+    fv_near_max = _fv_near(spot_max)
+    fv_far_min = _fv_far(spot_min)
+    fv_far_max = _fv_far(spot_max)
+
+    fv_total_min = fv_near_min + fv_far_min
+    fv_total_max = fv_near_max + fv_far_max
+
+    return {
+        "currencyPair": pair,
+        "direction": f"{buy_currency_near}/{sell_currency_near}",
+        "spotMin": float(spot_min),
+        "spotMax": float(spot_max),
+        "spotDiff": float(_diff_spot(spot_min, spot_max)),
+        "daysNear": days_near,
+        "daysFar": days_far,
+        "dfInternalNear": float(df_int_near),
+        "dfExternalNear": float(df_ext_near),
+        "dfInternalFar": float(df_int_far),
+        "dfExternalFar": float(df_ext_far),
+        "fxNear": float(fx_near),
+        "fxFar": float(fx_far),
+        "swapPointsDeal": float(sp_deal),
+        "swapPointsCalc": float(sp_calc),
+        "divergence": float(divergence),
+        "fvNearMin": float(fv_near_min),
+        "fvNearMax": float(fv_near_max),
+        "fvFarMin": float(fv_far_min),
+        "fvFarMax": float(fv_far_max),
+        "fvTotalMin": float(fv_total_min),
+        "fvTotalMax": float(fv_total_max),
+        "rateInternal": float(rate_internal),
+        "rateExternal": float(rate_external),
     }

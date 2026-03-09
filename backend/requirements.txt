@@ -34,5 +34,8 @@ passlib[bcrypt]>=1.7.0
 pydantic>=2.10.0,<3.0.0
 pydantic[email]>=2.10.0,<3.0.0
 
+# Graph analysis
+networkx>=3.0
+
 # Utilities
 python-dateutil>=2.8.2

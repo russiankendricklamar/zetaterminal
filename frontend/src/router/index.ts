@@ -48,6 +48,7 @@ const PBOAnalysis = () => import('@/pages/PBOAnalysis.vue')
 const AlphaStacking = () => import('@/pages/AlphaStacking.vue')
 const MetaLabeling = () => import('@/pages/MetaLabeling.vue')
 const AdversarialStress = () => import('@/pages/AdversarialStress.vue')
+const RepoAnalysis = () => import('@/pages/RepoAnalysis.vue')
 
 const routes = [
   {
@@ -117,6 +118,7 @@ const routes = [
       { path: 'analytics/alpha-stacking', name: 'AlphaStacking', component: AlphaStacking, meta: { title: 'Orthogonal Alpha Stacking', icon: '🔗' } },
       { path: 'analytics/meta-labeling', name: 'MetaLabeling', component: MetaLabeling, meta: { title: 'Meta-Labeling', icon: '🏷️' } },
       { path: 'analytics/adversarial-stress', name: 'AdversarialStress', component: AdversarialStress, meta: { title: 'Adversarial Stress Testing', icon: '🛡️' } },
+      { path: 'repo', name: 'RepoAnalysis', component: RepoAnalysis, meta: { title: 'REPO Analysis', icon: '📊' } },
     ]
   },
   {

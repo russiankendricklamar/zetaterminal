@@ -164,13 +164,21 @@ const commands: Command[] = [
     desc: 'Анализ стресс-сценариев',
     action: () => router.push('/stress') 
   },
-  { 
-    id: 'nav-hedging', 
-    label: 'Помощник по хеджированию', 
-    group: 'Управление рисками', 
-    icon: '🛡️', 
+  {
+    id: 'nav-hedging',
+    label: 'Помощник по хеджированию',
+    group: 'Управление рисками',
+    icon: '🛡️',
     desc: 'Стратегии хеджирования',
-    action: () => router.push('/hedging') 
+    action: () => router.push('/hedging')
+  },
+  {
+    id: 'nav-repo',
+    label: 'REPO Analysis',
+    group: 'Управление рисками',
+    icon: '📊',
+    desc: 'Concentration, collateral, systemic risk',
+    action: () => router.push('/repo')
   },
 
   // ===== АНАЛИЗ РЫНОЧНЫХ РЕЖИМОВ =====

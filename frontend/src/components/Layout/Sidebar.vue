@@ -221,6 +221,7 @@ const toolGroups = {
       { path: '/analytics/realized-kernels', label: 'Realized Kernels' },
       { path: '/analytics/har-model', label: 'HAR Model' },
       { path: '/analytics/factor-analysis', label: 'Factor Analysis' },
+      { path: '/repo', label: 'REPO Analysis' },
     ]
   },
   signalsModels: {

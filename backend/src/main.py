@@ -57,6 +57,7 @@ from src.api import etf
 from src.api import gemini
 from src.api import secrets
 from src.api import auth
+from src.api import repo
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -178,6 +179,7 @@ app.include_router(dadata.router, prefix="/api/dadata", tags=["DaData"], depende
 app.include_router(etf.router, prefix="/api/etf", tags=["ETF"], dependencies=_auth)
 app.include_router(gemini.router, prefix="/api/gemini", tags=["Gemini AI"], dependencies=_auth)
 app.include_router(secrets.router, prefix="/api/secrets", tags=["Secrets"], dependencies=_auth)
+app.include_router(repo.router, prefix="/api/repo", tags=["REPO"], dependencies=_auth)
 
 # REMOVED: platform_services router — contains dangerous endpoints:
 # open email relay, SSRF vectors, auth token proxy, open storage

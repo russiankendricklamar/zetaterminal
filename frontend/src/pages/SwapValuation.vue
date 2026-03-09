@@ -173,8 +173,8 @@
       </div>
     </div>
 
-    <!-- Input Parameters Section -->
-    <div class="grid-2">
+    <!-- IRS Input Parameters Section -->
+    <div v-if="selectedSwapType !== 'xccy'" class="grid-2">
       <!-- Swap Parameters -->
       <div class="card">
         <div class="card-header">
@@ -230,8 +230,228 @@
       </div>
     </div>
 
-    <!-- Valuation Results -->
-    <div class="grid-3">
+    <!-- FX Swap Input Parameters -->
+    <div v-if="selectedSwapType === 'xccy'" class="grid-2">
+      <!-- Near Leg -->
+      <div class="card">
+        <div class="card-header">
+          <h3>Ближняя нога (Near)</h3>
+        </div>
+        <div class="parameter-group">
+          <div class="param-row">
+            <label>Валюта покупки</label>
+            <select v-model="fxParams.nearLeg.buyCurrency" class="param-input">
+              <option v-for="c in currencies" :key="c" :value="c">{{ c }}</option>
+            </select>
+          </div>
+          <div class="param-row">
+            <label>Валюта продажи</label>
+            <select v-model="fxParams.nearLeg.sellCurrency" class="param-input">
+              <option v-for="c in currencies" :key="c" :value="c">{{ c }}</option>
+            </select>
+          </div>
+          <div class="param-row">
+            <label>Сумма покупки</label>
+            <input v-model.number="fxParams.nearLeg.nominalBuy" type="number" class="param-input" step="1000" />
+          </div>
+          <div class="param-row">
+            <label>Сумма продажи</label>
+            <input v-model.number="fxParams.nearLeg.nominalSell" type="number" class="param-input" step="1000" />
+          </div>
+          <div class="param-row">
+            <label>Дата расчёта</label>
+            <input v-model="fxParams.nearLeg.date" type="date" class="param-input" />
+          </div>
+        </div>
+      </div>
+
+      <!-- Far Leg -->
+      <div class="card">
+        <div class="card-header">
+          <h3>Дальняя нога (Far)</h3>
+        </div>
+        <div class="parameter-group">
+          <div class="param-row">
+            <label>Валюта покупки</label>
+            <select v-model="fxParams.farLeg.buyCurrency" class="param-input">
+              <option v-for="c in currencies" :key="c" :value="c">{{ c }}</option>
+            </select>
+          </div>
+          <div class="param-row">
+            <label>Валюта продажи</label>
+            <select v-model="fxParams.farLeg.sellCurrency" class="param-input">
+              <option v-for="c in currencies" :key="c" :value="c">{{ c }}</option>
+            </select>
+          </div>
+          <div class="param-row">
+            <label>Сумма покупки</label>
+            <input v-model.number="fxParams.farLeg.nominalBuy" type="number" class="param-input" step="1000" />
+          </div>
+          <div class="param-row">
+            <label>Сумма продажи</label>
+            <input v-model.number="fxParams.farLeg.nominalSell" type="number" class="param-input" step="1000" />
+          </div>
+          <div class="param-row">
+            <label>Дата расчёта</label>
+            <input v-model="fxParams.farLeg.date" type="date" class="param-input" />
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- FX Swap Market Params -->
+    <div v-if="selectedSwapType === 'xccy'" class="grid-2" style="margin-top: 0;">
+      <div class="card">
+        <div class="card-header">
+          <h3>Рыночные параметры</h3>
+        </div>
+        <div class="parameter-group">
+          <div class="param-row">
+            <label>Спот мин</label>
+            <input v-model.number="fxParams.spotMin" type="number" class="param-input" step="0.01" />
+          </div>
+          <div class="param-row">
+            <label>Спот макс</label>
+            <input v-model.number="fxParams.spotMax" type="number" class="param-input" step="0.01" />
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header">
+          <h3>Ставки</h3>
+        </div>
+        <div class="parameter-group">
+          <div class="param-row">
+            <label>Внутренняя ставка (%)</label>
+            <input v-model.number="fxParams.rateInternal" type="number" class="param-input" step="0.01" />
+          </div>
+          <div class="param-row">
+            <label>Внешняя ставка (%)</label>
+            <input v-model.number="fxParams.rateExternal" type="number" class="param-input" step="0.01" />
+          </div>
+          <div class="param-row">
+            <label>Валюта расчёта</label>
+            <select v-model="fxParams.settlementCurrency" class="param-input">
+              <option v-for="c in currencies" :key="c" :value="c">{{ c }}</option>
+            </select>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- FX Swap Results -->
+    <div v-if="selectedSwapType === 'xccy' && fxResults">
+      <div class="grid-3">
+        <div class="metric-card">
+          <div class="metric-header">
+            <h3>FV Total Min</h3>
+            <span class="metric-unit">тыс. {{ fxParams.settlementCurrency }}</span>
+          </div>
+          <div class="metric-value" :class="fxResults.fvTotalMin >= 0 ? 'positive' : 'negative'">
+            {{ fxResults.fvTotalMin.toFixed(2) }}
+          </div>
+          <div class="metric-detail">
+            <span class="detail-label">Near:</span>
+            <span class="detail-value mono">{{ fxResults.fvNearMin.toFixed(2) }}</span>
+          </div>
+        </div>
+
+        <div class="metric-card">
+          <div class="metric-header">
+            <h3>FV Total Max</h3>
+            <span class="metric-unit">тыс. {{ fxParams.settlementCurrency }}</span>
+          </div>
+          <div class="metric-value" :class="fxResults.fvTotalMax >= 0 ? 'positive' : 'negative'">
+            {{ fxResults.fvTotalMax.toFixed(2) }}
+          </div>
+          <div class="metric-detail">
+            <span class="detail-label">Far:</span>
+            <span class="detail-value mono">{{ fxResults.fvFarMax.toFixed(2) }}</span>
+          </div>
+        </div>
+
+        <div class="metric-card">
+          <div class="metric-header">
+            <h3>Swap Points</h3>
+            <span class="metric-unit">{{ fxResults.currencyPair }}</span>
+          </div>
+          <div class="metric-value accent">
+            {{ fxResults.swapPointsDeal.toFixed(4) }}
+          </div>
+          <div class="metric-detail">
+            <span class="detail-label">Расхождение:</span>
+            <span class="detail-value mono" :class="Math.abs(fxResults.divergence) > 0.5 ? 'negative' : ''">
+              {{ fxResults.divergence.toFixed(4) }}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <div class="card full-width">
+        <div class="card-header">
+          <h3>Детали оценки FX-свопа</h3>
+          <span class="card-subtitle">{{ fxResults.direction }} | Пара: {{ fxResults.currencyPair }}</span>
+        </div>
+        <div class="scenario-table-container">
+          <table class="scenario-table">
+            <thead>
+              <tr>
+                <th>Параметр</th>
+                <th>Near Leg</th>
+                <th>Far Leg</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="scenario-name">Дней до расчёта</td>
+                <td class="mono">{{ fxResults.daysNear }}</td>
+                <td class="mono">{{ fxResults.daysFar }}</td>
+              </tr>
+              <tr>
+                <td class="scenario-name">DF внутренний</td>
+                <td class="mono">{{ fxResults.dfInternalNear.toFixed(6) }}</td>
+                <td class="mono">{{ fxResults.dfInternalFar.toFixed(6) }}</td>
+              </tr>
+              <tr>
+                <td class="scenario-name">DF внешний</td>
+                <td class="mono">{{ fxResults.dfExternalNear.toFixed(6) }}</td>
+                <td class="mono">{{ fxResults.dfExternalFar.toFixed(6) }}</td>
+              </tr>
+              <tr>
+                <td class="scenario-name">FX курс (deal)</td>
+                <td class="mono accent">{{ fxResults.fxNear.toFixed(4) }}</td>
+                <td class="mono accent">{{ fxResults.fxFar.toFixed(4) }}</td>
+              </tr>
+              <tr>
+                <td class="scenario-name">FV Min (тыс.)</td>
+                <td class="mono" :class="fxResults.fvNearMin >= 0 ? 'positive' : 'negative'">{{ fxResults.fvNearMin.toFixed(2) }}</td>
+                <td class="mono" :class="fxResults.fvFarMin >= 0 ? 'positive' : 'negative'">{{ fxResults.fvFarMin.toFixed(2) }}</td>
+              </tr>
+              <tr>
+                <td class="scenario-name">FV Max (тыс.)</td>
+                <td class="mono" :class="fxResults.fvNearMax >= 0 ? 'positive' : 'negative'">{{ fxResults.fvNearMax.toFixed(2) }}</td>
+                <td class="mono" :class="fxResults.fvFarMax >= 0 ? 'positive' : 'negative'">{{ fxResults.fvFarMax.toFixed(2) }}</td>
+              </tr>
+              <tr>
+                <td class="scenario-name">Swap Points (deal)</td>
+                <td class="mono" colspan="2" style="text-align: center;">{{ fxResults.swapPointsDeal.toFixed(4) }}</td>
+              </tr>
+              <tr>
+                <td class="scenario-name">Swap Points (calc)</td>
+                <td class="mono" colspan="2" style="text-align: center;">{{ fxResults.swapPointsCalc.toFixed(4) }}</td>
+              </tr>
+              <tr>
+                <td class="scenario-name">Расхождение</td>
+                <td class="mono" colspan="2" style="text-align: center;" :class="Math.abs(fxResults.divergence) > 0.5 ? 'negative' : 'positive'">{{ fxResults.divergence.toFixed(4) }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- IRS Valuation Results -->
+    <div v-if="selectedSwapType !== 'xccy'" class="grid-3">
       <!-- PV Fixed Leg -->
       <div class="metric-card">
         <div class="metric-header">
@@ -278,8 +498,8 @@
       </div>
     </div>
 
-    <!-- Key Metrics Grid -->
-    <div class="grid-3">
+    <!-- Key Metrics Grid (IRS only) -->
+    <div v-if="selectedSwapType !== 'xccy'" class="grid-3">
       <!-- Duration -->
       <div class="card">
         <div class="card-header">
@@ -346,8 +566,8 @@
       </div>
     </div>
 
-    <!-- Cashflow Schedule -->
-    <div class="card full-width">
+    <!-- Cashflow Schedule (IRS only) -->
+    <div v-if="selectedSwapType !== 'xccy'" class="card full-width">
       <div class="card-header">
         <h3>График денежных потоков</h3>
         <span class="card-subtitle">Сравнение фиксированной и плавающей ног</span>
@@ -380,8 +600,8 @@
       </div>
     </div>
 
-    <!-- Valuation Charts -->
-    <div class="grid-2">
+    <!-- Valuation Charts (IRS only) -->
+    <div v-if="selectedSwapType !== 'xccy'" class="grid-2">
       <!-- PV Profile -->
       <div class="card">
         <div class="chart-header">
@@ -405,8 +625,8 @@
       </div>
     </div>
 
-    <!-- Scenario Analysis -->
-    <div class="card full-width">
+    <!-- Scenario Analysis (IRS only) -->
+    <div v-if="selectedSwapType !== 'xccy'" class="card full-width">
       <div class="card-header">
         <h3>Анализ сценариев</h3>
         <span class="card-subtitle">Swap Value при различных уровнях ставок</span>
@@ -443,8 +663,8 @@
       </div>
     </div>
 
-    <!-- Risk Summary -->
-    <div class="grid-3">
+    <!-- Risk Summary (IRS only) -->
+    <div v-if="selectedSwapType !== 'xccy'" class="grid-3">
       <div class="risk-card risk-high">
         <div class="risk-header">
           <span class="risk-icon"></span>
@@ -487,7 +707,7 @@
 import { ref, computed, onMounted, onBeforeUnmount, watch } from 'vue'
 import Chart from 'chart.js/auto'
 import * as XLSX from 'xlsx'
-import { valuateSwap, saveRegistryToParquet, type SwapValuationResponse } from '@/services/swapService'
+import { valuateSwap, valuateFxSwap, saveRegistryToParquet, type SwapValuationResponse, type FxSwapValuationResponse } from '@/services/swapService'
 import { useSwapRegistryStore } from '@/stores/swapRegistry'
 
 // Используем store для реестра свопов
@@ -508,6 +728,35 @@ const valuationDate = computed({
   get: () => swapRegistryStore.valuationDate,
   set: (value: string) => swapRegistryStore.setValuationDate(value)
 })
+
+// Currency list for FX swap selects
+const currencies = ['RUB', 'USD', 'EUR', 'CNY', 'GBP', 'JPY', 'CHF', 'AUD', 'CAD', 'HKD', 'TRY']
+
+// FX Swap Parameters
+const today = new Date().toISOString().split('T')[0]
+const fxParams = ref({
+  nearLeg: {
+    buyCurrency: 'USD',
+    sellCurrency: 'RUB',
+    nominalBuy: 1_000_000,
+    nominalSell: 89_500_000,
+    date: today,
+  },
+  farLeg: {
+    buyCurrency: 'RUB',
+    sellCurrency: 'USD',
+    nominalBuy: 90_200_000,
+    nominalSell: 1_000_000,
+    date: new Date(Date.now() + 90 * 86400000).toISOString().split('T')[0],
+  },
+  spotMin: 89.0,
+  spotMax: 90.0,
+  rateInternal: 16.0,
+  rateExternal: 4.5,
+  settlementCurrency: 'RUB',
+})
+
+const fxResults = ref<FxSwapValuationResponse | null>(null)
 
 // Swap Parameters
 const params = ref({
@@ -581,22 +830,35 @@ const updateValuation = () => {
 const calculateValuation = async () => {
   calculating.value = true
   error.value = ''
-  
+
   try {
-    const result = await valuateSwap({
-      notional: params.value.notional,
-      tenor: params.value.tenor,
-      fixedRate: params.value.fixedRate,
-      floatingRate: params.value.floatingRate,
-      spread: params.value.spread,
-      couponsPerYear: params.value.couponsPerYear,
-      discountRate: params.value.discountRate,
-      volatility: params.value.volatility,
-      swapType: selectedSwapType.value
-    })
-    
-    valuationResults.value = result
-    updateValuation()
+    if (selectedSwapType.value === 'xccy') {
+      const result = await valuateFxSwap({
+        nearLeg: fxParams.value.nearLeg,
+        farLeg: fxParams.value.farLeg,
+        valuationDate: valuationDate.value,
+        settlementCurrency: fxParams.value.settlementCurrency,
+        spotMin: fxParams.value.spotMin,
+        spotMax: fxParams.value.spotMax,
+        rateInternal: fxParams.value.rateInternal,
+        rateExternal: fxParams.value.rateExternal,
+      })
+      fxResults.value = result
+    } else {
+      const result = await valuateSwap({
+        notional: params.value.notional,
+        tenor: params.value.tenor,
+        fixedRate: params.value.fixedRate,
+        floatingRate: params.value.floatingRate,
+        spread: params.value.spread,
+        couponsPerYear: params.value.couponsPerYear,
+        discountRate: params.value.discountRate,
+        volatility: params.value.volatility,
+        swapType: selectedSwapType.value
+      })
+      valuationResults.value = result
+      updateValuation()
+    }
   } catch (err: unknown) {
     error.value = err instanceof Error ? err.message : 'Ошибка при расчете свопа'
     console.error('Swap valuation error:', err)
