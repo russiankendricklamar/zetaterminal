@@ -102,47 +102,55 @@ class UserOut(BaseModel):
 
 @router.post("/register", response_model=RegisterResponse)
 async def register(body: RegisterRequest, session: AsyncSession = Depends(get_session)):
-    # Check username uniqueness
-    existing = await session.execute(
-        select(User).where(User.username == body.username)
-    )
-    if existing.scalar_one_or_none():
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail="Username already taken",
+    import logging as _log
+    _logger = _log.getLogger(__name__)
+    try:
+        # Check username uniqueness
+        existing = await session.execute(
+            select(User).where(User.username == body.username)
         )
+        if existing.scalar_one_or_none():
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="Username already taken",
+            )
 
-    # Check email uniqueness
-    existing_email = await session.execute(
-        select(User).where(User.email == body.email)
-    )
-    if existing_email.scalar_one_or_none():
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail="Email already registered",
+        # Check email uniqueness
+        existing_email = await session.execute(
+            select(User).where(User.email == body.email)
         )
+        if existing_email.scalar_one_or_none():
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="Email already registered",
+            )
 
-    domain_handle = f"{body.username}@{DOMAIN}"
-    invite_code = _generate_invite_code()
+        domain_handle = f"{body.username}@{DOMAIN}"
+        invite_code = _generate_invite_code()
 
-    user = User(
-        username=body.username,
-        domain_handle=domain_handle,
-        email=body.email,
-        password_hash=pwd_context.hash(body.password),
-        role="user",
-        status="pending",
-        invite_code=invite_code,
-    )
-    session.add(user)
-    await session.commit()
+        user = User(
+            username=body.username,
+            domain_handle=domain_handle,
+            email=body.email,
+            password_hash=pwd_context.hash(body.password),
+            role="user",
+            status="pending",
+            invite_code=invite_code,
+        )
+        session.add(user)
+        await session.commit()
 
-    return RegisterResponse(
-        username=user.username,
-        domain_handle=domain_handle,
-        status="pending",
-        message="Registration successful. Await invite code from admin.",
-    )
+        return RegisterResponse(
+            username=user.username,
+            domain_handle=domain_handle,
+            status="pending",
+            message="Registration successful. Await invite code from admin.",
+        )
+    except HTTPException:
+        raise
+    except Exception as exc:
+        _logger.error("Register failed: %s", exc, exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Register error: {exc}")
 
 
 @router.post("/activate", response_model=ActivateResponse)
