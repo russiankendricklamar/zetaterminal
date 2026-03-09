@@ -50,6 +50,7 @@ const MetaLabeling = () => import('@/pages/MetaLabeling.vue')
 const AdversarialStress = () => import('@/pages/AdversarialStress.vue')
 const RepoAnalysis = () => import('@/pages/RepoAnalysis.vue')
 const Auth = () => import('@/pages/Auth.vue')
+const AdminPanel = () => import('@/pages/AdminPanel.vue')
 
 const routes = [
   {
@@ -126,6 +127,7 @@ const routes = [
       { path: 'analytics/meta-labeling', name: 'MetaLabeling', component: MetaLabeling, meta: { title: 'Meta-Labeling', icon: '🏷️' } },
       { path: 'analytics/adversarial-stress', name: 'AdversarialStress', component: AdversarialStress, meta: { title: 'Adversarial Stress Testing', icon: '🛡️' } },
       { path: 'repo', name: 'RepoAnalysis', component: RepoAnalysis, meta: { title: 'REPO Analysis', icon: '📊' } },
+      { path: 'admin', name: 'AdminPanel', component: AdminPanel, meta: { title: 'Admin Panel', requiresAdmin: true } },
     ]
   },
   {
@@ -141,7 +143,7 @@ const router = createRouter({
   routes
 })
 
-router.beforeEach((to, from, next) => {
+router.beforeEach((to, _from, next) => {
   const title = (to.meta?.title as string) || 'QuantPro'
   document.title = `${title} | Risk Management`
 
@@ -149,9 +151,22 @@ router.beforeEach((to, from, next) => {
   const isPublic = to.path === '/' || to.path === '/auth' || to.meta?.bare === true
   if (!apiKey && !isPublic) {
     next('/auth')
-  } else {
-    next()
+    return
   }
+
+  if (to.meta?.requiresAdmin) {
+    let role = ''
+    try {
+      const raw = localStorage.getItem('zeta_auth_user')
+      if (raw) role = JSON.parse(raw).role || ''
+    } catch { /* ignore */ }
+    if (role !== 'admin') {
+      next('/')
+      return
+    }
+  }
+
+  next()
 })
 
 export default router

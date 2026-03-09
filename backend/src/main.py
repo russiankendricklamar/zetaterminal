@@ -58,6 +58,7 @@ from src.api import gemini
 from src.api import secrets
 from src.api import auth
 from src.api import repo
+from src.api import admin
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -73,6 +74,8 @@ async def lifespan(app: FastAPI):
             logger.warning("Could not load API keys from DB: %s", e)
     # Seed admin user if none exists
     await _seed_admin()
+    from src.middleware.ip_ban import load_banned_ips
+    await load_banned_ips()
     yield
     await close_session()
 
@@ -160,8 +163,17 @@ app.add_middleware(
     allow_origins=cors_origins,
     allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    allow_headers=["Content-Type", "X-API-Key"],
+    allow_headers=["Content-Type", "X-API-Key", "X-Username"],
 )
+
+# Request tracking middleware (after CORS so preflight is not tracked)
+from src.middleware.request_tracker import RequestTrackerMiddleware
+app.add_middleware(RequestTrackerMiddleware)
+
+# IP ban middleware (added after RequestTracker — middleware executes in reverse order,
+# so IpBan runs before RequestTracker, blocking banned IPs early)
+from src.middleware.ip_ban import IpBanMiddleware
+app.add_middleware(IpBanMiddleware)
 
 # Подключаем все роутеры (с обязательной аутентификацией по API-ключу)
 _auth = [Depends(require_api_key)]
@@ -205,6 +217,7 @@ app.include_router(etf.router, prefix="/api/etf", tags=["ETF"], dependencies=_au
 app.include_router(gemini.router, prefix="/api/gemini", tags=["Gemini AI"], dependencies=_auth)
 app.include_router(secrets.router, prefix="/api/secrets", tags=["Secrets"], dependencies=_auth)
 app.include_router(repo.router, prefix="/api/repo", tags=["REPO"], dependencies=_auth)
+app.include_router(admin.router, prefix="/api/admin", tags=["Admin"])
 
 # REMOVED: platform_services router — contains dangerous endpoints:
 # open email relay, SSRF vectors, auth token proxy, open storage

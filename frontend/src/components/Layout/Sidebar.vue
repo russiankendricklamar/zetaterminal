@@ -143,6 +143,22 @@
 
       <div class="sidebar-divider"></div>
 
+      <!-- Admin Panel Link (admin only) -->
+      <router-link
+        v-if="isAdminUser"
+        to="/admin"
+        class="settings-link admin-link"
+        :class="{ active: isActive('/admin') }"
+        @click.native="handleNavClick"
+      >
+        <span class="nav-index font-mono">&#9733;</span>
+        <div class="nav-info">
+          <span class="nav-title font-oswald">ADMIN PANEL</span>
+          <span class="nav-subtitle font-mono">System control</span>
+        </div>
+        <span class="nav-arrow font-mono">&rarr;</span>
+      </router-link>
+
       <!-- Settings Link -->
       <router-link
         to="/settings"
@@ -178,7 +194,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, reactive } from 'vue'
+import { ref, computed, onMounted, onUnmounted, reactive } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 
 const route = useRoute()
@@ -189,6 +205,14 @@ const isSidebarOpen = ref(false)
 const touchStartX = ref(0)
 const touchEndX = ref(0)
 const sidebarRef = ref<HTMLElement | null>(null)
+
+const isAdminUser = computed(() => {
+  try {
+    const raw = localStorage.getItem('zeta_auth_user')
+    if (raw) return JSON.parse(raw).role === 'admin'
+  } catch { /* ignore */ }
+  return false
+})
 
 const expandedTools = reactive<Record<string, boolean>>({
   portfolio: false,
@@ -945,6 +969,15 @@ onUnmounted(() => clearInterval(timer))
 }
 
 .settings-link.active .nav-title {
+  color: #DC2626;
+}
+
+/* Admin link accent indicator */
+.admin-link {
+  border-top: 1px solid rgba(220, 38, 38, 0.3);
+}
+
+.admin-link .nav-index {
   color: #DC2626;
 }
 

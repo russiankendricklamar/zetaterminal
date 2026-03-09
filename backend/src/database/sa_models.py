@@ -117,3 +117,13 @@ class FileRecord(Base):
     created_by = Column(String, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+
+class IpBan(Base):
+    __tablename__ = "ip_bans"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    ip_address = Column(String, unique=True, nullable=False, index=True)
+    reason = Column(Text, nullable=True)
+    banned_by = Column(String, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)

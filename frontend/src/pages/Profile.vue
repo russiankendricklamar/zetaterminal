@@ -13,9 +13,18 @@
           <div class="h-4 w-[1px] bg-[var(--border-dark)]"></div>
           <h1 class="text-sm font-bold text-white font-oswald uppercase tracking-wider">Профиль</h1>
         </div>
-        <button @click="$router.back()" class="px-4 py-2 text-xs text-[var(--text-muted)] hover:text-white transition-colors border border-[var(--border-dark)] hover:border-[var(--accent-red)] font-mono uppercase">
-          Назад
-        </button>
+        <div class="flex items-center gap-3">
+          <router-link
+            v-if="isAdmin"
+            to="/admin"
+            class="px-4 py-2 text-xs text-[var(--accent-red)] hover:text-white transition-colors border border-[var(--accent-red)] hover:bg-[var(--accent-red)] font-mono uppercase"
+          >
+            Admin Panel →
+          </router-link>
+          <button @click="$router.back()" class="px-4 py-2 text-xs text-[var(--text-muted)] hover:text-white transition-colors border border-[var(--border-dark)] hover:border-[var(--accent-red)] font-mono uppercase">
+            Назад
+          </button>
+        </div>
       </header>
 
       <!-- Content -->
@@ -239,6 +248,8 @@ const initials = computed(() => {
   const name = form.display_name || form.username || ''
   return name.substring(0, 2).toUpperCase()
 })
+
+const isAdmin = computed(() => form.role === 'admin')
 
 async function loadProfile() {
   const authUser = getAuthUser()

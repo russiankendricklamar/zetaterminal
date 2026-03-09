@@ -1,7 +1,7 @@
 <!-- src/pages/SettingsView.vue -->
 <template>
   <div class="page-container">
-    
+
     <!-- Header -->
     <div class="section-header">
       <div class="header-left">
@@ -24,17 +24,16 @@
         :class="{ active: activeTab === tab.id }"
       >
         <span class="tab-label">{{ tab.name }}</span>
-        <span v-if="tab.id === 'api' && apiError" class="badge-dot"></span>
       </button>
     </div>
 
     <!-- Content Grid Layout -->
     <div class="settings-grid">
-      
+
       <!-- Tab: GENERAL -->
       <transition name="fade" mode="out-in">
       <div v-show="activeTab === 'general'" class="grid-content">
-        
+
         <div class="glass-panel settings-block">
           <h3 class="block-title">Интерфейс</h3>
           <div class="control-group">
@@ -46,9 +45,9 @@
                 <button :class="{ active: settings.general.theme === 'auto' }" @click="settings.general.theme = 'auto'">Авто</button>
               </div>
             </div>
-            
+
             <div class="divider"></div>
-            
+
             <div class="control-row">
               <label>Язык интерфейса</label>
               <div class="control-right">
@@ -59,9 +58,9 @@
                 </select>
               </div>
             </div>
-            
+
             <div class="divider"></div>
-            
+
             <div class="control-row">
               <label>Валюта портфеля</label>
               <div class="control-right">
@@ -82,7 +81,7 @@
       <!-- Tab: MODELS -->
       <transition name="fade" mode="out-in">
       <div v-show="activeTab === 'models'" class="grid-content">
-        
+
         <div class="glass-panel settings-block">
           <h3 class="block-title">Модели Оптимизации</h3>
           <div class="control-group">
@@ -100,9 +99,9 @@
                 </select>
               </div>
             </div>
-            
+
             <div class="divider"></div>
-            
+
             <div class="control-row">
               <div class="label-group">
                 <label>Модель VaR</label>
@@ -117,9 +116,9 @@
                 </select>
               </div>
             </div>
-            
+
             <div class="divider"></div>
-            
+
             <div class="control-row">
               <label>Доверительный интервал</label>
               <div class="control-right">
@@ -143,9 +142,9 @@
                 <span class="slider"></span>
               </label>
             </div>
-            
+
             <div class="divider"></div>
-            
+
             <div class="control-row">
               <label>EWMA (Экспоненциальное взвешивание)</label>
               <label class="switch">
@@ -162,7 +161,7 @@
       <!-- Tab: RISK -->
       <transition name="fade" mode="out-in">
       <div v-show="activeTab === 'risk'" class="grid-content">
-        
+
         <div class="glass-panel settings-block">
           <h3 class="block-title">Глобальные Лимиты</h3>
           <div class="control-group risk-limits">
@@ -173,9 +172,9 @@
                 <span class="unit">%</span>
               </div>
             </div>
-            
+
             <div class="divider"></div>
-            
+
             <div class="control-row">
               <label>Макс. концентрация (на актив)</label>
               <div class="input-wrapper">
@@ -183,9 +182,9 @@
                 <span class="unit">%</span>
               </div>
             </div>
-            
+
             <div class="divider"></div>
-            
+
             <div class="control-row">
               <label>Мин. коэффициент Шарпа</label>
               <div class="input-wrapper">
@@ -214,9 +213,9 @@
       </div>
       </transition>
 
-      <!-- Tab: API -->
+      <!-- Tab: CONNECTIONS -->
       <transition name="fade" mode="out-in">
-      <div v-show="activeTab === 'api'" class="grid-content">
+      <div v-show="activeTab === 'connections'" class="grid-content">
 
         <!-- Backend URL -->
         <div class="glass-panel settings-block">
@@ -247,22 +246,6 @@
             </button>
             <span class="status-text" :class="backendTestStatus.class">
               {{ backendTestStatus.text }}
-            </span>
-          </div>
-        </div>
-
-        <!-- Backend API Key -->
-        <div class="glass-panel settings-block">
-          <h3 class="block-title">Backend API Key</h3>
-          <div class="control-group">
-            <div class="control-row vertical">
-              <label>X-API-Key</label>
-              <input type="password" v-model="backendApiKey" class="glass-input full" placeholder="Введите API ключ для аутентификации">
-            </div>
-          </div>
-          <div class="status-footer">
-            <span class="sub-label" style="font-size:11px; color: rgba(255,255,255,0.4)">
-              Ключ передаётся в заголовке X-API-Key для всех запросов к бэкенду
             </span>
           </div>
         </div>
@@ -310,328 +293,7 @@
             </span>
           </div>
         </div>
-        
-        <!-- Connected Services Status -->
-        <div class="glass-panel settings-block">
-          <h3 class="block-title">Активные подключения</h3>
-          <div class="services-list">
-            <div v-for="srv in settings.connectedServices" :key="srv.id" class="service-item">
-              <div class="srv-left">
-                <span class="srv-dot" :class="{ connected: srv.connected }"></span>
-                <span class="srv-name">{{ srv.name }}</span>
-              </div>
-              <span class="status-indicator" :class="{ connected: srv.connected }">
-                {{ srv.connected ? 'Active' : 'Offline' }}
-              </span>
-            </div>
-          </div>
-        </div>
 
-        <!-- Extended API Keys — Collapsible Accordion -->
-        <div class="glass-panel settings-block api-accordion">
-          <h3 class="block-title">API Ключи</h3>
-          <div class="accordion-list">
-            <div
-              v-for="group in apiKeyGroups"
-              :key="group"
-              class="accordion-item"
-              :class="{ expanded: expandedApiGroups[group] }"
-            >
-              <button class="accordion-header" @click="toggleApiGroup(group)">
-                <span class="accordion-label">{{ group }}</span>
-                <span class="accordion-count">{{ getGroupKeys(group).length }}</span>
-                <svg class="accordion-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <polyline points="6 9 12 15 18 9" />
-                </svg>
-              </button>
-              <div class="accordion-body" v-show="expandedApiGroups[group]">
-                <div class="control-group">
-                  <template v-for="(cfg, idx) in getGroupKeys(group)" :key="cfg.key">
-                    <div class="control-row vertical">
-                      <label>{{ cfg.label }}</label>
-                      <input
-                        :type="cfg.key.toLowerCase().includes('secret') || cfg.key.toLowerCase().includes('password') ? 'password' : 'text'"
-                        v-model="extendedApiKeys[cfg.key]"
-                        class="glass-input full"
-                        :placeholder="cfg.placeholder"
-                      />
-                    </div>
-                    <div v-if="idx < getGroupKeys(group).length - 1" class="divider"></div>
-                  </template>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Backend Health -->
-        <div class="glass-panel settings-block">
-          <h3 class="block-title">Backend API Health</h3>
-          <div class="services-list">
-            <div v-for="(ok, svc) in apiHealthStatus" :key="svc" class="service-item">
-              <div class="srv-left">
-                <span class="srv-dot" :class="{ connected: ok }"></span>
-                <span class="srv-name font-mono" style="font-size:12px">{{ svc }}</span>
-              </div>
-              <span class="status-indicator" :class="{ connected: ok }">
-                {{ ok ? 'OK' : 'Down' }}
-              </span>
-            </div>
-          </div>
-          <div class="status-footer">
-            <button class="btn-glass xs" @click="checkApiServices">Обновить статус</button>
-          </div>
-        </div>
-
-      </div>
-      </transition>
-
-      <!-- Tab: SECURITY -->
-      <transition name="fade" mode="out-in">
-      <div v-show="activeTab === 'security'" class="grid-content security-content">
-
-        <!-- Sub-tabs -->
-        <div class="security-section full-width">
-          <div class="security-sub-tabs">
-            <button
-              v-for="st in securitySubTabs"
-              :key="st.id"
-              class="sub-tab-item"
-              :class="{ active: securitySubTab === st.id }"
-              @click="securitySubTab = st.id"
-            >
-              {{ st.name }}
-            </button>
-          </div>
-
-          <div v-if="securityError" class="security-error-banner">{{ securityError }}</div>
-
-          <!-- IP Lookup -->
-          <div v-show="securitySubTab === 'ip-lookup'" class="sec-tab-content">
-            <div class="sec-input-row">
-              <input v-model="ipInput" class="glass-input full" placeholder="IP адрес (напр. 8.8.8.8)" @keyup.enter="runIpLookup" />
-              <button class="btn-glass primary" :disabled="ipLoading || !ipInput.trim()" @click="runIpLookup">
-                {{ ipLoading ? 'Загрузка...' : 'Проверить' }}
-              </button>
-            </div>
-            <div v-if="ipLoading" class="sec-loading">LOADING...</div>
-            <div v-if="hasIpResults" class="sec-results-grid three-col">
-              <div v-if="ipInfoData" class="glass-panel settings-block">
-                <h3 class="block-title">IPINFO.IO</h3>
-                <div class="sec-fields">
-                  <div class="sec-field"><span class="sec-label">IP</span><span class="sec-value">{{ ipInfoData.ip }}</span></div>
-                  <div class="sec-field"><span class="sec-label">COUNTRY</span><span class="sec-value">{{ ipInfoData.country || '---' }}</span></div>
-                  <div class="sec-field"><span class="sec-label">CITY</span><span class="sec-value">{{ ipInfoData.city || '---' }}</span></div>
-                  <div class="sec-field"><span class="sec-label">REGION</span><span class="sec-value">{{ ipInfoData.region || '---' }}</span></div>
-                  <div class="sec-field"><span class="sec-label">ORG</span><span class="sec-value">{{ ipInfoData.org || '---' }}</span></div>
-                  <div class="sec-field"><span class="sec-label">COORDINATES</span><span class="sec-value">{{ ipInfoData.loc || '---' }}</span></div>
-                  <div class="sec-field"><span class="sec-label">TIMEZONE</span><span class="sec-value">{{ ipInfoData.timezone || '---' }}</span></div>
-                  <div class="sec-field"><span class="sec-label">HOSTNAME</span><span class="sec-value">{{ ipInfoData.hostname || '---' }}</span></div>
-                </div>
-              </div>
-              <div v-if="ip2locData" class="glass-panel settings-block">
-                <h3 class="block-title">IP2LOCATION</h3>
-                <div class="sec-fields">
-                  <div class="sec-field"><span class="sec-label">IP</span><span class="sec-value">{{ ip2locData.ip }}</span></div>
-                  <div class="sec-field"><span class="sec-label">COUNTRY</span><span class="sec-value">{{ ip2locData.country_name || '---' }} ({{ ip2locData.country_code || '' }})</span></div>
-                  <div class="sec-field"><span class="sec-label">CITY</span><span class="sec-value">{{ ip2locData.city_name || '---' }}</span></div>
-                  <div class="sec-field"><span class="sec-label">REGION</span><span class="sec-value">{{ ip2locData.region_name || '---' }}</span></div>
-                  <div class="sec-field"><span class="sec-label">ISP / AS</span><span class="sec-value">{{ ip2locData.as || '---' }}</span></div>
-                  <div class="sec-field"><span class="sec-label">COORDINATES</span><span class="sec-value">{{ formatCoords(ip2locData.latitude, ip2locData.longitude) }}</span></div>
-                  <div class="sec-field"><span class="sec-label">TIMEZONE</span><span class="sec-value">{{ ip2locData.time_zone || '---' }}</span></div>
-                  <div class="sec-field"><span class="sec-label">PROXY</span><span class="sec-value">{{ ip2locData.is_proxy ? 'YES' : 'NO' }}</span></div>
-                </div>
-              </div>
-              <div v-if="bdcData" class="glass-panel settings-block">
-                <h3 class="block-title">BIGDATACLOUD</h3>
-                <div class="sec-fields">
-                  <div class="sec-field"><span class="sec-label">IP</span><span class="sec-value">{{ bdcData.ip || '---' }}</span></div>
-                  <div class="sec-field"><span class="sec-label">COUNTRY</span><span class="sec-value">{{ bdcData.country?.name || '---' }} ({{ bdcData.country?.isoAlpha2 || '' }})</span></div>
-                  <div class="sec-field"><span class="sec-label">CITY</span><span class="sec-value">{{ bdcData.city?.name || '---' }}</span></div>
-                  <div class="sec-field"><span class="sec-label">ORGANISATION</span><span class="sec-value">{{ bdcData.network?.organisation || '---' }}</span></div>
-                  <div class="sec-field"><span class="sec-label">COORDINATES</span><span class="sec-value">{{ formatCoords(bdcData.location?.latitude, bdcData.location?.longitude) }}</span></div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- URL Scanner -->
-          <div v-show="securitySubTab === 'url-scanner'" class="sec-tab-content">
-            <div class="sec-input-row">
-              <input v-model="urlInput" class="glass-input full" placeholder="URL (напр. https://example.com)" @keyup.enter="runUrlScan" />
-              <button class="btn-glass primary" :disabled="urlLoading || !urlInput.trim()" @click="runUrlScan">
-                {{ urlLoading ? 'Сканирование...' : 'Сканировать' }}
-              </button>
-            </div>
-            <div v-if="urlLoading" class="sec-loading">SCANNING URL...</div>
-            <div v-if="vtScan || urlScanData" class="sec-results-grid two-col">
-              <div class="glass-panel settings-block">
-                <h3 class="block-title">VIRUSTOTAL</h3>
-                <div class="sec-fields">
-                  <div v-if="vtPolling" class="sec-polling">POLLING ANALYSIS... ({{ vtPollCount }}s)</div>
-                  <template v-if="vtAnalysisData">
-                    <div class="sec-field"><span class="sec-label">STATUS</span><span class="sec-value">{{ vtAnalysisData.status.toUpperCase() }}</span></div>
-                    <div class="sec-field"><span class="sec-label">MALICIOUS</span><span class="sec-value text-red">{{ vtAnalysisData.stats.malicious }}</span></div>
-                    <div class="sec-field"><span class="sec-label">SUSPICIOUS</span><span class="sec-value" style="color:#fb923c;font-weight:700">{{ vtAnalysisData.stats.suspicious }}</span></div>
-                    <div class="sec-field"><span class="sec-label">HARMLESS</span><span class="sec-value text-green">{{ vtAnalysisData.stats.harmless }}</span></div>
-                    <div class="sec-field"><span class="sec-label">UNDETECTED</span><span class="sec-value">{{ vtAnalysisData.stats.undetected }}</span></div>
-                    <div class="sec-field"><span class="sec-label">TIMEOUT</span><span class="sec-value">{{ vtAnalysisData.stats.timeout }}</span></div>
-                  </template>
-                  <template v-else-if="vtScan && !vtPolling">
-                    <div class="sec-field"><span class="sec-label">ANALYSIS ID</span><span class="sec-value sec-truncate">{{ vtScan.analysis_id }}</span></div>
-                  </template>
-                </div>
-              </div>
-              <div class="glass-panel settings-block">
-                <h3 class="block-title">URLSCAN.IO</h3>
-                <div class="sec-fields">
-                  <div v-if="urlScanPolling" class="sec-polling">POLLING RESULT... ({{ urlScanPollCount }}s)</div>
-                  <template v-if="urlScanResultData">
-                    <template v-if="urlScanResultData.page">
-                      <div class="sec-field"><span class="sec-label">DOMAIN</span><span class="sec-value">{{ urlScanResultData.page.domain }}</span></div>
-                      <div class="sec-field"><span class="sec-label">IP</span><span class="sec-value">{{ urlScanResultData.page.ip }}</span></div>
-                      <div class="sec-field"><span class="sec-label">COUNTRY</span><span class="sec-value">{{ urlScanResultData.page.country }}</span></div>
-                      <div class="sec-field"><span class="sec-label">SERVER</span><span class="sec-value">{{ urlScanResultData.page.server }}</span></div>
-                      <div class="sec-field"><span class="sec-label">STATUS CODE</span><span class="sec-value">{{ urlScanResultData.page.status_code }}</span></div>
-                    </template>
-                    <template v-if="urlScanResultData.verdicts">
-                      <div class="sec-field">
-                        <span class="sec-label">MALICIOUS</span>
-                        <span class="sec-value" :class="urlScanResultData.verdicts.malicious ? 'text-red' : 'text-green'">
-                          {{ urlScanResultData.verdicts.malicious ? 'YES' : 'NO' }}
-                        </span>
-                      </div>
-                      <div class="sec-field"><span class="sec-label">SCORE</span><span class="sec-value">{{ urlScanResultData.verdicts.score }}</span></div>
-                      <div v-if="urlScanResultData.verdicts.categories.length" class="sec-field">
-                        <span class="sec-label">CATEGORIES</span>
-                        <span class="sec-value">{{ urlScanResultData.verdicts.categories.join(', ') }}</span>
-                      </div>
-                    </template>
-                  </template>
-                  <template v-else-if="urlScanData && !urlScanPolling">
-                    <div class="sec-field"><span class="sec-label">UUID</span><span class="sec-value sec-truncate">{{ urlScanData.uuid }}</span></div>
-                  </template>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- IP Abuse -->
-          <div v-show="securitySubTab === 'ip-abuse'" class="sec-tab-content">
-            <div class="sec-input-row">
-              <input v-model="abuseIpInput" class="glass-input full" placeholder="IP адрес для проверки abuse-отчётов" @keyup.enter="runAbuseCheck" />
-              <button class="btn-glass primary" :disabled="abuseLoading || !abuseIpInput.trim()" @click="runAbuseCheck">
-                {{ abuseLoading ? 'Загрузка...' : 'Проверить' }}
-              </button>
-            </div>
-            <div v-if="abuseLoading" class="sec-loading">LOADING...</div>
-            <div v-if="abuseResult" class="sec-results-grid single-col">
-              <div class="glass-panel settings-block">
-                <h3 class="block-title">ABUSEIPDB REPORT</h3>
-                <div class="abuse-score-wrap">
-                  <div class="abuse-score-circle" :style="{ borderColor: abuseScoreColor }">
-                    <span class="abuse-score-value" :style="{ color: abuseScoreColor }">{{ abuseResult.abuse_confidence_score }}</span>
-                    <span class="abuse-score-label">CONFIDENCE</span>
-                  </div>
-                </div>
-                <div class="sec-fields">
-                  <div class="sec-field"><span class="sec-label">IP</span><span class="sec-value">{{ abuseResult.ip }}</span></div>
-                  <div class="sec-field"><span class="sec-label">PUBLIC</span><span class="sec-value">{{ abuseResult.is_public ? 'YES' : 'NO' }}</span></div>
-                  <div class="sec-field"><span class="sec-label">ABUSE SCORE</span><span class="sec-value" :style="{ color: abuseScoreColor }">{{ abuseResult.abuse_confidence_score }}%</span></div>
-                  <div class="sec-field"><span class="sec-label">TOTAL REPORTS</span><span class="sec-value">{{ abuseResult.total_reports }}</span></div>
-                  <div class="sec-field"><span class="sec-label">DISTINCT USERS</span><span class="sec-value">{{ abuseResult.num_distinct_users }}</span></div>
-                  <div class="sec-field"><span class="sec-label">ISP</span><span class="sec-value">{{ abuseResult.isp || '---' }}</span></div>
-                  <div class="sec-field"><span class="sec-label">DOMAIN</span><span class="sec-value">{{ abuseResult.domain || '---' }}</span></div>
-                  <div class="sec-field"><span class="sec-label">COUNTRY</span><span class="sec-value">{{ abuseResult.country_code || '---' }}</span></div>
-                  <div class="sec-field"><span class="sec-label">LAST REPORTED</span><span class="sec-value">{{ abuseResult.last_reported_at || 'NEVER' }}</span></div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- WHOIS -->
-          <div v-show="securitySubTab === 'whois'" class="sec-tab-content">
-            <div class="sec-input-row">
-              <input v-model="whoisInput" class="glass-input full" placeholder="Домен (напр. example.com)" @keyup.enter="runWhois" />
-              <button class="btn-glass primary" :disabled="whoisLoading || !whoisInput.trim()" @click="runWhois">
-                {{ whoisLoading ? 'Загрузка...' : 'Проверить' }}
-              </button>
-            </div>
-            <div v-if="whoisLoading" class="sec-loading">LOADING...</div>
-            <div v-if="whoisResult" class="sec-results-grid single-col">
-              <div class="glass-panel settings-block">
-                <h3 class="block-title">WHOIS — {{ whoisResult.domain || whoisInput }}</h3>
-                <div class="sec-fields">
-                  <div class="sec-field"><span class="sec-label">DOMAIN</span><span class="sec-value">{{ whoisResult.domain || '---' }}</span></div>
-                  <div class="sec-field"><span class="sec-label">DOMAIN ID</span><span class="sec-value">{{ whoisResult.domain_id || '---' }}</span></div>
-                  <div class="sec-field"><span class="sec-label">STATUS</span><span class="sec-value">{{ whoisResult.status || '---' }}</span></div>
-                  <div class="sec-field"><span class="sec-label">REGISTRAR</span><span class="sec-value">{{ whoisResult.registrar?.name || '---' }}</span></div>
-                  <div class="sec-field"><span class="sec-label">CREATED</span><span class="sec-value">{{ whoisResult.create_date || '---' }}</span></div>
-                  <div class="sec-field"><span class="sec-label">UPDATED</span><span class="sec-value">{{ whoisResult.update_date || '---' }}</span></div>
-                  <div class="sec-field"><span class="sec-label">EXPIRES</span><span class="sec-value">{{ whoisResult.expire_date || '---' }}</span></div>
-                  <div v-if="whoisResult.registrant" class="sec-field"><span class="sec-label">REGISTRANT ORG</span><span class="sec-value">{{ whoisResult.registrant.organization || '---' }}</span></div>
-                  <div v-if="whoisResult.registrant" class="sec-field"><span class="sec-label">REGISTRANT COUNTRY</span><span class="sec-value">{{ whoisResult.registrant.country || '---' }}</span></div>
-                  <div v-if="whoisResult.nameservers && whoisResult.nameservers.length" class="sec-field">
-                    <span class="sec-label">NAMESERVERS</span>
-                    <div class="sec-value ns-list">
-                      <span v-for="ns in whoisResult.nameservers" :key="ns" class="ns-item">{{ ns }}</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-      </div>
-      </transition>
-
-      <!-- Tab: USERS (admin only) -->
-      <transition name="fade" mode="out-in">
-      <div v-show="activeTab === 'users'" class="grid-content">
-        <div class="glass-panel settings-block users-panel">
-          <h3 class="block-title">Зарегистрированные пользователи</h3>
-          <div v-if="usersLoading" class="users-loading font-mono">LOADING...</div>
-          <div v-else class="users-table-wrap">
-            <table class="users-table">
-              <thead>
-                <tr>
-                  <th class="font-mono">USERNAME</th>
-                  <th class="font-mono">EMAIL</th>
-                  <th class="font-mono">STATUS</th>
-                  <th class="font-mono">INVITE CODE</th>
-                  <th class="font-mono">REGISTERED</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr v-for="u in usersList" :key="u.id">
-                  <td>
-                    <div class="user-cell">
-                      <span class="user-name">{{ u.username }}</span>
-                      <span class="user-domain font-mono">{{ u.domain_handle }}</span>
-                    </div>
-                  </td>
-                  <td class="font-mono">{{ u.email }}</td>
-                  <td>
-                    <span class="user-status-badge" :class="'status-' + u.status">{{ u.status.toUpperCase() }}</span>
-                  </td>
-                  <td class="font-mono">
-                    <span v-if="u.status === 'pending'" class="invite-code">{{ u.invite_code }}</span>
-                    <span v-else class="invite-used">&mdash;</span>
-                  </td>
-                  <td class="font-mono">{{ formatDate(u.created_at) }}</td>
-                </tr>
-                <tr v-if="!usersList.length">
-                  <td colspan="5" class="users-empty font-mono">No users found</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-          <div class="status-footer">
-            <button class="btn-glass xs" @click="loadUsers">Обновить</button>
-            <span class="status-text text-muted font-mono">{{ usersList.length }} users</span>
-          </div>
-        </div>
       </div>
       </transition>
 
@@ -641,47 +303,15 @@
 
 <script setup lang="ts">
 import { ref, watch, reactive, computed, onMounted } from 'vue'
-import { isAdmin as checkIsAdmin, fetchUsers } from '@/services/authService'
-import type { UserInfo } from '@/services/authService'
 import {
   createSession as createRuDataSession,
   hasActiveSession as hasRuDataSession,
   getSessionLogin as getRuDataSessionLogin,
-  clearSession as clearRuDataSession
 } from '@/services/rudataService'
-import {
-  API_KEYS_CONFIG, getApiKeyGroups, getKeysForGroup,
-  saveApiKeys, loadApiKeys, checkAllApiHealth
-} from '@/services/apiConfigService'
-import { getApiKey, setApiKey } from '@/utils/apiHeaders'
 import { getApiBaseUrl, setApiBaseUrl } from '@/utils/apiBase'
-import {
-  ipInfoLookup,
-  ip2LocationLookup,
-  bigDataCloudLookup,
-  virusTotalScanUrl,
-  virusTotalAnalysis,
-  abuseIpDbCheck,
-  urlScanSubmit,
-  urlScanResult as fetchUrlScanResult,
-  whoisLookup,
-} from '@/services/securityToolsService'
-import type {
-  IpInfoResult,
-  Ip2LocationResult,
-  BigDataCloudResult,
-  VirusTotalScanResult,
-  VirusTotalAnalysis as VTAnalysis,
-  AbuseIpDbResult,
-  UrlScanSubmitResult,
-  UrlScanResult as USResult,
-  WhoisResult,
-} from '@/services/securityToolsService'
 
 const activeTab = ref('general')
 const hasChanges = ref(true)
-const apiError = ref(false)
-const backendApiKey = ref('')
 
 // Backend URL state
 const backendMode = ref<'cloud' | 'local'>('cloud')
@@ -732,24 +362,12 @@ async function testBackendConnection() {
   }
 }
 
-// Admin panel state
-const isAdminUser = ref(false)
-const usersList = ref<UserInfo[]>([])
-const usersLoading = ref(false)
-
-const allTabs = [
-  { id: 'general', name: 'Общие', iconClass: 'icon-gen' },
-  { id: 'models', name: 'Модели', iconClass: 'icon-mod' },
-  { id: 'risk', name: 'Риск', iconClass: 'icon-risk' },
-  { id: 'api', name: 'API', iconClass: 'icon-api' },
-  { id: 'security', name: 'Безопасность', iconClass: 'icon-sec' },
-  { id: 'users', name: 'Пользователи', iconClass: 'icon-usr', adminOnly: true },
+const tabs = [
+  { id: 'general', name: 'Общие' },
+  { id: 'models', name: 'Модели' },
+  { id: 'risk', name: 'Риск' },
+  { id: 'connections', name: 'Подключения' },
 ]
-
-const tabs = computed(() => {
-  if (isAdminUser.value) return allTabs
-  return allTabs.filter(t => !(t as { adminOnly?: boolean }).adminOnly)
-})
 
 // Connection States
 const connectionStates = reactive({
@@ -771,280 +389,7 @@ const settings = reactive({
       rudataLogin: '', rudataPassword: '',
       bloombergKey: '', webhookUrl: ''
   },
-  connectedServices: [
-    { id: 1, name: 'Cbonds API', connected: false },
-    { id: 2, name: 'RuData Reference', connected: false },
-    { id: 3, name: 'Bloomberg Data', connected: false },
-    { id: 4, name: 'MOEX ISS', connected: true },
-    { id: 5, name: 'Alpha Vantage', connected: false },
-    { id: 6, name: 'Twelve Data', connected: false },
-    { id: 7, name: 'Polygon.io', connected: false },
-    { id: 8, name: 'FRED', connected: false },
-    { id: 9, name: 'CoinGecko', connected: false },
-    { id: 10, name: 'NewsAPI', connected: false },
-    { id: 11, name: 'Hugging Face', connected: false },
-    { id: 12, name: 'Frankfurter (ECB)', connected: true },
-    { id: 13, name: 'Bank of Russia', connected: true },
-    { id: 14, name: 'Nager.Date', connected: true },
-  ]
 })
-
-// ─── Extended API Keys ───────────────────────────────────────────────────────
-const apiKeyGroups = getApiKeyGroups()
-const extendedApiKeys = reactive<Record<string, string>>({})
-const expandedApiGroups = reactive<Record<string, boolean>>({})
-const apiHealthStatus = ref<Record<string, boolean>>({})
-
-function toggleApiGroup(group: string) {
-  expandedApiGroups[group] = !expandedApiGroups[group]
-}
-
-function loadExtendedKeys() {
-  const saved = loadApiKeys()
-  for (const cfg of API_KEYS_CONFIG) {
-    extendedApiKeys[cfg.key] = saved[cfg.key] || ''
-  }
-}
-
-function saveExtendedKeys() {
-  const keysToSave: Record<string, string> = {}
-  for (const cfg of API_KEYS_CONFIG) {
-    if (extendedApiKeys[cfg.key]) {
-      keysToSave[cfg.key] = extendedApiKeys[cfg.key]
-    }
-  }
-  saveApiKeys(keysToSave)
-}
-
-async function checkApiServices() {
-  try {
-    apiHealthStatus.value = await checkAllApiHealth()
-  } catch {
-    // ignore
-  }
-}
-
-function getGroupKeys(group: string) {
-  return getKeysForGroup(group)
-}
-
-// ─── Security Tab State ──────────────────────────────────────────────────────
-const securitySubTab = ref('ip-lookup')
-const securityError = ref('')
-
-const securitySubTabs = [
-  { id: 'ip-lookup', name: 'IP Lookup' },
-  { id: 'url-scanner', name: 'URL Scanner' },
-  { id: 'ip-abuse', name: 'IP Abuse' },
-  { id: 'whois', name: 'WHOIS' },
-]
-
-// IP Lookup
-const ipInput = ref('')
-const ipLoading = ref(false)
-const ipInfoData = ref<IpInfoResult | null>(null)
-const ip2locData = ref<Ip2LocationResult | null>(null)
-const bdcData = ref<BigDataCloudResult | null>(null)
-const hasIpResults = computed(() => ipInfoData.value || ip2locData.value || bdcData.value)
-
-async function runIpLookup() {
-  const ip = ipInput.value.trim()
-  if (!ip) return
-  ipLoading.value = true
-  securityError.value = ''
-  ipInfoData.value = null
-  ip2locData.value = null
-  bdcData.value = null
-  try {
-    const [r1, r2, r3] = await Promise.allSettled([
-      ipInfoLookup(ip),
-      ip2LocationLookup(ip),
-      bigDataCloudLookup(ip),
-    ])
-    ipInfoData.value = r1.status === 'fulfilled' ? r1.value : null
-    ip2locData.value = r2.status === 'fulfilled' ? r2.value : null
-    bdcData.value = r3.status === 'fulfilled' ? r3.value : null
-  } catch (e: unknown) {
-    const msg = e instanceof Error ? e.message : String(e)
-    securityError.value = `IP Lookup failed: ${msg}`
-  } finally {
-    ipLoading.value = false
-  }
-}
-
-function formatCoords(lat?: number, lng?: number): string {
-  if (lat == null || lng == null) return '---'
-  return `${lat.toFixed(4)}, ${lng.toFixed(4)}`
-}
-
-// URL Scanner
-const urlInput = ref('')
-const urlLoading = ref(false)
-const vtScan = ref<VirusTotalScanResult | null>(null)
-const vtAnalysisData = ref<VTAnalysis | null>(null)
-const vtPolling = ref(false)
-const vtPollCount = ref(0)
-const urlScanData = ref<UrlScanSubmitResult | null>(null)
-const urlScanResultData = ref<USResult | null>(null)
-const urlScanPolling = ref(false)
-const urlScanPollCount = ref(0)
-
-async function runUrlScan() {
-  const url = urlInput.value.trim()
-  if (!url) return
-  urlLoading.value = true
-  securityError.value = ''
-  vtScan.value = null
-  vtAnalysisData.value = null
-  vtPolling.value = false
-  vtPollCount.value = 0
-  urlScanData.value = null
-  urlScanResultData.value = null
-  urlScanPolling.value = false
-  urlScanPollCount.value = 0
-
-  try {
-    const [vtResult, usResult] = await Promise.allSettled([
-      virusTotalScanUrl(url),
-      urlScanSubmit(url),
-    ])
-    if (vtResult.status === 'fulfilled') {
-      vtScan.value = vtResult.value
-      pollVirusTotal(vtResult.value.analysis_id)
-    } else {
-      securityError.value = `VirusTotal submit failed: ${vtResult.reason}`
-    }
-    if (usResult.status === 'fulfilled') {
-      urlScanData.value = usResult.value
-      pollUrlScan(usResult.value.uuid)
-    } else {
-      const existing = securityError.value
-      const usErr = `URLScan submit failed: ${usResult.reason}`
-      securityError.value = existing ? `${existing} | ${usErr}` : usErr
-    }
-  } catch (e: unknown) {
-    const msg = e instanceof Error ? e.message : String(e)
-    securityError.value = `URL Scan failed: ${msg}`
-  } finally {
-    urlLoading.value = false
-  }
-}
-
-function pollVirusTotal(analysisId: string) {
-  vtPolling.value = true
-  vtPollCount.value = 0
-  const maxSeconds = 60
-  const intervalMs = 5000
-  const timer = setInterval(async () => {
-    vtPollCount.value += 5
-    try {
-      const result = await virusTotalAnalysis(analysisId)
-      if (result.status === 'completed' || vtPollCount.value >= maxSeconds) {
-        vtAnalysisData.value = result
-        vtPolling.value = false
-        clearInterval(timer)
-      }
-    } catch {
-      if (vtPollCount.value >= maxSeconds) {
-        vtPolling.value = false
-        clearInterval(timer)
-      }
-    }
-  }, intervalMs)
-}
-
-function pollUrlScan(uuid: string) {
-  urlScanPolling.value = true
-  urlScanPollCount.value = 0
-  const maxSeconds = 60
-  const intervalMs = 5000
-  const timer = setInterval(async () => {
-    urlScanPollCount.value += 5
-    try {
-      const result = await fetchUrlScanResult(uuid)
-      if (result.status === 'completed' || urlScanPollCount.value >= maxSeconds) {
-        urlScanResultData.value = result
-        urlScanPolling.value = false
-        clearInterval(timer)
-      }
-    } catch {
-      if (urlScanPollCount.value >= maxSeconds) {
-        urlScanPolling.value = false
-        clearInterval(timer)
-      }
-    }
-  }, intervalMs)
-}
-
-// IP Abuse
-const abuseIpInput = ref('')
-const abuseLoading = ref(false)
-const abuseResult = ref<AbuseIpDbResult | null>(null)
-const abuseScoreColor = computed(() => {
-  if (!abuseResult.value) return 'rgba(255,255,255,0.4)'
-  const score = abuseResult.value.abuse_confidence_score
-  if (score <= 25) return '#4ade80'
-  if (score <= 50) return '#facc15'
-  if (score <= 75) return '#fb923c'
-  return '#ef4444'
-})
-
-async function runAbuseCheck() {
-  const ip = abuseIpInput.value.trim()
-  if (!ip) return
-  abuseLoading.value = true
-  securityError.value = ''
-  abuseResult.value = null
-  try {
-    abuseResult.value = await abuseIpDbCheck(ip)
-  } catch (e: unknown) {
-    const msg = e instanceof Error ? e.message : String(e)
-    securityError.value = `Abuse check failed: ${msg}`
-  } finally {
-    abuseLoading.value = false
-  }
-}
-
-// WHOIS
-const whoisInput = ref('')
-const whoisLoading = ref(false)
-const whoisResult = ref<WhoisResult | null>(null)
-
-async function runWhois() {
-  const domain = whoisInput.value.trim()
-  if (!domain) return
-  whoisLoading.value = true
-  securityError.value = ''
-  whoisResult.value = null
-  try {
-    whoisResult.value = await whoisLookup(domain)
-  } catch (e: unknown) {
-    const msg = e instanceof Error ? e.message : String(e)
-    securityError.value = `WHOIS lookup failed: ${msg}`
-  } finally {
-    whoisLoading.value = false
-  }
-}
-
-async function loadUsers() {
-  usersLoading.value = true
-  try {
-    usersList.value = await fetchUsers()
-  } catch {
-    usersList.value = []
-  } finally {
-    usersLoading.value = false
-  }
-}
-
-function formatDate(dateStr: string): string {
-  try {
-    const d = new Date(dateStr)
-    return d.toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric' })
-  } catch {
-    return dateStr
-  }
-}
 
 // Загрузка сохраненных credentials при монтировании
 onMounted(() => {
@@ -1068,7 +413,7 @@ onMounted(() => {
       if (parsed.api?.cbondsLogin) settings.api.cbondsLogin = parsed.api.cbondsLogin
       if (parsed.api?.cbondsPassword) settings.api.cbondsPassword = parsed.api.cbondsPassword
     } catch (e) {
-      console.error('Failed to load settings:', e)
+      // Failed to load settings
     }
   }
 
@@ -1081,19 +426,6 @@ onMounted(() => {
   } else {
     backendMode.value = 'cloud'
     backendUrl.value = defaultUrl
-  }
-
-  // Загружаем backend API key
-  backendApiKey.value = getApiKey()
-
-  // Загружаем extended API keys
-  loadExtendedKeys()
-  checkApiServices()
-
-  // Check admin status
-  isAdminUser.value = checkIsAdmin()
-  if (isAdminUser.value) {
-    loadUsers()
   }
 
   hasChanges.value = false
@@ -1131,32 +463,20 @@ const testConnection = async (provider: 'cbonds' | 'rudata') => {
         if (result.success) {
           connectionStates[provider].status = 'success'
           connectionStates[provider].message = result.message
-
-          // Обновляем статус в списке сервисов
-          const srv = settings.connectedServices.find(s => s.name.toLowerCase().includes('rudata'))
-          if (srv) srv.connected = true
         } else {
           connectionStates[provider].status = 'error'
           connectionStates[provider].message = result.message
-
-          const srv = settings.connectedServices.find(s => s.name.toLowerCase().includes('rudata'))
-          if (srv) srv.connected = false
         }
       } catch (error: unknown) {
         const msg = error instanceof Error ? error.message : String(error)
         connectionStates[provider].status = 'error'
         connectionStates[provider].message = msg || 'Ошибка соединения'
-
-        const srv = settings.connectedServices.find(s => s.name.toLowerCase().includes('rudata'))
-        if (srv) srv.connected = false
       }
     } else if (provider === 'cbonds') {
       // Cbonds пока симулируем
       setTimeout(() => {
         if (settings.api.cbondsLogin && settings.api.cbondsPassword) {
           connectionStates[provider].status = 'success'
-          const srv = settings.connectedServices.find(s => s.name.toLowerCase().includes('cbonds'))
-          if (srv) srv.connected = true
         } else {
           connectionStates[provider].status = 'error'
           connectionStates[provider].message = 'Введите логин и пароль'
@@ -1189,12 +509,6 @@ const saveSettings = () => {
   } else {
     setApiBaseUrl('')
   }
-
-  // Сохраняем backend API key
-  setApiKey(backendApiKey.value)
-
-  // Сохраняем extended API keys
-  saveExtendedKeys()
 
   hasChanges.value = false
   setTimeout(() => hasChanges.value = true, 2000)
@@ -1303,15 +617,6 @@ watch(settings, () => { hasChanges.value = true }, { deep: true })
   right: 0;
   height: 2px;
   background: #3b82f6;
-}
-
-.badge-dot {
-  width: 6px;
-  height: 6px;
-  background: #ef4444;
-  border-radius: 50%;
-  margin-left: 6px;
-  display: inline-block;
 }
 
 /* ============================================
@@ -1603,7 +908,7 @@ input:checked + .slider:before {
 }
 
 /* ============================================
-   API SECTION SPECIFIC
+   CONNECTIONS SECTION SPECIFIC
    ============================================ */
 .status-footer {
   padding: 12px 20px 16px;
@@ -1616,134 +921,6 @@ input:checked + .slider:before {
 .status-text {
   font-size: 11px;
   font-weight: 500;
-}
-
-.services-list {
-  padding: 0 20px 8px;
-}
-
-.service-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 12px 0;
-  border-bottom: 1px solid rgba(255,255,255,0.05);
-}
-
-.service-item:last-child {
-  border-bottom: none;
-}
-
-.srv-left {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.srv-dot {
-  width: 6px;
-  height: 6px;
-  background: #ef4444;
-  border-radius: 50%;
-  flex-shrink: 0;
-}
-
-.srv-dot.connected {
-  background: #4ade80;
-  box-shadow: 0 0 6px #4ade80;
-}
-
-.srv-name {
-  font-size: 13px;
-  color: #fff;
-}
-
-.status-indicator {
-  font-size: 11px;
-  color: rgba(255,255,255,0.4);
-}
-
-.status-indicator.connected {
-  color: #4ade80;
-}
-
-/* ============================================
-   API ACCORDION
-   ============================================ */
-.api-accordion {
-  grid-column: 1 / -1;
-}
-
-.accordion-list {
-  padding: 0 16px 16px;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.accordion-item {
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  border-radius: 10px;
-  overflow: hidden;
-  transition: border-color 0.2s;
-}
-
-.accordion-item.expanded {
-  border-color: rgba(255, 255, 255, 0.12);
-}
-
-.accordion-header {
-  width: 100%;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 10px 14px;
-  background: rgba(255, 255, 255, 0.03);
-  border: none;
-  cursor: pointer;
-  transition: background 0.2s;
-}
-
-.accordion-header:hover {
-  background: rgba(255, 255, 255, 0.06);
-}
-
-.accordion-label {
-  flex: 1;
-  text-align: left;
-  font-size: 12px;
-  font-weight: 600;
-  color: rgba(255, 255, 255, 0.8);
-  text-transform: uppercase;
-  letter-spacing: 0.03em;
-}
-
-.accordion-count {
-  font-size: 10px;
-  color: rgba(255, 255, 255, 0.3);
-  background: rgba(255, 255, 255, 0.06);
-  padding: 2px 7px;
-  border-radius: 8px;
-  font-weight: 600;
-}
-
-.accordion-chevron {
-  color: rgba(255, 255, 255, 0.3);
-  transition: transform 0.25s ease;
-  flex-shrink: 0;
-}
-
-.accordion-item.expanded .accordion-chevron {
-  transform: rotate(180deg);
-  color: #3b82f6;
-}
-
-.accordion-body {
-  padding: 0 4px 4px;
-}
-
-.accordion-body .control-group {
-  margin: 0 8px 8px;
 }
 
 /* ============================================
@@ -1766,214 +943,6 @@ input:checked + .slider:before {
 .text-muted { color: rgba(255,255,255,0.4); }
 
 /* ============================================
-   SECURITY TAB
-   ============================================ */
-.security-content {
-  display: flex !important;
-  flex-direction: column;
-}
-
-.security-section.full-width {
-  grid-column: 1 / -1;
-  width: 100%;
-}
-
-.security-sub-tabs {
-  display: flex;
-  gap: 2px;
-  margin-bottom: 20px;
-  border-bottom: 1px solid rgba(255,255,255,0.06);
-}
-
-.sub-tab-item {
-  padding: 10px 16px;
-  background: transparent;
-  border: none;
-  color: rgba(255,255,255,0.4);
-  font-size: 11px;
-  font-weight: 600;
-  text-transform: uppercase;
-  cursor: pointer;
-  border-bottom: 2px solid transparent;
-  transition: all 0.2s;
-  letter-spacing: 0.04em;
-}
-
-.sub-tab-item:hover { color: rgba(255,255,255,0.6); }
-.sub-tab-item.active { color: rgba(255,255,255,0.9); border-bottom-color: #3b82f6; }
-
-.security-error-banner {
-  background: rgba(239,68,68,0.08);
-  border: 1px solid rgba(239,68,68,0.3);
-  padding: 10px 14px;
-  margin-bottom: 16px;
-  border-radius: 10px;
-  color: #ef4444;
-  font-size: 12px;
-  letter-spacing: 0.03em;
-}
-
-.sec-input-row {
-  display: flex;
-  gap: 10px;
-  margin-bottom: 20px;
-}
-
-.sec-input-row .glass-input { flex: 1; }
-
-.sec-loading {
-  font-size: 12px;
-  color: #3b82f6;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  margin-bottom: 16px;
-  animation: sec-pulse 1.2s ease-in-out infinite;
-}
-
-.sec-polling {
-  font-size: 11px;
-  color: #facc15;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  margin-bottom: 8px;
-  padding: 0 20px;
-  animation: sec-pulse 1.2s ease-in-out infinite;
-}
-
-@keyframes sec-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
-
-.sec-results-grid { display: grid; gap: 16px; }
-.sec-results-grid.three-col { grid-template-columns: repeat(3, 1fr); }
-.sec-results-grid.two-col { grid-template-columns: repeat(2, 1fr); }
-.sec-results-grid.single-col { grid-template-columns: 1fr; max-width: 700px; }
-
-.sec-fields { display: flex; flex-direction: column; gap: 6px; padding: 0 20px 16px; }
-.sec-field { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
-.sec-label { font-size: 9px; color: rgba(255,255,255,0.35); text-transform: uppercase; letter-spacing: 0.05em; white-space: nowrap; padding-top: 3px; flex-shrink: 0; }
-.sec-value { font-size: 13px; color: rgba(255,255,255,0.9); text-align: right; word-break: break-all; }
-.sec-truncate { max-width: 250px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-
-.abuse-score-wrap { display: flex; justify-content: center; margin: 8px 0 20px; }
-.abuse-score-circle { width: 110px; height: 110px; border: 2px solid rgba(255,255,255,0.2); border-radius: 50%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; }
-.abuse-score-value { font-size: 36px; font-weight: 700; line-height: 1; }
-.abuse-score-label { font-size: 8px; color: rgba(255,255,255,0.4); text-transform: uppercase; letter-spacing: 0.1em; }
-
-.ns-list { display: flex; flex-direction: column; gap: 3px; }
-.ns-item { font-size: 12px; color: rgba(255,255,255,0.7); }
-
-/* ============================================
-   USERS ADMIN PANEL
-   ============================================ */
-.users-panel {
-  grid-column: 1 / -1;
-}
-
-.users-loading {
-  padding: 32px 20px;
-  text-align: center;
-  color: rgba(255,255,255,0.4);
-  font-size: 12px;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-}
-
-.users-table-wrap {
-  overflow-x: auto;
-  padding: 0 16px 8px;
-}
-
-.users-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 13px;
-}
-
-.users-table th {
-  text-align: left;
-  font-size: 9px;
-  color: rgba(255,255,255,0.35);
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  padding: 10px 12px;
-  border-bottom: 1px solid rgba(255,255,255,0.08);
-  white-space: nowrap;
-}
-
-.users-table td {
-  padding: 12px 12px;
-  border-bottom: 1px solid rgba(255,255,255,0.04);
-  color: rgba(255,255,255,0.8);
-  vertical-align: middle;
-}
-
-.users-table tbody tr:hover {
-  background: rgba(255,255,255,0.02);
-}
-
-.user-cell {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.user-name {
-  font-weight: 600;
-  color: #fff;
-}
-
-.user-domain {
-  font-size: 10px;
-  color: rgba(255,255,255,0.35);
-}
-
-.user-status-badge {
-  display: inline-block;
-  padding: 2px 8px;
-  border-radius: 3px;
-  font-size: 10px;
-  font-weight: 600;
-  letter-spacing: 0.05em;
-}
-
-.status-pending {
-  background: rgba(245,158,11,0.15);
-  color: #F59E0B;
-  border: 1px solid rgba(245,158,11,0.3);
-}
-
-.status-active {
-  background: rgba(34,197,94,0.15);
-  color: #22C55E;
-  border: 1px solid rgba(34,197,94,0.3);
-}
-
-.status-blocked {
-  background: rgba(239,68,68,0.15);
-  color: #ef4444;
-  border: 1px solid rgba(239,68,68,0.3);
-}
-
-.invite-code {
-  background: rgba(255,255,255,0.06);
-  padding: 3px 8px;
-  border-radius: 3px;
-  letter-spacing: 0.1em;
-  font-size: 12px;
-  color: #F59E0B;
-  user-select: all;
-}
-
-.invite-used {
-  color: rgba(255,255,255,0.2);
-}
-
-.users-empty {
-  text-align: center;
-  color: rgba(255,255,255,0.3);
-  padding: 24px !important;
-}
-
-/* ============================================
    RESPONSIVE
    ============================================ */
 @media (max-width: 1024px) {
@@ -1982,11 +951,6 @@ input:checked + .slider:before {
   }
 
   .grid-content {
-    grid-template-columns: 1fr;
-  }
-
-  .sec-results-grid.three-col,
-  .sec-results-grid.two-col {
     grid-template-columns: 1fr;
   }
 }
@@ -2021,61 +985,61 @@ input:checked + .slider:before {
     padding: 12px;
     gap: 12px;
   }
-  
+
   .section-title {
     font-size: 20px;
   }
-  
+
   .section-subtitle {
     font-size: 11px;
   }
-  
+
   .section-header {
     flex-direction: column;
     align-items: flex-start;
     gap: 12px;
   }
-  
+
   .btn-save {
     width: 100%;
   }
-  
+
   .tabs-navigation {
     gap: 2px;
   }
-  
+
   .tab-item {
     padding: 8px 10px;
     font-size: 10px;
   }
-  
+
   .grid-content {
     gap: 12px;
   }
-  
+
   .settings-block {
     padding: 12px;
   }
-  
+
   .block-title {
     padding: 12px 16px 6px 16px;
     font-size: 10px;
   }
-  
+
   .control-group {
     margin: 0 12px 12px;
     padding: 0 12px;
   }
-  
+
   .control-row {
     padding: 10px 2px;
     min-height: 40px;
   }
-  
+
   .control-row label {
     font-size: 12px;
   }
-  
+
   .glass-select,
   .glass-input {
     font-size: 12px;
@@ -2095,15 +1059,6 @@ input:checked + .slider:before {
   /* Segmented control touch targets */
   .segmented-control button {
     min-height: 44px;
-  }
-
-  .sec-input-row {
-    flex-direction: column;
-  }
-
-  .sub-tab-item {
-    padding: 8px 10px;
-    font-size: 10px;
   }
 }
 
