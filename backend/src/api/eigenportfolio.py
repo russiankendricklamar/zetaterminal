@@ -1,12 +1,13 @@
 """
 API endpoints для анализа Eigenportfolios (PCA).
 """
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Request
 from typing import Dict, Any, List, Optional
 from pydantic import BaseModel, Field
 from datetime import datetime
 
 from src.services.eigenportfolio_service import compute_eigenportfolios
+from src.middleware.rate_limit import limiter
 
 router = APIRouter()
 
@@ -37,7 +38,8 @@ class EigenportfolioResponse(BaseModel):
 
 
 @router.post("/decompose", response_model=EigenportfolioResponse)
-async def decompose(request: EigenportfolioRequest):
+@limiter.limit("10/minute")
+async def decompose(http_request: Request, request: EigenportfolioRequest):
     """
     PCA декомпозиция ковариационной матрицы.
 

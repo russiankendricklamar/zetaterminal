@@ -383,9 +383,9 @@ const loadZCYC = async () => {
       // Показываем ошибку пользователю
       alert(`Ошибка загрузки кривой: ${data.error || 'Неизвестная ошибка'}`)
     }
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Ошибка загрузки кривой бескупонных доходностей:', error)
-    const errorMessage = error.message || 'Неизвестная ошибка'
+    const errorMessage = error instanceof Error ? error.message : 'Неизвестная ошибка'
     console.error('Детали ошибки:', {
       message: errorMessage,
       date: params.value.date

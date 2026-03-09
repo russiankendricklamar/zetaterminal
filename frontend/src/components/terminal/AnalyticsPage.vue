@@ -4,7 +4,7 @@
     <!-- Header & Tabs -->
     <div class="section-header flex-col md:flex-row md:items-center gap-6">
       <div class="flex items-center gap-4">
-        <div :class="`icon-box ${getAccentClass()}`">
+        <div :class="`icon-box ${getAccentColor()}`">
           <component :is="getTabIcon()" class="w-6 h-6" />
         </div>
         <div>
@@ -771,7 +771,7 @@ const selectAsset = (asset: string) => {
   isAssetsOpen.value = false;
 };
 
-const selectInstrument = (tool: any) => {
+const selectInstrument = (tool: Record<string, unknown>) => {
   selectedInstrument.value = tool;
   isInstrumentsOpen.value = false;
 };
@@ -897,10 +897,11 @@ const volatilitySurfaceOption = computed(() => {
       backgroundColor: 'rgba(20,20,30,0.9)',
       borderColor: 'rgba(255,255,255,0.1)',
       textStyle: { color: '#fff' },
-      formatter: (params: any) => {
-        const strike = strikes[params.data[0]];
-        const tenor = tenors[params.data[1]];
-        const vol = (params.data[2] * 100).toFixed(2);
+      formatter: (params: Record<string, unknown>) => {
+        const d = params.data as number[];
+        const strike = strikes[d[0]];
+        const tenor = tenors[d[1]];
+        const vol = (d[2] * 100).toFixed(2);
         return `Страйк: ${strike}<br/>Экспирация: ${tenor}<br/>Волатильность: ${vol}%`;
       }
     },
@@ -946,8 +947,9 @@ const volatilitySurfaceOption = computed(() => {
       data: data,
       label: {
         show: true,
-        formatter: (params: any) => {
-          return (params.data[2] * 100).toFixed(1) + '%';
+        formatter: (params: Record<string, unknown>) => {
+          const d = params.data as number[];
+          return (d[2] * 100).toFixed(1) + '%';
         },
         color: '#fff',
         fontSize: 10

@@ -1,10 +1,11 @@
 """
 API endpoints для Adversarial Stress Testing.
 """
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Request
 from typing import List, Optional, Dict, Any
 from pydantic import BaseModel, Field
 from src.services.adversarial_stress_service import run_adversarial_stress
+from src.middleware.rate_limit import limiter
 
 router = APIRouter()
 
@@ -25,7 +26,8 @@ class AdversarialStressRequest(BaseModel):
 
 
 @router.post("/generate", response_model=Dict[str, Any])
-async def generate_adversarial_stress(request: AdversarialStressRequest):
+@limiter.limit("10/minute")
+async def generate_adversarial_stress(http_request: Request, request: AdversarialStressRequest):
     """
     Генерирует adversarial worst-case сценарии для портфеля.
 

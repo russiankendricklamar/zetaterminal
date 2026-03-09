@@ -72,6 +72,65 @@ class RuDataResponse(BaseModel):
     message: Optional[str] = None
 
 
+class SessionResponse(BaseModel):
+    """Ответ с session_id после кеширования credentials."""
+    success: bool
+    message: str
+    session_id: Optional[str] = None
+    login: Optional[str] = None
+
+
+class SessionRequest(BaseModel):
+    """Запрос по session_id."""
+    session_id: str = Field(..., description="ID серверной сессии")
+
+
+@router.post("/session/create", response_model=SessionResponse)
+async def create_session(credentials: RuDataCredentials):
+    """
+    Проверить подключение к RuData API и кешировать credentials на сервере.
+
+    Возвращает session_id для последующих запросов без передачи логина/пароля.
+    """
+    try:
+        from src.services.rudata_service import test_rudata_connection, cache_credentials
+
+        result = await test_rudata_connection(
+            login=credentials.login,
+            password=credentials.password
+        )
+
+        if result.get("success"):
+            session_id = cache_credentials(credentials.login, credentials.password)
+            return SessionResponse(
+                success=True,
+                message=result.get("message", "Подключено"),
+                session_id=session_id,
+                login=credentials.login,
+            )
+
+        return SessionResponse(
+            success=False,
+            message=result.get("message", "Ошибка авторизации"),
+            login=credentials.login,
+        )
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Ошибка проверки подключения: {str(e)}"
+        )
+
+
+@router.post("/session/clear")
+async def clear_session(request: SessionRequest):
+    """Удалить кешированные credentials по session_id."""
+    from src.services.rudata_service import clear_cached_credentials
+
+    removed = clear_cached_credentials(request.session_id)
+    return {"success": True, "removed": removed}
+
+
 @router.post("/test-connection", response_model=ConnectionTestResponse)
 async def test_connection(credentials: RuDataCredentials):
     """

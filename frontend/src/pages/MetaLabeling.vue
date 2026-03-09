@@ -192,7 +192,13 @@
 
 <script setup lang="ts">
 import { ref, computed, watch, nextTick } from 'vue'
-import * as echarts from 'echarts'
+import { use, init } from 'echarts/core'
+import type { ECharts } from 'echarts/core'
+import { CanvasRenderer } from 'echarts/renderers'
+import { LineChart, BarChart, ScatterChart } from 'echarts/charts'
+import { TooltipComponent, LegendComponent, GridComponent } from 'echarts/components'
+
+use([CanvasRenderer, LineChart, BarChart, ScatterChart, TooltipComponent, LegendComponent, GridComponent])
 import { getApiHeaders } from '@/utils/apiHeaders'
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || ''
@@ -216,7 +222,7 @@ const prChart = ref<HTMLElement | null>(null)
 const probHistChart = ref<HTMLElement | null>(null)
 const featChart = ref<HTMLElement | null>(null)
 const betScatter = ref<HTMLElement | null>(null)
-let chartInstances: echarts.ECharts[] = []
+let chartInstances: ECharts[] = []
 
 // --- Prices parsing ---
 const parsedPrices = computed<number[] | null>(() => {
@@ -271,8 +277,8 @@ async function compute() {
     result.value = data.result
     await nextTick()
     renderAllCharts()
-  } catch (e: any) {
-    error.value = e.message
+  } catch (e: unknown) {
+    error.value = e instanceof Error ? e.message : String(e)
   } finally {
     loading.value = false
   }
@@ -285,7 +291,7 @@ function disposeAll() {
 }
 function mkChart(el: HTMLElement | null) {
   if (!el) return null
-  const inst = echarts.init(el, 'dark')
+  const inst = init(el, 'dark')
   chartInstances.push(inst)
   return inst
 }
@@ -323,13 +329,13 @@ function renderPR() {
   const inst = mkChart(prChart.value)
   if (!inst || !result.value) return
   const curve = result.value.pr_curve
-  const data = curve.map((p: any) => [p.recall, p.precision])
-  const labels = curve.map((p: any) => `thr=${p.threshold} n=${p.n_bets}`)
+  const data = curve.map((p: Record<string, unknown>) => [p.recall, p.precision])
+  const labels = curve.map((p: Record<string, unknown>) => `thr=${p.threshold} n=${p.n_bets}`)
   inst.setOption({
     backgroundColor: 'transparent',
     tooltip: {
       trigger: 'item',
-      formatter: (p: any) => `${labels[p.dataIndex]}<br/>P=${p.data[1].toFixed(3)} R=${p.data[0].toFixed(3)}`,
+      formatter: (p: Record<string, unknown>) => `${labels[p.dataIndex as number]}<br/>P=${(p.data as number[])[1].toFixed(3)} R=${(p.data as number[])[0].toFixed(3)}`,
     },
     xAxis: { name: 'Recall', nameLocation: 'middle', nameGap: 28, min: 0, max: 1, splitLine: { lineStyle: { color: '#333' } } },
     yAxis: { name: 'Precision', nameLocation: 'middle', nameGap: 40, min: 0, max: 1, splitLine: { lineStyle: { color: '#333' } } },
@@ -368,7 +374,7 @@ function renderProbHist() {
       type: 'bar',
       data: counts,
       itemStyle: {
-        color: (p: any) => bin_edges[p.dataIndex] >= threshold ? '#4caf72' : '#5b8af5',
+        color: (p: Record<string, unknown>) => bin_edges[p.dataIndex as number] >= threshold ? '#4caf72' : '#5b8af5',
         opacity: 0.85,
       },
     }],
@@ -389,10 +395,10 @@ function renderFeatures() {
     backgroundColor: 'transparent',
     tooltip: { trigger: 'axis' },
     xAxis: { type: 'value', splitLine: { lineStyle: { color: '#333' } } },
-    yAxis: { type: 'category', data: sorted.map((s: any) => s.n), axisLabel: { color: '#aaa' } },
+    yAxis: { type: 'category', data: sorted.map((s: { n: string; v: number }) => s.n), axisLabel: { color: '#aaa' } },
     series: [{
       type: 'bar',
-      data: sorted.map((s: any) => ({
+      data: sorted.map((s: { n: string; v: number }) => ({
         value: +s.v.toFixed(4),
         itemStyle: { color: s.v >= 0 ? '#4caf72' : '#e05c5c' },
       })),
@@ -421,7 +427,7 @@ function renderBetScatter() {
     backgroundColor: 'transparent',
     tooltip: {
       trigger: 'item',
-      formatter: (p: any) => {
+      formatter: (p: Record<string, unknown>) => {
         const d = data[p.dataIndex]
         return `P(profit)=${d.value[0].toFixed(3)}<br/>Return=${d.value[1].toFixed(4)}<br/>Bet: ${d.bet ? 'Да' : 'Нет'}`
       },
@@ -434,9 +440,9 @@ function renderBetScatter() {
         data: data.map(d => d.value),
         symbolSize: 8,
         itemStyle: {
-          color: (p: any) => data[p.dataIndex].label === 1 ? colors[1] : '#e05c5c',
-          opacity: (p: any) => (data[p.dataIndex].bet ? 1.0 : 0.35),
-          borderColor: (p: any) => data[p.dataIndex].bet ? '#fff' : 'transparent',
+          color: (p: Record<string, unknown>) => data[p.dataIndex as number].label === 1 ? colors[1] : '#e05c5c',
+          opacity: (p: Record<string, unknown>) => (data[p.dataIndex as number].bet ? 1.0 : 0.35),
+          borderColor: (p: Record<string, unknown>) => data[p.dataIndex as number].bet ? '#fff' : 'transparent',
           borderWidth: 1,
         },
       },

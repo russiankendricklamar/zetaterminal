@@ -93,7 +93,13 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted, watch, nextTick } from 'vue'
-import * as echarts from 'echarts'
+import { use, init as initChart, graphic } from 'echarts/core'
+import type { ECharts } from 'echarts/core'
+import { CanvasRenderer } from 'echarts/renderers'
+import { LineChart } from 'echarts/charts'
+import { GridComponent, MarkLineComponent } from 'echarts/components'
+
+use([CanvasRenderer, LineChart, GridComponent, MarkLineComponent])
 import BaseWidget from './BaseWidget.vue'
 import { useWaveSigma3D } from '@/composables/waveSigma/useWaveSigma3D'
 import { MarketRegime, SimulationData } from '@/composables/waveSigma/types'
@@ -132,8 +138,8 @@ const elapsedDays = ref(0)
 const simData = ref<SimulationData[]>([])
 
 // Charts
-let positionChart: echarts.ECharts | null = null
-let equityChart: echarts.ECharts | null = null
+let positionChart: ECharts | null = null
+let equityChart: ECharts | null = null
 
 // 3D Renderer
 const { init, dispose, setRegime, resize } = useWaveSigma3D()
@@ -187,7 +193,7 @@ const handleSignal = (rawSignal: number, _volatility: number) => {
 // Initialize charts
 const initCharts = () => {
   if (positionChartRef.value) {
-    positionChart = echarts.init(positionChartRef.value)
+    positionChart = initChart(positionChartRef.value)
     positionChart.setOption({
       animation: false,
       grid: {
@@ -239,7 +245,7 @@ const initCharts = () => {
   }
 
   if (equityChartRef.value) {
-    equityChart = echarts.init(equityChartRef.value)
+    equityChart = initChart(equityChartRef.value)
     equityChart.setOption({
       animation: false,
       grid: {
@@ -277,7 +283,7 @@ const initCharts = () => {
           lineStyle: { color: '#00d2d3', width: 2 },
           showSymbol: false,
           areaStyle: {
-            color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+            color: new graphic.LinearGradient(0, 0, 0, 1, [
               { offset: 0, color: 'rgba(0, 210, 211, 0.2)' },
               { offset: 1, color: 'rgba(0, 210, 211, 0)' }
             ])

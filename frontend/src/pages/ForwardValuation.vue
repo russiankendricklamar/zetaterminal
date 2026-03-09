@@ -1071,7 +1071,7 @@ const calculateValuation = async () => {
   error.value = ''
   
   try {
-    const request: any = {
+    const request: Record<string, unknown> = {
       forwardType: selectedForwardType.value,
       spotPrice: params.value.spotPrice,
       timeToMaturity: params.value.timeToMaturity,
@@ -1125,8 +1125,8 @@ const calculateValuation = async () => {
     const result = await valuateForward(request)
     valuationResults.value = result
     updateValuation()
-  } catch (err: any) {
-    error.value = err.message || 'Ошибка при расчете форварда'
+  } catch (err: unknown) {
+    error.value = err instanceof Error ? err.message : 'Ошибка при расчете форварда'
     console.error('Forward valuation error:', err)
   } finally {
     calculating.value = false
@@ -1356,10 +1356,10 @@ const handleFileUpload = async (event: Event) => {
     const jsonData = XLSX.utils.sheet_to_json(worksheet, { raw: false })
 
     // Парсим данные из Excel
-    const contracts: any[] = []
+    const contracts: Record<string, unknown>[] = []
     
     for (const row of jsonData as any[]) {
-      const contract: any = {
+      const contract: Record<string, unknown> = {
         forwardType: row['Тип'] || row['Type'] || row['type'] || selectedForwardType.value,
       }
 
@@ -1403,8 +1403,8 @@ const handleFileUpload = async (event: Event) => {
     forwardRegistryStore.loadRegistry(contracts)
     selectedContractIndex.value = null
     error.value = ''
-  } catch (err: any) {
-    error.value = `Ошибка при загрузке файла: ${err.message}`
+  } catch (err: unknown) {
+    error.value = `Ошибка при загрузке файла: ${err instanceof Error ? err.message : String(err)}`
     console.error('Excel parsing error:', err)
   }
 }
@@ -1465,7 +1465,7 @@ const calculateAllContracts = async () => {
     
     for (let i = 0; i < forwardRegistryStore.registryForwards.length; i++) {
       const contract = forwardRegistryStore.registryForwards[i]
-      const request: any = {
+      const request: Record<string, unknown> = {
         forwardType: contract.forwardType || selectedForwardType.value,
         spotPrice: contract.spotPrice || 0,
         timeToMaturity: contract.timeToMaturity || 0.25,
@@ -1498,7 +1498,7 @@ const calculateAllContracts = async () => {
         const result = await valuateForward(request)
         results.push(result)
         forwardRegistryStore.setForwardResult(i, result)
-      } catch (err: any) {
+      } catch (err: unknown) {
         const errorResult: ForwardValuationResponse = {
           fairForwardPrice: 0,
           forwardValue: 0,
@@ -1518,8 +1518,8 @@ const calculateAllContracts = async () => {
     
     // Сохраняем все результаты в store
     forwardRegistryStore.setAllResults(results)
-  } catch (err: any) {
-    error.value = `Ошибка при расчете контрактов: ${err.message}`
+  } catch (err: unknown) {
+    error.value = `Ошибка при расчете контрактов: ${err instanceof Error ? err.message : String(err)}`
   } finally {
     calculatingAll.value = false
   }
@@ -1545,7 +1545,7 @@ const exportRegistryToExcel = () => {
     const result = forwardRegistryStore.getResultByIndex(idx)
     const contractType = contract.forwardType || selectedForwardType.value
     
-    const baseData: any = {
+    const baseData: Record<string, unknown> = {
       '№': idx + 1,
       'Тип': contractType.toUpperCase(),
       'Дата оценки': contract.valuationDate || '',
@@ -1643,7 +1643,7 @@ const exportRegistryToExcel = () => {
   const ws = XLSX.utils.json_to_sheet(exportData)
   
   // Set column widths for better readability
-  const colWidths: any[] = []
+  const colWidths: Record<string, number>[] = []
   const maxCols = Math.max(...exportData.map(row => Object.keys(row).length))
   for (let i = 0; i < maxCols; i++) {
     colWidths.push({ wch: 18 })
@@ -1654,7 +1654,7 @@ const exportRegistryToExcel = () => {
 
   // Add scenarios sheet if there are calculated contracts
   if (hasCalculatedContracts) {
-    const scenariosData: any[] = []
+    const scenariosData: Record<string, unknown>[] = []
     
     loadedContracts.value.forEach((contract, contractIdx) => {
       const result = contractResults.value[contractIdx]
@@ -1688,7 +1688,7 @@ const exportRegistryToExcel = () => {
 
   // Add coupon schedule sheet for bond forwards
   if (hasCalculatedContracts) {
-    const couponScheduleData: any[] = []
+    const couponScheduleData: Record<string, unknown>[] = []
     
     forwardRegistryStore.registryForwards.forEach((contract, contractIdx) => {
       const result = forwardRegistryStore.getResultByIndex(contractIdx)
@@ -1730,9 +1730,9 @@ const exportRegistryToExcel = () => {
   try {
     XLSX.writeFile(wb, fileName)
     alert(`Реестр успешно экспортирован: ${fileName}\n${hasCalculatedContracts ? 'Включая все расчеты, сценарии и расписание купонов.' : 'Только входные параметры (контракты не рассчитаны).'}`)
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error('Ошибка при экспорте:', err)
-    alert(`Ошибка при экспорте файла: ${err.message}`)
+    alert(`Ошибка при экспорте файла: ${err instanceof Error ? err.message : String(err)}`)
   }
 }
 
@@ -1751,9 +1751,9 @@ const saveRegistryToParquetHandler = async () => {
         error.value = ''
       }, 5000)
     }
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error('Error saving registry to parquet:', err)
-    error.value = `Ошибка при сохранении реестра: ${err.message}`
+    error.value = `Ошибка при сохранении реестра: ${err instanceof Error ? err.message : String(err)}`
   } finally {
     savingParquet.value = false
   }
@@ -1770,7 +1770,7 @@ const clearRegistry = () => {
 
 // Add forward manually (сохраняем возможность ручного добавления)
 const addForwardManually = () => {
-  const newForward: any = {
+  const newForward: Record<string, unknown> = {
     forwardType: selectedForwardType.value,
     spotPrice: params.value.spotPrice,
     timeToMaturity: params.value.timeToMaturity,

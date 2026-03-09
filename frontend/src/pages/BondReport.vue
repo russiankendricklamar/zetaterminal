@@ -514,8 +514,8 @@ const calculateBond = async () => {
     }
 
     results.value = await response.json()
-  } catch (err: any) {
-    error.value = err.message || 'Ошибка при расчёте облигации'
+  } catch (err: unknown) {
+    error.value = err instanceof Error ? err.message : 'Ошибка при расчёте облигации'
     results.value = null
   } finally {
     loading.value = false

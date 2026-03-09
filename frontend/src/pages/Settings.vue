@@ -560,9 +560,10 @@
 <script setup lang="ts">
 import { ref, watch, reactive, computed, onMounted } from 'vue'
 import {
-  testConnection as testRuDataConnection,
-  saveCredentials as saveRuDataCredentials,
-  loadCredentials as loadRuDataCredentials
+  createSession as createRuDataSession,
+  hasActiveSession as hasRuDataSession,
+  getSessionLogin as getRuDataSessionLogin,
+  clearSession as clearRuDataSession
 } from '@/services/rudataService'
 import {
   API_KEYS_CONFIG, getApiKeyGroups, getKeysForGroup,
@@ -882,11 +883,12 @@ async function runWhois() {
 
 // Загрузка сохраненных credentials при монтировании
 onMounted(() => {
-  // Загружаем RuData credentials
-  const rudataCredentials = loadRuDataCredentials()
-  if (rudataCredentials) {
-    settings.api.rudataLogin = rudataCredentials.login
-    settings.api.rudataPassword = rudataCredentials.password
+  // Check if a server-side RuData session is active (memory-only)
+  if (hasRuDataSession()) {
+    const login = getRuDataSessionLogin()
+    if (login) {
+      settings.api.rudataLogin = login
+    }
     connectionStates.rudata.status = 'saved'
   }
 
@@ -942,7 +944,7 @@ const testConnection = async (provider: 'cbonds' | 'rudata') => {
       }
 
       try {
-        const result = await testRuDataConnection({ login, password })
+        const result = await createRuDataSession({ login, password })
 
         if (result.success) {
           connectionStates[provider].status = 'success'
@@ -951,9 +953,6 @@ const testConnection = async (provider: 'cbonds' | 'rudata') => {
           // Обновляем статус в списке сервисов
           const srv = settings.connectedServices.find(s => s.name.toLowerCase().includes('rudata'))
           if (srv) srv.connected = true
-
-          // Сохраняем credentials
-          saveRuDataCredentials({ login, password })
         } else {
           connectionStates[provider].status = 'error'
           connectionStates[provider].message = result.message
@@ -961,9 +960,10 @@ const testConnection = async (provider: 'cbonds' | 'rudata') => {
           const srv = settings.connectedServices.find(s => s.name.toLowerCase().includes('rudata'))
           if (srv) srv.connected = false
         }
-      } catch (error: any) {
+      } catch (error: unknown) {
+        const msg = error instanceof Error ? error.message : String(error)
         connectionStates[provider].status = 'error'
-        connectionStates[provider].message = error.message || 'Ошибка соединения'
+        connectionStates[provider].message = msg || 'Ошибка соединения'
 
         const srv = settings.connectedServices.find(s => s.name.toLowerCase().includes('rudata'))
         if (srv) srv.connected = false
@@ -984,13 +984,7 @@ const testConnection = async (provider: 'cbonds' | 'rudata') => {
 }
 
 const saveSettings = () => {
-  // Сохраняем RuData credentials отдельно (с обфускацией)
-  if (settings.api.rudataLogin && settings.api.rudataPassword) {
-    saveRuDataCredentials({
-      login: settings.api.rudataLogin,
-      password: settings.api.rudataPassword
-    })
-  }
+  // RuData credentials are cached server-side via createSession (no localStorage)
 
   // Сохраняем остальные настройки в localStorage
   const settingsToSave = {

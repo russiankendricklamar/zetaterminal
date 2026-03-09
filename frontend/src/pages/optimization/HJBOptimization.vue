@@ -570,19 +570,40 @@ onMounted(async () => {
     initialPrice.value = 100
   }
 
-  // Generate initial trajectories
+  // 1. Monte Carlo 2D — lightweight, visible immediately
   generateTrajectories()
 
   await nextTick()
 
-  // Init 3D trajectories
-  init3DTrajectories()
+  // 2. 3D trajectories — defer until canvas is in viewport
+  if (trajectories3DCanvas.value) {
+    const observer3D = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting) {
+        init3DTrajectories()
+        observer3D.disconnect()
+      }
+    })
+    observer3D.observe(trajectories3DCanvas.value)
+  }
 
-  // Init correlation heatmap
-  initCorrelation3DHeatmap()
+  // 3. Correlation heatmap — defer until container is in viewport
+  const heatmapEl = document.getElementById('correlation-3d-heatmap')
+  if (heatmapEl) {
+    const observerHeatmap = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting) {
+        initCorrelation3DHeatmap()
+        observerHeatmap.disconnect()
+      }
+    })
+    observerHeatmap.observe(heatmapEl)
+  }
 
-  // Init GARCH chart
-  initGARCHChart()
+  // 4. GARCH chart — run in idle time, don't block UI
+  if ('requestIdleCallback' in window) {
+    requestIdleCallback(() => initGARCHChart())
+  } else {
+    setTimeout(() => initGARCHChart(), 200)
+  }
 })
 </script>
 

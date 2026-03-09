@@ -927,9 +927,9 @@ const runAnalysis = async () => {
       errorMessage.value = 'Ошибка при выполнении анализа'
     }
     
-  } catch (e: any) {
+  } catch (e: unknown) {
     console.error('Analysis error:', e)
-    errorMessage.value = e.message || 'Неизвестная ошибка'
+    errorMessage.value = e instanceof Error ? e.message : 'Неизвестная ошибка'
   } finally {
     isLoading.value = false
     loadingStatus.value = ''

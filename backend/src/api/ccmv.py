@@ -1,10 +1,11 @@
 """
 API endpoints для CCMV оптимизации портфеля.
 """
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Request
 from typing import List, Optional, Dict, Any
 from pydantic import BaseModel, Field
 from src.services.ccmv_service import optimize_ccmv
+from src.middleware.rate_limit import limiter
 from datetime import datetime
 import numpy as np
 
@@ -55,7 +56,8 @@ class CCMVResponse(BaseModel):
 
 
 @router.post("/optimize", response_model=CCMVResponse)
-async def optimize_ccmv_portfolio(request: CCMVRequest):
+@limiter.limit("10/minute")
+async def optimize_ccmv_portfolio(http_request: Request, request: CCMVRequest):
     """
     Выполняет CCMV оптимизацию портфеля.
     

@@ -298,16 +298,16 @@ const loadCurrencyRates = async () => {
           // Если курс возвращается как currency/USD, конвертируем в USD/currency
           bases.value[currency] = 1 / rateData.rate;
           console.log(`Loaded ${currency}/USD:`, rateData.rate);
-        } catch (error: any) {
-          console.error(`Error loading rate for ${currency}:`, error.message);
+        } catch (error: unknown) {
+          console.error(`Error loading rate for ${currency}:`, error instanceof Error ? error.message : String(error));
         }
       });
     
     await Promise.all(ratePromises);
     console.log('Currency rates loaded successfully');
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error loading currency rates:', error);
-    console.error('Error details:', error.message, error.stack);
+    if (error instanceof Error) console.error('Error details:', error.message, error.stack);
   } finally {
     loadingRates.value = false;
   }

@@ -264,7 +264,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted, watch, defineComponent, h, nextTick } from 'vue'
-import * as THREE from 'three'
+import { Scene, PerspectiveCamera, WebGLRenderer, Vector3, Raycaster, Vector2, Color, Points, BufferGeometry, BufferAttribute, ShaderMaterial, AdditiveBlending } from 'three'
 import {
   categories as dataCategories,
   items as dataItems,
@@ -276,7 +276,7 @@ import {
 
 // Extended Category with icon component
 interface Category extends DataCategory {
-  icon: any
+  icon: Component
 }
 
 interface ClusterLabel {
@@ -425,20 +425,20 @@ const openItem = (item: KnowledgeItem) => {
 }
 
 // Three.js Galaxy System
-let scene: THREE.Scene
-let camera: THREE.PerspectiveCamera
-let renderer: THREE.WebGLRenderer
+let scene: Scene
+let camera: PerspectiveCamera
+let renderer: WebGLRenderer
 let animationId: number
-let mouseWorld = new THREE.Vector3()
-let raycaster = new THREE.Raycaster()
-let mouse = new THREE.Vector2()
+let mouseWorld = new Vector3()
+let raycaster = new Raycaster()
+let mouse = new Vector2()
 
 interface ClusterData {
   id: string
   name: string
-  color: THREE.Color
-  center: THREE.Vector3
-  particles: THREE.Points
+  color: Color
+  center: Vector3
+  particles: Points
   count: number
 }
 
@@ -450,14 +450,14 @@ const initThreeJS = () => {
   if (!canvasRef.value) return
 
   // Scene
-  scene = new THREE.Scene()
+  scene = new Scene()
 
   // Camera
-  camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000)
+  camera = new PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000)
   camera.position.z = 100
 
   // Renderer
-  renderer = new THREE.WebGLRenderer({
+  renderer = new WebGLRenderer({
     canvas: canvasRef.value,
     alpha: true,
     antialias: true
@@ -494,14 +494,14 @@ const initThreeJS = () => {
 }
 
 const createCluster = (category: Category, x: number, y: number, index: number): ClusterData => {
-  const geometry = new THREE.BufferGeometry()
+  const geometry = new BufferGeometry()
   const positions = new Float32Array(PARTICLES_PER_CLUSTER * 3)
   const sizes = new Float32Array(PARTICLES_PER_CLUSTER)
   const colors = new Float32Array(PARTICLES_PER_CLUSTER * 3)
   const randoms = new Float32Array(PARTICLES_PER_CLUSTER)
 
-  const color = new THREE.Color(category.color)
-  const center = new THREE.Vector3(x, y, (Math.random() - 0.5) * 20)
+  const color = new Color(category.color)
+  const center = new Vector3(x, y, (Math.random() - 0.5) * 20)
 
   // Spiral galaxy shape
   for (let i = 0; i < PARTICLES_PER_CLUSTER; i++) {
@@ -532,15 +532,15 @@ const createCluster = (category: Category, x: number, y: number, index: number):
     randoms[i] = Math.random()
   }
 
-  geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3))
-  geometry.setAttribute('size', new THREE.BufferAttribute(sizes, 1))
-  geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3))
-  geometry.setAttribute('aRandom', new THREE.BufferAttribute(randoms, 1))
+  geometry.setAttribute('position', new BufferAttribute(positions, 3))
+  geometry.setAttribute('size', new BufferAttribute(sizes, 1))
+  geometry.setAttribute('color', new BufferAttribute(colors, 3))
+  geometry.setAttribute('aRandom', new BufferAttribute(randoms, 1))
 
-  const material = new THREE.ShaderMaterial({
+  const material = new ShaderMaterial({
     uniforms: {
       uTime: { value: 0 },
-      uMouse: { value: new THREE.Vector3() },
+      uMouse: { value: new Vector3() },
       uHovered: { value: 0 },
     },
     vertexShader: `
@@ -602,10 +602,10 @@ const createCluster = (category: Category, x: number, y: number, index: number):
     `,
     transparent: true,
     depthWrite: false,
-    blending: THREE.AdditiveBlending,
+    blending: AdditiveBlending,
   })
 
-  const particles = new THREE.Points(geometry, material)
+  const particles = new Points(geometry, material)
   particles.userData = { clusterId: category.id, center }
 
   return {
@@ -619,7 +619,7 @@ const createCluster = (category: Category, x: number, y: number, index: number):
 }
 
 const createBackgroundStars = () => {
-  const geometry = new THREE.BufferGeometry()
+  const geometry = new BufferGeometry()
   const positions = new Float32Array(BACKGROUND_PARTICLES * 3)
   const sizes = new Float32Array(BACKGROUND_PARTICLES)
   const colors = new Float32Array(BACKGROUND_PARTICLES * 3)
@@ -639,11 +639,11 @@ const createBackgroundStars = () => {
     colors[i3 + 2] = brightness
   }
 
-  geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3))
-  geometry.setAttribute('size', new THREE.BufferAttribute(sizes, 1))
-  geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3))
+  geometry.setAttribute('position', new BufferAttribute(positions, 3))
+  geometry.setAttribute('size', new BufferAttribute(sizes, 1))
+  geometry.setAttribute('color', new BufferAttribute(colors, 3))
 
-  const material = new THREE.ShaderMaterial({
+  const material = new ShaderMaterial({
     uniforms: {
       uTime: { value: 0 },
     },
@@ -682,10 +682,10 @@ const createBackgroundStars = () => {
     `,
     transparent: true,
     depthWrite: false,
-    blending: THREE.AdditiveBlending,
+    blending: AdditiveBlending,
   })
 
-  const stars = new THREE.Points(geometry, material)
+  const stars = new Points(geometry, material)
   stars.userData = { isBackground: true }
   scene.add(stars)
 }
@@ -723,7 +723,7 @@ const animate = () => {
 
   // Update all cluster materials
   scene.children.forEach(child => {
-    if (child instanceof THREE.Points && child.material instanceof THREE.ShaderMaterial) {
+    if (child instanceof Points && child.material instanceof ShaderMaterial) {
       child.material.uniforms.uTime.value = time
       child.material.uniforms.uMouse.value = mouseWorld
 

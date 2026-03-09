@@ -7,11 +7,13 @@ Endpoints:
 - POST /fetch-data - Загрузка данных актива и расчёт доходностей
 """
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel, Field
 from typing import List, Optional, Dict, Any
 import numpy as np
 from datetime import datetime, timedelta
+
+from src.middleware.rate_limit import limiter
 
 router = APIRouter()
 
@@ -201,7 +203,8 @@ async def fetch_asset_data(request: AssetDataRequest):
 
 
 @router.post("/analyze", response_model=SpectralAnalysisResponse)
-async def analyze_spectral_regimes(request: SpectralAnalysisRequest):
+@limiter.limit("10/minute")
+async def analyze_spectral_regimes(http_request: Request, request: SpectralAnalysisRequest):
     """
     Запустить комплексный анализ скрытых рыночных режимов.
     

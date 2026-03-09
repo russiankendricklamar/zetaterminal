@@ -1,10 +1,11 @@
 """
 API endpoints для стресс-тестирования портфеля.
 """
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Request
 from typing import List, Optional, Dict, Any
 from pydantic import BaseModel, Field
 from src.services.stress_service import run_stress_test
+from src.middleware.rate_limit import limiter
 
 router = APIRouter()
 
@@ -34,7 +35,8 @@ class StressTestRequest(BaseModel):
 
 
 @router.post("/test", response_model=Dict[str, Any])
-async def run_stress_tests(request: StressTestRequest):
+@limiter.limit("10/minute")
+async def run_stress_tests(http_request: Request, request: StressTestRequest):
     """
     Выполняет стресс-тестирование портфеля для списка сценариев.
     """

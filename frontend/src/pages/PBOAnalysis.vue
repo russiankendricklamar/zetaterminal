@@ -154,7 +154,13 @@
 
 <script setup lang="ts">
 import { ref, computed, watch, nextTick } from 'vue'
-import * as echarts from 'echarts'
+import { use, init } from 'echarts/core'
+import type { ECharts } from 'echarts/core'
+import { CanvasRenderer } from 'echarts/renderers'
+import { ScatterChart, LineChart, BarChart } from 'echarts/charts'
+import { TooltipComponent, GridComponent, MarkLineComponent } from 'echarts/components'
+
+use([CanvasRenderer, ScatterChart, LineChart, BarChart, TooltipComponent, GridComponent, MarkLineComponent])
 import { getApiHeaders } from '@/utils/apiHeaders'
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || ''
@@ -168,8 +174,8 @@ const result = ref<any>(null)
 
 const scatterChart = ref<HTMLElement | null>(null)
 const logitChart = ref<HTMLElement | null>(null)
-let scatterInstance: echarts.ECharts | null = null
-let logitInstance: echarts.ECharts | null = null
+let scatterInstance: ECharts | null = null
+let logitInstance: ECharts | null = null
 
 // --- Parse matrix ---
 const parseResult = computed(() => {
@@ -241,8 +247,8 @@ async function compute() {
     result.value = data.result
     await nextTick()
     renderCharts()
-  } catch (e: any) {
-    error.value = e.message
+  } catch (e: unknown) {
+    error.value = e instanceof Error ? e.message : String(e)
   } finally {
     loading.value = false
   }
@@ -257,7 +263,7 @@ function renderCharts() {
 function renderScatter() {
   if (!scatterChart.value || !result.value) return
   scatterInstance?.dispose()
-  scatterInstance = echarts.init(scatterChart.value, 'dark')
+  scatterInstance = init(scatterChart.value, 'dark')
 
   const isSR: number[] = result.value.scatter.is_sr
   const oosSR: number[] = result.value.scatter.oos_sr
@@ -271,7 +277,7 @@ function renderScatter() {
     backgroundColor: 'transparent',
     tooltip: {
       trigger: 'item',
-      formatter: (p: any) => `IS SR: ${p.data[0].toFixed(4)}<br/>OOS SR: ${p.data[1].toFixed(4)}`,
+      formatter: (p: Record<string, unknown>) => { const d = p.data as number[]; return `IS SR: ${d[0].toFixed(4)}<br/>OOS SR: ${d[1].toFixed(4)}` },
     },
     xAxis: {
       name: 'IS Sharpe Ratio',
@@ -308,7 +314,7 @@ function renderScatter() {
 function renderLogit() {
   if (!logitChart.value || !result.value) return
   logitInstance?.dispose()
-  logitInstance = echarts.init(logitChart.value, 'dark')
+  logitInstance = init(logitChart.value, 'dark')
 
   const { counts, bin_edges, mean } = result.value.logit_hist
   const barData = counts.map((c: number, i: number) => ({
@@ -318,7 +324,7 @@ function renderLogit() {
 
   logitInstance.setOption({
     backgroundColor: 'transparent',
-    tooltip: { trigger: 'axis', formatter: (p: any) => `${p[0].name}<br/>Частота: ${p[0].value}` },
+    tooltip: { trigger: 'axis', formatter: (p: Record<string, unknown> | Record<string, unknown>[]) => { const a = Array.isArray(p) ? p[0] : p; return `${a.name}<br/>Частота: ${a.value}` } },
     xAxis: {
       type: 'category',
       data: bin_edges.slice(0, -1).map((v: number) => v.toFixed(1)),
@@ -333,7 +339,7 @@ function renderLogit() {
         type: 'bar',
         data: barData,
         itemStyle: {
-          color: (p: any) => (bin_edges[p.dataIndex] < 0 ? '#e05c5c' : '#5b8af5'),
+          color: (p: Record<string, unknown>) => (bin_edges[(p.dataIndex as number)] < 0 ? '#e05c5c' : '#5b8af5'),
         },
       },
     ],

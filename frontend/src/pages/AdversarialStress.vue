@@ -143,7 +143,13 @@
 
 <script setup lang="ts">
 import { ref, computed, watch, nextTick } from 'vue'
-import * as echarts from 'echarts'
+import { use, init } from 'echarts/core'
+import type { ECharts } from 'echarts/core'
+import { CanvasRenderer } from 'echarts/renderers'
+import { BarChart, LineChart, ScatterChart } from 'echarts/charts'
+import { TooltipComponent, LegendComponent, GridComponent } from 'echarts/components'
+
+use([CanvasRenderer, BarChart, LineChart, ScatterChart, TooltipComponent, LegendComponent, GridComponent])
 import { usePortfolioStore } from '@/stores/portfolio'
 import { getApiHeaders } from '@/utils/apiHeaders'
 
@@ -172,10 +178,10 @@ const distChart = ref<HTMLElement | null>(null)
 const pathsChart = ref<HTMLElement | null>(null)
 const shiftChart = ref<HTMLElement | null>(null)
 const tailChart = ref<HTMLElement | null>(null)
-let distInstance: echarts.ECharts | null = null
-let pathsInstance: echarts.ECharts | null = null
-let shiftInstance: echarts.ECharts | null = null
-let tailInstance: echarts.ECharts | null = null
+let distInstance: ECharts | null = null
+let pathsInstance: ECharts | null = null
+let shiftInstance: ECharts | null = null
+let tailInstance: ECharts | null = null
 
 // --- Helpers ---
 const formatCurrency = (v: number) => {
@@ -281,8 +287,8 @@ const runStress = async () => {
     result.value = await resp.json()
     await nextTick()
     renderCharts()
-  } catch (e: any) {
-    error.value = e.message
+  } catch (e: unknown) {
+    error.value = e instanceof Error ? e.message : String(e)
   } finally {
     loading.value = false
   }
@@ -304,7 +310,7 @@ const chartTheme = {
 const renderDistChart = () => {
   if (!distChart.value || !result.value) return
   distInstance?.dispose()
-  distInstance = echarts.init(distChart.value)
+  distInstance = init(distChart.value)
 
   const baseDist = result.value.return_distributions.base
   const advDist = result.value.return_distributions.adversarial
@@ -343,12 +349,12 @@ const renderDistChart = () => {
 const renderPathsChart = () => {
   if (!pathsChart.value || !result.value) return
   pathsInstance?.dispose()
-  pathsInstance = echarts.init(pathsChart.value)
+  pathsInstance = init(pathsChart.value)
 
   const mc = result.value.mc_adversarial
   const tGrid = mc.t_grid
 
-  const series: any[] = []
+  const series: Record<string, unknown>[] = []
 
   // Individual paths (faded)
   for (let i = 0; i < Math.min(mc.paths.length, 20); i++) {
@@ -410,14 +416,14 @@ const renderPathsChart = () => {
 const renderShiftChart = () => {
   if (!shiftChart.value || !result.value) return
   shiftInstance?.dispose()
-  shiftInstance = echarts.init(shiftChart.value)
+  shiftInstance = init(shiftChart.value)
 
   const names = result.value.asset_names
   const shifts = result.value.mu_shift
 
   shiftInstance.setOption({
     ...chartTheme,
-    tooltip: { trigger: 'axis', formatter: (p: any) => {
+    tooltip: { trigger: 'axis', formatter: (p: Record<string, unknown> | Record<string, unknown>[]) => {
       const item = Array.isArray(p) ? p[0] : p
       return `${item.name}: ${(item.value * 100).toFixed(2)}%`
     }},
@@ -436,7 +442,7 @@ const renderShiftChart = () => {
 const renderTailChart = () => {
   if (!tailChart.value || !result.value || !result.value.evt_tail.fit_success) return
   tailInstance?.dispose()
-  tailInstance = echarts.init(tailChart.value)
+  tailInstance = init(tailChart.value)
 
   const losses = result.value.return_distributions.adversarial
     .map((r: number) => -r)
@@ -477,7 +483,7 @@ const renderTailChart = () => {
     xAxis: { type: 'value', name: 'Loss', axisLabel: { formatter: (v: number) => (v * 100).toFixed(0) + '%' } },
     yAxis: { type: 'value', name: 'CDF', min: 0, max: 1 },
     series: [
-      { name: 'Empirical CDF', type: 'scatter', data: empiricalCdf.filter((_: any, i: number) => i % 3 === 0), symbolSize: 3, itemStyle: { color: '#9ca3af' } },
+      { name: 'Empirical CDF', type: 'scatter', data: empiricalCdf.filter((_: unknown, i: number) => i % 3 === 0), symbolSize: 3, itemStyle: { color: '#9ca3af' } },
       { name: 'GPD Fit', type: 'line', data: gpdPoints, lineStyle: { color: '#f87171', width: 2 }, symbol: 'none' },
     ],
   })

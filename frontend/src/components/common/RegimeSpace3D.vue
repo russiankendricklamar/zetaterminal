@@ -336,7 +336,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
+import { ref, shallowRef, computed, onMounted, onUnmounted, watch } from 'vue'
 import { HMMModel, generateMockMarketData, type MarketPoint } from '@/composables/useHMMModel'
 import { RegimeSpaceRenderer, type RegimeConfig, type CameraPreset, type HoverInfo } from '@/composables/useRegimeSpace3D'
 import ScrubInput from './ScrubInput.vue'
@@ -387,7 +387,7 @@ const filteredData = computed(() => {
 })
 
 // HMM Model
-const hmmModel = ref<HMMModel | null>(null)
+const hmmModel = shallowRef<HMMModel | null>(null)
 const transitionMatrix = ref<number[][] | null>(null)
 const stationaryDistribution = ref<number[]>([])
 const expectedDurations = ref<number[]>([])
@@ -548,13 +548,14 @@ const runAnalysis = async () => {
     }
     
     // Преобразуем данные в формат MarketPoint
-    allMarketData.value = chartDataResponse.data.map((d: any, idx: number) => ({
+    allMarketData.value = chartDataResponse.data.map((d, idx) => ({
       date: new Date(Date.now() - (chartDataResponse.data.length - idx) * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-      return: (d.price - 100) / 100, // Приблизительная доходность
-      volatility: d.vol,
+      return: ((d.price ?? 100) - 100) / 100, // Приблизительная доходность
+      volatility: d.vol ?? 0,
       liquidity: 0.5 + Math.random() * 0.5, // Заглушка для ликвидности
       regime: d.regime,
-      probability: Array(nStates.value).fill(0).map((_, i) => i === d.regime ? 0.8 : 0.2 / (nStates.value - 1))
+      probability: Array(nStates.value).fill(0).map((_: number, i: number) => i === d.regime ? 0.8 : 0.2 / (nStates.value - 1)),
+      index: idx
     }))
     
     // Получаем матрицу переходов и статистику из HMM модели

@@ -197,7 +197,13 @@
 
 <script setup lang="ts">
 import { ref, computed, nextTick, watch } from 'vue'
-import * as echarts from 'echarts'
+import { use, init } from 'echarts/core'
+import type { ECharts } from 'echarts/core'
+import { CanvasRenderer } from 'echarts/renderers'
+import { LineChart } from 'echarts/charts'
+import { TooltipComponent, LegendComponent, GridComponent, MarkLineComponent, DataZoomComponent } from 'echarts/components'
+
+use([CanvasRenderer, LineChart, TooltipComponent, LegendComponent, GridComponent, MarkLineComponent, DataZoomComponent])
 import { getApiHeaders } from '@/utils/apiHeaders'
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || ''
@@ -211,7 +217,7 @@ const loading = ref(false)
 const error = ref('')
 const result = ref<Record<string, any> | null>(null)
 const chartEl = ref<HTMLElement | null>(null)
-let chart: echarts.ECharts | null = null
+let chart: ECharts | null = null
 
 // ── Parsers ────────────────────────────────────────────────────────────────────
 function parseFloats(raw: string): number[] {
@@ -269,8 +275,8 @@ async function fitModel() {
     result.value = data.result
     await nextTick()
     renderChart()
-  } catch (e: any) {
-    error.value = e.message || 'Неизвестная ошибка'
+  } catch (e: unknown) {
+    error.value = e instanceof Error ? e.message : 'Неизвестная ошибка'
   } finally {
     loading.value = false
   }
@@ -279,7 +285,7 @@ async function fitModel() {
 // ── Chart ──────────────────────────────────────────────────────────────────────
 function renderChart() {
   if (!chartEl.value || !result.value) return
-  if (!chart) chart = echarts.init(chartEl.value, 'dark')
+  if (!chart) chart = init(chartEl.value, 'dark')
 
   const { actual_vol, fitted_vol, n, train_end } = result.value.plot_data
   const indices = Array.from({ length: n }, (_, i) => i + 1)
@@ -288,9 +294,10 @@ function renderChart() {
     backgroundColor: 'transparent',
     tooltip: {
       trigger: 'axis',
-      formatter: (p: any) => {
-        const t = p[0]?.axisValue
-        const lines = p.map((s: any) => `${s.seriesName}: ${parseFloat(s.value).toFixed(2)}%`).join('<br/>')
+      formatter: (p: Record<string, unknown> | Record<string, unknown>[]) => {
+        const arr = Array.isArray(p) ? p : [p]
+        const t = (arr[0] as Record<string, unknown>)?.axisValue
+        const lines = arr.map((s: Record<string, unknown>) => `${s.seriesName}: ${parseFloat(String(s.value)).toFixed(2)}%`).join('<br/>')
         return `t = ${t}<br/>${lines}`
       },
     },

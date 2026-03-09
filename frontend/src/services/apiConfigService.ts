@@ -68,26 +68,25 @@ export const API_KEYS_CONFIG: ApiKeyConfig[] = [
   { key: 'githubToken', label: 'GitHub Token', group: 'Developer', required: false, placeholder: 'ghp_your_token' },
 ]
 
-const STORAGE_KEY = 'api_keys_config'
+/**
+ * API keys should be managed server-side via environment variables.
+ * These stubs exist for backward compatibility with the Settings UI;
+ * they operate on an in-memory map that is cleared on page refresh.
+ */
+let _apiKeysMemory: Record<string, string> = {}
 
 /**
- * Save API keys to localStorage.
+ * Store API key references in memory (not persisted to localStorage).
  */
 export function saveApiKeys(keys: Record<string, string>): void {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(keys))
+  _apiKeysMemory = { ...keys }
 }
 
 /**
- * Load API keys from localStorage.
+ * Load API key references from memory.
  */
 export function loadApiKeys(): Record<string, string> {
-  const raw = localStorage.getItem(STORAGE_KEY)
-  if (!raw) return {}
-  try {
-    return JSON.parse(raw)
-  } catch {
-    return {}
-  }
+  return { ..._apiKeysMemory }
 }
 
 /**

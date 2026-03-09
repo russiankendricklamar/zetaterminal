@@ -9,9 +9,9 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
  * Сохраняет реестр опционов или поверхности волатильности в Supabase Storage в формате parquet
  */
 export const saveRegistryToParquet = async (
-  data: any[],
+  data: Record<string, unknown>[],
   registryType: 'option' | 'volatility_surface' = 'option'
-): Promise<{ success: boolean; data: any }> => {
+): Promise<{ success: boolean; data: Record<string, unknown> }> => {
   try {
     const response = await fetch(`${API_BASE_URL}/api/database/export/registry/parquet`, {
       method: 'POST',

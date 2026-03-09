@@ -1,10 +1,11 @@
 """
 API endpoints для HJB оптимизации портфеля.
 """
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Request
 from typing import List, Optional, Dict, Any
 from pydantic import BaseModel, Field
 from src.services.hjb_service import optimize_hjb
+from src.middleware.rate_limit import limiter
 from datetime import datetime
 
 router = APIRouter()
@@ -50,7 +51,8 @@ class HJBResponse(BaseModel):
 
 
 @router.post("/optimize", response_model=HJBResponse)
-async def optimize_hjb_portfolio(request: HJBRequest):
+@limiter.limit("10/minute")
+async def optimize_hjb_portfolio(http_request: Request, request: HJBRequest):
     """
     Выполняет HJB оптимизацию портфеля.
     

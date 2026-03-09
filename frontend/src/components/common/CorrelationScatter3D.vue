@@ -262,7 +262,8 @@ const props = defineProps<{
 // Reactive state
 const plotContainer = ref<HTMLElement | null>(null)
 const isLoading = ref(true)
-const Plotly: any = ref(null)
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const Plotly = ref<any>(null)
 
 const { isMobile } = useIsMobile()
 const availableAssets = ref(props.availableAssets || ['SPY', 'TLT', 'GLD', 'QQQ', 'BTC'])
@@ -326,8 +327,8 @@ const loadPlotly = async () => {
   }
   
   // Проверяем, уже ли загружен Plotly
-  if ((window as any).Plotly) {
-    Plotly.value = (window as any).Plotly
+  if ((window as unknown as Record<string, unknown>).Plotly) {
+    Plotly.value = (window as unknown as Record<string, unknown>).Plotly
     console.log('Plotly already loaded in CorrelationScatter3D')
     return Plotly.value
   }
@@ -337,9 +338,9 @@ const loadPlotly = async () => {
   if (existingScript) {
     return new Promise((resolve) => {
       const checkInterval = setInterval(() => {
-        if ((window as any).Plotly) {
+        if ((window as unknown as Record<string, unknown>).Plotly) {
           clearInterval(checkInterval)
-          Plotly.value = (window as any).Plotly
+          Plotly.value = (window as unknown as Record<string, unknown>).Plotly
           console.log('Plotly loaded from existing script in CorrelationScatter3D')
           resolve(Plotly.value)
         }
@@ -362,8 +363,8 @@ const loadPlotly = async () => {
   
   return new Promise((resolve, reject) => {
     script.onload = () => {
-      if ((window as any).Plotly) {
-        Plotly.value = (window as any).Plotly
+      if ((window as unknown as Record<string, unknown>).Plotly) {
+        Plotly.value = (window as unknown as Record<string, unknown>).Plotly
         console.log('Plotly loaded successfully in CorrelationScatter3D')
         resolve(Plotly.value)
       } else {
@@ -771,7 +772,7 @@ const updatePlot = async () => {
   })
 
   // Prepare traces
-  const traces: any[] = []
+  const traces: Record<string, unknown>[] = []
 
   // Main scatter plot by regime
   regimes.forEach(regime => {
@@ -983,7 +984,7 @@ const updatePlot = async () => {
   }
 
   // Layout
-  const layout: any = {
+  const layout: Record<string, unknown> = {
     paper_bgcolor: 'transparent',
     plot_bgcolor: 'transparent',
     font: { color: '#fff', family: 'system-ui' },
@@ -1244,7 +1245,7 @@ watch(() => selectedAssets.value, () => {
 // Extend window type
 declare global {
   interface Window {
-    Plotly?: any
+    Plotly?: unknown
   }
 }
 </script>

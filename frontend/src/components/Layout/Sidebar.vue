@@ -76,6 +76,7 @@
           to="/terminal"
           class="nav-entry terminal-entry"
           :class="{ active: isActive('/terminal') }"
+          @mouseenter="prefetchRoute('/terminal')"
           @click.native="handleNavClick"
         >
           <div class="zeta-icon font-anton">&zeta;</div>
@@ -126,6 +127,7 @@
                   class="nav-item"
                   :class="{ active: isActive(item.path), 'coming-soon': item.soon }"
                   :style="{ '--item-index': itemIndex }"
+                  @mouseenter="prefetchRoute(item.path)"
                   @click.native="!item.soon && handleNavClick($event)"
                 >
                   <span class="item-dot"></span>
@@ -310,6 +312,26 @@ const handleTouchEnd = () => {
   const swipeDistance = touchStartX.value - touchEndX.value
   if (swipeDistance > 50 && isSidebarOpen.value) {
     closeSidebar()
+  }
+}
+
+// Prefetch route chunks on hover for heavy pages
+const prefetchedRoutes = new Set<string>()
+const prefetchRoute = (path: string) => {
+  if (!path || prefetchedRoutes.has(path)) return
+  prefetchedRoutes.add(path)
+  const matched = router.resolve(path)
+  if (matched?.matched?.length) {
+    for (const record of matched.matched) {
+      const components = record.components
+      if (components) {
+        for (const comp of Object.values(components)) {
+          if (typeof comp === 'function') {
+            (comp as () => Promise<unknown>)()
+          }
+        }
+      }
+    }
   }
 }
 

@@ -1,6 +1,6 @@
 """
-Database module for Supabase connection.
+Database module — SQLAlchemy async with Neon (PostgreSQL) or SQLite.
 """
-from .client import get_supabase_client, supabase_client
+from .client import get_session, init_db
 
-__all__ = ["get_supabase_client", "supabase_client"]
+__all__ = ["get_session", "init_db"]

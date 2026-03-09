@@ -523,7 +523,7 @@ watch(() => swapRegistryStore.totalSwaps, () => {
 })
 
 // Methods
-const selectScenario = (scenario: any) => {
+const selectScenario = (scenario: Record<string, unknown>) => {
   selectedScenario.value = scenario
 }
 

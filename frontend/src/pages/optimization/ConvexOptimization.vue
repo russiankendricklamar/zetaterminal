@@ -178,7 +178,13 @@
 
 <script setup lang="ts">
 import { ref, computed, watch, nextTick } from 'vue'
-import * as echarts from 'echarts'
+import { use, init } from 'echarts/core'
+import type { ECharts } from 'echarts/core'
+import { CanvasRenderer } from 'echarts/renderers'
+import { BarChart, PieChart, LineChart, ScatterChart } from 'echarts/charts'
+import { TooltipComponent, LegendComponent, GridComponent } from 'echarts/components'
+
+use([CanvasRenderer, BarChart, PieChart, LineChart, ScatterChart, TooltipComponent, LegendComponent, GridComponent])
 import { getApiHeaders } from '@/utils/apiHeaders'
 
 const emit = defineEmits<{
@@ -225,7 +231,7 @@ const result = ref<any>(null)
 const weightsChart = ref<HTMLElement | null>(null)
 const rcChart = ref<HTMLElement | null>(null)
 const frontierChart = ref<HTMLElement | null>(null)
-let chartInstances: echarts.ECharts[] = []
+let chartInstances: ECharts[] = []
 
 // --- Parse ---
 const parseResult = computed(() => {
@@ -300,8 +306,8 @@ async function compute() {
     result.value = data.result
     await nextTick()
     renderAllCharts()
-  } catch (e: any) {
-    error.value = e.message
+  } catch (e: unknown) {
+    error.value = e instanceof Error ? e.message : String(e)
   } finally {
     loading.value = false
   }
@@ -311,7 +317,7 @@ async function compute() {
 function disposeAll() { chartInstances.forEach(c => c.dispose()); chartInstances = [] }
 function mk(el: HTMLElement | null) {
   if (!el) return null
-  const inst = echarts.init(el, 'dark')
+  const inst = init(el, 'dark')
   chartInstances.push(inst)
   return inst
 }
@@ -360,7 +366,7 @@ function renderRC() {
   const rc: number[] = rpRes.risk_contributions
   inst.setOption({
     backgroundColor: 'transparent',
-    tooltip: { trigger: 'item', formatter: (p: any) => `${p.name}: ${(p.value * 100).toFixed(2)}%` },
+    tooltip: { trigger: 'item', formatter: (p: Record<string, unknown>) => `${p.name}: ${((p.value as number) * 100).toFixed(2)}%` },
     series: [{
       type: 'pie',
       radius: ['30%', '65%'],
@@ -368,7 +374,7 @@ function renderRC() {
         name: n,
         value: +Math.abs(rc[i] ?? 0).toFixed(6),
       })),
-      label: { formatter: (p: any) => `${p.name}\n${(p.value * 100).toFixed(1)}%`, color: '#e0e0e0' },
+      label: { formatter: (p: Record<string, unknown>) => `${p.name}\n${((p.value as number) * 100).toFixed(1)}%`, color: '#e0e0e0' },
     }],
   })
 }
@@ -391,11 +397,12 @@ function renderFrontier() {
     backgroundColor: 'transparent',
     tooltip: {
       trigger: 'item',
-      formatter: (p: any) => {
+      formatter: (p: Record<string, unknown>) => {
+        const d = p.data as number[]
         if (p.seriesName === 'Frontier') {
-          return `Vol: ${(p.data[0] * 100).toFixed(2)}%<br/>Ret: ${(p.data[1] * 100).toFixed(2)}%`
+          return `Vol: ${(d[0] * 100).toFixed(2)}%<br/>Ret: ${(d[1] * 100).toFixed(2)}%`
         }
-        return `${p.seriesName}<br/>Vol: ${(p.data[0] * 100).toFixed(2)}%<br/>Ret: ${(p.data[1] * 100).toFixed(2)}%`
+        return `${p.seriesName}<br/>Vol: ${(d[0] * 100).toFixed(2)}%<br/>Ret: ${(d[1] * 100).toFixed(2)}%`
       },
     },
     legend: { right: 10, top: 10, textStyle: { color: '#aaa' } },
@@ -410,7 +417,7 @@ function renderFrontier() {
         itemStyle: { color: '#5b8af5' },
         symbol: 'none',
       },
-      ...overlayPoints.map((p: any) => ({
+      ...overlayPoints.map((p: { name: string; value: number[]; color: string }) => ({
         name: p.name,
         type: 'scatter',
         data: [p.value],
@@ -430,8 +437,8 @@ const objLabel = (k: string) => ({
   equal_weight: 'Equal Wt',
 }[k] ?? k)
 const objColor = (k: string) => OBJ_COLORS[k] ?? '#888'
-const isBestSharpe = (s: any) => {
-  const best = Math.max(...(result.value?.summary ?? []).map((x: any) => x.sharpe))
+const isBestSharpe = (s: Record<string, unknown>) => {
+  const best = Math.max(...(result.value?.summary ?? []).map((x: Record<string, unknown>) => x.sharpe as number))
   return s.sharpe === best && best > 0
 }
 

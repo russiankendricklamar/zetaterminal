@@ -10,11 +10,13 @@ Endpoints:
 - GET /multivariate-hmm/export - Экспорт результатов в DataFrame
 """
 
-from fastapi import APIRouter, HTTPException, Query, Body
+from fastapi import APIRouter, HTTPException, Query, Body, Request
 from pydantic import BaseModel, Field
 from typing import List, Optional, Dict, Any
 import numpy as np
 import logging
+
+from src.middleware.rate_limit import limiter
 
 logger = logging.getLogger(__name__)
 
@@ -96,7 +98,8 @@ def _get_model_key(asset_names: List[str], n_regimes: int) -> str:
 
 
 @router.post("/multivariate-hmm/fit", response_model=FitResponse)
-async def fit_model(request: FitRequest = Body(...)):
+@limiter.limit("10/minute")
+async def fit_model(http_request: Request, request: FitRequest = Body(...)):
     """
     Обучение многомерной HMM модели на данных.
     

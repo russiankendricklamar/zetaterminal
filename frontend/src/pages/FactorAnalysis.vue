@@ -213,7 +213,13 @@
 
 <script setup lang="ts">
 import { ref, nextTick, watch } from 'vue'
-import * as echarts from 'echarts'
+import { use, init } from 'echarts/core'
+import type { ECharts } from 'echarts/core'
+import { CanvasRenderer } from 'echarts/renderers'
+import { BarChart, HeatmapChart } from 'echarts/charts'
+import { TooltipComponent, GridComponent, VisualMapComponent } from 'echarts/components'
+
+use([CanvasRenderer, BarChart, HeatmapChart, TooltipComponent, GridComponent, VisualMapComponent])
 import { getApiHeaders } from '@/utils/apiHeaders'
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || ''
@@ -229,8 +235,8 @@ const result = ref<Record<string, any> | null>(null)
 
 const peChartEl = ref<HTMLElement | null>(null)
 const heatmapEl = ref<HTMLElement | null>(null)
-let peChart: echarts.ECharts | null = null
-let heatmapChart: echarts.ECharts | null = null
+let peChart: ECharts | null = null
+let heatmapChart: ECharts | null = null
 
 // ── Parsers ────────────────────────────────────────────────────────────────────
 function parseMatrix(raw: string, hasHeader: boolean): { data: number[][], names: string[] | null } {
@@ -293,8 +299,8 @@ async function analyze() {
     result.value = d.result
     await nextTick()
     renderCharts()
-  } catch (e: any) {
-    error.value = e.message || 'Неизвестная ошибка'
+  } catch (e: unknown) {
+    error.value = e instanceof Error ? e.message : 'Неизвестная ошибка'
   } finally {
     loading.value = false
   }
@@ -308,7 +314,7 @@ function renderCharts() {
 
 function renderPricingErrors() {
   if (!peChartEl.value || !result.value) return
-  if (!peChart) peChart = echarts.init(peChartEl.value, 'dark')
+  if (!peChart) peChart = init(peChartEl.value, 'dark')
 
   const errors = result.value.cs.pricing_errors as number[]
   const names = result.value.cs.pricing_errors_assets as string[]
@@ -316,7 +322,7 @@ function renderPricingErrors() {
 
   peChart.setOption({
     backgroundColor: 'transparent',
-    tooltip: { trigger: 'axis', formatter: (p: any) => `${p[0].name}: ${parseFloat(p[0].value).toFixed(4)}` },
+    tooltip: { trigger: 'axis', formatter: (p: Record<string, unknown> | Record<string, unknown>[]) => { const a = Array.isArray(p) ? p[0] : p; return `${a.name}: ${parseFloat(String(a.value)).toFixed(4)}` } },
     xAxis: { type: 'category', data: names, axisLabel: { rotate: 30, fontSize: 11 } },
     yAxis: { type: 'value', axisLabel: { formatter: (v: number) => v.toFixed(3) } },
     series: [{
@@ -330,7 +336,7 @@ function renderPricingErrors() {
 
 function renderHeatmap() {
   if (!heatmapEl.value || !result.value) return
-  if (!heatmapChart) heatmapChart = echarts.init(heatmapEl.value, 'dark')
+  if (!heatmapChart) heatmapChart = init(heatmapEl.value, 'dark')
 
   const betas = result.value.ts.beta_matrix as number[][]
   const assetNames = result.value.asset_names as string[]
@@ -354,7 +360,7 @@ function renderHeatmap() {
 
   heatmapChart.setOption({
     backgroundColor: 'transparent',
-    tooltip: { formatter: (p: any) => `${assetNames[p.data[1]]} / ${factorNames[p.data[0]]}: β = ${p.data[2]}` },
+    tooltip: { formatter: (p: Record<string, unknown>) => { const d = p.data as number[]; return `${assetNames[d[1]]} / ${factorNames[d[0]]}: β = ${d[2]}` } },
     xAxis: { type: 'category', data: factorNames, splitArea: { show: true } },
     yAxis: { type: 'category', data: assetNames, splitArea: { show: true } },
     visualMap: {
@@ -366,7 +372,7 @@ function renderHeatmap() {
     series: [{
       type: 'heatmap',
       data,
-      label: { show: N <= 12, formatter: (p: any) => p.data[2].toFixed(2), fontSize: 11 },
+      label: { show: N <= 12, formatter: (p: Record<string, unknown>) => (p.data as number[])[2].toFixed(2), fontSize: 11 },
     }],
     grid: { left: 80, right: 20, top: 10, bottom: 60 },
   })

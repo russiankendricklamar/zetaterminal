@@ -615,8 +615,8 @@ const fetchReport = async (targetIsin: string) => {
     const result = await fetchFloaterBondReport(targetIsin, valuationDate.value)
     report.value = result
     setTimeout(() => initCharts(), 100)
-  } catch (e: any) {
-    error.value = e.message || 'Ошибка загрузки данных'
+  } catch (e: unknown) {
+    error.value = e instanceof Error ? e.message : 'Ошибка загрузки данных'
     console.error('Floater bond report error:', e)
   } finally {
     loading.value = false
@@ -644,7 +644,7 @@ const toggleEditMode = () => {
       editableReport.value.issue_info = { issue_date: null, maturity_date: null, coupon_rate: null, coupon_per_year: null }
     }
     if (editableReport.value && !editableReport.value.pricing) {
-      editableReport.value.pricing = { clean_price_pct: 0, ytm: 0, ytm_pct: 0, g_spread_bps: 0, g_curve_yield: 0, g_curve_pct: 0, yield_type: 'YTM' } as any
+      editableReport.value.pricing = { clean_price_pct: 0, ytm: 0, ytm_pct: 0, g_spread_bps: 0, g_curve_yield: 0, g_curve_pct: 0, yield_type: 'YTM' } as FloaterBondReport['pricing']
     }
     if (editableReport.value && !editableReport.value.risk_indicators) {
       editableReport.value.risk_indicators = { duration: 0, mod_duration: 0, convexity: 0, dv01: 0 }
@@ -660,7 +660,7 @@ const exportToExcel = () => {
   if (!dataToExport) return
 
   try {
-    const data: any[][] = []
+    const data: (string | number | null | undefined)[][] = []
     data.push(['Отчет по облигации с плавающим купоном'])
     data.push(['Дата оценки:', valuationDate.value])
     data.push(['ISIN:', dataToExport.isin])
@@ -762,9 +762,9 @@ const exportToExcel = () => {
 
     const fileName = `Floater_Bond_Report_${dataToExport.isin}_${valuationDate.value}.xlsx`
     XLSX.writeFile(wb, fileName)
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error('Export error:', err)
-    alert(`Ошибка при экспорте: ${err.message}`)
+    alert(`Ошибка при экспорте: ${err instanceof Error ? err.message : String(err)}`)
   }
 }
 
@@ -801,7 +801,7 @@ const initCharts = () => {
     })
     const prices = ph.map(p => p.price)
 
-    priceHistoryChart = new Chart(priceHistoryRef.value.getContext('2d') as any, {
+    priceHistoryChart = new Chart(priceHistoryRef.value.getContext('2d')!, {
       type: 'line',
       data: {
         labels,
@@ -840,7 +840,7 @@ const initCharts = () => {
           }
         }
       }
-    } as any)
+    } as Record<string, unknown>)
   }
 
   // Margin Dynamics Chart (DM and QM) — real data
@@ -853,7 +853,7 @@ const initCharts = () => {
     const dm = mh.map(p => p.dm)
     const qm = mh.map(p => p.qm)
 
-    marginDynamicsChart = new Chart(marginDynamicsRef.value.getContext('2d') as any, {
+    marginDynamicsChart = new Chart(marginDynamicsRef.value.getContext('2d')!, {
       type: 'line',
       data: {
         labels,
@@ -915,7 +915,7 @@ const initCharts = () => {
           }
         }
       }
-    } as any)
+    } as Record<string, unknown>)
   }
 
   // Indices Comparison Chart
@@ -934,7 +934,7 @@ const initCharts = () => {
       { label: 'Индекс корп. облигаций (ВВВ)', value: (indices.corp_bbb || 0) * 100, color: '#9ca3af' }
     ].filter(p => p.value > 0)
 
-    indicesComparisonChart = new Chart(indicesComparisonRef.value.getContext('2d') as any, {
+    indicesComparisonChart = new Chart(indicesComparisonRef.value.getContext('2d')!, {
       type: 'scatter',
       data: {
         datasets: dataPoints.map((point) => ({
@@ -966,8 +966,8 @@ const initCharts = () => {
             bodyFont: { size: 12 },
             cornerRadius: 8,
             callbacks: {
-              title: (context: any) => dataPoints[context[0].datasetIndex]?.label || '',
-              label: (context: any) => `Доходность: ${dataPoints[context.datasetIndex]?.value.toFixed(2)}%`
+              title: (context: Record<string, unknown>[]) => dataPoints[(context[0] as Record<string, unknown>).datasetIndex as number]?.label || '',
+              label: (context: Record<string, unknown>) => `Доходность: ${dataPoints[context.datasetIndex as number]?.value.toFixed(2)}%`
             }
           }
         },
@@ -996,7 +996,7 @@ const initCharts = () => {
       },
       plugins: [{
         id: 'indicesTimeline',
-        afterDraw: (chart: any) => {
+        afterDraw: (chart: { ctx: CanvasRenderingContext2D; chartArea: { top: number; bottom: number; left: number; right: number }; data: { datasets: unknown[] }; getDatasetMeta: (idx: number) => { data: { getProps: (props: string[], final: boolean) => { x: number; y: number } }[] } }) => {
           const ctx = chart.ctx
           const chartArea = chart.chartArea
           const yCenter = (chartArea.top + chartArea.bottom) / 2
@@ -1008,7 +1008,7 @@ const initCharts = () => {
         }
       }, {
         id: 'blinkingRedPoint',
-        afterDraw: (chart: any) => {
+        afterDraw: (chart: { ctx: CanvasRenderingContext2D; chartArea: { top: number; bottom: number; left: number; right: number }; data: { datasets: unknown[] }; getDatasetMeta: (idx: number) => { data: { getProps: (props: string[], final: boolean) => { x: number; y: number } }[] } }) => {
           const ctx = chart.ctx
           const redIdx = dataPoints.findIndex(p => p.label.startsWith('Оцениваемая облигация'))
           if (redIdx < 0) return
@@ -1038,7 +1038,7 @@ const initCharts = () => {
           ctx.restore()
         }
       }]
-    } as any)
+    } as Record<string, unknown>)
 
     let indicesAnimationFrameId: number | null = null
     let isIndicesAnimating = true
@@ -1057,7 +1057,7 @@ const initCharts = () => {
     animateIndices()
 
     if (indicesComparisonChart) {
-      const chartRef = indicesComparisonChart as any
+      const chartRef = indicesComparisonChart as unknown as Record<string, unknown>
       chartRef.__animationFrameId = indicesAnimationFrameId
       chartRef.__stopAnimation = () => {
         isIndicesAnimating = false
@@ -1075,7 +1075,7 @@ const initCharts = () => {
     const bondYield = (report.value.pricing.ytm || 0) * 100
     const bondName = report.value.issuer || 'Оцениваемая облигация'
 
-    const datasets: any[] = []
+    const datasets: Record<string, unknown>[] = []
 
     if (analogous.length > 0) {
       datasets.push({
@@ -1100,7 +1100,7 @@ const initCharts = () => {
       pointHoverRadius: 12
     })
 
-    analogousBondsChart = new Chart(analogousBondsRef.value.getContext('2d') as any, {
+    analogousBondsChart = new Chart(analogousBondsRef.value.getContext('2d')!, {
       type: 'scatter',
       data: { datasets },
       options: {
@@ -1143,7 +1143,7 @@ const initCharts = () => {
       },
       plugins: [{
         id: 'blinkingPoint',
-        afterDraw: (chart: any) => {
+        afterDraw: (chart: { ctx: CanvasRenderingContext2D; chartArea: { top: number; bottom: number; left: number; right: number }; data: { datasets: unknown[] }; getDatasetMeta: (idx: number) => { data: { getProps: (props: string[], final: boolean) => { x: number; y: number } }[] } }) => {
           const ctx = chart.ctx
           const currentBondDatasetIndex = chart.data.datasets.length - 1
           const meta = chart.getDatasetMeta(currentBondDatasetIndex)
@@ -1173,7 +1173,7 @@ const initCharts = () => {
           ctx.restore()
         }
       }]
-    } as any)
+    } as Record<string, unknown>)
 
     let animationFrameId: number | null = null
     let isAnimating = true
@@ -1192,7 +1192,7 @@ const initCharts = () => {
     animate()
 
     if (analogousBondsChart) {
-      const chartRef = analogousBondsChart as any
+      const chartRef = analogousBondsChart as unknown as Record<string, unknown>
       chartRef.__animationFrameId = animationFrameId
       chartRef.__stopAnimation = () => {
         isAnimating = false
@@ -1293,12 +1293,12 @@ onBeforeUnmount(() => {
   if (priceHistoryChart) priceHistoryChart.destroy()
   if (marginDynamicsChart) marginDynamicsChart.destroy()
   if (indicesComparisonChart) {
-    const stop = (indicesComparisonChart as any).__stopAnimation
+    const stop = (indicesComparisonChart as unknown as Record<string, unknown>).__stopAnimation
     if (typeof stop === 'function') stop()
     indicesComparisonChart.destroy()
   }
   if (analogousBondsChart) {
-    const stop = (analogousBondsChart as any).__stopAnimation
+    const stop = (analogousBondsChart as unknown as Record<string, unknown>).__stopAnimation
     if (typeof stop === 'function') stop()
     analogousBondsChart.destroy()
   }

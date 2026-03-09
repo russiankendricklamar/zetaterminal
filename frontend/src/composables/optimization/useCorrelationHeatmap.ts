@@ -1,11 +1,13 @@
 import { ref, type Ref } from 'vue'
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 let Plotly: any = null
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 let plotlyLoadPromise: Promise<any> | null = null
 
 const loadPlotly = async () => {
   if (typeof window !== 'undefined') {
-    const win = window as any
+    const win = window as unknown as Record<string, unknown>
 
     if (win.Plotly) {
       Plotly = win.Plotly
@@ -51,11 +53,22 @@ const loadPlotly = async () => {
   return null
 }
 
+interface PortfolioPosition {
+  symbol: string
+  allocation: number
+  [key: string]: unknown
+}
+
+interface CorrelationRow {
+  label: string
+  values: number[]
+}
+
 export function useCorrelationHeatmap(
-  portfolioPositions: Ref<any[]>,
-  correlationMatrix: Ref<any[]>
+  portfolioPositions: Ref<PortfolioPosition[]>,
+  correlationMatrix: Ref<CorrelationRow[]>
 ) {
-  const hoveredAsset = ref<any>(null)
+  const hoveredAsset = ref<Record<string, unknown> | null>(null)
 
   const initCorrelation3DHeatmap = async () => {
     try {
@@ -70,7 +83,7 @@ export function useCorrelationHeatmap(
 
       const matrix = correlationMatrix.value
 
-      const calculate3DPositions = (assets: any[], corrMatrix: any[]) => {
+      const calculate3DPositions = (assets: PortfolioPosition[], corrMatrix: CorrelationRow[]) => {
         return assets.map((asset) => {
           const isBond = asset.symbol.includes('SU') || asset.symbol.includes('RU000')
           const assetColor = isBond ? '#3b82f6' : '#10b981'
@@ -115,7 +128,7 @@ export function useCorrelationHeatmap(
         nz: normalize(p.z, zMin, zMax)
       }))
 
-      const createSphere = (cx: number, cy: number, cz: number, r: number, color: string, asset: any) => {
+      const createSphere = (cx: number, cy: number, cz: number, r: number, color: string, asset: Record<string, unknown>) => {
         const x: number[] = [], y: number[] = [], z: number[] = []
         const steps = 16
 
@@ -139,7 +152,7 @@ export function useCorrelationHeatmap(
         }
       }
 
-      const traces: any[] = []
+      const traces: Record<string, unknown>[] = []
 
       normalizedPositions.forEach((pos) => {
         const size = 0.3 + (pos.asset.allocation / 25)
@@ -220,8 +233,10 @@ export function useCorrelationHeatmap(
 
       Plotly.newPlot(container, traces, layout, { responsive: true, displayModeBar: false, staticPlot: false, displaylogo: false })
 
-      const plotlyContainer = container as any
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const plotlyContainer = container as HTMLElement & { on: (event: string, cb: (data: any) => void) => void }
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       plotlyContainer.on('plotly_hover', (data: any) => {
         if (data?.points?.length > 0) {
           for (const point of data.points) {

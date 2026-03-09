@@ -331,7 +331,7 @@ const runHMM = async () => {
         taskStore.updateProgress(taskId, 95)
         
         // Обновляем данные
-        chartData.value = chartDataResponse.data.map((d: any) => ({
+        chartData.value = chartDataResponse.data.map((d: Record<string, unknown>) => ({
             price: d.price,
             regime: d.regime,
             vol: d.vol
@@ -340,7 +340,7 @@ const runHMM = async () => {
         transitionMatrix.value = matrixResponse.transition_matrix
         
         // Обновляем статистику режимов (используем среднее по всем активам)
-        regimeStats.value = statsResponse.statistics.map((stat: any) => {
+        regimeStats.value = statsResponse.statistics.map((stat: Record<string, unknown>) => {
             const avgMean = stat.mean.reduce((a: number, b: number) => a + b, 0) / stat.mean.length
             const avgVol = stat.volatility_per_asset.reduce((a: number, b: number) => a + b, 0) / stat.volatility_per_asset.length
             return {
@@ -357,10 +357,10 @@ const runHMM = async () => {
             togglePlay()
         }, 500)
 
-    } catch (e: any) {
+    } catch (e: unknown) {
         console.error('Ошибка обучения HMM:', e)
         taskStore.failTask(taskId)
-        alert(`Ошибка: ${e.message || 'Неизвестная ошибка'}`)
+        alert(`Ошибка: ${e instanceof Error ? e.message : 'Неизвестная ошибка'}`)
     } finally {
         isLoading.value = false
     }

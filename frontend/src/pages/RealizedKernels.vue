@@ -202,7 +202,13 @@
 
 <script setup lang="ts">
 import { ref, nextTick, watch } from 'vue'
-import * as echarts from 'echarts'
+import { use, init } from 'echarts/core'
+import type { ECharts } from 'echarts/core'
+import { CanvasRenderer } from 'echarts/renderers'
+import { LineChart } from 'echarts/charts'
+import { TooltipComponent, GridComponent, MarkLineComponent } from 'echarts/components'
+
+use([CanvasRenderer, LineChart, TooltipComponent, GridComponent, MarkLineComponent])
 import { getApiHeaders } from '@/utils/apiHeaders'
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || ''
@@ -217,7 +223,7 @@ const loading = ref(false)
 const error = ref('')
 const result = ref<Record<string, any> | null>(null)
 const sigChartEl = ref<HTMLElement | null>(null)
-let sigChart: echarts.ECharts | null = null
+let sigChart: ECharts | null = null
 
 // ── Formatters ─────────────────────────────────────────────────────────────────
 function parsePrices(): number[] {
@@ -282,8 +288,8 @@ async function estimate() {
     result.value = data.result
     await nextTick()
     renderSignaturePlot()
-  } catch (e: any) {
-    error.value = e.message || 'Неизвестная ошибка'
+  } catch (e: unknown) {
+    error.value = e instanceof Error ? e.message : 'Неизвестная ошибка'
   } finally {
     loading.value = false
   }
@@ -292,7 +298,7 @@ async function estimate() {
 // ── Chart ──────────────────────────────────────────────────────────────────────
 function renderSignaturePlot() {
   if (!sigChartEl.value || !result.value) return
-  if (!sigChart) sigChart = echarts.init(sigChartEl.value, 'dark')
+  if (!sigChart) sigChart = init(sigChartEl.value, 'dark')
 
   const { steps, rv } = result.value.signature_plot
   const optStep = result.value.optimal_sampling_step
@@ -308,7 +314,7 @@ function renderSignaturePlot() {
     backgroundColor: 'transparent',
     tooltip: {
       trigger: 'axis',
-      formatter: (p: any) => `Шаг Δ = ${p[0].axisValue}<br/>RK Vol ≈ ${(p[0].value[1] * 100).toFixed(2)}%`,
+      formatter: (p: Record<string, unknown> | Record<string, unknown>[]) => { const a = Array.isArray(p) ? p[0] : p; return `Шаг Δ = ${a.axisValue}<br/>RK Vol ≈ ${((a.value as number[])[1] * 100).toFixed(2)}%` },
     },
     xAxis: {
       type: 'value',

@@ -1184,10 +1184,10 @@ const handleFileUpload = async (event: Event) => {
     const jsonData = XLSX.utils.sheet_to_json(worksheet, { raw: false })
 
     // Парсим данные из Excel
-    const options: any[] = []
-    
-    for (const row of jsonData as any[]) {
-      const option: any = {
+    const options: Record<string, unknown>[] = []
+
+    for (const row of jsonData as Record<string, string>[]) {
+      const option: Record<string, unknown> = {
         S: parseFloat(row['Spot'] || row['S'] || row['s'] || row['Спот'] || '0'),
         K: parseFloat(row['Strike'] || row['K'] || row['k'] || row['Страйк'] || '0'),
         r: parseFloat(row['Rate'] || row['r'] || row['Ставка'] || row['Безрисковая ставка'] || '5'),
@@ -1228,9 +1228,9 @@ const handleFileUpload = async (event: Event) => {
     loadedOptions.value = options
     selectedOptionIndex.value = null
     optionResults.value = []
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error('Excel parsing error:', err)
-    alert(`Ошибка при загрузке файла: ${err.message}`)
+    alert(`Ошибка при загрузке файла: ${err instanceof Error ? err.message : String(err)}`)
   }
 }
 
@@ -1311,7 +1311,7 @@ const calculateAllOptions = async () => {
           theta,
           rho
         })
-      } catch (err: any) {
+      } catch (err: unknown) {
         optionResults.value.push({
           price: 0,
           delta: 0,
@@ -1321,9 +1321,9 @@ const calculateAllOptions = async () => {
         console.error(`Error calculating option ${i + 1}:`, err)
       }
     }
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error('Error calculating options:', err)
-    alert(`Ошибка при расчете опционов: ${err.message}`)
+    alert(`Ошибка при расчете опционов: ${err instanceof Error ? err.message : String(err)}`)
   } finally {
     calculatingAll.value = false
   }
@@ -1430,9 +1430,9 @@ const exportRegistryToExcel = () => {
   try {
     XLSX.writeFile(wb, fileName)
     alert(`Реестр успешно экспортирован: ${fileName}`)
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error('Ошибка при экспорте:', err)
-    alert(`Ошибка при экспорте файла: ${err.message}`)
+    alert(`Ошибка при экспорте файла: ${err instanceof Error ? err.message : String(err)}`)
   }
 }
 
@@ -1451,9 +1451,9 @@ const saveRegistryToParquetHandler = async () => {
         error.value = ''
       }, 5000)
     }
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error('Error saving registry to parquet:', err)
-    error.value = `Ошибка при сохранении реестра: ${err.message}`
+    error.value = `Ошибка при сохранении реестра: ${err instanceof Error ? err.message : String(err)}`
   } finally {
     savingParquet.value = false
   }

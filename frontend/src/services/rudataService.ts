@@ -56,29 +56,83 @@ export interface BondSearchRequest {
   fields?: string[]
 }
 
-// Хранение credentials в localStorage
+// Server-side session management (no localStorage credential storage)
 
-const STORAGE_KEY = 'rudata_credentials'
-
-export function saveCredentials(credentials: RuDataCredentials): void {
-  // Сохраняем в base64 для минимальной обфускации
-  const encoded = btoa(JSON.stringify(credentials))
-  localStorage.setItem(STORAGE_KEY, encoded)
+export interface SessionResponse {
+  success: boolean
+  message: string
+  session_id?: string
+  login?: string
 }
 
-export function loadCredentials(): RuDataCredentials | null {
-  const encoded = localStorage.getItem(STORAGE_KEY)
-  if (!encoded) return null
+// Session ID is kept in memory only (cleared on page refresh)
+let _sessionId: string | null = null
+let _sessionLogin: string | null = null
 
-  try {
-    return JSON.parse(atob(encoded))
-  } catch {
-    return null
+/**
+ * Authenticate with RuData and cache credentials server-side.
+ * Returns session info; stores session_id in memory.
+ */
+export async function createSession(credentials: RuDataCredentials): Promise<SessionResponse> {
+  const response = await fetch(`${API_BASE}/api/rudata/session/create`, {
+    method: 'POST',
+    headers: getApiHeaders(),
+    body: JSON.stringify(credentials)
+  })
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ detail: `HTTP ${response.status}` }))
+    throw new Error(error.detail || `Ошибка: ${response.status}`)
   }
+
+  const result: SessionResponse = await response.json()
+
+  if (result.success && result.session_id) {
+    _sessionId = result.session_id
+    _sessionLogin = result.login ?? credentials.login
+  }
+
+  return result
 }
 
-export function clearCredentials(): void {
-  localStorage.removeItem(STORAGE_KEY)
+/**
+ * Get the current server-side session ID (memory-only).
+ */
+export function getSessionId(): string | null {
+  return _sessionId
+}
+
+/**
+ * Get the login associated with the current session.
+ */
+export function getSessionLogin(): string | null {
+  return _sessionLogin
+}
+
+/**
+ * Check if a server session is active.
+ */
+export function hasActiveSession(): boolean {
+  return _sessionId !== null
+}
+
+/**
+ * Clear the server-side session and local reference.
+ */
+export async function clearSession(): Promise<void> {
+  if (_sessionId) {
+    try {
+      await fetch(`${API_BASE}/api/rudata/session/clear`, {
+        method: 'POST',
+        headers: getApiHeaders(),
+        body: JSON.stringify({ session_id: _sessionId })
+      })
+    } catch {
+      // Best-effort cleanup
+    }
+  }
+  _sessionId = null
+  _sessionLogin = null
 }
 
 // API функции
@@ -269,10 +323,11 @@ export class RuDataClient {
     this.credentials = credentials
   }
 
-  static fromStorage(): RuDataClient | null {
-    const credentials = loadCredentials()
-    if (!credentials) return null
-    return new RuDataClient(credentials)
+  /**
+   * Create a session on the server, caching credentials server-side.
+   */
+  async createSession(): Promise<SessionResponse> {
+    return createSession(this.credentials)
   }
 
   async testConnection(): Promise<ConnectionTestResponse> {
@@ -325,9 +380,11 @@ export class RuDataClient {
     return getFintoolReference(this.credentials, id, fields)
   }
 
-  // Сохранить credentials
-  save(): void {
-    saveCredentials(this.credentials)
+  /**
+   * Clear the server-side session.
+   */
+  async clearSession(): Promise<void> {
+    return clearSession()
   }
 }
 
@@ -341,8 +398,10 @@ export default {
   searchBonds,
   getZCYC,
   getFintoolReference,
-  saveCredentials,
-  loadCredentials,
-  clearCredentials,
+  createSession,
+  getSessionId,
+  getSessionLogin,
+  hasActiveSession,
+  clearSession,
   RuDataClient
 }

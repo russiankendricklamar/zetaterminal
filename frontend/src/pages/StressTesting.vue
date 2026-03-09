@@ -563,7 +563,7 @@ const scenarios = ref([
 
 // Scenario Editor State
 const isEditorOpen = ref(false)
-const editingScenario = ref<any>(null)
+const editingScenario = ref<Record<string, unknown> | null>(null)
 const nextScenarioId = ref(5)
 
 const formData = ref({
@@ -610,7 +610,7 @@ const saveCustomScenarios = () => {
   }
 }
 
-const openScenarioEditor = (scenario?: any) => {
+const openScenarioEditor = (scenario?: Record<string, unknown>) => {
   if (scenario) {
     editingScenario.value = scenario
     formData.value = {
@@ -737,7 +737,7 @@ const saveScenario = () => {
     .replace(/[^a-z0-9]+/g, '_')
     .replace(/^_+|_+$/g, '')
   
-  const scenarioData: any = {
+  const scenarioData: Record<string, unknown> = {
     id: editingScenario?.value?.id || nextScenarioId.value++,
     name: formData.value.name,
     description: formData.value.description,
@@ -780,7 +780,7 @@ const saveScenario = () => {
   showToast(editingScenario.value ? 'Сценарий обновлен' : 'Сценарий создан', 'success')
 }
 
-const editScenario = (scenario: any) => {
+const editScenario = (scenario: Record<string, unknown>) => {
   openScenarioEditor(scenario)
 }
 
@@ -799,7 +799,7 @@ const deleteScenario = (id: number) => {
 loadCustomScenarios()
 
 const selectedScenario = ref(scenarios.value[0])
-const selectScenario = (scenario: any) => selectedScenario.value = scenario
+const selectScenario = (scenario: Record<string, unknown>) => selectedScenario.value = scenario
 
 // Helpers
 const getImpact = (val: number) => val * shockMultiplier.value
@@ -815,7 +815,7 @@ const getScenarioMetrics = (scenarioKey: string) => {
   return stressTestResults.value.results[scenarioKey].metrics
 }
 
-const getScenarioPnLImpact = (scenario: any) => {
+const getScenarioPnLImpact = (scenario: Record<string, unknown>) => {
   const metrics = getScenarioMetrics(scenario.key)
   if (metrics) {
     // Вычисляем P&L Impact из метрик
@@ -825,7 +825,7 @@ const getScenarioPnLImpact = (scenario: any) => {
   return scenario.pnlImpact * shockMultiplier.value
 }
 
-const getScenarioVaRChange = (scenario: any) => {
+const getScenarioVaRChange = (scenario: Record<string, unknown>) => {
   const metrics = getScenarioMetrics(scenario.key)
   if (metrics) {
     const baselineCapital = stressTestResults.value?.baseline.initial_capital || 1000000

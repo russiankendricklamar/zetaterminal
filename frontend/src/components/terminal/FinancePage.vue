@@ -92,7 +92,7 @@ const data = [
 ];
 const COLORS = ['#F59E0B', '#6366F1', '#10B981', '#EC4899'];
 
-const handleItemClick = (item: any) => {
+const handleItemClick = (item: Record<string, unknown>) => {
   const assetInfo: AssetInfo = {
     name: item.name === 'BTC' ? 'Bitcoin' : item.name === 'ETH' ? 'Ethereum' : item.name === 'SOL' ? 'Solana' : 'Tether',
     symbol: item.name,

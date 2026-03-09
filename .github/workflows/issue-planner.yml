@@ -18,9 +18,20 @@ jobs:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
         with:
           script: |
-            const title = context.payload.issue.title;
-            const body = context.payload.issue.body || '';
-            const issueNumber = context.payload.issue.number;
+            const issue = context.payload.issue;
+            const issueNumber = issue.number;
+
+            // Skip bot-created issues
+            if (issue.user.type === 'Bot') {
+              console.log(`Skipping bot-created issue #${issueNumber}`);
+              return;
+            }
+
+            // Sanitize and limit input length
+            const MAX_TITLE_LENGTH = 200;
+            const MAX_BODY_LENGTH = 5000;
+            const title = (issue.title || '').slice(0, MAX_TITLE_LENGTH);
+            const body = (issue.body || '').slice(0, MAX_BODY_LENGTH);
 
             const systemPrompt = `You are a senior quant engineer working on Zeta Terminal — a quantitative finance platform built with Vue 3 + TypeScript (frontend) and Python FastAPI (backend).
 

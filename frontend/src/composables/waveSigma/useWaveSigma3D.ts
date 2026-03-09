@@ -2,7 +2,7 @@
  * Three.js renderer for WAVE_σ.9 market momentum surface visualization
  */
 
-import * as THREE from 'three'
+import { Scene, PerspectiveCamera, WebGLRenderer, Mesh, PlaneGeometry, BufferAttribute, MeshBasicMaterial, DoubleSide, AmbientLight, PointLight, Color, Material } from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 import { MarketRegime } from './types'
 import { noise, getHeatmapColor } from './mathUtils'
@@ -19,16 +19,16 @@ export type SignalCallback = (signal: number, volatility: number) => void
  * Class for rendering 3D wave surface
  */
 export class WaveSigmaRenderer {
-  private scene!: THREE.Scene
-  private camera!: THREE.PerspectiveCamera
-  private renderer!: THREE.WebGLRenderer
+  private scene!: Scene
+  private camera!: PerspectiveCamera
+  private renderer!: WebGLRenderer
   private controls!: OrbitControls
   private container: HTMLElement
 
   // 3D objects
-  private mesh: THREE.Mesh | null = null
-  private wireframeMesh: THREE.Mesh | null = null
-  private geometry: THREE.PlaneGeometry | null = null
+  private mesh: Mesh | null = null
+  private wireframeMesh: Mesh | null = null
+  private geometry: PlaneGeometry | null = null
   private colors: Float32Array | null = null
 
   // Animation state
@@ -58,8 +58,8 @@ export class WaveSigmaRenderer {
    * Initialize scene
    */
   private initScene(): void {
-    this.scene = new THREE.Scene()
-    this.scene.background = new THREE.Color(0x050505)
+    this.scene = new Scene()
+    this.scene.background = new Color(0x050505)
   }
 
   /**
@@ -68,7 +68,7 @@ export class WaveSigmaRenderer {
   private initCamera(): void {
     const width = this.container.clientWidth
     const height = this.container.clientHeight
-    this.camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 1000)
+    this.camera = new PerspectiveCamera(45, width / height, 0.1, 1000)
     this.camera.position.set(0, 25, 40)
     this.camera.lookAt(0, 0, 0)
   }
@@ -77,7 +77,7 @@ export class WaveSigmaRenderer {
    * Initialize renderer
    */
   private initRenderer(): void {
-    this.renderer = new THREE.WebGLRenderer({
+    this.renderer = new WebGLRenderer({
       antialias: true,
       alpha: true,
       powerPreference: 'high-performance'
@@ -106,10 +106,10 @@ export class WaveSigmaRenderer {
    * Initialize lighting
    */
   private initLighting(): void {
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.5)
+    const ambientLight = new AmbientLight(0xffffff, 0.5)
     this.scene.add(ambientLight)
 
-    const pointLight = new THREE.PointLight(0xffffff, 1)
+    const pointLight = new PointLight(0xffffff, 1)
     pointLight.position.set(10, 10, 10)
     this.scene.add(pointLight)
   }
@@ -118,28 +118,28 @@ export class WaveSigmaRenderer {
    * Initialize surface mesh
    */
   private initSurface(): void {
-    this.geometry = new THREE.PlaneGeometry(WIDTH, HEIGHT, SEGMENTS_W, SEGMENTS_H)
+    this.geometry = new PlaneGeometry(WIDTH, HEIGHT, SEGMENTS_W, SEGMENTS_H)
 
     // Initialize colors attribute
     const vertexCount = (SEGMENTS_W + 1) * (SEGMENTS_H + 1)
     this.colors = new Float32Array(vertexCount * 3)
-    this.geometry.setAttribute('color', new THREE.BufferAttribute(this.colors, 3))
+    this.geometry.setAttribute('color', new BufferAttribute(this.colors, 3))
 
     // Main surface material
-    const material = new THREE.MeshBasicMaterial({
+    const material = new MeshBasicMaterial({
       vertexColors: true,
-      side: THREE.DoubleSide,
+      side: DoubleSide,
       transparent: true,
       opacity: 0.8
     })
 
-    this.mesh = new THREE.Mesh(this.geometry, material)
+    this.mesh = new Mesh(this.geometry, material)
     this.mesh.rotation.x = -Math.PI / 2.5
     this.mesh.position.y = -5
     this.scene.add(this.mesh)
 
     // Wireframe overlay
-    const wireframeMaterial = new THREE.MeshBasicMaterial({
+    const wireframeMaterial = new MeshBasicMaterial({
       wireframe: true,
       color: 0xffffff,
       transparent: true,
@@ -147,7 +147,7 @@ export class WaveSigmaRenderer {
       depthWrite: false
     })
 
-    this.wireframeMesh = new THREE.Mesh(this.geometry, wireframeMaterial)
+    this.wireframeMesh = new Mesh(this.geometry, wireframeMaterial)
     this.wireframeMesh.rotation.x = -Math.PI / 2.5
     this.wireframeMesh.position.y = -5
     this.scene.add(this.wireframeMesh)
@@ -159,8 +159,8 @@ export class WaveSigmaRenderer {
   private updateSurface(delta: number): void {
     if (!this.geometry || !this.colors) return
 
-    const posAttr = this.geometry.getAttribute('position') as THREE.BufferAttribute
-    const colAttr = this.geometry.getAttribute('color') as THREE.BufferAttribute
+    const posAttr = this.geometry.getAttribute('position') as BufferAttribute
+    const colAttr = this.geometry.getAttribute('color') as BufferAttribute
     if (!posAttr || !colAttr) return
 
     // Slow down time for the simulation
@@ -295,13 +295,13 @@ export class WaveSigmaRenderer {
 
     // Dispose materials
     if (this.mesh) {
-      const material = this.mesh.material as THREE.Material
+      const material = this.mesh.material as Material
       material.dispose()
       this.scene.remove(this.mesh)
     }
 
     if (this.wireframeMesh) {
-      const material = this.wireframeMesh.material as THREE.Material
+      const material = this.wireframeMesh.material as Material
       material.dispose()
       this.scene.remove(this.wireframeMesh)
     }

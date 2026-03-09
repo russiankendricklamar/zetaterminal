@@ -155,7 +155,13 @@
 
 <script setup lang="ts">
 import { ref, nextTick, watch } from 'vue'
-import * as echarts from 'echarts'
+import { use, init } from 'echarts/core'
+import type { ECharts } from 'echarts/core'
+import { CanvasRenderer } from 'echarts/renderers'
+import { BarChart, LineChart, HeatmapChart } from 'echarts/charts'
+import { TooltipComponent, LegendComponent, GridComponent, VisualMapComponent, MarkLineComponent } from 'echarts/components'
+
+use([CanvasRenderer, BarChart, LineChart, HeatmapChart, TooltipComponent, LegendComponent, GridComponent, VisualMapComponent, MarkLineComponent])
 import { getApiHeaders } from '@/utils/apiHeaders'
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || ''
@@ -175,10 +181,10 @@ const rmtEl = ref<HTMLElement | null>(null)
 const heatmapEl = ref<HTMLElement | null>(null)
 const riskEl = ref<HTMLElement | null>(null)
 
-let screeChart: echarts.ECharts | null = null
-let rmtChart: echarts.ECharts | null = null
-let heatmapChart: echarts.ECharts | null = null
-let riskChart: echarts.ECharts | null = null
+let screeChart: ECharts | null = null
+let rmtChart: ECharts | null = null
+let heatmapChart: ECharts | null = null
+let riskChart: ECharts | null = null
 
 // ── Parsers ────────────────────────────────────────────────────────────────────
 function parseMatrix(raw: string, header: boolean): { data: number[][], names: string[] | null } {
@@ -240,8 +246,8 @@ async function decompose() {
     result.value = (await resp.json()).result
     await nextTick()
     renderAll()
-  } catch (e: any) {
-    error.value = e.message || 'Неизвестная ошибка'
+  } catch (e: unknown) {
+    error.value = e instanceof Error ? e.message : 'Неизвестная ошибка'
   } finally {
     loading.value = false
   }
@@ -257,7 +263,7 @@ function renderAll() {
 
 function renderScree() {
   if (!screeEl.value || !result.value) return
-  if (!screeChart) screeChart = echarts.init(screeEl.value, 'dark')
+  if (!screeChart) screeChart = init(screeEl.value, 'dark')
 
   const evPct = result.value.explained_variance.map((v: number) => +(v * 100).toFixed(2))
   const cumPct = result.value.cumulative_variance.map((v: number) => +(v * 100).toFixed(2))
@@ -293,7 +299,7 @@ function renderScree() {
 
 function renderRMT() {
   if (!rmtEl.value || !result.value) return
-  if (!rmtChart) rmtChart = echarts.init(rmtEl.value, 'dark')
+  if (!rmtChart) rmtChart = init(rmtEl.value, 'dark')
 
   const { eigenvalues, rmt } = result.value
   const { lambda_plus, lambda_minus, mp_x, mp_pdf } = rmt
@@ -331,7 +337,7 @@ function renderRMT() {
 
 function renderHeatmap() {
   if (!heatmapEl.value || !result.value) return
-  if (!heatmapChart) heatmapChart = echarts.init(heatmapEl.value, 'dark')
+  if (!heatmapChart) heatmapChart = init(heatmapEl.value, 'dark')
 
   const loadings = result.value.loadings as { asset: string, loadings: number[] }[]
   const K = result.value.n_components_used
@@ -349,7 +355,7 @@ function renderHeatmap() {
 
   heatmapChart.setOption({
     backgroundColor: 'transparent',
-    tooltip: { formatter: (p: any) => `${assetLabels[p.data[1]]} / ${pcLabels[p.data[0]]}: ${p.data[2]}` },
+    tooltip: { formatter: (p: Record<string, unknown>) => { const d = p.data as number[]; return `${assetLabels[d[1]]} / ${pcLabels[d[0]]}: ${d[2]}` } },
     xAxis: { type: 'category', data: pcLabels, splitArea: { show: true } },
     yAxis: { type: 'category', data: assetLabels, splitArea: { show: true } },
     visualMap: {
@@ -360,7 +366,7 @@ function renderHeatmap() {
     },
     series: [{
       type: 'heatmap', data,
-      label: { show: loadings.length <= 15 && K <= 8, formatter: (p: any) => p.data[2].toFixed(2), fontSize: 10 },
+      label: { show: loadings.length <= 15 && K <= 8, formatter: (p: Record<string, unknown>) => (p.data as number[])[2].toFixed(2), fontSize: 10 },
     }],
     grid: { left: 80, right: 20, top: 10, bottom: 55 },
   })
@@ -368,7 +374,7 @@ function renderHeatmap() {
 
 function renderRisk() {
   if (!riskEl.value || !result.value?.portfolio_risk) return
-  if (!riskChart) riskChart = echarts.init(riskEl.value, 'dark')
+  if (!riskChart) riskChart = init(riskEl.value, 'dark')
 
   const contribs = result.value.portfolio_risk.pc_contributions as { pc: number, share: number, var_contribution: number }[]
   const labels = contribs.map(c => `PC${c.pc}`)
@@ -377,7 +383,7 @@ function renderRisk() {
 
   riskChart.setOption({
     backgroundColor: 'transparent',
-    tooltip: { trigger: 'axis', formatter: (p: any) => `PC${p[0].axisValue}: ${p[0].value.toFixed(2)}%` },
+    tooltip: { trigger: 'axis', formatter: (p: Record<string, unknown> | Record<string, unknown>[]) => { const a = Array.isArray(p) ? p[0] : p; return `PC${a.axisValue}: ${(a.value as number).toFixed(2)}%` } },
     xAxis: { type: 'category', data: labels, axisLabel: { fontSize: 10 } },
     yAxis: { type: 'value', axisLabel: { formatter: (v: number) => v + '%' } },
     series: [{

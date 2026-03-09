@@ -101,8 +101,8 @@ export const valuateBond = async (request: BondValuationRequest): Promise<BondVa
  */
 export const saveRegistryToParquet = async (
   registryType: 'bond' | 'swap' | 'forward',
-  data: any[]
-): Promise<{ success: boolean; data: any }> => {
+  data: Record<string, unknown>[]
+): Promise<{ success: boolean; data: Record<string, unknown> }> => {
   try {
     const response = await fetch(`${API_BASE_URL}/api/database/export/registry/parquet`, {
       method: 'POST',

@@ -2,7 +2,15 @@
  * Three.js рендерер для 3D визуализации пространства скрытых состояний
  */
 
-import * as THREE from 'three'
+import {
+  Scene, PerspectiveCamera, WebGLRenderer, Line, Points, Mesh, Group, Object3D,
+  Raycaster, Vector2, Vector3, ArrowHelper, Color, FogExp2, AmbientLight,
+  DirectionalLight, LineBasicMaterial, BufferGeometry, BufferAttribute,
+  Float32BufferAttribute, SphereGeometry, MeshPhongMaterial, MeshBasicMaterial,
+  DoubleSide, CanvasTexture, SpriteMaterial, Sprite, LineSegments, EdgesGeometry,
+  CatmullRomCurve3, PCFSoftShadowMap, PointsMaterial, PlaneGeometry,
+  CylinderGeometry, ConeGeometry, RingGeometry, LineDashedMaterial, Material
+} from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 import type { MarketPoint, HMMModel } from './useHMMModel'
 
@@ -39,21 +47,21 @@ export interface HoverInfo {
  * Класс для рендеринга 3D пространства режимов
  */
 export class RegimeSpaceRenderer {
-  private scene: THREE.Scene
-  private camera: THREE.PerspectiveCamera
-  private renderer: THREE.WebGLRenderer
-  private controls: OrbitControls
+  private scene!: Scene
+  private camera!: PerspectiveCamera
+  private renderer!: WebGLRenderer
+  private controls!: OrbitControls
   private container: HTMLElement
 
   // 3D объекты
-  private trajectoryLine: THREE.Line | null = null
-  private trajectoryPoints: THREE.Points | null = null
-  private trajectoryNodes: THREE.Mesh[] = [] // Узлы траектории (маленькие кружки)
-  private transitionMarkers: THREE.Mesh[] = [] // Шарики переходов между режимами
-  private regimeEllipsoids: THREE.Group[] = []
-  private regimeCentroids: THREE.Mesh[] = []
-  private axesHelper: THREE.Group | null = null
-  private gridHelper: THREE.Object3D | null = null
+  private trajectoryLine: Line | null = null
+  private trajectoryPoints: Points | null = null
+  private trajectoryNodes: Mesh[] = [] // Узлы траектории (маленькие кружки)
+  private transitionMarkers: Mesh[] = [] // Шарики переходов между режимами
+  private regimeEllipsoids: Group[] = []
+  private regimeCentroids: Mesh[] = []
+  private axesHelper: Group | null = null
+  private gridHelper: Object3D | null = null
 
   // Данные
   private marketData: MarketPoint[] = []
@@ -70,9 +78,9 @@ export class RegimeSpaceRenderer {
   private autoAnimationDuration = 5000 // 5 секунд для полной анимации
   
   // Интерактивность - hover детализация
-  private raycaster: THREE.Raycaster | null = null
-  private mouse: THREE.Vector2 = new THREE.Vector2()
-  private hoveredObject: THREE.Object3D | null = null
+  private raycaster: Raycaster | null = null
+  private mouse: Vector2 = new Vector2()
+  private hoveredObject: Object3D | null = null
   private onHoverCallback: ((info: HoverInfo | null) => void) | null = null
 
   // Настройки - изначально включены сетка, эллипсоиды и траектория (для анимации)
@@ -82,20 +90,20 @@ export class RegimeSpaceRenderer {
   private showGrid = true
   private currentTimeIndex = 0
   private showTransitionArrows = false
-  private transitionArrows: THREE.ArrowHelper[] = []
+  private transitionArrows: ArrowHelper[] = []
   
   // Renaissance Insights Mode
   private renaissanceMode = false
   private selectedTimeframe = 'daily'
-  private nonRandomSegments: THREE.Group[] = []
-  private arbitrageZones: THREE.Mesh[] = []
-  private meanReversionBands: THREE.Mesh[] = []
-  private momentumArrows: THREE.ArrowHelper[] = []
-  private signalMarkers: THREE.Group[] = []
-  private probabilityWaves: THREE.Group[] = []
-  private decodingParticles: THREE.Points[] = []
-  private portfolioHeatmap: THREE.Group | null = null
-  private comparisonOverlay: THREE.Group | null = null
+  private nonRandomSegments: Group[] = []
+  private arbitrageZones: Mesh[] = []
+  private meanReversionBands: Mesh[] = []
+  private momentumArrows: ArrowHelper[] = []
+  private signalMarkers: Group[] = []
+  private probabilityWaves: Group[] = []
+  private decodingParticles: Points[] = []
+  private portfolioHeatmap: Group | null = null
+  private comparisonOverlay: Group | null = null
 
   constructor(container: HTMLElement) {
     this.container = container
@@ -112,10 +120,10 @@ export class RegimeSpaceRenderer {
    * Инициализация сцены
    */
   private initScene() {
-    this.scene = new THREE.Scene()
+    this.scene = new Scene()
     // Чёрный фон
-    this.scene.background = new THREE.Color(0x000000)
-    this.scene.fog = new THREE.FogExp2(0x000000, 0.008)
+    this.scene.background = new Color(0x000000)
+    this.scene.fog = new FogExp2(0x000000, 0.008)
   }
 
   /**
@@ -124,7 +132,7 @@ export class RegimeSpaceRenderer {
   private initCamera() {
     const width = this.container.clientWidth
     const height = this.container.clientHeight
-    this.camera = new THREE.PerspectiveCamera(60, width / height, 0.1, 1000)
+    this.camera = new PerspectiveCamera(60, width / height, 0.1, 1000)
     // Позиция камеры для обзора всей сцены (сетка 0-120 по XZ, 0-80 по Y)
     // Центр сцены примерно в (60, 40, 60)
     this.camera.position.set(90, 90, 90)
@@ -135,7 +143,7 @@ export class RegimeSpaceRenderer {
    * Инициализация рендерера
    */
   private initRenderer() {
-    this.renderer = new THREE.WebGLRenderer({ 
+    this.renderer = new WebGLRenderer({ 
       antialias: true, 
       alpha: true,
       powerPreference: 'high-performance'
@@ -143,7 +151,7 @@ export class RegimeSpaceRenderer {
     this.renderer.setSize(this.container.clientWidth, this.container.clientHeight)
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
     this.renderer.shadowMap.enabled = true
-    this.renderer.shadowMap.type = THREE.PCFSoftShadowMap
+    this.renderer.shadowMap.type = PCFSoftShadowMap
     this.container.appendChild(this.renderer.domElement)
   }
 
@@ -167,20 +175,20 @@ export class RegimeSpaceRenderer {
    */
   private initLighting() {
     // Ambient light - увеличиваем для более яркой сцены
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.6)
+    const ambientLight = new AmbientLight(0xffffff, 0.6)
     this.scene.add(ambientLight)
 
     // Directional lights - увеличиваем интенсивность
-    const light1 = new THREE.DirectionalLight(0x60a5fa, 0.7)
+    const light1 = new DirectionalLight(0x60a5fa, 0.7)
     light1.position.set(30, 30, 30)
     light1.castShadow = true
     this.scene.add(light1)
 
-    const light2 = new THREE.DirectionalLight(0xa78bfa, 0.5)
+    const light2 = new DirectionalLight(0xa78bfa, 0.5)
     light2.position.set(-30, 30, -30)
     this.scene.add(light2)
 
-    const light3 = new THREE.DirectionalLight(0x4ade80, 0.4)
+    const light3 = new DirectionalLight(0x4ade80, 0.4)
     light3.position.set(0, -30, 0)
     this.scene.add(light3)
   }
@@ -189,7 +197,7 @@ export class RegimeSpaceRenderer {
    * Инициализация интерактивности - hover детализация
    */
   private initInteractivity() {
-    this.raycaster = new THREE.Raycaster()
+    this.raycaster = new Raycaster()
     
     // Обработчики событий мыши
     const onMouseMove = (event: MouseEvent) => {
@@ -225,17 +233,17 @@ export class RegimeSpaceRenderer {
     this.raycaster.setFromCamera(this.mouse, this.camera)
     
     // Отдельные проверки для каждого типа объектов с приоритетом
-    let finalObject: THREE.Object3D | null = null
+    let finalObject: Object3D | null = null
     let finalDistance = Infinity
     
     // 1. Приоритет: Узлы траектории (маленькие шарики)
     // Собираем все узлы: из trajectoryNodes и из групп эллипсоидов (regimePoints)
-    const allTrajectoryNodes: THREE.Object3D[] = [...this.trajectoryNodes]
+    const allTrajectoryNodes: Object3D[] = [...this.trajectoryNodes]
     
     // Добавляем узлы из групп эллипсоидов (regimePoints с userData.point)
     this.regimeEllipsoids.forEach(group => {
       group.children.forEach(child => {
-        if (child instanceof THREE.Mesh && child.userData.point && !allTrajectoryNodes.includes(child)) {
+        if (child instanceof Mesh && child.userData.point && !allTrajectoryNodes.includes(child)) {
           allTrajectoryNodes.push(child)
         }
       })
@@ -261,10 +269,10 @@ export class RegimeSpaceRenderer {
     // 3. Эллипсоиды - только если нет более приоритетных объектов поблизости
     // Проверяем только если нет узла или центроида в радиусе 5 единиц
     if (!finalObject || finalDistance > 5) {
-      const ellipsoidMeshes: THREE.Object3D[] = []
+      const ellipsoidMeshes: Object3D[] = []
       this.regimeEllipsoids.forEach(group => {
         group.children.forEach(child => {
-          if (child instanceof THREE.Mesh && !(child instanceof THREE.LineSegments)) {
+          if (child instanceof Mesh && !(child instanceof LineSegments)) {
             ellipsoidMeshes.push(child)
           }
         })
@@ -302,7 +310,7 @@ export class RegimeSpaceRenderer {
   /**
    * Получение информации об объекте для hover
    */
-  private getHoverInfo(object: THREE.Object3D): HoverInfo | null {
+  private getHoverInfo(object: Object3D): HoverInfo | null {
     // Проверяем узлы траектории (включая те, что находятся в группах эллипсоидов)
     // Сначала проверяем прямо в trajectoryNodes
     for (const node of this.trajectoryNodes) {
@@ -314,7 +322,7 @@ export class RegimeSpaceRenderer {
     // Затем проверяем узлы внутри групп эллипсоидов (regimePoints)
     for (const group of this.regimeEllipsoids) {
       for (const child of group.children) {
-        if (child === object && child instanceof THREE.Mesh && child.userData.point) {
+        if (child === object && child instanceof Mesh && child.userData.point) {
           return this.createTrajectoryNodeInfo(child)
         }
       }
@@ -351,11 +359,11 @@ export class RegimeSpaceRenderer {
       const group = this.regimeEllipsoids[i]
       // object может быть группой или mesh внутри группы
       let isThisEllipsoid = false
-      let ellipsoidMesh: THREE.Object3D | null = null
+      let ellipsoidMesh: Object3D | null = null
       
       if (group === object) {
         isThisEllipsoid = true
-        ellipsoidMesh = group.children.find(c => c instanceof THREE.Mesh) || group
+        ellipsoidMesh = group.children.find(c => c instanceof Mesh) || group
       } else {
         for (const child of group.children) {
           if (child === object) {
@@ -406,7 +414,7 @@ export class RegimeSpaceRenderer {
   /**
    * Создание информации об узле траектории
    */
-  private createTrajectoryNodeInfo(node: THREE.Mesh): HoverInfo | null {
+  private createTrajectoryNodeInfo(node: Mesh): HoverInfo | null {
     const userData = node.userData
     const point = userData.point as MarketPoint | undefined
     if (!point) return null
@@ -613,11 +621,11 @@ export class RegimeSpaceRenderer {
   /**
    * Получение позиции режима в 3D пространстве
    */
-  private getRegimePosition(regimeId: number): THREE.Vector3 {
-    if (!this.hmmModel) return new THREE.Vector3(0, 0, 0)
+  private getRegimePosition(regimeId: number): Vector3 {
+    if (!this.hmmModel) return new Vector3(0, 0, 0)
     const means = this.hmmModel.getEmissionMeans()
     if (!means || !means[regimeId] || !Array.isArray(means[regimeId])) {
-      return new THREE.Vector3(0, 0, 0)
+      return new Vector3(0, 0, 0)
     }
     const mean = means[regimeId]
     // mean[0] = Return, mean[1] = Volatility, mean[2] = Liquidity
@@ -626,7 +634,7 @@ export class RegimeSpaceRenderer {
     const x = this.getRegimeZPosition(regimeId)
     const y = Math.max(0, mean[1] !== undefined ? mean[1] : 0) // Гарантируем положительное значение
     const z = this.getRegimeXPosition(regimeId)
-    return new THREE.Vector3(x, y, z)
+    return new Vector3(x, y, z)
   }
 
   /**
@@ -670,7 +678,7 @@ export class RegimeSpaceRenderer {
       
       const targetPos = this.getRegimePosition(targetRegime)
       
-      const direction = new THREE.Vector3()
+      const direction = new Vector3()
       direction.subVectors(targetPos, currentPos)
       const length = direction.length()
       if (length < 5) return // Skip if too close
@@ -679,9 +687,9 @@ export class RegimeSpaceRenderer {
       
       // Color based on probability
       const intensity = prob
-      const color = new THREE.Color(targetConfig.color)
+      const color = new Color(targetConfig.color)
       
-      const arrow = new THREE.ArrowHelper(
+      const arrow = new ArrowHelper(
         direction,
         currentPos,
         length * 0.8,
@@ -691,7 +699,7 @@ export class RegimeSpaceRenderer {
       )
       
       // Set opacity based on probability
-      const material = arrow.line.material as THREE.LineBasicMaterial
+      const material = arrow.line.material as LineBasicMaterial
       material.opacity = intensity
       material.transparent = true
       
@@ -706,14 +714,14 @@ export class RegimeSpaceRenderer {
   private createAxes() {
     // Оси теперь отображаются только через подписи вдоль граней сетки
     // Стрелки убраны по запросу пользователя
-    this.axesHelper = new THREE.Group()
+    this.axesHelper = new Group()
     this.scene.add(this.axesHelper)
   }
 
   /**
    * Добавление текстовой метки оси
    */
-  private addAxisLabel(text: string, position: THREE.Vector3, color: number, parent: THREE.Group) {
+  private addAxisLabel(text: string, position: Vector3, color: number, parent: Group) {
     const canvas = document.createElement('canvas')
     canvas.width = 512
     canvas.height = 256
@@ -724,10 +732,10 @@ export class RegimeSpaceRenderer {
     ctx.textBaseline = 'middle'
     ctx.fillText(text, 256, 128)
     
-    const texture = new THREE.CanvasTexture(canvas)
+    const texture = new CanvasTexture(canvas)
     texture.needsUpdate = true
-    const spriteMaterial = new THREE.SpriteMaterial({ map: texture })
-    const sprite = new THREE.Sprite(spriteMaterial)
+    const spriteMaterial = new SpriteMaterial({ map: texture })
+    const sprite = new Sprite(spriteMaterial)
     sprite.scale.set(8, 4, 1)
     sprite.position.copy(position)
     parent.add(sprite)
@@ -739,15 +747,15 @@ export class RegimeSpaceRenderer {
   private createGrid() {
     if (!this.showGrid) return
     
-    const gridGroup = new THREE.Group()
+    const gridGroup = new Group()
     
     // Материалы для сеток - ярко белые
-    const gridMaterial = new THREE.LineBasicMaterial({ 
+    const gridMaterial = new LineBasicMaterial({ 
       color: 0xffffff,
       opacity: 1.0,
       transparent: false
     })
-    const gridSecondaryMaterial = new THREE.LineBasicMaterial({ 
+    const gridSecondaryMaterial = new LineBasicMaterial({ 
       color: 0xffffff,
       opacity: 0.7,
       transparent: true
@@ -762,28 +770,28 @@ export class RegimeSpaceRenderer {
     // Линии параллельные оси X (Liquidity)
     for (let i = 0; i <= horizontalDivisions; i++) {
       const z = i * horizontalStep
-      const geometry = new THREE.BufferGeometry()
+      const geometry = new BufferGeometry()
       const positions = new Float32Array([
         0, 0, z,
         horizontalGridSize, 0, z
       ])
-      geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3))
+      geometry.setAttribute('position', new BufferAttribute(positions, 3))
       const isMainLine = i % 4 === 0
-      const line = new THREE.Line(geometry, isMainLine ? gridMaterial : gridSecondaryMaterial)
+      const line = new Line(geometry, isMainLine ? gridMaterial : gridSecondaryMaterial)
       gridGroup.add(line)
     }
     
     // Линии параллельные оси Z (Return)
     for (let i = 0; i <= horizontalDivisions; i++) {
       const x = i * horizontalStep
-      const geometry = new THREE.BufferGeometry()
+      const geometry = new BufferGeometry()
       const positions = new Float32Array([
         x, 0, 0,
         x, 0, horizontalGridSize
       ])
-      geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3))
+      geometry.setAttribute('position', new BufferAttribute(positions, 3))
       const isMainLine = i % 4 === 0
-      const line = new THREE.Line(geometry, isMainLine ? gridMaterial : gridSecondaryMaterial)
+      const line = new Line(geometry, isMainLine ? gridMaterial : gridSecondaryMaterial)
       gridGroup.add(line)
     }
     
@@ -795,40 +803,40 @@ export class RegimeSpaceRenderer {
     // Вертикальные линии (параллельны Y)
     for (let i = 0; i <= horizontalDivisions; i++) {
       const z = i * horizontalStep
-      const geometry = new THREE.BufferGeometry()
+      const geometry = new BufferGeometry()
       const positions = new Float32Array([
         0, 0, z,
         0, verticalGridSize, z
       ])
-      geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3))
-      const line = new THREE.Line(geometry, i % 4 === 0 ? gridMaterial : gridSecondaryMaterial)
+      geometry.setAttribute('position', new BufferAttribute(positions, 3))
+      const line = new Line(geometry, i % 4 === 0 ? gridMaterial : gridSecondaryMaterial)
       gridGroup.add(line)
     }
     
     // Горизонтальные линии (параллельны Z)
     for (let i = 0; i <= verticalDivisions; i++) {
       const y = i * verticalStep
-      const geometry = new THREE.BufferGeometry()
+      const geometry = new BufferGeometry()
       const positions = new Float32Array([
         0, y, 0,
         0, y, horizontalGridSize
       ])
-      geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3))
-      const line = new THREE.Line(geometry, i % 4 === 0 ? gridMaterial : gridSecondaryMaterial)
+      geometry.setAttribute('position', new BufferAttribute(positions, 3))
+      const line = new Line(geometry, i % 4 === 0 ? gridMaterial : gridSecondaryMaterial)
       gridGroup.add(line)
     }
     
     // Названия осей на концах осей
     // Ось X (Return)
-    const xAxisLabel = this.createAxisLabelAtEnd('Return', new THREE.Vector3(horizontalGridSize, 5, 10), 0x60a5fa)
+    const xAxisLabel = this.createAxisLabelAtEnd('Return', new Vector3(horizontalGridSize, 5, 10), 0x60a5fa)
     if (xAxisLabel) gridGroup.add(xAxisLabel)
     
     // Ось Y (Volatility)
-    const yAxisLabel = this.createAxisLabelAtEnd('Volatility', new THREE.Vector3(5, verticalGridSize, 10), 0xa78bfa)
+    const yAxisLabel = this.createAxisLabelAtEnd('Volatility', new Vector3(5, verticalGridSize, 10), 0xa78bfa)
     if (yAxisLabel) gridGroup.add(yAxisLabel)
     
     // Ось Z (Liquidity)
-    const zAxisLabel = this.createAxisLabelAtEnd('Liquidity', new THREE.Vector3(10, 5, horizontalGridSize), 0x4ade80)
+    const zAxisLabel = this.createAxisLabelAtEnd('Liquidity', new Vector3(10, 5, horizontalGridSize), 0x4ade80)
     if (zAxisLabel) gridGroup.add(zAxisLabel)
     
     this.gridHelper = gridGroup
@@ -838,9 +846,9 @@ export class RegimeSpaceRenderer {
   /**
    * Создание длинного названия оси, растянутого вдоль грани сетки
    */
-  private createLongAxisLabel(text: string, startPosition: THREE.Vector3, direction: THREE.Vector3, color: number): THREE.Group | null {
+  private createLongAxisLabel(text: string, startPosition: Vector3, direction: Vector3, color: number): Group | null {
     try {
-      const group = new THREE.Group()
+      const group = new Group()
       const length = direction.length()
       const normalizedDirection = direction.clone().normalize()
       
@@ -860,9 +868,9 @@ export class RegimeSpaceRenderer {
       ctx.textBaseline = 'middle'
       ctx.fillText(text, canvas.width / 2, canvas.height / 2)
       
-      const texture = new THREE.CanvasTexture(canvas)
+      const texture = new CanvasTexture(canvas)
       texture.needsUpdate = true
-      const spriteMaterial = new THREE.SpriteMaterial({ 
+      const spriteMaterial = new SpriteMaterial({ 
         map: texture,
         transparent: true,
         alphaTest: 0.1
@@ -870,7 +878,7 @@ export class RegimeSpaceRenderer {
       
       // Создаем один большой спрайт, растянутый вдоль грани
       // Увеличиваем высоту для лучшей видимости с изометрического вида
-      const sprite = new THREE.Sprite(spriteMaterial)
+      const sprite = new Sprite(spriteMaterial)
       sprite.scale.set(length * 0.9, 25, 1) // Увеличиваем высоту с 12 до 25
       sprite.position.copy(centerPosition)
       
@@ -898,7 +906,7 @@ export class RegimeSpaceRenderer {
   /**
    * Создание метки оси на конце оси (ближе к камере)
    */
-  private createAxisLabelAtEnd(text: string, position: THREE.Vector3, color: number): THREE.Sprite | null {
+  private createAxisLabelAtEnd(text: string, position: Vector3, color: number): Sprite | null {
     try {
       const canvas = document.createElement('canvas')
       canvas.width = 2048
@@ -912,14 +920,14 @@ export class RegimeSpaceRenderer {
       ctx.textBaseline = 'middle'
       ctx.fillText(text, canvas.width / 2, canvas.height / 2)
       
-      const texture = new THREE.CanvasTexture(canvas)
+      const texture = new CanvasTexture(canvas)
       texture.needsUpdate = true
-      const spriteMaterial = new THREE.SpriteMaterial({ 
+      const spriteMaterial = new SpriteMaterial({ 
         map: texture,
         transparent: true,
         alphaTest: 0.1
       })
-      const sprite = new THREE.Sprite(spriteMaterial)
+      const sprite = new Sprite(spriteMaterial)
       // Большой размер для видимости с изометрического вида
       sprite.scale.set(20, 5, 1)
       sprite.position.copy(position)
@@ -934,7 +942,7 @@ export class RegimeSpaceRenderer {
   /**
    * Создание текстовой метки для сетки
    */
-  private createGridLabel(text: string, position: THREE.Vector3, color: number, isTitle: boolean = false, isLarge: boolean = false): THREE.Sprite | null {
+  private createGridLabel(text: string, position: Vector3, color: number, isTitle: boolean = false, isLarge: boolean = false): Sprite | null {
     try {
       const canvas = document.createElement('canvas')
       // Увеличиваем размер для больших надписей
@@ -956,14 +964,14 @@ export class RegimeSpaceRenderer {
       ctx.textBaseline = 'middle'
       ctx.fillText(text, canvas.width / 2, canvas.height / 2)
       
-      const texture = new THREE.CanvasTexture(canvas)
+      const texture = new CanvasTexture(canvas)
       texture.needsUpdate = true
-      const spriteMaterial = new THREE.SpriteMaterial({ 
+      const spriteMaterial = new SpriteMaterial({ 
         map: texture,
         transparent: true,
         alphaTest: 0.1
       })
-      const sprite = new THREE.Sprite(spriteMaterial)
+      const sprite = new Sprite(spriteMaterial)
       // Увеличиваем масштаб для больших надписей
       if (isTitle) {
         sprite.scale.set(16, 8, 1)
@@ -1039,17 +1047,17 @@ export class RegimeSpaceRenderer {
       const regimeColor = this.getRegimeColorByVolatility(volatility)
       
       // Создаем эллипсоид из сферы с масштабированием
-      const geometry = new THREE.SphereGeometry(1, 32, 32)
-      const material = new THREE.MeshPhongMaterial({
-        color: new THREE.Color(regimeColor),
+      const geometry = new SphereGeometry(1, 32, 32)
+      const material = new MeshPhongMaterial({
+        color: new Color(regimeColor),
         transparent: true,
         opacity: 0.5,
-        side: THREE.DoubleSide,
-        emissive: new THREE.Color(regimeColor),
+        side: DoubleSide,
+        emissive: new Color(regimeColor),
         emissiveIntensity: 0.5
       })
 
-      const ellipsoid = new THREE.Mesh(geometry, material)
+      const ellipsoid = new Mesh(geometry, material)
       
       // Делаем каждый режим в виде шара (одинаковый масштаб по всем осям)
       // Используем среднее значение ковариаций для создания сферы
@@ -1076,10 +1084,10 @@ export class RegimeSpaceRenderer {
       ellipsoid.position.set(x, y, z)
       
       // Wireframe сетка на сфере
-      const wireframe = new THREE.LineSegments(
-        new THREE.EdgesGeometry(geometry),
-        new THREE.LineBasicMaterial({ 
-          color: new THREE.Color(regimeColor), 
+      const wireframe = new LineSegments(
+        new EdgesGeometry(geometry),
+        new LineBasicMaterial({ 
+          color: new Color(regimeColor), 
           opacity: 0.7, 
           transparent: true 
         })
@@ -1088,11 +1096,11 @@ export class RegimeSpaceRenderer {
       wireframe.position.copy(ellipsoid.position)
       
       // Добавляем текстовую метку над режимом
-      const labelPosition = new THREE.Vector3(x, y + sphereRadius + 3, z)
+      const labelPosition = new Vector3(x, y + sphereRadius + 3, z)
       const label = this.createRegimeLabel(config.name, labelPosition, regimeColor)
       
       // Создаем маленькие кружки внутри эллипсоида для наблюдений этого режима
-      const regimePoints: THREE.Mesh[] = []
+      const regimePoints: Mesh[] = []
       if (this.marketData.length > 0) {
         // Находим ВСЕ точки траектории, принадлежащие этому режиму
         const regimeObservations = this.marketData
@@ -1150,17 +1158,17 @@ export class RegimeSpaceRenderer {
           
           // Создаем маленькую белую сферу для наблюдения (узел траектории)
           // Белый цвет как на картинке для лучшей видимости внутри сфер
-          const pointGeometry = new THREE.SphereGeometry(0.8, 12, 12)
-          const pointMaterial = new THREE.MeshPhongMaterial({
-            color: new THREE.Color(0xffffff), // Белый цвет как на картинке
-            emissive: new THREE.Color(0xffffff),
+          const pointGeometry = new SphereGeometry(0.8, 12, 12)
+          const pointMaterial = new MeshPhongMaterial({
+            color: new Color(0xffffff), // Белый цвет как на картинке
+            emissive: new Color(0xffffff),
             emissiveIntensity: 0.6,
             transparent: true,
             opacity: 1.0,
             shininess: 100
           })
           
-          const pointMesh = new THREE.Mesh(pointGeometry, pointMaterial)
+          const pointMesh = new Mesh(pointGeometry, pointMaterial)
           pointMesh.position.set(nodeX, nodeY, nodeZ)
           
           // Сохраняем информацию о точке
@@ -1174,7 +1182,7 @@ export class RegimeSpaceRenderer {
         })
       }
       
-      const group = new THREE.Group()
+      const group = new Group()
       group.userData = { regimeId, config } // Сохраняем regimeId для getHoverInfo
       group.add(ellipsoid)
       group.add(wireframe)
@@ -1191,7 +1199,7 @@ export class RegimeSpaceRenderer {
   /**
    * Создание текстовой метки для режима
    */
-  private createRegimeLabel(text: string, position: THREE.Vector3, color: string): THREE.Sprite | null {
+  private createRegimeLabel(text: string, position: Vector3, color: string): Sprite | null {
     try {
       const canvas = document.createElement('canvas')
       canvas.width = 512
@@ -1205,14 +1213,14 @@ export class RegimeSpaceRenderer {
       ctx.textBaseline = 'middle'
       ctx.fillText(text, 256, 128)
       
-      const texture = new THREE.CanvasTexture(canvas)
+      const texture = new CanvasTexture(canvas)
       texture.needsUpdate = true
-      const spriteMaterial = new THREE.SpriteMaterial({ 
+      const spriteMaterial = new SpriteMaterial({ 
         map: texture,
         transparent: true,
         alphaTest: 0.1
       })
-      const sprite = new THREE.Sprite(spriteMaterial)
+      const sprite = new Sprite(spriteMaterial)
       sprite.scale.set(8, 4, 1)
       sprite.position.copy(position)
       
@@ -1256,10 +1264,10 @@ export class RegimeSpaceRenderer {
       console.log('Creating centroid for regime', regimeId, 'sphereRadius:', sphereRadius, 'coreRadius:', coreRadius)
 
       // Ядро сферы - яркое и светящееся
-      const geometry = new THREE.SphereGeometry(coreRadius, 24, 24)
-      const material = new THREE.MeshPhongMaterial({
-        color: new THREE.Color(0xffffff), // Белое ядро
-        emissive: new THREE.Color(regimeColor),
+      const geometry = new SphereGeometry(coreRadius, 24, 24)
+      const material = new MeshPhongMaterial({
+        color: new Color(0xffffff), // Белое ядро
+        emissive: new Color(regimeColor),
         emissiveIntensity: 1.5,
         transparent: true,
         opacity: 1.0,
@@ -1267,7 +1275,7 @@ export class RegimeSpaceRenderer {
         depthTest: false // Рендерится поверх других объектов
       })
 
-      const centroid = new THREE.Mesh(geometry, material)
+      const centroid = new Mesh(geometry, material)
       centroid.renderOrder = 100 // Рендерится после эллипсоидов
       // Позиция в центре сферы
       const x = this.getRegimeZPosition(regimeId)
@@ -1282,14 +1290,14 @@ export class RegimeSpaceRenderer {
       }
 
       // Glow effect - внешнее свечение ядра
-      const glowGeometry = new THREE.SphereGeometry(glowRadius, 24, 24)
-      const glowMaterial = new THREE.MeshBasicMaterial({
-        color: new THREE.Color(regimeColor),
+      const glowGeometry = new SphereGeometry(glowRadius, 24, 24)
+      const glowMaterial = new MeshBasicMaterial({
+        color: new Color(regimeColor),
         transparent: true,
         opacity: 0.4,
         depthTest: false // Рендерится поверх
       })
-      const glow = new THREE.Mesh(glowGeometry, glowMaterial)
+      const glow = new Mesh(glowGeometry, glowMaterial)
       glow.renderOrder = 99 // Рендерится перед ядром но после эллипсоидов
       glow.position.copy(centroid.position)
       glow.userData = { 
@@ -1299,7 +1307,7 @@ export class RegimeSpaceRenderer {
         baseRadius: glowRadius
       }
 
-      const group = new THREE.Group()
+      const group = new Group()
       group.add(centroid)
       group.add(glow)
       
@@ -1318,8 +1326,8 @@ export class RegimeSpaceRenderer {
     if (this.marketData.length === 0) return
 
     // Создаем массив точек для кривой из ВСЕХ наблюдений
-    const points: THREE.Vector3[] = []
-    const pointColors: THREE.Color[] = []
+    const points: Vector3[] = []
+    const pointColors: Color[] = []
     const pointRegimes: number[] = []
 
     // Проходим по ВСЕМ наблюдениям и создаем точки траектории
@@ -1367,7 +1375,7 @@ export class RegimeSpaceRenderer {
       const y = Math.max(5, Math.min(75, regimeY + offsetY))
       const z = Math.max(5, Math.min(115, regimeZ + offsetZ))
 
-      points.push(new THREE.Vector3(x, y, z))
+      points.push(new Vector3(x, y, z))
 
       // Цвет и режим (regimeId уже определён выше)
       pointRegimes.push(regimeId)
@@ -1382,7 +1390,7 @@ export class RegimeSpaceRenderer {
       }
       
       const regimeColor = this.getRegimeColorByVolatility(volatility)
-      const color = new THREE.Color(regimeColor)
+      const color = new Color(regimeColor)
       pointColors.push(color)
     })
 
@@ -1399,7 +1407,7 @@ export class RegimeSpaceRenderer {
       
       // Создаем кривую Catmull-Rom для плавного соединения точек
       // Это создает плавную кривую, проходящую через все узлы (наблюдения)
-      const curve = new THREE.CatmullRomCurve3(points, false, 'centripetal')
+      const curve = new CatmullRomCurve3(points, false, 'centripetal')
       
       // Генерируем точки вдоль кривой (больше точек = более плавная кривая)
       // Используем достаточно точек для плавной кривой, показывающей переходы между режимами
@@ -1421,13 +1429,13 @@ export class RegimeSpaceRenderer {
         // Интерполируем цвет между узлами, показывая переход между режимами
         const color1 = pointColors[nodeIndex]
         const color2 = pointColors[nextNodeIndex]
-        const interpolatedColor = new THREE.Color().lerpColors(color1, color2, localT)
+        const interpolatedColor = new Color().lerpColors(color1, color2, localT)
         
         curveColors.push(interpolatedColor.r, interpolatedColor.g, interpolatedColor.b)
       }
       
       // Создаем геометрию для кривой линии
-      const curveGeometry = new THREE.BufferGeometry()
+      const curveGeometry = new BufferGeometry()
       const curvePositions = new Float32Array(curvePoints.length * 3)
       curvePoints.forEach((point, i) => {
         curvePositions[i * 3] = point.x
@@ -1435,17 +1443,17 @@ export class RegimeSpaceRenderer {
         curvePositions[i * 3 + 2] = point.z
       })
       
-      curveGeometry.setAttribute('position', new THREE.BufferAttribute(curvePositions, 3))
-      curveGeometry.setAttribute('color', new THREE.Float32BufferAttribute(curveColors, 3))
+      curveGeometry.setAttribute('position', new BufferAttribute(curvePositions, 3))
+      curveGeometry.setAttribute('color', new Float32BufferAttribute(curveColors, 3))
 
-      const lineMaterial = new THREE.LineBasicMaterial({
+      const lineMaterial = new LineBasicMaterial({
         vertexColors: true,
         transparent: true,
         opacity: 0.9,
         linewidth: 3
       })
 
-      this.trajectoryLine = new THREE.Line(curveGeometry, lineMaterial)
+      this.trajectoryLine = new Line(curveGeometry, lineMaterial)
       this.scene.add(this.trajectoryLine)
       
       // Создаем шарики переходов между режимами на кривой
@@ -1501,17 +1509,17 @@ export class RegimeSpaceRenderer {
         const z = Math.max(5, Math.min(115, regimeZ + offsetZ))
         
         // Создаем маленькую белую сферу для узла (как на картинке)
-        const nodeGeometry = new THREE.SphereGeometry(0.6, 12, 12)
-        const nodeMaterial = new THREE.MeshPhongMaterial({
-          color: new THREE.Color(0xffffff), // Белый цвет, как на картинке
-          emissive: new THREE.Color(0xffffff),
+        const nodeGeometry = new SphereGeometry(0.6, 12, 12)
+        const nodeMaterial = new MeshPhongMaterial({
+          color: new Color(0xffffff), // Белый цвет, как на картинке
+          emissive: new Color(0xffffff),
           emissiveIntensity: 0.6,
           transparent: true,
           opacity: 1.0,
           shininess: 100
         })
         
-        const node = new THREE.Mesh(nodeGeometry, nodeMaterial)
+        const node = new Mesh(nodeGeometry, nodeMaterial)
         node.position.set(x, y, z)
         
         // Сохраняем информацию о узле
@@ -1582,7 +1590,7 @@ export class RegimeSpaceRenderer {
       node.visible = shouldBeVisible
       
       // Добавляем эффект свечения для последнего видимого узла
-      if (shouldBeVisible && node.material instanceof THREE.MeshPhongMaterial) {
+      if (shouldBeVisible && node.material instanceof MeshPhongMaterial) {
         if (i === visibleCount) {
           // Активный узел (текущая позиция в анимации) - пульсирует
           const pulse = Math.sin(Date.now() * 0.01) * 0.3 + 0.7
@@ -1612,7 +1620,7 @@ export class RegimeSpaceRenderer {
       // Показываем все узлы после завершения анимации
       this.trajectoryNodes.forEach(node => {
         node.visible = true
-        if (node.material instanceof THREE.MeshPhongMaterial) {
+        if (node.material instanceof MeshPhongMaterial) {
           node.material.emissiveIntensity = 0.6
           node.scale.setScalar(1)
         }
@@ -1626,7 +1634,7 @@ export class RegimeSpaceRenderer {
   /**
    * Создание шариков переходов между режимами на кривой траектории
    */
-  private createTransitionMarkers(curve: THREE.CatmullRomCurve3, points: THREE.Vector3[]) {
+  private createTransitionMarkers(curve: CatmullRomCurve3, points: Vector3[]) {
     if (this.marketData.length < 2 || points.length < 2) return
     
     this.transitionMarkers = []
@@ -1678,8 +1686,8 @@ export class RegimeSpaceRenderer {
         const currentColor = this.getRegimeColorByVolatility(currentVolatility)
         
         // Создаем шарик перехода (белый или золотой для выделения)
-        const markerGeometry = new THREE.SphereGeometry(0.6, 16, 16)
-        const markerMaterial = new THREE.MeshPhongMaterial({
+        const markerGeometry = new SphereGeometry(0.6, 16, 16)
+        const markerMaterial = new MeshPhongMaterial({
           color: 0xffffff, // Белый цвет для выделения
           emissive: 0xffd700, // Золотое свечение
           emissiveIntensity: 0.8,
@@ -1688,20 +1696,20 @@ export class RegimeSpaceRenderer {
           shininess: 100
         })
         
-        const marker = new THREE.Mesh(markerGeometry, markerMaterial)
+        const marker = new Mesh(markerGeometry, markerMaterial)
         marker.position.copy(transitionPosition)
         
         // Добавляем внешнее свечение (больший полупрозрачный шар)
-        const glowGeometry = new THREE.SphereGeometry(0.9, 16, 16)
-        const glowMaterial = new THREE.MeshBasicMaterial({
+        const glowGeometry = new SphereGeometry(0.9, 16, 16)
+        const glowMaterial = new MeshBasicMaterial({
           color: 0xffd700,
           transparent: true,
           opacity: 0.3
         })
-        const glow = new THREE.Mesh(glowGeometry, glowMaterial)
+        const glow = new Mesh(glowGeometry, glowMaterial)
         glow.position.copy(transitionPosition)
         
-        const markerGroup = new THREE.Group()
+        const markerGroup = new Group()
         markerGroup.add(marker)
         markerGroup.add(glow)
         
@@ -1765,8 +1773,8 @@ export class RegimeSpaceRenderer {
   private createTrajectoryLine() {
     if (this.marketData.length === 0 || !this.showTrajectory) return
     
-    const points: THREE.Vector3[] = []
-    const pointColors: THREE.Color[] = []
+    const points: Vector3[] = []
+    const pointColors: Color[] = []
     
     // Используем ВСЕ данные для линии траектории
     this.marketData.forEach((point, i) => {
@@ -1810,16 +1818,16 @@ export class RegimeSpaceRenderer {
       const y = Math.max(5, Math.min(75, regimeY + offsetY))
       const z = Math.max(5, Math.min(115, regimeZ + offsetZ))
       
-      points.push(new THREE.Vector3(x, y, z))
+      points.push(new Vector3(x, y, z))
       
       // regimeId уже определён выше
       const regimeColor = this.getRegimeColorByVolatility(point.volatility)
-      pointColors.push(new THREE.Color(regimeColor))
+      pointColors.push(new Color(regimeColor))
     })
     
     if (points.length < 2) return
     
-    const curve = new THREE.CatmullRomCurve3(points, false, 'centripetal')
+    const curve = new CatmullRomCurve3(points, false, 'centripetal')
     const curvePoints = curve.getPoints(Math.max(100, points.length * 15))
     
     const curveColors: number[] = []
@@ -1834,12 +1842,12 @@ export class RegimeSpaceRenderer {
       
       const color1 = pointColors[nodeIndex]
       const color2 = pointColors[nextNodeIndex]
-      const interpolatedColor = new THREE.Color().lerpColors(color1, color2, localT)
+      const interpolatedColor = new Color().lerpColors(color1, color2, localT)
       
       curveColors.push(interpolatedColor.r, interpolatedColor.g, interpolatedColor.b)
     }
     
-    const curveGeometry = new THREE.BufferGeometry()
+    const curveGeometry = new BufferGeometry()
     const curvePositions = new Float32Array(curvePoints.length * 3)
     curvePoints.forEach((point, i) => {
       curvePositions[i * 3] = point.x
@@ -1847,17 +1855,17 @@ export class RegimeSpaceRenderer {
       curvePositions[i * 3 + 2] = point.z
     })
     
-    curveGeometry.setAttribute('position', new THREE.BufferAttribute(curvePositions, 3))
-    curveGeometry.setAttribute('color', new THREE.Float32BufferAttribute(curveColors, 3))
+    curveGeometry.setAttribute('position', new BufferAttribute(curvePositions, 3))
+    curveGeometry.setAttribute('color', new Float32BufferAttribute(curveColors, 3))
     
-    const lineMaterial = new THREE.LineBasicMaterial({
+    const lineMaterial = new LineBasicMaterial({
       vertexColors: true,
       transparent: true,
       opacity: 0.9,
       linewidth: 3
     })
     
-    this.trajectoryLine = new THREE.Line(curveGeometry, lineMaterial)
+    this.trajectoryLine = new Line(curveGeometry, lineMaterial)
     this.scene.add(this.trajectoryLine)
   }
 
@@ -1975,7 +1983,7 @@ export class RegimeSpaceRenderer {
         centroid.scale.setScalar(pulse)
         
         // Пульсация свечения - яркий эффект "биения сердца"
-        if (centroid.material instanceof THREE.MeshPhongMaterial) {
+        if (centroid.material instanceof MeshPhongMaterial) {
           const intensity = 0.8 + Math.sin(time * 4 + centroid.userData.pulsePhase) * 0.5
           centroid.material.emissiveIntensity = intensity
           // Пульсация яркости цвета
@@ -1984,14 +1992,14 @@ export class RegimeSpaceRenderer {
       }
       
       // Пульсация glow эффекта - расширяющееся свечение
-      const glow = centroid.parent.children.find(child => child !== centroid && child.type === 'Mesh') as THREE.Mesh | undefined
+      const glow = centroid.parent.children.find(child => child !== centroid && child.type === 'Mesh') as Mesh | undefined
       if (glow && glow.userData.pulsePhase !== undefined) {
         // Более сильная пульсация свечения: от 0.5 до 1.5
         const glowPulse = Math.sin(time * 2.5 + glow.userData.pulsePhase + Math.PI/4) * 0.5 + 1
         const baseScale = glow.userData.baseScale || 1
         glow.scale.setScalar(baseScale * glowPulse)
         
-        if (glow.material instanceof THREE.MeshBasicMaterial) {
+        if (glow.material instanceof MeshBasicMaterial) {
           // Пульсация прозрачности свечения
           const baseOpacity = glow.userData.baseOpacity || 0.3
           const opacityPulse = Math.sin(time * 2.5 + glow.userData.pulsePhase) * 0.15 + baseOpacity
@@ -2011,7 +2019,7 @@ export class RegimeSpaceRenderer {
       // Animate probability waves
       this.probabilityWaves.forEach((waveGroup) => {
         waveGroup.children.forEach((child, idx) => {
-          if (child instanceof THREE.Mesh && child.material instanceof THREE.MeshBasicMaterial) {
+          if (child instanceof Mesh && child.material instanceof MeshBasicMaterial) {
             const baseOpacity = child.userData.baseOpacity || 0.3
             const opacity = baseOpacity * (0.5 + 0.5 * Math.sin(Date.now() * 0.001 + idx))
             child.material.opacity = opacity
@@ -2164,7 +2172,7 @@ export class RegimeSpaceRenderer {
       if (regimeStability > 0.8 && predictability > 0.7) {
         // Создаем highlighted сегмент
         // Учитываем диагональное отражение и гарантируем положительные значения
-        const points: THREE.Vector3[] = []
+        const points: Vector3[] = []
         window.forEach((point, idx) => {
           if (point.return === undefined || point.volatility === undefined || point.liquidity === undefined) {
             return
@@ -2173,32 +2181,32 @@ export class RegimeSpaceRenderer {
           const x = Math.max(0, point.liquidity * 35)
           const y = Math.max(0, point.volatility)
           const z = Math.max(0, point.return)
-          points.push(new THREE.Vector3(x, y, z))
+          points.push(new Vector3(x, y, z))
         })
         
         if (points.length < 2) return
         
-        const geometry = new THREE.BufferGeometry().setFromPoints(points)
-        const material = new THREE.LineBasicMaterial({
+        const geometry = new BufferGeometry().setFromPoints(points)
+        const material = new LineBasicMaterial({
           color: 0xffff00,
           linewidth: 4,
           transparent: true,
           opacity: 0.8
         })
         
-        const line = new THREE.Line(geometry, material)
-        const group = new THREE.Group()
+        const line = new Line(geometry, material)
+        const group = new Group()
         group.add(line)
         
         // Добавляем свечение
-        const glowGeometry = new THREE.BufferGeometry().setFromPoints(points)
-        const glowMaterial = new THREE.LineBasicMaterial({
+        const glowGeometry = new BufferGeometry().setFromPoints(points)
+        const glowMaterial = new LineBasicMaterial({
           color: 0xffff00,
           linewidth: 6,
           transparent: true,
           opacity: 0.3
         })
-        const glow = new THREE.Line(glowGeometry, glowMaterial)
+        const glow = new Line(glowGeometry, glowMaterial)
         group.add(glow)
         
         this.nonRandomSegments.push(group)
@@ -2227,15 +2235,15 @@ export class RegimeSpaceRenderer {
       
       if (maxTransitionProb > 0.3) {
         // Создаем сферическую зону
-        const geometry = new THREE.SphereGeometry(5, 16, 16)
-        const material = new THREE.MeshBasicMaterial({
-          color: new THREE.Color(regimeColor),
+        const geometry = new SphereGeometry(5, 16, 16)
+        const material = new MeshBasicMaterial({
+          color: new Color(regimeColor),
           transparent: true,
           opacity: 0.2,
           wireframe: true
         })
         
-        const sphere = new THREE.Mesh(geometry, material)
+        const sphere = new Mesh(geometry, material)
         // Используем реальные позиции режимов
         // Переворачиваем диагонально: X и Z меняются местами
         const x = this.getRegimeZPosition(regimeId)
@@ -2266,26 +2274,26 @@ export class RegimeSpaceRenderer {
         const x1 = this.getRegimeZPosition(i)
         const y1 = Math.max(0, means[i][1] !== undefined ? means[i][1] : 0)
         const z1 = this.getRegimeXPosition(i)
-        const mean1 = new THREE.Vector3(x1, y1, z1)
+        const mean1 = new Vector3(x1, y1, z1)
         
         const x2 = this.getRegimeZPosition(j)
         const y2 = Math.max(0, means[j][1] !== undefined ? means[j][1] : 0)
         const z2 = this.getRegimeXPosition(j)
-        const mean2 = new THREE.Vector3(x2, y2, z2)
+        const mean2 = new Vector3(x2, y2, z2)
         
-        const midPoint = new THREE.Vector3().addVectors(mean1, mean2).multiplyScalar(0.5)
-        const direction = new THREE.Vector3().subVectors(mean2, mean1).normalize()
+        const midPoint = new Vector3().addVectors(mean1, mean2).multiplyScalar(0.5)
+        const direction = new Vector3().subVectors(mean2, mean1).normalize()
         
         // Создаем цилиндр как "резиновую band"
-        const geometry = new THREE.CylinderGeometry(0.5, 0.5, mean1.distanceTo(mean2), 8)
-        const material = new THREE.MeshBasicMaterial({
+        const geometry = new CylinderGeometry(0.5, 0.5, mean1.distanceTo(mean2), 8)
+        const material = new MeshBasicMaterial({
           color: 0xffffff,
           transparent: true,
           opacity: 0.15,
           wireframe: true
         })
         
-        const cylinder = new THREE.Mesh(geometry, material)
+        const cylinder = new Mesh(geometry, material)
         cylinder.position.copy(midPoint)
         cylinder.lookAt(mean2)
         cylinder.rotateX(Math.PI / 2)
@@ -2323,17 +2331,17 @@ export class RegimeSpaceRenderer {
         const prevY = Math.max(0, prevPoint.volatility)
         const prevZ = Math.max(0, prevPoint.return)
         
-        const direction = new THREE.Vector3(
+        const direction = new Vector3(
           currX - prevX,
           currY - prevY,
           currZ - prevZ
         ).normalize()
         
-        const position = new THREE.Vector3(currX, currY, currZ)
+        const position = new Vector3(currX, currY, currZ)
         
         const color = avgReturn > 0 ? 0x4ade80 : 0xf87171
         
-        const arrow = new THREE.ArrowHelper(
+        const arrow = new ArrowHelper(
           direction,
           position,
           3,
@@ -2374,37 +2382,37 @@ export class RegimeSpaceRenderer {
         const y = Math.max(0, current.volatility)
         const z = Math.max(0, current.return)
         
-        const position = new THREE.Vector3(x, y, z)
+        const position = new Vector3(x, y, z)
         
         // Buy signal (green) или Sell signal (red)
         const isBuy = expectedReturn > 0
         const color = isBuy ? 0x4ade80 : 0xf87171
         
-        const geometry = new THREE.ConeGeometry(0.8, 2, 8)
-        const material = new THREE.MeshBasicMaterial({
+        const geometry = new ConeGeometry(0.8, 2, 8)
+        const material = new MeshBasicMaterial({
           color: color,
           transparent: true,
           opacity: 0.7
         })
         
-        const marker = new THREE.Mesh(geometry, material)
+        const marker = new Mesh(geometry, material)
         marker.position.copy(position)
-        marker.lookAt(position.clone().add(new THREE.Vector3(0, isBuy ? 1 : -1, 0)))
+        marker.lookAt(position.clone().add(new Vector3(0, isBuy ? 1 : -1, 0)))
         marker.rotateX(-Math.PI / 2)
         
-        const group = new THREE.Group()
+        const group = new Group()
         group.add(marker)
         
         // Добавляем свечение
-        const glowGeometry = new THREE.ConeGeometry(1, 2.5, 8)
-        const glowMaterial = new THREE.MeshBasicMaterial({
+        const glowGeometry = new ConeGeometry(1, 2.5, 8)
+        const glowMaterial = new MeshBasicMaterial({
           color: color,
           transparent: true,
           opacity: 0.2
         })
-        const glow = new THREE.Mesh(glowGeometry, glowMaterial)
+        const glow = new Mesh(glowGeometry, glowMaterial)
         glow.position.copy(position)
-        glow.lookAt(position.clone().add(new THREE.Vector3(0, isBuy ? 1 : -1, 0)))
+        glow.lookAt(position.clone().add(new Vector3(0, isBuy ? 1 : -1, 0)))
         glow.rotateX(-Math.PI / 2)
         group.add(glow)
         
@@ -2430,15 +2438,15 @@ export class RegimeSpaceRenderer {
       
       // Создаем концентрические волны
       for (let ring = 1; ring <= 3; ring++) {
-        const geometry = new THREE.RingGeometry(ring * 2, ring * 2.5, 32)
-        const material = new THREE.MeshBasicMaterial({
-          color: new THREE.Color(regimeColor),
+        const geometry = new RingGeometry(ring * 2, ring * 2.5, 32)
+        const material = new MeshBasicMaterial({
+          color: new Color(regimeColor),
           transparent: true,
           opacity: 0.3 / ring,
-          side: THREE.DoubleSide
+          side: DoubleSide
         })
         
-        const wave = new THREE.Mesh(geometry, material)
+        const wave = new Mesh(geometry, material)
         // Используем реальные позиции режимов
         // Переворачиваем диагонально: X и Z меняются местами
         // Только положительное пространство: Y должен быть >= 0
@@ -2450,7 +2458,7 @@ export class RegimeSpaceRenderer {
         
         wave.userData = { baseOpacity: 0.3 / ring, ring }
         
-        const group = new THREE.Group()
+        const group = new Group()
         group.add(wave)
         this.probabilityWaves.push(group)
         this.scene.add(group)
@@ -2488,18 +2496,18 @@ export class RegimeSpaceRenderer {
     }
     
     if (particles.length > 0) {
-      const geometry = new THREE.BufferGeometry()
-      geometry.setAttribute('position', new THREE.Float32BufferAttribute(particles, 3))
-      geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3))
+      const geometry = new BufferGeometry()
+      geometry.setAttribute('position', new Float32BufferAttribute(particles, 3))
+      geometry.setAttribute('color', new Float32BufferAttribute(colors, 3))
       
-      const material = new THREE.PointsMaterial({
+      const material = new PointsMaterial({
         size: 0.5,
         vertexColors: true,
         transparent: true,
         opacity: 0.6
       })
       
-      const points = new THREE.Points(geometry, material)
+      const points = new Points(geometry, material)
       points.userData = { velocity: particles.map(() => Math.random() * 0.1 - 0.05) }
       
       this.decodingParticles.push(points)
@@ -2512,7 +2520,7 @@ export class RegimeSpaceRenderer {
    */
   private createPortfolioHeatmap(marketData: MarketPoint[], hmmModel: HMMModel, regimeConfigs: RegimeConfig[]) {
     const means = hmmModel.getEmissionMeans()
-    const group = new THREE.Group()
+    const group = new Group()
     
     // Создаем heatmap как плоскости для каждого режима
     means.forEach((mean, regimeId) => {
@@ -2520,20 +2528,20 @@ export class RegimeSpaceRenderer {
       if (!config) return
       
       // Плоскость, показывающая ожидаемую доходность
-      const geometry = new THREE.PlaneGeometry(10, 10, 10, 10)
+      const geometry = new PlaneGeometry(10, 10, 10, 10)
       const expectedReturn = mean[0]
       const heatValue = (expectedReturn + 0.2) / 0.4 // Normalize to 0-1
       
-      const material = new THREE.MeshBasicMaterial({
-        color: new THREE.Color(
+      const material = new MeshBasicMaterial({
+        color: new Color(
           expectedReturn > 0 ? 0x4ade80 : 0xf87171
         ),
         transparent: true,
         opacity: Math.abs(heatValue) * 0.3,
-        side: THREE.DoubleSide
+        side: DoubleSide
       })
       
-      const plane = new THREE.Mesh(geometry, material)
+      const plane = new Mesh(geometry, material)
       // Переворачиваем диагонально: X и Z меняются местами
       // Только положительное пространство: Y должен быть >= 0
       const x = this.getRegimeZPosition(regimeId)
@@ -2553,11 +2561,11 @@ export class RegimeSpaceRenderer {
    * Создание Comparison Overlay (vs Renaissance benchmark)
    */
   private createComparisonOverlay(marketData: MarketPoint[]) {
-    const group = new THREE.Group()
+    const group = new Group()
     
     // Создаем визуализацию benchmark performance
     // В реальности это будет сравнение с историческими данными Medallion Fund
-    const points: THREE.Vector3[] = []
+    const points: Vector3[] = []
     
     marketData.forEach((point, i) => {
       // Mock benchmark trajectory (в реальности - данные фонда)
@@ -2571,20 +2579,21 @@ export class RegimeSpaceRenderer {
       const y = Math.max(0, point.volatility * 0.9)
       const z = Math.max(0, benchmarkReturn)
       
-      points.push(new THREE.Vector3(x, y, z))
+      points.push(new Vector3(x, y, z))
     })
     
     if (points.length > 1) {
-      const geometry = new THREE.BufferGeometry().setFromPoints(points)
-      const material = new THREE.LineBasicMaterial({
+      const geometry = new BufferGeometry().setFromPoints(points)
+      const material = new LineDashedMaterial({
         color: 0xffd700, // Gold color for benchmark
         transparent: true,
         opacity: 0.4,
         linewidth: 2,
-        dashed: true
+        dashSize: 3,
+        gapSize: 1
       })
       
-      const line = new THREE.Line(geometry, material)
+      const line = new Line(geometry, material)
       group.add(line)
     }
     

@@ -6,12 +6,75 @@
 """
 
 import asyncio
+import hashlib
+import time
 from typing import Optional, Iterable, Union, Dict, Any, List
 from datetime import datetime
 import aiohttp
 import pandas as pd
 
 from src.utils.http_client import get_session
+
+
+# ─── Server-side credential session cache with TTL ──────────────────────────
+_SESSION_TTL_SECONDS = 3600  # 1 hour
+
+_credential_cache: Dict[str, Dict[str, Any]] = {}
+
+
+def _make_session_key(login: str) -> str:
+    """Create a hash-based session key from the login."""
+    return hashlib.sha256(login.encode()).hexdigest()
+
+
+def cache_credentials(login: str, password: str) -> str:
+    """
+    Cache RuData credentials server-side and return a session_id.
+
+    Credentials are stored in memory with a TTL.
+    """
+    session_id = _make_session_key(login)
+    _credential_cache[session_id] = {
+        "login": login,
+        "password": password,
+        "cached_at": time.time(),
+    }
+    return session_id
+
+
+def get_cached_credentials(session_id: str) -> Optional[Dict[str, str]]:
+    """
+    Retrieve cached credentials by session_id.
+
+    Returns None if expired or not found.
+    """
+    entry = _credential_cache.get(session_id)
+    if entry is None:
+        return None
+
+    elapsed = time.time() - entry["cached_at"]
+    if elapsed > _SESSION_TTL_SECONDS:
+        _credential_cache.pop(session_id, None)
+        return None
+
+    return {"login": entry["login"], "password": entry["password"]}
+
+
+def clear_cached_credentials(session_id: str) -> bool:
+    """Remove cached credentials for a session_id."""
+    return _credential_cache.pop(session_id, None) is not None
+
+
+def cleanup_expired_sessions() -> int:
+    """Remove all expired sessions. Returns count of removed entries."""
+    now = time.time()
+    expired = [
+        sid for sid, entry in _credential_cache.items()
+        if now - entry["cached_at"] > _SESSION_TTL_SECONDS
+    ]
+    for sid in expired:
+        _credential_cache.pop(sid, None)
+    return len(expired)
 
 
 class RuDataService:

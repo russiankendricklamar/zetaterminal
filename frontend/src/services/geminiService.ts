@@ -1,85 +1,46 @@
-import { Candle, AIAnalysisResult } from '@/types/terminal';
+import { Candle, AIAnalysisResult } from '@/types/terminal'
+import { getApiHeaders } from '@/utils/apiHeaders'
 
-// Note: This is a placeholder service. In production, you would need to:
-// 1. Install @google/genai package: npm install @google/genai
-// 2. Set up API key in environment variables
-// 3. Uncomment and configure the actual API calls
+const API_BASE = import.meta.env.VITE_API_BASE_URL || ''
 
 export const analyzeMarketData = async (candles: Candle[]): Promise<AIAnalysisResult> => {
   try {
-    // For now, return mock data
-    // In production, uncomment below and configure:
-    
-    /*
-    import { GoogleGenAI, Type } from "@google/genai";
-    
-    const ai = new GoogleGenAI({ apiKey: import.meta.env.VITE_GEMINI_API_KEY });
-    const MODEL_NAME = "gemini-3-flash-preview";
+    const response = await fetch(`${API_BASE}/api/gemini/analyze`, {
+      method: 'POST',
+      headers: getApiHeaders(),
+      body: JSON.stringify({
+        candles: candles.slice(-20).map(c => ({
+          time: c.time,
+          open: c.open,
+          high: c.high,
+          low: c.low,
+          close: c.close,
+          volume: c.volume,
+        })),
+      }),
+    })
 
-    const recentData = candles.slice(-20).map(c => ({
-      t: c.time,
-      o: c.open.toFixed(1),
-      h: c.high.toFixed(1),
-      l: c.low.toFixed(1),
-      c: c.close.toFixed(1),
-      v: c.volume.toFixed(2)
-    }));
-
-    const prompt = `
-      Analyze this crypto market data (OHLCV).
-      Identify the short-term trend, provide a confidence score (0-100), key support/resistance levels, and a brief reasoning string (max 20 words).
-      Data: ${JSON.stringify(recentData)}
-    `;
-
-    const response = await ai.models.generateContent({
-      model: MODEL_NAME,
-      contents: prompt,
-      config: {
-        responseMimeType: "application/json",
-        responseSchema: {
-          type: Type.OBJECT,
-          properties: {
-            trend: { type: Type.STRING, enum: ['BULLISH', 'BEARISH', 'NEUTRAL'] },
-            confidence: { type: Type.NUMBER },
-            reasoning: { type: Type.STRING },
-            keyLevels: {
-              type: Type.OBJECT,
-              properties: {
-                support: { type: Type.NUMBER },
-                resistance: { type: Type.NUMBER }
-              }
-            }
-          }
-        }
-      }
-    });
-
-    if (response.text) {
-      return JSON.parse(response.text) as AIAnalysisResult;
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}`)
     }
-    */
 
-    // Mock response for now
-    const lastPrice = candles[candles.length - 1]?.close || 0;
-    const prevPrice = candles[candles.length - 2]?.close || lastPrice;
-    const trend = lastPrice > prevPrice ? 'BULLISH' : lastPrice < prevPrice ? 'BEARISH' : 'NEUTRAL';
-    
+    return await response.json() as AIAnalysisResult
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : String(error)
+    console.error('AI Analysis Failed:', message)
+
+    const lastPrice = candles[candles.length - 1]?.close || 0
+    const prevPrice = candles[candles.length - 2]?.close || lastPrice
+    const trend = lastPrice > prevPrice ? 'BULLISH' : lastPrice < prevPrice ? 'BEARISH' : 'NEUTRAL'
+
     return {
       trend,
-      confidence: Math.floor(Math.random() * 30) + 60,
-      reasoning: "Market showing moderate volatility with potential upward momentum based on recent price action",
+      confidence: 0,
+      reasoning: 'AI Service Temporarily Unavailable',
       keyLevels: {
         support: lastPrice * 0.95,
-        resistance: lastPrice * 1.05
-      }
-    };
-  } catch (error) {
-    console.error("AI Analysis Failed:", error);
-    return {
-      trend: 'NEUTRAL',
-      confidence: 0,
-      reasoning: "AI Service Temporarily Unavailable",
-      keyLevels: { support: 0, resistance: 0 }
-    };
+        resistance: lastPrice * 1.05,
+      },
+    }
   }
-};
+}

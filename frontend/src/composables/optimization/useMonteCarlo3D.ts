@@ -1,6 +1,6 @@
 import { ref, computed, watch, onUnmounted } from 'vue'
 import type { Ref } from 'vue'
-import * as THREE from 'three'
+import { Scene, PerspectiveCamera, WebGLRenderer, Line, Group, Sprite, Mesh, Material, SpriteMaterial, CanvasTexture, Vector3, LineBasicMaterial, BufferGeometry, AmbientLight } from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 import type { HJBResponse } from '../../services/hjbService'
 
@@ -44,23 +44,23 @@ export function useMonteCarlo3D(
   initialPrice: Ref<number>
 ) {
   const trajectories3DCanvas = ref<HTMLCanvasElement | null>(null)
-  let scene3D: THREE.Scene | null = null
-  let camera3D: THREE.PerspectiveCamera | null = null
-  let renderer3D: THREE.WebGLRenderer | null = null
-  let controls3D: any = null
+  let scene3D: Scene | null = null
+  let camera3D: PerspectiveCamera | null = null
+  let renderer3D: WebGLRenderer | null = null
+  let controls3D: OrbitControls | null = null
   let animationId3D: number | null = null
   const currentStep3D = ref(0)
   let cameraPositioned = false
   const simulationResult3D = ref<SimulationResult3D | null>(null)
-  const trajectories3DLines: THREE.Line[] = []
-  let cachedScaleParams: { scaleX: number; scaleY: number; scaleZ: number; stats: any; boxWidth: number; boxDepth: number } | null = null
+  const trajectories3DLines: Line[] = []
+  let cachedScaleParams: { scaleX: number; scaleY: number; scaleZ: number; stats: SimulationResult3D['stats']; boxWidth: number; boxDepth: number } | null = null
 
   const isPlaying3D = ref(false)
   const playbackStep3D = ref(0)
   let animationFrame3D: number | null = null
 
-  let gridObjects: THREE.Group[] = []
-  let axisLabels: THREE.Sprite[] = []
+  let gridObjects: Group[] = []
+  let axisLabels: Sprite[] = []
 
   const maxStep3D = computed(() => {
     if (!simulationResult3D.value || !simulationResult3D.value.paths.length) return 0
@@ -204,7 +204,7 @@ export function useMonteCarlo3D(
     }
   }
 
-  const createAxisLabelSprite = (text: string, position: THREE.Vector3, size: number = 8): THREE.Sprite => {
+  const createAxisLabelSprite = (text: string, position: Vector3, size: number = 8): Sprite => {
     const canvas = document.createElement('canvas')
     canvas.width = 6144
     canvas.height = 3072
@@ -218,23 +218,23 @@ export function useMonteCarlo3D(
     ctx.strokeText(text, 3072, 1536)
     ctx.fillText(text, 3072, 1536)
 
-    const texture = new THREE.CanvasTexture(canvas)
-    const spriteMaterial = new THREE.SpriteMaterial({ map: texture })
-    const sprite = new THREE.Sprite(spriteMaterial)
+    const texture = new CanvasTexture(canvas)
+    const spriteMaterial = new SpriteMaterial({ map: texture })
+    const sprite = new Sprite(spriteMaterial)
     sprite.scale.set(size, size / 2, 1)
     sprite.position.copy(position)
     return sprite
   }
 
-  const update3DGrids = (stats: any, scaleX: number, scaleY: number, scaleZ: number, boxWidth: number, boxDepth: number) => {
+  const update3DGrids = (stats: SimulationResult3D['stats'], scaleX: number, scaleY: number, scaleZ: number, boxWidth: number, boxDepth: number) => {
     if (!scene3D) return
 
     gridObjects.forEach(grid => {
       if (scene3D) scene3D.remove(grid)
       grid.traverse((child) => {
-        if (child instanceof THREE.Mesh) {
+        if (child instanceof Mesh) {
           child.geometry.dispose()
-          if (child.material instanceof THREE.Material) child.material.dispose()
+          if (child.material instanceof Material) child.material.dispose()
         }
       })
     })
@@ -242,7 +242,7 @@ export function useMonteCarlo3D(
 
     axisLabels.forEach(sprite => {
       if (scene3D) scene3D.remove(sprite)
-      if (sprite.material instanceof THREE.SpriteMaterial) {
+      if (sprite.material instanceof SpriteMaterial) {
         sprite.material.map?.dispose()
         sprite.material.dispose()
       }
@@ -250,31 +250,31 @@ export function useMonteCarlo3D(
     axisLabels.length = 0
 
     const boxHeight = (stats.maxPrice - stats.minPrice) * scaleY * 1.2
-    const gridGroup = new THREE.Group()
+    const gridGroup = new Group()
 
     const createGrid = (w: number, h: number, axis: 'xz' | 'xy' | 'yz') => {
-      const g = new THREE.Group()
+      const g = new Group()
       const cellSize = 50
       const sectionSize = 250
-      const lineMat = new THREE.LineBasicMaterial({ color: 0x0088aa, opacity: 0.3, transparent: true })
-      const secMat = new THREE.LineBasicMaterial({ color: 0x003344, opacity: 0.5, transparent: true })
+      const lineMat = new LineBasicMaterial({ color: 0x0088aa, opacity: 0.3, transparent: true })
+      const secMat = new LineBasicMaterial({ color: 0x003344, opacity: 0.5, transparent: true })
 
       for (let i = 0; i <= w; i += cellSize) {
         const isSec = i % sectionSize === 0
         const mat = isSec ? secMat : lineMat
-        const pts = axis === 'xz' ? [new THREE.Vector3(i, 0, 0), new THREE.Vector3(i, 0, h)]
-          : axis === 'xy' ? [new THREE.Vector3(i, 0, 0), new THREE.Vector3(i, h, 0)]
-          : [new THREE.Vector3(0, 0, i), new THREE.Vector3(0, h, i)]
-        g.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), mat))
+        const pts = axis === 'xz' ? [new Vector3(i, 0, 0), new Vector3(i, 0, h)]
+          : axis === 'xy' ? [new Vector3(i, 0, 0), new Vector3(i, h, 0)]
+          : [new Vector3(0, 0, i), new Vector3(0, h, i)]
+        g.add(new Line(new BufferGeometry().setFromPoints(pts), mat))
       }
 
       for (let i = 0; i <= h; i += cellSize) {
         const isSec = i % sectionSize === 0
         const mat = isSec ? secMat : lineMat
-        const pts = axis === 'xz' ? [new THREE.Vector3(0, 0, i), new THREE.Vector3(w, 0, i)]
-          : axis === 'xy' ? [new THREE.Vector3(0, i, 0), new THREE.Vector3(w, i, 0)]
-          : [new THREE.Vector3(0, i, 0), new THREE.Vector3(0, i, w)]
-        g.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), mat))
+        const pts = axis === 'xz' ? [new Vector3(0, 0, i), new Vector3(w, 0, i)]
+          : axis === 'xy' ? [new Vector3(0, i, 0), new Vector3(w, i, 0)]
+          : [new Vector3(0, i, 0), new Vector3(0, i, w)]
+        g.add(new Line(new BufferGeometry().setFromPoints(pts), mat))
       }
       return g
     }
@@ -284,46 +284,46 @@ export function useMonteCarlo3D(
     gridGroup.add(createGrid(boxDepth, boxHeight, 'yz'))
 
     // Axes
-    const axesMat = new THREE.LineBasicMaterial({ color: 0xffffff, linewidth: 3 })
-    const tickMat = new THREE.LineBasicMaterial({ color: 0xaaaaaa, opacity: 0.8, transparent: true })
+    const axesMat = new LineBasicMaterial({ color: 0xffffff, linewidth: 3 })
+    const tickMat = new LineBasicMaterial({ color: 0xaaaaaa, opacity: 0.8, transparent: true })
     const tickSize = Math.max(boxWidth, boxDepth, boxHeight) * 0.03
     const cellSize = 50
     const sectionSize = 250
 
     // X axis
-    gridGroup.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(0, 0, 0), new THREE.Vector3(boxWidth, 0, 0)]), axesMat))
+    gridGroup.add(new Line(new BufferGeometry().setFromPoints([new Vector3(0, 0, 0), new Vector3(boxWidth, 0, 0)]), axesMat))
     for (let x = 0; x <= boxWidth; x += cellSize) {
       const isSec = x % sectionSize === 0
       const tl = isSec ? tickSize * 1.5 : tickSize
-      gridGroup.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(x, -tl, 0), new THREE.Vector3(x, tl, 0)]), isSec ? axesMat : tickMat))
+      gridGroup.add(new Line(new BufferGeometry().setFromPoints([new Vector3(x, -tl, 0), new Vector3(x, tl, 0)]), isSec ? axesMat : tickMat))
     }
 
     // Y axis
-    gridGroup.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(0, 0, 0), new THREE.Vector3(0, boxHeight, 0)]), axesMat))
+    gridGroup.add(new Line(new BufferGeometry().setFromPoints([new Vector3(0, 0, 0), new Vector3(0, boxHeight, 0)]), axesMat))
     for (let y = 0; y <= boxHeight; y += cellSize) {
       const isSec = y % sectionSize === 0
       const tl = isSec ? tickSize * 1.5 : tickSize
-      gridGroup.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(-tl, y, 0), new THREE.Vector3(tl, y, 0)]), isSec ? axesMat : tickMat))
+      gridGroup.add(new Line(new BufferGeometry().setFromPoints([new Vector3(-tl, y, 0), new Vector3(tl, y, 0)]), isSec ? axesMat : tickMat))
     }
 
     // Z axis
-    gridGroup.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(0, 0, 0), new THREE.Vector3(0, 0, boxDepth)]), axesMat))
+    gridGroup.add(new Line(new BufferGeometry().setFromPoints([new Vector3(0, 0, 0), new Vector3(0, 0, boxDepth)]), axesMat))
     for (let z = 0; z <= boxDepth; z += cellSize) {
       const isSec = z % sectionSize === 0
       const tl = isSec ? tickSize * 1.5 : tickSize
-      gridGroup.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(-tl, 0, z), new THREE.Vector3(tl, 0, z)]), isSec ? axesMat : tickMat))
+      gridGroup.add(new Line(new BufferGeometry().setFromPoints([new Vector3(-tl, 0, z), new Vector3(tl, 0, z)]), isSec ? axesMat : tickMat))
     }
 
     // Labels
-    const xLabel = createAxisLabelSprite('ВРЕМЯ (t)', new THREE.Vector3(boxWidth / 2, -120, 0), 150)
+    const xLabel = createAxisLabelSprite('ВРЕМЯ (t)', new Vector3(boxWidth / 2, -120, 0), 150)
     axisLabels.push(xLabel)
     scene3D.add(xLabel)
 
-    const yLabel = createAxisLabelSprite('Капитал', new THREE.Vector3(-150, boxHeight / 2, 0), 150)
+    const yLabel = createAxisLabelSprite('Капитал', new Vector3(-150, boxHeight / 2, 0), 150)
     axisLabels.push(yLabel)
     scene3D.add(yLabel)
 
-    const zLabel = createAxisLabelSprite('ТРАЕКТОРИИ (N)', new THREE.Vector3(-120, -120, boxDepth / 2), 150)
+    const zLabel = createAxisLabelSprite('ТРАЕКТОРИИ (N)', new Vector3(-120, -120, boxDepth / 2), 150)
     axisLabels.push(zLabel)
     scene3D.add(zLabel)
 
@@ -337,7 +337,7 @@ export function useMonteCarlo3D(
     trajectories3DLines.forEach(line => {
       scene3D?.remove(line)
       line.geometry.dispose()
-      if ((line.material as THREE.Material).dispose) (line.material as THREE.Material).dispose()
+      if ((line.material as Material).dispose) (line.material as Material).dispose()
     })
     trajectories3DLines.length = 0
 
@@ -367,8 +367,8 @@ export function useMonteCarlo3D(
       cameraPositioned = true
     }
 
-    const primaryMaterial = new THREE.LineBasicMaterial({ color: 0x00f0ff, transparent: true, opacity: 0.6, linewidth: 1.5 })
-    const whiteMaterial = new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 1.0, linewidth: 2.5 })
+    const primaryMaterial = new LineBasicMaterial({ color: 0x00f0ff, transparent: true, opacity: 0.6, linewidth: 1.5 })
+    const whiteMaterial = new LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 1.0, linewidth: 2.5 })
 
     paths.forEach((path, idx) => {
       const finalVal = path[path.length - 1].y
@@ -378,9 +378,9 @@ export function useMonteCarlo3D(
       const activePoints = path.slice(0, limit)
       if (activePoints.length < 2) return
 
-      const points = activePoints.map(p => new THREE.Vector3(p.x * sx, (p.y - stats.minPrice) * sy, p.z * sz))
-      const geometry = new THREE.BufferGeometry().setFromPoints(points)
-      const line = new THREE.Line(geometry, material)
+      const points = activePoints.map(p => new Vector3(p.x * sx, (p.y - stats.minPrice) * sy, p.z * sz))
+      const geometry = new BufferGeometry().setFromPoints(points)
+      const line = new Line(geometry, material)
       if (scene3D) {
         scene3D.add(line)
         trajectories3DLines[idx] = line
@@ -420,11 +420,11 @@ export function useMonteCarlo3D(
       return
     }
 
-    scene3D = new THREE.Scene()
+    scene3D = new Scene()
     scene3D.background = null
 
-    camera3D = new THREE.PerspectiveCamera(45, width / height, 0.1, 50000)
-    renderer3D = new THREE.WebGLRenderer({ canvas: trajectories3DCanvas.value, antialias: true, alpha: true })
+    camera3D = new PerspectiveCamera(45, width / height, 0.1, 50000)
+    renderer3D = new WebGLRenderer({ canvas: trajectories3DCanvas.value, antialias: true, alpha: true })
     renderer3D.setSize(width, height)
     renderer3D.setPixelRatio(window.devicePixelRatio)
 
@@ -433,7 +433,7 @@ export function useMonteCarlo3D(
     controls3D.dampingFactor = 0.1
     controls3D.rotateSpeed = 0.5
 
-    scene3D.add(new THREE.AmbientLight(0xffffff, 3))
+    scene3D.add(new AmbientLight(0xffffff, 3))
 
     const basePrice = initialPrice.value * 10000
     const config: SimulationConfig3D = {
@@ -586,7 +586,7 @@ export function useMonteCarlo3D(
     trajectories3DLines.length = 0
     gridObjects.length = 0
     axisLabels.forEach(sprite => {
-      if (sprite.material instanceof THREE.SpriteMaterial) {
+      if (sprite.material instanceof SpriteMaterial) {
         sprite.material.map?.dispose()
         sprite.material.dispose()
       }

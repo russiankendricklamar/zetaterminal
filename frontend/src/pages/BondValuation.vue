@@ -733,9 +733,9 @@ const fetchMarketYield = async () => {
     } else {
       error.value = 'Доходность не найдена для данной даты'
     }
-  } catch (e: any) {
+  } catch (e: unknown) {
     console.error('Ошибка загрузки доходности:', e)
-    error.value = e.message || 'Ошибка загрузки доходности из MOEX API'
+    error.value = e instanceof Error ? e.message : 'Ошибка загрузки доходности из MOEX API'
   } finally {
     loadingMarketYield.value = false
   }
@@ -789,9 +789,9 @@ const calculateBond = async () => {
     })
     
     results.value = response
-  } catch (e: any) {
+  } catch (e: unknown) {
     console.error('Ошибка оценки облигации:', e)
-    error.value = e.message || 'Ошибка соединения с API или получения данных облигации'
+    error.value = e instanceof Error ? e.message : 'Ошибка соединения с API или получения данных облигации'
   } finally {
     loading.value = false
   }
@@ -811,16 +811,16 @@ const handleFileUpload = async (event: Event) => {
     const jsonData = XLSX.utils.sheet_to_json(worksheet, { raw: false })
 
     // Парсим данные из Excel
-    const bonds: any[] = []
-    
-    for (const row of jsonData as any[]) {
+    const bonds: Record<string, unknown>[] = []
+
+    for (const row of jsonData as Record<string, string>[]) {
       const marketYieldStr = row['Рыночная доходность'] || row['Market Yield'] || row['market_yield'] || row['YTM'] || row['ytm'] || ''
       const marketYield = marketYieldStr ? parseFloat(marketYieldStr) : null
       
       // Определяем режим: если есть рыночная доходность, используем её, иначе два сценария
       const useMarketYield = marketYield !== null && marketYield > 0
       
-      const bond: any = {
+      const bond: Record<string, unknown> = {
         secid: row['ISIN'] || row['isin'] || row['SECID'] || row['secid'] || row['Облигация'] || '',
         valuationDate: row['Дата оценки'] || row['Valuation Date'] || row['valuation_date'] || row['Дата'] || params.value.valuationDate,
         useMarketYield: useMarketYield,
@@ -849,9 +849,9 @@ const handleFileUpload = async (event: Event) => {
     selectedBondIndex.value = null
     bondResults.value = []
     error.value = ''
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error('Excel parsing error:', err)
-    error.value = `Ошибка при загрузке файла: ${err.message}`
+    error.value = `Ошибка при загрузке файла: ${err instanceof Error ? err.message : String(err)}`
   }
 }
 
@@ -927,14 +927,14 @@ const calculateAllBonds = async () => {
           dayCountConvention: bond.dayCountConvention || undefined
         })
         bondResults.value.push(result)
-      } catch (err: any) {
+      } catch (err: unknown) {
         bondResults.value.push(null)
         console.error(`Error calculating bond ${i + 1}:`, err)
       }
     }
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error('Error calculating bonds:', err)
-    error.value = `Ошибка при расчете облигаций: ${err.message}`
+    error.value = `Ошибка при расчете облигаций: ${err instanceof Error ? err.message : String(err)}`
   } finally {
     calculatingAll.value = false
   }
@@ -1008,9 +1008,9 @@ const saveRegistryToParquetHandler = async () => {
         error.value = ''
       }, 5000)
     }
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error('Error saving registry to parquet:', err)
-    error.value = `Ошибка при сохранении реестра: ${err.message}`
+    error.value = `Ошибка при сохранении реестра: ${err instanceof Error ? err.message : String(err)}`
   } finally {
     savingParquet.value = false
   }

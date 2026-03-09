@@ -403,7 +403,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onBeforeUnmount, nextTick } from 'vue'
 import Chart from 'chart.js/auto'
-import * as THREE from 'three'
+import { Scene, PerspectiveCamera, WebGLRenderer, Mesh, Group, Color, AmbientLight, DirectionalLight, BufferGeometry, BufferAttribute, MeshPhongMaterial, GridHelper, Line, LineBasicMaterial, CanvasTexture, SpriteMaterial, Sprite, ConeGeometry, MeshBasicMaterial, SphereGeometry, Vector3, Spherical } from 'three'
 import * as XLSX from 'xlsx'
 import { saveRegistryToParquet } from '@/services/optionService'
 
@@ -502,10 +502,10 @@ const handleClickOutside = (event: MouseEvent) => {
 }
 
 const threeCanvas = ref<HTMLCanvasElement | null>(null)
-let scene: THREE.Scene | null = null
-let camera: THREE.PerspectiveCamera | null = null
-let renderer: THREE.WebGLRenderer | null = null
-let mesh: THREE.Mesh | null = null
+let scene: Scene | null = null
+let camera: PerspectiveCamera | null = null
+let renderer: WebGLRenderer | null = null
+let mesh: Mesh | null = null
 let animationId: number | null = null
 
 /* --- MOCK DATA PARAMS --- */
@@ -666,7 +666,7 @@ const getVolColor = (vol: number): string => {
   return 'rgba(239, 68, 68, 0.7)'
 }
 
-/* --- THREE.JS INITIALIZATION --- */
+/* --- JS INITIALIZATION --- */
 const initThreeJS = () => {
   if (!threeCanvas.value) return
 
@@ -674,16 +674,16 @@ const initThreeJS = () => {
   const height = threeCanvas.value.clientHeight
 
   // Scene
-  scene = new THREE.Scene()
-  scene.background = new THREE.Color(0x0f1419)
+  scene = new Scene()
+  scene.background = new Color(0x0f1419)
 
   // Camera
-  camera = new THREE.PerspectiveCamera(75, width / height, 0.1, 1000)
+  camera = new PerspectiveCamera(75, width / height, 0.1, 1000)
   camera.position.set(12, 12, 12)
   camera.lookAt(0, 0, 0)
 
   // Renderer
-  renderer = new THREE.WebGLRenderer({ 
+  renderer = new WebGLRenderer({ 
     canvas: threeCanvas.value, 
     antialias: true, 
     alpha: true 
@@ -692,10 +692,10 @@ const initThreeJS = () => {
   renderer.setPixelRatio(window.devicePixelRatio)
 
   // Lighting
-  const ambientLight = new THREE.AmbientLight(0xffffff, 0.6)
+  const ambientLight = new AmbientLight(0xffffff, 0.6)
   scene.add(ambientLight)
 
-  const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8)
+  const directionalLight = new DirectionalLight(0xffffff, 0.8)
   directionalLight.position.set(10, 15, 10)
   scene.add(directionalLight)
 
@@ -713,12 +713,12 @@ const initThreeJS = () => {
       mesh.rotation.y += 0.003
     }
     
-    renderer?.render(scene as THREE.Scene, camera as THREE.PerspectiveCamera)
+    renderer?.render(scene as Scene, camera as PerspectiveCamera)
   }
   animate()
 }
 
-let sceneContainer: THREE.Group | null = null
+let sceneContainer: Group | null = null
 
 const buildSurface = () => {
   if (!scene) return
@@ -728,11 +728,11 @@ const buildSurface = () => {
   }
 
   // Создаём контейнер, в который поместим ВСЁ
-  sceneContainer = new THREE.Group()
+  sceneContainer = new Group()
   sceneContainer.name = 'sceneContainer'
 
   // Create geometry
-  const geometry = new THREE.BufferGeometry()
+  const geometry = new BufferGeometry()
   const vertices: number[] = []
   const indices: number[] = []
   const colors: number[] = []
@@ -773,13 +773,13 @@ const buildSurface = () => {
     }
   }
 
-  geometry.setAttribute('position', new THREE.BufferAttribute(new Float32Array(vertices), 3))
-  geometry.setAttribute('color', new THREE.BufferAttribute(new Float32Array(colors), 3))
-  geometry.setIndex(new THREE.BufferAttribute(new Uint32Array(indices), 1))
+  geometry.setAttribute('position', new BufferAttribute(new Float32Array(vertices), 3))
+  geometry.setAttribute('color', new BufferAttribute(new Float32Array(colors), 3))
+  geometry.setIndex(new BufferAttribute(new Uint32Array(indices), 1))
   geometry.computeVertexNormals()
 
   // Material
-  const material = new THREE.MeshPhongMaterial({
+  const material = new MeshPhongMaterial({
     vertexColors: true,
     wireframe: showWireframe.value,
     flatShading: false,
@@ -787,25 +787,25 @@ const buildSurface = () => {
     shininess: 30
   })
 
-  mesh = new THREE.Mesh(geometry, material)
+  mesh = new Mesh(geometry, material)
   sceneContainer.add(mesh)
 
   // Add grids on all planes if enabled
   if (showGrid.value) {
     // Grid on XZ plane (horizontal, at y = -0.5)
-    const gridXZ = new THREE.GridHelper(12, 12, 0x444444, 0x222222)
+    const gridXZ = new GridHelper(12, 12, 0x444444, 0x222222)
     gridXZ.position.y = -0.5
     gridXZ.rotation.x = 0
     sceneContainer.add(gridXZ)
     
     // Grid on XY plane (vertical, at z = -6)
-    const gridXY = new THREE.GridHelper(12, 12, 0x444444, 0x222222)
+    const gridXY = new GridHelper(12, 12, 0x444444, 0x222222)
     gridXY.position.z = -6
     gridXY.rotation.x = Math.PI / 2
     sceneContainer.add(gridXY)
     
     // Grid on YZ plane (vertical, at x = -6)
-    const gridYZ = new THREE.GridHelper(12, 12, 0x444444, 0x222222)
+    const gridYZ = new GridHelper(12, 12, 0x444444, 0x222222)
     gridYZ.position.x = -6
     gridYZ.rotation.z = Math.PI / 2
     sceneContainer.add(gridYZ)
@@ -818,12 +818,12 @@ const buildSurface = () => {
   scene!.add(sceneContainer)
 }
 
-const createAxes = (container: THREE.Group) => {
-  const axesGroup = new THREE.Group()
+const createAxes = (container: Group) => {
+  const axesGroup = new Group()
   axesGroup.name = 'axesGroup'
 
   // Оси на углу плоскости XZ, ВЫШЕ на оси Y
-  const offset = new THREE.Vector3(-6, 0, -6)
+  const offset = new Vector3(-6, 0, -6)
   axesGroup.position.copy(offset)
 
   const axesLength = 12
@@ -833,11 +833,11 @@ const createAxes = (container: THREE.Group) => {
   const numTicks = 6
 
   const whiteColor = 0xffffff
-  const lineMaterial = new THREE.LineBasicMaterial({ color: whiteColor, linewidth: lineWidth })
-  const tickMaterial = new THREE.LineBasicMaterial({ color: whiteColor, linewidth: 1 })
+  const lineMaterial = new LineBasicMaterial({ color: whiteColor, linewidth: lineWidth })
+  const tickMaterial = new LineBasicMaterial({ color: whiteColor, linewidth: 1 })
 
   // Helper function для создания текстового спрайта (подписи на делениях)
-  const createTextSprite = (text: string, position: THREE.Vector3) => {
+  const createTextSprite = (text: string, position: Vector3) => {
     const canvas = document.createElement('canvas')
     canvas.width = 1024
     canvas.height = 512
@@ -848,16 +848,16 @@ const createAxes = (container: THREE.Group) => {
     ctx.textBaseline = 'middle'
     ctx.fillText(text, 512, 256)
     
-    const texture = new THREE.CanvasTexture(canvas)
-    const spriteMaterial = new THREE.SpriteMaterial({ map: texture })
-    const sprite = new THREE.Sprite(spriteMaterial)
+    const texture = new CanvasTexture(canvas)
+    const spriteMaterial = new SpriteMaterial({ map: texture })
+    const sprite = new Sprite(spriteMaterial)
     sprite.scale.set(5, 2.5, 1)
     sprite.position.copy(position)
     return sprite
   }
 
   // Helper function для создания названий осей (больше размер)
-  const createAxisLabelSprite = (text: string, position: THREE.Vector3) => {
+  const createAxisLabelSprite = (text: string, position: Vector3) => {
     const canvas = document.createElement('canvas')
     canvas.width = 1024
     canvas.height = 512
@@ -868,30 +868,30 @@ const createAxes = (container: THREE.Group) => {
     ctx.textBaseline = 'middle'
     ctx.fillText(text, 512, 256)
     
-    const texture = new THREE.CanvasTexture(canvas)
-    const spriteMaterial = new THREE.SpriteMaterial({ map: texture })
-    const sprite = new THREE.Sprite(spriteMaterial)
+    const texture = new CanvasTexture(canvas)
+    const spriteMaterial = new SpriteMaterial({ map: texture })
+    const sprite = new Sprite(spriteMaterial)
     sprite.scale.set(7, 3.5, 1)
     sprite.position.copy(position)
     return sprite
   }
 
   // ===== X-AXIS (Strike) - Вправо =====
-  const xGeometry = new THREE.BufferGeometry()
+  const xGeometry = new BufferGeometry()
   xGeometry.setAttribute(
     'position',
-    new THREE.BufferAttribute(
+    new BufferAttribute(
       new Float32Array([0, 0, 0, axesLength, 0, 0]),
       3
     )
   )
-  const xLine = new THREE.Line(xGeometry, lineMaterial)
+  const xLine = new Line(xGeometry, lineMaterial)
   axesGroup.add(xLine)
 
   // X arrow
-  const xArrowGeometry = new THREE.ConeGeometry(arrowSize * 0.35, arrowSize, 8)
-  const xArrowMaterial = new THREE.MeshBasicMaterial({ color: whiteColor })
-  const xArrow = new THREE.Mesh(xArrowGeometry, xArrowMaterial)
+  const xArrowGeometry = new ConeGeometry(arrowSize * 0.35, arrowSize, 8)
+  const xArrowMaterial = new MeshBasicMaterial({ color: whiteColor })
+  const xArrow = new Mesh(xArrowGeometry, xArrowMaterial)
   xArrow.position.set(axesLength + 0.15, 0, 0)
   xArrow.rotation.z = -Math.PI / 2
   axesGroup.add(xArrow)
@@ -900,43 +900,43 @@ const createAxes = (container: THREE.Group) => {
   for (let i = 0; i <= numTicks; i++) {
     const t = (i / numTicks) * axesLength
     // Tick line
-    const tickGeometry = new THREE.BufferGeometry()
+    const tickGeometry = new BufferGeometry()
     tickGeometry.setAttribute(
       'position',
-      new THREE.BufferAttribute(
+      new BufferAttribute(
         new Float32Array([t, -tickSize, 0, t, tickSize, 0]),
         3
       )
     )
-    const tick = new THREE.Line(tickGeometry, tickMaterial)
+    const tick = new Line(tickGeometry, tickMaterial)
     axesGroup.add(tick)
     
     // Label
     const strikeValue = ((strikes[Math.floor((i / numTicks) * (strikes.length - 1))] - 1) * 100).toFixed(0)
-    const label = createTextSprite(strikeValue + '%', new THREE.Vector3(t, -0.8, 0))
+    const label = createTextSprite(strikeValue + '%', new Vector3(t, -0.8, 0))
     axesGroup.add(label)
   }
 
   // X axis label
-  const xLabel = createAxisLabelSprite('Strike (%)', new THREE.Vector3(axesLength / 2, -2.5, 0))
+  const xLabel = createAxisLabelSprite('Strike (%)', new Vector3(axesLength / 2, -2.5, 0))
   axesGroup.add(xLabel)
 
   // ===== Y-AXIS (Volatility) - Вверх =====
-  const yGeometry = new THREE.BufferGeometry()
+  const yGeometry = new BufferGeometry()
   yGeometry.setAttribute(
     'position',
-    new THREE.BufferAttribute(
+    new BufferAttribute(
       new Float32Array([0, 0, 0, 0, axesLength, 0]),
       3
     )
   )
-  const yLine = new THREE.Line(yGeometry, lineMaterial)
+  const yLine = new Line(yGeometry, lineMaterial)
   axesGroup.add(yLine)
 
   // Y arrow
-  const yArrowGeometry = new THREE.ConeGeometry(arrowSize * 0.35, arrowSize, 8)
-  const yArrowMaterial = new THREE.MeshBasicMaterial({ color: whiteColor })
-  const yArrow = new THREE.Mesh(yArrowGeometry, yArrowMaterial)
+  const yArrowGeometry = new ConeGeometry(arrowSize * 0.35, arrowSize, 8)
+  const yArrowMaterial = new MeshBasicMaterial({ color: whiteColor })
+  const yArrow = new Mesh(yArrowGeometry, yArrowMaterial)
   yArrow.position.set(0, axesLength + 0.15, 0)
   axesGroup.add(yArrow)
 
@@ -945,43 +945,43 @@ const createAxes = (container: THREE.Group) => {
   for (let i = 0; i <= numTicks; i++) {
     const t = (i / numTicks) * axesLength
     // Tick line
-    const tickGeometry = new THREE.BufferGeometry()
+    const tickGeometry = new BufferGeometry()
     tickGeometry.setAttribute(
       'position',
-      new THREE.BufferAttribute(
+      new BufferAttribute(
         new Float32Array([-tickSize, t, 0, tickSize, t, 0]),
         3
       )
     )
-    const tick = new THREE.Line(tickGeometry, tickMaterial)
+    const tick = new Line(tickGeometry, tickMaterial)
     axesGroup.add(tick)
     
     // Label
     const volValue = ((t / axesLength) * maxVol).toFixed(1)
-    const label = createTextSprite(volValue + '%', new THREE.Vector3(-0.8, t, 0))
+    const label = createTextSprite(volValue + '%', new Vector3(-0.8, t, 0))
     axesGroup.add(label)
   }
 
   // Y axis label
-  const yLabel = createAxisLabelSprite('IV (%)', new THREE.Vector3(-2.5, axesLength / 2, 0))
+  const yLabel = createAxisLabelSprite('IV (%)', new Vector3(-2.5, axesLength / 2, 0))
   axesGroup.add(yLabel)
 
   // ===== Z-AXIS (Tenor) - Назад =====
-  const zGeometry = new THREE.BufferGeometry()
+  const zGeometry = new BufferGeometry()
   zGeometry.setAttribute(
     'position',
-    new THREE.BufferAttribute(
+    new BufferAttribute(
       new Float32Array([0, 0, 0, 0, 0, axesLength]),
       3
     )
   )
-  const zLine = new THREE.Line(zGeometry, lineMaterial)
+  const zLine = new Line(zGeometry, lineMaterial)
   axesGroup.add(zLine)
 
   // Z arrow
-  const zArrowGeometry = new THREE.ConeGeometry(arrowSize * 0.35, arrowSize, 8)
-  const zArrowMaterial = new THREE.MeshBasicMaterial({ color: whiteColor })
-  const zArrow = new THREE.Mesh(zArrowGeometry, zArrowMaterial)
+  const zArrowGeometry = new ConeGeometry(arrowSize * 0.35, arrowSize, 8)
+  const zArrowMaterial = new MeshBasicMaterial({ color: whiteColor })
+  const zArrow = new Mesh(zArrowGeometry, zArrowMaterial)
   zArrow.position.set(0, 0, axesLength - 0.15)
   zArrow.rotation.x = Math.PI / 2
   axesGroup.add(zArrow)
@@ -990,31 +990,31 @@ const createAxes = (container: THREE.Group) => {
   for (let i = 0; i <= numTicks; i++) {
     const t = (i / numTicks) * axesLength
     // Tick line
-    const tickGeometry = new THREE.BufferGeometry()
+    const tickGeometry = new BufferGeometry()
     tickGeometry.setAttribute(
       'position',
-      new THREE.BufferAttribute(
+      new BufferAttribute(
         new Float32Array([-tickSize, 0, t, tickSize, 0, t]),
         3
       )
     )
-    const tick = new THREE.Line(tickGeometry, tickMaterial)
+    const tick = new Line(tickGeometry, tickMaterial)
     axesGroup.add(tick)
     
     // Label
     const tenorIdx = Math.floor((i / numTicks) * (tenors.length - 1))
-    const label = createTextSprite(tenors[tenorIdx], new THREE.Vector3(0, -0.8, t))
+    const label = createTextSprite(tenors[tenorIdx], new Vector3(0, -0.8, t))
     axesGroup.add(label)
   }
 
   // Z axis label
-  const zLabel = createAxisLabelSprite('Tenor', new THREE.Vector3(0, -2.5, axesLength / 2))
+  const zLabel = createAxisLabelSprite('Tenor', new Vector3(0, -2.5, axesLength / 2))
   axesGroup.add(zLabel)
 
   // Origin point
-  const originGeometry = new THREE.SphereGeometry(0.12, 12, 12)
-  const originMaterial = new THREE.MeshBasicMaterial({ color: whiteColor })
-  const origin = new THREE.Mesh(originGeometry, originMaterial)
+  const originGeometry = new SphereGeometry(0.12, 12, 12)
+  const originMaterial = new MeshBasicMaterial({ color: whiteColor })
+  const origin = new Mesh(originGeometry, originMaterial)
   axesGroup.add(origin)
 
   container.add(axesGroup)
@@ -1047,7 +1047,7 @@ const setupControls = () => {
   let isPanning = false
   let previousMousePosition = { x: 0, y: 0 }
   let rotation = { x: 0, y: 0 }
-  const target = new THREE.Vector3(0, 0, 0)
+  const target = new Vector3(0, 0, 0)
   const minDistance = 5
   const maxDistance = 50
 
@@ -1055,7 +1055,7 @@ const setupControls = () => {
   const rotateCamera = (deltaX: number, deltaY: number) => {
     if (!camera) return
     
-    const spherical = new THREE.Spherical()
+    const spherical = new Spherical()
     spherical.setFromVector3(camera.position.clone().sub(target))
     
     spherical.theta -= deltaX * 0.01
@@ -1064,7 +1064,7 @@ const setupControls = () => {
     // Ограничиваем phi, чтобы камера не переворачивалась
     spherical.phi = Math.max(0.1, Math.min(Math.PI - 0.1, spherical.phi))
     
-    const newPosition = new THREE.Vector3()
+    const newPosition = new Vector3()
     newPosition.setFromSpherical(spherical)
     newPosition.add(target)
     
@@ -1077,13 +1077,13 @@ const setupControls = () => {
     if (!camera) return
     
     const panSpeed = 0.01
-    const direction = new THREE.Vector3()
+    const direction = new Vector3()
     camera.getWorldDirection(direction)
     
-    const right = new THREE.Vector3()
+    const right = new Vector3()
     right.crossVectors(direction, camera.up).normalize()
     
-    const up = new THREE.Vector3()
+    const up = new Vector3()
     up.crossVectors(right, direction).normalize()
     
     const distance = camera.position.distanceTo(target)
@@ -1102,7 +1102,7 @@ const setupControls = () => {
   const zoomCamera = (delta: number) => {
     if (!camera) return
     
-    const direction = new THREE.Vector3()
+    const direction = new Vector3()
     direction.subVectors(camera.position, target).normalize()
     
     const distance = camera.position.distanceTo(target)
@@ -1400,7 +1400,7 @@ const buildHeatmapChart = () => {
           ticks: { 
             color: 'rgba(255,255,255,0.3)', 
             font: { size: 10 },
-            callback: function(value: any) {
+            callback: function(value: unknown) {
               return tenors[value] || ''
             }
           },
@@ -1418,7 +1418,7 @@ const buildHeatmapChart = () => {
           ticks: { 
             color: 'rgba(255,255,255,0.3)', 
             font: { size: 10 },
-            callback: function(value: any) {
+            callback: function(value: unknown) {
               const strikeIdx = Math.round(value)
               if (strikeIdx >= 0 && strikeIdx < strikes.length) {
                 return ((strikes[strikeIdx] - 1) * 100).toFixed(0) + '%'
@@ -1590,10 +1590,10 @@ const handleFileUpload = async (event: Event) => {
     const jsonData = XLSX.utils.sheet_to_json(worksheet, { raw: false })
 
     // Парсим данные из Excel
-    const contracts: any[] = []
+    const contracts: Record<string, unknown>[] = []
     
     for (const row of jsonData as any[]) {
-      const contract: any = {
+      const contract: Record<string, unknown> = {
         instrument: row['Instrument'] || row['instrument'] || row['Инструмент'] || row['Symbol'] || row['symbol'] || 'SPY',
         strike: parseFloat(row['Strike'] || row['strike'] || row['Страйк'] || row['K'] || '1.0'),
         tenor: row['Tenor'] || row['tenor'] || row['Срок'] || row['Maturity'] || row['maturity'] || '1M',
@@ -1608,9 +1608,9 @@ const handleFileUpload = async (event: Event) => {
 
     registryContracts.value = contracts
     selectedContractIndex.value = null
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error('Excel parsing error:', err)
-    alert(`Ошибка при загрузке файла: ${err.message}`)
+    alert(`Ошибка при загрузке файла: ${err instanceof Error ? err.message : String(err)}`)
   }
 }
 
@@ -1683,9 +1683,9 @@ const saveRegistryToParquetHandler = async () => {
         error.value = ''
       }, 5000)
     }
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error('Error saving registry to parquet:', err)
-    error.value = `Ошибка при сохранении реестра: ${err.message}`
+    error.value = `Ошибка при сохранении реестра: ${err instanceof Error ? err.message : String(err)}`
   } finally {
     savingParquet.value = false
   }

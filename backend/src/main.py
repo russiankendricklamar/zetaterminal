@@ -1,13 +1,22 @@
 """
 FastAPI приложение для Zeta Terminal Backend.
 """
+import logging
 from contextlib import asynccontextmanager
-from fastapi import FastAPI, Depends
+
+from fastapi import FastAPI, Depends, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
+from slowapi import _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
 import os
+
+logger = logging.getLogger(__name__)
 
 from src.utils.http_client import close_session
 from src.middleware.auth import require_api_key
+from src.middleware.rate_limit import limiter
+from src.database.client import init_db
 
 # Импортируем все роутеры
 from src.api import backtest
@@ -45,9 +54,11 @@ from src.api import adversarial_stress
 from src.api import moexalgo
 from src.api import dadata
 from src.api import etf
+from src.api import gemini
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    await init_db()
     yield
     await close_session()
 
@@ -60,27 +71,26 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+
 # Настройка CORS
 cors_origins_env = os.getenv("CORS_ORIGINS", "")
 cors_origins = [o.strip() for o in cors_origins_env.split(",") if o.strip()]
 
-if cors_origins:
-    app.add_middleware(
-        CORSMiddleware,
-        allow_origins=cors_origins,
-        allow_credentials=True,
-        allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-        allow_headers=["Content-Type", "X-API-Key"],
-    )
-else:
-    # Dev mode: allow all origins but WITHOUT credentials
-    app.add_middleware(
-        CORSMiddleware,
-        allow_origins=["*"],
-        allow_credentials=False,
-        allow_methods=["*"],
-        allow_headers=["*"],
-    )
+if not cors_origins:
+    cors_origins = [
+        "http://localhost:5173",
+        "https://russiankendricklamar.github.io",
+    ]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=cors_origins,
+    allow_credentials=True,
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allow_headers=["Content-Type", "X-API-Key"],
+)
 
 # Подключаем все роутеры (с обязательной аутентификацией по API-ключу)
 _auth = [Depends(require_api_key)]
@@ -120,19 +130,25 @@ app.include_router(adversarial_stress.router, prefix="/api/adversarial-stress", 
 app.include_router(moexalgo.router, prefix="/api/moexalgo", tags=["MOEX ISS"], dependencies=_auth)
 app.include_router(dadata.router, prefix="/api/dadata", tags=["DaData"], dependencies=_auth)
 app.include_router(etf.router, prefix="/api/etf", tags=["ETF"], dependencies=_auth)
+app.include_router(gemini.router, prefix="/api/gemini", tags=["Gemini AI"], dependencies=_auth)
 
 # REMOVED: platform_services router — contains dangerous endpoints:
 # open email relay, SSRF vectors, auth token proxy, open storage
 
 
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception) -> JSONResponse:
+    logger.error("Unhandled error on %s %s: %s", request.method, request.url.path, exc, exc_info=True)
+    return JSONResponse(
+        status_code=500,
+        content={"detail": "Internal server error"},
+    )
+
+
 @app.get("/")
 async def root():
     """Корневой endpoint"""
-    return {
-        "message": "Zeta Terminal API",
-        "version": "1.0.0",
-        "status": "running"
-    }
+    return {"status": "ok"}
 
 
 @app.get("/health")

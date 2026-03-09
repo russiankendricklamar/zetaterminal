@@ -169,7 +169,7 @@ export interface FloaterBondReport extends VanillaBondReport {
 
 // ─── MOEX ISS helpers ──────────────────────────────────────────────────────────
 
-async function moexRequest(endpoint: string, params: Record<string, string> = {}): Promise<any> {
+async function moexRequest(endpoint: string, params: Record<string, string> = {}): Promise<unknown> {
   const url = new URL(`${MOEX_ISS}${endpoint}.json`)
   url.searchParams.set('iss.json', 'extended')
   url.searchParams.set('iss.meta', 'off')
@@ -182,14 +182,18 @@ async function moexRequest(endpoint: string, params: Record<string, string> = {}
   return resp.json()
 }
 
-function parseISSTable(response: any, tableName: string): Record<string, any>[] {
-  if (!response || !response[1] || !response[1][tableName]) return []
-  const table = response[1][tableName]
-  if (Array.isArray(table)) return table
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function parseISSTable(response: unknown, tableName: string): Record<string, any>[] {
+  const resp = response as Record<string, unknown>[] | undefined
+  if (!resp || !resp[1] || !(resp[1] as Record<string, unknown>)[tableName]) return []
+  const table = (resp[1] as Record<string, unknown>)[tableName] as Record<string, unknown>
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  if (Array.isArray(table)) return table as Record<string, any>[]
   if (table.data && table.columns) {
-    return table.data.map((row: any[]) => {
+    return (table.data as unknown[][]).map((row: unknown[]) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const obj: Record<string, any> = {}
-      table.columns.forEach((col: string, i: number) => { obj[col] = row[i] })
+      ;(table.columns as string[]).forEach((col: string, i: number) => { obj[col] = row[i] })
       return obj
     })
   }
@@ -223,13 +227,15 @@ async function getSecuritySpec(isinOrSecid: string): Promise<SecuritySpec> {
   const description = parseISSTable(resp, 'description')
 
   const descMap: Record<string, string> = {}
-  description.forEach((row: any) => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  description.forEach((row: Record<string, any>) => {
     const key = (row.name || row.NAME || '').toLowerCase()
     descMap[key] = row.value || row.VALUE || ''
   })
 
   const boards = parseISSTable(resp, 'boards')
-  const tqcbBoard = boards.find((b: any) => b.boardid === 'TQCB' || b.BOARDID === 'TQCB')
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const tqcbBoard = boards.find((b: Record<string, any>) => b.boardid === 'TQCB' || b.BOARDID === 'TQCB')
   const firstBoard = boards[0] || {}
   const secid = (tqcbBoard || firstBoard)?.secid || (tqcbBoard || firstBoard)?.SECID || isinOrSecid
 
@@ -324,8 +330,10 @@ async function getCurrentMarketData(secid: string): Promise<CurrentMarketData> {
   const mktData = parseISSTable(resp, 'marketdata')
   const secData = parseISSTable(resp, 'securities')
 
-  const mkt = mktData.find((r: any) => (r.SECID || r.secid) === secid) || mktData[0] || {}
-  const sec = secData.find((r: any) => (r.SECID || r.secid) === secid) || secData[0] || {}
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const mkt = mktData.find((r: Record<string, any>) => (r.SECID || r.secid) === secid) || mktData[0] || {}
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const sec = secData.find((r: Record<string, any>) => (r.SECID || r.secid) === secid) || secData[0] || {}
 
   return {
     last: mkt.LAST ?? mkt.last ?? null,
@@ -358,7 +366,7 @@ function getRuDataCreds(): RuDataCreds | null {
   }
 }
 
-async function ruDataQuery(pathMethod: string, body: Record<string, any> = {}, creds?: RuDataCreds): Promise<any> {
+async function ruDataQuery(pathMethod: string, body: Record<string, unknown> = {}, creds?: RuDataCreds): Promise<unknown> {
   const c = creds || getRuDataCreds()
   if (!c) return null
 
@@ -383,7 +391,7 @@ async function ruDataQuery(pathMethod: string, body: Record<string, any> = {}, c
 
 // ─── RuData: FintoolReferenceData (аналог _xll.ReferenceParams) ─────────────
 
-async function getRuDataFintoolRef(isin: string, creds?: RuDataCreds): Promise<any> {
+async function getRuDataFintoolRef(isin: string, creds?: RuDataCreds): Promise<unknown> {
   const c = creds || getRuDataCreds()
   if (!c) return null
 
@@ -488,6 +496,7 @@ async function getRuDataEfirYields(isin: string, date: string, creds?: RuDataCre
 
 // ─── RuData: EfirEndOfDay (duration, Y2O_LAST, DURATION_O) ────────────────────
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function getRuDataEfirEndOfDay(isin: string, date: string, fields: string[], creds?: RuDataCreds): Promise<Record<string, any>> {
   const c = creds || getRuDataCreds()
   if (!c) return {}
@@ -516,6 +525,7 @@ async function getRuDataEfirHistoryAgg(
   toDate: string,
   fields: string[],
   creds?: RuDataCreds
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 ): Promise<Record<string, any>> {
   const c = creds || getRuDataCreds()
   if (!c) return {}
@@ -580,10 +590,11 @@ async function getRuDataRatings(isin: string, creds?: RuDataCreds): Promise<Rati
     }, c)
     if (!data || !Array.isArray(data)) return []
 
-    return data.map((r: any) => ({
-      agency: r.ra_name || r.agency || '',
-      rating: r.last_rating || r.rating || '',
-      outlook: r.forecast || r.outlook || null,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    return data.map((r: Record<string, any>) => ({
+      agency: (r.ra_name || r.agency || '') as string,
+      rating: (r.last_rating || r.rating || '') as string,
+      outlook: (r.forecast || r.outlook || null) as string | null,
       date: r.last_dt ? String(r.last_dt).split('T')[0] : null,
     }))
   } catch {
@@ -602,10 +613,11 @@ async function getRuDataIssuerRatings(issuerName: string, creds?: RuDataCreds): 
     }, c)
     if (!data || !Array.isArray(data)) return []
 
-    return data.map((r: any) => ({
-      agency: r.ra_name || r.agency || '',
-      rating: r.last_rating || r.rating || '',
-      outlook: r.forecast || r.outlook || null,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    return data.map((r: Record<string, any>) => ({
+      agency: (r.ra_name || r.agency || '') as string,
+      rating: (r.last_rating || r.rating || '') as string,
+      outlook: (r.forecast || r.outlook || null) as string | null,
       date: r.last_dt ? String(r.last_dt).split('T')[0] : null,
     }))
   } catch {
@@ -944,20 +956,23 @@ async function getCouponSchedule(isin: string): Promise<{
     const amortRaw = parseISSTable(resp, 'amortizations')
     const offersRaw = parseISSTable(resp, 'offers')
 
-    const coupons: CouponPayment[] = couponsRaw.map((c: any) => ({
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const coupons: CouponPayment[] = couponsRaw.map((c: Record<string, any>) => ({
       date: c.coupondate || c.COUPONDATE || '',
       value: c.value || c.VALUE || 0,
       valueprc: c.valueprc || c.VALUEPRC || 0,
       value_rub: c.value_rub || c.VALUE_RUB || c.value || c.VALUE || 0,
     }))
 
-    const amortizations: AmortizationPayment[] = amortRaw.map((a: any) => ({
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const amortizations: AmortizationPayment[] = amortRaw.map((a: Record<string, any>) => ({
       date: a.amortdate || a.AMORTDATE || '',
       value: a.value || a.VALUE || 0,
       valueprc: a.valueprc || a.VALUEPRC || 0,
     }))
 
-    const offers = offersRaw.map((o: any) => ({
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const offers = offersRaw.map((o: Record<string, any>) => ({
       date: o.offerdate || o.OFFERDATE || '',
       type: o.offertypename || o.OFFERTYPENAME || '',
     }))
@@ -1134,9 +1149,10 @@ async function getCorporateEvents(isin: string): Promise<CorporateEvent[]> {
         count: 20,
       }, creds)
       if (data && Array.isArray(data) && data.length > 0) {
-        return data.map((item: any) => ({
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        return data.map((item: Record<string, any>) => ({
           date: item.pub_date ? String(item.pub_date).split('T')[0] : null,
-          description: item.title || item.subject || item.text || '',
+          description: (item.title || item.subject || item.text || '') as string,
         }))
       }
     } catch { /* fallback to ISS */ }
@@ -1381,7 +1397,7 @@ export async function fetchVanillaBondReport(
   // --- Модифицированная дюрация ---
   // B15 = EfirYields(duration_n)
   let modDuration: number
-  modDuration = efirYields.duration_n ?? ruCalc?.mod_duration ?? null as any
+  modDuration = efirYields.duration_n ?? ruCalc?.mod_duration ?? (null as unknown as number)
   if (modDuration == null) {
     // Fallback: ModDur = MacaulayDur / (1 + y/m)
     modDuration = durationYears / (1 + ytmDecimal / (spec.couponfrequency || 2))
@@ -1390,7 +1406,7 @@ export async function fetchVanillaBondReport(
   // --- Выпуклость ---
   // B14 = EfirYields(convexity)
   let convexity: number
-  convexity = efirYields.convexity ?? ruCalc?.convexity ?? null as any
+  convexity = efirYields.convexity ?? ruCalc?.convexity ?? (null as unknown as number)
   if (convexity == null) {
     convexity = calcConvexity(ytmDecimal, currentFaceValue, currentCouponRate, spec.couponfrequency || 2, yearsToMaturity)
   }
@@ -1607,8 +1623,10 @@ export async function fetchFloaterBondReport(
   const coupons = parseISSTable(resp, 'coupons')
   const today = new Date(valuationDate)
   const futureCoupons = coupons
-    .filter((c: any) => new Date(c.coupondate || c.COUPONDATE || '') > today)
-    .sort((a: any, b: any) =>
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    .filter((c: Record<string, any>) => new Date((c.coupondate || c.COUPONDATE || '') as string) > today)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    .sort((a: Record<string, any>, b: Record<string, any>) =>
       new Date(a.coupondate || a.COUPONDATE || '').getTime() -
       new Date(b.coupondate || b.COUPONDATE || '').getTime()
     )

@@ -248,7 +248,7 @@ const chartOption = computed(() => {
         fontSize: 12,
         fontFamily: 'JetBrains Mono, monospace'
       },
-      formatter: (params: any) => {
+      formatter: (params: Record<string, unknown> | Record<string, unknown>[]) => {
         const data = params[0];
         return `<div style="font-size:10px;color:#888;margin-bottom:4px">${data.name}</div>
                 <div style="font-size:14px;font-weight:bold;color:#fff">${Number(data.value).toLocaleString('en-US', { minimumFractionDigits: 2 })}</div>`;

@@ -1,10 +1,11 @@
 """
 API endpoints для бэктестинга портфеля.
 """
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Request
 from typing import List, Optional, Dict, Any
 from pydantic import BaseModel, Field
 from src.services.backtest_service import run_backtest
+from src.middleware.rate_limit import limiter
 
 router = APIRouter()
 
@@ -24,7 +25,8 @@ class BacktestRequest(BaseModel):
 
 
 @router.post("/run", response_model=Dict[str, Any])
-async def run_portfolio_backtest(request: BacktestRequest):
+@limiter.limit("10/minute")
+async def run_portfolio_backtest(http_request: Request, request: BacktestRequest):
     """
     Выполняет бэктест портфеля.
     """

@@ -148,7 +148,13 @@
 
 <script setup lang="ts">
 import { ref, computed, nextTick, watch } from 'vue'
-import * as echarts from 'echarts'
+import { use, init } from 'echarts/core'
+import type { ECharts } from 'echarts/core'
+import { CanvasRenderer } from 'echarts/renderers'
+import { LineChart } from 'echarts/charts'
+import { TooltipComponent, GridComponent, MarkLineComponent } from 'echarts/components'
+
+use([CanvasRenderer, LineChart, TooltipComponent, GridComponent, MarkLineComponent])
 import { getApiHeaders } from '@/utils/apiHeaders'
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || ''
@@ -165,8 +171,8 @@ const result = ref<Record<string, any> | null>(null)
 
 const nullChartEl = ref<HTMLElement | null>(null)
 const psrChartEl = ref<HTMLElement | null>(null)
-let nullChart: echarts.ECharts | null = null
-let psrChart: echarts.ECharts | null = null
+let nullChart: ECharts | null = null
+let psrChart: ECharts | null = null
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 function parseReturns(): number[] {
@@ -234,8 +240,8 @@ async function analyze() {
     result.value = data.result
     await nextTick()
     renderCharts()
-  } catch (e: any) {
-    error.value = e.message || 'Неизвестная ошибка'
+  } catch (e: unknown) {
+    error.value = e instanceof Error ? e.message : 'Неизвестная ошибка'
   } finally {
     loading.value = false
   }
@@ -250,7 +256,7 @@ function renderCharts() {
 
 function renderNullChart() {
   if (!nullChartEl.value || !result.value) return
-  if (!nullChart) nullChart = echarts.init(nullChartEl.value, 'dark')
+  if (!nullChart) nullChart = init(nullChartEl.value, 'dark')
 
   const { x, pdf } = result.value.null_distribution
   const sr = result.value.sr_annual
@@ -260,7 +266,7 @@ function renderNullChart() {
 
   nullChart.setOption({
     backgroundColor: 'transparent',
-    tooltip: { trigger: 'axis', formatter: (p: any) => `SR = ${parseFloat(p[0].axisValue).toFixed(3)}<br/>pdf = ${p[0].value[1].toFixed(4)}` },
+    tooltip: { trigger: 'axis', formatter: (p: Record<string, unknown> | Record<string, unknown>[]) => { const a = Array.isArray(p) ? p[0] : p; return `SR = ${parseFloat(String(a.axisValue)).toFixed(3)}<br/>pdf = ${(a.value as number[])[1].toFixed(4)}` } },
     xAxis: { type: 'value', name: 'SR (годовой)', nameLocation: 'middle', nameGap: 25, axisLine: { lineStyle: { color: '#666' } } },
     yAxis: { type: 'value', name: 'Плотность', axisLine: { lineStyle: { color: '#666' } } },
     series: [
@@ -287,7 +293,7 @@ function renderNullChart() {
 
 function renderPsrChart() {
   if (!psrChartEl.value || !result.value) return
-  if (!psrChart) psrChart = echarts.init(psrChartEl.value, 'dark')
+  if (!psrChart) psrChart = init(psrChartEl.value, 'dark')
 
   const { sr_star, psr_values } = result.value.psr_curve
   const benchSr = result.value.benchmark_sr
@@ -295,7 +301,7 @@ function renderPsrChart() {
 
   psrChart.setOption({
     backgroundColor: 'transparent',
-    tooltip: { trigger: 'axis', formatter: (p: any) => `SR* = ${parseFloat(p[0].axisValue).toFixed(2)}<br/>PSR = ${(p[0].value[1] * 100).toFixed(1)}%` },
+    tooltip: { trigger: 'axis', formatter: (p: Record<string, unknown> | Record<string, unknown>[]) => { const a = Array.isArray(p) ? p[0] : p; return `SR* = ${parseFloat(String(a.axisValue)).toFixed(2)}<br/>PSR = ${((a.value as number[])[1] * 100).toFixed(1)}%` } },
     xAxis: { type: 'value', name: 'SR* (пороговое значение)', nameLocation: 'middle', nameGap: 25, axisLine: { lineStyle: { color: '#666' } } },
     yAxis: { type: 'value', name: 'PSR(SR*)', min: 0, max: 1, axisLabel: { formatter: (v: number) => (v * 100).toFixed(0) + '%' }, axisLine: { lineStyle: { color: '#666' } } },
     series: [

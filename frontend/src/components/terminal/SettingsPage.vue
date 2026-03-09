@@ -732,7 +732,7 @@ const loadActiveWidgets = () => {
   if (saved) {
     try {
       const widgets = JSON.parse(saved);
-      return widgets.map((w: any) => {
+      return widgets.map((w: Record<string, unknown>) => {
         const template = availableWidgets.find(aw => aw.type === w.type);
         return {
           ...w,
@@ -789,7 +789,7 @@ const removeWidget = (id: string) => {
   }
 };
 
-const editWidgetSize = (widget: any) => {
+const editWidgetSize = (widget: Record<string, unknown>) => {
   const newWidth = prompt('Ширина (в ячейках):', widget.width);
   const newHeight = prompt('Высота (в ячейках):', widget.height);
   
@@ -864,7 +864,7 @@ const getWidgetComponent = (type: string) => {
   return component;
 };
 
-const getWidgetProps = (widget: any) => {
+const getWidgetProps = (widget: Record<string, unknown>) => {
   const template = availableWidgets.find(aw => aw.type === widget.type);
   const component = widgetComponentsMap[widget.type];
   

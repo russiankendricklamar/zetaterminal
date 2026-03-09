@@ -38,11 +38,11 @@ export interface HMMParameters {
  * Класс HMM модели для рыночных режимов
  */
 export class HMMModel {
-  private nStates: number
-  private transitionMatrix: number[][]
-  private initialStateDistribution: number[]
-  private emissionMeans: number[][]
-  private emissionCovariances: number[][][]
+  private nStates!: number
+  private transitionMatrix!: number[][]
+  private initialStateDistribution!: number[]
+  private emissionMeans!: number[][]
+  private emissionCovariances!: number[][][]
 
   constructor(params?: HMMParameters) {
     if (params) {

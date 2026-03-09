@@ -1,11 +1,12 @@
 """
 API endpoints для вычислительных задач.
 """
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Request
 from typing import List, Optional
 from pydantic import BaseModel
 from src.models.schemas import ComputeRequest, ComputeResponse
 from src.services.compute_service import ComputeService
+from src.middleware.rate_limit import limiter
 from datetime import datetime
 
 router = APIRouter()
@@ -44,7 +45,8 @@ async def calculate_statistics(data: List[float]):
 
 
 @router.post("/garch")
-async def calculate_garch(request: GARCHRequest):
+@limiter.limit("10/minute")
+async def calculate_garch(http_request: Request, request: GARCHRequest):
     """
     Вычисляет GARCH(1,1) модель волатильности.
     

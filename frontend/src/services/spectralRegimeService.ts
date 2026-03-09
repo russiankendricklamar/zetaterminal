@@ -126,7 +126,7 @@ export interface AnalysisSummary {
   minimum_phase: {
     is_minimum_phase: boolean
     n_violations: number
-    violations: any[]
+    violations: unknown[]
   }
   reconstruction: {
     rmse: number

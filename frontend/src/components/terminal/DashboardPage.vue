@@ -111,8 +111,8 @@ const widgetComponents: Record<string, any> = {
 interface Widget {
   id: string;
   type: string;
-  component: any;
-  props: any;
+  component: Component;
+  props: Record<string, unknown>;
   width: number;
   height: number;
   x?: number;
@@ -120,7 +120,7 @@ interface Widget {
 }
 
 interface Props {
-  orderBook?: { bids: any[]; asks: any[] };
+  orderBook?: { bids: [number, number][]; asks: [number, number][] };
   currentPrice?: number;
   chartData?: Candle[];
   symbol?: string;
@@ -150,8 +150,8 @@ const loadWidgets = (): Widget[] => {
     try {
       const savedWidgets = JSON.parse(saved);
       return savedWidgets
-        .filter((w: any) => widgetComponents[w.type]) // Фильтруем только существующие компоненты
-        .map((w: any) => {
+        .filter((w: Record<string, unknown>) => widgetComponents[w.type as string]) // Фильтруем только существующие компоненты
+        .map((w: Record<string, unknown>) => {
           const component = widgetComponents[w.type];
           // Для инструментов количественного анализа передаем все метаданные
           if (component === QuantitativeToolWidget) {

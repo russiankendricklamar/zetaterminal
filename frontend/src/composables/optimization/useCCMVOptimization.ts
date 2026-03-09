@@ -176,7 +176,7 @@ export function useCCMVOptimization() {
     return currentPos?.allocation || 0
   }
 
-  const getWeightDelta = (pos: any): number => {
+  const getWeightDelta = (pos: { symbol: string; allocation: number }): number => {
     return getOptimalWeight(pos.symbol) - pos.allocation
   }
 

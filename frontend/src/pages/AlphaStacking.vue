@@ -184,7 +184,13 @@
 
 <script setup lang="ts">
 import { ref, computed, watch, nextTick } from 'vue'
-import * as echarts from 'echarts'
+import { use, init } from 'echarts/core'
+import type { ECharts } from 'echarts/core'
+import { CanvasRenderer } from 'echarts/renderers'
+import { BarChart, LineChart, PieChart, HeatmapChart } from 'echarts/charts'
+import { TooltipComponent, LegendComponent, GridComponent, VisualMapComponent } from 'echarts/components'
+
+use([CanvasRenderer, BarChart, LineChart, PieChart, HeatmapChart, TooltipComponent, LegendComponent, GridComponent, VisualMapComponent])
 import { getApiHeaders } from '@/utils/apiHeaders'
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || ''
@@ -206,7 +212,7 @@ const crossIcAfter = ref<HTMLElement | null>(null)
 const decayChart = ref<HTMLElement | null>(null)
 const icTimeChart = ref<HTMLElement | null>(null)
 
-let chartInstances: echarts.ECharts[] = []
+let chartInstances: ECharts[] = []
 
 const demoPlaceholder = `0,0,0.5,0.2,0.01
 0,1,-0.3,0.4,-0.005
@@ -337,8 +343,8 @@ async function compute() {
     result.value = data.result
     await nextTick()
     renderAllCharts()
-  } catch (e: any) {
-    error.value = e.message
+  } catch (e: unknown) {
+    error.value = e instanceof Error ? e.message : String(e)
   } finally {
     loading.value = false
   }
@@ -350,9 +356,9 @@ function disposeAll() {
   chartInstances = []
 }
 
-function initChart(el: HTMLElement | null): echarts.ECharts | null {
+function initEChart(el: HTMLElement | null): ECharts | null {
   if (!el) return null
-  const inst = echarts.init(el, 'dark')
+  const inst = init(el, 'dark')
   chartInstances.push(inst)
   return inst
 }
@@ -368,13 +374,13 @@ function renderAllCharts() {
 }
 
 function renderIRBar() {
-  const inst = initChart(irBarChart.value)
+  const inst = initEChart(irBarChart.value)
   if (!inst) return
-  const names = result.value.signal_stats.map((s: any) => s.name)
-  const rawIC = result.value.signal_stats.map((s: any) => +(s.raw_ic * 100).toFixed(3))
-  const orthoIC = result.value.signal_stats.map((s: any) => +(s.ortho_ic * 100).toFixed(3))
-  const rawIR = result.value.signal_stats.map((s: any) => +s.raw_ir.toFixed(3))
-  const orthoIR = result.value.signal_stats.map((s: any) => +s.ortho_ir.toFixed(3))
+  const names = result.value.signal_stats.map((s: Record<string, unknown>) => s.name)
+  const rawIC = result.value.signal_stats.map((s: Record<string, unknown>) => +((s.raw_ic as number) * 100).toFixed(3))
+  const orthoIC = result.value.signal_stats.map((s: Record<string, unknown>) => +((s.ortho_ic as number) * 100).toFixed(3))
+  const rawIR = result.value.signal_stats.map((s: Record<string, unknown>) => +(s.raw_ir as number).toFixed(3))
+  const orthoIR = result.value.signal_stats.map((s: Record<string, unknown>) => +(s.ortho_ir as number).toFixed(3))
 
   inst.setOption({
     backgroundColor: 'transparent',
@@ -396,25 +402,25 @@ function renderIRBar() {
 }
 
 function renderWeights() {
-  const inst = initChart(weightsChart.value)
+  const inst = initEChart(weightsChart.value)
   if (!inst) return
   const stats = result.value.signal_stats
   inst.setOption({
     backgroundColor: 'transparent',
-    tooltip: { trigger: 'item', formatter: (p: any) => `${p.name}: ${(p.value * 100).toFixed(1)}%` },
+    tooltip: { trigger: 'item', formatter: (p: Record<string, unknown>) => `${p.name}: ${((p.value as number) * 100).toFixed(1)}%` },
     series: [{
       type: 'pie',
       radius: ['35%', '70%'],
-      data: stats.map((s: any) => ({ name: s.name, value: +(s.weight).toFixed(4) })),
-      label: { formatter: (p: any) => `${p.name}\n${(p.value * 100).toFixed(1)}%`, color: '#e0e0e0' },
+      data: stats.map((s: Record<string, unknown>) => ({ name: s.name, value: +(s.weight as number).toFixed(4) })),
+      label: { formatter: (p: Record<string, unknown>) => `${p.name}\n${((p.value as number) * 100).toFixed(1)}%`, color: '#e0e0e0' },
     }],
   })
 }
 
 function renderCrossIC(el: HTMLElement | null, matrix: number[][], _title: string) {
-  const inst = initChart(el)
+  const inst = initEChart(el)
   if (!inst || !result.value) return
-  const names = result.value.signal_stats.map((s: any) => s.name)
+  const names = result.value.signal_stats.map((s: Record<string, unknown>) => s.name)
   const N = names.length
   const data: [number, number, number][] = []
   for (let i = 0; i < N; i++) {
@@ -425,7 +431,7 @@ function renderCrossIC(el: HTMLElement | null, matrix: number[][], _title: strin
 
   inst.setOption({
     backgroundColor: 'transparent',
-    tooltip: { formatter: (p: any) => `${names[p.data[1]]} vs ${names[p.data[0]]}: ${p.data[2]}` },
+    tooltip: { formatter: (p: Record<string, unknown>) => { const d = p.data as number[]; return `${names[d[1]]} vs ${names[d[0]]}: ${d[2]}` } },
     xAxis: { type: 'category', data: names, axisLabel: { color: '#aaa', rotate: 30 } },
     yAxis: { type: 'category', data: names, axisLabel: { color: '#aaa' } },
     visualMap: {
@@ -437,18 +443,18 @@ function renderCrossIC(el: HTMLElement | null, matrix: number[][], _title: strin
     series: [{
       type: 'heatmap',
       data,
-      label: { show: true, formatter: (p: any) => p.data[2].toFixed(2), color: '#fff', fontSize: 11 },
+      label: { show: true, formatter: (p: Record<string, unknown>) => (p.data as number[])[2].toFixed(2), color: '#fff', fontSize: 11 },
     }],
     grid: { left: 80, right: 80, top: 10, bottom: 50 },
   })
 }
 
 function renderDecay() {
-  const inst = initChart(decayChart.value)
+  const inst = initEChart(decayChart.value)
   if (!inst || !result.value) return
   const decay = result.value.ic_decay
   const horizons = result.value.ic_horizons
-  const signalNames = [...result.value.signal_stats.map((s: any) => s.name), 'Stacked']
+  const signalNames = [...result.value.signal_stats.map((s: Record<string, unknown>) => s.name), 'Stacked']
   const colors = ['#5b8af5', '#4caf72', '#f5a623', '#e05c5c', '#b39ddb', '#80deea']
 
   const series = signalNames.map((name, idx) => ({
@@ -473,7 +479,7 @@ function renderDecay() {
 }
 
 function renderICTime() {
-  const inst = initChart(icTimeChart.value)
+  const inst = initEChart(icTimeChart.value)
   if (!inst || !result.value) return
   const ts = result.value.ic_time_series
   const keys = Object.keys(ts)

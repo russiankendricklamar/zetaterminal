@@ -433,7 +433,7 @@ const loadPopularTickers = async () => {
     });
     
     console.log(`✅ Added ${addedCount} new tickers to the list`);
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('❌ Error loading popular tickers:', error);
     console.warn('⚠️ Using static tickers only');
   }
@@ -490,17 +490,17 @@ const loadRealData = async () => {
         if (i + batchSize < allTickers.length) {
           await new Promise(resolve => setTimeout(resolve, 500));
         }
-      } catch (batchError: any) {
-        console.warn(`⚠️ Error loading batch ${Math.floor(i / batchSize) + 1}:`, batchError.message);
+      } catch (batchError: unknown) {
+        console.warn(`⚠️ Error loading batch ${Math.floor(i / batchSize) + 1}:`, batchError instanceof Error ? batchError.message : String(batchError));
         // Продолжаем загрузку следующих батчей
       }
     }
     
     console.log(`✅ Updated ${updatedCount} assets with real data`);
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('❌ Error loading real market data:', error);
-    console.error('Error message:', error.message);
-    if (error.stack) {
+    console.error('Error message:', error instanceof Error ? error.message : String(error));
+    if (error instanceof Error && error.stack) {
       console.error('Error stack:', error.stack);
     }
     

@@ -1,64 +1,54 @@
 """
 API endpoints for database operations.
 """
-from fastapi import APIRouter, HTTPException, Depends
+import logging
+from io import BytesIO
 from typing import List, Optional
 from datetime import datetime
-from pydantic import BaseModel
 
+from fastapi import APIRouter, HTTPException, Depends
+from pydantic import BaseModel
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from src.database.client import get_session
 from src.database.repositories import (
     BondValuationRepository,
     PortfolioRepository,
     CalculationHistoryRepository,
     MarketDataRepository,
-    FileRepository
+    FileRepository,
 )
 from src.database.models import (
     BondValuationRecord,
     PortfolioRecord,
     CalculationHistory,
     MarketDataDaily,
-    FileRecord
+    FileRecord,
 )
-from src.database.storage import StorageService
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
-
-
-# Dependency injection for repositories
-def get_bond_repo() -> BondValuationRepository:
-    return BondValuationRepository()
-
-
-def get_portfolio_repo() -> PortfolioRepository:
-    return PortfolioRepository()
-
-
-def get_history_repo() -> CalculationHistoryRepository:
-    return CalculationHistoryRepository()
 
 
 # Bond Valuation endpoints
 @router.post("/bond-valuations", response_model=dict)
 async def create_bond_valuation(
     record: BondValuationRecord,
-    repo: BondValuationRepository = Depends(get_bond_repo)
+    session: AsyncSession = Depends(get_session),
 ):
-    """Create a new bond valuation record."""
-    try:
-        result = repo.create(record)
-        return {"success": True, "data": result}
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+    repo = BondValuationRepository(session)
+    result = await repo.create(record)
+    return {"success": True, "data": result}
 
 
 @router.get("/bond-valuations/{record_id}", response_model=dict)
 async def get_bond_valuation(
     record_id: int,
-    repo: BondValuationRepository = Depends(get_bond_repo)
+    session: AsyncSession = Depends(get_session),
 ):
-    """Get bond valuation by ID."""
-    result = repo.get_by_id(record_id)
+    repo = BondValuationRepository(session)
+    result = await repo.get_by_id(record_id)
     if not result:
         raise HTTPException(status_code=404, detail="Record not found")
     return {"success": True, "data": result}
@@ -70,34 +60,30 @@ async def get_bond_valuations(
     start_date: Optional[str] = None,
     end_date: Optional[str] = None,
     limit: int = 100,
-    repo: BondValuationRepository = Depends(get_bond_repo)
+    session: AsyncSession = Depends(get_session),
 ):
-    """Get bond valuations with optional filters."""
-    try:
-        if secid:
-            results = repo.get_by_secid(secid, limit)
-        elif start_date and end_date:
-            results = repo.get_by_date_range(start_date, end_date, limit)
-        else:
-            # Get all recent records
-            results = repo.get_by_date_range(
-                (datetime.now().replace(day=1)).strftime("%Y-%m-%d"),
-                datetime.now().strftime("%Y-%m-%d"),
-                limit
-            )
-        return {"success": True, "data": results, "count": len(results)}
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+    repo = BondValuationRepository(session)
+    if secid:
+        results = await repo.get_by_secid(secid, limit)
+    elif start_date and end_date:
+        results = await repo.get_by_date_range(start_date, end_date, limit)
+    else:
+        results = await repo.get_by_date_range(
+            datetime.now().replace(day=1).strftime("%Y-%m-%d"),
+            datetime.now().strftime("%Y-%m-%d"),
+            limit,
+        )
+    return {"success": True, "data": results, "count": len(results)}
 
 
 @router.put("/bond-valuations/{record_id}", response_model=dict)
 async def update_bond_valuation(
     record_id: int,
     record: BondValuationRecord,
-    repo: BondValuationRepository = Depends(get_bond_repo)
+    session: AsyncSession = Depends(get_session),
 ):
-    """Update bond valuation record."""
-    result = repo.update(record_id, record)
+    repo = BondValuationRepository(session)
+    result = await repo.update(record_id, record)
     if not result:
         raise HTTPException(status_code=404, detail="Record not found")
     return {"success": True, "data": result}
@@ -106,10 +92,10 @@ async def update_bond_valuation(
 @router.delete("/bond-valuations/{record_id}", response_model=dict)
 async def delete_bond_valuation(
     record_id: int,
-    repo: BondValuationRepository = Depends(get_bond_repo)
+    session: AsyncSession = Depends(get_session),
 ):
-    """Delete bond valuation record."""
-    success = repo.delete(record_id)
+    repo = BondValuationRepository(session)
+    success = await repo.delete(record_id)
     if not success:
         raise HTTPException(status_code=404, detail="Record not found")
     return {"success": True, "message": "Record deleted"}
@@ -119,33 +105,30 @@ async def delete_bond_valuation(
 @router.post("/portfolios", response_model=dict)
 async def create_portfolio(
     record: PortfolioRecord,
-    repo: PortfolioRepository = Depends(get_portfolio_repo)
+    session: AsyncSession = Depends(get_session),
 ):
-    """Create a new portfolio record."""
-    try:
-        result = repo.create(record)
-        return {"success": True, "data": result}
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+    repo = PortfolioRepository(session)
+    result = await repo.create(record)
+    return {"success": True, "data": result}
 
 
 @router.get("/portfolios", response_model=dict)
 async def get_portfolios(
     limit: int = 100,
-    repo: PortfolioRepository = Depends(get_portfolio_repo)
+    session: AsyncSession = Depends(get_session),
 ):
-    """Get all portfolios."""
-    results = repo.get_all(limit)
+    repo = PortfolioRepository(session)
+    results = await repo.get_all(limit)
     return {"success": True, "data": results, "count": len(results)}
 
 
 @router.get("/portfolios/{portfolio_id}", response_model=dict)
 async def get_portfolio(
     portfolio_id: int,
-    repo: PortfolioRepository = Depends(get_portfolio_repo)
+    session: AsyncSession = Depends(get_session),
 ):
-    """Get portfolio by ID."""
-    result = repo.get_by_id(portfolio_id)
+    repo = PortfolioRepository(session)
+    result = await repo.get_by_id(portfolio_id)
     if not result:
         raise HTTPException(status_code=404, detail="Portfolio not found")
     return {"success": True, "data": result}
@@ -155,32 +138,25 @@ async def get_portfolio(
 @router.post("/calculation-history", response_model=dict)
 async def create_calculation_history(
     record: CalculationHistory,
-    repo: CalculationHistoryRepository = Depends(get_history_repo)
+    session: AsyncSession = Depends(get_session),
 ):
-    """Create a new calculation history record."""
-    try:
-        result = repo.create(record)
-        return {"success": True, "data": result}
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+    repo = CalculationHistoryRepository(session)
+    result = await repo.create(record)
+    return {"success": True, "data": result}
 
 
 @router.get("/calculation-history", response_model=dict)
 async def get_calculation_history(
     calculation_type: Optional[str] = None,
     limit: int = 50,
-    repo: CalculationHistoryRepository = Depends(get_history_repo)
+    session: AsyncSession = Depends(get_session),
 ):
-    """Get calculation history."""
-    results = repo.get_recent(calculation_type, limit)
+    repo = CalculationHistoryRepository(session)
+    results = await repo.get_recent(calculation_type, limit)
     return {"success": True, "data": results, "count": len(results)}
 
 
 # Market Data endpoints
-def get_market_repo() -> MarketDataRepository:
-    return MarketDataRepository()
-
-
 @router.get("/market-data", response_model=dict)
 async def get_market_data(
     ticker: Optional[str] = None,
@@ -188,11 +164,11 @@ async def get_market_data(
     start_date: Optional[str] = None,
     end_date: Optional[str] = None,
     limit: int = 100,
-    repo: MarketDataRepository = Depends(get_market_repo)
+    session: AsyncSession = Depends(get_session),
 ):
-    """Get market data."""
+    repo = MarketDataRepository(session)
     if ticker:
-        results = repo.get_by_ticker(ticker, data_type, start_date, end_date, limit)
+        results = await repo.get_by_ticker(ticker, data_type, start_date, end_date, limit)
     else:
         results = []
     return {"success": True, "data": results, "count": len(results)}
@@ -201,49 +177,100 @@ async def get_market_data(
 @router.post("/market-data/daily", response_model=dict)
 async def create_market_data(
     record: MarketDataDaily,
-    repo: MarketDataRepository = Depends(get_market_repo)
+    session: AsyncSession = Depends(get_session),
 ):
-    """Create or update daily market data."""
-    try:
-        result = repo.create_or_update(record)
-        return {"success": True, "data": result}
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+    repo = MarketDataRepository(session)
+    result = await repo.create_or_update(record)
+    return {"success": True, "data": result}
 
 
 # File endpoints
-def get_file_repo() -> FileRepository:
-    return FileRepository()
-
-
 @router.get("/files", response_model=dict)
 async def get_files(
     file_type: Optional[str] = None,
     limit: int = 100,
-    repo: FileRepository = Depends(get_file_repo)
+    session: AsyncSession = Depends(get_session),
 ):
-    """Get files list."""
+    repo = FileRepository(session)
     if file_type:
-        results = repo.get_by_type(file_type, limit)
+        results = await repo.get_by_type(file_type, limit)
     else:
-        results = repo.get_all(limit)
+        results = await repo.get_all(limit)
     return {"success": True, "data": results, "count": len(results)}
 
 
 @router.get("/files/{file_id}", response_model=dict)
 async def get_file(
     file_id: int,
-    repo: FileRepository = Depends(get_file_repo)
+    session: AsyncSession = Depends(get_session),
 ):
-    """Get file metadata by ID."""
-    result = repo.get_by_id(file_id)
+    repo = FileRepository(session)
+    result = await repo.get_by_id(file_id)
     if not result:
         raise HTTPException(status_code=404, detail="File not found")
     return {"success": True, "data": result}
 
 
-# Parquet Export endpoints
-from src.database.parquet_export import ParquetExporter
+# Registry export endpoints
+class RegistryParquetRequest(BaseModel):
+    registry_type: str
+    data: List[dict]
+    file_name: Optional[str] = None
+
+
+@router.post("/export/registry/parquet", response_model=dict)
+async def export_registry_parquet(
+    request: RegistryParquetRequest,
+    session: AsyncSession = Depends(get_session),
+):
+    """Export registry data to Parquet format and save locally."""
+    import os
+    import pandas as pd
+
+    data = request.data
+    if not data:
+        raise HTTPException(status_code=400, detail="Registry data is empty")
+
+    df = pd.DataFrame(data)
+
+    file_name = request.file_name
+    if not file_name:
+        date_str = datetime.now().strftime("%Y%m%d")
+        file_name = f"registry_{request.registry_type}_{date_str}.parquet"
+
+    export_dir = os.path.join(os.getcwd(), "exports", "registers")
+    os.makedirs(export_dir, exist_ok=True)
+    file_path = os.path.join(export_dir, file_name)
+
+    df.to_parquet(file_path, engine="pyarrow", compression="snappy", index=False)
+    file_size = os.path.getsize(file_path)
+
+    repo = FileRepository(session)
+    file_record = FileRecord(
+        file_name=file_name,
+        file_path=file_path,
+        file_type="register",
+        file_size=file_size,
+        mime_type="application/octet-stream",
+        description=f"Registry export: {request.registry_type} ({len(data)} records)",
+        metadata={
+            "registry_type": request.registry_type,
+            "records_count": len(data),
+            "format": "parquet",
+            "compression": "snappy",
+        },
+    )
+    await repo.create(file_record)
+
+    return {
+        "success": True,
+        "data": {
+            "file_path": file_path,
+            "file_name": file_name,
+            "file_size": file_size,
+            "records_count": len(data),
+        },
+    }
 
 
 @router.post("/export/market-data/parquet", response_model=dict)
@@ -252,110 +279,40 @@ async def export_market_data_parquet(
     data_type: Optional[str] = None,
     start_date: Optional[str] = None,
     end_date: Optional[str] = None,
-    file_name: Optional[str] = None
+    file_name: Optional[str] = None,
+    session: AsyncSession = Depends(get_session),
 ):
     """Export market data to Parquet format."""
-    try:
-        exporter = ParquetExporter()
-        result = exporter.export_market_data_to_parquet(
-            ticker=ticker,
-            data_type=data_type,
-            start_date=start_date,
-            end_date=end_date,
-            file_name=file_name
-        )
-        return {"success": True, "data": result}
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+    import os
+    import pandas as pd
 
+    repo = MarketDataRepository(session)
+    if not ticker:
+        raise HTTPException(status_code=400, detail="Ticker is required")
 
-# REMOVED: POST /export/table/{table_name}/parquet
-# Arbitrary table exfiltration vulnerability — allowed SELECT * on any table name.
+    records = await repo.get_by_ticker(ticker, data_type, start_date, end_date, limit=10000)
+    if not records:
+        raise HTTPException(status_code=404, detail="No data found for export")
 
-# Registry export endpoints
-class RegistryParquetRequest(BaseModel):
-    registry_type: str
-    data: List[dict]
-    file_name: Optional[str] = None
+    df = pd.DataFrame(records)
 
-@router.post("/export/registry/parquet", response_model=dict)
-async def export_registry_parquet(
-    request: RegistryParquetRequest
-):
-    """
-    Export registry data to Parquet format and store in Supabase Storage.
-    
-    Args:
-        request: Request body with registry_type, data, and optional file_name
-    """
-    registry_type = request.registry_type
-    data = request.data
-    file_name = request.file_name
-    try:
-        import pandas as pd
-        from io import BytesIO
-        from datetime import datetime
-        
-        if not data:
-            raise ValueError("Registry data is empty")
-        
-        # Convert to DataFrame
-        df = pd.DataFrame(data)
-        
-        # Generate file name
-        if not file_name:
-            date_str = datetime.now().strftime("%Y%m%d")
-            file_name = f"registry_{registry_type}_{date_str}.parquet"
-        
-        # Generate file path
-        storage = StorageService()
-        file_path = storage.generate_file_path("registers", file_name, "parquet")
-        
-        # Convert DataFrame to Parquet bytes
-        buffer = BytesIO()
-        df.to_parquet(
-            buffer,
-            engine='pyarrow',
-            compression='snappy',
-            index=False
-        )
-        buffer.seek(0)
-        
-        # Upload to Storage
-        file_info = storage.upload_file(
-            file_path=file_path,
-            file_data=buffer,
-            file_type="register",
-            description=f"Registry export: {registry_type} ({len(data)} records)"
-        )
-        
-        # Save metadata to database
-        file_repo = FileRepository()
-        file_record = FileRecord(
-            file_name=file_name,
-            file_path=file_path,
-            file_type="register",
-            file_size=file_info["size"],
-            mime_type="application/octet-stream",
-            description=f"Registry export: {registry_type} ({len(data)} records)",
-            metadata={
-                "registry_type": registry_type,
-                "records_count": len(data),
-                "format": "parquet",
-                "compression": "snappy"
-            }
-        )
-        file_repo.create(file_record)
-        
-        return {
-            "success": True,
-            "data": {
-                "file_path": file_path,
-                "file_name": file_name,
-                "file_size": file_info["size"],
-                "records_count": len(data),
-                "url": file_info.get("url", "")
-            }
-        }
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+    if not file_name:
+        date_str = datetime.now().strftime("%Y%m%d")
+        file_name = f"market_{ticker}_{date_str}.parquet"
+
+    export_dir = os.path.join(os.getcwd(), "exports", "market_data")
+    os.makedirs(export_dir, exist_ok=True)
+    file_path = os.path.join(export_dir, file_name)
+
+    df.to_parquet(file_path, engine="pyarrow", compression="snappy", index=False)
+    file_size = os.path.getsize(file_path)
+
+    return {
+        "success": True,
+        "data": {
+            "file_path": file_path,
+            "file_name": file_name,
+            "file_size": file_size,
+            "records_count": len(records),
+        },
+    }

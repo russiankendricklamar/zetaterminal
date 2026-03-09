@@ -21,8 +21,8 @@ import BaseWidget from './BaseWidget.vue';
 import OrderBook from '../OrderBook.vue';
 
 interface Props {
-  bids: any[];
-  asks: any[];
+  bids: [number, number][];
+  asks: [number, number][];
   currentPrice: number;
   width?: number;
   height?: number;

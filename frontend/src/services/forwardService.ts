@@ -136,8 +136,8 @@ export const valuateForward = async (
  * Сохраняет реестр форвардов в Supabase Storage в формате parquet
  */
 export const saveRegistryToParquet = async (
-  data: any[]
-): Promise<{ success: boolean; data: any }> => {
+  data: Record<string, unknown>[]
+): Promise<{ success: boolean; data: Record<string, unknown> }> => {
   try {
     const response = await fetch(`${API_BASE_URL}/api/database/export/registry/parquet`, {
       method: 'POST',

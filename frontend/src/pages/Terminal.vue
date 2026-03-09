@@ -642,7 +642,7 @@ const iconMap: Record<string, any> = {
   'DatabaseIcon': DatabaseIcon,
 };
 
-const getWindowIcon = (viewType: string): any => {
+const getWindowIcon = (viewType: string): Component => {
   const item = navItems.find(i => i.id === viewType);
   const iconName = item?.icon || 'ActivityIcon';
   return iconMap[iconName] || ActivityIcon;

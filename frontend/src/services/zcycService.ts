@@ -54,8 +54,8 @@ export async function getZCYC(date?: string): Promise<ZCYCResponse> {
     }
     
     return response.json()
-  } catch (error: any) {
-    if (error.name === 'TypeError' && error.message.includes('fetch')) {
+  } catch (error: unknown) {
+    if (error instanceof TypeError && error.message.includes('fetch')) {
       throw new Error(`Не удалось подключиться к серверу. Убедитесь, что бэкенд запущен на ${API_BASE}`)
     }
     throw error
@@ -175,7 +175,7 @@ export async function getLatestCurve(engine: string = 'stock') {
  * Преобразовать кривую доходностей в discount curve.
  */
 export async function curveToDiscount(
-  data: Array<Record<string, any>>,
+  data: Array<Record<string, unknown>>,
   colTerm: string = 'period',
   colYield: string = 'value'
 ) {
