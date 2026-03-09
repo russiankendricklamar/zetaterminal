@@ -70,7 +70,7 @@ class InterpolateResponse(BaseModel):
     interpolated: bool
 
 
-@router.get("/zcyc", response_model=ZCYCResponse)
+@router.get("/", response_model=ZCYCResponse)
 async def get_zcyc(
     date: Optional[str] = Query(None, description="Дата в формате YYYY-MM-DD. Если не указана, используется последняя доступная")
 ):
@@ -118,7 +118,7 @@ async def get_zcyc(
         )
 
 
-@router.post("/zcyc/interpolate", response_model=InterpolateResponse)
+@router.post("/interpolate", response_model=InterpolateResponse)
 async def interpolate_zcyc_rate(
     term: float = Query(..., ge=0.0, description="Срок в годах"),
     method: str = Query("linear", description="Метод интерполяции: linear или nelson_siegel"),
@@ -194,7 +194,7 @@ async def interpolate_zcyc_rate(
         )
 
 
-@router.get("/zcyc/dates")
+@router.get("/dates")
 async def get_available_dates():
     """
     Получить список доступных дат для кривой бескупонных доходностей.
@@ -219,7 +219,7 @@ async def get_available_dates():
         )
 
 
-@router.get("/zcyc/maxdates")
+@router.get("/maxdates")
 async def get_maxdates_endpoint(
     engine: str = Query("stock", description="Движок биржи (stock, currency, etc.)")
 ):
@@ -246,7 +246,7 @@ async def get_maxdates_endpoint(
         )
 
 
-@router.get("/zcyc/yearyields")
+@router.get("/yearyields")
 async def get_yearyields_endpoint(
     date: Optional[str] = Query(None, description="Дата в формате YYYY-MM-DD"),
     engine: str = Query("stock", description="Движок биржи (stock, currency, etc.)")
@@ -287,7 +287,7 @@ async def get_yearyields_endpoint(
         )
 
 
-@router.get("/zcyc/yearyields/dates")
+@router.get("/yearyields/dates")
 async def get_yearyields_dates_endpoint(
     date: Optional[str] = Query(None, description="Дата в формате YYYY-MM-DD"),
     engine: str = Query("stock", description="Движок биржи (stock, currency, etc.)")
@@ -315,7 +315,7 @@ async def get_yearyields_dates_endpoint(
         )
 
 
-@router.get("/zcyc/latest")
+@router.get("/latest")
 async def get_latest_curve_endpoint(
     engine: str = Query("stock", description="Движок биржи (stock, currency, etc.)")
 ):
@@ -343,7 +343,7 @@ async def get_latest_curve_endpoint(
         )
 
 
-@router.post("/zcyc/discount")
+@router.post("/discount")
 async def curve_to_discount_endpoint(
     data: List[Dict[str, Any]],
     col_term: str = Query("period", description="Название колонки со сроком"),

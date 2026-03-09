@@ -97,7 +97,7 @@ def _get_model_key(asset_names: List[str], n_regimes: int) -> str:
     return f"{assets_str}_{n_regimes}"
 
 
-@router.post("/multivariate-hmm/fit", response_model=FitResponse)
+@router.post("/fit", response_model=FitResponse)
 @limiter.limit("10/minute")
 async def fit_model(http_request: Request, request: FitRequest = Body(...)):
     """
@@ -269,7 +269,7 @@ async def fit_model(http_request: Request, request: FitRequest = Body(...)):
         )
 
 
-@router.post("/multivariate-hmm/predict", response_model=PredictResponse)
+@router.post("/predict", response_model=PredictResponse)
 async def predict_states(request: PredictRequest = Body(...)):
     """
     Предсказать наиболее вероятные состояния.
@@ -321,7 +321,7 @@ async def predict_states(request: PredictRequest = Body(...)):
         )
 
 
-@router.get("/multivariate-hmm/statistics", response_model=RegimeStatisticsResponse)
+@router.get("/statistics", response_model=RegimeStatisticsResponse)
 async def get_regime_statistics():
     """
     Получить статистику для каждого режима.
@@ -350,7 +350,7 @@ async def get_regime_statistics():
         )
 
 
-@router.get("/multivariate-hmm/regime-at-time", response_model=RegimeAtTimeResponse)
+@router.get("/regime-at-time", response_model=RegimeAtTimeResponse)
 async def get_regime_at_time(
     t: int = Query(..., ge=0, description="Индекс времени")
 ):
@@ -384,7 +384,7 @@ async def get_regime_at_time(
         )
 
 
-@router.post("/multivariate-hmm/simulate", response_model=SimulateResponse)
+@router.post("/simulate", response_model=SimulateResponse)
 async def simulate_trajectories(request: SimulateRequest = Body(...)):
     """
     Симулировать будущие траектории.
@@ -420,7 +420,7 @@ async def simulate_trajectories(request: SimulateRequest = Body(...)):
         )
 
 
-@router.get("/multivariate-hmm/export")
+@router.get("/export")
 async def export_to_dataframe():
     """
     Экспортировать результаты в DataFrame формат.
@@ -453,7 +453,7 @@ async def export_to_dataframe():
         )
 
 
-@router.get("/multivariate-hmm/transition-matrix")
+@router.get("/transition-matrix")
 async def get_transition_matrix():
     """
     Получить матрицу переходов.
@@ -485,7 +485,7 @@ async def get_transition_matrix():
         )
 
 
-@router.get("/multivariate-hmm/chart-data")
+@router.get("/chart-data")
 async def get_chart_data():
     """
     Получить данные для визуализации на фронтенде.
