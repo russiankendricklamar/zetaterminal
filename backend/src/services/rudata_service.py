@@ -270,6 +270,8 @@ class RuDataService:
                 'error': 'Data extraction failed'
             }
 
+    _MAX_PAGES = 200  # Safety limit to prevent unbounded pagination
+
     async def _extract_simple(
         self,
         session: aiohttp.ClientSession,
@@ -286,8 +288,9 @@ class RuDataService:
         body['pager'] = {'page': 1, 'size': self._max_pagesize}
 
         prev_container = None
+        pages_fetched = 0
 
-        while True:
+        while pages_fetched < self._MAX_PAGES:
             tasks = []
             for _ in range(self._max_requests):
                 tasks.append(
@@ -300,6 +303,7 @@ class RuDataService:
                 body['pager']['page'] += 1
 
             responses = await asyncio.gather(*tasks, return_exceptions=True)
+            pages_fetched += self._max_requests
 
             should_break = False
             for response in responses:

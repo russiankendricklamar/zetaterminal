@@ -199,6 +199,7 @@ async def get_market_data(
     start_date: Optional[str] = None,
     end_date: Optional[str] = None,
     limit: int = Query(100, ge=1, le=1000),
+    user: TokenPayload = Depends(require_auth),
     session: AsyncSession = Depends(get_session),
 ):
     repo = MarketDataRepository(session)
@@ -212,6 +213,7 @@ async def get_market_data(
 @router.post("/market-data/daily", response_model=dict)
 async def create_market_data(
     record: MarketDataDaily,
+    user: TokenPayload = Depends(require_auth),
     session: AsyncSession = Depends(get_session),
 ):
     repo = MarketDataRepository(session)
@@ -224,6 +226,7 @@ async def create_market_data(
 async def get_files(
     file_type: Optional[str] = None,
     limit: int = Query(100, ge=1, le=1000),
+    user: TokenPayload = Depends(require_auth),
     session: AsyncSession = Depends(get_session),
 ):
     repo = FileRepository(session)
@@ -237,6 +240,7 @@ async def get_files(
 @router.get("/files/{file_id}", response_model=dict)
 async def get_file(
     file_id: int,
+    user: TokenPayload = Depends(require_auth),
     session: AsyncSession = Depends(get_session),
 ):
     repo = FileRepository(session)

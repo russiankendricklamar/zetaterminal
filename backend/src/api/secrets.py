@@ -2,7 +2,7 @@
 API router for managing third-party API keys stored in the database.
 """
 from fastapi import APIRouter, Depends
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.database.client import get_session
@@ -12,9 +12,9 @@ router = APIRouter()
 
 
 class SetKeyRequest(BaseModel):
-    service: str
-    key_value: str
-    description: str = ""
+    service: str = Field(..., min_length=1, max_length=100)
+    key_value: str = Field(..., min_length=1, max_length=500)
+    description: str = Field("", max_length=500)
 
 
 class SetKeyResponse(BaseModel):
