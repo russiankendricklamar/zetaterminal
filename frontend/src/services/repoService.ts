@@ -115,7 +115,7 @@ export const analyzeRepo = async (file: File): Promise<RepoAnalysisResponse> => 
   const apiKey = getApiKey()
   const headers: Record<string, string> = {}
   if (apiKey) {
-    headers['X-API-Key'] = apiKey
+    headers['Authorization'] = `Bearer ${apiKey}`
   }
 
   const response = await fetch(`${API_BASE_URL}/api/repo/analyze`, {

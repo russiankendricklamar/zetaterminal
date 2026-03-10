@@ -15,9 +15,14 @@ _banned_ips: set[str] = set()
 
 
 def _client_ip(request: Request) -> str:
+    """Extract client IP. On Render (single trusted proxy), use the first
+    entry in X-Forwarded-For (set by the proxy). Fallback to request.client.host."""
     forwarded = request.headers.get("x-forwarded-for")
     if forwarded:
-        return forwarded.split(",")[0].strip()
+        # Render sets a single entry; for multi-hop, the first entry is the
+        # original client IP set by the first proxy.  We trust Render's proxy.
+        parts = [p.strip() for p in forwarded.split(",")]
+        return parts[0]
     if request.client:
         return request.client.host
     return "unknown"

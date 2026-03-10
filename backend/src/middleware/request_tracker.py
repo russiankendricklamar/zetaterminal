@@ -97,8 +97,8 @@ class RequestTrackerMiddleware(BaseHTTPMiddleware):
             return response
         except Exception as exc:
             status_code = 500
-            error_msg = str(exc)[:300]
-            tb_short = traceback.format_exc()[-500:]
+            error_msg = f"{type(exc).__name__}: {str(exc)[:200]}"
+            tb_short = ""
             raise
         finally:
             duration_ms = round((time.time() - start) * 1000, 2)

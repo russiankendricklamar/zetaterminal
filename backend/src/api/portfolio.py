@@ -1,10 +1,14 @@
 """
 API endpoints для расчета метрик портфеля.
 """
+import logging
+
 from fastapi import APIRouter, HTTPException
 from datetime import datetime
 from src.models.schemas import PortfolioMetricsRequest, PortfolioMetricsResponse
 from src.services.portfolio_service import PortfolioService
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 portfolio_service = PortfolioService()
@@ -37,7 +41,8 @@ async def calculate_portfolio_metrics(request: PortfolioMetricsRequest):
             timestamp=datetime.now().isoformat()
         )
     except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        logger.error("Portfolio metrics calculation failed: %s", e, exc_info=True)
+        raise HTTPException(status_code=400, detail="Invalid input parameters")
 
 
 @router.get("/health")

@@ -1,12 +1,16 @@
 """
 API endpoints для HJB оптимизации портфеля.
 """
+import logging
+
 from fastapi import APIRouter, HTTPException, Request
 from typing import List, Optional, Dict, Any
 from pydantic import BaseModel, Field
 from src.services.hjb_service import optimize_hjb
 from src.middleware.rate_limit import limiter
 from datetime import datetime
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
@@ -96,9 +100,11 @@ async def optimize_hjb_portfolio(http_request: Request, request: HJBRequest):
         )
         
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        logger.error("HJB optimization validation error: %s", e, exc_info=True)
+        raise HTTPException(status_code=400, detail="Invalid input parameters")
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Ошибка при оптимизации: {str(e)}")
+        logger.error("HJB optimization failed: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 @router.get("/health")

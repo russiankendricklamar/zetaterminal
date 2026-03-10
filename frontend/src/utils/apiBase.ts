@@ -3,8 +3,11 @@ const PRODUCTION_URL = 'https://zeta-terminal-backend.onrender.com'
 const BUILD_TIME_DEFAULT = import.meta.env.VITE_API_BASE_URL || PRODUCTION_URL
 
 export function getApiBaseUrl(): string {
-  const override = localStorage.getItem(STORAGE_KEY)
-  return override !== null ? override : BUILD_TIME_DEFAULT
+  if (import.meta.env.DEV) {
+    const override = localStorage.getItem(STORAGE_KEY)
+    if (override !== null) return override
+  }
+  return BUILD_TIME_DEFAULT
 }
 
 export function setApiBaseUrl(url: string): void {

@@ -1,13 +1,17 @@
 """
 API endpoints для вычислительных задач.
 """
-from fastapi import APIRouter, HTTPException, Request
+import logging
+
+from fastapi import APIRouter, Body, HTTPException, Request
 from typing import List, Optional
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from src.models.schemas import ComputeRequest, ComputeResponse
 from src.services.compute_service import ComputeService
 from src.middleware.rate_limit import limiter
 from datetime import datetime
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 compute_service = ComputeService()
@@ -15,7 +19,7 @@ compute_service = ComputeService()
 
 class GARCHRequest(BaseModel):
     """Схема запроса для GARCH моделирования."""
-    returns: List[float]
+    returns: List[float] = Field(..., max_length=50000)
     omega: Optional[float] = 0.000025
     alpha: Optional[float] = 0.082
     beta: Optional[float] = 0.893
@@ -23,7 +27,7 @@ class GARCHRequest(BaseModel):
 
 
 @router.post("/statistics", response_model=ComputeResponse)
-async def calculate_statistics(data: List[float]):
+async def calculate_statistics(data: List[float] = Body(..., max_length=100000)):
     """
     Вычисляет статистику для массива данных.
     
@@ -41,7 +45,8 @@ async def calculate_statistics(data: List[float]):
             timestamp=datetime.now()
         )
     except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        logger.error("Compute operation failed: %s", e, exc_info=True)
+        raise HTTPException(status_code=400, detail="Invalid input parameters")
 
 
 @router.post("/garch")
@@ -70,7 +75,8 @@ async def calculate_garch(http_request: Request, request: GARCHRequest):
             "timestamp": datetime.now()
         }
     except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        logger.error("Compute operation failed: %s", e, exc_info=True)
+        raise HTTPException(status_code=400, detail="Invalid input parameters")
 
 
 @router.get("/health")

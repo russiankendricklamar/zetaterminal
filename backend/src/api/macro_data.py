@@ -4,6 +4,8 @@ Macro Data Router — FRED, Frankfurter (ECB), Bank of Russia, SEC EDGAR, OpenFI
 Prefix: /api/macro-data
 """
 
+import logging
+
 from fastapi import APIRouter, HTTPException, Query, Body
 from typing import Optional, List, Dict
 
@@ -24,6 +26,8 @@ from src.services.macro_data_service import (
     openfigi_map,
 )
 
+logger = logging.getLogger(__name__)
+
 router = APIRouter()
 
 
@@ -41,7 +45,8 @@ async def fred_series(
     try:
         return await fred_series_observations(series_id, limit, sort_order, observation_start, observation_end)
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error("FRED series observations failed: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 @router.get("/fred/search")
@@ -53,7 +58,8 @@ async def fred_search_endpoint(
     try:
         return await fred_search(q, limit)
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error("FRED search failed: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 # ─── Frankfurter (ECB) ───────────────────────────────────────────────────────
@@ -66,7 +72,8 @@ async def ecb_latest(
     try:
         return await ecb_latest_rates(base)
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error("ECB latest rates failed: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 @router.get("/ecb/history")
@@ -80,7 +87,8 @@ async def ecb_history(
     try:
         return await ecb_historical_rates(base, start, end, symbols)
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error("ECB historical rates failed: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 # ─── Bank of Russia ───────────────────────────────────────────────────────────
@@ -91,7 +99,8 @@ async def cbr_rates():
     try:
         return await cbr_daily_rates()
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error("CBR daily rates failed: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 @router.get("/cbr/key-rate")
@@ -100,7 +109,8 @@ async def cbr_key():
     try:
         return await cbr_key_rate()
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error("CBR key rate failed: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 @router.get("/cbr/ruonia")
@@ -112,7 +122,8 @@ async def cbr_ruonia_endpoint(
     try:
         return await cbr_ruonia(from_date, to_date)
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error("CBR RUONIA failed: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 @router.get("/cbr/metals")
@@ -124,7 +135,8 @@ async def cbr_metals_endpoint(
     try:
         return await cbr_precious_metals(from_date, to_date)
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error("CBR precious metals failed: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 @router.get("/cbr/deposit-rates")
@@ -136,7 +148,8 @@ async def cbr_deposit_endpoint(
     try:
         return await cbr_deposit_rates(from_date, to_date)
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error("CBR deposit rates failed: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 @router.get("/cbr/repo-rates")
@@ -148,7 +161,8 @@ async def cbr_repo_endpoint(
     try:
         return await cbr_repo_rates(from_date, to_date)
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error("CBR repo rates failed: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 # ─── SEC EDGAR ────────────────────────────────────────────────────────────────
@@ -159,7 +173,8 @@ async def sec_filings(cik: str):
     try:
         return await sec_company_filings(cik)
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error("SEC filings lookup failed: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 @router.get("/sec/search")
@@ -172,7 +187,8 @@ async def sec_search_endpoint(
     try:
         return await sec_full_text_search(q, forms=forms or "", limit=limit)
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error("SEC full-text search failed: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 @router.get("/sec/company-facts/{cik}")
@@ -181,7 +197,8 @@ async def sec_facts(cik: str):
     try:
         return await sec_company_facts(cik)
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error("SEC company facts lookup failed: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 # ─── OpenFIGI ─────────────────────────────────────────────────────────────────
@@ -194,7 +211,8 @@ async def figi_map(
     try:
         return await openfigi_map(jobs)
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error("OpenFIGI map failed: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 @router.get("/health")

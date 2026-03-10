@@ -168,8 +168,8 @@ export interface FullAssetAnalysisResponse {
  * Получить список доступных активов для анализа.
  */
 export async function getAvailableAssets(): Promise<{ success: boolean; data: AssetCategory }> {
-  const response = await fetch(`${API_BASE}/api/spectral-regime/assets`)
-  
+  const response = await fetch(`${API_BASE}/api/spectral-regime/assets`, { headers: getApiHeaders() })
+
   if (!response.ok) {
     throw new Error(`Ошибка получения списка активов: ${response.status}`)
   }

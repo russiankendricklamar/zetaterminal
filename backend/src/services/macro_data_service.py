@@ -9,8 +9,12 @@ import xml.etree.ElementTree as ET
 from typing import Optional, Dict, Any, List
 from src.utils.http_client import get_session
 
+import re as _re
+from xml.sax.saxutils import escape as _xml_escape
 from src.services.cache_service import cache_get, cache_set, make_cache_key
 from src.services.secrets_service import get_key_sync
+
+_DATE_RE = _re.compile(r"^\d{4}-\d{2}-\d{2}$")
 
 FRED_BASE = "https://api.stlouisfed.org/fred"
 
@@ -275,6 +279,8 @@ async def cbr_ruonia(
     to_date: str = "2026-12-31",
 ) -> Dict[str, Any]:
     """Get RUONIA rates from CBR SOAP API."""
+    if not _DATE_RE.match(from_date) or not _DATE_RE.match(to_date):
+        raise ValueError("Invalid date format (expected YYYY-MM-DD)")
     key = make_cache_key("cbr", "ruonia", from_date, to_date)
     cached = cache_get(key)
     if cached is not None:
@@ -285,8 +291,8 @@ async def cbr_ruonia(
                      xmlns:web="http://web.cbr.ru/">
       <soap12:Body>
         <web:RuoniaXML>
-          <web:fromDate>{from_date}</web:fromDate>
-          <web:ToDate>{to_date}</web:ToDate>
+          <web:fromDate>{_xml_escape(from_date)}</web:fromDate>
+          <web:ToDate>{_xml_escape(to_date)}</web:ToDate>
         </web:RuoniaXML>
       </soap12:Body>
     </soap12:Envelope>"""
@@ -329,6 +335,8 @@ async def cbr_precious_metals(
     to_date: str = "2026-12-31",
 ) -> Dict[str, Any]:
     """Get precious metals prices from CBR SOAP API."""
+    if not _DATE_RE.match(from_date) or not _DATE_RE.match(to_date):
+        raise ValueError("Invalid date format (expected YYYY-MM-DD)")
     key = make_cache_key("cbr", "metals", from_date, to_date)
     cached = cache_get(key)
     if cached is not None:
@@ -339,8 +347,8 @@ async def cbr_precious_metals(
                      xmlns:web="http://web.cbr.ru/">
       <soap12:Body>
         <web:DragMetDynamicXML>
-          <web:fromDate>{from_date}</web:fromDate>
-          <web:ToDate>{to_date}</web:ToDate>
+          <web:fromDate>{_xml_escape(from_date)}</web:fromDate>
+          <web:ToDate>{_xml_escape(to_date)}</web:ToDate>
         </web:DragMetDynamicXML>
       </soap12:Body>
     </soap12:Envelope>"""
@@ -388,6 +396,8 @@ async def cbr_deposit_rates(
     to_date: str = "2026-12-31",
 ) -> Dict[str, Any]:
     """Get average deposit rates from CBR SOAP API (DepoDynamicXML)."""
+    if not _DATE_RE.match(from_date) or not _DATE_RE.match(to_date):
+        raise ValueError("Invalid date format (expected YYYY-MM-DD)")
     key = make_cache_key("cbr", "depo_rates", from_date, to_date)
     cached = cache_get(key)
     if cached is not None:
@@ -398,8 +408,8 @@ async def cbr_deposit_rates(
                      xmlns:web="http://web.cbr.ru/">
       <soap12:Body>
         <web:DepoDynamicXML>
-          <web:fromDate>{from_date}</web:fromDate>
-          <web:ToDate>{to_date}</web:ToDate>
+          <web:fromDate>{_xml_escape(from_date)}</web:fromDate>
+          <web:ToDate>{_xml_escape(to_date)}</web:ToDate>
         </web:DepoDynamicXML>
       </soap12:Body>
     </soap12:Envelope>"""
@@ -438,6 +448,8 @@ async def cbr_repo_rates(
     to_date: str = "2026-12-31",
 ) -> Dict[str, Any]:
     """Get repo debt data from CBR SOAP API (RepoDebtXML)."""
+    if not _DATE_RE.match(from_date) or not _DATE_RE.match(to_date):
+        raise ValueError("Invalid date format (expected YYYY-MM-DD)")
     key = make_cache_key("cbr", "repo", from_date, to_date)
     cached = cache_get(key)
     if cached is not None:
@@ -448,8 +460,8 @@ async def cbr_repo_rates(
                      xmlns:web="http://web.cbr.ru/">
       <soap12:Body>
         <web:RepoDebtXML>
-          <web:fromDate>{from_date}</web:fromDate>
-          <web:ToDate>{to_date}</web:ToDate>
+          <web:fromDate>{_xml_escape(from_date)}</web:fromDate>
+          <web:ToDate>{_xml_escape(to_date)}</web:ToDate>
         </web:RepoDebtXML>
       </soap12:Body>
     </soap12:Envelope>"""

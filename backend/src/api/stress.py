@@ -1,11 +1,15 @@
 """
 API endpoints для стресс-тестирования портфеля.
 """
+import logging
+
 from fastapi import APIRouter, HTTPException, Request
 from typing import List, Optional, Dict, Any
 from pydantic import BaseModel, Field
 from src.services.stress_service import run_stress_test
 from src.middleware.rate_limit import limiter
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
@@ -57,6 +61,8 @@ async def run_stress_tests(http_request: Request, request: StressTestRequest):
         )
         return result
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        logger.error("Stress test validation error: %s", e, exc_info=True)
+        raise HTTPException(status_code=400, detail="Invalid input parameters")
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
+        logger.error("Stress test failed: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")

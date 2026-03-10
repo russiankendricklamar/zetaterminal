@@ -81,7 +81,8 @@ export async function interpolateZCYC(
   }
   
   const response = await fetch(`${API_BASE}/api/zcyc/interpolate?${params.toString()}`, {
-    method: 'POST'
+    method: 'POST',
+    headers: getApiHeaders()
   })
   
   if (!response.ok) {
@@ -96,8 +97,8 @@ export async function interpolateZCYC(
  * Получить список доступных дат.
  */
 export async function getAvailableDates(): Promise<string[]> {
-  const response = await fetch(`${API_BASE}/api/zcyc/dates`)
-  
+  const response = await fetch(`${API_BASE}/api/zcyc/dates`, { headers: getApiHeaders() })
+
   if (!response.ok) {
     throw new Error(`Ошибка получения списка дат: ${response.status}`)
   }
@@ -110,8 +111,8 @@ export async function getAvailableDates(): Promise<string[]> {
  * Получить максимальные даты для кривой ZCYC.
  */
 export async function getMaxDates(engine: string = 'stock') {
-  const response = await fetch(`${API_BASE}/api/zcyc/maxdates?engine=${engine}`)
-  
+  const response = await fetch(`${API_BASE}/api/zcyc/maxdates?engine=${engine}`, { headers: getApiHeaders() })
+
   if (!response.ok) {
     const error = await response.json().catch(() => ({ detail: 'Unknown error' }))
     throw new Error(error.detail || `Ошибка получения максимальных дат: ${response.status}`)
@@ -129,8 +130,8 @@ export async function getYearYields(date?: string, engine: string = 'stock') {
     params.append('date', date)
   }
   
-  const response = await fetch(`${API_BASE}/api/zcyc/yearyields?${params.toString()}`)
-  
+  const response = await fetch(`${API_BASE}/api/zcyc/yearyields?${params.toString()}`, { headers: getApiHeaders() })
+
   if (!response.ok) {
     const error = await response.json().catch(() => ({ detail: 'Unknown error' }))
     throw new Error(error.detail || `Ошибка получения кривой доходностей: ${response.status}`)
@@ -148,8 +149,8 @@ export async function getYearYieldsDates(date?: string, engine: string = 'stock'
     params.append('date', date)
   }
   
-  const response = await fetch(`${API_BASE}/api/zcyc/yearyields/dates?${params.toString()}`)
-  
+  const response = await fetch(`${API_BASE}/api/zcyc/yearyields/dates?${params.toString()}`, { headers: getApiHeaders() })
+
   if (!response.ok) {
     const error = await response.json().catch(() => ({ detail: 'Unknown error' }))
     throw new Error(error.detail || `Ошибка получения диапазона дат: ${response.status}`)
@@ -162,8 +163,8 @@ export async function getYearYieldsDates(date?: string, engine: string = 'stock'
  * Получить последнюю доступную кривую доходностей.
  */
 export async function getLatestCurve(engine: string = 'stock') {
-  const response = await fetch(`${API_BASE}/api/zcyc/latest?engine=${engine}`)
-  
+  const response = await fetch(`${API_BASE}/api/zcyc/latest?engine=${engine}`, { headers: getApiHeaders() })
+
   if (!response.ok) {
     const error = await response.json().catch(() => ({ detail: 'Unknown error' }))
     throw new Error(error.detail || `Ошибка получения последней кривой: ${response.status}`)

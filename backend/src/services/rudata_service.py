@@ -19,6 +19,7 @@ from src.utils.http_client import get_session
 # ─── Server-side credential session cache with TTL ──────────────────────────
 _SESSION_TTL_SECONDS = 3600  # 1 hour
 
+_MAX_CREDENTIAL_CACHE = 100
 _credential_cache: Dict[str, Dict[str, Any]] = {}
 
 
@@ -33,6 +34,10 @@ def cache_credentials(login: str, password: str) -> str:
 
     Credentials are stored in memory with a TTL.
     """
+    cleanup_expired_sessions()
+    if len(_credential_cache) >= _MAX_CREDENTIAL_CACHE:
+        oldest = min(_credential_cache, key=lambda k: _credential_cache[k]["cached_at"])
+        _credential_cache.pop(oldest, None)
     session_id = _make_session_key(login)
     _credential_cache[session_id] = {
         "login": login,
@@ -256,11 +261,13 @@ class RuDataService:
             }
 
         except Exception as e:
+            import logging
+            logging.getLogger(__name__).error("RuData extract_data failed: %s", e, exc_info=True)
             return {
                 'success': False,
                 'data': [],
                 'count': 0,
-                'error': str(e)
+                'error': 'Data extraction failed'
             }
 
     async def _extract_simple(

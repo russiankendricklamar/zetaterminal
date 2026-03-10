@@ -1,12 +1,16 @@
 """
 API endpoints для Time-Series vs Cross-Sectional факторного анализа.
 """
+import logging
+
 from fastapi import APIRouter, HTTPException
 from typing import Dict, Any, List, Optional
 from pydantic import BaseModel, Field
 from datetime import datetime
 
 from src.services.factor_analysis_service import run_factor_analysis
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
@@ -62,9 +66,11 @@ async def analyze_factors(request: FactorAnalysisRequest):
         )
         return FactorAnalysisResponse(result=result)
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        logger.error("Factor analysis validation error: %s", e, exc_info=True)
+        raise HTTPException(status_code=400, detail="Invalid input parameters")
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Ошибка анализа: {str(e)}")
+        logger.error("Factor analysis failed: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 @router.get("/health")

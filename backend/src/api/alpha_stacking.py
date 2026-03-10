@@ -1,12 +1,16 @@
 """
 API endpoints для Orthogonal Alpha Stacking.
 """
+import logging
+
 from fastapi import APIRouter, HTTPException
 from typing import Dict, Any, List, Optional
 from pydantic import BaseModel, Field
 from datetime import datetime
 
 from src.services.alpha_stacking_service import compute_alpha_stacking
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
@@ -72,9 +76,11 @@ async def analyze(request: AlphaStackingRequest):
         )
         return AlphaStackingResponse(result=result)
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        logger.error("Alpha stacking validation error: %s", e, exc_info=True)
+        raise HTTPException(status_code=400, detail="Invalid input parameters")
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Ошибка вычисления: {str(e)}")
+        logger.error("Alpha stacking computation failed: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 @router.get("/health")

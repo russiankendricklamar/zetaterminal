@@ -1,13 +1,13 @@
 """
-Authentication router: register, activate, login, list users.
+Authentication router: register, activate, login (JWT), refresh, logout, users, profile.
 """
-import os
+import logging
 import re
 import string
 import secrets
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 
-from fastapi import APIRouter, HTTPException, Depends, status
+from fastapi import APIRouter, HTTPException, Depends, Request, status
 from pydantic import BaseModel, EmailStr, field_validator
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -15,8 +15,20 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from passlib.context import CryptContext
 
 from src.database.client import get_session
-from src.database.sa_models import User
-from src.middleware.auth import require_api_key
+from src.database.sa_models import User, RefreshToken
+from src.middleware.auth import require_auth
+from src.middleware.admin import require_admin
+from src.middleware.rate_limit import limiter
+from src.utils.jwt_utils import (
+    TokenPayload,
+    create_access_token,
+    create_refresh_token,
+    decode_token,
+    hash_token,
+    REFRESH_TOKEN_EXPIRE_DAYS,
+)
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
@@ -29,7 +41,7 @@ DOMAIN = "zetaterminal.dev"
 
 def _generate_invite_code() -> str:
     alphabet = string.ascii_uppercase + string.digits
-    return "".join(secrets.choice(alphabet) for _ in range(8))
+    return "".join(secrets.choice(alphabet) for _ in range(12))
 
 
 # ── Schemas ──────────────────────────────────────────────────────────────────
@@ -51,8 +63,16 @@ class RegisterRequest(BaseModel):
     @field_validator("password")
     @classmethod
     def validate_password(cls, v: str) -> str:
-        if len(v) < 6:
-            raise ValueError("Password must be at least 6 characters")
+        if len(v) < 8:
+            raise ValueError("Password must be at least 8 characters")
+        if len(v) > 128:
+            raise ValueError("Password must be 128 characters or fewer")
+        if not re.search(r"[A-Z]", v):
+            raise ValueError("Password must contain at least one uppercase letter")
+        if not re.search(r"[a-z]", v):
+            raise ValueError("Password must contain at least one lowercase letter")
+        if not re.search(r"\d", v):
+            raise ValueError("Password must contain at least one digit")
         return v
 
 
@@ -83,7 +103,23 @@ class LoginResponse(BaseModel):
     username: str
     domain_handle: str
     role: str
-    api_key: str
+    access_token: str
+    refresh_token: str
+    token_type: str = "bearer"
+
+
+class RefreshRequest(BaseModel):
+    refresh_token: str
+
+
+class RefreshResponse(BaseModel):
+    access_token: str
+    refresh_token: str
+    token_type: str = "bearer"
+
+
+class LogoutRequest(BaseModel):
+    refresh_token: str
 
 
 class UserOut(BaseModel):
@@ -94,7 +130,6 @@ class UserOut(BaseModel):
     display_name: str | None
     role: str
     status: str
-    invite_code: str
     created_at: datetime
     activated_at: datetime | None
 
@@ -102,28 +137,18 @@ class UserOut(BaseModel):
 # ── Endpoints ────────────────────────────────────────────────────────────────
 
 @router.post("/register", response_model=RegisterResponse)
-async def register(body: RegisterRequest, session: AsyncSession = Depends(get_session)):
-    import logging as _log
-    _logger = _log.getLogger(__name__)
+@limiter.limit("3/minute")
+async def register(request: Request, body: RegisterRequest, session: AsyncSession = Depends(get_session)):
     try:
-        # Check username uniqueness
         existing = await session.execute(
-            select(User).where(User.username == body.username)
+            select(User).where(
+                (User.username == body.username) | (User.email == body.email)
+            )
         )
         if existing.scalar_one_or_none():
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,
-                detail="Username already taken",
-            )
-
-        # Check email uniqueness
-        existing_email = await session.execute(
-            select(User).where(User.email == body.email)
-        )
-        if existing_email.scalar_one_or_none():
-            raise HTTPException(
-                status_code=status.HTTP_409_CONFLICT,
-                detail="Email already registered",
+                detail="Username or email already in use",
             )
 
         domain_handle = f"{body.username}@{DOMAIN}"
@@ -150,12 +175,13 @@ async def register(body: RegisterRequest, session: AsyncSession = Depends(get_se
     except HTTPException:
         raise
     except Exception as exc:
-        _logger.error("Register failed: %s", exc, exc_info=True)
-        raise HTTPException(status_code=500, detail=f"Register error: {exc}")
+        logger.error("Register failed: %s", exc, exc_info=True)
+        raise HTTPException(status_code=500, detail="Registration failed")
 
 
 @router.post("/activate", response_model=ActivateResponse)
-async def activate(body: ActivateRequest, session: AsyncSession = Depends(get_session)):
+@limiter.limit("10/minute")
+async def activate(request: Request, body: ActivateRequest, session: AsyncSession = Depends(get_session)):
     result = await session.execute(
         select(User).where(User.invite_code == body.code.strip().upper())
     )
@@ -177,7 +203,8 @@ async def activate(body: ActivateRequest, session: AsyncSession = Depends(get_se
         )
 
     user.status = "active"
-    user.activated_at = datetime.utcnow()
+    user.activated_at = datetime.now(timezone.utc)
+    user.invite_code = f"USED-{user.id}"
     await session.commit()
 
     return ActivateResponse(
@@ -188,12 +215,27 @@ async def activate(body: ActivateRequest, session: AsyncSession = Depends(get_se
 
 
 @router.post("/login", response_model=LoginResponse)
-async def login(body: LoginRequest, session: AsyncSession = Depends(get_session)):
+@limiter.limit("5/minute")
+async def login(request: Request, body: LoginRequest, session: AsyncSession = Depends(get_session)):
     result = await session.execute(
-        select(User).where(User.username == body.username.lower())
+        select(User).where(User.username == body.username.lower()).with_for_update()
     )
     user = result.scalar_one_or_none()
+
+    # Account lockout check
+    if user and user.locked_until and user.locked_until > datetime.now(timezone.utc):
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail="Account temporarily locked. Try again later.",
+        )
+
     if not user or not pwd_context.verify(body.password, user.password_hash):
+        # Track failed attempts
+        if user:
+            user.failed_login_count = (user.failed_login_count or 0) + 1
+            if user.failed_login_count >= 5:
+                user.locked_until = datetime.now(timezone.utc) + timedelta(minutes=15)
+            await session.commit()
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid username or password",
@@ -209,45 +251,129 @@ async def login(body: LoginRequest, session: AsyncSession = Depends(get_session)
             detail="Account is blocked",
         )
 
-    api_key = os.getenv("API_KEY", "")
-    if not api_key:
-        raise HTTPException(
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="Platform API key not configured",
-        )
+    # Reset lockout on successful login
+    user.failed_login_count = 0
+    user.locked_until = None
+
+    access_token = create_access_token(user.id, user.username, user.role)
+    refresh_token = create_refresh_token(user.id, user.username, user.role)
+
+    # Store refresh token hash in DB
+    rt = RefreshToken(
+        user_id=user.id,
+        token_hash=hash_token(refresh_token),
+        expires_at=datetime.now(timezone.utc) + timedelta(days=REFRESH_TOKEN_EXPIRE_DAYS),
+    )
+    session.add(rt)
+    await session.commit()
 
     return LoginResponse(
         user_id=user.id,
         username=user.username,
         domain_handle=user.domain_handle,
         role=user.role,
-        api_key=api_key,
+        access_token=access_token,
+        refresh_token=refresh_token,
     )
 
 
-class UpdateRoleRequest(BaseModel):
-    role: str
+@router.post("/refresh", response_model=RefreshResponse)
+@limiter.limit("20/minute")
+async def refresh(request: Request, body: RefreshRequest, session: AsyncSession = Depends(get_session)):
+    """Exchange a valid refresh token for a new access token."""
+    try:
+        payload = decode_token(body.refresh_token)
+    except Exception:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid or expired refresh token",
+        )
 
-    @field_validator("role")
-    @classmethod
-    def validate_role(cls, v: str) -> str:
-        if v not in ("admin", "user"):
-            raise ValueError("Role must be 'admin' or 'user'")
-        return v
+    if payload.type != "refresh":
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid token type",
+        )
 
+    # Check token is not revoked and not expired in DB (row lock prevents race condition)
+    token_hash = hash_token(body.refresh_token)
+    result = await session.execute(
+        select(RefreshToken).where(
+            RefreshToken.token_hash == token_hash,
+            RefreshToken.revoked == False,
+            RefreshToken.expires_at > datetime.now(timezone.utc),
+        ).with_for_update()
+    )
+    stored_token = result.scalar_one_or_none()
+    if not stored_token:
+        # Token was valid JWT but not in DB or already revoked — possible reuse attack.
+        # Revoke ALL tokens for this user as a safety measure.
+        from sqlalchemy import update
+        await session.execute(
+            update(RefreshToken)
+            .where(RefreshToken.user_id == payload.sub, RefreshToken.revoked == False)
+            .values(revoked=True)
+        )
+        await session.commit()
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Refresh token revoked or not found",
+        )
 
-@router.put("/users/{user_id}/role", dependencies=[Depends(require_api_key)])
-async def update_user_role(user_id: int, body: UpdateRoleRequest, session: AsyncSession = Depends(get_session)):
-    result = await session.execute(select(User).where(User.id == user_id))
-    user = result.scalar_one_or_none()
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
-    user.role = body.role
+    # Verify user is still active
+    user_result = await session.execute(
+        select(User).where(User.id == payload.sub)
+    )
+    user = user_result.scalar_one_or_none()
+    if not user or user.status == "blocked":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Account is blocked or not found",
+        )
+
+    # Rotate refresh token: revoke old, issue new
+    stored_token.revoked = True
+
+    new_access_token = create_access_token(user.id, user.username, user.role)
+    new_refresh_token = create_refresh_token(user.id, user.username, user.role)
+
+    new_rt = RefreshToken(
+        user_id=user.id,
+        token_hash=hash_token(new_refresh_token),
+        expires_at=datetime.now(timezone.utc) + timedelta(days=REFRESH_TOKEN_EXPIRE_DAYS),
+    )
+    session.add(new_rt)
     await session.commit()
-    return {"id": user.id, "username": user.username, "role": user.role}
+
+    return RefreshResponse(access_token=new_access_token, refresh_token=new_refresh_token)
 
 
-@router.get("/users", response_model=list[UserOut], dependencies=[Depends(require_api_key)])
+@router.post("/logout")
+async def logout(
+    body: LogoutRequest,
+    _payload: TokenPayload = Depends(require_auth),
+    session: AsyncSession = Depends(get_session),
+):
+    """Revoke the refresh token."""
+    token_hash = hash_token(body.refresh_token)
+    result = await session.execute(
+        select(RefreshToken).where(
+            RefreshToken.token_hash == token_hash,
+            RefreshToken.user_id == _payload.sub,
+        )
+    )
+    stored_token = result.scalar_one_or_none()
+    if stored_token:
+        stored_token.revoked = True
+        await session.commit()
+    return {"message": "Logged out"}
+
+
+@router.get(
+    "/users",
+    response_model=list[UserOut],
+    dependencies=[Depends(require_admin)],
+)
 async def list_users(session: AsyncSession = Depends(get_session)):
     result = await session.execute(select(User).order_by(User.created_at.desc()))
     users = result.scalars().all()
@@ -260,7 +386,6 @@ async def list_users(session: AsyncSession = Depends(get_session)):
             display_name=u.display_name,
             role=u.role,
             status=u.status,
-            invite_code=u.invite_code,
             created_at=u.created_at,
             activated_at=u.activated_at,
         )
@@ -286,12 +411,32 @@ class ProfileResponse(BaseModel):
     activated_at: datetime | None
 
 
+_MAX_PREFERENCES_SIZE = 4096  # bytes
+
+
 class ProfileUpdateRequest(BaseModel):
     display_name: str | None = None
     email: EmailStr | None = None
     phone: str | None = None
     bio: str | None = None
     preferences: dict | None = None
+
+    @field_validator("display_name")
+    @classmethod
+    def validate_display_name(cls, v: str | None) -> str | None:
+        if v is not None and len(v) > 100:
+            raise ValueError("Display name must be 100 characters or fewer")
+        return v
+
+    @field_validator("preferences")
+    @classmethod
+    def validate_preferences(cls, v: dict | None) -> dict | None:
+        if v is not None:
+            import json
+            serialized = json.dumps(v)
+            if len(serialized) > _MAX_PREFERENCES_SIZE:
+                raise ValueError(f"Preferences too large (max {_MAX_PREFERENCES_SIZE} bytes)")
+        return v
 
     @field_validator("phone")
     @classmethod
@@ -310,8 +455,19 @@ class ProfileUpdateRequest(BaseModel):
         return v
 
 
-@router.get("/me/{username}", response_model=ProfileResponse, dependencies=[Depends(require_api_key)])
-async def get_profile(username: str, session: AsyncSession = Depends(get_session)):
+@router.get("/me/{username}", response_model=ProfileResponse)
+async def get_profile(
+    username: str,
+    payload: TokenPayload = Depends(require_auth),
+    session: AsyncSession = Depends(get_session),
+):
+    # IDOR protection: users can only view their own profile (admins can view any)
+    if payload.username != username.lower() and payload.role != "admin":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Access denied",
+        )
+
     result = await session.execute(
         select(User).where(User.username == username.lower())
     )
@@ -335,12 +491,20 @@ async def get_profile(username: str, session: AsyncSession = Depends(get_session
     )
 
 
-@router.put("/me/{username}", response_model=ProfileResponse, dependencies=[Depends(require_api_key)])
+@router.put("/me/{username}", response_model=ProfileResponse)
 async def update_profile(
     username: str,
     body: ProfileUpdateRequest,
+    payload: TokenPayload = Depends(require_auth),
     session: AsyncSession = Depends(get_session),
 ):
+    # IDOR protection: users can only edit their own profile (admins can edit any)
+    if payload.username != username.lower() and payload.role != "admin":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Access denied",
+        )
+
     result = await session.execute(
         select(User).where(User.username == username.lower())
     )

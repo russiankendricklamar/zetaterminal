@@ -2,12 +2,14 @@
 API endpoints for database operations.
 """
 import logging
+import os
+import re
 from io import BytesIO
 from typing import List, Optional
 from datetime import datetime
 
 from fastapi import APIRouter, HTTPException, Depends
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.database.client import get_session
@@ -29,6 +31,16 @@ from src.database.models import (
 logger = logging.getLogger(__name__)
 
 router = APIRouter()
+
+_SAFE_FILENAME_RE = re.compile(r'^[\w.\-]+$')
+
+
+def _sanitize_filename(name: str) -> str:
+    """Strip path components and validate filename characters."""
+    name = os.path.basename(name)
+    if not _SAFE_FILENAME_RE.match(name):
+        raise HTTPException(status_code=400, detail="Invalid file name characters")
+    return name
 
 
 # Bond Valuation endpoints
@@ -217,6 +229,13 @@ class RegistryParquetRequest(BaseModel):
     data: List[dict]
     file_name: Optional[str] = None
 
+    @field_validator("data")
+    @classmethod
+    def validate_data_size(cls, v: List[dict]) -> List[dict]:
+        if len(v) > 10000:
+            raise ValueError("Maximum 10000 records per export")
+        return v
+
 
 @router.post("/export/registry/parquet", response_model=dict)
 async def export_registry_parquet(
@@ -224,7 +243,6 @@ async def export_registry_parquet(
     session: AsyncSession = Depends(get_session),
 ):
     """Export registry data to Parquet format and save locally."""
-    import os
     import pandas as pd
 
     data = request.data
@@ -237,6 +255,8 @@ async def export_registry_parquet(
     if not file_name:
         date_str = datetime.now().strftime("%Y%m%d")
         file_name = f"registry_{request.registry_type}_{date_str}.parquet"
+
+    file_name = _sanitize_filename(file_name)
 
     export_dir = os.path.join(os.getcwd(), "exports", "registers")
     os.makedirs(export_dir, exist_ok=True)
@@ -265,7 +285,6 @@ async def export_registry_parquet(
     return {
         "success": True,
         "data": {
-            "file_path": file_path,
             "file_name": file_name,
             "file_size": file_size,
             "records_count": len(data),
@@ -283,7 +302,6 @@ async def export_market_data_parquet(
     session: AsyncSession = Depends(get_session),
 ):
     """Export market data to Parquet format."""
-    import os
     import pandas as pd
 
     repo = MarketDataRepository(session)
@@ -300,6 +318,8 @@ async def export_market_data_parquet(
         date_str = datetime.now().strftime("%Y%m%d")
         file_name = f"market_{ticker}_{date_str}.parquet"
 
+    file_name = _sanitize_filename(file_name)
+
     export_dir = os.path.join(os.getcwd(), "exports", "market_data")
     os.makedirs(export_dir, exist_ok=True)
     file_path = os.path.join(export_dir, file_name)
@@ -310,7 +330,6 @@ async def export_market_data_parquet(
     return {
         "success": True,
         "data": {
-            "file_path": file_path,
             "file_name": file_name,
             "file_size": file_size,
             "records_count": len(records),

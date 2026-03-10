@@ -4,6 +4,7 @@ News & AI Service — NewsAPI, Currents API, Hugging Face Inference
 Proxies news feeds and ML inference endpoints.
 """
 
+import re
 from typing import Optional, Dict, Any, List
 from src.utils.http_client import get_session
 
@@ -213,8 +214,13 @@ async def currents_search(
 
 # ─── Hugging Face ─────────────────────────────────────────────────────────────
 
+_HF_MODEL_RE = re.compile(r"^[a-zA-Z0-9_\-]+/[a-zA-Z0-9_\-\.]+$")
+
+
 async def hf_inference(model_id: str, inputs: str) -> Any:
     """Run inference on a Hugging Face model."""
+    if not _HF_MODEL_RE.match(model_id):
+        raise ValueError(f"Invalid HuggingFace model_id: {model_id}")
     headers = {"Authorization": f"Bearer {_hf_token()}"}
     session = await get_session()
     async with session.post(

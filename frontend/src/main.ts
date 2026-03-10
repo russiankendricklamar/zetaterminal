@@ -10,6 +10,21 @@ const pinia = createPinia()
 app.use(pinia)
 app.use(router)
 
+// One-time cleanup of legacy auth storage keys
+localStorage.removeItem('zeta_api_key')
+localStorage.removeItem('rudata_credentials')
+// Remove legacy cbondsPassword if stored
+try {
+  const s = localStorage.getItem('app_settings')
+  if (s) {
+    const p = JSON.parse(s)
+    if (p?.api?.cbondsPassword) {
+      delete p.api.cbondsPassword
+      localStorage.setItem('app_settings', JSON.stringify(p))
+    }
+  }
+} catch { /* ignore */ }
+
 // Initialize theme
 import { useThemeStore } from '@/stores/theme'
 const themeStore = useThemeStore()

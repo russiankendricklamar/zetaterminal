@@ -1,12 +1,16 @@
 """
 API endpoints для статистического анализа коэффициента Шарпа.
 """
+import logging
+
 from fastapi import APIRouter, HTTPException
 from typing import Dict, Any, List
 from pydantic import BaseModel, Field
 from datetime import datetime
 
 from src.services.sharpe_stats_service import compute_sharpe_stats
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
@@ -58,9 +62,11 @@ async def analyze_sharpe(request: SharpeStatsRequest):
         )
         return SharpeStatsResponse(result=result)
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        logger.error("Sharpe stats validation error: %s", e, exc_info=True)
+        raise HTTPException(status_code=400, detail="Invalid input parameters")
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Ошибка вычисления: {str(e)}")
+        logger.error("Sharpe stats computation failed: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 @router.get("/health")

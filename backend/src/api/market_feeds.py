@@ -4,6 +4,8 @@ Market Feeds Router — Alpha Vantage, Twelve Data, Polygon.io
 Prefix: /api/market-feeds
 """
 
+import logging
+
 from fastapi import APIRouter, HTTPException, Query
 from typing import Optional
 
@@ -21,6 +23,8 @@ from src.services.market_feeds_service import (
     polygon_news,
 )
 
+logger = logging.getLogger(__name__)
+
 router = APIRouter()
 
 
@@ -32,7 +36,8 @@ async def av_quote(symbol: str = Query(..., description="Ticker symbol")):
     try:
         return await alpha_vantage_quote(symbol)
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error("Alpha Vantage quote failed: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 @router.get("/alpha-vantage/time-series")
@@ -45,7 +50,8 @@ async def av_time_series(
     try:
         return await alpha_vantage_time_series(symbol, interval, outputsize)
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error("Alpha Vantage time series failed: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 @router.get("/alpha-vantage/forex")
@@ -57,7 +63,8 @@ async def av_forex(
     try:
         return await alpha_vantage_forex(from_currency, to_currency)
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error("Alpha Vantage forex failed: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 @router.get("/alpha-vantage/technicals")
@@ -72,7 +79,8 @@ async def av_technicals(
     try:
         return await alpha_vantage_technicals(symbol, indicator, interval, time_period, series_type)
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error("Alpha Vantage technicals failed: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 # ─── Twelve Data ──────────────────────────────────────────────────────────────
@@ -83,7 +91,8 @@ async def td_quote(symbol: str = Query(...)):
     try:
         return await twelve_data_quote(symbol)
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error("Twelve Data quote failed: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 @router.get("/twelve-data/time-series")
@@ -96,7 +105,8 @@ async def td_time_series(
     try:
         return await twelve_data_time_series(symbol, interval, outputsize)
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error("Twelve Data time series failed: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 @router.get("/twelve-data/forex-pairs")
@@ -105,7 +115,8 @@ async def td_forex_pairs():
     try:
         return await twelve_data_forex_pairs()
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error("Twelve Data forex pairs failed: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 # ─── Polygon.io ───────────────────────────────────────────────────────────────
@@ -116,7 +127,8 @@ async def poly_ticker(ticker: str):
     try:
         return await polygon_ticker_details(ticker)
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error("Polygon ticker details failed: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 @router.get("/polygon/aggs/{ticker}")
@@ -131,7 +143,8 @@ async def poly_aggs(
     try:
         return await polygon_aggregates(ticker, from_date, to_date, timespan, multiplier)
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error("Polygon aggregates failed: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 @router.get("/polygon/options/{ticker}")
@@ -146,7 +159,8 @@ async def poly_options(
     try:
         return await polygon_options_chain(ticker, expiration_date, strike_price, contract_type, limit)
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error("Polygon options chain failed: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 @router.get("/polygon/news")
@@ -158,7 +172,8 @@ async def poly_news(
     try:
         return await polygon_news(ticker, limit)
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error("Polygon news failed: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 @router.get("/health")

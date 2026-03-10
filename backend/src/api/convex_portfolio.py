@@ -1,12 +1,16 @@
 """
 API endpoints для Convex Portfolio Construction.
 """
+import logging
+
 from fastapi import APIRouter, HTTPException
 from typing import Dict, Any, List, Optional
 from pydantic import BaseModel, Field
 from datetime import datetime
 
 from src.services.convex_portfolio_service import compute_convex_portfolio
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
@@ -93,9 +97,11 @@ async def optimize(request: ConvexPortfolioRequest):
         )
         return ConvexPortfolioResponse(result=result)
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        logger.error("Convex portfolio validation error: %s", e, exc_info=True)
+        raise HTTPException(status_code=400, detail="Invalid input parameters")
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Ошибка оптимизации: {str(e)}")
+        logger.error("Convex portfolio optimization failed: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 @router.get("/health")

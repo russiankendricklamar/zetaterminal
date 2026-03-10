@@ -47,10 +47,8 @@ if not _raw_url:
 
 DATABASE_URL = _normalize_database_url(_raw_url)
 
-# Neon requires SSL — create a permissive SSL context for asyncpg
+# Neon requires SSL — use default SSL context (validates certs via system CA)
 _ssl_context = ssl.create_default_context()
-_ssl_context.check_hostname = False
-_ssl_context.verify_mode = ssl.CERT_NONE
 
 engine = create_async_engine(
     DATABASE_URL,

@@ -4,6 +4,8 @@ Calendar Utils Router — Nager.Date, Russian Calendar
 Prefix: /api/calendar
 """
 
+import logging
+
 from fastapi import APIRouter, HTTPException, Query
 
 from src.services.calendar_utils_service import (
@@ -12,6 +14,8 @@ from src.services.calendar_utils_service import (
     nager_is_today_holiday,
     russian_calendar,
 )
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
@@ -22,7 +26,8 @@ async def holidays(country_code: str, year: int):
     try:
         return await nager_public_holidays(country_code.upper(), year)
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error("Calendar operation failed: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 @router.get("/next-holidays/{country_code}")
@@ -31,7 +36,8 @@ async def next_holidays(country_code: str):
     try:
         return await nager_next_holidays(country_code.upper())
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error("Calendar operation failed: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 @router.get("/is-today-holiday/{country_code}")
@@ -40,7 +46,8 @@ async def today_holiday(country_code: str):
     try:
         return await nager_is_today_holiday(country_code.upper())
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error("Calendar operation failed: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 @router.get("/russia/{year}")
@@ -49,7 +56,8 @@ async def russia_calendar(year: int):
     try:
         return await russian_calendar(year)
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error("Calendar operation failed: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 @router.get("/health")

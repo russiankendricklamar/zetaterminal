@@ -21,11 +21,16 @@ class StorageService:
         description: Optional[str] = None,
     ) -> dict:
         full_path = os.path.join(self.base_dir, file_path)
-        os.makedirs(os.path.dirname(full_path), exist_ok=True)
+        # Path traversal protection: ensure resolved path is within base_dir
+        real_base = os.path.realpath(self.base_dir)
+        real_full = os.path.realpath(full_path)
+        if not real_full.startswith(real_base + os.sep) and real_full != real_base:
+            raise ValueError("Path traversal detected")
+        os.makedirs(os.path.dirname(real_full), exist_ok=True)
         data = file_data.read() if hasattr(file_data, "read") else file_data
-        with open(full_path, "wb") as f:
+        with open(real_full, "wb") as f:
             f.write(data)
-        return {"path": full_path, "size": len(data), "type": file_type}
+        return {"path": file_path, "size": len(data), "type": file_type}
 
     @staticmethod
     def generate_file_path(file_type: str, file_name: str, subfolder: Optional[str] = None) -> str:

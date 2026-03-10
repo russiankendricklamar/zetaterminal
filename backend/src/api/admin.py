@@ -6,7 +6,7 @@ import platform
 import sys
 import time
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 
 import aiohttp
 from fastapi import APIRouter, Depends, HTTPException, Query
@@ -14,8 +14,10 @@ from pydantic import BaseModel, field_validator
 from sqlalchemy import select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
+import ipaddress
+
 from src.database.client import get_session, engine
-from src.database.sa_models import User, IpBan
+from src.database.sa_models import User, IpBan, RefreshToken
 from src.middleware.admin import require_admin
 from src.middleware.ip_ban import add_banned_ip, remove_banned_ip
 from src.middleware.request_tracker import (
@@ -75,6 +77,15 @@ class IpBanRequest(BaseModel):
     ip_address: str
     reason: str | None = None
 
+    @field_validator("ip_address")
+    @classmethod
+    def validate_ip(cls, v: str) -> str:
+        try:
+            ipaddress.ip_address(v.strip())
+        except ValueError:
+            raise ValueError("Invalid IP address format")
+        return v.strip()
+
 
 class IpBanOut(BaseModel):
     id: int
@@ -108,29 +119,35 @@ async def list_users(session: AsyncSession = Depends(get_session)):
     ]
 
 
-@router.put("/users/{user_id}/status", dependencies=_admin_dep)
+@router.put("/users/{user_id}/status")
 async def update_user_status(
     user_id: int,
     body: UpdateStatusRequest,
+    admin: User = Depends(require_admin),
     session: AsyncSession = Depends(get_session),
 ):
+    if user_id == admin.id:
+        raise HTTPException(status_code=400, detail="Cannot modify your own status")
     result = await session.execute(select(User).where(User.id == user_id))
     user = result.scalar_one_or_none()
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     user.status = body.status
     if body.status == "active" and not user.activated_at:
-        user.activated_at = datetime.utcnow()
+        user.activated_at = datetime.now(timezone.utc)
     await session.commit()
     return {"id": user.id, "username": user.username, "status": user.status}
 
 
-@router.put("/users/{user_id}/role", dependencies=_admin_dep)
+@router.put("/users/{user_id}/role")
 async def update_user_role(
     user_id: int,
     body: UpdateRoleRequest,
+    admin: User = Depends(require_admin),
     session: AsyncSession = Depends(get_session),
 ):
+    if user_id == admin.id:
+        raise HTTPException(status_code=400, detail="Cannot modify your own role")
     result = await session.execute(select(User).where(User.id == user_id))
     user = result.scalar_one_or_none()
     if not user:
@@ -142,25 +159,43 @@ async def update_user_role(
 
 # ── Kick / Ban ──────────────────────────────────────────────────────────────
 
-@router.post("/users/{user_id}/kick", dependencies=_admin_dep)
-async def kick_user(user_id: int, session: AsyncSession = Depends(get_session)):
-    """Invalidate user session (set status to 'kicked', they must re-login)."""
+@router.post("/users/{user_id}/kick")
+async def kick_user(user_id: int, admin: User = Depends(require_admin), session: AsyncSession = Depends(get_session)):
+    """Invalidate user session by revoking all refresh tokens (forces re-login)."""
+    from sqlalchemy import update
     result = await session.execute(select(User).where(User.id == user_id))
     user = result.scalar_one_or_none()
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
-    # Force re-authentication by marking status
+    if user_id == admin.id:
+        raise HTTPException(status_code=400, detail="Cannot kick yourself")
+    # Revoke all active refresh tokens for this user
+    await session.execute(
+        update(RefreshToken)
+        .where(RefreshToken.user_id == user_id, RefreshToken.revoked == False)
+        .values(revoked=True)
+    )
+    await session.commit()
     return {"id": user.id, "username": user.username, "kicked": True}
 
 
-@router.post("/users/{user_id}/ban", dependencies=_admin_dep)
-async def ban_user(user_id: int, session: AsyncSession = Depends(get_session)):
-    """Block user account and kick active session."""
+@router.post("/users/{user_id}/ban")
+async def ban_user(user_id: int, admin: User = Depends(require_admin), session: AsyncSession = Depends(get_session)):
+    """Block user account and revoke all refresh tokens."""
+    from sqlalchemy import update
     result = await session.execute(select(User).where(User.id == user_id))
     user = result.scalar_one_or_none()
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
+    if user_id == admin.id:
+        raise HTTPException(status_code=400, detail="Cannot ban yourself")
     user.status = "blocked"
+    # Revoke all active refresh tokens
+    await session.execute(
+        update(RefreshToken)
+        .where(RefreshToken.user_id == user_id, RefreshToken.revoked == False)
+        .values(revoked=True)
+    )
     await session.commit()
     return {"id": user.id, "username": user.username, "status": "blocked", "banned": True}
 

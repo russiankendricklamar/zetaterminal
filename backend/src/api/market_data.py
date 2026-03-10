@@ -47,10 +47,11 @@ async def get_stock(ticker: str):
     try:
         return get_stock_info(ticker)
     except ValueError as e:
-        raise HTTPException(status_code=404, detail=str(e))
+        logger.error("Stock not found for ticker %s: %s", ticker, e, exc_info=True)
+        raise HTTPException(status_code=404, detail="Ticker not found")
     except Exception as e:
-        logger.error(f"Error in get_stock endpoint: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
+        logger.error("Error in get_stock endpoint: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 @router.post("/stock/history", response_model=List[Dict])
@@ -67,10 +68,11 @@ async def get_history(request: StockHistoryRequest):
     try:
         return get_stock_history(request.ticker, request.period, request.interval)
     except ValueError as e:
-        raise HTTPException(status_code=404, detail=str(e))
+        logger.error("Stock history not found: %s", e, exc_info=True)
+        raise HTTPException(status_code=404, detail="History not found")
     except Exception as e:
-        logger.error(f"Error in get_history endpoint: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
+        logger.error("Error in get_history endpoint: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 @router.post("/stocks/multiple", response_model=List[Dict[str, Any]])
@@ -87,10 +89,11 @@ async def get_multiple(request: MultipleStocksRequest):
     try:
         return get_multiple_stocks(request.tickers)
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        logger.error("Invalid request for multiple stocks: %s", e, exc_info=True)
+        raise HTTPException(status_code=400, detail="Invalid request")
     except Exception as e:
-        logger.error(f"Error in get_multiple endpoint: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
+        logger.error("Error in get_multiple endpoint: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 @router.get("/currency/{base}/{quote}", response_model=Dict[str, Any])
@@ -108,10 +111,11 @@ async def get_currency(base: str, quote: str = "USD"):
     try:
         return get_currency_rate(base, quote)
     except ValueError as e:
-        raise HTTPException(status_code=404, detail=str(e))
+        logger.error("Currency pair not found %s/%s: %s", base, quote, e, exc_info=True)
+        raise HTTPException(status_code=404, detail="Currency pair not found")
     except Exception as e:
-        logger.error(f"Error in get_currency endpoint: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
+        logger.error("Error in get_currency endpoint: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 @router.get("/crypto/{symbol}", response_model=Dict[str, Any])
@@ -128,10 +132,11 @@ async def get_crypto(symbol: str):
     try:
         return get_crypto_info(symbol)
     except ValueError as e:
-        raise HTTPException(status_code=404, detail=str(e))
+        logger.error("Crypto not found %s: %s", symbol, e, exc_info=True)
+        raise HTTPException(status_code=404, detail="Crypto not found")
     except Exception as e:
-        logger.error(f"Error in get_crypto endpoint: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
+        logger.error("Error in get_crypto endpoint: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 @router.get("/index/{symbol}", response_model=Dict[str, Any])
@@ -148,10 +153,11 @@ async def get_index(symbol: str):
     try:
         return get_index_info(symbol)
     except ValueError as e:
-        raise HTTPException(status_code=404, detail=str(e))
+        logger.error("Index not found %s: %s", symbol, e, exc_info=True)
+        raise HTTPException(status_code=404, detail="Index not found")
     except Exception as e:
-        logger.error(f"Error in get_index endpoint: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
+        logger.error("Error in get_index endpoint: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 @router.get("/tickers/popular", response_model=List[str])
@@ -166,8 +172,8 @@ async def get_popular_tickers_list():
     try:
         return get_popular_tickers()
     except Exception as e:
-        logger.error(f"Error in get_popular_tickers endpoint: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
+        logger.error("Error in get_popular_tickers endpoint: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 @router.get("/crypto/popular", response_model=List[str])
@@ -182,8 +188,8 @@ async def get_popular_cryptos_list():
     try:
         return get_popular_cryptos()
     except Exception as e:
-        logger.error(f"Error in get_popular_cryptos endpoint: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
+        logger.error("Error in get_popular_cryptos endpoint: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 @router.get("/health")

@@ -1,6 +1,8 @@
 """
 API endpoints для CCMV оптимизации портфеля.
 """
+import logging
+
 from fastapi import APIRouter, HTTPException, Request
 from typing import List, Optional, Dict, Any
 from pydantic import BaseModel, Field
@@ -8,6 +10,8 @@ from src.services.ccmv_service import optimize_ccmv
 from src.middleware.rate_limit import limiter
 from datetime import datetime
 import numpy as np
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
@@ -115,9 +119,11 @@ async def optimize_ccmv_portfolio(http_request: Request, request: CCMVRequest):
         )
         
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        logger.error("CCMV optimization validation error: %s", e, exc_info=True)
+        raise HTTPException(status_code=400, detail="Invalid input parameters")
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Ошибка при оптимизации: {str(e)}")
+        logger.error("CCMV optimization failed: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 @router.get("/health")

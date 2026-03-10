@@ -411,7 +411,11 @@ onMounted(() => {
       if (parsed.models) Object.assign(settings.models, parsed.models)
       if (parsed.risk) Object.assign(settings.risk, parsed.risk)
       if (parsed.api?.cbondsLogin) settings.api.cbondsLogin = parsed.api.cbondsLogin
-      if (parsed.api?.cbondsPassword) settings.api.cbondsPassword = parsed.api.cbondsPassword
+      // Clean up legacy cbondsPassword from localStorage
+      if (parsed.api?.cbondsPassword) {
+        delete parsed.api.cbondsPassword
+        localStorage.setItem('app_settings', JSON.stringify(parsed))
+      }
     } catch (e) {
       // Failed to load settings
     }
@@ -495,8 +499,6 @@ const saveSettings = () => {
     risk: settings.risk,
     api: {
       cbondsLogin: settings.api.cbondsLogin,
-      cbondsPassword: settings.api.cbondsPassword,
-      bloombergKey: settings.api.bloombergKey,
       webhookUrl: settings.api.webhookUrl
     }
   }

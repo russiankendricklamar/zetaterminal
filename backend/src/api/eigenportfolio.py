@@ -1,6 +1,8 @@
 """
 API endpoints для анализа Eigenportfolios (PCA).
 """
+import logging
+
 from fastapi import APIRouter, HTTPException, Request
 from typing import Dict, Any, List, Optional
 from pydantic import BaseModel, Field
@@ -8,6 +10,8 @@ from datetime import datetime
 
 from src.services.eigenportfolio_service import compute_eigenportfolios
 from src.middleware.rate_limit import limiter
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
@@ -71,9 +75,11 @@ async def decompose(http_request: Request, request: EigenportfolioRequest):
         )
         return EigenportfolioResponse(result=result)
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        logger.error("Eigenportfolio validation error: %s", e, exc_info=True)
+        raise HTTPException(status_code=400, detail="Invalid input parameters")
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Ошибка вычисления: {str(e)}")
+        logger.error("Eigenportfolio computation failed: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 @router.get("/health")

@@ -87,7 +87,7 @@ export const optimizeBlackLitterman = async (
 
 export const checkBLHealth = async (): Promise<{ status: string; service: string }> => {
   try {
-    const response = await fetch(`${API_BASE_URL}/api/black-litterman/health`)
+    const response = await fetch(`${API_BASE_URL}/api/black-litterman/health`, { headers: getApiHeaders() })
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`)
     }

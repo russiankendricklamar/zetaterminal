@@ -4,6 +4,8 @@ News & AI Router — NewsAPI, Currents API, Hugging Face Inference
 Prefix: /api/news-ai
 """
 
+import logging
+
 from fastapi import APIRouter, HTTPException, Query, Body
 from typing import Optional
 from pydantic import BaseModel
@@ -17,6 +19,8 @@ from src.services.news_ai_service import (
     hf_sentiment,
     hf_summarize,
 )
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
@@ -34,7 +38,8 @@ async def news_headlines(
     try:
         return await newsapi_top_headlines(country, category, q, page_size)
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error("NewsAPI top headlines failed: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 @router.get("/newsapi/everything")
@@ -50,7 +55,8 @@ async def news_everything(
     try:
         return await newsapi_everything(q, from_date, to_date, sort_by, page_size, language)
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error("NewsAPI everything search failed: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 # ─── Currents API ─────────────────────────────────────────────────────────────
@@ -65,7 +71,8 @@ async def curr_latest(
     try:
         return await currents_latest(language, keywords, category)
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error("Currents latest news failed: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 @router.get("/currents/search")
@@ -77,7 +84,8 @@ async def curr_search(
     try:
         return await currents_search(keywords, language)
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error("Currents search failed: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 # ─── Hugging Face ─────────────────────────────────────────────────────────────
@@ -100,7 +108,8 @@ async def hf_infer(req: InferenceRequest):
     try:
         return await hf_inference(req.model_id, req.inputs)
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error("HuggingFace inference failed: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 @router.post("/huggingface/sentiment")
@@ -109,7 +118,8 @@ async def hf_sent(req: SentimentRequest):
     try:
         return await hf_sentiment(req.text)
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error("HuggingFace sentiment analysis failed: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 @router.post("/huggingface/summarize")
@@ -118,7 +128,8 @@ async def hf_sum(req: SummarizeRequest):
     try:
         return await hf_summarize(req.text, req.max_length)
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error("HuggingFace summarization failed: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 @router.get("/health")

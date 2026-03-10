@@ -11,9 +11,13 @@ Endpoints:
 - GET /rudata/zcyc - Получить кривую бескупонной доходности
 """
 
+import logging
+
 from fastapi import APIRouter, HTTPException, Query
 from pydantic import BaseModel, Field
 from typing import List, Optional, Dict, Any
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
@@ -116,10 +120,8 @@ async def create_session(credentials: RuDataCredentials):
         )
 
     except Exception as e:
-        raise HTTPException(
-            status_code=500,
-            detail=f"Ошибка проверки подключения: {str(e)}"
-        )
+        logger.error("RuData operation failed: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 @router.post("/session/clear")
@@ -149,10 +151,8 @@ async def test_connection(credentials: RuDataCredentials):
         return ConnectionTestResponse(**result)
 
     except Exception as e:
-        raise HTTPException(
-            status_code=500,
-            detail=f"Ошибка проверки подключения: {str(e)}"
-        )
+        logger.error("RuData operation failed: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 @router.post("/query", response_model=RuDataResponse)
@@ -179,10 +179,8 @@ async def execute_query(query: RuDataQuery):
         return RuDataResponse(**result)
 
     except Exception as e:
-        raise HTTPException(
-            status_code=500,
-            detail=f"Ошибка выполнения запроса: {str(e)}"
-        )
+        logger.error("RuData query failed: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 @router.post("/bond/info", response_model=RuDataResponse)
@@ -199,10 +197,8 @@ async def get_bond_info(credentials: RuDataCredentials, isin: str = Query(..., d
         return RuDataResponse(**result)
 
     except Exception as e:
-        raise HTTPException(
-            status_code=500,
-            detail=f"Ошибка получения информации об облигации: {str(e)}"
-        )
+        logger.error("RuData bond info failed: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 @router.post("/bond/cashflows", response_model=RuDataResponse)
@@ -219,10 +215,8 @@ async def get_bond_cashflows(credentials: RuDataCredentials, isin: str = Query(.
         return RuDataResponse(**result)
 
     except Exception as e:
-        raise HTTPException(
-            status_code=500,
-            detail=f"Ошибка получения денежных потоков: {str(e)}"
-        )
+        logger.error("RuData cashflows failed: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 @router.post("/bond/calculate", response_model=RuDataResponse)
@@ -243,10 +237,8 @@ async def calculate_bond(request: BondCalculateRequest):
         return RuDataResponse(**result)
 
     except Exception as e:
-        raise HTTPException(
-            status_code=500,
-            detail=f"Ошибка расчета облигации: {str(e)}"
-        )
+        logger.error("RuData bond calculation failed: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 @router.post("/bonds/search", response_model=RuDataResponse)
@@ -271,10 +263,8 @@ async def search_bonds(request: BondSearchRequest):
         return RuDataResponse(**result)
 
     except Exception as e:
-        raise HTTPException(
-            status_code=500,
-            detail=f"Ошибка поиска облигаций: {str(e)}"
-        )
+        logger.error("RuData bond search failed: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 @router.post("/zcyc", response_model=RuDataResponse)
@@ -294,10 +284,8 @@ async def get_zcyc(
         return RuDataResponse(**result)
 
     except Exception as e:
-        raise HTTPException(
-            status_code=500,
-            detail=f"Ошибка получения ZCYC: {str(e)}"
-        )
+        logger.error("RuData ZCYC failed: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 @router.post("/fintool/reference", response_model=RuDataResponse)
@@ -326,10 +314,8 @@ async def get_fintool_reference(
         return RuDataResponse(**result)
 
     except Exception as e:
-        raise HTTPException(
-            status_code=500,
-            detail=f"Ошибка получения справочных данных: {str(e)}"
-        )
+        logger.error("RuData reference data failed: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 @router.post("/indicator/list", response_model=RuDataResponse)
@@ -357,7 +343,5 @@ async def get_indicator_list(
         return RuDataResponse(**result)
 
     except Exception as e:
-        raise HTTPException(
-            status_code=500,
-            detail=f"Ошибка получения списка индикаторов: {str(e)}"
-        )
+        logger.error("RuData indicator list failed: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")

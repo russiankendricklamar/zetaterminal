@@ -2,7 +2,7 @@
 Repository pattern for database operations using SQLAlchemy.
 """
 from typing import List, Optional, Dict, Any
-from datetime import datetime
+from datetime import datetime, timezone
 
 from sqlalchemy import select, delete as sa_delete
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -76,7 +76,7 @@ class BondValuationRepository:
         data = record.model_dump(exclude={"id", "created_at"}, exclude_none=True)
         for key, value in data.items():
             setattr(row, key, value)
-        row.updated_at = datetime.utcnow()
+        row.updated_at = datetime.now(timezone.utc)
         await self.session.commit()
         await self.session.refresh(row)
         return _row_to_dict(row)

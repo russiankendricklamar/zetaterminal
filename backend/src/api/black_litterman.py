@@ -1,12 +1,16 @@
 """
 API endpoints для Black-Litterman оптимизации портфеля.
 """
+import logging
+
 from fastapi import APIRouter, HTTPException
 from typing import List, Optional
 from pydantic import BaseModel, Field
 from src.services.black_litterman_service import optimize_black_litterman
 from datetime import datetime
 import numpy as np
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
@@ -77,11 +81,14 @@ async def optimize_bl_portfolio(request: BlackLittermanRequest):
         return result
 
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        logger.error("Black-Litterman validation error: %s", e, exc_info=True)
+        raise HTTPException(status_code=400, detail="Invalid input parameters")
     except np.linalg.LinAlgError as e:
-        raise HTTPException(status_code=400, detail=f"Ошибка линейной алгебры: {str(e)}")
+        logger.error("Black-Litterman linear algebra error: %s", e, exc_info=True)
+        raise HTTPException(status_code=400, detail="Linear algebra error in optimization")
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Ошибка при оптимизации: {str(e)}")
+        logger.error("Black-Litterman optimization failed: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 @router.get("/health")

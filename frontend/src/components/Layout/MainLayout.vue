@@ -168,8 +168,8 @@ const toggleUserMenu = () => {
   showNotifications.value = false
 }
 
-function handleLogout() {
-  logout()
+async function handleLogout() {
+  await logout()
   showUserMenu.value = false
   router.push('/auth')
 }

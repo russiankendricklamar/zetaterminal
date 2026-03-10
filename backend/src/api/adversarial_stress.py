@@ -1,11 +1,15 @@
 """
 API endpoints для Adversarial Stress Testing.
 """
+import logging
+
 from fastapi import APIRouter, HTTPException, Request
 from typing import List, Optional, Dict, Any
 from pydantic import BaseModel, Field
 from src.services.adversarial_stress_service import run_adversarial_stress
 from src.middleware.rate_limit import limiter
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
@@ -65,9 +69,11 @@ async def generate_adversarial_stress(http_request: Request, request: Adversaria
         return result
 
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        logger.error("Adversarial stress validation error: %s", e, exc_info=True)
+        raise HTTPException(status_code=400, detail="Invalid input parameters")
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Ошибка adversarial stress: {str(e)}")
+        logger.error("Adversarial stress test failed: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 @router.get("/health")

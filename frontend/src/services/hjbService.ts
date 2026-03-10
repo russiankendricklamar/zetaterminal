@@ -86,7 +86,7 @@ export const optimizeHJBPortfolio = async (request: HJBRequest): Promise<HJBResp
  */
 export const checkHJBHealth = async (): Promise<{ status: string; service: string }> => {
   try {
-    const response = await fetch(`${API_BASE_URL}/api/hjb/health`);
+    const response = await fetch(`${API_BASE_URL}/api/hjb/health`, { headers: getApiHeaders() });
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }

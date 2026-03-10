@@ -11,7 +11,7 @@ import { getApiBaseUrl } from '@/utils/apiBase'
 const API_BASE = getApiBaseUrl()
 
 async function fetchJson<T>(url: string): Promise<T> {
-  const resp = await fetch(url)
+  const resp = await fetch(url, { headers: getApiHeaders() })
   if (!resp.ok) throw new Error(`HTTP ${resp.status}: ${resp.statusText}`)
   return resp.json()
 }

@@ -5,6 +5,7 @@
  */
 
 import { getApiBaseUrl } from '@/utils/apiBase'
+import { getApiHeaders } from '@/utils/apiHeaders'
 
 const API_BASE = getApiBaseUrl()
 
@@ -75,7 +76,7 @@ export interface MoexTradesResponse {
 }
 
 async function fetchJson<T>(url: string): Promise<T> {
-  const response = await fetch(url)
+  const response = await fetch(url, { headers: getApiHeaders() })
   if (!response.ok) {
     const err = await response.json().catch(() => ({ detail: 'Unknown error' }))
     throw new Error(err.detail || `HTTP error! status: ${response.status}`)

@@ -54,4 +54,4 @@ async def delete_key(service: str, session: AsyncSession = Depends(get_session))
 async def reload_keys(session: AsyncSession = Depends(get_session)):
     """Force reload all keys from DB into memory cache."""
     await secrets_service.load_all(session)
-    return {"success": True, "count": len(secrets_service._cache)}
+    return {"success": True}

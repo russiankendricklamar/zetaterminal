@@ -7,6 +7,8 @@ Endpoints:
 - POST /fetch-data - Загрузка данных актива и расчёт доходностей
 """
 
+import logging
+
 from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel, Field
 from typing import List, Optional, Dict, Any
@@ -14,6 +16,8 @@ import numpy as np
 from datetime import datetime, timedelta
 
 from src.middleware.rate_limit import limiter
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
@@ -196,10 +200,8 @@ async def fetch_asset_data(request: AssetDataRequest):
             detail="yfinance не установлен. Установите: pip install yfinance"
         )
     except Exception as e:
-        raise HTTPException(
-            status_code=500,
-            detail=f"Ошибка при загрузке данных: {str(e)}"
-        )
+        logger.error("Spectral regime data loading failed: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 @router.post("/analyze", response_model=SpectralAnalysisResponse)
@@ -266,10 +268,8 @@ async def analyze_spectral_regimes(http_request: Request, request: SpectralAnaly
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(
-            status_code=500,
-            detail=f"Ошибка анализа: {str(e)}"
-        )
+        logger.error("Spectral regime analysis failed: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 @router.post("/analyze-asset")
@@ -327,7 +327,5 @@ async def analyze_asset_regimes(
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(
-            status_code=500,
-            detail=f"Ошибка анализа актива: {str(e)}"
-        )
+        logger.error("Spectral regime asset analysis failed: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")

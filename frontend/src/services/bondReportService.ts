@@ -18,6 +18,11 @@ import { getApiBaseUrl } from '@/utils/apiBase'
 const API_BASE = getApiBaseUrl()
 const MOEX_ISS = 'https://iss.moex.com/iss'
 
+/** Escape single quotes in filter values to prevent filter injection. */
+function escFilter(val: string): string {
+  return val.replace(/'/g, "''")
+}
+
 // ─── Типы ──────────────────────────────────────────────────────────────────────
 
 export interface RatingEntry {
@@ -358,13 +363,8 @@ interface RuDataCreds {
 }
 
 function getRuDataCreds(): RuDataCreds | null {
-  const encoded = localStorage.getItem('rudata_credentials')
-  if (!encoded) return null
-  try {
-    return JSON.parse(atob(encoded))
-  } catch {
-    return null
-  }
+  // Credentials are now managed server-side only
+  return null
 }
 
 async function ruDataQuery(pathMethod: string, body: Record<string, unknown> = {}, creds?: RuDataCreds): Promise<unknown> {
@@ -586,7 +586,7 @@ async function getRuDataRatings(isin: string, creds?: RuDataCreds): Promise<Rati
 
   try {
     const data = await ruDataQuery('Rating/List', {
-      filter: `fintoolid = '${isin}' OR isin_code = '${isin}'`,
+      filter: `fintoolid = '${escFilter(isin)}' OR isin_code = '${escFilter(isin)}'`,
       count: 100,
     }, c)
     if (!data || !Array.isArray(data)) return []
@@ -609,7 +609,7 @@ async function getRuDataIssuerRatings(issuerName: string, creds?: RuDataCreds): 
 
   try {
     const data = await ruDataQuery('Rating/List', {
-      filter: `org_name LIKE '%${issuerName}%'`,
+      filter: `org_name LIKE '%${escFilter(issuerName)}%'`,
       count: 100,
     }, c)
     if (!data || !Array.isArray(data)) return []
@@ -1146,7 +1146,7 @@ async function getCorporateEvents(isin: string): Promise<CorporateEvent[]> {
   if (creds) {
     try {
       const data = await ruDataQuery('News/List', {
-        filter: `isin_code = '${isin}'`,
+        filter: `isin_code = '${escFilter(isin)}'`,
         count: 20,
       }, creds)
       if (data && Array.isArray(data) && data.length > 0) {
@@ -1640,7 +1640,7 @@ export async function fetchFloaterBondReport(
   if (creds && base.issuer) {
     try {
       const data = await ruDataQuery('Bond/List', {
-        filter: `issuername LIKE '%${base.issuer.substring(0, 20)}%' AND status = 'В обращении'`,
+        filter: `issuername LIKE '%${escFilter(base.issuer.substring(0, 20))}%' AND status = 'В обращении'`,
         count: 200,
       }, creds)
       if (data && Array.isArray(data)) {

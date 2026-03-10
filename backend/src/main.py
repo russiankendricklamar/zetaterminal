@@ -10,11 +10,14 @@ from fastapi.responses import JSONResponse
 from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 import os
+import secrets
 
 logger = logging.getLogger(__name__)
 
 from src.utils.http_client import close_session
+from src.utils.jwt_utils import validate_jwt_secret
 from src.middleware.auth import require_api_key
+from src.middleware.admin import require_admin
 from src.middleware.rate_limit import limiter
 from src.database.client import init_db
 
@@ -55,13 +58,15 @@ from src.api import moexalgo
 from src.api import dadata
 from src.api import etf
 from src.api import gemini
-from src.api import secrets
+from src.api import secrets as secrets_api
 from src.api import auth
 from src.api import repo
 from src.api import admin
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    # Validate JWT secret at startup
+    validate_jwt_secret()
     await init_db()
     await _migrate_user_profile_columns()
     # Load API keys from DB into memory cache
@@ -76,6 +81,8 @@ async def lifespan(app: FastAPI):
     await _seed_admin()
     from src.middleware.ip_ban import load_banned_ips
     await load_banned_ips()
+    # Cleanup expired/revoked refresh tokens
+    await _cleanup_expired_tokens()
     yield
     await close_session()
 
@@ -83,12 +90,14 @@ async def lifespan(app: FastAPI):
 async def _migrate_user_profile_columns() -> None:
     """Add profile columns to users table if they don't exist."""
     from src.database.client import engine
-    from sqlalchemy import text
+    from sqlalchemy import text, inspect as sa_inspect
 
     columns = [
         ("phone", "VARCHAR"),
         ("bio", "TEXT"),
         ("preferences", "JSONB"),
+        ("failed_login_count", "INTEGER DEFAULT 0"),
+        ("locked_until", "TIMESTAMPTZ"),
     ]
     try:
         async with engine.begin() as conn:
@@ -102,7 +111,7 @@ async def _migrate_user_profile_columns() -> None:
 
 
 async def _seed_admin() -> None:
-    """Create default admin user if no admin exists."""
+    """Create default admin user if no admin exists. Requires ADMIN_PASSWORD env var."""
     from sqlalchemy import select
     from src.database.sa_models import User
     from src.database.client import async_session_factory
@@ -118,21 +127,50 @@ async def _seed_admin() -> None:
             if result.scalar_one_or_none():
                 return
 
-            admin_password = os.getenv("ADMIN_PASSWORD", "admin")
-            admin = User(
+            admin_password = os.getenv("ADMIN_PASSWORD", "")
+            if not admin_password:
+                logger.warning("ADMIN_PASSWORD not set — skipping admin seed")
+                return
+            if len(admin_password) < 12:
+                logger.warning("ADMIN_PASSWORD too short (min 12 chars) — skipping admin seed")
+                return
+
+            admin_user = User(
                 username="admin",
                 domain_handle="admin@zetaterminal.dev",
                 email="admin@zetaterminal.io",
                 password_hash=pwd_context.hash(admin_password),
                 role="admin",
                 status="active",
-                invite_code="ADMIN000",
+                invite_code=secrets.token_hex(8).upper(),
             )
-            session.add(admin)
+            session.add(admin_user)
             await session.commit()
             logger.info("Default admin user seeded")
     except Exception as e:
         logger.warning("Could not seed admin user: %s", e)
+
+
+async def _cleanup_expired_tokens() -> None:
+    """Delete expired or revoked refresh tokens on startup."""
+    from datetime import datetime, timezone
+    from sqlalchemy import delete
+    from src.database.sa_models import RefreshToken
+    from src.database.client import async_session_factory
+
+    try:
+        async with async_session_factory() as session:
+            result = await session.execute(
+                delete(RefreshToken).where(
+                    (RefreshToken.revoked == True)
+                    | (RefreshToken.expires_at < datetime.now(timezone.utc))
+                )
+            )
+            await session.commit()
+            if result.rowcount:
+                logger.info("Cleaned up %d expired/revoked refresh tokens", result.rowcount)
+    except Exception as e:
+        logger.warning("Could not clean up refresh tokens: %s", e)
 
 
 # Создаем FastAPI приложение
@@ -163,8 +201,19 @@ app.add_middleware(
     allow_origins=cors_origins,
     allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    allow_headers=["Content-Type", "X-API-Key", "X-Username"],
+    allow_headers=["Content-Type", "Authorization", "X-API-Key", "X-Username"],
 )
+
+# Security headers middleware
+@app.middleware("http")
+async def add_security_headers(request: Request, call_next):
+    response = await call_next(request)
+    response.headers["X-Frame-Options"] = "DENY"
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+    response.headers["Strict-Transport-Security"] = "max-age=63072000; includeSubDomains"
+    response.headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=()"
+    return response
 
 # Request tracking middleware (after CORS so preflight is not tracked)
 from src.middleware.request_tracker import RequestTrackerMiddleware
@@ -175,7 +224,7 @@ app.add_middleware(RequestTrackerMiddleware)
 from src.middleware.ip_ban import IpBanMiddleware
 app.add_middleware(IpBanMiddleware)
 
-# Подключаем все роутеры (с обязательной аутентификацией по API-ключу)
+# Подключаем все роутеры (с обязательной аутентификацией)
 _auth = [Depends(require_api_key)]
 
 app.include_router(auth.router, prefix="/api/auth", tags=["Auth"])
@@ -215,12 +264,9 @@ app.include_router(moexalgo.router, prefix="/api/moexalgo", tags=["MOEX ISS"], d
 app.include_router(dadata.router, prefix="/api/dadata", tags=["DaData"], dependencies=_auth)
 app.include_router(etf.router, prefix="/api/etf", tags=["ETF"], dependencies=_auth)
 app.include_router(gemini.router, prefix="/api/gemini", tags=["Gemini AI"], dependencies=_auth)
-app.include_router(secrets.router, prefix="/api/secrets", tags=["Secrets"], dependencies=_auth)
+app.include_router(secrets_api.router, prefix="/api/secrets", tags=["Secrets"], dependencies=[Depends(require_api_key), Depends(require_admin)])
 app.include_router(repo.router, prefix="/api/repo", tags=["REPO"], dependencies=_auth)
-app.include_router(admin.router, prefix="/api/admin", tags=["Admin"])
-
-# REMOVED: platform_services router — contains dangerous endpoints:
-# open email relay, SSRF vectors, auth token proxy, open storage
+app.include_router(admin.router, prefix="/api/admin", tags=["Admin"], dependencies=_auth)
 
 
 @app.exception_handler(Exception)

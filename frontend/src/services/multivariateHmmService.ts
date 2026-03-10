@@ -118,8 +118,8 @@ export async function predictStates(data?: number[][]): Promise<PredictResponse>
  * Получить статистику режимов.
  */
 export async function getRegimeStatistics(): Promise<RegimeStatisticsResponse> {
-  const response = await fetch(`${API_BASE}/api/multivariate-hmm/statistics`)
-  
+  const response = await fetch(`${API_BASE}/api/multivariate-hmm/statistics`, { headers: getApiHeaders() })
+
   if (!response.ok) {
     const error = await response.json().catch(() => ({ detail: 'Unknown error' }))
     throw new Error(error.detail || `Ошибка получения статистики: ${response.status}`)
@@ -132,8 +132,8 @@ export async function getRegimeStatistics(): Promise<RegimeStatisticsResponse> {
  * Получить информацию о режиме в момент времени.
  */
 export async function getRegimeAtTime(t: number): Promise<RegimeAtTimeResponse> {
-  const response = await fetch(`${API_BASE}/api/multivariate-hmm/regime-at-time?t=${t}`)
-  
+  const response = await fetch(`${API_BASE}/api/multivariate-hmm/regime-at-time?t=${t}`, { headers: getApiHeaders() })
+
   if (!response.ok) {
     const error = await response.json().catch(() => ({ detail: 'Unknown error' }))
     throw new Error(error.detail || `Ошибка получения информации о режиме: ${response.status}`)
@@ -146,8 +146,8 @@ export async function getRegimeAtTime(t: number): Promise<RegimeAtTimeResponse> 
  * Получить матрицу переходов.
  */
 export async function getTransitionMatrix(): Promise<{ success: boolean; transition_matrix: number[][]; n_regimes: number }> {
-  const response = await fetch(`${API_BASE}/api/multivariate-hmm/transition-matrix`)
-  
+  const response = await fetch(`${API_BASE}/api/multivariate-hmm/transition-matrix`, { headers: getApiHeaders() })
+
   if (!response.ok) {
     const error = await response.json().catch(() => ({ detail: 'Unknown error' }))
     throw new Error(error.detail || `Ошибка получения матрицы переходов: ${response.status}`)
@@ -160,8 +160,8 @@ export async function getTransitionMatrix(): Promise<{ success: boolean; transit
  * Получить данные для визуализации.
  */
 export async function getChartData(): Promise<ChartDataResponse> {
-  const response = await fetch(`${API_BASE}/api/multivariate-hmm/chart-data`)
-  
+  const response = await fetch(`${API_BASE}/api/multivariate-hmm/chart-data`, { headers: getApiHeaders() })
+
   if (!response.ok) {
     const error = await response.json().catch(() => ({ detail: 'Unknown error' }))
     throw new Error(error.detail || `Ошибка получения данных для графиков: ${response.status}`)

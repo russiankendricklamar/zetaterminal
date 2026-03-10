@@ -88,7 +88,9 @@ class SimulateResponse(BaseModel):
 
 
 # Глобальное хранилище обученных моделей (в production лучше использовать Redis или БД)
-_trained_models: Dict[str, Any] = {}
+from collections import OrderedDict
+_MAX_TRAINED_MODELS = 20
+_trained_models: OrderedDict[str, Any] = OrderedDict()
 
 
 def _get_model_key(asset_names: List[str], n_regimes: int) -> str:
@@ -245,9 +247,11 @@ async def fit_model(http_request: Request, request: FitRequest = Body(...)):
                 tol=request.tol
             )
         
-        # Сохраняем модель
+        # Сохраняем модель (с LRU-eviction)
         model_key = _get_model_key(asset_names, n_regimes_used)
         _trained_models[model_key] = model
+        if len(_trained_models) > _MAX_TRAINED_MODELS:
+            _trained_models.popitem(last=False)
         
         return FitResponse(
             success=True,
@@ -263,10 +267,8 @@ async def fit_model(http_request: Request, request: FitRequest = Body(...)):
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(
-            status_code=500,
-            detail=f"Ошибка обучения модели: {str(e)}"
-        )
+        logger.error("HMM operation failed: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 @router.post("/predict", response_model=PredictResponse)
@@ -315,10 +317,8 @@ async def predict_states(request: PredictRequest = Body(...)):
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(
-            status_code=500,
-            detail=f"Ошибка предсказания: {str(e)}"
-        )
+        logger.error("HMM operation failed: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 @router.get("/statistics", response_model=RegimeStatisticsResponse)
@@ -344,10 +344,8 @@ async def get_regime_statistics():
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(
-            status_code=500,
-            detail=f"Ошибка получения статистики: {str(e)}"
-        )
+        logger.error("HMM operation failed: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 @router.get("/regime-at-time", response_model=RegimeAtTimeResponse)
@@ -378,10 +376,8 @@ async def get_regime_at_time(
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(
-            status_code=500,
-            detail=f"Ошибка получения информации о режиме: {str(e)}"
-        )
+        logger.error("HMM operation failed: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 @router.post("/simulate", response_model=SimulateResponse)
@@ -414,10 +410,8 @@ async def simulate_trajectories(request: SimulateRequest = Body(...)):
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(
-            status_code=500,
-            detail=f"Ошибка симуляции: {str(e)}"
-        )
+        logger.error("HMM operation failed: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 @router.get("/export")
@@ -447,10 +441,8 @@ async def export_to_dataframe():
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(
-            status_code=500,
-            detail=f"Ошибка экспорта: {str(e)}"
-        )
+        logger.error("HMM operation failed: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 @router.get("/transition-matrix")
@@ -479,10 +471,8 @@ async def get_transition_matrix():
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(
-            status_code=500,
-            detail=f"Ошибка получения матрицы переходов: {str(e)}"
-        )
+        logger.error("HMM operation failed: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 @router.get("/chart-data")
@@ -553,7 +543,5 @@ async def get_chart_data():
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(
-            status_code=500,
-            detail=f"Ошибка получения данных для графиков: {str(e)}"
-        )
+        logger.error("HMM operation failed: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")

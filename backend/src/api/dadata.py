@@ -4,6 +4,8 @@ DaData Router — Russian company and bank data.
 Prefix: /api/dadata
 """
 
+import logging
+
 from fastapi import APIRouter, HTTPException, Query
 
 from src.services.dadata_service import (
@@ -11,6 +13,8 @@ from src.services.dadata_service import (
     dadata_suggest_company,
     dadata_find_bank,
 )
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
@@ -21,7 +25,8 @@ async def find_company(inn: str):
     try:
         return await dadata_find_company(inn)
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error("DaData operation failed: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 @router.get("/suggest/company")
@@ -33,7 +38,8 @@ async def suggest_company(
     try:
         return await dadata_suggest_company(q, count)
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error("DaData operation failed: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 @router.get("/suggest/bank")
@@ -44,7 +50,8 @@ async def find_bank(
     try:
         return await dadata_find_bank(bik)
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error("DaData operation failed: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 @router.get("/health")

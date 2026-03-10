@@ -1,4 +1,4 @@
-import { getApiHeaders, setApiKey } from '@/utils/apiHeaders'
+import { getApiHeaders, setTokens, clearTokens, getRefreshToken } from '@/utils/apiHeaders'
 import { getApiBaseUrl } from '@/utils/apiBase'
 import { appFetch } from '@/utils/tauriFetch'
 
@@ -37,7 +37,9 @@ export interface LoginResponse {
   username: string
   domain_handle: string
   role: string
-  api_key: string
+  access_token: string
+  refresh_token: string
+  token_type: string
 }
 
 export interface UserInfo {
@@ -48,7 +50,6 @@ export interface UserInfo {
   display_name: string | null
   role: string
   status: string
-  invite_code: string
   created_at: string
   activated_at: string | null
 }
@@ -146,7 +147,7 @@ export async function login(data: LoginRequest): Promise<LoginResponse> {
     throw new Error(err.detail || 'Login failed')
   }
   const result: LoginResponse = await res.json()
-  setApiKey(result.api_key)
+  setTokens(result.access_token, result.refresh_token)
   localStorage.setItem(AUTH_USER_KEY, JSON.stringify({
     user_id: result.user_id,
     username: result.username,
@@ -154,6 +155,26 @@ export async function login(data: LoginRequest): Promise<LoginResponse> {
     role: result.role,
   }))
   return result
+}
+
+export async function refreshAccessToken(): Promise<string | null> {
+  const refreshToken = getRefreshToken()
+  if (!refreshToken) return null
+
+  try {
+    const res = await appFetch(`${API_BASE_URL}/api/auth/refresh`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ refresh_token: refreshToken }),
+    })
+    if (!res.ok) return null
+    const data = await res.json()
+    // Server rotates refresh tokens — store both new tokens
+    setTokens(data.access_token, data.refresh_token)
+    return data.access_token
+  } catch {
+    return null
+  }
 }
 
 export async function fetchUsers(): Promise<UserInfo[]> {
@@ -179,8 +200,20 @@ export function getAuthUser(): { user_id: number; username: string; domain_handl
   }
 }
 
-export function logout(): void {
-  setApiKey('')
+export async function logout(): Promise<void> {
+  const refreshToken = getRefreshToken()
+  if (refreshToken) {
+    try {
+      await appFetch(`${API_BASE_URL}/api/auth/logout`, {
+        method: 'POST',
+        headers: getApiHeaders(),
+        body: JSON.stringify({ refresh_token: refreshToken }),
+      })
+    } catch {
+      // Best-effort server logout
+    }
+  }
+  clearTokens()
   localStorage.removeItem(AUTH_USER_KEY)
 }
 

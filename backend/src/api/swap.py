@@ -1,10 +1,14 @@
 """
 API endpoints для оценки свопов (IRS, CDS, Basis Swaps, FX Swaps).
 """
+import logging
+
 from fastapi import APIRouter, HTTPException
 from typing import Optional, Dict, Any, List
 from pydantic import BaseModel, Field
 from src.services.swap_service import calculate_swap_valuation, calculate_fx_swap_valuation
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
@@ -41,11 +45,14 @@ async def valuate_swap(request: SwapValuationRequest):
         )
         return result
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        logger.error("Swap valuation validation error: %s", e, exc_info=True)
+        raise HTTPException(status_code=400, detail="Invalid input parameters")
     except RuntimeError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        logger.error("Swap valuation runtime error: %s", e, exc_info=True)
+        raise HTTPException(status_code=400, detail="Calculation error")
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
+        logger.error("Swap valuation failed: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 class FxSwapLeg(BaseModel):
@@ -93,9 +100,11 @@ async def valuate_fx_swap(request: FxSwapValuationRequest):
         )
         return result
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        logger.error("FX swap valuation validation error: %s", e, exc_info=True)
+        raise HTTPException(status_code=400, detail="Invalid input parameters")
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
+        logger.error("FX swap valuation failed: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 @router.get("/health")

@@ -71,7 +71,7 @@ export const optimizeCCMVPortfolio = async (request: CCMVRequest): Promise<CCMVR
  */
 export const checkCCMVHealth = async (): Promise<{ status: string; service: string }> => {
   try {
-    const response = await fetch(`${API_BASE_URL}/api/ccmv/health`);
+    const response = await fetch(`${API_BASE_URL}/api/ccmv/health`, { headers: getApiHeaders() });
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }

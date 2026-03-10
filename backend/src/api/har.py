@@ -1,12 +1,16 @@
 """
 API endpoints для HAR модели прогнозирования волатильности.
 """
+import logging
+
 from fastapi import APIRouter, HTTPException
 from typing import Dict, Any, List, Optional
 from pydantic import BaseModel, Field
 from datetime import datetime
 
 from src.services.har_service import fit_har_model
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
@@ -64,9 +68,11 @@ async def fit_har(request: HARRequest):
         )
         return HARResponse(result=result)
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        logger.error("HAR model validation error: %s", e, exc_info=True)
+        raise HTTPException(status_code=400, detail="Invalid input parameters")
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Ошибка оценки: {str(e)}")
+        logger.error("HAR model estimation failed: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 @router.get("/health")

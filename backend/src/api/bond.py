@@ -40,11 +40,14 @@ async def valuate_bond(request: BondValuationRequest):
         )
         return result
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        logger.error("Bond valuation validation error: %s", e, exc_info=True)
+        raise HTTPException(status_code=400, detail="Invalid input parameters")
     except RuntimeError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        logger.error("Bond valuation runtime error: %s", e, exc_info=True)
+        raise HTTPException(status_code=400, detail="Calculation error")
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
+        logger.error("Bond valuation failed: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 @router.get("/market-yield", response_model=Dict[str, Any])
@@ -70,7 +73,8 @@ async def get_market_yield(
             "yield": yield_value
         }
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        logger.error("Market yield validation error for %s: %s", secid, e, exc_info=True)
+        raise HTTPException(status_code=400, detail="Invalid input parameters")
     except Exception as e:
-        logger.error(f"Error getting market yield for {secid} on {date}: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
+        logger.error("Error getting market yield for %s on %s: %s", secid, date, e, exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")

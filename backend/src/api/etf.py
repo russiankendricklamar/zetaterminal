@@ -4,6 +4,8 @@ ETF Data Router — Russian + International ETFs.
 Prefix: /api/etf
 """
 
+import logging
+
 from fastapi import APIRouter, HTTPException, Query
 from typing import Optional
 
@@ -12,6 +14,8 @@ from src.services.etf_service import (
     etf_candles,
     POPULAR_INTL_ETFS,
 )
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
@@ -22,7 +26,8 @@ async def list_etfs():
     try:
         return await moex_etf_list()
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error("ETF operation failed: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 @router.get("/candles/{ticker}")
@@ -37,7 +42,8 @@ async def get_candles(
     try:
         return await etf_candles(ticker, interval, from_date, till_date, limit)
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error("ETF operation failed: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 @router.get("/popular-international")

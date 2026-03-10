@@ -6,20 +6,6 @@ import { getApiBaseUrl } from '@/utils/apiBase'
 
 const API = () => getApiBaseUrl()
 
-function getAdminHeaders(): Record<string, string> {
-  const headers = getApiHeaders()
-  try {
-    const raw = localStorage.getItem('zeta_auth_user')
-    if (raw) {
-      const user = JSON.parse(raw)
-      if (user.username) {
-        headers['X-Username'] = user.username
-      }
-    }
-  } catch { /* ignore */ }
-  return headers
-}
-
 // ── Interfaces ──────────────────────────────────────────────────────────────
 
 export interface AdminUser {
@@ -103,7 +89,7 @@ export interface IpBanRecord {
 
 async function apiFetch<T>(path: string, options: RequestInit = {}): Promise<T> {
   const resp = await fetch(`${API()}/api/admin${path}`, {
-    headers: getAdminHeaders(),
+    headers: getApiHeaders(),
     ...options,
   })
   if (!resp.ok) {

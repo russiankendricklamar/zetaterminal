@@ -127,7 +127,7 @@ export const runStressTests = async (request: StressTestRequest): Promise<Stress
  */
 export const checkStressHealth = async (): Promise<{ status: string; service: string }> => {
   try {
-    const response = await fetch(`${API_BASE_URL}/api/stress/health`);
+    const response = await fetch(`${API_BASE_URL}/api/stress/health`, { headers: getApiHeaders() });
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }

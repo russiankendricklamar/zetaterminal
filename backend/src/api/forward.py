@@ -102,11 +102,14 @@ async def valuate_forward(request: ForwardValuationRequest):
         )
         return result
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        logger.error("Forward valuation validation error: %s", e, exc_info=True)
+        raise HTTPException(status_code=400, detail="Invalid input parameters")
     except RuntimeError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        logger.error("Forward valuation runtime error: %s", e, exc_info=True)
+        raise HTTPException(status_code=400, detail="Calculation error")
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
+        logger.error("Forward valuation failed: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 @router.get("/health")

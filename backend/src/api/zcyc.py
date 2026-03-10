@@ -8,11 +8,15 @@ Endpoints:
 """
 
 import asyncio
+import logging
+
 from fastapi import APIRouter, HTTPException, Query
 from pydantic import BaseModel, Field
 from typing import List, Optional, Dict, Any
 from datetime import datetime
 import pandas as pd
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
@@ -112,10 +116,8 @@ async def get_zcyc(
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(
-            status_code=500,
-            detail=f"Ошибка получения кривой бескупонных доходностей: {str(e)}"
-        )
+        logger.error("ZCYC curve retrieval failed: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 @router.post("/interpolate", response_model=InterpolateResponse)
@@ -188,10 +190,8 @@ async def interpolate_zcyc_rate(
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(
-            status_code=500,
-            detail=f"Ошибка интерполяции: {str(e)}"
-        )
+        logger.error("ZCYC interpolation failed: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 @router.get("/dates")
@@ -213,10 +213,8 @@ async def get_available_dates():
         }
         
     except Exception as e:
-        raise HTTPException(
-            status_code=500,
-            detail=f"Ошибка получения списка дат: {str(e)}"
-        )
+        logger.error("ZCYC dates retrieval failed: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 @router.get("/maxdates")
@@ -240,10 +238,8 @@ async def get_maxdates_endpoint(
         }
         
     except Exception as e:
-        raise HTTPException(
-            status_code=500,
-            detail=f"Ошибка получения максимальных дат: {str(e)}"
-        )
+        logger.error("ZCYC maxdates retrieval failed: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 @router.get("/yearyields")
@@ -281,10 +277,8 @@ async def get_yearyields_endpoint(
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(
-            status_code=500,
-            detail=f"Ошибка получения кривой доходностей: {str(e)}"
-        )
+        logger.error("ZCYC yearyields retrieval failed: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 @router.get("/yearyields/dates")
@@ -309,10 +303,8 @@ async def get_yearyields_dates_endpoint(
         }
         
     except Exception as e:
-        raise HTTPException(
-            status_code=500,
-            detail=f"Ошибка получения диапазона дат: {str(e)}"
-        )
+        logger.error("ZCYC date range retrieval failed: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 @router.get("/latest")
@@ -337,10 +329,8 @@ async def get_latest_curve_endpoint(
         }
         
     except Exception as e:
-        raise HTTPException(
-            status_code=500,
-            detail=f"Ошибка получения последней кривой: {str(e)}"
-        )
+        logger.error("ZCYC latest curve retrieval failed: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 @router.post("/discount")
@@ -372,7 +362,5 @@ async def curve_to_discount_endpoint(
         }
         
     except Exception as e:
-        raise HTTPException(
-            status_code=500,
-            detail=f"Ошибка преобразования кривой: {str(e)}"
-        )
+        logger.error("ZCYC discount curve conversion failed: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
