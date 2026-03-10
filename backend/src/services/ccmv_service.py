@@ -9,7 +9,7 @@ from math import floor
 import cvxpy as cp
 import warnings
 
-warnings.filterwarnings('ignore')
+warnings.filterwarnings('ignore', category=DeprecationWarning)
 
 
 def hierarchical_clustering(R: np.ndarray) -> np.ndarray:

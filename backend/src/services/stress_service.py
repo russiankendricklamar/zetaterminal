@@ -7,7 +7,7 @@ from typing import Dict, List, Optional, Tuple
 import warnings
 from src.services.hjb_service import HJBStrategy, simulate_monte_carlo
 
-warnings.filterwarnings('ignore')
+warnings.filterwarnings('ignore', category=DeprecationWarning)
 
 
 class StressTestSimulator:

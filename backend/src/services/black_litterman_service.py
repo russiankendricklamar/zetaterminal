@@ -15,7 +15,7 @@ import numpy as np
 from typing import Dict, List, Optional
 import warnings
 
-warnings.filterwarnings('ignore')
+warnings.filterwarnings('ignore', category=DeprecationWarning)
 
 
 def compute_equilibrium_returns(

@@ -198,7 +198,7 @@ async def get_market_data(
     data_type: Optional[str] = None,
     start_date: Optional[str] = None,
     end_date: Optional[str] = None,
-    limit: int = 100,
+    limit: int = Query(100, ge=1, le=1000),
     session: AsyncSession = Depends(get_session),
 ):
     repo = MarketDataRepository(session)
@@ -223,7 +223,7 @@ async def create_market_data(
 @router.get("/files", response_model=dict)
 async def get_files(
     file_type: Optional[str] = None,
-    limit: int = 100,
+    limit: int = Query(100, ge=1, le=1000),
     session: AsyncSession = Depends(get_session),
 ):
     repo = FileRepository(session)
@@ -292,7 +292,7 @@ async def export_registry_parquet(
     repo = FileRepository(session)
     file_record = FileRecord(
         file_name=file_name,
-        file_path=file_path,
+        file_path=file_name,  # store name only, not full server path
         file_type="register",
         file_size=file_size,
         mime_type="application/octet-stream",

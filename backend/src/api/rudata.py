@@ -26,37 +26,37 @@ router = APIRouter()
 
 class RuDataCredentials(BaseModel):
     """Учетные данные для RuData API."""
-    login: str = Field(..., description="Логин RuData")
-    password: str = Field(..., description="Пароль RuData")
+    login: str = Field(..., min_length=1, max_length=200, description="Логин RuData")
+    password: str = Field(..., min_length=1, max_length=200, description="Пароль RuData")
 
 
 class RuDataQuery(BaseModel):
     """Запрос к RuData API."""
-    login: str = Field(..., description="Логин RuData")
-    password: str = Field(..., description="Пароль RuData")
-    path_method: str = Field(..., description="Путь метода API (например, 'Bond/List')")
+    login: str = Field(..., min_length=1, max_length=200, description="Логин RuData")
+    password: str = Field(..., min_length=1, max_length=200, description="Пароль RuData")
+    path_method: str = Field(..., min_length=1, max_length=200, description="Путь метода API (например, 'Bond/List')")
     body: Dict[str, Any] = Field(default_factory=dict, description="Тело запроса")
     post: bool = Field(default=True, description="Использовать POST метод")
-    search_array: Optional[List[str]] = Field(None, description="Массив поиска")
-    search_param: str = Field(default="filter", description="Параметр для массива поиска")
-    search_field: Optional[str] = Field(None, description="Поле фильтрации")
+    search_array: Optional[List[str]] = Field(None, max_length=1000, description="Массив поиска")
+    search_param: str = Field(default="filter", max_length=100, description="Параметр для массива поиска")
+    search_field: Optional[str] = Field(None, max_length=200, description="Поле фильтрации")
 
 
 class BondCalculateRequest(BaseModel):
     """Запрос на расчет параметров облигации."""
-    login: str
-    password: str
-    isin: str
-    calc_date: Optional[str] = None
+    login: str = Field(..., min_length=1, max_length=200)
+    password: str = Field(..., min_length=1, max_length=200)
+    isin: str = Field(..., min_length=1, max_length=50)
+    calc_date: Optional[str] = Field(None, max_length=20)
     price: Optional[float] = None
 
 
 class BondSearchRequest(BaseModel):
     """Запрос на поиск облигаций."""
-    login: str
-    password: str
-    filter: str = Field(..., description="Строка фильтрации")
-    fields: Optional[List[str]] = Field(None, description="Список полей для выборки")
+    login: str = Field(..., min_length=1, max_length=200)
+    password: str = Field(..., min_length=1, max_length=200)
+    filter: str = Field(..., min_length=1, max_length=2000, description="Строка фильтрации")
+    fields: Optional[List[str]] = Field(None, max_length=100, description="Список полей для выборки")
 
 
 class ConnectionTestResponse(BaseModel):

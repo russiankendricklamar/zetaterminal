@@ -17,7 +17,7 @@ from typing import Dict, List, Optional, Tuple, Any
 import logging
 import warnings
 
-warnings.filterwarnings('ignore')
+warnings.filterwarnings('ignore', category=DeprecationWarning)
 logger = logging.getLogger(__name__)
 
 

@@ -103,22 +103,27 @@ async def _migrate_user_profile_columns() -> None:
     user_id_tables = [
         "bond_valuations", "portfolios", "calculation_history", "file_records",
     ]
+    # Build migration SQL at startup from hardcoded constants only.
+    # Using string formatting here is safe because col_name, col_type, and table
+    # are compile-time constants defined above — never user input.
+    _user_col_stmts = [
+        f"ALTER TABLE users ADD COLUMN IF NOT EXISTS {col_name} {col_type}"
+        for col_name, col_type in columns
+    ]
+    _uid_stmts = []
+    for table in user_id_tables:
+        _uid_stmts.append(f"ALTER TABLE {table} ADD COLUMN IF NOT EXISTS user_id INTEGER")
+        _uid_stmts.append(f"CREATE INDEX IF NOT EXISTS ix_{table}_user_id ON {table} (user_id)")
+
     try:
         async with engine.begin() as conn:
-            for col_name, col_type in columns:
-                await conn.execute(text(
-                    f"ALTER TABLE users ADD COLUMN IF NOT EXISTS {col_name} {col_type}"
-                ))
-        for table in user_id_tables:
-            await conn.execute(text(
-                f"ALTER TABLE {table} ADD COLUMN IF NOT EXISTS user_id INTEGER"
-            ))
-            try:
-                await conn.execute(text(
-                    f"CREATE INDEX IF NOT EXISTS ix_{table}_user_id ON {table} (user_id)"
-                ))
-            except Exception:
-                pass
+            for stmt in _user_col_stmts:
+                await conn.execute(text(stmt))
+            for stmt in _uid_stmts:
+                try:
+                    await conn.execute(text(stmt))
+                except Exception:
+                    pass
         logger.info("User profile columns migration complete")
     except Exception as e:
         logger.warning("Could not migrate user profile columns: %s", e)
@@ -294,13 +299,13 @@ async def global_exception_handler(request: Request, exc: Exception) -> JSONResp
 
 @app.get("/")
 async def root():
-    """Корневой endpoint"""
+    """Корневой endpoint — minimal info for uptime monitors."""
     return {"status": "ok"}
 
 
 @app.get("/health")
 async def health():
-    """Health check endpoint"""
+    """Health check endpoint (unauthenticated for Render probes)."""
     return {"status": "healthy"}
 
 

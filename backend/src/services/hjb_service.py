@@ -4,9 +4,9 @@
 """
 import numpy as np
 from typing import Dict, List, Optional, Tuple
-import warnings
+import logging
 
-warnings.filterwarnings('ignore')
+_logger = logging.getLogger(__name__)
 
 
 class HJBStrategy:
@@ -74,11 +74,23 @@ class HJBStrategy:
         # Вычисляем избыточные доходности (критично для формулы Мертона)
         self.excess_mu = self.mu - self.risk_free_rate
         
-        # Обратная матрица ковариации
-        try:
-            self.inv_cov_matrix = np.linalg.inv(self.cov_matrix)
-        except np.linalg.LinAlgError:
+        # Обратная матрица ковариации с проверкой обусловленности
+        cond = np.linalg.cond(self.cov_matrix)
+        if cond > 1e12:
+            _logger.warning(
+                "Ill-conditioned covariance matrix (cond=%.2e). "
+                "Using pseudo-inverse; results may be unreliable.", cond
+            )
             self.inv_cov_matrix = np.linalg.pinv(self.cov_matrix)
+        else:
+            if cond > 1e8:
+                _logger.warning(
+                    "High condition number (%.2e) on covariance matrix.", cond
+                )
+            try:
+                self.inv_cov_matrix = np.linalg.inv(self.cov_matrix)
+            except np.linalg.LinAlgError:
+                self.inv_cov_matrix = np.linalg.pinv(self.cov_matrix)
         
         # Формула Мертона: w_base = Σ^(-1) (μ - r_f·1)
         self._weights_base = np.dot(self.inv_cov_matrix, self.excess_mu)

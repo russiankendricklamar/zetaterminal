@@ -26,7 +26,7 @@ from scipy.cluster.hierarchy import fclusterdata
 from typing import Dict, List, Optional, Tuple, Any
 import warnings
 
-warnings.filterwarnings('ignore')
+warnings.filterwarnings('ignore', category=DeprecationWarning)
 
 
 class SpectralRegimeAnalyzer:

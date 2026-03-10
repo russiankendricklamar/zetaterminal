@@ -60,12 +60,6 @@ async def valuate_forward(request: ForwardValuationRequest):
     Выполняет оценку форварда различных типов.
     """
     try:
-        # ОТЛАДКА: Логируем входные параметры для диагностики бага NPV
-        if request.forwardType == "fx" and request.buyAmount:
-            logger.info(f"API Debug - buyAmount={request.buyAmount:,.2f}, buyCurrency={request.buyCurrency}, "
-                       f"sellCurrency={request.sellCurrency}, spotPrice={request.spotPrice:.6f}, "
-                       f"marketForwardPrice={request.marketForwardPrice:.6f}")
-        
         result = calculate_forward_valuation(
             forward_type=request.forwardType,
             spot_price=request.spotPrice,

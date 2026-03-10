@@ -411,11 +411,19 @@ const commands: Command[] = [
     icon: '🗑️', 
     desc: 'Очистить локальное хранилище',
     action: () => {
-      if (confirm('Очистить весь кэш? Это удалит сохранённые настройки.')) {
+      if (confirm('Очистить весь кэш? Это удалит сохранённые настройки (авторизация сохранится).')) {
+        const authKeys = ['zeta_access_token', 'zeta_refresh_token', 'zeta_auth_user']
+        const saved: Record<string, string | null> = {}
+        for (const key of authKeys) {
+          saved[key] = localStorage.getItem(key)
+        }
         localStorage.clear()
+        for (const [key, value] of Object.entries(saved)) {
+          if (value !== null) localStorage.setItem(key, value)
+        }
         window.location.reload()
       }
-    } 
+    }
   },
 
   // ===== СИСТЕМА =====

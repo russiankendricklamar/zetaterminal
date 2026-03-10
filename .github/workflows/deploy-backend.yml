@@ -21,3 +21,7 @@ jobs:
           cache-dependency-path: backend/requirements.txt
       - run: pip install -r requirements.txt
       - run: python -c "from src.main import app; print('Import OK')"
+      - name: Audit dependencies for known vulnerabilities
+        run: |
+          pip install pip-audit
+          pip-audit --strict || true

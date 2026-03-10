@@ -43,7 +43,7 @@
                   <span class="text-[10px] text-gray-600">{{ formatDate(article.publishedAt) }}</span>
                 </div>
               </div>
-              <a v-if="article.url" :href="article.url" target="_blank" class="text-xs text-purple-400 hover:text-purple-300 whitespace-nowrap">Читать</a>
+              <a v-if="article.url" :href="article.url" target="_blank" rel="noopener noreferrer" class="text-xs text-purple-400 hover:text-purple-300 whitespace-nowrap">Читать</a>
             </div>
           </div>
         </div>
@@ -88,7 +88,7 @@
             <div class="flex items-center gap-3 mt-2">
               <span class="text-[10px] text-gray-500 font-mono">{{ article.source }}</span>
               <span class="text-[10px] text-gray-600">{{ formatDate(article.publishedAt) }}</span>
-              <a v-if="article.url" :href="article.url" target="_blank" class="text-[10px] text-purple-400 hover:text-purple-300">Открыть</a>
+              <a v-if="article.url" :href="article.url" target="_blank" rel="noopener noreferrer" class="text-[10px] text-purple-400 hover:text-purple-300">Открыть</a>
             </div>
           </div>
         </div>

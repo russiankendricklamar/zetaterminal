@@ -13,7 +13,7 @@ from pydantic import BaseModel
 
 logger = logging.getLogger(__name__)
 
-JWT_SECRET = os.getenv("JWT_SECRET", "")
+JWT_SECRET = os.getenv("JWT_SECRET") or ""
 JWT_ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 10
 REFRESH_TOKEN_EXPIRE_DAYS = 30

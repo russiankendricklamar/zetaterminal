@@ -63,7 +63,9 @@ _active_requests: dict[str, ActiveRequest] = {}
 def _client_ip(request: Request) -> str:
     forwarded = request.headers.get("x-forwarded-for")
     if forwarded:
-        return forwarded.split(",")[0].strip()
+        # Rightmost entry = set by the nearest trusted proxy (Render)
+        parts = [p.strip() for p in forwarded.split(",")]
+        return parts[-1]
     if request.client:
         return request.client.host
     return "unknown"

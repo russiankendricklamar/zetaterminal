@@ -136,6 +136,9 @@ async def update_user_status(
     if body.status == "active" and not user.activated_at:
         user.activated_at = datetime.now(timezone.utc)
     await session.commit()
+    # Immediately evict cached status so require_auth picks up the change
+    from src.middleware.auth import invalidate_user_status_cache
+    invalidate_user_status_cache(user_id)
     return {"id": user.id, "username": user.username, "status": user.status}
 
 
@@ -197,6 +200,8 @@ async def ban_user(user_id: int, admin: User = Depends(require_admin), session: 
         .values(revoked=True)
     )
     await session.commit()
+    from src.middleware.auth import invalidate_user_status_cache
+    invalidate_user_status_cache(user_id)
     return {"id": user.id, "username": user.username, "status": "blocked", "banned": True}
 
 

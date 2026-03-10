@@ -90,21 +90,34 @@ async def curr_search(
 
 # ─── Hugging Face ─────────────────────────────────────────────────────────────
 
+_ALLOWED_HF_MODELS = frozenset({
+    "ProsusAI/finbert",
+    "facebook/bart-large-cnn",
+    "mrm8488/distilroberta-finetuned-financial-news-sentiment-analysis",
+    "yiyanghkust/finbert-tone",
+})
+
+
 class InferenceRequest(BaseModel):
-    model_id: str
-    inputs: str
+    model_id: str = Field(..., max_length=200)
+    inputs: str = Field(..., max_length=10_000)
 
 class SentimentRequest(BaseModel):
-    text: str
+    text: str = Field(..., max_length=10_000)
 
 class SummarizeRequest(BaseModel):
-    text: str
-    max_length: int = 150
+    text: str = Field(..., max_length=50_000)
+    max_length: int = Field(150, ge=10, le=2000)
 
 
 @router.post("/huggingface/inference")
 async def hf_infer(req: InferenceRequest):
-    """Run arbitrary HF model inference."""
+    """Run HF model inference (whitelisted models only)."""
+    if req.model_id not in _ALLOWED_HF_MODELS:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Model not allowed. Allowed: {', '.join(sorted(_ALLOWED_HF_MODELS))}",
+        )
     try:
         return await hf_inference(req.model_id, req.inputs)
     except Exception as e:

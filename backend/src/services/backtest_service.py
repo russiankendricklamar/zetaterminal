@@ -8,7 +8,7 @@ import warnings
 from datetime import datetime, timedelta
 from src.services.hjb_service import HJBStrategy, simulate_monte_carlo
 
-warnings.filterwarnings('ignore')
+warnings.filterwarnings('ignore', category=DeprecationWarning)
 
 
 def calculate_backtest_metrics(
