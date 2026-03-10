@@ -17,6 +17,7 @@ class BondValuation(Base):
     __tablename__ = "bond_valuations"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
+    user_id = Column(Integer, nullable=True, index=True)
     secid = Column(String, nullable=False, index=True)
     valuation_date = Column(String, nullable=False)
     discount_yield1 = Column(Float, nullable=False)
@@ -35,6 +36,7 @@ class Portfolio(Base):
     __tablename__ = "portfolios"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
+    user_id = Column(Integer, nullable=True, index=True)
     name = Column(String, nullable=False)
     description = Column(Text, nullable=True)
     positions = Column(JSON, nullable=False)
@@ -47,6 +49,7 @@ class CalculationHistory(Base):
     __tablename__ = "calculation_history"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
+    user_id = Column(Integer, nullable=True, index=True)
     calculation_type = Column(String, nullable=False)
     input_data = Column(JSON, nullable=False)
     result_data = Column(JSON, nullable=False)
@@ -109,6 +112,7 @@ class FileRecord(Base):
     __tablename__ = "file_records"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
+    user_id = Column(Integer, nullable=True, index=True)
     file_name = Column(String, nullable=False)
     file_path = Column(String, nullable=False)
     file_type = Column(String, nullable=False)

@@ -4,8 +4,9 @@ API endpoints для оценки облигаций (DCF).
 import asyncio
 from fastapi import APIRouter, HTTPException, Query
 from typing import Optional, Dict, Any
-from pydantic import BaseModel, Field
+from pydantic import Field
 from src.services.bond_service import calculate_bond_valuation, get_market_yield_from_moex
+from src.utils.financial_validation import FinancialBaseModel, MAX_RATE_PCT
 import logging
 
 logger = logging.getLogger(__name__)
@@ -13,12 +14,12 @@ logger = logging.getLogger(__name__)
 router = APIRouter()
 
 
-class BondValuationRequest(BaseModel):
+class BondValuationRequest(FinancialBaseModel):
     """Запрос на оценку облигации."""
-    secid: str = Field(..., description="ISIN облигации (например, RU000A10AU99)")
+    secid: str = Field(..., min_length=1, max_length=50, description="ISIN облигации (например, RU000A10AU99)")
     valuationDate: str = Field(..., description="Дата оценки (YYYY-MM-DD)")
-    discountYield1: float = Field(..., description="Ставка дисконтирования для сценария 1 (доходность аналога) в процентах")
-    discountYield2: float = Field(..., description="Ставка дисконтирования для сценария 2 (доходность индекса) в процентах")
+    discountYield1: float = Field(..., ge=-100, le=MAX_RATE_PCT, description="Ставка дисконтирования для сценария 1 (доходность аналога) в процентах")
+    discountYield2: float = Field(..., ge=-100, le=MAX_RATE_PCT, description="Ставка дисконтирования для сценария 2 (доходность индекса) в процентах")
     dayCount: Optional[int] = Field(None, description="Базис расчета: 365 (ACT/365) или 360 (30/360) - устаревший параметр")
     dayCountConvention: Optional[str] = Field(None, description="Базис расчета: 'Actual/365F', 'Actual/360', 'Actual/Actual (ISDA)', '30/360 (US)', '30E/360 (ISDA)', '30E/360', 'Actual/Actual (ISMA)'")
 

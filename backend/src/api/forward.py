@@ -3,8 +3,9 @@ API endpoints для оценки валютных форвардов.
 """
 from fastapi import APIRouter, HTTPException
 from typing import Optional, Dict, Any
-from pydantic import BaseModel, Field
+from pydantic import Field
 from src.services.forward_service import calculate_forward_valuation
+from src.utils.financial_validation import FinancialBaseModel, MAX_NOTIONAL, MAX_TENOR_YEARS, MAX_RATE_PCT
 import logging
 
 logger = logging.getLogger(__name__)
@@ -12,14 +13,14 @@ logger = logging.getLogger(__name__)
 router = APIRouter()
 
 
-class ForwardValuationRequest(BaseModel):
+class ForwardValuationRequest(FinancialBaseModel):
     """Запрос на оценку форварда."""
     forwardType: str = Field("fx", description="Тип форварда: fx, bond, commodity, equity, rate")
     # Общие параметры
-    spotPrice: float = Field(..., description="Спот цена базового актива")
-    timeToMaturity: float = Field(..., description="Время до экспирации (лет)")
-    marketForwardPrice: float = Field(..., description="Рыночная цена форварда")
-    contractSize: float = Field(1.0, description="Размер контракта")
+    spotPrice: float = Field(..., gt=0, le=MAX_NOTIONAL, description="Спот цена базового актива")
+    timeToMaturity: float = Field(..., gt=0, le=MAX_TENOR_YEARS, description="Время до экспирации (лет)")
+    marketForwardPrice: float = Field(..., gt=0, le=MAX_NOTIONAL, description="Рыночная цена форварда")
+    contractSize: float = Field(1.0, gt=0, le=MAX_NOTIONAL, description="Размер контракта")
     
     # Параметры для Cost-of-Carry (bond, commodity, equity, rate)
     dividendYield: Optional[float] = Field(0.0, description="Дивиденды / Купоны (%)")

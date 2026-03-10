@@ -5,9 +5,10 @@ import logging
 
 from fastapi import APIRouter, Body, HTTPException, Request
 from typing import List, Optional
-from pydantic import BaseModel, Field
+from pydantic import Field
 from src.models.schemas import ComputeRequest, ComputeResponse
 from src.services.compute_service import ComputeService
+from src.utils.financial_validation import FinancialBaseModel, MAX_DATA_POINTS
 from src.middleware.rate_limit import limiter
 from datetime import datetime
 
@@ -17,13 +18,13 @@ router = APIRouter()
 compute_service = ComputeService()
 
 
-class GARCHRequest(BaseModel):
+class GARCHRequest(FinancialBaseModel):
     """Схема запроса для GARCH моделирования."""
-    returns: List[float] = Field(..., max_length=50000)
-    omega: Optional[float] = 0.000025
-    alpha: Optional[float] = 0.082
-    beta: Optional[float] = 0.893
-    initial_variance: Optional[float] = None
+    returns: List[float] = Field(..., max_length=MAX_DATA_POINTS)
+    omega: Optional[float] = Field(0.000025, gt=0, le=1.0)
+    alpha: Optional[float] = Field(0.082, ge=0, le=1.0)
+    beta: Optional[float] = Field(0.893, ge=0, le=1.0)
+    initial_variance: Optional[float] = Field(None, gt=0, le=1.0)
 
 
 @router.post("/statistics", response_model=ComputeResponse)

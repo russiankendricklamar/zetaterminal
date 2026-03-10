@@ -5,8 +5,9 @@ import logging
 
 from fastapi import APIRouter, HTTPException, Request
 from typing import List, Optional, Dict, Any
-from pydantic import BaseModel, Field
+from pydantic import Field
 from src.services.backtest_service import run_backtest
+from src.utils.financial_validation import FinancialBaseModel, MAX_ASSETS, MAX_CAPITAL
 from src.middleware.rate_limit import limiter
 
 logger = logging.getLogger(__name__)
@@ -14,16 +15,16 @@ logger = logging.getLogger(__name__)
 router = APIRouter()
 
 
-class BacktestRequest(BaseModel):
+class BacktestRequest(FinancialBaseModel):
     """Запрос на бэктестинг портфеля."""
-    mu: List[float] = Field(..., max_length=50, description="Ожидаемые доходности активов")
-    cov_matrix: List[List[float]] = Field(..., max_length=50, description="Ковариационная матрица")
-    initial_capital: float = Field(1000000, description="Начальный капитал")
-    risk_free_rate: float = Field(..., description="Безрисковая ставка")
-    gamma: float = Field(..., description="Коэффициент риск-аверсии")
-    horizon_years: float = Field(1.0, description="Горизонт инвестирования (годы)")
+    mu: List[float] = Field(..., max_length=MAX_ASSETS, description="Ожидаемые доходности активов")
+    cov_matrix: List[List[float]] = Field(..., max_length=MAX_ASSETS, description="Ковариационная матрица")
+    initial_capital: float = Field(1000000, gt=0, le=MAX_CAPITAL, description="Начальный капитал")
+    risk_free_rate: float = Field(..., ge=-1, le=1, description="Безрисковая ставка")
+    gamma: float = Field(..., gt=0, le=100, description="Коэффициент риск-аверсии")
+    horizon_years: float = Field(1.0, gt=0, le=100, description="Горизонт инвестирования (годы)")
     n_steps: int = Field(252, ge=1, le=1000, description="Количество временных шагов")
-    asset_names: Optional[List[str]] = Field(None, max_length=50, description="Названия активов")
+    asset_names: Optional[List[str]] = Field(None, max_length=MAX_ASSETS, description="Названия активов")
     n_paths: int = Field(1000, ge=1, le=10000, description="Количество Монте-Карло траекторий")
     seed: Optional[int] = Field(None, description="Seed для воспроизводимости")
 

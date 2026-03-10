@@ -7,6 +7,7 @@ from fastapi import APIRouter, HTTPException, Request
 from typing import List, Optional, Dict, Any
 from pydantic import BaseModel, Field
 from src.services.ccmv_service import optimize_ccmv
+from src.utils.financial_validation import FinancialBaseModel, MAX_ASSETS
 from src.middleware.rate_limit import limiter
 from datetime import datetime
 import numpy as np
@@ -16,17 +17,17 @@ logger = logging.getLogger(__name__)
 router = APIRouter()
 
 
-class CCMVRequest(BaseModel):
+class CCMVRequest(FinancialBaseModel):
     """Запрос на CCMV оптимизацию."""
-    R: List[List[float]] = Field(..., description="Матрица доходностей (time_steps x num_assets)")
-    mu: List[float] = Field(..., description="Ожидаемые доходности активов")
-    cov_matrix: List[List[float]] = Field(..., description="Ковариационная матрица")
-    Delta: int = Field(..., gt=0, description="Максимальное количество активов в портфеле")
+    R: List[List[float]] = Field(..., max_length=MAX_ASSETS * 100, description="Матрица доходностей (time_steps x num_assets)")
+    mu: List[float] = Field(..., max_length=MAX_ASSETS, description="Ожидаемые доходности активов")
+    cov_matrix: List[List[float]] = Field(..., max_length=MAX_ASSETS, description="Ковариационная матрица")
+    Delta: int = Field(..., gt=0, le=MAX_ASSETS, description="Максимальное количество активов в портфеле")
     bar_w: float = Field(..., gt=0, le=1, description="Максимальный вес на актив")
-    gamma: float = Field(..., gt=0, description="Коэффициент неприятия риска (γ > 0)")
+    gamma: float = Field(..., gt=0, le=100, description="Коэффициент неприятия риска (γ > 0)")
     method: str = Field(default='delta', description="Метод оптимизации: 'delta' или 'alpha'")
-    asset_names: Optional[List[str]] = Field(None, description="Названия активов")
-    risk_free_rate: float = Field(default=0.0, description="Безрисковая ставка (для Sharpe ratio)")
+    asset_names: Optional[List[str]] = Field(None, max_length=MAX_ASSETS, description="Названия активов")
+    risk_free_rate: float = Field(default=0.0, ge=-1, le=1, description="Безрисковая ставка (для Sharpe ratio)")
     
     class Config:
         schema_extra = {

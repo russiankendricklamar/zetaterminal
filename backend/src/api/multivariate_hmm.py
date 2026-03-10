@@ -10,13 +10,15 @@ Endpoints:
 - GET /multivariate-hmm/export - Экспорт результатов в DataFrame
 """
 
-from fastapi import APIRouter, HTTPException, Query, Body, Request
+from fastapi import APIRouter, HTTPException, Query, Body, Request, Depends
 from pydantic import BaseModel, Field
 from typing import List, Optional, Dict, Any
 import numpy as np
 import logging
 
 from src.middleware.rate_limit import limiter
+from src.middleware.auth import require_auth
+from src.utils.jwt_utils import TokenPayload
 
 logger = logging.getLogger(__name__)
 
@@ -93,15 +95,27 @@ _MAX_TRAINED_MODELS = 20
 _trained_models: OrderedDict[str, Any] = OrderedDict()
 
 
-def _get_model_key(asset_names: List[str], n_regimes: int) -> str:
-    """Генерировать ключ для хранения модели."""
+def _get_model_key(asset_names: List[str], n_regimes: int, user_id: int = 0) -> str:
+    """Генерировать ключ для хранения модели (scoped по user_id)."""
     assets_str = "_".join(sorted(asset_names))
-    return f"{assets_str}_{n_regimes}"
+    return f"u{user_id}_{assets_str}_{n_regimes}"
+
+
+def _get_user_model(user_id: int) -> Any:
+    """Получить последнюю модель текущего пользователя."""
+    user_prefix = f"u{user_id}_"
+    user_models = {k: v for k, v in _trained_models.items() if k.startswith(user_prefix)}
+    if not user_models:
+        raise HTTPException(
+            status_code=400,
+            detail="Нет обученных моделей. Сначала вызовите /fit"
+        )
+    return list(user_models.values())[-1]
 
 
 @router.post("/fit", response_model=FitResponse)
 @limiter.limit("10/minute")
-async def fit_model(http_request: Request, request: FitRequest = Body(...)):
+async def fit_model(http_request: Request, request: FitRequest = Body(...), user: TokenPayload = Depends(require_auth)):
     """
     Обучение многомерной HMM модели на данных.
     
@@ -247,8 +261,8 @@ async def fit_model(http_request: Request, request: FitRequest = Body(...)):
                 tol=request.tol
             )
         
-        # Сохраняем модель (с LRU-eviction)
-        model_key = _get_model_key(asset_names, n_regimes_used)
+        # Сохраняем модель (с LRU-eviction, scoped по user)
+        model_key = _get_model_key(asset_names, n_regimes_used, user.sub)
         _trained_models[model_key] = model
         if len(_trained_models) > _MAX_TRAINED_MODELS:
             _trained_models.popitem(last=False)
@@ -272,7 +286,7 @@ async def fit_model(http_request: Request, request: FitRequest = Body(...)):
 
 
 @router.post("/predict", response_model=PredictResponse)
-async def predict_states(request: PredictRequest = Body(...)):
+async def predict_states(request: PredictRequest = Body(...), user: TokenPayload = Depends(require_auth)):
     """
     Предсказать наиболее вероятные состояния.
     
@@ -285,15 +299,7 @@ async def predict_states(request: PredictRequest = Body(...)):
     try:
         from src.services.multivariate_hmm_service import MultivariateHMMRegimeAnalyzer
         
-        # Получаем последнюю обученную модель (в production нужна более сложная логика)
-        if not _trained_models:
-            raise HTTPException(
-                status_code=400,
-                detail="Нет обученных моделей. Сначала вызовите /fit"
-            )
-        
-        # Берем последнюю модель
-        model = list(_trained_models.values())[-1]
+        model = _get_user_model(user.sub)
         
         if request.data is not None:
             y = np.array(request.data, dtype=np.float64)
@@ -322,21 +328,15 @@ async def predict_states(request: PredictRequest = Body(...)):
 
 
 @router.get("/statistics", response_model=RegimeStatisticsResponse)
-async def get_regime_statistics():
+async def get_regime_statistics(user: TokenPayload = Depends(require_auth)):
     """
     Получить статистику для каждого режима.
-    
+
     Returns:
         Статистика режимов
     """
     try:
-        if not _trained_models:
-            raise HTTPException(
-                status_code=400,
-                detail="Нет обученных моделей. Сначала вызовите /fit"
-            )
-        
-        model = list(_trained_models.values())[-1]
+        model = _get_user_model(user.sub)
         statistics = model.get_regime_statistics()
         
         return RegimeStatisticsResponse(statistics=statistics)
@@ -350,25 +350,20 @@ async def get_regime_statistics():
 
 @router.get("/regime-at-time", response_model=RegimeAtTimeResponse)
 async def get_regime_at_time(
-    t: int = Query(..., ge=0, description="Индекс времени")
+    t: int = Query(..., ge=0, description="Индекс времени"),
+    user: TokenPayload = Depends(require_auth),
 ):
     """
     Получить информацию о режиме в момент времени t.
-    
+
     Parameters:
         t: Индекс времени
-    
+
     Returns:
         Информация о режиме в момент t
     """
     try:
-        if not _trained_models:
-            raise HTTPException(
-                status_code=400,
-                detail="Нет обученных моделей. Сначала вызовите /fit"
-            )
-        
-        model = list(_trained_models.values())[-1]
+        model = _get_user_model(user.sub)
         regime_info = model.get_regime_at_time(t)
         
         return RegimeAtTimeResponse(**regime_info)
@@ -381,24 +376,18 @@ async def get_regime_at_time(
 
 
 @router.post("/simulate", response_model=SimulateResponse)
-async def simulate_trajectories(request: SimulateRequest = Body(...)):
+async def simulate_trajectories(request: SimulateRequest = Body(...), user: TokenPayload = Depends(require_auth)):
     """
     Симулировать будущие траектории.
-    
+
     Parameters:
         n_steps: Количество шагов симуляции
-    
+
     Returns:
         Симулированные траектории
     """
     try:
-        if not _trained_models:
-            raise HTTPException(
-                status_code=400,
-                detail="Нет обученных моделей. Сначала вызовите /fit"
-            )
-        
-        model = list(_trained_models.values())[-1]
+        model = _get_user_model(user.sub)
         trajectories = model.simulate(n_steps=request.n_steps)
         
         return SimulateResponse(
@@ -415,21 +404,15 @@ async def simulate_trajectories(request: SimulateRequest = Body(...)):
 
 
 @router.get("/export")
-async def export_to_dataframe():
+async def export_to_dataframe(user: TokenPayload = Depends(require_auth)):
     """
     Экспортировать результаты в DataFrame формат.
-    
+
     Returns:
         DataFrame с вероятностями режимов и предсказанными состояниями
     """
     try:
-        if not _trained_models:
-            raise HTTPException(
-                status_code=400,
-                detail="Нет обученных моделей. Сначала вызовите /fit"
-            )
-        
-        model = list(_trained_models.values())[-1]
+        model = _get_user_model(user.sub)
         df = model.export_to_dataframe()
         
         return {
@@ -446,21 +429,15 @@ async def export_to_dataframe():
 
 
 @router.get("/transition-matrix")
-async def get_transition_matrix():
+async def get_transition_matrix(user: TokenPayload = Depends(require_auth)):
     """
     Получить матрицу переходов.
-    
+
     Returns:
         Матрица переходов
     """
     try:
-        if not _trained_models:
-            raise HTTPException(
-                status_code=400,
-                detail="Нет обученных моделей. Сначала вызовите /fit"
-            )
-        
-        model = list(_trained_models.values())[-1]
+        model = _get_user_model(user.sub)
         
         return {
             "success": True,
@@ -476,21 +453,15 @@ async def get_transition_matrix():
 
 
 @router.get("/chart-data")
-async def get_chart_data():
+async def get_chart_data(user: TokenPayload = Depends(require_auth)):
     """
     Получить данные для визуализации на фронтенде.
-    
+
     Returns:
         Данные для графиков: цены, режимы, волатильность
     """
     try:
-        if not _trained_models:
-            raise HTTPException(
-                status_code=400,
-                detail="Нет обученных моделей. Сначала вызовите /fit"
-            )
-        
-        model = list(_trained_models.values())[-1]
+        model = _get_user_model(user.sub)
         
         # Получаем предсказанные состояния
         states = model.predict_states()

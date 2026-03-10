@@ -38,10 +38,10 @@ jobs:
         run: npm ci
 
       - name: Build desktop app
-        uses: tauri-apps/tauri-action@v0
+        uses: tauri-apps/tauri-action@19e2fba6b14cc7fa36a43cd1a9aca462ef1eb7f2 # v0.5.15
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          VITE_API_BASE_URL: https://zeta-terminal-backend.onrender.com
+          VITE_API_BASE_URL: ${{ secrets.VITE_API_BASE_URL }}
         with:
           projectPath: frontend
           tagName: ${{ github.ref_name }}

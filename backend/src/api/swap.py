@@ -5,24 +5,25 @@ import logging
 
 from fastapi import APIRouter, HTTPException
 from typing import Optional, Dict, Any, List
-from pydantic import BaseModel, Field
+from pydantic import Field
 from src.services.swap_service import calculate_swap_valuation, calculate_fx_swap_valuation
+from src.utils.financial_validation import FinancialBaseModel, MAX_NOTIONAL, MAX_TENOR_YEARS, MAX_RATE_PCT
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
 
-class SwapValuationRequest(BaseModel):
+class SwapValuationRequest(FinancialBaseModel):
     """Запрос на оценку свопа."""
-    notional: float = Field(..., description="Номинал (млн)")
-    tenor: float = Field(..., description="Срок (годы)")
-    fixedRate: float = Field(..., description="Фиксированная ставка (%)")
-    floatingRate: float = Field(..., description="Индекс плавающей ставки (%)")
-    spread: float = Field(0.0, description="Спред (bp)")
-    couponsPerYear: int = Field(2, gt=0, description="Купонов в год")
-    discountRate: float = Field(..., description="Дисконт кривая (базовая ставка, %)")
-    volatility: Optional[float] = Field(None, description="Волатильность (%)")
+    notional: float = Field(..., gt=0, le=MAX_NOTIONAL, description="Номинал (млн)")
+    tenor: float = Field(..., gt=0, le=MAX_TENOR_YEARS, description="Срок (годы)")
+    fixedRate: float = Field(..., ge=-100, le=MAX_RATE_PCT, description="Фиксированная ставка (%)")
+    floatingRate: float = Field(..., ge=-100, le=MAX_RATE_PCT, description="Индекс плавающей ставки (%)")
+    spread: float = Field(0.0, ge=-10000, le=10000, description="Спред (bp)")
+    couponsPerYear: int = Field(2, gt=0, le=12, description="Купонов в год")
+    discountRate: float = Field(..., ge=-100, le=MAX_RATE_PCT, description="Дисконт кривая (базовая ставка, %)")
+    volatility: Optional[float] = Field(None, ge=0, le=500, description="Волатильность (%)")
     swapType: str = Field("irs", description="Тип свопа: irs, cds, basis, xccy")
 
 
@@ -55,7 +56,7 @@ async def valuate_swap(request: SwapValuationRequest):
         raise HTTPException(status_code=500, detail="Internal server error")
 
 
-class FxSwapLeg(BaseModel):
+class FxSwapLeg(FinancialBaseModel):
     """Одна нога FX-свопа."""
     buyCurrency: str = Field(..., description="Валюта покупки")
     sellCurrency: str = Field(..., description="Валюта продажи")
@@ -64,7 +65,7 @@ class FxSwapLeg(BaseModel):
     date: str = Field(..., description="Дата расчёта (YYYY-MM-DD)")
 
 
-class FxSwapValuationRequest(BaseModel):
+class FxSwapValuationRequest(FinancialBaseModel):
     """Запрос на оценку FX-свопа."""
     nearLeg: FxSwapLeg = Field(..., description="Ближняя нога")
     farLeg: FxSwapLeg = Field(..., description="Дальняя нога")

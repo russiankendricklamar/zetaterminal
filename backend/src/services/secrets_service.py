@@ -12,22 +12,23 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.database.sa_models import ApiKey
+from src.utils.crypto import encrypt_value, decrypt_value
 
 logger = logging.getLogger(__name__)
 
-# In-memory cache: service_name -> key_value
+# In-memory cache: service_name -> decrypted key_value
 _cache: dict[str, str] = {}
 _loaded = False
 
 
 async def load_all(session: AsyncSession) -> None:
-    """Load all API keys from DB into memory cache."""
+    """Load all API keys from DB into memory cache (decrypted)."""
     global _loaded
     result = await session.execute(select(ApiKey))
     rows = result.scalars().all()
     _cache.clear()
     for row in rows:
-        _cache[row.service] = row.key_value
+        _cache[row.service] = decrypt_value(row.key_value)
     _loaded = True
     logger.info("Loaded %d API keys from database", len(_cache))
 
@@ -59,23 +60,24 @@ def get_key_sync(service: str) -> str:
 
 async def set_key(service: str, key_value: str, description: str,
                   session: AsyncSession) -> None:
-    """Insert or update an API key."""
+    """Insert or update an API key (encrypted at rest)."""
+    encrypted = encrypt_value(key_value)
     result = await session.execute(
         select(ApiKey).where(ApiKey.service == service)
     )
     existing = result.scalar_one_or_none()
     if existing:
-        existing.key_value = key_value
+        existing.key_value = encrypted
         if description:
             existing.description = description
     else:
         session.add(ApiKey(
             service=service,
-            key_value=key_value,
+            key_value=encrypted,
             description=description,
         ))
     await session.commit()
-    _cache[service] = key_value
+    _cache[service] = key_value  # Cache stores decrypted value
     logger.info("API key updated for service: %s", service)
 
 

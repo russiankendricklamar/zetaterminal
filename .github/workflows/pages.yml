@@ -13,16 +13,20 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
 
       - name: Setup Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@60edb5dd545a775178f52524783378180af0d1f8 # v4.0.2
         with:
           node-version: 20
 
       - name: Install dependencies
         working-directory: ./frontend
         run: npm ci
+
+      - name: Audit dependencies
+        working-directory: ./frontend
+        run: npm audit --audit-level=high || true
 
       - name: Build
         working-directory: ./frontend
@@ -31,7 +35,7 @@ jobs:
           VITE_API_BASE_URL: ${{ secrets.VITE_API_BASE_URL }}
 
       - name: Deploy to gh-pages branch
-        uses: peaceiris/actions-gh-pages@v4
+        uses: peaceiris/actions-gh-pages@4f9cc6602d3f66b9c108549d475ec49e8ef4d45e # v4.0.0
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./frontend/dist

@@ -7,6 +7,10 @@ from fastapi import APIRouter, HTTPException, Request
 from typing import List, Optional, Dict, Any
 from pydantic import BaseModel, Field
 from src.services.hjb_service import optimize_hjb
+from src.utils.financial_validation import (
+    FinancialBaseModel, MAX_ASSETS, MAX_MONTE_CARLO_PATHS,
+    MAX_MONTE_CARLO_STEPS, MAX_CAPITAL,
+)
 from src.middleware.rate_limit import limiter
 from datetime import datetime
 
@@ -15,15 +19,24 @@ logger = logging.getLogger(__name__)
 router = APIRouter()
 
 
-class HJBRequest(BaseModel):
+class MonteCarloParams(FinancialBaseModel):
+    """Bounded Monte Carlo simulation parameters."""
+    initial_capital: float = Field(1_000_000, gt=0, le=MAX_CAPITAL)
+    horizon_years: float = Field(1.0, gt=0, le=100)
+    n_paths: int = Field(5000, ge=1, le=MAX_MONTE_CARLO_PATHS)
+    n_steps: int = Field(252, ge=1, le=MAX_MONTE_CARLO_STEPS)
+    random_seed: Optional[int] = Field(42)
+
+
+class HJBRequest(FinancialBaseModel):
     """Запрос на HJB оптимизацию."""
-    mu: List[float] = Field(..., description="Ожидаемые доходности активов")
-    cov_matrix: List[List[float]] = Field(..., description="Ковариационная матрица")
-    risk_free_rate: float = Field(..., description="Безрисковая ставка (в долях)")
-    gamma: float = Field(..., gt=0, description="Коэффициент риск-аверсии (γ > 0)")
-    asset_names: Optional[List[str]] = Field(None, description="Названия активов")
-    monte_carlo: Optional[Dict[str, Any]] = Field(None, description="Параметры Монте-Карло симуляции")
-    
+    mu: List[float] = Field(..., max_length=MAX_ASSETS, description="Ожидаемые доходности активов")
+    cov_matrix: List[List[float]] = Field(..., max_length=MAX_ASSETS, description="Ковариационная матрица")
+    risk_free_rate: float = Field(..., ge=-1, le=1, description="Безрисковая ставка (в долях)")
+    gamma: float = Field(..., gt=0, le=100, description="Коэффициент риск-аверсии (γ > 0)")
+    asset_names: Optional[List[str]] = Field(None, max_length=MAX_ASSETS, description="Названия активов")
+    monte_carlo: Optional[MonteCarloParams] = Field(None, description="Параметры Монте-Карло симуляции")
+
     class Config:
         schema_extra = {
             "example": {
@@ -85,13 +98,14 @@ async def optimize_hjb_portfolio(http_request: Request, request: HJBRequest):
                 raise ValueError("Ковариационная матрица должна быть квадратной")
         
         # Выполняем оптимизацию
+        mc_params = request.monte_carlo.model_dump() if request.monte_carlo else None
         result = optimize_hjb(
             mu=mu,
             cov_matrix=cov_matrix,
             risk_free_rate=request.risk_free_rate,
             gamma=request.gamma,
             asset_names=request.asset_names,
-            monte_carlo_params=request.monte_carlo
+            monte_carlo_params=mc_params
         )
         
         return HJBResponse(

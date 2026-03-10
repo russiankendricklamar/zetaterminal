@@ -99,12 +99,26 @@ async def _migrate_user_profile_columns() -> None:
         ("failed_login_count", "INTEGER DEFAULT 0"),
         ("locked_until", "TIMESTAMPTZ"),
     ]
+    # user_id columns for data isolation
+    user_id_tables = [
+        "bond_valuations", "portfolios", "calculation_history", "file_records",
+    ]
     try:
         async with engine.begin() as conn:
             for col_name, col_type in columns:
                 await conn.execute(text(
                     f"ALTER TABLE users ADD COLUMN IF NOT EXISTS {col_name} {col_type}"
                 ))
+        for table in user_id_tables:
+            await conn.execute(text(
+                f"ALTER TABLE {table} ADD COLUMN IF NOT EXISTS user_id INTEGER"
+            ))
+            try:
+                await conn.execute(text(
+                    f"CREATE INDEX IF NOT EXISTS ix_{table}_user_id ON {table} (user_id)"
+                ))
+            except Exception:
+                pass
         logger.info("User profile columns migration complete")
     except Exception as e:
         logger.warning("Could not migrate user profile columns: %s", e)
@@ -266,7 +280,7 @@ app.include_router(etf.router, prefix="/api/etf", tags=["ETF"], dependencies=_au
 app.include_router(gemini.router, prefix="/api/gemini", tags=["Gemini AI"], dependencies=_auth)
 app.include_router(secrets_api.router, prefix="/api/secrets", tags=["Secrets"], dependencies=[Depends(require_api_key), Depends(require_admin)])
 app.include_router(repo.router, prefix="/api/repo", tags=["REPO"], dependencies=_auth)
-app.include_router(admin.router, prefix="/api/admin", tags=["Admin"], dependencies=_auth)
+app.include_router(admin.router, prefix="/api/admin", tags=["Admin"], dependencies=[Depends(require_api_key), Depends(require_admin)])
 
 
 @app.exception_handler(Exception)

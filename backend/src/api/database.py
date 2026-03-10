@@ -8,11 +8,14 @@ from io import BytesIO
 from typing import List, Optional
 from datetime import datetime
 
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import APIRouter, HTTPException, Depends, Query
 from pydantic import BaseModel, field_validator
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select
 
 from src.database.client import get_session
+from src.middleware.auth import require_auth
+from src.utils.jwt_utils import TokenPayload
 from src.database.repositories import (
     BondValuationRepository,
     PortfolioRepository,
@@ -47,6 +50,7 @@ def _sanitize_filename(name: str) -> str:
 @router.post("/bond-valuations", response_model=dict)
 async def create_bond_valuation(
     record: BondValuationRecord,
+    user: TokenPayload = Depends(require_auth),
     session: AsyncSession = Depends(get_session),
 ):
     repo = BondValuationRepository(session)
@@ -57,11 +61,14 @@ async def create_bond_valuation(
 @router.get("/bond-valuations/{record_id}", response_model=dict)
 async def get_bond_valuation(
     record_id: int,
+    user: TokenPayload = Depends(require_auth),
     session: AsyncSession = Depends(get_session),
 ):
     repo = BondValuationRepository(session)
     result = await repo.get_by_id(record_id)
     if not result:
+        raise HTTPException(status_code=404, detail="Record not found")
+    if result.get("user_id") and result["user_id"] != user.sub:
         raise HTTPException(status_code=404, detail="Record not found")
     return {"success": True, "data": result}
 
@@ -71,7 +78,8 @@ async def get_bond_valuations(
     secid: Optional[str] = None,
     start_date: Optional[str] = None,
     end_date: Optional[str] = None,
-    limit: int = 100,
+    limit: int = Query(100, ge=1, le=1000),
+    user: TokenPayload = Depends(require_auth),
     session: AsyncSession = Depends(get_session),
 ):
     repo = BondValuationRepository(session)
@@ -92,24 +100,32 @@ async def get_bond_valuations(
 async def update_bond_valuation(
     record_id: int,
     record: BondValuationRecord,
+    user: TokenPayload = Depends(require_auth),
     session: AsyncSession = Depends(get_session),
 ):
     repo = BondValuationRepository(session)
-    result = await repo.update(record_id, record)
-    if not result:
+    existing = await repo.get_by_id(record_id)
+    if not existing:
         raise HTTPException(status_code=404, detail="Record not found")
+    if existing.get("user_id") and existing["user_id"] != user.sub:
+        raise HTTPException(status_code=404, detail="Record not found")
+    result = await repo.update(record_id, record)
     return {"success": True, "data": result}
 
 
 @router.delete("/bond-valuations/{record_id}", response_model=dict)
 async def delete_bond_valuation(
     record_id: int,
+    user: TokenPayload = Depends(require_auth),
     session: AsyncSession = Depends(get_session),
 ):
     repo = BondValuationRepository(session)
-    success = await repo.delete(record_id)
-    if not success:
+    existing = await repo.get_by_id(record_id)
+    if not existing:
         raise HTTPException(status_code=404, detail="Record not found")
+    if existing.get("user_id") and existing["user_id"] != user.sub:
+        raise HTTPException(status_code=404, detail="Record not found")
+    await repo.delete(record_id)
     return {"success": True, "message": "Record deleted"}
 
 
@@ -117,6 +133,7 @@ async def delete_bond_valuation(
 @router.post("/portfolios", response_model=dict)
 async def create_portfolio(
     record: PortfolioRecord,
+    user: TokenPayload = Depends(require_auth),
     session: AsyncSession = Depends(get_session),
 ):
     repo = PortfolioRepository(session)
@@ -126,7 +143,8 @@ async def create_portfolio(
 
 @router.get("/portfolios", response_model=dict)
 async def get_portfolios(
-    limit: int = 100,
+    limit: int = Query(100, ge=1, le=1000),
+    user: TokenPayload = Depends(require_auth),
     session: AsyncSession = Depends(get_session),
 ):
     repo = PortfolioRepository(session)
@@ -137,11 +155,14 @@ async def get_portfolios(
 @router.get("/portfolios/{portfolio_id}", response_model=dict)
 async def get_portfolio(
     portfolio_id: int,
+    user: TokenPayload = Depends(require_auth),
     session: AsyncSession = Depends(get_session),
 ):
     repo = PortfolioRepository(session)
     result = await repo.get_by_id(portfolio_id)
     if not result:
+        raise HTTPException(status_code=404, detail="Portfolio not found")
+    if result.get("user_id") and result["user_id"] != user.sub:
         raise HTTPException(status_code=404, detail="Portfolio not found")
     return {"success": True, "data": result}
 
@@ -150,6 +171,7 @@ async def get_portfolio(
 @router.post("/calculation-history", response_model=dict)
 async def create_calculation_history(
     record: CalculationHistory,
+    user: TokenPayload = Depends(require_auth),
     session: AsyncSession = Depends(get_session),
 ):
     repo = CalculationHistoryRepository(session)
@@ -160,7 +182,8 @@ async def create_calculation_history(
 @router.get("/calculation-history", response_model=dict)
 async def get_calculation_history(
     calculation_type: Optional[str] = None,
-    limit: int = 50,
+    limit: int = Query(50, ge=1, le=1000),
+    user: TokenPayload = Depends(require_auth),
     session: AsyncSession = Depends(get_session),
 ):
     repo = CalculationHistoryRepository(session)
@@ -240,6 +263,7 @@ class RegistryParquetRequest(BaseModel):
 @router.post("/export/registry/parquet", response_model=dict)
 async def export_registry_parquet(
     request: RegistryParquetRequest,
+    user: TokenPayload = Depends(require_auth),
     session: AsyncSession = Depends(get_session),
 ):
     """Export registry data to Parquet format and save locally."""
@@ -299,6 +323,7 @@ async def export_market_data_parquet(
     start_date: Optional[str] = None,
     end_date: Optional[str] = None,
     file_name: Optional[str] = None,
+    user: TokenPayload = Depends(require_auth),
     session: AsyncSession = Depends(get_session),
 ):
     """Export market data to Parquet format."""
