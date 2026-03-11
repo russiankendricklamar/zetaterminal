@@ -40,13 +40,16 @@ def forecast_volatility(
         for h in range(n_steps):
             forecasts[h] = last_var
     elif model == "egarch":
+        # EGARCH operates in LOG-variance space: ln(σ²)
         beta = params["beta"]
         long_run_var = model_result.get("long_run_variance")
         if long_run_var is None or long_run_var <= 0:
             long_run_var = np.mean(variances)
+        long_run_logvar = np.log(max(long_run_var, 1e-12))
+        last_logvar = np.log(max(last_var, 1e-12))
         for h in range(n_steps):
-            forecasts[h] = long_run_var + (abs(beta) ** (h + 1)) * (last_var - long_run_var)
-            forecasts[h] = max(forecasts[h], 1e-12)
+            logvar_h = long_run_logvar + (abs(beta) ** (h + 1)) * (last_logvar - long_run_logvar)
+            forecasts[h] = max(np.exp(logvar_h), 1e-12)
     else:
         # GARCH(1,1) and GJR-GARCH
         persistence = model_result.get("persistence", 0.95)

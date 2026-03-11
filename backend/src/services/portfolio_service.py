@@ -74,21 +74,23 @@ class PortfolioService:
             vol = min(day_change * np.sqrt(252), 0.5)  # Ограничиваем максимум 50%
             volatilities.append(vol)
 
-        # Волатильность портфеля (упрощенный расчет)
-        # Для более точного расчета нужна корреляционная матрица
-        portfolio_volatility = np.sqrt(
-            sum(
-                (pos.get('allocation', 0) / 100.0) ** 2 * vol ** 2
-                for pos, vol in zip(positions, volatilities, strict=False)
-            )
-        )
+        # Волатильность портфеля: σ²_p = Σ_i Σ_j w_i w_j σ_i σ_j ρ_ij
+        # Без корреляционной матрицы используем constant-correlation model
+        # ρ_avg ≈ 0.3 (типичная межотраслевая корреляция акций)
+        avg_corr = 0.3
+        weights = np.array([pos.get('allocation', 0) / 100.0 for pos in positions])
+        vols = np.array(volatilities)
+        n = len(weights)
+        if n > 0 and np.sum(vols) > 0:
+            # σ²_p = Σ w²_i σ²_i + avg_corr * Σ_{i≠j} w_i w_j σ_i σ_j
+            diag_term = float(np.sum(weights ** 2 * vols ** 2))
+            cross_term = float((np.sum(weights * vols)) ** 2 - np.sum(weights ** 2 * vols ** 2))
+            portfolio_volatility = float(np.sqrt(max(diag_term + avg_corr * cross_term, 0.0)))
+        else:
+            portfolio_volatility = 0.0
 
-        # Если волатильность слишком мала, используем средневзвешенную
         if portfolio_volatility < 0.01:
-            portfolio_volatility = sum(
-                (pos.get('allocation', 0) / 100.0) * vol
-                for pos, vol in zip(positions, volatilities, strict=False)
-            )
+            portfolio_volatility = float(np.sum(weights * vols))
 
         # Total P&L (прибыль/убыток)
         total_pnl = sum(
@@ -123,12 +125,11 @@ class PortfolioService:
             risk_free_rate
         )
 
-        # Beta: β = (σ_p / σ_m) × ρ(p, m)
+        # Beta: β = Cov(R_p, R_m) / Var(R_m), fallback to proxy
         beta = PortfolioService._calculate_beta(
             positions,
             volatilities,
             market_volatility,
-            market_correlation
         )
 
         # Alpha
@@ -190,37 +191,52 @@ class PortfolioService:
         if not daily_returns:
             return 0.0
 
-        # Вычисляем downside deviation (только отрицательные доходности)
-        downside_returns = [r for r in daily_returns if r < 0]
-        if not downside_returns:
-            return 0.0
-
-        downside_std = np.std(downside_returns) * np.sqrt(252)
-        if downside_std == 0:
+        # Downside deviation: sqrt(E[min(r - rf_daily, 0)²]) * sqrt(252)
+        rf_daily = risk_free_rate / 252
+        downside_sq = [(min(r - rf_daily, 0)) ** 2 for r in daily_returns]
+        downside_var = sum(downside_sq) / len(daily_returns)
+        downside_std = np.sqrt(downside_var) * np.sqrt(252)
+        if downside_std < 1e-12:
             return 0.0
 
         excess_return = annual_return - risk_free_rate
         return excess_return / downside_std
 
     @staticmethod
-    def _calculate_beta(positions: list[dict], volatilities: list[float],
-                        market_volatility: float, market_correlation: float = 0.7) -> float:
-        """
-        Вычисляет бета портфеля: β = (σ_p / σ_m) × ρ(p, m).
+    def _calculate_beta(
+        positions: list[dict],
+        volatilities: list[float],
+        market_volatility: float,
+        market_returns: list[float] | None = None,
+        portfolio_returns: list[float] | None = None,
+    ) -> float:
+        """β = Cov(R_p, R_m) / Var(R_m).
 
-        Без исторических рядов используется оценка через волатильности и
-        предполагаемую корреляцию с рынком (market_correlation).
+        If historical returns are available, compute exact beta.
+        Otherwise fallback: β = (σ_p / σ_m) × ρ_assumed (ρ=0.7).
         """
+        # Exact beta from returns when available
+        if (
+            market_returns is not None
+            and portfolio_returns is not None
+            and len(market_returns) >= 20
+            and len(portfolio_returns) >= 20
+        ):
+            m = np.array(market_returns[-min(len(market_returns), len(portfolio_returns)):])
+            p = np.array(portfolio_returns[-len(m):])
+            var_m = float(np.var(m, ddof=1))
+            if var_m > 1e-12:
+                cov_pm = float(np.cov(p, m, ddof=1)[0, 1])
+                return cov_pm / var_m
+
+        # Fallback: proxy β = (σ_p / σ_m) × ρ_assumed
         if market_volatility <= 0:
             return 1.0
-
         weighted_vol = sum(
             (pos.get('allocation', 0) / 100.0) * vol
             for pos, vol in zip(positions, volatilities, strict=False)
         )
-
-        beta = (weighted_vol / market_volatility) * market_correlation
-        return float(beta)
+        return float((weighted_vol / market_volatility) * 0.7)
 
     @staticmethod
     def _calculate_skewness(returns: list[float]) -> float:

@@ -41,14 +41,35 @@ For any requested model, produce:
 - How does it fit in the Aladdin module mapping?
 - What Zeta Terminal route/page will use it?
 
+## Knowledge Base (ALWAYS read first!)
+
+Before researching externally, **always** read the relevant knowledge files:
+```
+.claude/knowledge/01-derivatives-pricing.md  — BSM, Black, Heston, SABR, binomial, interest rate models
+.claude/knowledge/02-greeks.md               — All option Greeks with formulas
+.claude/knowledge/03-risk-measures.md        — VaR, ES, EWMA, GARCH(1,1), PCA, Cornish-Fisher
+.claude/knowledge/04-stochastic-calculus.md  — Ito, martingales, Girsanov, Feynman-Kac, SDE, Lévy
+.claude/knowledge/05-portfolio-theory.md     — Markowitz, CAPM, APT, Black-Litterman, Risk Parity, CVaR
+.claude/knowledge/06-bibliography.md         — Full citation reference for all source books
+.claude/knowledge/07-fixed-income.md         — Bonds, duration, yield curves, swaps, OAS, credit risk
+.claude/knowledge/08-hidden-markov-models.md — HMM, Baum-Welch, Viterbi, regime detection
+.claude/knowledge/09-probability-distributions.md — Normal, Lognormal, Student-t, Lévy, Pareto, Gumbel, etc.
+.claude/knowledge/10-numerical-methods.md     — Monte Carlo, Finite Differences, LSM, Quasi-MC, calibration
+.claude/knowledge/11-models-catalog.md        — Compact catalog of all models with SDEs and formulas
+```
+
+Sources: Ширяев (1998), Hull (2022), Булинский-Ширяев (2005),
+Липцер-Ширяев (1974), Wilmott (2007), McDougall (2020).
+
 ## Research Process
 
-1. Search for the model in academic literature and textbooks
-2. Find open-source reference implementations (QuantLib, PyQL, etc.)
-3. Read existing Zeta Terminal code to understand patterns:
+1. **Read knowledge base** files relevant to the model
+2. Search for the model in academic literature and textbooks
+3. Find open-source reference implementations (QuantLib, PyQL, etc.)
+4. Read existing Zeta Terminal code to understand patterns:
    - `backend/src/services/` for existing models
    - `backend/src/utils/financial_validation.py` for constraints
-4. Produce the specification document
+5. Produce the specification document
 
 ## Existing Models in Zeta Terminal
 

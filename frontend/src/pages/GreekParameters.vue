@@ -124,7 +124,7 @@
           {{ riskMetricsStore.sharpeRatio.toFixed(2) }}
         </div>
         <div class="kpi-sub">
-          <span class="text-muted">Sortino:</span> <span class="text-white">{{ riskMetricsStore.calculateSortinoRatio(riskMetricsStore.expectedReturn, riskMetricsStore.volatility).toFixed(2) }}</span>
+          <span class="text-muted">Sortino:</span> <span class="text-white">{{ riskMetricsStore.calculateSortinoRatio(riskMetricsStore.expectedReturn, []).toFixed(2) }}</span>
         </div>
       </div>
     </div>

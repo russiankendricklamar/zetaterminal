@@ -369,3 +369,7 @@ def _validate_garch_params(omega: float, alpha: float, beta: float) -> None:
         raise ValueError(f"alpha must be >= 0, got {alpha}")
     if beta < 0:
         raise ValueError(f"beta must be >= 0, got {beta}")
+    if alpha + beta >= 1.0:
+        raise ValueError(
+            f"Stationarity requires alpha + beta < 1, got {alpha} + {beta} = {alpha + beta}"
+        )

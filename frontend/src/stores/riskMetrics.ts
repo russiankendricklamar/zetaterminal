@@ -4,6 +4,7 @@
  */
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
+import { calculateVaR as apiCalculateVaR, type VaRMethod, type GarchModel, type VaRResult } from '@/services/riskService'
 
 export interface RiskContribution {
   symbol: string
@@ -92,7 +93,8 @@ export const useRiskMetricsStore = defineStore('riskMetrics', () => {
   }
   
   /**
-   * Вычисляет Risk Contribution (Marginal VaR) для каждого актива
+   * Euler decomposition: RC_i = w_i * (Σw)_i / σ_p * VaR_total
+   * Σ RC_i = VaR_total (Euler's theorem for homogeneous functions)
    */
   const calculateRiskContributions = (
     positions: Array<{ symbol: string; allocation: number; notional: number; color: string }>,
@@ -101,83 +103,120 @@ export const useRiskMetricsStore = defineStore('riskMetrics', () => {
     portfolioValue: number = totalEquity.value
   ): RiskContribution[] => {
     if (!positions.length || portfolioVolatility === 0) return []
-    
-    // Вычисляем веса активов
+
     const totalNotional = positions.reduce((sum, p) => sum + p.notional, 0)
     if (totalNotional === 0) return []
-    
-    // Вычисляем ковариации активов с портфелем
-    const contributions: RiskContribution[] = []
-    
-    positions.forEach((pos, idx) => {
-      const weight = pos.notional / totalNotional
-      
-      // Находим корреляции этого актива со всеми другими
-      const corrRow = correlationMatrix.find(r => r.label === pos.symbol)
-      if (!corrRow) return
-      
-      // Упрощенный расчет Marginal VaR
-      // В реальности нужно использовать матрицу ковариаций и градиент VaR
-      // Здесь используем упрощенную формулу: contribution ≈ weight * volatility * correlation_with_portfolio
-      let avgCorrelation = 0
-      positions.forEach((otherPos, otherIdx) => {
-        if (otherIdx < corrRow.values.length) {
-          avgCorrelation += corrRow.values[otherIdx] * (otherPos.notional / totalNotional)
-        }
-      })
-      
-      // Marginal VaR contribution (упрощенная формула)
-      const marginalVaR = portfolioVolatility * weight * avgCorrelation * portfolioValue
-      contributions.push({
-        symbol: pos.symbol,
-        weight: weight * 100,
-        contribution: Math.abs(marginalVaR),
-        percentRisk: 0, // Вычислим после
-        color: pos.color
-      })
-    })
-    
-    // Нормализуем проценты
-    const totalContribution = contributions.reduce((sum, c) => sum + c.contribution, 0)
-    if (totalContribution > 0) {
-      contributions.forEach(c => {
-        c.percentRisk = (c.contribution / totalContribution) * 100
-      })
+
+    const n = positions.length
+    const w = positions.map(p => p.notional / totalNotional)
+
+    // Build covariance matrix from correlation matrix + individual vols
+    // σ_i estimated from portfolioVolatility scaled by weight (fallback)
+    const vols = positions.map(() => portfolioVolatility)
+
+    // Σ_ij = ρ_ij * σ_i * σ_j
+    const covMatrix: number[][] = Array.from({ length: n }, () => Array(n).fill(0))
+    for (let i = 0; i < n; i++) {
+      const corrRow = correlationMatrix.find(r => r.label === positions[i].symbol)
+      for (let j = 0; j < n; j++) {
+        const rho = corrRow && j < corrRow.values.length ? corrRow.values[j] : (i === j ? 1.0 : 0.3)
+        covMatrix[i][j] = rho * vols[i] * vols[j]
+      }
     }
-    
-    return contributions.sort((a, b) => b.contribution - a.contribution)
+
+    // (Σ·w)_i = Σ_j Σ_ij * w_j
+    const covW = covMatrix.map(row =>
+      row.reduce((sum, val, j) => sum + val * w[j], 0)
+    )
+
+    // σ_p = sqrt(w' Σ w)
+    const sigmaP = Math.sqrt(w.reduce((sum, wi, i) => sum + wi * covW[i], 0))
+    if (sigmaP < 1e-12) return []
+
+    const z = 1.645 // 95% confidence
+    const totalVaR = z * sigmaP * portfolioValue
+
+    // RC_i = w_i * z * (Σw)_i / σ_p * portfolioValue
+    const contributions: RiskContribution[] = positions.map((pos, i) => {
+      const rc = w[i] * z * covW[i] / sigmaP * portfolioValue
+      return {
+        symbol: pos.symbol,
+        weight: w[i] * 100,
+        contribution: rc,
+        percentRisk: totalVaR > 0 ? (rc / totalVaR) * 100 : 0,
+        color: pos.color,
+      }
+    })
+
+    return [...contributions].sort((a, b) => b.contribution - a.contribution)
   }
   
   /**
-   * Вычисляет VaR и CVaR на основе волатильности портфеля
+   * Вычисляет VaR и CVaR на основе волатильности портфеля (local fallback)
    */
   const calculateVaR = (
     portfolioValue: number,
     volatility: number,
     confidenceLevel: number = 0.95,
-    timeHorizon: number = 1  // в днях
+    timeHorizon: number = 1
   ): { var: number; cvar: number } => {
-    // Z-score для нормального распределения
     const zScores: Record<number, number> = {
       0.90: 1.282,
       0.95: 1.645,
       0.99: 2.326,
       0.999: 3.090
     }
-    
+
     const z = zScores[confidenceLevel] || 1.645
-    const scaledVol = volatility * Math.sqrt(timeHorizon / 252) // Annualized to daily
-    
-    // VaR = Portfolio Value * Z * Volatility
+    const alpha = 1 - confidenceLevel
+    const scaledVol = volatility * Math.sqrt(timeHorizon / 252)
+
     const varValue = portfolioValue * z * scaledVol
-    
-    // CVaR ≈ VaR * 1.25 (упрощенная формула для нормального распределения)
-    const cvarValue = varValue * 1.25
-    
+
+    // Analytical CVaR: sigma * phi(z) / alpha * portfolioValue
+    const phi = Math.exp(-0.5 * z * z) / Math.sqrt(2 * Math.PI)
+    const cvarValue = alpha > 0
+      ? portfolioValue * scaledVol * phi / alpha
+      : varValue * 1.25
+
     return {
-      var: -varValue, // Negative для отображения как потери
+      var: -varValue,
       cvar: -cvarValue
     }
+  }
+
+  /**
+   * Вычисляет VaR/CVaR через backend Risk Engine API
+   */
+  const calculateVaRFromAPI = async (
+    returns: number[],
+    options: {
+      method?: VaRMethod
+      confidence?: number
+      horizon?: number
+      portfolioValue?: number
+      useGarch?: boolean
+      garchModel?: GarchModel
+    } = {}
+  ): Promise<VaRResult> => {
+    const result = await apiCalculateVaR({
+      returns,
+      method: options.method ?? 'parametric',
+      confidence: options.confidence ?? 0.95,
+      horizon: options.horizon ?? 1,
+      portfolio_value: options.portfolioValue ?? totalEquity.value,
+      use_garch: options.useGarch ?? false,
+      garch_model: options.garchModel ?? 'garch_11',
+    })
+
+    updateMetrics({
+      var95: result.confidence === 0.95 ? -result.var : (metrics.value?.var95 ?? 0),
+      cvar95: result.confidence === 0.95 ? -result.cvar : (metrics.value?.cvar95 ?? 0),
+      var99: result.confidence === 0.99 ? -result.var : (metrics.value?.var99 ?? 0),
+      cvar99: result.confidence === 0.99 ? -result.cvar : (metrics.value?.cvar99 ?? 0),
+    })
+
+    return result
   }
   
   /**
@@ -188,12 +227,22 @@ export const useRiskMetricsStore = defineStore('riskMetrics', () => {
   }
   
   /**
-   * Вычисляет Sortino Ratio (аналогично Sharpe, но только учитывает негативную волатильность)
+   * Вычисляет Sortino Ratio = (E[R] - Rf) / σ_downside
+   * где σ_downside = sqrt(E[min(R - Rf, 0)²])
    */
-  const calculateSortinoRatio = (expectedReturn: number, volatility: number): number => {
-    // Упрощенная формула: Sortino ≈ Sharpe * 1.5 (обычно выше, так как учитывает только downside risk)
-    const sharpe = volatility > 0 ? expectedReturn / volatility : 0
-    return sharpe * 1.5
+  const calculateSortinoRatio = (
+    expectedReturn: number,
+    returns: number[],
+    riskFreeRate: number = 0
+  ): number => {
+    if (!returns.length) return 0
+    const downsideSquares = returns
+      .map(r => Math.min(r - riskFreeRate, 0))
+      .map(d => d * d)
+    const downsideVol = Math.sqrt(
+      downsideSquares.reduce((sum, v) => sum + v, 0) / returns.length
+    )
+    return downsideVol > 1e-12 ? (expectedReturn - riskFreeRate) / downsideVol : 0
   }
   
   /**
@@ -217,6 +266,7 @@ export const useRiskMetricsStore = defineStore('riskMetrics', () => {
     updateMetrics,
     calculateRiskContributions,
     calculateVaR,
+    calculateVaRFromAPI,
     updateStressScenarios,
     calculateSortinoRatio,
     // Computed

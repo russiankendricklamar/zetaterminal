@@ -377,9 +377,9 @@ def calculate_cost_of_carry_forward(
     net_carry = r + c - d - y
     fair_forward_price = spot_price * np.exp(net_carry * T)
 
-    # Стоимость форвардного контракта для лонга: (S - K) / e^(r*T)
+    # Стоимость форвардного контракта для лонга: (F - K) * e^(-rT)
     K = market_forward_price
-    forward_value = (spot_price - K) / np.exp(r * T)
+    forward_value = (fair_forward_price - K) * np.exp(-r * T)
 
     # Внутренняя стоимость
     intrinsic_value = spot_price - K
@@ -387,8 +387,8 @@ def calculate_cost_of_carry_forward(
     # Временная стоимость
     time_value = forward_value - intrinsic_value
 
-    # Greeks
-    delta = np.exp(-r * T)
+    # Greeks — forward delta = e^(-dT) where d = dividend yield
+    delta = np.exp(-d * T)
     rho = spot_price * T * np.exp(net_carry * T)
 
     # Анализ сценариев

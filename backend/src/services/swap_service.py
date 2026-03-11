@@ -108,7 +108,7 @@ def calculate_swap_valuation(
 
     # Spread DV01: чувствительность плавающей ноги к изменению спреда на 1bp
     # Пересчитываем PV плавающей ноги при спреде + 1bp
-    spread_bump = 0.01  # 1 basis point в процентных пунктах
+    spread_bump = 1.0  # 1 basis point (spread в bp, делится на 100 дважды)
     floating_rate_bumped = (floating_rate + (spread + spread_bump) / 100) / 100.0
     floating_coupon_bumped = notional * floating_rate_bumped / coupons_per_year
     pv_floating_bumped = 0.0

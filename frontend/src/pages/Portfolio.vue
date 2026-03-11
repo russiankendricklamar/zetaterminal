@@ -180,16 +180,39 @@
               stroke="currentColor"
               stroke-width="4"
             ><path d="M6 9l6 6 6-6" /></svg>
-            {{ portfolioMetrics ? portfolioMetrics.var_95_percent.toFixed(1) + '%' : '1.2%' }}
+            {{ varDisplay ? varDisplay.varPct + '%' : (portfolioMetrics ? portfolioMetrics.var_95_percent.toFixed(1) + '%' : '1.2%') }}
           </div>
         </div>
         <div class="kpi-content">
           <div class="kpi-value text-white">
-            {{ portfolioMetrics ? portfolioMetrics.var_95_percent.toFixed(2) + '%' : '2.45%' }}
+            {{ varDisplay ? varDisplay.varPct + '%' : (portfolioMetrics ? portfolioMetrics.var_95_percent.toFixed(2) + '%' : '2.45%') }}
           </div>
           <div class="kpi-sub">
-            Дневной риск
+            <template v-if="isLoadingReturns || isLoadingVaR">Загрузка...</template>
+            <template v-else-if="varDisplay">{{ varDisplay.method + (varDisplay.isGarch ? ' + GARCH' : '') }}</template>
+            <template v-else>Дневной риск</template>
           </div>
+        </div>
+        <div class="var-controls">
+          <div class="var-pills">
+            <button
+              v-for="m in (['parametric', 'historical', 'monte_carlo'] as VaRMethod[])"
+              :key="m"
+              class="var-pill"
+              :class="{ active: varMethod === m }"
+              @click="varMethod = m; loadVaRFromEngine()"
+            >
+              {{ varMethodLabels[m] }}
+            </button>
+          </div>
+          <label class="garch-toggle">
+            <input
+              v-model="useGarch"
+              type="checkbox"
+              @change="loadVaRFromEngine()"
+            >
+            <span class="garch-toggle-label">GARCH</span>
+          </label>
         </div>
       </div>
 
@@ -607,7 +630,7 @@
                 <span class="meta-hint">CVaR 95%</span>
               </div>
               <div class="metric-value text-red">
-                -3.78%
+                {{ varDisplay ? '-' + varDisplay.cvarPct + '%' : '-3.78%' }}
               </div>
             </div>
             <div class="metric-row">
@@ -715,10 +738,10 @@
             <div class="metric-row">
               <div class="metric-label">
                 <span>VaR (95%)</span>
-                <span class="meta-hint">Дневной</span>
+                <span class="meta-hint">{{ varDisplay ? varDisplay.method + (varDisplay.isGarch ? ' + GARCH' : '') : 'Дневной' }}</span>
               </div>
               <div class="metric-value text-red">
-                {{ portfolioMetrics ? (portfolioMetrics.var_95_percent * -1).toFixed(2) + '%' : '-2.15%' }}
+                {{ varDisplay ? '-' + varDisplay.varPct + '%' : (portfolioMetrics ? (portfolioMetrics.var_95_percent * -1).toFixed(2) + '%' : '-2.15%') }}
               </div>
             </div>
             <div class="metric-row">
@@ -1029,6 +1052,8 @@ import CorrelationScatter3D from '../components/common/CorrelationScatter3D.vue'
 import GarchForecastBlock from '../components/portfolio/GarchForecastBlock.vue'
 import { usePortfolioStore, defaultBank } from '../stores/portfolio'
 import { calculatePortfolioMetrics, type PortfolioMetricsResponse } from '../services/portfolioService'
+import { calculateVaR as fetchVaR, getRiskReport, type VaRMethod, type VaRResult, type RiskReportResult } from '../services/riskService'
+import { getStockHistory, type StockHistoryPoint } from '../services/marketDataService'
 
 // Timer cleanup tracking
 const activeTimerIds: Set<ReturnType<typeof setTimeout>> = new Set()
@@ -1336,6 +1361,122 @@ const toast = ref({ show: false, message: '', type: 'success' })
 // ============================================================================
 const portfolioMetrics = ref<PortfolioMetricsResponse | null>(null)
 const isLoadingMetrics = ref(false)
+
+// ============================================================================
+// VAR ENGINE - historical returns, method selection, GARCH toggle
+// ============================================================================
+const varMethod = ref<VaRMethod>('parametric')
+const useGarch = ref(false)
+const varResult = ref<VaRResult | null>(null)
+const riskReport = ref<RiskReportResult | null>(null)
+const isLoadingVaR = ref(false)
+const isLoadingReturns = ref(false)
+
+// Cache: portfolio-weighted daily returns computed from historical prices
+const cachedReturns = ref<number[]>([])
+const cachedReturnsTickers = ref<string>('')
+
+const varMethodLabels: Record<VaRMethod, string> = {
+  parametric: 'Parametric',
+  historical: 'Historical',
+  monte_carlo: 'Monte Carlo',
+}
+
+/**
+ * Fetch 1Y daily history for each ticker, compute portfolio-weighted log returns.
+ * Results are cached until portfolio tickers change.
+ */
+const loadHistoricalReturns = async (): Promise<number[]> => {
+  if (!positions.value || positions.value.length === 0) return []
+
+  const tickerKey = positions.value.map((p: any) => p.symbol).sort().join(',')
+  if (tickerKey === cachedReturnsTickers.value && cachedReturns.value.length > 0) {
+    return cachedReturns.value
+  }
+
+  isLoadingReturns.value = true
+  try {
+    // Fetch 1Y daily history for each ticker in parallel
+    const historyPromises = positions.value.map((pos: any) =>
+      getStockHistory(pos.symbol, '1y', '1d').catch(() => [] as StockHistoryPoint[])
+    )
+    const histories = await Promise.all(historyPromises)
+
+    // Find the shortest common length (all series must align by date)
+    const lengths = histories.map(h => h.length).filter(l => l > 1)
+    if (lengths.length === 0) return []
+    const minLen = Math.min(...lengths)
+
+    // Compute weights from allocations
+    const totalAlloc = positions.value.reduce((s: number, p: any) => s + (p.allocation || 0), 0)
+    if (totalAlloc === 0) return []
+    const weights = positions.value.map((p: any) => (p.allocation || 0) / totalAlloc)
+
+    // Compute portfolio daily log returns
+    const portfolioReturns: number[] = []
+    for (let t = 1; t < minLen; t++) {
+      let dayReturn = 0
+      for (let i = 0; i < positions.value.length; i++) {
+        const h = histories[i]
+        if (!h || h.length < minLen) continue
+        const prevClose = h[t - 1].close
+        const curClose = h[t].close
+        if (prevClose > 0 && curClose > 0) {
+          dayReturn += weights[i] * Math.log(curClose / prevClose)
+        }
+      }
+      portfolioReturns.push(dayReturn)
+    }
+
+    cachedReturns.value = portfolioReturns
+    cachedReturnsTickers.value = tickerKey
+    return portfolioReturns
+  } catch {
+    return []
+  } finally {
+    isLoadingReturns.value = false
+  }
+}
+
+const loadVaRFromEngine = async () => {
+  if (!positions.value || positions.value.length === 0) return
+
+  const returns = await loadHistoricalReturns()
+  if (returns.length < 10) return
+
+  const nav = portfolioMetrics.value?.nav ?? positions.value.reduce((s: number, p: any) => s + (p.notional || 0), 0)
+  if (nav <= 0) return
+
+  isLoadingVaR.value = true
+  try {
+    const result = await fetchVaR({
+      returns,
+      method: varMethod.value,
+      confidence: 0.95,
+      horizon: 1,
+      portfolio_value: nav,
+      use_garch: useGarch.value,
+      garch_model: 'garch_11',
+    })
+    varResult.value = result
+  } catch {
+    varResult.value = null
+  } finally {
+    isLoadingVaR.value = false
+  }
+}
+
+const varDisplay = computed(() => {
+  if (!varResult.value || !portfolioMetrics.value) return null
+  const nav = portfolioMetrics.value.nav
+  if (nav <= 0) return null
+  return {
+    varPct: ((varResult.value.var / nav) * 100).toFixed(2),
+    cvarPct: ((varResult.value.cvar / nav) * 100).toFixed(2),
+    method: varMethodLabels[varResult.value.method],
+    isGarch: varResult.value.use_garch,
+  }
+})
 
 // ============================================================================
 // BANK SELECTOR - используем store
@@ -2629,6 +2770,38 @@ const getMockHistogram = (symbol: string) => {
 .kpi-value { font-size: 26px; font-weight: 700; letter-spacing: -0.02em; line-height: 1.1; }
 .kpi-value small { font-size: 14px; color: rgba(255,255,255,0.4); font-weight: 500; margin-left: 4px; }
 .kpi-sub { font-size: 11px; color: rgba(255,255,255,0.4); }
+
+/* VaR Controls */
+.var-controls { margin-top: 8px; display: flex; flex-direction: column; gap: 6px; }
+.var-pills { display: flex; gap: 4px; }
+.var-pill {
+  font-family: var(--font-oswald, 'Oswald', sans-serif);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 3px 8px;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-dark);
+  border-radius: 3px;
+  color: var(--text-tertiary);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.var-pill:hover { border-color: var(--border-medium); color: var(--text-secondary); }
+.var-pill.active { background: var(--accent-red); border-color: var(--accent-red); color: var(--text-primary); }
+.garch-toggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  font-family: var(--font-oswald, 'Oswald', sans-serif);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-tertiary);
+}
+.garch-toggle input { accent-color: var(--accent-red); width: 12px; height: 12px; }
+.garch-toggle-label { user-select: none; }
 
 /* Glass Panel */
 .glass-panel {

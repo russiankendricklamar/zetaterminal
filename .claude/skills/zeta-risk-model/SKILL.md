@@ -14,6 +14,7 @@ Every financial model in Zeta Terminal follows BlackRock Aladdin's principle: **
 ### 1. Research & Reference Values
 
 Before writing ANY code:
+- **Read `.claude/knowledge/*.md`** files relevant to the model (formulas, reference values, stability notes)
 - Find the canonical paper/textbook for the model
 - Identify 2-3 reference test cases with known outputs
 - Document the mathematical formulation

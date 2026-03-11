@@ -69,6 +69,18 @@
               >
             </div>
 
+            <!-- Dividend Yield -->
+            <div class="input-group">
+              <label class="lbl">q (Div Yield), %</label>
+              <input
+                v-model.number="params.q"
+                type="number"
+                step="0.01"
+                class="glass-input"
+                @change="calculateGreeks"
+              >
+            </div>
+
             <!-- Volatility -->
             <div class="input-group">
               <label class="lbl">σ (Vol), %</label>
@@ -310,6 +322,7 @@ const params = reactive({
   S: 100,
   K: 100,
   r: 5,
+  q: 0,
   sigma: 20,
   T: 0.25,
   type: 'call',
@@ -350,15 +363,15 @@ const normalCdf = (x: number): number => {
   return 0.5 * (1.0 + sign * y)
 }
 
-const calculateOptionPrice = (S: number, K: number, r: number, sigma: number, T: number, type: string): number => {
+const calculateOptionPrice = (S: number, K: number, r: number, sigma: number, T: number, type: string, q: number = 0): number => {
   if (sigma <= 0 || T <= 0) return 0
-  const d1 = (Math.log(S / K) + (r + 0.5 * sigma * sigma) * T) / (sigma * Math.sqrt(T))
+  const d1 = (Math.log(S / K) + (r - q + 0.5 * sigma * sigma) * T) / (sigma * Math.sqrt(T))
   const d2 = d1 - sigma * Math.sqrt(T)
 
   if (type === 'call') {
-    return S * normalCdf(d1) - K * Math.exp(-r * T) * normalCdf(d2)
+    return S * Math.exp(-q * T) * normalCdf(d1) - K * Math.exp(-r * T) * normalCdf(d2)
   } else {
-    return K * Math.exp(-r * T) * normalCdf(-d2) - S * normalCdf(-d1)
+    return K * Math.exp(-r * T) * normalCdf(-d2) - S * Math.exp(-q * T) * normalCdf(-d1)
   }
 }
 
@@ -366,6 +379,7 @@ const calculateGreeks = () => {
   const S = params.S
   const K = params.K
   const r = params.r / 100
+  const q = params.q / 100
   const sigma = params.sigma / 100
   const T = params.T
 
@@ -379,50 +393,57 @@ const calculateGreeks = () => {
     return
   }
 
-  const d1 = (Math.log(S / K) + (r + 0.5 * sigma * sigma) * T) / (sigma * Math.sqrt(T))
+  // BSM with continuous dividend yield q (Wilmott Tables 6.1–6.2)
+  const d1 = (Math.log(S / K) + (r - q + 0.5 * sigma * sigma) * T) / (sigma * Math.sqrt(T))
   const d2 = d1 - sigma * Math.sqrt(T)
 
+  const eqT = Math.exp(-q * T)
+  const erT = Math.exp(-r * T)
   const Nd1 = normalCdf(d1)
   const N_d1 = normalCdf(-d1)
   const nd1 = normalPdf(d1)
   const Nd2 = normalCdf(d2)
   const N_d2 = normalCdf(-d2)
 
-  // Delta
+  // Delta: e^(-qT) * N(d1) for call
   if (params.type === 'call') {
-    greeks.delta = Nd1
+    greeks.delta = eqT * Nd1
   } else {
-    greeks.delta = N_d1 - 1
+    greeks.delta = eqT * (Nd1 - 1)
   }
 
-  // Gamma
-  greeks.gamma = nd1 / (S * sigma * Math.sqrt(T))
+  // Gamma: e^(-qT) * n(d1) / (S * sigma * sqrt(T))
+  greeks.gamma = eqT * nd1 / (S * sigma * Math.sqrt(T))
 
-  // Vega (на 1% изменения волатильности)
-  greeks.vega = S * nd1 * Math.sqrt(T) / 100
+  // Vega: S * e^(-qT) * sqrt(T) * n(d1) — per 1% vol change
+  greeks.vega = S * eqT * nd1 * Math.sqrt(T) / 100
 
-  // Theta (в день)
+  // Theta (per day, Wilmott eq)
   if (params.type === 'call') {
-    greeks.theta = (-S * nd1 * sigma / (2 * Math.sqrt(T)) - r * K * Math.exp(-r * T) * Nd2) / 365
+    greeks.theta = (-S * eqT * nd1 * sigma / (2 * Math.sqrt(T))
+      + q * S * eqT * Nd1
+      - r * K * erT * Nd2) / 365
   } else {
-    greeks.theta = (-S * nd1 * sigma / (2 * Math.sqrt(T)) + r * K * Math.exp(-r * T) * N_d2) / 365
+    greeks.theta = (-S * eqT * nd1 * sigma / (2 * Math.sqrt(T))
+      - q * S * eqT * N_d1
+      + r * K * erT * N_d2) / 365
   }
 
-  // Rho (на 1% изменения ставки)
-  greeks.rho = (params.type === 'call' 
-    ? K * T * Math.exp(-r * T) * Nd2 
-    : -K * T * Math.exp(-r * T) * N_d2) / 100
+  // Rho: per 1% rate change
+  greeks.rho = (params.type === 'call'
+    ? K * T * erT * Nd2
+    : -K * T * erT * N_d2) / 100
 
   // === Матрица чувствительности ===
   const spotShifts = [-10, -5, 0, 5, 10]
   const volShifts = [-2, -1, 0, 1, 2]
-  const basePrice = calculateOptionPrice(S, K, r, sigma, T, params.type)
+  const basePrice = calculateOptionPrice(S, K, r, sigma, T, params.type, q)
 
   sensitivityMatrix.value = spotShifts.map(dS => {
     return volShifts.map(dVol => {
       const newS = S + dS
       const newSigma = sigma + dVol / 100
-      const newPrice = calculateOptionPrice(newS, K, r, newSigma, T, params.type)
+      const newPrice = calculateOptionPrice(newS, K, r, newSigma, T, params.type, q)
       return newPrice - basePrice
     })
   })

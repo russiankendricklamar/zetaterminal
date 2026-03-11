@@ -51,6 +51,7 @@ from src.api import (
     portfolio,
     realized_kernels,
     repo,
+    risk,
     rudata,
     security_tools,
     sharpe_stats,
@@ -307,6 +308,7 @@ app.include_router(etf.router, prefix="/api/etf", tags=["ETF"], dependencies=_au
 app.include_router(gemini.router, prefix="/api/gemini", tags=["Gemini AI"], dependencies=_auth)
 app.include_router(secrets_api.router, prefix="/api/secrets", tags=["Secrets"], dependencies=[Depends(require_api_key), Depends(require_admin)])
 app.include_router(repo.router, prefix="/api/repo", tags=["REPO"], dependencies=_auth)
+app.include_router(risk.router, prefix="/api/risk", tags=["Risk Engine"], dependencies=_auth)
 app.include_router(admin.router, prefix="/api/admin", tags=["Admin"], dependencies=[Depends(require_api_key), Depends(require_admin)])
 
 
