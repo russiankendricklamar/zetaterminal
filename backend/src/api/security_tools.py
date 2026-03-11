@@ -9,7 +9,7 @@ import ipaddress
 import logging
 
 from fastapi import APIRouter, HTTPException, Query
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from src.services.security_tools_service import (
     ipinfo_lookup,
@@ -76,13 +76,31 @@ async def bdc(ip: str):
 
 # ─── VirusTotal ───────────────────────────────────────────────────────────────
 
+def _validate_url(url: str) -> str:
+    """Validate URL scheme and block private/internal hosts."""
+    from urllib.parse import urlparse
+    parsed = urlparse(url)
+    if parsed.scheme not in ("http", "https"):
+        raise HTTPException(status_code=400, detail="Only http/https URLs are allowed")
+    if not parsed.hostname:
+        raise HTTPException(status_code=400, detail="Invalid URL")
+    try:
+        addr = ipaddress.ip_address(parsed.hostname)
+        if addr.is_private or addr.is_reserved or addr.is_loopback:
+            raise HTTPException(status_code=400, detail="Internal/private URLs not allowed")
+    except ValueError:
+        pass  # hostname is a domain, not an IP — OK
+    return url
+
+
 class UrlScanRequest(BaseModel):
-    url: str
+    url: str = Field(..., max_length=2048)
 
 
 @router.post("/virustotal/scan-url")
 async def vt_scan(req: UrlScanRequest):
     """Submit a URL for VirusTotal scanning."""
+    _validate_url(req.url)
     try:
         return await virustotal_scan_url(req.url)
     except Exception as e:
@@ -118,6 +136,7 @@ async def abuse_check(ip: str):
 @router.post("/urlscan/submit")
 async def uscan_submit(req: UrlScanRequest):
     """Submit URL to URLScan.io."""
+    _validate_url(req.url)
     try:
         return await urlscan_submit(req.url)
     except Exception as e:
@@ -137,9 +156,14 @@ async def uscan_result(uuid: str):
 
 # ─── IP2WHOIS ─────────────────────────────────────────────────────────────────
 
+_DOMAIN_RE = __import__('re').compile(r'^[a-zA-Z0-9]([a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])?(\.[a-zA-Z]{2,})+$')
+
+
 @router.get("/whois/{domain}")
 async def whois(domain: str):
     """WHOIS lookup for a domain."""
+    if not _DOMAIN_RE.match(domain) or len(domain) > 253:
+        raise HTTPException(status_code=400, detail="Invalid domain format")
     try:
         return await ip2whois_lookup(domain)
     except Exception as e:

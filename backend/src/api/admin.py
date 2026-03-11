@@ -46,7 +46,6 @@ class AdminUserOut(BaseModel):
     display_name: str | None
     role: str
     status: str
-    invite_code: str
     created_at: datetime
     activated_at: datetime | None
 

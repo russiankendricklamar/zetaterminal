@@ -63,11 +63,12 @@ async def analyze_market(http_request: Request, request: GenerateRequest):
         # Length is already enforced by Pydantic max_length=2000; this is a defense-in-depth check
         if len(user_prompt) > 2000:
             raise HTTPException(status_code=400, detail="Prompt too long (max 2000 chars)")
-        prompt = f"{system_prefix}\n\nUser request: {user_prompt}\n\nData: {data_str}"
+        user_content = f"User request: {user_prompt}\n\nData: {data_str}"
 
         url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent"
         payload = {
-            "contents": [{"parts": [{"text": prompt}]}],
+            "system_instruction": {"parts": [{"text": system_prefix}]},
+            "contents": [{"parts": [{"text": user_content}]}],
             "generationConfig": {
                 "responseMimeType": "application/json",
             },

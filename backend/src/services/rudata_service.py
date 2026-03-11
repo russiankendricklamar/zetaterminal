@@ -7,6 +7,7 @@
 
 import asyncio
 import hashlib
+import secrets
 import time
 from typing import Optional, Iterable, Union, Dict, Any, List
 from datetime import datetime
@@ -23,25 +24,22 @@ _MAX_CREDENTIAL_CACHE = 100
 _credential_cache: Dict[str, Dict[str, Any]] = {}
 
 
-def _make_session_key(login: str) -> str:
-    """Create a hash-based session key from the login."""
-    return hashlib.sha256(login.encode()).hexdigest()
-
-
-def cache_credentials(login: str, password: str) -> str:
+def cache_credentials(login: str, password: str, user_id: int = 0) -> str:
     """
     Cache RuData credentials server-side and return a session_id.
 
-    Credentials are stored in memory with a TTL.
+    Uses a cryptographically random session ID (not derived from login)
+    and associates the session with the authenticated user_id.
     """
     cleanup_expired_sessions()
     if len(_credential_cache) >= _MAX_CREDENTIAL_CACHE:
         oldest = min(_credential_cache, key=lambda k: _credential_cache[k]["cached_at"])
         _credential_cache.pop(oldest, None)
-    session_id = _make_session_key(login)
+    session_id = secrets.token_hex(32)
     _credential_cache[session_id] = {
         "login": login,
         "password": password,
+        "user_id": user_id,
         "cached_at": time.time(),
     }
     return session_id
@@ -443,13 +441,8 @@ _rudata_instance: Optional[RuDataService] = None
 
 
 def get_rudata_service(login: str, password: str) -> RuDataService:
-    """Получить экземпляр сервиса RuData."""
-    global _rudata_instance
-
-    if _rudata_instance is None or _rudata_instance._login != login:
-        _rudata_instance = RuDataService(login=login, password=password)
-
-    return _rudata_instance
+    """Create a new RuDataService instance per request (no shared singleton)."""
+    return RuDataService(login=login, password=password)
 
 
 async def test_rudata_connection(login: str, password: str) -> Dict[str, Any]:

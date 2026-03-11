@@ -93,6 +93,8 @@ async def get_bond_valuations(
             datetime.now().strftime("%Y-%m-%d"),
             limit,
         )
+    # Filter by user ownership (IDOR protection)
+    results = [r for r in results if not r.get("user_id") or r["user_id"] == user.sub]
     return {"success": True, "data": results, "count": len(results)}
 
 
@@ -149,6 +151,7 @@ async def get_portfolios(
 ):
     repo = PortfolioRepository(session)
     results = await repo.get_all(limit)
+    results = [r for r in results if not r.get("user_id") or r["user_id"] == user.sub]
     return {"success": True, "data": results, "count": len(results)}
 
 
@@ -188,6 +191,7 @@ async def get_calculation_history(
 ):
     repo = CalculationHistoryRepository(session)
     results = await repo.get_recent(calculation_type, limit)
+    results = [r for r in results if not r.get("user_id") or r["user_id"] == user.sub]
     return {"success": True, "data": results, "count": len(results)}
 
 
@@ -234,6 +238,7 @@ async def get_files(
         results = await repo.get_by_type(file_type, limit)
     else:
         results = await repo.get_all(limit)
+    results = [r for r in results if not r.get("user_id") or r["user_id"] == user.sub]
     return {"success": True, "data": results, "count": len(results)}
 
 

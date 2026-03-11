@@ -70,8 +70,14 @@ def invalidate_user_status_cache(user_id: int) -> None:
 
 
 def _is_auth_disabled() -> bool:
-    """Allow DISABLE_AUTH only when NOT running on Render (production)."""
-    if os.getenv("RENDER"):
+    """Allow DISABLE_AUTH only when explicitly in dev mode.
+
+    Checks RENDER, ORACLE_CLOUD, FLY_APP_NAME, RAILWAY, K_SERVICE, and
+    generic PRODUCTION env vars to detect any cloud/production environment.
+    """
+    production_markers = ["RENDER", "ORACLE_CLOUD", "OCI_REGION", "FLY_APP_NAME",
+                          "RAILWAY_ENVIRONMENT", "K_SERVICE", "PRODUCTION"]
+    if any(os.getenv(m) for m in production_markers):
         return False
     return os.getenv("DISABLE_AUTH", "").lower() == "true"
 

@@ -39,22 +39,24 @@ def _get_fernet():
 
 
 def encrypt_value(plaintext: str) -> str:
-    """Encrypt a plaintext string. Returns the ciphertext as a string.
-    Falls back to plaintext if encryption is unavailable."""
+    """Encrypt a plaintext string. Raises if encryption is unavailable."""
     f = _get_fernet()
     if f is None:
-        return plaintext
+        raise RuntimeError(
+            "Encryption unavailable — install 'cryptography' and set JWT_SECRET"
+        )
     return f.encrypt(plaintext.encode()).decode()
 
 
 def decrypt_value(ciphertext: str) -> str:
-    """Decrypt a ciphertext string. Returns the plaintext.
-    Falls back to returning the input if decryption fails (legacy unencrypted values)."""
+    """Decrypt a ciphertext string. Returns the plaintext."""
     f = _get_fernet()
     if f is None:
-        return ciphertext
+        raise RuntimeError(
+            "Decryption unavailable — install 'cryptography' and set JWT_SECRET"
+        )
     try:
         return f.decrypt(ciphertext.encode()).decode()
     except Exception:
-        # Legacy unencrypted value — return as-is
-        return ciphertext
+        logger.warning("Failed to decrypt value — possible legacy unencrypted data")
+        raise
