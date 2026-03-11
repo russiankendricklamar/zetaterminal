@@ -80,6 +80,7 @@
                   <transition name="slide">
                     <div v-if="showUserMenu" class="user-menu" @click.stop>
                       <button class="user-menu-item font-mono" @click="goToProfile">ПРОФИЛЬ</button>
+                      <button v-if="isAdminUser" class="user-menu-item font-mono" @click="goToAdmin">ADMIN PANEL</button>
                       <div class="user-menu-divider"></div>
                       <button class="user-menu-item user-menu-logout font-mono" @click="handleLogout">ВЫХОД &rarr;</button>
                     </div>
@@ -139,6 +140,7 @@ import { useRoute, useRouter } from 'vue-router'
 import Sidebar from '@/components/Layout/Sidebar.vue'
 import TaskWidget from '@/components/common/TaskWidget.vue'
 import { getAuthUser, logout } from '@/services/authService'
+import { getApiKey } from '@/utils/apiHeaders'
 
 const route = useRoute()
 const router = useRouter()
@@ -174,9 +176,27 @@ async function handleLogout() {
   router.push('/auth')
 }
 
+const isAdminUser = computed(() => {
+  // Read role from JWT claims (harder to tamper than localStorage JSON).
+  // Backend enforces require_admin on every admin endpoint — this is UX only.
+  const token = getApiKey()
+  if (!token) return false
+  try {
+    const payload = JSON.parse(atob(token.split('.')[1]))
+    return payload.role === 'admin'
+  } catch {
+    return false
+  }
+})
+
 function goToProfile() {
   showUserMenu.value = false
   router.push('/profile')
+}
+
+function goToAdmin() {
+  showUserMenu.value = false
+  router.push('/admin')
 }
 
 function handleClickOutside(e: MouseEvent) {
@@ -187,14 +207,17 @@ function handleClickOutside(e: MouseEvent) {
   }
 }
 
+let _latencyTimer: ReturnType<typeof setInterval>
+
 onMounted(() => {
-  setInterval(() => {
+  _latencyTimer = setInterval(() => {
     latency.value = 12 + Math.floor(Math.random() * 8)
   }, 2000)
   document.addEventListener('click', handleClickOutside)
 })
 
 onUnmounted(() => {
+  clearInterval(_latencyTimer)
   document.removeEventListener('click', handleClickOutside)
 })
 </script>

@@ -8,6 +8,7 @@ Usage:
 Set DISABLE_AUTH=true for local development without auth.
 In production (RENDER env var is set), DISABLE_AUTH is ignored.
 """
+import asyncio
 import logging
 import os
 import time
@@ -26,6 +27,7 @@ _bearer_scheme = HTTPBearer(auto_error=False)
 # users within _STATUS_CACHE_TTL seconds.
 _STATUS_CACHE_TTL = 60  # seconds
 _user_status_cache: dict[int, tuple[str, float]] = {}  # user_id -> (status, cached_at)
+_status_cache_lock = asyncio.Lock()
 
 
 async def _is_user_active(user_id: int) -> bool:
@@ -35,24 +37,31 @@ async def _is_user_active(user_id: int) -> bool:
     if cached and (now - cached[1]) < _STATUS_CACHE_TTL:
         return cached[0] == "active"
 
-    from sqlalchemy import select
-    from src.database.client import async_session_factory
-    from src.database.sa_models import User
+    async with _status_cache_lock:
+        # Re-check after acquiring lock (another coroutine may have populated it)
+        now = time.time()  # refresh timestamp after lock wait
+        cached = _user_status_cache.get(user_id)
+        if cached and (now - cached[1]) < _STATUS_CACHE_TTL:
+            return cached[0] == "active"
 
-    try:
-        async with async_session_factory() as session:
-            result = await session.execute(
-                select(User.status).where(User.id == user_id)
-            )
-            row = result.scalar_one_or_none()
-            user_status = row if row else "deleted"
-            _user_status_cache[user_id] = (user_status, now)
-            return user_status == "active"
-    except Exception:
-        # If DB is unreachable, allow the request (fail-open for availability).
-        # The JWT is still cryptographically valid.
-        logger.warning("Could not verify user status for user_id=%s", user_id)
-        return True
+        from sqlalchemy import select
+        from src.database.client import async_session_factory
+        from src.database.sa_models import User
+
+        try:
+            async with async_session_factory() as session:
+                result = await session.execute(
+                    select(User.status).where(User.id == user_id)
+                )
+                row = result.scalar_one_or_none()
+                user_status = row if row else "deleted"
+                _user_status_cache[user_id] = (user_status, now)
+                return user_status == "active"
+        except Exception:
+            # Fail-closed: deny access when DB is unreachable.
+            # A stolen token should not grant access if we cannot verify the account.
+            logger.warning("Could not verify user status for user_id=%s — denying access", user_id)
+            return False
 
 
 def invalidate_user_status_cache(user_id: int) -> None:

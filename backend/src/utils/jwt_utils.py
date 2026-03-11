@@ -1,7 +1,7 @@
 """
 JWT token utilities for Zeta Terminal authentication.
 
-Provides access token (60 min) and refresh token (30 day) creation/validation.
+Provides access token (30 min) and refresh token (30 day) creation/validation.
 """
 import hashlib
 import logging
@@ -15,8 +15,15 @@ logger = logging.getLogger(__name__)
 
 JWT_SECRET = os.getenv("JWT_SECRET") or ""
 JWT_ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 10
+ACCESS_TOKEN_EXPIRE_MINUTES = 30
 REFRESH_TOKEN_EXPIRE_DAYS = 30
+
+
+def _require_secret() -> str:
+    """Return JWT_SECRET or raise if empty. Guards every sign/verify call."""
+    if not JWT_SECRET:
+        raise RuntimeError("JWT_SECRET is not configured — cannot sign or verify tokens")
+    return JWT_SECRET
 
 
 class TokenPayload(BaseModel):
@@ -46,7 +53,7 @@ def create_access_token(user_id: int, username: str, role: str) -> str:
         "iat": int(now.timestamp()),
         "exp": int((now + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)).timestamp()),
     }
-    return jwt.encode(payload, JWT_SECRET, algorithm=JWT_ALGORITHM)
+    return jwt.encode(payload, _require_secret(), algorithm=JWT_ALGORITHM)
 
 
 def create_refresh_token(user_id: int, username: str, role: str) -> str:
@@ -59,12 +66,12 @@ def create_refresh_token(user_id: int, username: str, role: str) -> str:
         "iat": int(now.timestamp()),
         "exp": int((now + timedelta(days=REFRESH_TOKEN_EXPIRE_DAYS)).timestamp()),
     }
-    return jwt.encode(payload, JWT_SECRET, algorithm=JWT_ALGORITHM)
+    return jwt.encode(payload, _require_secret(), algorithm=JWT_ALGORITHM)
 
 
 def decode_token(token: str) -> TokenPayload:
     """Decode and validate a JWT token. Raises jwt.InvalidTokenError on failure."""
-    data = jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
+    data = jwt.decode(token, _require_secret(), algorithms=[JWT_ALGORITHM])
     return TokenPayload(**data)
 
 

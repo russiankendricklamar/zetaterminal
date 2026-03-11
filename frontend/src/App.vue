@@ -12,8 +12,7 @@ import { onMounted, computed } from 'vue'
 import { useRoute } from 'vue-router'
 import { useThemeStore } from '@/stores'
 import CommandPalette from '@/components/common/CommandPalette.vue'
-import TaskContainer from '@/components/common/TaskContainer.vue'
-import { warmupBackend } from '@/services/apiConfigService'
+import { restoreSession } from '@/utils/sessionManager'
 
 const route = useRoute()
 const themeStore = useThemeStore()
@@ -23,7 +22,8 @@ const isTerminalPage = computed(() => route.path === '/terminal')
 
 onMounted(() => {
   themeStore.initTheme()
-  warmupBackend()
+  // Restore session using refresh token (also warms up Render backend)
+  restoreSession()
 })
 </script>
 

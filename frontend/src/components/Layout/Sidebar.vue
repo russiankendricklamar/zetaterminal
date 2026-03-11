@@ -143,22 +143,6 @@
 
       <div class="sidebar-divider"></div>
 
-      <!-- Admin Panel Link (admin only) -->
-      <router-link
-        v-if="isAdminUser"
-        to="/admin"
-        class="settings-link admin-link"
-        :class="{ active: isActive('/admin') }"
-        @click.native="handleNavClick"
-      >
-        <span class="nav-index font-mono">&#9733;</span>
-        <div class="nav-info">
-          <span class="nav-title font-oswald">ADMIN PANEL</span>
-          <span class="nav-subtitle font-mono">System control</span>
-        </div>
-        <span class="nav-arrow font-mono">&rarr;</span>
-      </router-link>
-
       <!-- Settings Link -->
       <router-link
         to="/settings"
@@ -205,14 +189,6 @@ const isSidebarOpen = ref(false)
 const touchStartX = ref(0)
 const touchEndX = ref(0)
 const sidebarRef = ref<HTMLElement | null>(null)
-
-const isAdminUser = computed(() => {
-  try {
-    const raw = localStorage.getItem('zeta_auth_user')
-    if (raw) return JSON.parse(raw).role === 'admin'
-  } catch { /* ignore */ }
-  return false
-})
 
 const expandedTools = reactive<Record<string, boolean>>({
   portfolio: false,

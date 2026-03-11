@@ -3,6 +3,7 @@ import { createRouter, createWebHashHistory } from 'vue-router'
 import MainLayout from '@/components/Layout/MainLayout.vue'
 import Home from '@/pages/Home.vue'
 import { getApiKey } from '@/utils/apiHeaders'
+import { hasSession, restoreSession } from '@/utils/sessionManager'
 
 // Everything else is lazy-loaded for code splitting
 const NotFound = () => import('@/pages/NotFound.vue')
@@ -143,23 +144,38 @@ const router = createRouter({
   routes
 })
 
-router.beforeEach((to, _from, next) => {
+router.beforeEach(async (to, _from, next) => {
   const title = (to.meta?.title as string) || 'QuantPro'
   document.title = `${title} | Risk Management`
 
-  const apiKey = getApiKey()
   const isPublic = to.path === '/' || to.path === '/auth' || to.meta?.bare === true
+
+  let apiKey = getApiKey()
+
+  // If no access token but a refresh token exists, try to restore the session
+  if (!apiKey && !isPublic && hasSession()) {
+    const restored = await restoreSession()
+    if (restored) {
+      apiKey = getApiKey()
+    }
+  }
+
   if (!apiKey && !isPublic) {
     next('/auth')
     return
   }
 
   if (to.meta?.requiresAdmin) {
+    // Read role from JWT claims — harder to tamper than localStorage.
+    // Backend enforces require_admin independently on every admin endpoint.
     let role = ''
     try {
-      const raw = localStorage.getItem('zeta_auth_user')
-      if (raw) role = JSON.parse(raw).role || ''
-    } catch { /* ignore */ }
+      const token = getApiKey()
+      if (token) {
+        const payload = JSON.parse(atob(token.split('.')[1]))
+        role = payload.role || ''
+      }
+    } catch { /* malformed token */ }
     if (role !== 'admin') {
       next('/')
       return

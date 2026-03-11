@@ -48,23 +48,25 @@ async def load_banned_ips() -> None:
     from src.database.client import async_session_factory
     from src.database.sa_models import IpBan
 
+    global _banned_ips
     try:
         async with async_session_factory() as session:
             result = await session.execute(select(IpBan.ip_address))
             ips = {row[0] for row in result.fetchall()}
-            _banned_ips.clear()
-            _banned_ips.update(ips)
+            _banned_ips = ips  # atomic reference swap (no empty-set window)
             logger.info("Loaded %d banned IPs", len(_banned_ips))
     except Exception as e:
         logger.warning("Could not load banned IPs: %s", e)
 
 
 def add_banned_ip(ip: str) -> None:
-    _banned_ips.add(ip)
+    global _banned_ips
+    _banned_ips = _banned_ips | {ip}  # atomic reference swap
 
 
 def remove_banned_ip(ip: str) -> None:
-    _banned_ips.discard(ip)
+    global _banned_ips
+    _banned_ips = _banned_ips - {ip}  # atomic reference swap
 
 
 def get_banned_ips() -> set[str]:

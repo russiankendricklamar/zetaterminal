@@ -1,8 +1,7 @@
 import { getApiHeaders, setTokens, clearTokens, getRefreshToken } from '@/utils/apiHeaders'
 import { getApiBaseUrl } from '@/utils/apiBase'
 import { appFetch } from '@/utils/tauriFetch'
-
-const API_BASE_URL = getApiBaseUrl()
+import { startAutoRefresh, stopAutoRefresh } from '@/utils/sessionManager'
 
 export interface RegisterRequest {
   username: string
@@ -100,7 +99,7 @@ async function fetchWithRetry(
 
 export async function register(data: RegisterRequest): Promise<RegisterResponse> {
   const res = await fetchWithRetry(
-    `${API_BASE_URL}/api/auth/register`,
+    `${getApiBaseUrl()}/api/auth/register`,
     {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -117,7 +116,7 @@ export async function register(data: RegisterRequest): Promise<RegisterResponse>
 
 export async function activate(code: string): Promise<ActivateResponse> {
   const res = await fetchWithRetry(
-    `${API_BASE_URL}/api/auth/activate`,
+    `${getApiBaseUrl()}/api/auth/activate`,
     {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -134,7 +133,7 @@ export async function activate(code: string): Promise<ActivateResponse> {
 
 export async function login(data: LoginRequest): Promise<LoginResponse> {
   const res = await fetchWithRetry(
-    `${API_BASE_URL}/api/auth/login`,
+    `${getApiBaseUrl()}/api/auth/login`,
     {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -154,32 +153,16 @@ export async function login(data: LoginRequest): Promise<LoginResponse> {
     domain_handle: result.domain_handle,
     role: result.role,
   }))
+  startAutoRefresh()
   return result
 }
 
-export async function refreshAccessToken(): Promise<string | null> {
-  const refreshToken = getRefreshToken()
-  if (!refreshToken) return null
-
-  try {
-    const res = await appFetch(`${API_BASE_URL}/api/auth/refresh`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ refresh_token: refreshToken }),
-    })
-    if (!res.ok) return null
-    const data = await res.json()
-    // Server rotates refresh tokens — store both new tokens
-    setTokens(data.access_token, data.refresh_token)
-    return data.access_token
-  } catch {
-    return null
-  }
-}
+/** @deprecated Use refreshTokenPair from @/utils/tokenRefresher directly */
+export { refreshTokenPair as refreshAccessToken } from '@/utils/tokenRefresher'
 
 export async function fetchUsers(): Promise<UserInfo[]> {
   const res = await fetchWithRetry(
-    `${API_BASE_URL}/api/auth/users`,
+    `${getApiBaseUrl()}/api/auth/users`,
     { headers: getApiHeaders() },
     'Failed to fetch users',
   )
@@ -204,7 +187,7 @@ export async function logout(): Promise<void> {
   const refreshToken = getRefreshToken()
   if (refreshToken) {
     try {
-      await appFetch(`${API_BASE_URL}/api/auth/logout`, {
+      await appFetch(`${getApiBaseUrl()}/api/auth/logout`, {
         method: 'POST',
         headers: getApiHeaders(),
         body: JSON.stringify({ refresh_token: refreshToken }),
@@ -213,6 +196,7 @@ export async function logout(): Promise<void> {
       // Best-effort server logout
     }
   }
+  stopAutoRefresh()
   clearTokens()
   localStorage.removeItem(AUTH_USER_KEY)
 }
@@ -252,7 +236,7 @@ export interface ProfileUpdateData {
 
 export async function getProfile(username: string): Promise<ProfileData> {
   const res = await fetchWithRetry(
-    `${API_BASE_URL}/api/auth/me/${encodeURIComponent(username)}`,
+    `${getApiBaseUrl()}/api/auth/me/${encodeURIComponent(username)}`,
     { headers: getApiHeaders() },
     'Failed to fetch profile',
   )
@@ -265,7 +249,7 @@ export async function getProfile(username: string): Promise<ProfileData> {
 
 export async function updateProfile(username: string, data: ProfileUpdateData): Promise<ProfileData> {
   const res = await fetchWithRetry(
-    `${API_BASE_URL}/api/auth/me/${encodeURIComponent(username)}`,
+    `${getApiBaseUrl()}/api/auth/me/${encodeURIComponent(username)}`,
     {
       method: 'PUT',
       headers: getApiHeaders(),

@@ -28,7 +28,7 @@ async def get_session() -> aiohttp.ClientSession:
             ttl_dns_cache=300,
             enable_cleanup_closed=True,
         )
-        timeout = aiohttp.ClientTimeout(total=30, connect=10)
+        timeout = aiohttp.ClientTimeout(total=30, connect=10, sock_read=15)
         _session = aiohttp.ClientSession(
             connector=connector,
             timeout=timeout,
