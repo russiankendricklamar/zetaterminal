@@ -487,6 +487,11 @@ import {
   hasActiveSession as hasRuDataSession,
   getSessionLogin as getRuDataSessionLogin,
 } from '@/services/rudataService'
+import {
+  createSession as createCbondsSession,
+  hasActiveSession as hasCbondsSession,
+  getSessionLogin as getCbondsSessionLogin,
+} from '@/services/cbondsService'
 import { getApiBaseUrl, setApiBaseUrl } from '@/utils/apiBase'
 
 const activeTab = ref('general')
@@ -581,6 +586,15 @@ onMounted(() => {
     connectionStates.rudata.status = 'saved'
   }
 
+  // Check if a server-side Cbonds session is active (memory-only)
+  if (hasCbondsSession()) {
+    const cbLogin = getCbondsSessionLogin()
+    if (cbLogin) {
+      settings.api.cbondsLogin = cbLogin
+    }
+    connectionStates.cbonds.status = 'saved'
+  }
+
   // Загружаем другие настройки из localStorage
   const savedSettings = localStorage.getItem('app_settings')
   if (savedSettings) {
@@ -656,15 +670,30 @@ const testConnection = async (provider: 'cbonds' | 'rudata') => {
         connectionStates[provider].message = msg || 'Ошибка соединения'
       }
     } else if (provider === 'cbonds') {
-      // Cbonds пока симулируем
-      setTimeout(() => {
-        if (settings.api.cbondsLogin && settings.api.cbondsPassword) {
+      const login = settings.api.cbondsLogin
+      const password = settings.api.cbondsPassword
+
+      if (!login || !password) {
+        connectionStates[provider].status = 'error'
+        connectionStates[provider].message = 'Введите логин и пароль'
+        return
+      }
+
+      try {
+        const result = await createCbondsSession({ login, password })
+
+        if (result.success) {
           connectionStates[provider].status = 'success'
+          connectionStates[provider].message = result.message
         } else {
           connectionStates[provider].status = 'error'
-          connectionStates[provider].message = 'Введите логин и пароль'
+          connectionStates[provider].message = result.message
         }
-      }, 1200)
+      } catch (error: unknown) {
+        const msg = error instanceof Error ? error.message : String(error)
+        connectionStates[provider].status = 'error'
+        connectionStates[provider].message = msg || 'Ошибка соединения'
+      }
     }
 }
 

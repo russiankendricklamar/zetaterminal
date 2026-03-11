@@ -52,6 +52,7 @@ from src.api import (
     realized_kernels,
     repo,
     risk,
+    cbonds,
     rudata,
     security_tools,
     sharpe_stats,
@@ -282,6 +283,7 @@ app.include_router(hjb.router, prefix="/api/hjb", tags=["HJB"], dependencies=_au
 app.include_router(market_data.router, prefix="/api/market-data", tags=["Market Data"], dependencies=_auth)
 app.include_router(zcyc.router, prefix="/api/zcyc", tags=["ZCYC"], dependencies=_auth)
 app.include_router(rudata.router, prefix="/api/rudata", tags=["RuData"], dependencies=_auth)
+app.include_router(cbonds.router, prefix="/api/cbonds", tags=["Cbonds"], dependencies=_auth)
 app.include_router(spectral_regime.router, prefix="/api/spectral-regime", tags=["Spectral Regime"], dependencies=_auth)
 app.include_router(multivariate_hmm.router, prefix="/api/multivariate-hmm", tags=["Multivariate HMM"], dependencies=_auth)
 app.include_router(database.router, prefix="/api/database", tags=["Database"], dependencies=_auth)
