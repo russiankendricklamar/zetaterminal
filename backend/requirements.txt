@@ -44,3 +44,4 @@ networkx>=3.0,<4.0.0
 
 # Utilities
 python-dateutil>=2.8.2,<3.0.0
+defusedxml>=0.7.0

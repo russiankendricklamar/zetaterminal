@@ -6,7 +6,7 @@ Proxies macroeconomic and regulatory data from five providers.
 
 import os
 import re as _re
-import xml.etree.ElementTree as ET
+import defusedxml.ElementTree as ET
 from typing import Any
 from xml.sax.saxutils import escape as _xml_escape
 

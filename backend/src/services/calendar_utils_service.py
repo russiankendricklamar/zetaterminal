@@ -4,7 +4,7 @@ Calendar Utils Service — Nager.Date, Russian Calendar (xmlcalendar.ru)
 Public holiday data and work calendar information.
 """
 
-import xml.etree.ElementTree as ET
+import defusedxml.ElementTree as ET
 from typing import Any
 
 from src.services.cache_service import cache_get, cache_set, make_cache_key
