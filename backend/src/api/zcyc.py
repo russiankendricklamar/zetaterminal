@@ -8,7 +8,6 @@ Endpoints:
 """
 
 import asyncio
-import logging
 from datetime import datetime
 from typing import Any
 
@@ -16,7 +15,7 @@ import pandas as pd
 from fastapi import APIRouter, HTTPException, Query
 from pydantic import BaseModel, Field
 
-logger = logging.getLogger(__name__)
+from src.utils.error_handler import service_endpoint
 
 router = APIRouter()
 
@@ -75,6 +74,7 @@ class InterpolateResponse(BaseModel):
 
 
 @router.get("/", response_model=ZCYCResponse)
+@service_endpoint("Get Zcyc")
 async def get_zcyc(
     date: str | None = Query(None, description="Дата в формате YYYY-MM-DD. Если не указана, используется последняя доступная")
 ):
@@ -90,37 +90,30 @@ async def get_zcyc(
     Returns:
         Данные кривой бескупонных доходностей
     """
-    try:
-        from src.services.zcyc_service import fetch_zcyc_from_moex
+    from src.services.zcyc_service import fetch_zcyc_from_moex
 
-        # Валидация даты
-        if date:
-            try:
-                datetime.strptime(date, "%Y-%m-%d")
-            except ValueError:
-                raise HTTPException(
-                    status_code=400,
-                    detail="Неверный формат даты. Используйте YYYY-MM-DD"
-                ) from None
-
-        result = await asyncio.to_thread(fetch_zcyc_from_moex, date=date)
-
-        if result['status'] == 'error':
+    # Валидация даты
+    if date:
+        try:
+            datetime.strptime(date, "%Y-%m-%d")
+        except ValueError:
             raise HTTPException(
-                status_code=500,
-                detail=result.get('error', 'Ошибка получения данных из MOEX')
-            )
+                status_code=400,
+                detail="Неверный формат даты. Используйте YYYY-MM-DD"
+            ) from None
 
-        return ZCYCResponse(**result)
+    result = await asyncio.to_thread(fetch_zcyc_from_moex, date=date)
 
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error("ZCYC curve retrieval failed: %s", e, exc_info=True)
-        raise HTTPException(status_code=500, detail="Internal server error") from e
+    if result['status'] == 'error':
+        raise HTTPException(
+            status_code=500,
+            detail=result.get('error', 'Ошибка получения данных из MOEX')
+        )
 
+    return ZCYCResponse(**result)
 
 @router.post("/interpolate", response_model=InterpolateResponse)
+@service_endpoint("Interpolate Zcyc Rate")
 async def interpolate_zcyc_rate(
     term: float = Query(..., ge=0.0, description="Срок в годах"),
     method: str = Query("linear", description="Метод интерполяции: linear или nelson_siegel"),
@@ -141,60 +134,53 @@ async def interpolate_zcyc_rate(
     Returns:
         Интерполированная доходность
     """
-    try:
-        from src.services.zcyc_service import fetch_zcyc_from_moex, interpolate_zcyc_rate
+    from src.services.zcyc_service import fetch_zcyc_from_moex, interpolate_zcyc_rate
 
-        # Получаем кривую
-        zcyc_result = await asyncio.to_thread(fetch_zcyc_from_moex, date=date)
+    # Получаем кривую
+    zcyc_result = await asyncio.to_thread(fetch_zcyc_from_moex, date=date)
 
-        if zcyc_result['status'] == 'error':
-            raise HTTPException(
-                status_code=500,
-                detail=zcyc_result.get('error', 'Ошибка получения данных из MOEX')
-            )
-
-        # Проверяем, что срок в допустимом диапазоне
-        if term < zcyc_result['min_term'] or term > zcyc_result['max_term']:
-            raise HTTPException(
-                status_code=400,
-                detail=f"Срок {term} лет вне допустимого диапазона [{zcyc_result['min_term']}, {zcyc_result['max_term']}]"
-            )
-
-        # Интерполируем
-        interpolated_value = interpolate_zcyc_rate(
-            zcyc_result['data'],
-            term,
-            method=method
+    if zcyc_result['status'] == 'error':
+        raise HTTPException(
+            status_code=500,
+            detail=zcyc_result.get('error', 'Ошибка получения данных из MOEX')
         )
 
-        if interpolated_value is None:
-            raise HTTPException(
-                status_code=500,
-                detail="Не удалось интерполировать доходность"
-            )
-
-        # Проверяем, была ли это интерполяция или точное совпадение
-        is_interpolated = True
-        for point in zcyc_result['data']:
-            if abs(point['term'] - term) < 0.0001:
-                is_interpolated = False
-                break
-
-        return InterpolateResponse(
-            term=term,
-            value=interpolated_value,
-            method=method,
-            interpolated=is_interpolated
+    # Проверяем, что срок в допустимом диапазоне
+    if term < zcyc_result['min_term'] or term > zcyc_result['max_term']:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Срок {term} лет вне допустимого диапазона [{zcyc_result['min_term']}, {zcyc_result['max_term']}]"
         )
 
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error("ZCYC interpolation failed: %s", e, exc_info=True)
-        raise HTTPException(status_code=500, detail="Internal server error") from e
+    # Интерполируем
+    interpolated_value = interpolate_zcyc_rate(
+        zcyc_result['data'],
+        term,
+        method=method
+    )
 
+    if interpolated_value is None:
+        raise HTTPException(
+            status_code=500,
+            detail="Не удалось интерполировать доходность"
+        )
+
+    # Проверяем, была ли это интерполяция или точное совпадение
+    is_interpolated = True
+    for point in zcyc_result['data']:
+        if abs(point['term'] - term) < 0.0001:
+            is_interpolated = False
+            break
+
+    return InterpolateResponse(
+        term=term,
+        value=interpolated_value,
+        method=method,
+        interpolated=is_interpolated
+    )
 
 @router.get("/dates")
+@service_endpoint("Get Available Dates")
 async def get_available_dates():
     """
     Получить список доступных дат для кривой бескупонных доходностей.
@@ -202,22 +188,17 @@ async def get_available_dates():
     Returns:
         Список дат в формате YYYY-MM-DD
     """
-    try:
-        from src.services.zcyc_service import get_available_zcyc_dates
+    from src.services.zcyc_service import get_available_zcyc_dates
 
-        dates = await asyncio.to_thread(get_available_zcyc_dates)
-        return {
-            "success": True,
-            "dates": dates,
-            "count": len(dates)
-        }
-
-    except Exception as e:
-        logger.error("ZCYC dates retrieval failed: %s", e, exc_info=True)
-        raise HTTPException(status_code=500, detail="Internal server error") from e
-
+    dates = await asyncio.to_thread(get_available_zcyc_dates)
+    return {
+        "success": True,
+        "dates": dates,
+        "count": len(dates)
+    }
 
 @router.get("/maxdates")
+@service_endpoint("Get Maxdates Endpoint")
 async def get_maxdates_endpoint(
     engine: str = Query("stock", description="Движок биржи (stock, currency, etc.)")
 ):
@@ -227,22 +208,17 @@ async def get_maxdates_endpoint(
     Returns:
         DataFrame с колонками: tradedate, maxdate, months
     """
-    try:
-        from src.services.zcyc_service import get_maxdates
+    from src.services.zcyc_service import get_maxdates
 
-        df = await asyncio.to_thread(get_maxdates, engine=engine)
-        return {
-            "success": True,
-            "data": df.to_dict(orient="records"),
-            "columns": df.columns.tolist()
-        }
-
-    except Exception as e:
-        logger.error("ZCYC maxdates retrieval failed: %s", e, exc_info=True)
-        raise HTTPException(status_code=500, detail="Internal server error") from e
-
+    df = await asyncio.to_thread(get_maxdates, engine=engine)
+    return {
+        "success": True,
+        "data": df.to_dict(orient="records"),
+        "columns": df.columns.tolist()
+    }
 
 @router.get("/yearyields")
+@service_endpoint("Get Yearyields Endpoint")
 async def get_yearyields_endpoint(
     date: str | None = Query(None, description="Дата в формате YYYY-MM-DD"),
     engine: str = Query("stock", description="Движок биржи (stock, currency, etc.)")
@@ -253,35 +229,28 @@ async def get_yearyields_endpoint(
     Returns:
         DataFrame с колонками: tradedate, tradetime, period, value
     """
-    try:
-        from src.services.zcyc_service import get_yearyields
+    from src.services.zcyc_service import get_yearyields
 
-        # Валидация даты
-        if date:
-            try:
-                datetime.strptime(date, "%Y-%m-%d")
-            except ValueError:
-                raise HTTPException(
-                    status_code=400,
-                    detail="Неверный формат даты. Используйте YYYY-MM-DD"
-                ) from None
+    # Валидация даты
+    if date:
+        try:
+            datetime.strptime(date, "%Y-%m-%d")
+        except ValueError:
+            raise HTTPException(
+                status_code=400,
+                detail="Неверный формат даты. Используйте YYYY-MM-DD"
+            ) from None
 
-        df = await asyncio.to_thread(get_yearyields, date=date, engine=engine)
-        return {
-            "success": True,
-            "data": df.to_dict(orient="records"),
-            "columns": df.columns.tolist(),
-            "count": len(df)
-        }
-
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error("ZCYC yearyields retrieval failed: %s", e, exc_info=True)
-        raise HTTPException(status_code=500, detail="Internal server error") from e
-
+    df = await asyncio.to_thread(get_yearyields, date=date, engine=engine)
+    return {
+        "success": True,
+        "data": df.to_dict(orient="records"),
+        "columns": df.columns.tolist(),
+        "count": len(df)
+    }
 
 @router.get("/yearyields/dates")
+@service_endpoint("Get Yearyields Dates Endpoint")
 async def get_yearyields_dates_endpoint(
     date: str | None = Query(None, description="Дата в формате YYYY-MM-DD"),
     engine: str = Query("stock", description="Движок биржи (stock, currency, etc.)")
@@ -292,22 +261,17 @@ async def get_yearyields_dates_endpoint(
     Returns:
         DataFrame с колонками: from, till
     """
-    try:
-        from src.services.zcyc_service import get_yearyields_dates
+    from src.services.zcyc_service import get_yearyields_dates
 
-        df = await asyncio.to_thread(get_yearyields_dates, date=date, engine=engine)
-        return {
-            "success": True,
-            "data": df.to_dict(orient="records"),
-            "columns": df.columns.tolist()
-        }
-
-    except Exception as e:
-        logger.error("ZCYC date range retrieval failed: %s", e, exc_info=True)
-        raise HTTPException(status_code=500, detail="Internal server error") from e
-
+    df = await asyncio.to_thread(get_yearyields_dates, date=date, engine=engine)
+    return {
+        "success": True,
+        "data": df.to_dict(orient="records"),
+        "columns": df.columns.tolist()
+    }
 
 @router.get("/latest")
+@service_endpoint("Get Latest Curve Endpoint")
 async def get_latest_curve_endpoint(
     engine: str = Query("stock", description="Движок биржи (stock, currency, etc.)")
 ):
@@ -317,23 +281,18 @@ async def get_latest_curve_endpoint(
     Returns:
         DataFrame с кривой доходностей для последней доступной даты
     """
-    try:
-        from src.services.zcyc_service import get_latest_curve
+    from src.services.zcyc_service import get_latest_curve
 
-        df = await asyncio.to_thread(get_latest_curve, engine=engine)
-        return {
-            "success": True,
-            "data": df.to_dict(orient="records"),
-            "columns": df.columns.tolist(),
-            "count": len(df)
-        }
-
-    except Exception as e:
-        logger.error("ZCYC latest curve retrieval failed: %s", e, exc_info=True)
-        raise HTTPException(status_code=500, detail="Internal server error") from e
-
+    df = await asyncio.to_thread(get_latest_curve, engine=engine)
+    return {
+        "success": True,
+        "data": df.to_dict(orient="records"),
+        "columns": df.columns.tolist(),
+        "count": len(df)
+    }
 
 @router.post("/discount")
+@service_endpoint("Curve To Discount Endpoint")
 async def curve_to_discount_endpoint(
     data: list[dict[str, Any]],
     col_term: str = Query("period", description="Название колонки со сроком"),
@@ -348,19 +307,14 @@ async def curve_to_discount_endpoint(
     Returns:
         DataFrame с добавленными колонками: yield_decimal, discount_factor
     """
-    try:
-        from src.services.zcyc_service import curve_to_discount
+    from src.services.zcyc_service import curve_to_discount
 
-        df_curve = pd.DataFrame(data)
-        df_discount = curve_to_discount(df_curve, col_term=col_term, col_yield=col_yield)
+    df_curve = pd.DataFrame(data)
+    df_discount = curve_to_discount(df_curve, col_term=col_term, col_yield=col_yield)
 
-        return {
-            "success": True,
-            "data": df_discount.to_dict(orient="records"),
-            "columns": df_discount.columns.tolist(),
-            "count": len(df_discount)
-        }
-
-    except Exception as e:
-        logger.error("ZCYC discount curve conversion failed: %s", e, exc_info=True)
-        raise HTTPException(status_code=500, detail="Internal server error") from e
+    return {
+        "success": True,
+        "data": df_discount.to_dict(orient="records"),
+        "columns": df_discount.columns.tolist(),
+        "count": len(df_discount)
+    }

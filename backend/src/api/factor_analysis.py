@@ -1,16 +1,14 @@
 """
 API endpoints для Time-Series vs Cross-Sectional факторного анализа.
 """
-import logging
 from datetime import datetime
 from typing import Any
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter
 from pydantic import BaseModel, Field
 
 from src.services.factor_analysis_service import run_factor_analysis
-
-logger = logging.getLogger(__name__)
+from src.utils.error_handler import service_endpoint
 
 router = APIRouter()
 
@@ -43,6 +41,7 @@ class FactorAnalysisResponse(BaseModel):
 
 
 @router.post("/analyze", response_model=FactorAnalysisResponse)
+@service_endpoint("Factor analysis")
 async def analyze_factors(request: FactorAnalysisRequest):
     """
     Двухшаговый Fama-MacBeth факторный анализ.
@@ -57,20 +56,13 @@ async def analyze_factors(request: FactorAnalysisRequest):
     - Ценовые ошибки per asset
     - R² (TS и CS)
     """
-    try:
-        result = run_factor_analysis(
-            returns=request.returns,
-            factors=request.factors,
-            asset_names=request.asset_names,
-            factor_names=request.factor_names,
-        )
-        return FactorAnalysisResponse(result=result)
-    except ValueError as e:
-        logger.error("Factor analysis validation error: %s", e, exc_info=True)
-        raise HTTPException(status_code=400, detail="Invalid input parameters") from e
-    except Exception as e:
-        logger.error("Factor analysis failed: %s", e, exc_info=True)
-        raise HTTPException(status_code=500, detail="Internal server error") from e
+    result = run_factor_analysis(
+        returns=request.returns,
+        factors=request.factors,
+        asset_names=request.asset_names,
+        factor_names=request.factor_names,
+    )
+    return FactorAnalysisResponse(result=result)
 
 
 @router.get("/health")

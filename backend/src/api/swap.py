@@ -1,16 +1,14 @@
 """
 API endpoints для оценки свопов (IRS, CDS, Basis Swaps, FX Swaps).
 """
-import logging
 from typing import Any
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter
 from pydantic import Field
 
 from src.services.swap_service import calculate_fx_swap_valuation, calculate_swap_valuation
+from src.utils.error_handler import service_endpoint
 from src.utils.financial_validation import MAX_NOTIONAL, MAX_RATE_PCT, MAX_TENOR_YEARS, FinancialBaseModel
-
-logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
@@ -29,32 +27,22 @@ class SwapValuationRequest(FinancialBaseModel):
 
 
 @router.post("/valuate", response_model=dict[str, Any])
+@service_endpoint("Swap valuation")
 async def valuate_swap(request: SwapValuationRequest):
     """
     Выполняет оценку свопа.
     """
-    try:
-        result = calculate_swap_valuation(
-            notional=request.notional,
-            tenor=request.tenor,
-            fixed_rate=request.fixedRate,
-            floating_rate=request.floatingRate,
-            spread=request.spread,
-            coupons_per_year=request.couponsPerYear,
-            discount_rate=request.discountRate,
-            volatility=request.volatility,
-            swap_type=request.swapType
-        )
-        return result
-    except ValueError as e:
-        logger.error("Swap valuation validation error: %s", e, exc_info=True)
-        raise HTTPException(status_code=400, detail="Invalid input parameters") from e
-    except RuntimeError as e:
-        logger.error("Swap valuation runtime error: %s", e, exc_info=True)
-        raise HTTPException(status_code=400, detail="Calculation error") from e
-    except Exception as e:
-        logger.error("Swap valuation failed: %s", e, exc_info=True)
-        raise HTTPException(status_code=500, detail="Internal server error") from e
+    return calculate_swap_valuation(
+        notional=request.notional,
+        tenor=request.tenor,
+        fixed_rate=request.fixedRate,
+        floating_rate=request.floatingRate,
+        spread=request.spread,
+        coupons_per_year=request.couponsPerYear,
+        discount_rate=request.discountRate,
+        volatility=request.volatility,
+        swap_type=request.swapType
+    )
 
 
 class FxSwapLeg(FinancialBaseModel):
@@ -79,34 +67,27 @@ class FxSwapValuationRequest(FinancialBaseModel):
 
 
 @router.post("/valuate-fx", response_model=dict[str, Any])
+@service_endpoint("FX swap valuation")
 async def valuate_fx_swap(request: FxSwapValuationRequest):
     """Выполняет оценку FX-свопа."""
-    try:
-        result = calculate_fx_swap_valuation(
-            buy_currency_near=request.nearLeg.buyCurrency,
-            sell_currency_near=request.nearLeg.sellCurrency,
-            nominal_buy_near=request.nearLeg.nominalBuy,
-            nominal_sell_near=request.nearLeg.nominalSell,
-            date_near=request.nearLeg.date,
-            buy_currency_far=request.farLeg.buyCurrency,
-            sell_currency_far=request.farLeg.sellCurrency,
-            nominal_buy_far=request.farLeg.nominalBuy,
-            nominal_sell_far=request.farLeg.nominalSell,
-            date_far=request.farLeg.date,
-            valuation_date=request.valuationDate,
-            settlement_currency=request.settlementCurrency,
-            spot_min=request.spotMin,
-            spot_max=request.spotMax,
-            rate_internal=request.rateInternal,
-            rate_external=request.rateExternal,
-        )
-        return result
-    except ValueError as e:
-        logger.error("FX swap valuation validation error: %s", e, exc_info=True)
-        raise HTTPException(status_code=400, detail="Invalid input parameters") from e
-    except Exception as e:
-        logger.error("FX swap valuation failed: %s", e, exc_info=True)
-        raise HTTPException(status_code=500, detail="Internal server error") from e
+    return calculate_fx_swap_valuation(
+        buy_currency_near=request.nearLeg.buyCurrency,
+        sell_currency_near=request.nearLeg.sellCurrency,
+        nominal_buy_near=request.nearLeg.nominalBuy,
+        nominal_sell_near=request.nearLeg.nominalSell,
+        date_near=request.nearLeg.date,
+        buy_currency_far=request.farLeg.buyCurrency,
+        sell_currency_far=request.farLeg.sellCurrency,
+        nominal_buy_far=request.farLeg.nominalBuy,
+        nominal_sell_far=request.farLeg.nominalSell,
+        date_far=request.farLeg.date,
+        valuation_date=request.valuationDate,
+        settlement_currency=request.settlementCurrency,
+        spot_min=request.spotMin,
+        spot_max=request.spotMax,
+        rate_internal=request.rateInternal,
+        rate_external=request.rateExternal,
+    )
 
 
 @router.get("/health")

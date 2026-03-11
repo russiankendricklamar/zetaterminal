@@ -1,14 +1,14 @@
 """
 API endpoints для стресс-тестирования портфеля.
 """
-import logging
 from typing import Any
 
-from fastapi import APIRouter, HTTPException, Request
+from fastapi import APIRouter, Request
 from pydantic import Field
 
 from src.middleware.rate_limit import limiter
 from src.services.stress_service import run_stress_test
+from src.utils.error_handler import service_endpoint
 from src.utils.financial_validation import (
     MAX_ASSETS,
     MAX_CAPITAL,
@@ -16,8 +16,6 @@ from src.utils.financial_validation import (
     MAX_SCENARIOS,
     FinancialBaseModel,
 )
-
-logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
@@ -48,29 +46,22 @@ class StressTestRequest(FinancialBaseModel):
 
 @router.post("/test", response_model=dict[str, Any])
 @limiter.limit("10/minute")
+@service_endpoint("Stress test")
 async def run_stress_tests(http_request: Request, request: StressTestRequest):
     """
     Выполняет стресс-тестирование портфеля для списка сценариев.
     """
-    try:
-        # Конвертируем сценарии в словари
-        scenarios_dict = [scenario.dict() for scenario in request.scenarios]
+    # Конвертируем сценарии в словари
+    scenarios_dict = [scenario.dict() for scenario in request.scenarios]
 
-        result = run_stress_test(
-            mu=request.mu,
-            cov_matrix=request.cov_matrix,
-            initial_capital=request.initial_capital,
-            risk_free_rate=request.risk_free_rate,
-            gamma=request.gamma,
-            scenarios=scenarios_dict,
-            asset_names=request.asset_names,
-            n_paths=request.n_paths,
-            seed=request.seed
-        )
-        return result
-    except ValueError as e:
-        logger.error("Stress test validation error: %s", e, exc_info=True)
-        raise HTTPException(status_code=400, detail="Invalid input parameters") from e
-    except Exception as e:
-        logger.error("Stress test failed: %s", e, exc_info=True)
-        raise HTTPException(status_code=500, detail="Internal server error") from e
+    return run_stress_test(
+        mu=request.mu,
+        cov_matrix=request.cov_matrix,
+        initial_capital=request.initial_capital,
+        risk_free_rate=request.risk_free_rate,
+        gamma=request.gamma,
+        scenarios=scenarios_dict,
+        asset_names=request.asset_names,
+        n_paths=request.n_paths,
+        seed=request.seed
+    )

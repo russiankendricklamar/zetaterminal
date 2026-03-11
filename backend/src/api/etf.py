@@ -4,9 +4,8 @@ ETF Data Router — Russian + International ETFs.
 Prefix: /api/etf
 """
 
-import logging
 
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, Query
 
 from src.services.etf_service import (
     POPULAR_INTL_ETFS,
@@ -14,21 +13,16 @@ from src.services.etf_service import (
     moex_etf_list,
 )
 
-logger = logging.getLogger(__name__)
+from src.utils.error_handler import service_endpoint
 
 router = APIRouter()
 
 
 @router.get("/list")
+@service_endpoint("List Etfs")
 async def list_etfs():
     """List Russian ETFs from MOEX TQTF board."""
-    try:
-        return await moex_etf_list()
-    except Exception as e:
-        logger.error("ETF operation failed: %s", e, exc_info=True)
-        raise HTTPException(status_code=500, detail="Internal server error") from e
-
-
+    return await moex_etf_list()
 @router.get("/candles/{ticker}")
 async def get_candles(
     ticker: str,
@@ -38,14 +32,9 @@ async def get_candles(
     limit: int = Query(100),
 ):
     """Get OHLCV candles for a MOEX ETF."""
-    try:
-        return await etf_candles(ticker, interval, from_date, till_date, limit)
-    except Exception as e:
-        logger.error("ETF operation failed: %s", e, exc_info=True)
-        raise HTTPException(status_code=500, detail="Internal server error") from e
-
-
+    return await etf_candles(ticker, interval, from_date, till_date, limit)
 @router.get("/popular-international")
+@service_endpoint("Popular International")
 async def popular_international():
     """List popular international ETF tickers (use market-data API for prices)."""
     return {"tickers": POPULAR_INTL_ETFS, "note": "Use /api/market-data for price data"}

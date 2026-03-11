@@ -11,13 +11,12 @@ Endpoints:
 - GET /rudata/zcyc - Получить кривую бескупонной доходности
 """
 
-import logging
 from typing import Any
 
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, Query
 from pydantic import BaseModel, Field
 
-logger = logging.getLogger(__name__)
+from src.utils.error_handler import service_endpoint
 
 router = APIRouter()
 
@@ -90,41 +89,37 @@ class SessionRequest(BaseModel):
 
 
 @router.post("/session/create", response_model=SessionResponse)
+@service_endpoint("Create Session")
 async def create_session(credentials: RuDataCredentials):
     """
     Проверить подключение к RuData API и кешировать credentials на сервере.
 
     Возвращает session_id для последующих запросов без передачи логина/пароля.
     """
-    try:
-        from src.services.rudata_service import cache_credentials, test_rudata_connection
+    from src.services.rudata_service import cache_credentials, test_rudata_connection
 
-        result = await test_rudata_connection(
-            login=credentials.login,
-            password=credentials.password
-        )
+    result = await test_rudata_connection(
+        login=credentials.login,
+        password=credentials.password
+    )
 
-        if result.get("success"):
-            session_id = cache_credentials(credentials.login, credentials.password)
-            return SessionResponse(
-                success=True,
-                message=result.get("message", "Подключено"),
-                session_id=session_id,
-                login=credentials.login,
-            )
-
+    if result.get("success"):
+        session_id = cache_credentials(credentials.login, credentials.password)
         return SessionResponse(
-            success=False,
-            message=result.get("message", "Ошибка авторизации"),
+            success=True,
+            message=result.get("message", "Подключено"),
+            session_id=session_id,
             login=credentials.login,
         )
 
-    except Exception as e:
-        logger.error("RuData operation failed: %s", e, exc_info=True)
-        raise HTTPException(status_code=500, detail="Internal server error") from e
-
+    return SessionResponse(
+        success=False,
+        message=result.get("message", "Ошибка авторизации"),
+        login=credentials.login,
+    )
 
 @router.post("/session/clear")
+@service_endpoint("Clear Session")
 async def clear_session(request: SessionRequest):
     """Удалить кешированные credentials по session_id."""
     from src.services.rudata_service import clear_cached_credentials
@@ -134,114 +129,90 @@ async def clear_session(request: SessionRequest):
 
 
 @router.post("/test-connection", response_model=ConnectionTestResponse)
+@service_endpoint("Test Connection")
 async def test_connection(credentials: RuDataCredentials):
     """
     Проверить подключение к RuData API.
 
     Выполняет авторизацию и возвращает результат.
     """
-    try:
-        from src.services.rudata_service import test_rudata_connection
+    from src.services.rudata_service import test_rudata_connection
 
-        result = await test_rudata_connection(
-            login=credentials.login,
-            password=credentials.password
-        )
+    result = await test_rudata_connection(
+        login=credentials.login,
+        password=credentials.password
+    )
 
-        return ConnectionTestResponse(**result)
-
-    except Exception as e:
-        logger.error("RuData operation failed: %s", e, exc_info=True)
-        raise HTTPException(status_code=500, detail="Internal server error") from e
-
+    return ConnectionTestResponse(**result)
 
 @router.post("/query", response_model=RuDataResponse)
+@service_endpoint("Execute Query")
 async def execute_query(query: RuDataQuery):
     """
     Выполнить произвольный запрос к RuData API.
 
     Документация методов: https://docs.efir-net.ru/dh2/#/
     """
-    try:
-        from src.services.rudata_service import fetch_rudata
+    from src.services.rudata_service import fetch_rudata
 
-        result = await fetch_rudata(
-            login=query.login,
-            password=query.password,
-            path_method=query.path_method,
-            body_json=query.body,
-            post=query.post,
-            search_array=query.search_array,
-            search_param=query.search_param,
-            search_field=query.search_field
-        )
+    result = await fetch_rudata(
+        login=query.login,
+        password=query.password,
+        path_method=query.path_method,
+        body_json=query.body,
+        post=query.post,
+        search_array=query.search_array,
+        search_param=query.search_param,
+        search_field=query.search_field
+    )
 
-        return RuDataResponse(**result)
-
-    except Exception as e:
-        logger.error("RuData query failed: %s", e, exc_info=True)
-        raise HTTPException(status_code=500, detail="Internal server error") from e
-
+    return RuDataResponse(**result)
 
 @router.post("/bond/info", response_model=RuDataResponse)
+@service_endpoint("Get Bond Info")
 async def get_bond_info(credentials: RuDataCredentials, isin: str = Query(..., description="ISIN облигации")):
     """
     Получить информацию об облигации по ISIN.
     """
-    try:
-        from src.services.rudata_service import get_rudata_service
+    from src.services.rudata_service import get_rudata_service
 
-        service = get_rudata_service(credentials.login, credentials.password)
-        result = await service.get_bond_info(isin)
+    service = get_rudata_service(credentials.login, credentials.password)
+    result = await service.get_bond_info(isin)
 
-        return RuDataResponse(**result)
-
-    except Exception as e:
-        logger.error("RuData bond info failed: %s", e, exc_info=True)
-        raise HTTPException(status_code=500, detail="Internal server error") from e
-
+    return RuDataResponse(**result)
 
 @router.post("/bond/cashflows", response_model=RuDataResponse)
+@service_endpoint("Get Bond Cashflows")
 async def get_bond_cashflows(credentials: RuDataCredentials, isin: str = Query(..., description="ISIN облигации")):
     """
     Получить денежные потоки (купоны, амортизация) облигации.
     """
-    try:
-        from src.services.rudata_service import get_rudata_service
+    from src.services.rudata_service import get_rudata_service
 
-        service = get_rudata_service(credentials.login, credentials.password)
-        result = await service.get_bond_cashflows(isin)
+    service = get_rudata_service(credentials.login, credentials.password)
+    result = await service.get_bond_cashflows(isin)
 
-        return RuDataResponse(**result)
-
-    except Exception as e:
-        logger.error("RuData cashflows failed: %s", e, exc_info=True)
-        raise HTTPException(status_code=500, detail="Internal server error") from e
-
+    return RuDataResponse(**result)
 
 @router.post("/bond/calculate", response_model=RuDataResponse)
+@service_endpoint("Calculate Bond")
 async def calculate_bond(request: BondCalculateRequest):
     """
     Рассчитать параметры облигации (доходность, дюрация, и т.д.).
     """
-    try:
-        from src.services.rudata_service import get_rudata_service
+    from src.services.rudata_service import get_rudata_service
 
-        service = get_rudata_service(request.login, request.password)
-        result = await service.calculate_bond(
-            isin=request.isin,
-            calc_date=request.calc_date,
-            price=request.price
-        )
+    service = get_rudata_service(request.login, request.password)
+    result = await service.calculate_bond(
+        isin=request.isin,
+        calc_date=request.calc_date,
+        price=request.price
+    )
 
-        return RuDataResponse(**result)
-
-    except Exception as e:
-        logger.error("RuData bond calculation failed: %s", e, exc_info=True)
-        raise HTTPException(status_code=500, detail="Internal server error") from e
-
+    return RuDataResponse(**result)
 
 @router.post("/bonds/search", response_model=RuDataResponse)
+@service_endpoint("Search Bonds")
 async def search_bonds(request: BondSearchRequest):
     """
     Поиск облигаций по фильтру.
@@ -251,23 +222,18 @@ async def search_bonds(request: BondSearchRequest):
     - "facevalue >= 1000 and currency = 'RUB'"
     - "isin_reg LIKE 'RU%'"
     """
-    try:
-        from src.services.rudata_service import get_rudata_service
+    from src.services.rudata_service import get_rudata_service
 
-        service = get_rudata_service(request.login, request.password)
-        result = await service.search_bonds(
-            filter_str=request.filter,
-            fields=request.fields
-        )
+    service = get_rudata_service(request.login, request.password)
+    result = await service.search_bonds(
+        filter_str=request.filter,
+        fields=request.fields
+    )
 
-        return RuDataResponse(**result)
-
-    except Exception as e:
-        logger.error("RuData bond search failed: %s", e, exc_info=True)
-        raise HTTPException(status_code=500, detail="Internal server error") from e
-
+    return RuDataResponse(**result)
 
 @router.post("/zcyc", response_model=RuDataResponse)
+@service_endpoint("Get Zcyc")
 async def get_zcyc(
     credentials: RuDataCredentials,
     date: str | None = Query(None, description="Дата в формате YYYY-MM-DD")
@@ -275,20 +241,15 @@ async def get_zcyc(
     """
     Получить кривую бескупонной доходности (ZCYC) из RuData.
     """
-    try:
-        from src.services.rudata_service import get_rudata_service
+    from src.services.rudata_service import get_rudata_service
 
-        service = get_rudata_service(credentials.login, credentials.password)
-        result = await service.get_zcyc(date=date)
+    service = get_rudata_service(credentials.login, credentials.password)
+    result = await service.get_zcyc(date=date)
 
-        return RuDataResponse(**result)
-
-    except Exception as e:
-        logger.error("RuData ZCYC failed: %s", e, exc_info=True)
-        raise HTTPException(status_code=500, detail="Internal server error") from e
-
+    return RuDataResponse(**result)
 
 @router.post("/fintool/reference", response_model=RuDataResponse)
+@service_endpoint("Get Fintool Reference")
 async def get_fintool_reference(
     credentials: RuDataCredentials,
     id: str = Query(..., description="ID финансового инструмента (ISIN, FintoolID)"),
@@ -297,28 +258,23 @@ async def get_fintool_reference(
     """
     Получить справочные данные финансового инструмента.
     """
-    try:
-        from src.services.rudata_service import fetch_rudata
+    from src.services.rudata_service import fetch_rudata
 
-        body: dict[str, Any] = {'id': id}
-        if fields:
-            body['fields'] = fields
+    body: dict[str, Any] = {'id': id}
+    if fields:
+        body['fields'] = fields
 
-        result = await fetch_rudata(
-            login=credentials.login,
-            password=credentials.password,
-            path_method='Info/FintoolReferenceData',
-            body_json=body
-        )
+    result = await fetch_rudata(
+        login=credentials.login,
+        password=credentials.password,
+        path_method='Info/FintoolReferenceData',
+        body_json=body
+    )
 
-        return RuDataResponse(**result)
-
-    except Exception as e:
-        logger.error("RuData reference data failed: %s", e, exc_info=True)
-        raise HTTPException(status_code=500, detail="Internal server error") from e
-
+    return RuDataResponse(**result)
 
 @router.post("/indicator/list", response_model=RuDataResponse)
+@service_endpoint("Get Indicator List")
 async def get_indicator_list(
     credentials: RuDataCredentials,
     filter: str | None = Query(None, description="Строка фильтрации")
@@ -326,22 +282,17 @@ async def get_indicator_list(
     """
     Получить список индикаторов.
     """
-    try:
-        from src.services.rudata_service import fetch_rudata
+    from src.services.rudata_service import fetch_rudata
 
-        body: dict[str, Any] = {}
-        if filter:
-            body['filter'] = filter
+    body: dict[str, Any] = {}
+    if filter:
+        body['filter'] = filter
 
-        result = await fetch_rudata(
-            login=credentials.login,
-            password=credentials.password,
-            path_method='Indicator/List',
-            body_json=body
-        )
+    result = await fetch_rudata(
+        login=credentials.login,
+        password=credentials.password,
+        path_method='Indicator/List',
+        body_json=body
+    )
 
-        return RuDataResponse(**result)
-
-    except Exception as e:
-        logger.error("RuData indicator list failed: %s", e, exc_info=True)
-        raise HTTPException(status_code=500, detail="Internal server error") from e
+    return RuDataResponse(**result)

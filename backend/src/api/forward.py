@@ -1,16 +1,14 @@
 """
 API endpoints для оценки валютных форвардов.
 """
-import logging
 from typing import Any
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter
 from pydantic import Field
 
 from src.services.forward_service import calculate_forward_valuation
+from src.utils.error_handler import service_endpoint
 from src.utils.financial_validation import MAX_NOTIONAL, MAX_TENOR_YEARS, FinancialBaseModel
-
-logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
@@ -57,56 +55,46 @@ class ForwardValuationRequest(FinancialBaseModel):
 
 
 @router.post("/valuate", response_model=dict[str, Any])
+@service_endpoint("Forward valuation")
 async def valuate_forward(request: ForwardValuationRequest):
     """
     Выполняет оценку форварда различных типов.
     """
-    try:
-        result = calculate_forward_valuation(
-            forward_type=request.forwardType,
-            spot_price=request.spotPrice,
-            time_to_maturity=request.timeToMaturity,
-            market_forward_price=request.marketForwardPrice,
-            contract_size=request.contractSize,
-            # Cost-of-Carry параметры
-            dividend_yield=request.dividendYield,
-            carrying_cost=request.carryingCost,
-            convenience_yield=request.convenienceYield,
-            risk_free_rate=request.riskFreeRate,
-            repo_rate=request.repoRate,
-            # Bond параметры
-            accrued_interest=request.accruedInterest,
-            coupon_rate=request.couponRate,
-            coupon_frequency=request.couponFrequency,
-            face_value=request.faceValue,
-            last_coupon_date=request.lastCouponDate,
-            maturity_date=request.maturityDate,
-            day_count_convention=request.dayCountConvention or "ACT/365",
-            yield_curve_tenors=request.yieldCurveTenors,
-            yield_curve_rates=request.yieldCurveRates,
-            auto_calculate_ai=request.autoCalculateAI if request.autoCalculateAI is not None else True,
-            # FX параметры
-            buy_currency=request.buyCurrency,
-            sell_currency=request.sellCurrency,
-            buy_amount=request.buyAmount,
-            sell_amount=request.sellAmount,
-            deal_date=request.dealDate,
-            valuation_date=request.valuationDate,
-            expiration_date=request.expirationDate,
-            settlement_currency=request.settlementCurrency,
-            internal_rate=request.internalRate,
-            external_rate=request.externalRate
-        )
-        return result
-    except ValueError as e:
-        logger.error("Forward valuation validation error: %s", e, exc_info=True)
-        raise HTTPException(status_code=400, detail="Invalid input parameters") from e
-    except RuntimeError as e:
-        logger.error("Forward valuation runtime error: %s", e, exc_info=True)
-        raise HTTPException(status_code=400, detail="Calculation error") from e
-    except Exception as e:
-        logger.error("Forward valuation failed: %s", e, exc_info=True)
-        raise HTTPException(status_code=500, detail="Internal server error") from e
+    return calculate_forward_valuation(
+        forward_type=request.forwardType,
+        spot_price=request.spotPrice,
+        time_to_maturity=request.timeToMaturity,
+        market_forward_price=request.marketForwardPrice,
+        contract_size=request.contractSize,
+        # Cost-of-Carry параметры
+        dividend_yield=request.dividendYield,
+        carrying_cost=request.carryingCost,
+        convenience_yield=request.convenienceYield,
+        risk_free_rate=request.riskFreeRate,
+        repo_rate=request.repoRate,
+        # Bond параметры
+        accrued_interest=request.accruedInterest,
+        coupon_rate=request.couponRate,
+        coupon_frequency=request.couponFrequency,
+        face_value=request.faceValue,
+        last_coupon_date=request.lastCouponDate,
+        maturity_date=request.maturityDate,
+        day_count_convention=request.dayCountConvention or "ACT/365",
+        yield_curve_tenors=request.yieldCurveTenors,
+        yield_curve_rates=request.yieldCurveRates,
+        auto_calculate_ai=request.autoCalculateAI if request.autoCalculateAI is not None else True,
+        # FX параметры
+        buy_currency=request.buyCurrency,
+        sell_currency=request.sellCurrency,
+        buy_amount=request.buyAmount,
+        sell_amount=request.sellAmount,
+        deal_date=request.dealDate,
+        valuation_date=request.valuationDate,
+        expiration_date=request.expirationDate,
+        settlement_currency=request.settlementCurrency,
+        internal_rate=request.internalRate,
+        external_rate=request.externalRate
+    )
 
 
 @router.get("/health")

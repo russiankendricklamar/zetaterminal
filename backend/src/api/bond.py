@@ -2,16 +2,14 @@
 API endpoints для оценки облигаций (DCF).
 """
 import asyncio
-import logging
 from typing import Any
 
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, Query
 from pydantic import Field
 
 from src.services.bond_service import calculate_bond_valuation, get_market_yield_from_moex
+from src.utils.error_handler import service_endpoint
 from src.utils.financial_validation import MAX_RATE_PCT, FinancialBaseModel
-
-logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
@@ -27,57 +25,26 @@ class BondValuationRequest(FinancialBaseModel):
 
 
 @router.post("/valuate", response_model=dict[str, Any])
+@service_endpoint("Bond valuation")
 async def valuate_bond(request: BondValuationRequest):
-    """
-    Выполняет оценку облигации для двух сценариев доходности.
-    """
-    try:
-        result = await asyncio.to_thread(
-            calculate_bond_valuation,
-            secid=request.secid,
-            valuation_date=request.valuationDate,
-            discount_yield1=request.discountYield1,
-            discount_yield2=request.discountYield2,
-            day_count=request.dayCount,
-            day_count_convention=request.dayCountConvention,
-        )
-        return result
-    except ValueError as e:
-        logger.error("Bond valuation validation error: %s", e, exc_info=True)
-        raise HTTPException(status_code=400, detail="Invalid input parameters") from e
-    except RuntimeError as e:
-        logger.error("Bond valuation runtime error: %s", e, exc_info=True)
-        raise HTTPException(status_code=400, detail="Calculation error") from e
-    except Exception as e:
-        logger.error("Bond valuation failed: %s", e, exc_info=True)
-        raise HTTPException(status_code=500, detail="Internal server error") from e
+    """Выполняет оценку облигации для двух сценариев доходности."""
+    return await asyncio.to_thread(
+        calculate_bond_valuation,
+        secid=request.secid,
+        valuation_date=request.valuationDate,
+        discount_yield1=request.discountYield1,
+        discount_yield2=request.discountYield2,
+        day_count=request.dayCount,
+        day_count_convention=request.dayCountConvention,
+    )
 
 
 @router.get("/market-yield", response_model=dict[str, Any])
+@service_endpoint("Market yield lookup")
 async def get_market_yield(
     secid: str = Query(..., description="ISIN облигации"),
     date: str = Query(..., description="Дата оценки (YYYY-MM-DD)")
 ):
-    """
-    Получает рыночную доходность облигации из MOEX API на указанную дату.
-    
-    Args:
-        secid: ISIN облигации
-        date: Дата оценки в формате YYYY-MM-DD
-        
-    Returns:
-        Словарь с рыночной доходностью (в процентах)
-    """
-    try:
-        yield_value = await asyncio.to_thread(get_market_yield_from_moex, secid, date)
-        return {
-            "secid": secid,
-            "date": date,
-            "yield": yield_value
-        }
-    except ValueError as e:
-        logger.error("Market yield validation error for %s: %s", secid, e, exc_info=True)
-        raise HTTPException(status_code=400, detail="Invalid input parameters") from e
-    except Exception as e:
-        logger.error("Error getting market yield for %s on %s: %s", secid, date, e, exc_info=True)
-        raise HTTPException(status_code=500, detail="Internal server error") from e
+    """Получает рыночную доходность облигации из MOEX API."""
+    yield_value = await asyncio.to_thread(get_market_yield_from_moex, secid, date)
+    return {"secid": secid, "date": date, "yield": yield_value}

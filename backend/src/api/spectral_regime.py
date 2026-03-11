@@ -7,7 +7,6 @@ Endpoints:
 - POST /fetch-data - Загрузка данных актива и расчёт доходностей
 """
 
-import logging
 from datetime import datetime, timedelta
 from typing import Any
 
@@ -17,7 +16,7 @@ from pydantic import BaseModel, Field
 
 from src.middleware.rate_limit import limiter
 
-logger = logging.getLogger(__name__)
+from src.utils.error_handler import service_endpoint
 
 router = APIRouter()
 
@@ -119,6 +118,7 @@ AVAILABLE_ASSETS = {
 
 
 @router.get("/assets")
+@service_endpoint("Get Available Assets")
 async def get_available_assets():
     """
     Получить список доступных активов для анализа.
@@ -133,6 +133,7 @@ async def get_available_assets():
 
 
 @router.post("/fetch-data")
+@service_endpoint("Fetch Asset Data")
 async def fetch_asset_data(request: AssetDataRequest):
     """
     Загрузить исторические данные актива и рассчитать доходности.
@@ -143,69 +144,59 @@ async def fetch_asset_data(request: AssetDataRequest):
     Returns:
         Массив дневных доходностей и метаданные
     """
-    try:
-        import yfinance as yf
+    import yfinance as yf
 
-        ticker = request.ticker
-        period_days = request.period_days
+    ticker = request.ticker
+    period_days = request.period_days
 
-        # Загрузка данных через yfinance
-        end_date = datetime.now()
-        start_date = end_date - timedelta(days=period_days + 30)  # +30 для запаса
+    # Загрузка данных через yfinance
+    end_date = datetime.now()
+    start_date = end_date - timedelta(days=period_days + 30)  # +30 для запаса
 
-        data = yf.download(
-            ticker,
-            start=start_date.strftime('%Y-%m-%d'),
-            end=end_date.strftime('%Y-%m-%d'),
-            progress=False
+    data = yf.download(
+        ticker,
+        start=start_date.strftime('%Y-%m-%d'),
+        end=end_date.strftime('%Y-%m-%d'),
+        progress=False
+    )
+
+    if data.empty:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Не удалось загрузить данные для тикера {ticker}"
         )
 
-        if data.empty:
-            raise HTTPException(
-                status_code=404,
-                detail=f"Не удалось загрузить данные для тикера {ticker}"
-            )
+    # Расчёт логарифмических доходностей
+    prices = data['Close'].values.flatten()
+    returns = np.diff(np.log(prices))
 
-        # Расчёт логарифмических доходностей
-        prices = data['Close'].values.flatten()
-        returns = np.diff(np.log(prices))
+    # Ограничение по количеству
+    if len(returns) > period_days:
+        returns = returns[-period_days:]
 
-        # Ограничение по количеству
-        if len(returns) > period_days:
-            returns = returns[-period_days:]
+    # Метаданные
+    metadata = {
+        "ticker": ticker,
+        "start_date": str(data.index[0].date()) if len(data) > 0 else None,
+        "end_date": str(data.index[-1].date()) if len(data) > 0 else None,
+        "n_observations": len(returns),
+        "mean_return": float(np.mean(returns)),
+        "std_return": float(np.std(returns)),
+        "min_return": float(np.min(returns)),
+        "max_return": float(np.max(returns)),
+        "last_price": float(prices[-1]) if len(prices) > 0 else None
+    }
 
-        # Метаданные
-        metadata = {
-            "ticker": ticker,
-            "start_date": str(data.index[0].date()) if len(data) > 0 else None,
-            "end_date": str(data.index[-1].date()) if len(data) > 0 else None,
-            "n_observations": len(returns),
-            "mean_return": float(np.mean(returns)),
-            "std_return": float(np.std(returns)),
-            "min_return": float(np.min(returns)),
-            "max_return": float(np.max(returns)),
-            "last_price": float(prices[-1]) if len(prices) > 0 else None
-        }
-
-        return {
-            "success": True,
-            "returns": returns.tolist(),
-            "prices": prices.tolist(),
-            "metadata": metadata
-        }
-
-    except ImportError:
-        raise HTTPException(
-            status_code=500,
-            detail="yfinance не установлен. Установите: pip install yfinance"
-        ) from None
-    except Exception as e:
-        logger.error("Spectral regime data loading failed: %s", e, exc_info=True)
-        raise HTTPException(status_code=500, detail="Internal server error") from e
-
+    return {
+        "success": True,
+        "returns": returns.tolist(),
+        "prices": prices.tolist(),
+        "metadata": metadata
+    }
 
 @router.post("/analyze", response_model=SpectralAnalysisResponse)
 @limiter.limit("10/minute")
+@service_endpoint("Analyze Spectral Regimes")
 async def analyze_spectral_regimes(http_request: Request, request: SpectralAnalysisRequest):
     """
     Запустить комплексный анализ скрытых рыночных режимов.
@@ -224,55 +215,48 @@ async def analyze_spectral_regimes(http_request: Request, request: SpectralAnaly
     Returns:
         Полные результаты анализа с данными для визуализации
     """
-    try:
-        from src.services.spectral_regime_service import run_spectral_regime_analysis
+    from src.services.spectral_regime_service import run_spectral_regime_analysis
 
-        returns = request.returns
+    returns = request.returns
 
-        if len(returns) < 50:
-            raise HTTPException(
-                status_code=400,
-                detail="Минимальная длина временного ряда - 50 наблюдений"
-            )
-
-        if len(returns) > 5000:
-            raise HTTPException(
-                status_code=400,
-                detail="Максимальная длина временного ряда - 5000 наблюдений"
-            )
-
-        # Проверка на NaN и Inf
-        returns_arr = np.array(returns)
-        if np.any(~np.isfinite(returns_arr)):
-            raise HTTPException(
-                status_code=400,
-                detail="Временной ряд содержит NaN или Inf значения"
-            )
-
-        # Запуск анализа
-        result = run_spectral_regime_analysis(
-            returns=returns,
-            n_poles=request.n_poles,
-            window_size=request.window_size,
-            max_lag=request.max_lag,
-            auto_optimize=request.auto_optimize or (request.n_poles is None or request.window_size is None),
-            criterion=request.criterion
+    if len(returns) < 50:
+        raise HTTPException(
+            status_code=400,
+            detail="Минимальная длина временного ряда - 50 наблюдений"
         )
 
-        return SpectralAnalysisResponse(
-            success=True,
-            summary=result['summary'],
-            visualization=result['visualization']
+    if len(returns) > 5000:
+        raise HTTPException(
+            status_code=400,
+            detail="Максимальная длина временного ряда - 5000 наблюдений"
         )
 
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error("Spectral regime analysis failed: %s", e, exc_info=True)
-        raise HTTPException(status_code=500, detail="Internal server error") from e
+    # Проверка на NaN и Inf
+    returns_arr = np.array(returns)
+    if np.any(~np.isfinite(returns_arr)):
+        raise HTTPException(
+            status_code=400,
+            detail="Временной ряд содержит NaN или Inf значения"
+        )
 
+    # Запуск анализа
+    result = run_spectral_regime_analysis(
+        returns=returns,
+        n_poles=request.n_poles,
+        window_size=request.window_size,
+        max_lag=request.max_lag,
+        auto_optimize=request.auto_optimize or (request.n_poles is None or request.window_size is None),
+        criterion=request.criterion
+    )
+
+    return SpectralAnalysisResponse(
+        success=True,
+        summary=result['summary'],
+        visualization=result['visualization']
+    )
 
 @router.post("/analyze-asset")
+@service_endpoint("Analyze Asset Regimes")
 async def analyze_asset_regimes(
     ticker: str,
     period_days: int = 252,
@@ -293,39 +277,32 @@ async def analyze_asset_regimes(
     Returns:
         Результаты анализа с метаданными актива
     """
-    try:
-        # Загрузка данных
-        data_request = AssetDataRequest(ticker=ticker, period_days=period_days)
-        data_response = await fetch_asset_data(data_request)
+    # Загрузка данных
+    data_request = AssetDataRequest(ticker=ticker, period_days=period_days)
+    data_response = await fetch_asset_data(data_request)
 
-        if not data_response.get('success'):
-            raise HTTPException(status_code=500, detail="Ошибка загрузки данных")
+    if not data_response.get('success'):
+        raise HTTPException(status_code=500, detail="Ошибка загрузки данных")
 
-        returns = data_response['returns']
+    returns = data_response['returns']
 
-        # Анализ
-        analysis_request = SpectralAnalysisRequest(
-            returns=returns,
-            n_poles=n_poles,
-            window_size=window_size,
-            auto_optimize=auto_optimize,
-            criterion=criterion
-        )
-        analysis_response = await analyze_spectral_regimes(analysis_request)
+    # Анализ
+    analysis_request = SpectralAnalysisRequest(
+        returns=returns,
+        n_poles=n_poles,
+        window_size=window_size,
+        auto_optimize=auto_optimize,
+        criterion=criterion
+    )
+    analysis_response = await analyze_spectral_regimes(analysis_request)
 
-        return {
-            "success": True,
-            "asset_metadata": data_response['metadata'],
-            "prices": data_response['prices'],
-            "returns": returns,
-            "analysis": {
-                "summary": analysis_response.summary,
-                "visualization": analysis_response.visualization
-            }
+    return {
+        "success": True,
+        "asset_metadata": data_response['metadata'],
+        "prices": data_response['prices'],
+        "returns": returns,
+        "analysis": {
+            "summary": analysis_response.summary,
+            "visualization": analysis_response.visualization
         }
-
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error("Spectral regime asset analysis failed: %s", e, exc_info=True)
-        raise HTTPException(status_code=500, detail="Internal server error") from e
+    }

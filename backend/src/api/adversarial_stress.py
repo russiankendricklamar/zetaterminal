@@ -1,7 +1,6 @@
 """
 API endpoints для Adversarial Stress Testing.
 """
-import logging
 from typing import Any
 
 from fastapi import APIRouter, HTTPException, Request
@@ -10,7 +9,7 @@ from pydantic import BaseModel, Field
 from src.middleware.rate_limit import limiter
 from src.services.adversarial_stress_service import run_adversarial_stress
 
-logger = logging.getLogger(__name__)
+from src.utils.error_handler import service_endpoint
 
 router = APIRouter()
 
@@ -32,6 +31,7 @@ class AdversarialStressRequest(BaseModel):
 
 @router.post("/generate", response_model=dict[str, Any])
 @limiter.limit("10/minute")
+@service_endpoint("Generate Adversarial Stress")
 async def generate_adversarial_stress(http_request: Request, request: AdversarialStressRequest):
     """
     Генерирует adversarial worst-case сценарии для портфеля.
@@ -42,42 +42,31 @@ async def generate_adversarial_stress(http_request: Request, request: Adversaria
     - Monte-Carlo с adversarial параметрами
     - EVT (GPD) для хвоста потерь
     """
-    try:
-        n = len(request.mu)
+    n = len(request.mu)
 
-        if len(request.weights) != n:
-            raise ValueError(
-                f"Длина weights ({len(request.weights)}) ≠ длине mu ({n})"
-            )
-        if len(request.cov_matrix) != n or any(len(row) != n for row in request.cov_matrix):
-            raise ValueError(
-                f"Ковариационная матрица должна быть {n}×{n}"
-            )
-
-        result = run_adversarial_stress(
-            cov_matrix=request.cov_matrix,
-            mu=request.mu,
-            weights=request.weights,
-            kappa=request.kappa,
-            epsilon=request.epsilon,
-            n_paths=request.n_paths,
-            risk_free_rate=request.risk_free_rate,
-            initial_capital=request.initial_capital,
-            gamma=request.gamma,
-            asset_names=request.asset_names,
-            seed=request.seed,
+    if len(request.weights) != n:
+        raise ValueError(
+            f"Длина weights ({len(request.weights)}) ≠ длине mu ({n})"
         )
-        return result
+    if len(request.cov_matrix) != n or any(len(row) != n for row in request.cov_matrix):
+        raise ValueError(
+            f"Ковариационная матрица должна быть {n}×{n}"
+        )
 
-    except ValueError as e:
-        logger.error("Adversarial stress validation error: %s", e, exc_info=True)
-        raise HTTPException(status_code=400, detail="Invalid input parameters") from e
-    except Exception as e:
-        logger.error("Adversarial stress test failed: %s", e, exc_info=True)
-        raise HTTPException(status_code=500, detail="Internal server error") from e
+    result = run_adversarial_stress(
+        cov_matrix=request.cov_matrix,
+        mu=request.mu,
+        weights=request.weights,
+        kappa=request.kappa,
+        epsilon=request.epsilon,
+        n_paths=request.n_paths,
+        risk_free_rate=request.risk_free_rate,
+        initial_capital=request.initial_capital,
+        gamma=request.gamma,
+        asset_names=request.asset_names,
+        seed=request.seed,
+    )
+    return result
 
-
-@router.get("/health")
-async def adversarial_stress_health():
     """Health check."""
     return {"status": "healthy", "service": "adversarial-stress"}

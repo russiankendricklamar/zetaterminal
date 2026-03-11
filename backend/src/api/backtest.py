@@ -1,17 +1,15 @@
 """
 API endpoints для бэктестинга портфеля.
 """
-import logging
 from typing import Any
 
-from fastapi import APIRouter, HTTPException, Request
+from fastapi import APIRouter, Request
 from pydantic import Field
 
 from src.middleware.rate_limit import limiter
 from src.services.backtest_service import run_backtest
+from src.utils.error_handler import service_endpoint
 from src.utils.financial_validation import MAX_ASSETS, MAX_CAPITAL, FinancialBaseModel
-
-logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
@@ -32,27 +30,20 @@ class BacktestRequest(FinancialBaseModel):
 
 @router.post("/run", response_model=dict[str, Any])
 @limiter.limit("10/minute")
+@service_endpoint("Backtest")
 async def run_portfolio_backtest(http_request: Request, request: BacktestRequest):
     """
     Выполняет бэктест портфеля.
     """
-    try:
-        result = run_backtest(
-            mu=request.mu,
-            cov_matrix=request.cov_matrix,
-            initial_capital=request.initial_capital,
-            risk_free_rate=request.risk_free_rate,
-            gamma=request.gamma,
-            horizon_years=request.horizon_years,
-            n_steps=request.n_steps,
-            asset_names=request.asset_names,
-            n_paths=request.n_paths,
-            seed=request.seed
-        )
-        return result
-    except ValueError as e:
-        logger.error("Backtest validation error: %s", e, exc_info=True)
-        raise HTTPException(status_code=400, detail="Invalid input parameters") from e
-    except Exception as e:
-        logger.error("Backtest failed: %s", e, exc_info=True)
-        raise HTTPException(status_code=500, detail="Internal server error") from e
+    return run_backtest(
+        mu=request.mu,
+        cov_matrix=request.cov_matrix,
+        initial_capital=request.initial_capital,
+        risk_free_rate=request.risk_free_rate,
+        gamma=request.gamma,
+        horizon_years=request.horizon_years,
+        n_steps=request.n_steps,
+        asset_names=request.asset_names,
+        n_paths=request.n_paths,
+        seed=request.seed
+    )

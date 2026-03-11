@@ -1,18 +1,16 @@
 """
 API endpoints для вычислительных задач.
 """
-import logging
 from datetime import datetime
 
-from fastapi import APIRouter, Body, HTTPException, Request
+from fastapi import APIRouter, Body, Request
 from pydantic import Field
 
 from src.middleware.rate_limit import limiter
 from src.models.schemas import ComputeResponse
 from src.services.compute_service import ComputeService
+from src.utils.error_handler import service_endpoint
 from src.utils.financial_validation import MAX_DATA_POINTS, FinancialBaseModel
-
-logger = logging.getLogger(__name__)
 
 router = APIRouter()
 compute_service = ComputeService()
@@ -28,56 +26,50 @@ class GARCHRequest(FinancialBaseModel):
 
 
 @router.post("/statistics", response_model=ComputeResponse)
+@service_endpoint("Statistics computation")
 async def calculate_statistics(data: list[float] = Body(..., max_length=100000)):
     """
     Вычисляет статистику для массива данных.
-    
+
     Args:
         data: Список числовых значений
-        
+
     Returns:
         Статистические показатели
     """
-    try:
-        result = compute_service.calculate_statistics(data)
-        return ComputeResponse(
-            result=result,
-            status="success",
-            timestamp=datetime.now()
-        )
-    except Exception as e:
-        logger.error("Compute operation failed: %s", e, exc_info=True)
-        raise HTTPException(status_code=400, detail="Invalid input parameters") from e
+    result = compute_service.calculate_statistics(data)
+    return ComputeResponse(
+        result=result,
+        status="success",
+        timestamp=datetime.now()
+    )
 
 
 @router.post("/garch")
 @limiter.limit("10/minute")
+@service_endpoint("GARCH computation")
 async def calculate_garch(http_request: Request, request: GARCHRequest):
     """
     Вычисляет GARCH(1,1) модель волатильности.
-    
+
     Args:
         request: Параметры GARCH модели
-        
+
     Returns:
         Результаты GARCH моделирования
     """
-    try:
-        result = compute_service.calculate_garch(
-            returns=request.returns,
-            omega=request.omega,
-            alpha=request.alpha,
-            beta=request.beta,
-            initial_variance=request.initial_variance
-        )
-        return {
-            "result": result,
-            "status": "success",
-            "timestamp": datetime.now()
-        }
-    except Exception as e:
-        logger.error("Compute operation failed: %s", e, exc_info=True)
-        raise HTTPException(status_code=400, detail="Invalid input parameters") from e
+    result = compute_service.calculate_garch(
+        returns=request.returns,
+        omega=request.omega,
+        alpha=request.alpha,
+        beta=request.beta,
+        initial_variance=request.initial_variance
+    )
+    return {
+        "result": result,
+        "status": "success",
+        "timestamp": datetime.now()
+    }
 
 
 @router.get("/health")

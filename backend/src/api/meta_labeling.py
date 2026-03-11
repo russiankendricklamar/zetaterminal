@@ -1,7 +1,6 @@
 """
 API endpoints для Meta-Labeling (Signal Quality Control).
 """
-import logging
 from datetime import datetime
 from typing import Any
 
@@ -10,7 +9,7 @@ from pydantic import BaseModel, Field
 
 from src.services.meta_labeling_service import compute_meta_labeling
 
-logger = logging.getLogger(__name__)
+from src.utils.error_handler import service_endpoint
 
 router = APIRouter()
 
@@ -46,6 +45,7 @@ class MetaLabelingResponse(BaseModel):
 
 
 @router.post("/analyze", response_model=MetaLabelingResponse)
+@service_endpoint("Analyze")
 async def analyze(request: MetaLabelingRequest):
     """
     Meta-Labeling анализ.
@@ -59,26 +59,15 @@ async def analyze(request: MetaLabelingRequest):
     - Precision-recall curve (threshold sweep)
     - Feature importances мета-модели
     """
-    try:
-        result = compute_meta_labeling(
-            prices=request.prices,
-            pt_multiplier=request.pt_multiplier,
-            sl_multiplier=request.sl_multiplier,
-            max_holding=request.max_holding,
-            vol_window=request.vol_window,
-            train_ratio=request.train_ratio,
-            regularization=request.regularization,
-            meta_threshold=request.meta_threshold,
-        )
-        return MetaLabelingResponse(result=result)
-    except ValueError as e:
-        logger.error("Meta-labeling validation error: %s", e, exc_info=True)
-        raise HTTPException(status_code=400, detail="Invalid input parameters") from e
-    except Exception as e:
-        logger.error("Meta-labeling computation failed: %s", e, exc_info=True)
-        raise HTTPException(status_code=500, detail="Internal server error") from e
-
-
-@router.get("/health")
-async def health():
+    result = compute_meta_labeling(
+        prices=request.prices,
+        pt_multiplier=request.pt_multiplier,
+        sl_multiplier=request.sl_multiplier,
+        max_holding=request.max_holding,
+        vol_window=request.vol_window,
+        train_ratio=request.train_ratio,
+        regularization=request.regularization,
+        meta_threshold=request.meta_threshold,
+    )
+    return MetaLabelingResponse(result=result)
     return {"status": "healthy", "service": "meta_labeling"}

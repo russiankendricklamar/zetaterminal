@@ -1,7 +1,6 @@
 """
 API endpoints для анализа Eigenportfolios (PCA).
 """
-import logging
 from datetime import datetime
 from typing import Any
 
@@ -10,8 +9,7 @@ from pydantic import BaseModel, Field
 
 from src.middleware.rate_limit import limiter
 from src.services.eigenportfolio_service import compute_eigenportfolios
-
-logger = logging.getLogger(__name__)
+from src.utils.error_handler import service_endpoint
 
 router = APIRouter()
 
@@ -43,6 +41,7 @@ class EigenportfolioResponse(BaseModel):
 
 @router.post("/decompose", response_model=EigenportfolioResponse)
 @limiter.limit("10/minute")
+@service_endpoint("Eigenportfolio decomposition")
 async def decompose(http_request: Request, request: EigenportfolioRequest):
     """
     PCA декомпозиция ковариационной матрицы.
@@ -65,21 +64,14 @@ async def decompose(http_request: Request, request: EigenportfolioRequest):
                 detail=f"portfolio_weights длина {len(request.portfolio_weights)} != N активов {n_assets}"
             )
 
-    try:
-        result = compute_eigenportfolios(
-            returns=request.returns,
-            asset_names=request.asset_names,
-            use_shrinkage=request.use_shrinkage,
-            n_components=request.n_components,
-            portfolio_weights=request.portfolio_weights,
-        )
-        return EigenportfolioResponse(result=result)
-    except ValueError as e:
-        logger.error("Eigenportfolio validation error: %s", e, exc_info=True)
-        raise HTTPException(status_code=400, detail="Invalid input parameters") from e
-    except Exception as e:
-        logger.error("Eigenportfolio computation failed: %s", e, exc_info=True)
-        raise HTTPException(status_code=500, detail="Internal server error") from e
+    result = compute_eigenportfolios(
+        returns=request.returns,
+        asset_names=request.asset_names,
+        use_shrinkage=request.use_shrinkage,
+        n_components=request.n_components,
+        portfolio_weights=request.portfolio_weights,
+    )
+    return EigenportfolioResponse(result=result)
 
 
 @router.get("/health")

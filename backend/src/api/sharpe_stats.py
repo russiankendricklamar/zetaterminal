@@ -1,7 +1,6 @@
 """
 API endpoints для статистического анализа коэффициента Шарпа.
 """
-import logging
 from datetime import datetime
 from typing import Any
 
@@ -10,7 +9,7 @@ from pydantic import BaseModel, Field
 
 from src.services.sharpe_stats_service import compute_sharpe_stats
 
-logger = logging.getLogger(__name__)
+from src.utils.error_handler import service_endpoint
 
 router = APIRouter()
 
@@ -41,6 +40,7 @@ class SharpeStatsResponse(BaseModel):
 
 
 @router.post("/analyze", response_model=SharpeStatsResponse)
+@service_endpoint("Analyze Sharpe")
 async def analyze_sharpe(request: SharpeStatsRequest):
     """
     Полный статистический анализ коэффициента Шарпа.
@@ -52,23 +52,12 @@ async def analyze_sharpe(request: SharpeStatsRequest):
     - Probabilistic Sharpe Ratio (PSR) и Deflated Sharpe Ratio (DSR)
     - Данные для PSR-кривой и распределения SR под H₀
     """
-    try:
-        result = compute_sharpe_stats(
-            returns=request.returns,
-            risk_free_rate=request.risk_free_rate,
-            periods_per_year=request.periods_per_year,
-            benchmark_sr=request.benchmark_sr,
-            n_trials=request.n_trials,
-        )
-        return SharpeStatsResponse(result=result)
-    except ValueError as e:
-        logger.error("Sharpe stats validation error: %s", e, exc_info=True)
-        raise HTTPException(status_code=400, detail="Invalid input parameters") from e
-    except Exception as e:
-        logger.error("Sharpe stats computation failed: %s", e, exc_info=True)
-        raise HTTPException(status_code=500, detail="Internal server error") from e
-
-
-@router.get("/health")
-async def health():
+    result = compute_sharpe_stats(
+        returns=request.returns,
+        risk_free_rate=request.risk_free_rate,
+        periods_per_year=request.periods_per_year,
+        benchmark_sr=request.benchmark_sr,
+        n_trials=request.n_trials,
+    )
+    return SharpeStatsResponse(result=result)
     return {"status": "healthy", "service": "sharpe-stats"}

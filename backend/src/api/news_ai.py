@@ -4,7 +4,6 @@ News & AI Router — NewsAPI, Currents API, Hugging Face Inference
 Prefix: /api/news-ai
 """
 
-import logging
 
 from fastapi import APIRouter, HTTPException, Query
 from pydantic import BaseModel
@@ -19,7 +18,7 @@ from src.services.news_ai_service import (
     newsapi_top_headlines,
 )
 
-logger = logging.getLogger(__name__)
+from src.utils.error_handler import service_endpoint
 
 router = APIRouter()
 
@@ -27,6 +26,7 @@ router = APIRouter()
 # ─── NewsAPI ──────────────────────────────────────────────────────────────────
 
 @router.get("/newsapi/headlines")
+@service_endpoint("News Headlines")
 async def news_headlines(
     country: str = Query("us"),
     category: str | None = Query(None),
@@ -34,14 +34,9 @@ async def news_headlines(
     page_size: int = Query(20),
 ):
     """Top headlines from NewsAPI."""
-    try:
-        return await newsapi_top_headlines(country, category, q, page_size)
-    except Exception as e:
-        logger.error("NewsAPI top headlines failed: %s", e, exc_info=True)
-        raise HTTPException(status_code=500, detail="Internal server error") from e
-
-
+    return await newsapi_top_headlines(country, category, q, page_size)
 @router.get("/newsapi/everything")
+@service_endpoint("News Everything")
 async def news_everything(
     q: str = Query(""),
     from_date: str | None = Query(None, alias="from"),
@@ -51,42 +46,26 @@ async def news_everything(
     language: str = Query("en"),
 ):
     """Search all articles from NewsAPI."""
-    try:
-        return await newsapi_everything(q, from_date, to_date, sort_by, page_size, language)
-    except Exception as e:
-        logger.error("NewsAPI everything search failed: %s", e, exc_info=True)
-        raise HTTPException(status_code=500, detail="Internal server error") from e
-
-
+    return await newsapi_everything(q, from_date, to_date, sort_by, page_size, language)
 # ─── Currents API ─────────────────────────────────────────────────────────────
 
 @router.get("/currents/latest")
+@service_endpoint("Curr Latest")
 async def curr_latest(
     language: str = Query("en"),
     keywords: str | None = Query(None),
     category: str | None = Query(None),
 ):
     """Latest news from Currents API."""
-    try:
-        return await currents_latest(language, keywords, category)
-    except Exception as e:
-        logger.error("Currents latest news failed: %s", e, exc_info=True)
-        raise HTTPException(status_code=500, detail="Internal server error") from e
-
-
+    return await currents_latest(language, keywords, category)
 @router.get("/currents/search")
+@service_endpoint("Curr Search")
 async def curr_search(
     keywords: str = Query(""),
     language: str = Query("en"),
 ):
     """Search news from Currents API."""
-    try:
-        return await currents_search(keywords, language)
-    except Exception as e:
-        logger.error("Currents search failed: %s", e, exc_info=True)
-        raise HTTPException(status_code=500, detail="Internal server error") from e
-
-
+    return await currents_search(keywords, language)
 # ─── Hugging Face ─────────────────────────────────────────────────────────────
 
 _ALLOWED_HF_MODELS = frozenset({
@@ -110,6 +89,7 @@ class SummarizeRequest(BaseModel):
 
 
 @router.post("/huggingface/inference")
+@service_endpoint("Hf Infer")
 async def hf_infer(req: InferenceRequest):
     """Run HF model inference (whitelisted models only)."""
     if req.model_id not in _ALLOWED_HF_MODELS:
@@ -117,33 +97,16 @@ async def hf_infer(req: InferenceRequest):
             status_code=400,
             detail=f"Model not allowed. Allowed: {', '.join(sorted(_ALLOWED_HF_MODELS))}",
         )
-    try:
-        return await hf_inference(req.model_id, req.inputs)
-    except Exception as e:
-        logger.error("HuggingFace inference failed: %s", e, exc_info=True)
-        raise HTTPException(status_code=500, detail="Internal server error") from e
-
-
+    return await hf_inference(req.model_id, req.inputs)
 @router.post("/huggingface/sentiment")
+@service_endpoint("Hf Sent")
 async def hf_sent(req: SentimentRequest):
     """Financial sentiment analysis (ProsusAI/finbert)."""
-    try:
-        return await hf_sentiment(req.text)
-    except Exception as e:
-        logger.error("HuggingFace sentiment analysis failed: %s", e, exc_info=True)
-        raise HTTPException(status_code=500, detail="Internal server error") from e
-
-
+    return await hf_sentiment(req.text)
 @router.post("/huggingface/summarize")
 async def hf_sum(req: SummarizeRequest):
     """Text summarization (facebook/bart-large-cnn)."""
-    try:
-        return await hf_summarize(req.text, req.max_length)
-    except Exception as e:
-        logger.error("HuggingFace summarization failed: %s", e, exc_info=True)
-        raise HTTPException(status_code=500, detail="Internal server error") from e
-
-
+    return await hf_summarize(req.text, req.max_length)
 @router.get("/health")
 async def health():
     return {"status": "ok", "service": "news-ai"}

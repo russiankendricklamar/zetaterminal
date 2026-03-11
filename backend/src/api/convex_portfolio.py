@@ -1,7 +1,6 @@
 """
 API endpoints для Convex Portfolio Construction.
 """
-import logging
 from datetime import datetime
 from typing import Any
 
@@ -9,8 +8,7 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 
 from src.services.convex_portfolio_service import compute_convex_portfolio
-
-logger = logging.getLogger(__name__)
+from src.utils.error_handler import service_endpoint
 
 router = APIRouter()
 
@@ -58,6 +56,7 @@ class ConvexPortfolioResponse(BaseModel):
 
 
 @router.post("/optimize", response_model=ConvexPortfolioResponse)
+@service_endpoint("Convex portfolio optimization")
 async def optimize(request: ConvexPortfolioRequest):
     """
     Convex Portfolio Optimization.
@@ -78,30 +77,22 @@ async def optimize(request: ConvexPortfolioRequest):
         if invalid:
             raise HTTPException(status_code=400, detail=f"Неизвестные задачи: {invalid}")
 
-    try:
-        result = compute_convex_portfolio(
-            returns=request.returns,
-            asset_names=request.asset_names,
-            objectives=request.objectives,
-            long_only=request.long_only,
-            lb=request.lb,
-            ub=request.ub,
-            max_weight=request.max_weight,
-            target_return=request.target_return,
-            leverage=request.leverage,
-            cvar_alpha=request.cvar_alpha,
-            risk_free=request.risk_free,
-            kelly_fraction=request.kelly_fraction,
-            annualize=request.annualize,
-            n_frontier=request.n_frontier,
-        )
-        return ConvexPortfolioResponse(result=result)
-    except ValueError as e:
-        logger.error("Convex portfolio validation error: %s", e, exc_info=True)
-        raise HTTPException(status_code=400, detail="Invalid input parameters") from e
-    except Exception as e:
-        logger.error("Convex portfolio optimization failed: %s", e, exc_info=True)
-        raise HTTPException(status_code=500, detail="Internal server error") from e
+    return ConvexPortfolioResponse(result=compute_convex_portfolio(
+        returns=request.returns,
+        asset_names=request.asset_names,
+        objectives=request.objectives,
+        long_only=request.long_only,
+        lb=request.lb,
+        ub=request.ub,
+        max_weight=request.max_weight,
+        target_return=request.target_return,
+        leverage=request.leverage,
+        cvar_alpha=request.cvar_alpha,
+        risk_free=request.risk_free,
+        kelly_fraction=request.kelly_fraction,
+        annualize=request.annualize,
+        n_frontier=request.n_frontier,
+    ))
 
 
 @router.get("/health")

@@ -1,7 +1,6 @@
 """
 API endpoints для получения рыночных данных через yfinance.
 """
-import logging
 from typing import Any
 
 from fastapi import APIRouter, HTTPException
@@ -18,7 +17,7 @@ from src.services.yfinance_service import (
     get_stock_info,
 )
 
-logger = logging.getLogger(__name__)
+from src.utils.error_handler import service_endpoint
 
 router = APIRouter()
 
@@ -36,6 +35,7 @@ class MultipleStocksRequest(BaseModel):
 
 
 @router.get("/stock/{ticker}", response_model=dict[str, Any])
+@service_endpoint("Get Stock")
 async def get_stock(ticker: str):
     """
     Получает информацию об акции.
@@ -46,18 +46,7 @@ async def get_stock(ticker: str):
     Returns:
         Информация об акции
     """
-    try:
-        return get_stock_info(ticker)
-    except ValueError as e:
-        logger.error("Stock not found for ticker %s: %s", ticker, e, exc_info=True)
-        raise HTTPException(status_code=404, detail="Ticker not found") from e
-    except Exception as e:
-        logger.error("Error in get_stock endpoint: %s", e, exc_info=True)
-        raise HTTPException(status_code=500, detail="Internal server error") from e
-
-
-@router.post("/stock/history", response_model=list[dict])
-async def get_history(request: StockHistoryRequest):
+    return get_stock_info(ticker)
     """
     Получает исторические данные об акции.
     
@@ -67,18 +56,7 @@ async def get_history(request: StockHistoryRequest):
     Returns:
         Исторические данные
     """
-    try:
-        return get_stock_history(request.ticker, request.period, request.interval)
-    except ValueError as e:
-        logger.error("Stock history not found: %s", e, exc_info=True)
-        raise HTTPException(status_code=404, detail="History not found") from e
-    except Exception as e:
-        logger.error("Error in get_history endpoint: %s", e, exc_info=True)
-        raise HTTPException(status_code=500, detail="Internal server error") from e
-
-
-@router.post("/stocks/multiple", response_model=list[dict[str, Any]])
-async def get_multiple(request: MultipleStocksRequest):
+    return get_stock_history(request.ticker, request.period, request.interval)
     """
     Получает информацию о нескольких акциях одновременно.
     
@@ -88,18 +66,7 @@ async def get_multiple(request: MultipleStocksRequest):
     Returns:
         Список информации об акциях
     """
-    try:
-        return get_multiple_stocks(request.tickers)
-    except ValueError as e:
-        logger.error("Invalid request for multiple stocks: %s", e, exc_info=True)
-        raise HTTPException(status_code=400, detail="Invalid request") from e
-    except Exception as e:
-        logger.error("Error in get_multiple endpoint: %s", e, exc_info=True)
-        raise HTTPException(status_code=500, detail="Internal server error") from e
-
-
-@router.get("/currency/{base}/{quote}", response_model=dict[str, Any])
-async def get_currency(base: str, quote: str = "USD"):
+    return get_multiple_stocks(request.tickers)
     """
     Получает курс валютной пары.
     
@@ -110,18 +77,7 @@ async def get_currency(base: str, quote: str = "USD"):
     Returns:
         Информация о курсе валютной пары
     """
-    try:
-        return get_currency_rate(base, quote)
-    except ValueError as e:
-        logger.error("Currency pair not found %s/%s: %s", base, quote, e, exc_info=True)
-        raise HTTPException(status_code=404, detail="Currency pair not found") from e
-    except Exception as e:
-        logger.error("Error in get_currency endpoint: %s", e, exc_info=True)
-        raise HTTPException(status_code=500, detail="Internal server error") from e
-
-
-@router.get("/crypto/{symbol}", response_model=dict[str, Any])
-async def get_crypto(symbol: str):
+    return get_currency_rate(base, quote)
     """
     Получает информацию о криптовалюте.
     
@@ -131,18 +87,7 @@ async def get_crypto(symbol: str):
     Returns:
         Информация о криптовалюте
     """
-    try:
-        return get_crypto_info(symbol)
-    except ValueError as e:
-        logger.error("Crypto not found %s: %s", symbol, e, exc_info=True)
-        raise HTTPException(status_code=404, detail="Crypto not found") from e
-    except Exception as e:
-        logger.error("Error in get_crypto endpoint: %s", e, exc_info=True)
-        raise HTTPException(status_code=500, detail="Internal server error") from e
-
-
-@router.get("/index/{symbol}", response_model=dict[str, Any])
-async def get_index(symbol: str):
+    return get_crypto_info(symbol)
     """
     Получает информацию об индексе.
     
@@ -152,18 +97,7 @@ async def get_index(symbol: str):
     Returns:
         Информация об индексе
     """
-    try:
-        return get_index_info(symbol)
-    except ValueError as e:
-        logger.error("Index not found %s: %s", symbol, e, exc_info=True)
-        raise HTTPException(status_code=404, detail="Index not found") from e
-    except Exception as e:
-        logger.error("Error in get_index endpoint: %s", e, exc_info=True)
-        raise HTTPException(status_code=500, detail="Internal server error") from e
-
-
-@router.get("/tickers/popular", response_model=list[str])
-async def get_popular_tickers_list():
+    return get_index_info(symbol)
     """
     Получает список популярных тикеров из различных индексов и бирж.
     Включает S&P 500, NASDAQ 100, Dow Jones, и другие популярные акции.
@@ -171,15 +105,7 @@ async def get_popular_tickers_list():
     Returns:
         Список популярных тикеров
     """
-    try:
-        return get_popular_tickers()
-    except Exception as e:
-        logger.error("Error in get_popular_tickers endpoint: %s", e, exc_info=True)
-        raise HTTPException(status_code=500, detail="Internal server error") from e
-
-
-@router.get("/crypto/popular", response_model=list[str])
-async def get_popular_cryptos_list():
+    return get_popular_tickers()
     """
     Получает список популярных криптовалют.
     Формат тикеров: SYMBOL-USD (например, BTC-USD, ETH-USD)
@@ -187,14 +113,6 @@ async def get_popular_cryptos_list():
     Returns:
         Список популярных криптовалют
     """
-    try:
-        return get_popular_cryptos()
-    except Exception as e:
-        logger.error("Error in get_popular_cryptos endpoint: %s", e, exc_info=True)
-        raise HTTPException(status_code=500, detail="Internal server error") from e
-
-
-@router.get("/health")
-async def health_check():
+    return get_popular_cryptos()
     """Health check для сервиса рыночных данных."""
     return {"status": "ok", "service": "market_data"}

@@ -1,7 +1,6 @@
 """
 API endpoints для HAR модели прогнозирования волатильности.
 """
-import logging
 from datetime import datetime
 from typing import Any
 
@@ -10,7 +9,7 @@ from pydantic import BaseModel, Field
 
 from src.services.har_service import fit_har_model
 
-logger = logging.getLogger(__name__)
+from src.utils.error_handler import service_endpoint
 
 router = APIRouter()
 
@@ -40,6 +39,7 @@ class HARResponse(BaseModel):
 
 
 @router.post("/fit", response_model=HARResponse)
+@service_endpoint("Fit Har")
 async def fit_har(request: HARRequest):
     """
     Оценивает HAR-RV и (опционально) HAR-RV-CJ модели прогнозирования волатильности.
@@ -58,23 +58,12 @@ async def fit_har(request: HARRequest):
         if h < 1 or h > 252:
             raise HTTPException(status_code=400, detail="Горизонт прогноза должен быть от 1 до 252 дней")
 
-    try:
-        result = fit_har_model(
-            rv=request.rv,
-            bv=request.bv,
-            log_transform=request.log_transform,
-            forecast_horizons=request.forecast_horizons,
-            train_ratio=request.train_ratio,
-        )
-        return HARResponse(result=result)
-    except ValueError as e:
-        logger.error("HAR model validation error: %s", e, exc_info=True)
-        raise HTTPException(status_code=400, detail="Invalid input parameters") from e
-    except Exception as e:
-        logger.error("HAR model estimation failed: %s", e, exc_info=True)
-        raise HTTPException(status_code=500, detail="Internal server error") from e
-
-
-@router.get("/health")
-async def health():
+    result = fit_har_model(
+        rv=request.rv,
+        bv=request.bv,
+        log_transform=request.log_transform,
+        forecast_horizons=request.forecast_horizons,
+        train_ratio=request.train_ratio,
+    )
+    return HARResponse(result=result)
     return {"status": "healthy", "service": "har"}

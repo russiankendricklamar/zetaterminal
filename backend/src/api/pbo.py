@@ -1,16 +1,14 @@
 """
 API endpoints для PBO (Probability of Backtest Overfitting) и DSR.
 """
-import logging
 from datetime import datetime
 from typing import Any
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter
 from pydantic import BaseModel, Field
 
 from src.services.pbo_service import compute_pbo
-
-logger = logging.getLogger(__name__)
+from src.utils.error_handler import service_endpoint
 
 router = APIRouter()
 
@@ -41,6 +39,7 @@ class PBOResponse(BaseModel):
 
 
 @router.post("/analyze", response_model=PBOResponse)
+@service_endpoint("PBO analysis")
 async def analyze_pbo(request: PBORequest):
     """
     Полный анализ переобучения бэктеста.
@@ -53,20 +52,13 @@ async def analyze_pbo(request: PBORequest):
     - Логит-гистограмма OOS ранга
     - Статистика по каждой стратегии (SR, PSR)
     """
-    try:
-        result = compute_pbo(
-            strategy_returns=request.strategy_returns,
-            n_splits=request.n_splits,
-            annualize=request.annualize,
-            sr_benchmark=request.sr_benchmark,
-        )
-        return PBOResponse(result=result)
-    except ValueError as e:
-        logger.error("PBO validation error: %s", e, exc_info=True)
-        raise HTTPException(status_code=400, detail="Invalid input parameters") from e
-    except Exception as e:
-        logger.error("PBO computation failed: %s", e, exc_info=True)
-        raise HTTPException(status_code=500, detail="Internal server error") from e
+    result = compute_pbo(
+        strategy_returns=request.strategy_returns,
+        n_splits=request.n_splits,
+        annualize=request.annualize,
+        sr_benchmark=request.sr_benchmark,
+    )
+    return PBOResponse(result=result)
 
 
 @router.get("/health")

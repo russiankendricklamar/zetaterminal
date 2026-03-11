@@ -1,16 +1,14 @@
 """
 API endpoints для Orthogonal Alpha Stacking.
 """
-import logging
 from datetime import datetime
 from typing import Any
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter
 from pydantic import BaseModel, Field
 
 from src.services.alpha_stacking_service import compute_alpha_stacking
-
-logger = logging.getLogger(__name__)
+from src.utils.error_handler import service_endpoint
 
 router = APIRouter()
 
@@ -54,6 +52,7 @@ class AlphaStackingResponse(BaseModel):
 
 
 @router.post("/analyze", response_model=AlphaStackingResponse)
+@service_endpoint("Alpha stacking")
 async def analyze(request: AlphaStackingRequest):
     """
     Orthogonal Alpha Stacking.
@@ -65,22 +64,15 @@ async def analyze(request: AlphaStackingRequest):
     - IC decay по горизонтам
     - IC стэкингового сигнала во времени
     """
-    try:
-        result = compute_alpha_stacking(
-            panel_signals=request.panel_signals,
-            panel_fwd_returns=request.panel_fwd_returns,
-            signal_names=request.signal_names,
-            ortho_method=request.ortho_method,
-            ic_horizons=request.ic_horizons or [1, 5, 10, 21],
-            shrinkage=request.shrinkage,
-        )
-        return AlphaStackingResponse(result=result)
-    except ValueError as e:
-        logger.error("Alpha stacking validation error: %s", e, exc_info=True)
-        raise HTTPException(status_code=400, detail="Invalid input parameters") from e
-    except Exception as e:
-        logger.error("Alpha stacking computation failed: %s", e, exc_info=True)
-        raise HTTPException(status_code=500, detail="Internal server error") from e
+    result = compute_alpha_stacking(
+        panel_signals=request.panel_signals,
+        panel_fwd_returns=request.panel_fwd_returns,
+        signal_names=request.signal_names,
+        ortho_method=request.ortho_method,
+        ic_horizons=request.ic_horizons or [1, 5, 10, 21],
+        shrinkage=request.shrinkage,
+    )
+    return AlphaStackingResponse(result=result)
 
 
 @router.get("/health")
