@@ -108,9 +108,15 @@ async def vt_scan(req: UrlScanRequest):
         raise HTTPException(status_code=500, detail="Internal server error")
 
 
+_VT_ID_RE = __import__('re').compile(r'^[a-zA-Z0-9\-]{1,128}$')
+_UUID_RE = __import__('re').compile(r'^[0-9a-f\-]{36}$')
+
+
 @router.get("/virustotal/analysis/{analysis_id}")
 async def vt_analysis(analysis_id: str):
     """Get VirusTotal analysis result."""
+    if not _VT_ID_RE.match(analysis_id):
+        raise HTTPException(status_code=400, detail="Invalid analysis ID format")
     try:
         return await virustotal_analysis(analysis_id)
     except Exception as e:
@@ -147,6 +153,8 @@ async def uscan_submit(req: UrlScanRequest):
 @router.get("/urlscan/result/{uuid}")
 async def uscan_result(uuid: str):
     """Get URLScan.io result."""
+    if not _UUID_RE.match(uuid):
+        raise HTTPException(status_code=400, detail="Invalid UUID format")
     try:
         return await urlscan_result(uuid)
     except Exception as e:

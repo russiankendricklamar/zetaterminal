@@ -24,7 +24,7 @@ router = APIRouter()
 
 class SpectralAnalysisRequest(BaseModel):
     """Запрос на анализ спектральных режимов."""
-    returns: List[float] = Field(..., description="Временной ряд доходностей")
+    returns: List[float] = Field(..., max_length=5000, description="Временной ряд доходностей")
     n_poles: Optional[int] = Field(default=None, ge=2, le=15, description="Количество полюсов (2-15). Если None, определяется автоматически")
     window_size: Optional[int] = Field(default=None, ge=5, le=100, description="Размер скользящего окна (5-100). Если None, определяется автоматически")
     max_lag: Optional[int] = Field(default=None, description="Максимальный лаг ACF (по умолчанию T/4)")

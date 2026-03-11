@@ -313,7 +313,7 @@ async def _check_service(name: str, url: str, timeout: float = 5.0) -> dict:
             "status": "down",
             "http_status": None,
             "response_ms": elapsed,
-            "error": str(exc)[:200],
+            "error": type(exc).__name__,
         }
 
 
@@ -335,7 +335,7 @@ async def health_check():
                 "name": "PostgreSQL (Neon)",
                 "status": "down",
                 "response_ms": elapsed,
-                "error": str(exc)[:200],
+                "error": type(exc).__name__,
             }
 
     tasks.append(_check_db())
