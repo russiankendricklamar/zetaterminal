@@ -9,13 +9,14 @@ from pydantic import BaseModel, Field
 
 from src.services.convex_portfolio_service import compute_convex_portfolio
 from src.utils.error_handler import service_endpoint
+from src.utils.financial_validation import FinancialBaseModel
 
 router = APIRouter()
 
 VALID_OBJECTIVES = {"min_variance", "max_sharpe", "mean_variance", "cvar", "risk_parity", "kelly"}
 
 
-class ConvexPortfolioRequest(BaseModel):
+class ConvexPortfolioRequest(FinancialBaseModel):
     returns: list[list[float]] = Field(
         ..., description="Матрица T × N доходностей (строки=периоды, столбцы=активы)"
     )

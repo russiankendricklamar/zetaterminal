@@ -9,11 +9,12 @@ from pydantic import BaseModel, Field
 
 from src.services.factor_analysis_service import run_factor_analysis
 from src.utils.error_handler import service_endpoint
+from src.utils.financial_validation import FinancialBaseModel
 
 router = APIRouter()
 
 
-class FactorAnalysisRequest(BaseModel):
+class FactorAnalysisRequest(FinancialBaseModel):
     returns: list[list[float]] = Field(
         ..., description="Матрица доходностей T × N (строки=периоды, столбцы=активы)"
     )

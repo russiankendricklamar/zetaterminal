@@ -8,13 +8,13 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 
 from src.services.realized_kernels_service import compute_realized_kernels
-
 from src.utils.error_handler import service_endpoint
+from src.utils.financial_validation import FinancialBaseModel
 
 router = APIRouter()
 
 
-class RealizedKernelsRequest(BaseModel):
+class RealizedKernelsRequest(FinancialBaseModel):
     prices: list[float] = Field(..., description="Ряд цен высокочастотных наблюдений (хронологический порядок)")
     kernel: str = Field("parzen", description="Ядро для RK: 'parzen', 'tukey-hanning', 'bartlett'")
     bandwidth: int | None = Field(None, ge=1, description="Bandwidth H для RK (None = n^(3/5))")

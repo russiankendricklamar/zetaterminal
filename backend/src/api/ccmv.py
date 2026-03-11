@@ -11,22 +11,17 @@ from pydantic import BaseModel, Field
 from src.middleware.rate_limit import limiter
 from src.services.ccmv_service import optimize_ccmv
 from src.utils.error_handler import service_endpoint
-from src.utils.financial_validation import MAX_ASSETS, FinancialBaseModel
+from src.utils.financial_validation import MAX_ASSETS, MeanVarianceBase
 
 router = APIRouter()
 
 
-class CCMVRequest(FinancialBaseModel):
+class CCMVRequest(MeanVarianceBase):
     """Запрос на CCMV оптимизацию."""
     R: list[list[float]] = Field(..., max_length=MAX_ASSETS * 100, description="Матрица доходностей (time_steps x num_assets)")
-    mu: list[float] = Field(..., max_length=MAX_ASSETS, description="Ожидаемые доходности активов")
-    cov_matrix: list[list[float]] = Field(..., max_length=MAX_ASSETS, description="Ковариационная матрица")
     Delta: int = Field(..., gt=0, le=MAX_ASSETS, description="Максимальное количество активов в портфеле")
     bar_w: float = Field(..., gt=0, le=1, description="Максимальный вес на актив")
-    gamma: float = Field(..., gt=0, le=100, description="Коэффициент неприятия риска (γ > 0)")
     method: str = Field(default='delta', description="Метод оптимизации: 'delta' или 'alpha'")
-    asset_names: list[str] | None = Field(None, max_length=MAX_ASSETS, description="Названия активов")
-    risk_free_rate: float = Field(default=0.0, ge=-1, le=1, description="Безрисковая ставка (для Sharpe ratio)")
 
     class Config:
         schema_extra = {

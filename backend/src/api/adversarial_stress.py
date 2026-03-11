@@ -4,17 +4,17 @@ API endpoints для Adversarial Stress Testing.
 from typing import Any
 
 from fastapi import APIRouter, HTTPException, Request
-from pydantic import BaseModel, Field
+from pydantic import Field
 
 from src.middleware.rate_limit import limiter
 from src.services.adversarial_stress_service import run_adversarial_stress
-
 from src.utils.error_handler import service_endpoint
+from src.utils.financial_validation import FinancialBaseModel
 
 router = APIRouter()
 
 
-class AdversarialStressRequest(BaseModel):
+class AdversarialStressRequest(FinancialBaseModel):
     """Запрос на adversarial stress test."""
     cov_matrix: list[list[float]] = Field(..., description="Ковариационная матрица (N x N)")
     mu: list[float] = Field(..., description="Ожидаемые доходности активов (N)")

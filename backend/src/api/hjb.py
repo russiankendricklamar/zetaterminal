@@ -11,11 +11,11 @@ from src.middleware.rate_limit import limiter
 from src.services.hjb_service import optimize_hjb
 from src.utils.error_handler import service_endpoint
 from src.utils.financial_validation import (
-    MAX_ASSETS,
     MAX_CAPITAL,
     MAX_MONTE_CARLO_PATHS,
     MAX_MONTE_CARLO_STEPS,
     FinancialBaseModel,
+    MeanVarianceBase,
 )
 
 router = APIRouter()
@@ -30,13 +30,9 @@ class MonteCarloParams(FinancialBaseModel):
     random_seed: int | None = Field(42)
 
 
-class HJBRequest(FinancialBaseModel):
+class HJBRequest(MeanVarianceBase):
     """Запрос на HJB оптимизацию."""
-    mu: list[float] = Field(..., max_length=MAX_ASSETS, description="Ожидаемые доходности активов")
-    cov_matrix: list[list[float]] = Field(..., max_length=MAX_ASSETS, description="Ковариационная матрица")
     risk_free_rate: float = Field(..., ge=-1, le=1, description="Безрисковая ставка (в долях)")
-    gamma: float = Field(..., gt=0, le=100, description="Коэффициент риск-аверсии (γ > 0)")
-    asset_names: list[str] | None = Field(None, max_length=MAX_ASSETS, description="Названия активов")
     monte_carlo: MonteCarloParams | None = Field(None, description="Параметры Монте-Карло симуляции")
 
     class Config:

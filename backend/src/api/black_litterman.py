@@ -5,15 +5,16 @@ from datetime import datetime
 
 import numpy as np
 from fastapi import APIRouter
-from pydantic import BaseModel, Field
+from pydantic import Field
 
 from src.services.black_litterman_service import optimize_black_litterman
 from src.utils.error_handler import service_endpoint
+from src.utils.financial_validation import FinancialBaseModel
 
 router = APIRouter()
 
 
-class BLView(BaseModel):
+class BLView(FinancialBaseModel):
     """Один инвестиционный взгляд."""
     assets: list[int] = Field(..., description="Индексы активов, затронутых взглядом")
     weights: list[float] = Field(..., description="Веса в pick-матрице P для этого взгляда")
@@ -21,7 +22,7 @@ class BLView(BaseModel):
     confidence: float = Field(default=0.5, ge=0.01, le=1.0, description="Уверенность 0..1")
 
 
-class BlackLittermanRequest(BaseModel):
+class BlackLittermanRequest(FinancialBaseModel):
     """Запрос на Black-Litterman оптимизацию."""
     cov_matrix: list[list[float]] = Field(..., description="Ковариационная матрица (N x N)")
     market_weights: list[float] = Field(..., description="Рыночные капитализационные веса (N)")

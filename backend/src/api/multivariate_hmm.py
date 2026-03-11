@@ -19,16 +19,16 @@ from pydantic import BaseModel, Field
 
 from src.middleware.auth import require_auth
 from src.middleware.rate_limit import limiter
+from src.utils.error_handler import service_endpoint
+from src.utils.financial_validation import FinancialBaseModel
 from src.utils.jwt_utils import TokenPayload
 
 logger = logging.getLogger(__name__)
 
-from src.utils.error_handler import service_endpoint
-
 router = APIRouter()
 
 
-class FitRequest(BaseModel):
+class FitRequest(FinancialBaseModel):
     """Запрос на обучение модели."""
     data: list[list[float]] | None = Field(None, description="(T, K) массив доходностей. Если None, загружаются данные портфеля")
     asset_names: list[str] | None = Field(None, description="Названия активов")
@@ -54,7 +54,7 @@ class FitResponse(BaseModel):
     message: str
 
 
-class PredictRequest(BaseModel):
+class PredictRequest(FinancialBaseModel):
     """Запрос на предсказание состояний."""
     data: list[list[float]] | None = Field(None, description="(T, K) массив данных. Если None, используется обученный ряд")
 

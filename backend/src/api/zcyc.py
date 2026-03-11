@@ -16,6 +16,7 @@ from fastapi import APIRouter, HTTPException, Query
 from pydantic import BaseModel, Field
 
 from src.utils.error_handler import service_endpoint
+from src.utils.financial_validation import FinancialBaseModel
 
 router = APIRouter()
 
@@ -59,7 +60,7 @@ class ZCYCResponse(BaseModel):
         }
 
 
-class InterpolateRequest(BaseModel):
+class InterpolateRequest(FinancialBaseModel):
     """Запрос на интерполяцию доходности."""
     term: float = Field(..., ge=0.0, description="Срок в годах")
     method: str = Field(default="linear", description="Метод интерполяции: linear или nelson_siegel")

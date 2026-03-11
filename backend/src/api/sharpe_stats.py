@@ -8,13 +8,13 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 
 from src.services.sharpe_stats_service import compute_sharpe_stats
-
 from src.utils.error_handler import service_endpoint
+from src.utils.financial_validation import FinancialBaseModel
 
 router = APIRouter()
 
 
-class SharpeStatsRequest(BaseModel):
+class SharpeStatsRequest(FinancialBaseModel):
     returns: list[float] = Field(..., description="Ряд периодических доходностей (в долях, напр. 0.01 = 1%)")
     risk_free_rate: float = Field(0.0, ge=0.0, description="Безрисковая ставка годовая (в долях)")
     periods_per_year: int = Field(252, ge=1, le=365, description="Периодов в году: 252=дни, 52=недели, 12=месяцы")

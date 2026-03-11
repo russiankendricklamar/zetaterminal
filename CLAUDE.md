@@ -1,5 +1,82 @@
 # Zeta Terminal — CLAUDE.md
 
+## Vision: Open-Source Aladdin
+
+Zeta Terminal — open-source аналог **BlackRock Aladdin** (Asset, Liability, Debt, and Derivative Investment Network) для российского рынка. Aladdin управляет $21.6T активами для 200+ институциональных клиентов и является индустриальным стандартом risk management.
+
+**Цель:** создать доступную платформу с ключевыми возможностями Aladdin для количественного анализа, управления портфелем и оценки рисков — без enterprise-ценника ($750K–$2M+/год).
+
+### Маппинг модулей: Aladdin → Zeta Terminal
+
+| Aladdin Module | Zeta Terminal | Статус | Приоритет |
+|---------------|---------------|--------|-----------|
+| **Aladdin Risk** — VaR, stress testing, factor models, scenario analysis | `/portfolio` VaR/CVaR, `/stress` stress testing, GARCH, HMM regime detection | Частично | P0 |
+| **Portfolio Management** — construction, optimization, rebalancing, attribution | `/portfolio`, `/ccmv` CCMV optimization, `/hjb` HJB dynamic, Markowitz | Частично | P0 |
+| **Trading & Execution** — OMS, FIX connectivity, electronic trading | — | Не начато | P2 |
+| **Operations & Settlement** — reconciliation, corporate actions | — | Не начато | P3 |
+| **Compliance & Regulatory** — pre-trade checks, guideline monitoring | — | Не начато | P2 |
+| **Fixed Income Analytics** — OAS, duration, convexity, yield curves | `/bond-valuation` DCF, `/zcyc-viewer` ZCYC, duration, convexity | Готово | — |
+| **Derivatives Pricing** — options, swaps, forwards | `/pricing/options` BSM/Heston/VG/CGMY, `/valuation/swaps` IRS/CDS, `/valuation/forwards` | Готово | — |
+| **Volatility** — surfaces, calibration | `/analytics/volatility` SABR/SVI 3D surface | Готово | — |
+| **Market Regimes** — regime detection, spectral analysis | `/terminal` Prony/ACF, `/regimes` HMM 3D | Готово | — |
+| **Aladdin Wealth** — advisor tools, client reporting, stress testing for wealth | — | Не начато | P1 |
+| **Aladdin Studio** — API platform, SDK, data cloud | REST API (FastAPI), но без SDK/docs | Частично | P1 |
+| **Aladdin Sustainability** — ESG metrics, climate risk | — | Не начато | P3 |
+| **Aladdin Copilot** — AI assistant (LangChain/GPT-4) | GitHub Issues auto-responder (Claude) | Минимально | P1 |
+| **Data Platform** — multi-source data ingestion, time-series | MOEX ISS, RuData, Yahoo Finance | Частично | P1 |
+| **Client Reporting** — PDF/Excel reports, dashboards | PDF export (`html2pdf.js`), Excel (`xlsx`) | Частично | P1 |
+| **Backtesting** — strategy backtesting with historical data | `/backtest` | Частично | P0 |
+
+### Ключевые принципы Aladdin, которым следуем
+
+1. **"One Platform"** — единая точка доступа к данным, аналитике и торговле (у нас: единый SPA с Command Palette `⌘K`)
+2. **Risk-First** — риск-аналитика как фундамент всех решений, а не надстройка
+3. **Multi-Asset** — поддержка всех классов активов в одном интерфейсе (облигации, акции, деривативы, портфели)
+4. **Real-Time + Historical** — сочетание live-данных с историческим анализом
+5. **API-First** — каждая функция доступна через API (у нас: FastAPI REST endpoints)
+
+### Чего у Aladdin нет, а у нас есть
+
+- **Open-source** — весь код открыт (MIT)
+- **Российский рынок** — MOEX ISS, RuData/Interfax, ZCYC ЦБ РФ
+- **Zero cost** — бесплатный деплой (GitHub Pages + Render free tier + Neon)
+- **Brutalist UI** — уникальный дизайн vs корпоративный Aladdin
+
+### Roadmap к паритету с Aladdin (приоритеты)
+
+**P0 — Core (текущий фокус):**
+- Расширение risk analytics: Monte Carlo VaR, factor risk decomposition, correlation stress
+- Portfolio construction: Black-Litterman, risk parity, min-CVaR
+- Backtesting: multi-strategy, transaction costs, slippage
+
+**P1 — Platform:**
+- AI Copilot: интеграция Claude API для natural language queries по портфелю
+- Data Platform: больше источников (CBR, FRED, Binance), time-series storage
+- Client Reporting: шаблонные отчёты для инвесторов, автокомментарии
+- API documentation + Python SDK (`zetaterminal-sdk`)
+
+**P2 — Trading & Compliance:**
+- Order management (бумажный трейдинг → реальное исполнение)
+- Pre-trade compliance checks
+- Regulatory reporting templates
+
+**P3 — Extended:**
+- ESG/Climate risk scoring
+- Private markets (eFront аналог)
+- Operations & settlement
+
+### Конкурентный контекст
+
+| Платформа | AUM | Стоимость | Open-Source |
+|-----------|-----|-----------|------------|
+| **BlackRock Aladdin** | $21.6T | $750K–$2M+/год | Нет |
+| **Bloomberg PORT** | — | $24K+/год за терминал | Нет |
+| **MSCI RiskMetrics** | — | Enterprise pricing | Нет |
+| **FactSet** | — | $12K+/год | Нет |
+| **Zeta Terminal** | — | **Бесплатно** | **Да (MIT)** |
+
+---
+
 Production-ready quantitative financial analysis platform (SaaS).
 Frontend on **GitHub Pages**, backend on **Render** (free tier).
 

@@ -9,11 +9,12 @@ from pydantic import BaseModel, Field
 
 from src.services.pbo_service import compute_pbo
 from src.utils.error_handler import service_endpoint
+from src.utils.financial_validation import FinancialBaseModel
 
 router = APIRouter()
 
 
-class PBORequest(BaseModel):
+class PBORequest(FinancialBaseModel):
     strategy_returns: list[list[float]] = Field(
         ..., description="Матрица доходностей T × N (строки=периоды, столбцы=стратегии)"
     )

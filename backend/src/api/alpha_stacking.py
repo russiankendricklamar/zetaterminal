@@ -9,11 +9,12 @@ from pydantic import BaseModel, Field
 
 from src.services.alpha_stacking_service import compute_alpha_stacking
 from src.utils.error_handler import service_endpoint
+from src.utils.financial_validation import FinancialBaseModel
 
 router = APIRouter()
 
 
-class AlphaStackingRequest(BaseModel):
+class AlphaStackingRequest(FinancialBaseModel):
     panel_signals: list[list[list[float]]] = Field(
         ...,
         description="Матрица T × N_assets × N_signals — значения сигналов (z-scores, ранки)"

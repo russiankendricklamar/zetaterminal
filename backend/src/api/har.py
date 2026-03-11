@@ -8,13 +8,13 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 
 from src.services.har_service import fit_har_model
-
 from src.utils.error_handler import service_endpoint
+from src.utils.financial_validation import FinancialBaseModel
 
 router = APIRouter()
 
 
-class HARRequest(BaseModel):
+class HARRequest(FinancialBaseModel):
     rv: list[float] = Field(..., description="Ряд ежедневных реализованных дисперсий (RV)")
     bv: list[float] | None = Field(None, description="Bipower Variation для HAR-RV-CJ (опционально)")
     log_transform: bool = Field(False, description="Применять log(RV) как зависимую переменную")

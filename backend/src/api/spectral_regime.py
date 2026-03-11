@@ -15,13 +15,13 @@ from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel, Field
 
 from src.middleware.rate_limit import limiter
-
 from src.utils.error_handler import service_endpoint
+from src.utils.financial_validation import FinancialBaseModel
 
 router = APIRouter()
 
 
-class SpectralAnalysisRequest(BaseModel):
+class SpectralAnalysisRequest(FinancialBaseModel):
     """Запрос на анализ спектральных режимов."""
     returns: list[float] = Field(..., max_length=5000, description="Временной ряд доходностей")
     n_poles: int | None = Field(default=None, ge=2, le=15, description="Количество полюсов (2-15). Если None, определяется автоматически")

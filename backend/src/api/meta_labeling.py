@@ -8,13 +8,13 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 
 from src.services.meta_labeling_service import compute_meta_labeling
-
 from src.utils.error_handler import service_endpoint
+from src.utils.financial_validation import FinancialBaseModel
 
 router = APIRouter()
 
 
-class MetaLabelingRequest(BaseModel):
+class MetaLabelingRequest(FinancialBaseModel):
     prices: list[float] = Field(
         ..., description="Ценовой ряд (T,) — закрытия или mid-цены"
     )
