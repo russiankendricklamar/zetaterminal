@@ -57,7 +57,7 @@ export async function getZCYC(date?: string): Promise<ZCYCResponse> {
     return response.json()
   } catch (error: unknown) {
     if (error instanceof TypeError && error.message.includes('fetch')) {
-      throw new Error(`Не удалось подключиться к серверу. Убедитесь, что бэкенд запущен на ${API_BASE}`)
+      throw new Error(`Не удалось подключиться к серверу. Убедитесь, что бэкенд запущен на ${API_BASE}`, { cause: error })
     }
     throw error
   }

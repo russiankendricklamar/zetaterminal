@@ -217,10 +217,12 @@
 
       <!-- Per-objective detail -->
       <div class="obj-details">
-        <div
+        <template
           v-for="obj in result.objectives_computed"
-          v-if="result.results[obj]"
           :key="obj"
+        >
+        <div
+          v-if="result.results[obj]"
           class="card obj-detail-card"
         >
           <h3>
@@ -286,6 +288,7 @@
             </div>
           </div>
         </div>
+        </template>
       </div>
     </template>
   </div>

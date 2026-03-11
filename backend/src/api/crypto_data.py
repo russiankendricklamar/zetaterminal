@@ -15,7 +15,6 @@ from src.services.crypto_data_service import (
     coingecko_markets,
     coingecko_trending,
 )
-
 from src.utils.error_handler import service_endpoint
 
 router = APIRouter()

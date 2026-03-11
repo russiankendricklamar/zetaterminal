@@ -4,7 +4,7 @@ API endpoints для Meta-Labeling (Signal Quality Control).
 from datetime import datetime
 from typing import Any
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter
 from pydantic import BaseModel, Field
 
 from src.services.meta_labeling_service import compute_meta_labeling

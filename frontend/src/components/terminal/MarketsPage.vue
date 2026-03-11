@@ -12,7 +12,7 @@
         </div>
         <div class="tab-group">
           <button
-            v-for="(filter, i) in filters"
+            v-for="filter in filters"
             :key="filter"
             :class="['tab-btn', { active: activeFilter === filter }]"
             @click="activeFilter = filter"

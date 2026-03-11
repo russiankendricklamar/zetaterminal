@@ -283,7 +283,7 @@ export class RegimeSpaceRenderer {
         // Эллипсоид выбираем только если нет более приоритетных объектов
         if (ellipsoidIntersects.length > 0 && !finalObject) {
           finalObject = ellipsoidIntersects[0].object
-          finalDistance = ellipsoidIntersects[0].distance
+          // finalDistance not needed here — ellipsoid is lowest priority
         }
       }
     }

@@ -12,7 +12,6 @@ from src.services.dadata_service import (
     dadata_find_company,
     dadata_suggest_company,
 )
-
 from src.utils.error_handler import service_endpoint
 
 router = APIRouter()

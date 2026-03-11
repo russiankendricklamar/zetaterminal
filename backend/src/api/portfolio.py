@@ -3,11 +3,10 @@ API endpoints для расчета метрик портфеля.
 """
 from datetime import datetime
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter
 
 from src.models.schemas import PortfolioMetricsRequest, PortfolioMetricsResponse
 from src.services.portfolio_service import PortfolioService
-
 from src.utils.error_handler import service_endpoint
 
 router = APIRouter()

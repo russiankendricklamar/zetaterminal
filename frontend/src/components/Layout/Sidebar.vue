@@ -57,7 +57,7 @@
           to="/"
           class="nav-entry"
           :class="{ active: isActive('/') }"
-          @click.native="handleNavClick"
+          @click="handleNavClick"
         >
           <span class="nav-index font-mono">01</span>
           <div class="nav-info">
@@ -76,7 +76,7 @@
           to="/docs"
           class="nav-entry"
           :class="{ active: isActive('/docs') }"
-          @click.native="handleNavClick"
+          @click="handleNavClick"
         >
           <span class="nav-index font-mono">02</span>
           <div class="nav-info">
@@ -96,7 +96,7 @@
           class="nav-entry terminal-entry"
           :class="{ active: isActive('/terminal') }"
           @mouseenter="prefetchRoute('/terminal')"
-          @click.native="handleNavClick"
+          @click="handleNavClick"
         >
           <div class="zeta-icon font-anton">
             &zeta;
@@ -168,7 +168,7 @@
                   :class="{ active: isActive(item.path), 'coming-soon': item.soon }"
                   :style="{ '--item-index': itemIndex }"
                   @mouseenter="prefetchRoute(item.path)"
-                  @click.native="!item.soon && handleNavClick($event)"
+                  @click="!item.soon && handleNavClick($event)"
                 >
                   <span class="item-dot" />
                   <span class="nav-label font-mono">{{ item.label }}</span>
@@ -194,7 +194,7 @@
         to="/settings"
         class="settings-link"
         :class="{ active: isActive('/settings') }"
-        @click.native="handleNavClick"
+        @click="handleNavClick"
       >
         <span class="nav-index font-mono">&#9881;</span>
         <div class="nav-info">

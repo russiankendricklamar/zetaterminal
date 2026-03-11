@@ -668,7 +668,7 @@ const onKeydown = (e: KeyboardEvent) => {
   // Открытие/закрытие палитры
   if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
     e.preventDefault()
-    isOpen.value ? close() : open()
+    if (isOpen.value) { close() } else { open() }
     return
   }
   

@@ -9,14 +9,14 @@ from typing import Any
 import pandas as pd
 import requests
 
-# Re-export types and constants for backward compatibility
-from .bond_pricing_types import BASE_ISS, DayCountConvention  # noqa: F401
-
 # Re-export cashflow calculators for backward compatibility
-from .bond_pricing_cashflows import (  # noqa: F401
+from .bond_pricing_cashflows import (
     AccruedInterestCalculator,
     DayCountCalculator,
 )
+
+# Re-export types and constants for backward compatibility
+from .bond_pricing_types import BASE_ISS, DayCountConvention
 
 logger = logging.getLogger(__name__)
 

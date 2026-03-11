@@ -553,9 +553,9 @@ async function computeMarketActivity(
     ['DEAL_ACC.SUM', 'DEAL_ACC.CNN', 'VAL_ACC.SUM']
   )
 
-  let trades = 0
-  let tradingDays = 0
-  let totalVolume = 0
+  let trades: number
+  let tradingDays: number
+  let totalVolume: number
 
   if (efirData && (efirData['DEAL_ACC.SUM'] !== undefined || efirData['DEAL_ACC.CNN'] !== undefined)) {
     trades = Number(efirData['DEAL_ACC.SUM']) || 0
@@ -1006,17 +1006,15 @@ export async function fetchVanillaBondReport(
   // --- YTM или YTP ---
   // M6 = IF(B10="", CbondsCalcYTM, CbondsCalcYTP)(ISIN, date, price)
   let ytmDecimal: number
-  let yieldType: 'YTM' | 'YTP' = 'YTM'
+  const yieldType: 'YTM' | 'YTP' = hasOffer ? 'YTP' : 'YTM'
 
   if (hasOffer) {
-    yieldType = 'YTP'
     // Приоритет: RuData YTP → EfirEndOfDay Y2O_LAST → MOEX yield → fallback
     ytmDecimal = (ruCalc?.ytp ?? null) !== null ? ruCalc!.ytp! :
       (efirEod['Y2O_LAST'] != null ? Number(efirEod['Y2O_LAST']) / 100 :
         (marketData.yield && marketData.yield > 0 ? marketData.yield / 100 :
           calcYTMFromPrice(cleanPricePct, currentFaceValue, currentCouponRate, spec.couponfrequency || 2, yearsToMaturity)))
   } else {
-    yieldType = 'YTM'
     // Приоритет: RuData YTM → MOEX yield → fallback
     ytmDecimal = (ruCalc?.ytm ?? null) !== null ? ruCalc!.ytm! :
       (marketData.yield && marketData.yield > 0 ? marketData.yield / 100 :

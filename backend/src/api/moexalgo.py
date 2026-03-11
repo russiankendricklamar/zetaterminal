@@ -15,7 +15,6 @@ from src.services.moexalgo_service import (
     moex_securities,
     moex_trades,
 )
-
 from src.utils.error_handler import service_endpoint
 
 router = APIRouter()

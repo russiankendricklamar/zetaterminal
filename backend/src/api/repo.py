@@ -11,7 +11,6 @@ import pandas as pd
 from fastapi import APIRouter, File, HTTPException, UploadFile
 
 from src.services.repo_service import run_full_pipeline
-
 from src.utils.error_handler import service_endpoint
 
 router = APIRouter()

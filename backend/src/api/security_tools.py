@@ -21,7 +21,6 @@ from src.services.security_tools_service import (
     virustotal_analysis,
     virustotal_scan_url,
 )
-
 from src.utils.error_handler import service_endpoint
 
 router = APIRouter()

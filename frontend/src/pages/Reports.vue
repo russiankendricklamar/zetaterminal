@@ -360,7 +360,7 @@
               </div>
               <div class="positions-list">
                 <div 
-                  v-for="(pos, idx) in portfolioPositions.slice(0, 5)" 
+                  v-for="pos in portfolioPositions.slice(0, 5)" 
                   :key="pos.symbol"
                   class="position-item"
                 >

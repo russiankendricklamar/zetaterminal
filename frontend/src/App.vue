@@ -67,7 +67,7 @@ body {
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background-color: #050505;
-  color: #f5f5f5;
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
 }
 </style>

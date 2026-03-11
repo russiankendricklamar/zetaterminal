@@ -3,7 +3,7 @@ API endpoints для получения рыночных данных через
 """
 from typing import Any
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter
 from pydantic import BaseModel, Field
 
 from src.services.yfinance_service import (
@@ -16,7 +16,6 @@ from src.services.yfinance_service import (
     get_stock_history,
     get_stock_info,
 )
-
 from src.utils.error_handler import service_endpoint
 
 router = APIRouter()

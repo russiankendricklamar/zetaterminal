@@ -23,7 +23,6 @@ from src.services.macro_data_service import (
     sec_company_filings,
     sec_full_text_search,
 )
-
 from src.utils.error_handler import service_endpoint
 
 router = APIRouter()

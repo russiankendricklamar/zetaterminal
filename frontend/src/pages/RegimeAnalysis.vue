@@ -587,12 +587,10 @@ const generateMockResults = () => {
             if(rand < cum) { regime = k; break; }
         }
 
-        let drift = 0
-        let shock = 0
-        if(regime === 0) { drift = 0.0005; shock = 0.008 * shockMultiplier.value; } 
-        else if(regime === 1) { drift = 0.0015; shock = 0.012 * shockMultiplier.value; } 
-        else if(regime === 2) { drift = -0.003; shock = 0.035 * shockMultiplier.value; } 
-        else { drift = -0.001; shock = 0.015 * shockMultiplier.value; } 
+        const driftMap: Record<number, number> = { 0: 0.0005, 1: 0.0015, 2: -0.003 }
+        const shockMap: Record<number, number> = { 0: 0.008, 1: 0.012, 2: 0.035 }
+        const drift = driftMap[regime] ?? -0.001
+        const shock = (shockMap[regime] ?? 0.015) * shockMultiplier.value
 
         const ret = drift + (Math.random() - 0.5) * 2 * shock
         price = price * (1 + ret)

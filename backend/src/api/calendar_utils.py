@@ -5,7 +5,7 @@ Prefix: /api/calendar
 """
 
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter
 
 from src.services.calendar_utils_service import (
     nager_is_today_holiday,
@@ -13,7 +13,6 @@ from src.services.calendar_utils_service import (
     nager_public_holidays,
     russian_calendar,
 )
-
 from src.utils.error_handler import service_endpoint
 
 router = APIRouter()

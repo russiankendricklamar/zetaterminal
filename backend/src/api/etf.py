@@ -12,7 +12,6 @@ from src.services.etf_service import (
     etf_candles,
     moex_etf_list,
 )
-
 from src.utils.error_handler import service_endpoint
 
 router = APIRouter()

@@ -291,9 +291,9 @@ onUnmounted(() => {
   height: 100vh;
   overflow-x: hidden;
   overflow-y: auto;
-  background: #050505;
+  background: var(--bg-primary);
   position: relative;
-  color: #f5f5f5;
+  color: var(--text-primary);
   -webkit-font-smoothing: antialiased;
   -webkit-overflow-scrolling: touch;
 }
@@ -321,8 +321,8 @@ onUnmounted(() => {
   overflow-x: hidden;
   overflow-y: auto;
   min-height: 100%;
-  background: #0a0a0a;
-  border-left: 1px solid #1a1a1a;
+  background: var(--bg-secondary);
+  border-left: 1px solid var(--border-dark);
 }
 
 /* Dynamic Island Container */
@@ -348,8 +348,8 @@ onUnmounted(() => {
   flex-shrink: 0;
   position: relative;
   z-index: 20;
-  border-bottom: 1px solid #1a1a1a;
-  background: #050505;
+  border-bottom: 1px solid var(--border-dark);
+  background: var(--bg-primary);
 }
 
 .header-content {
@@ -372,12 +372,12 @@ onUnmounted(() => {
   letter-spacing: 0.15em;
   display: flex;
   gap: 10px;
-  color: #525252;
+  color: var(--text-muted);
   text-transform: uppercase;
 }
 
 .crumb-active {
-  color: #DC2626;
+  color: var(--accent-red);
 }
 
 .system-status {
@@ -385,7 +385,7 @@ onUnmounted(() => {
   align-items: center;
   gap: 16px;
   font-size: 11px;
-  border: 1px solid #262626;
+  border: 1px solid var(--border-medium);
   padding: 6px 12px;
 }
 
@@ -401,7 +401,7 @@ onUnmounted(() => {
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: #DC2626;
+  background: var(--accent-red);
 }
 
 .status-dot.online {
@@ -411,11 +411,11 @@ onUnmounted(() => {
 .divider-v {
   width: 1px;
   height: 12px;
-  background: #262626;
+  background: var(--border-medium);
 }
 
 .status-text {
-  color: #737373;
+  color: var(--text-tertiary);
 }
 
 /* Bottom Row */
@@ -439,7 +439,7 @@ onUnmounted(() => {
   position: absolute;
   left: 12px;
   width: 16px;
-  color: #525252;
+  color: var(--text-muted);
   z-index: 2;
   transition: color 0.2s;
 }
@@ -447,32 +447,32 @@ onUnmounted(() => {
 .search-input {
   width: 100%;
   padding: 12px 12px 12px 40px;
-  background: #050505;
-  border: 1px solid #262626;
-  color: #f5f5f5;
+  background: var(--bg-primary);
+  border: 1px solid var(--border-medium);
+  color: var(--text-primary);
   font-size: 13px;
   transition: border-color 0.2s;
 }
 
 .search-input:focus {
   outline: none;
-  border-color: #DC2626;
+  border-color: var(--accent-red);
 }
 
 .search-input:focus ~ .search-icon {
-  color: #DC2626;
+  color: var(--accent-red);
 }
 
 .search-input::placeholder {
-  color: #525252;
+  color: var(--text-muted);
 }
 
 .hk-badge {
   position: absolute;
   right: 12px;
   font-size: 10px;
-  color: #525252;
-  border: 1px solid #262626;
+  color: var(--text-muted);
+  border: 1px solid var(--border-medium);
   padding: 2px 6px;
   pointer-events: none;
   transition: opacity 0.2s;
@@ -492,9 +492,9 @@ onUnmounted(() => {
 .icon-btn {
   width: 40px;
   height: 40px;
-  border: 1px solid #262626;
+  border: 1px solid var(--border-medium);
   background: transparent;
-  color: #737373;
+  color: var(--text-tertiary);
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -504,14 +504,14 @@ onUnmounted(() => {
 }
 
 .icon-btn:hover {
-  background: #DC2626;
-  border-color: #DC2626;
+  background: var(--accent-red);
+  border-color: var(--accent-red);
   color: #000;
 }
 
 .icon-btn.active {
-  background: #DC2626;
-  border-color: #DC2626;
+  background: var(--accent-red);
+  border-color: var(--accent-red);
   color: #000;
 }
 
@@ -526,7 +526,7 @@ onUnmounted(() => {
   right: -4px;
   min-width: 16px;
   height: 16px;
-  background: #DC2626;
+  background: var(--accent-red);
   color: #fff;
   font-size: 10px;
   font-weight: 600;
@@ -543,7 +543,7 @@ onUnmounted(() => {
 .user-avatar {
   width: 40px;
   height: 40px;
-  background: #DC2626;
+  background: var(--accent-red);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -564,8 +564,8 @@ onUnmounted(() => {
   top: calc(100% + 8px);
   right: 0;
   width: 160px;
-  background: #0a0a0a;
-  border: 1px solid #262626;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-medium);
   z-index: 50;
 }
 
@@ -574,7 +574,7 @@ onUnmounted(() => {
   padding: 12px 16px;
   background: transparent;
   border: none;
-  color: #a3a3a3;
+  color: var(--text-secondary);
   font-size: 11px;
   text-transform: uppercase;
   letter-spacing: 0.1em;
@@ -584,18 +584,18 @@ onUnmounted(() => {
 }
 
 .user-menu-item:hover {
-  background: #111111;
-  color: #f5f5f5;
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
 }
 
 .user-menu-logout:hover {
-  background: #DC2626;
+  background: var(--accent-red);
   color: #000;
 }
 
 .user-menu-divider {
   height: 1px;
-  background: #1a1a1a;
+  background: var(--border-dark);
 }
 
 /* ============================================
@@ -607,16 +607,16 @@ onUnmounted(() => {
   right: 32px;
   width: 340px;
   margin-top: 8px;
-  background: #0a0a0a;
-  border: 1px solid #262626;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-medium);
   z-index: 50;
   overflow: hidden;
 }
 
 .panel-header {
   padding: 16px 20px;
-  background: #050505;
-  border-bottom: 1px solid #262626;
+  background: var(--bg-primary);
+  border-bottom: 1px solid var(--border-medium);
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -624,7 +624,7 @@ onUnmounted(() => {
 
 .panel-header h3 {
   font-size: 12px;
-  color: #f5f5f5;
+  color: var(--text-primary);
   letter-spacing: 0.1em;
   margin: 0;
 }
@@ -633,7 +633,7 @@ onUnmounted(() => {
   background: none;
   border: none;
   font-size: 10px;
-  color: #DC2626;
+  color: var(--accent-red);
   cursor: pointer;
   letter-spacing: 0.05em;
   transition: opacity 0.2s;
@@ -652,12 +652,12 @@ onUnmounted(() => {
   padding: 16px 20px;
   display: flex;
   gap: 12px;
-  border-bottom: 1px solid #1a1a1a;
+  border-bottom: 1px solid var(--border-dark);
   transition: background 0.2s;
 }
 
 .notif-item:hover {
-  background: #111111;
+  background: var(--bg-tertiary);
 }
 
 .notif-item:last-child {
@@ -685,20 +685,20 @@ onUnmounted(() => {
 .notif-title {
   font-size: 13px;
   font-weight: 500;
-  color: #f5f5f5;
+  color: var(--text-primary);
   margin-bottom: 4px;
   letter-spacing: 0.05em;
 }
 
 .notif-desc {
   font-size: 11px;
-  color: #737373;
+  color: var(--text-tertiary);
   line-height: 1.4;
 }
 
 .notif-time {
   font-size: 10px;
-  color: #525252;
+  color: var(--text-muted);
   flex-shrink: 0;
 }
 

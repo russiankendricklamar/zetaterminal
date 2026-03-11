@@ -1539,12 +1539,7 @@ const calculatePrice = () => {
   const minS = K * 0.5
   const maxS = K * 1.5
   for (let s = minS; s <= maxS; s += (maxS - minS) / 50) {
-    let payoff = 0
-    if (params.optionType === 'call') {
-      payoff = Math.max(s - K, 0)
-    } else {
-      payoff = Math.max(K - s, 0)
-    }
+    const payoff = params.optionType === 'call' ? Math.max(s - K, 0) : Math.max(K - s, 0)
     payoffData.value.push(payoff)
   }
 }
@@ -1577,12 +1572,7 @@ const currentPriceX = computed(() => {
 const currentPriceY = computed(() => {
   if (!payoffData.value.length) return 0
   const maxPayoff = Math.max(...payoffData.value)
-  let payoff = 0
-  if (params.optionType === 'call') {
-    payoff = Math.max(params.S - params.K, 0)
-  } else {
-    payoff = Math.max(params.K - params.S, 0)
-  }
+  const payoff = params.optionType === 'call' ? Math.max(params.S - params.K, 0) : Math.max(params.K - params.S, 0)
   return 300 - (payoff / (maxPayoff || 1)) * 250 - 25
 })
 

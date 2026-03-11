@@ -20,7 +20,6 @@ from src.services.market_feeds_service import (
     twelve_data_quote,
     twelve_data_time_series,
 )
-
 from src.utils.error_handler import service_endpoint
 
 router = APIRouter()

@@ -370,9 +370,7 @@ const loadData = async () => {
 
     // RUONIA
     if (ruoniaRes.status === 'fulfilled') {
-      ruoniaRes.value.history.length > 0
-        ? (ruoniaRate.value = ruoniaRes.value.current_rate)
-        : (ruoniaRate.value = ruoniaRes.value.current_rate)
+      ruoniaRate.value = ruoniaRes.value.current_rate
     }
 
     // CBR Daily Rates

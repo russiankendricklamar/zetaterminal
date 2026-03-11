@@ -3,7 +3,7 @@ API endpoints для Adversarial Stress Testing.
 """
 from typing import Any
 
-from fastapi import APIRouter, HTTPException, Request
+from fastapi import APIRouter, Request
 from pydantic import Field
 
 from src.middleware.rate_limit import limiter

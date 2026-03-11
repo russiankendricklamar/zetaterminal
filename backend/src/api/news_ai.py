@@ -17,7 +17,6 @@ from src.services.news_ai_service import (
     newsapi_everything,
     newsapi_top_headlines,
 )
-
 from src.utils.error_handler import service_endpoint
 
 router = APIRouter()

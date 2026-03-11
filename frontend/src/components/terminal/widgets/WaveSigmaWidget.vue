@@ -183,12 +183,9 @@ const handleSignal = (rawSignal: number, _volatility: number) => {
   if (now - lastUpdateRef.value < 50) return
   lastUpdateRef.value = now
 
-  let position = 0
-  if (regime.value === MarketRegime.TRENDING) {
-    position = rawSignal > 0.2 ? 1 : rawSignal < -0.2 ? -1 : 0
-  } else {
-    position = rawSignal > 0.5 ? 0.5 : rawSignal < -0.5 ? -0.5 : Math.random() - 0.5
-  }
+  const position = regime.value === MarketRegime.TRENDING
+    ? (rawSignal > 0.2 ? 1 : rawSignal < -0.2 ? -1 : 0)
+    : (rawSignal > 0.5 ? 0.5 : rawSignal < -0.5 ? -0.5 : Math.random() - 0.5)
 
   const pnl =
     Math.abs(position) * (regime.value === MarketRegime.TRENDING ? 1.5 : -2.0) + (Math.random() * 2 - 1)
