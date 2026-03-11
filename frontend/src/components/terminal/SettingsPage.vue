@@ -854,14 +854,6 @@ const loadActiveWidgets = () => {
 
 const activeWidgets = ref(loadActiveWidgets());
 
-// Отладочная информация
-watch(() => activeWidgets.value.length, (newLength) => {
-  console.log('Active widgets count:', newLength);
-  if (newLength > 0) {
-    console.log('Widgets:', activeWidgets.value);
-  }
-}, { immediate: true });
-
 const addWidget = (widget: typeof availableWidgets[0]) => {
   const newWidget = {
     id: `${widget.type}-${Date.now()}`,

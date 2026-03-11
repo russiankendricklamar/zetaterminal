@@ -1063,7 +1063,6 @@ const loadPlotly = async () => {
   // Проверяем, уже ли загружен Plotly
   if ((window as any).Plotly) {
     Plotly = (window as any).Plotly
-    console.log('Plotly already loaded')
     return Plotly
   }
   
@@ -1076,7 +1075,6 @@ const loadPlotly = async () => {
           clearInterval(checkInterval)
           activeIntervalIds.delete(checkInterval)
           Plotly = (window as any).Plotly
-          console.log('Plotly loaded from existing script')
           resolve(Plotly)
         }
       }, 100)
@@ -1101,7 +1099,6 @@ const loadPlotly = async () => {
     script.onload = () => {
       if ((window as any).Plotly) {
         Plotly = (window as any).Plotly
-        console.log('Plotly loaded successfully')
         resolve(Plotly)
       } else {
         console.error('Plotly not found after script load')
@@ -1553,7 +1550,6 @@ const topAssetsFor3D = computed(() => {
 // ============================================================================
 const initCorrelation3DHeatmap = async () => {
   try {
-    console.log('Initializing 3D Correlation Heatmap...')
     const plotlyResult = await loadPlotly()
     if (!plotlyResult) {
       console.error('Plotly not loaded')
@@ -1567,8 +1563,6 @@ const initCorrelation3DHeatmap = async () => {
       return
     }
     
-    console.log('Container found, dimensions:', container.clientWidth, container.clientHeight)
-    
     // Проверяем, что контейнер видим и имеет размеры
     if (container.clientWidth === 0 || container.clientHeight === 0) {
       console.warn('Container has zero dimensions, waiting for layout...')
@@ -1578,9 +1572,8 @@ const initCorrelation3DHeatmap = async () => {
         console.error('Container still has zero dimensions after wait')
         return
       }
-      console.log('Container dimensions after wait:', container.clientWidth, container.clientHeight)
     }
-    
+
     // Берем все активы для визуализации (акции и облигации)
     const allAssets = [...positions.value]
 
@@ -1807,12 +1800,8 @@ const initCorrelation3DHeatmap = async () => {
       displaylogo: false
     }
 
-    console.log('Portfolio: Creating 3D plot with', traces.length, 'traces')
-    console.log('Portfolio: Container dimensions:', container.clientWidth, container.clientHeight)
-    
     try {
       Plotly.newPlot(container, traces, layout, config)
-      console.log('Portfolio: 3D plot created successfully')
     } catch (error) {
       console.error('Portfolio: Error creating 3D plot:', error)
       return
@@ -1895,8 +1884,6 @@ const initLatentVol3D = async () => {
       return
     }
     
-    console.log('Initializing Latent Vol graph')
-
     const generateLatentSurface = (offset: number) => {
     const n = 40
     const x = Array.from({ length: n }, (_, i) => i / (n - 1) * 100) // Peak position %
@@ -2046,7 +2033,6 @@ const initLatentVol3D = async () => {
     // ===== УПРАВЛЕНИЕ МЫШКОЙ ОТКЛЮЧЕНО - СТАТИЧНАЯ КАМЕРА =====
     // setupWaveControls(container)
     
-    console.log('Latent Vol graph initialized successfully')
   } catch (err) {
     console.error('Error initializing Latent Vol graph:', err)
   }
@@ -2082,7 +2068,6 @@ onMounted(async () => {
   trackTimeout(async () => {
     try {
       await initCorrelation3DHeatmap()
-      console.log('3D Correlation Heatmap initialized')
     } catch (err) {
       console.error('Failed to initialize 3D Correlation Heatmap:', err)
     }

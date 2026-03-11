@@ -674,14 +674,6 @@ const runAnalysis = async () => {
     return
   }
   
-  console.log('Starting HMM analysis...', {
-    nStates: nStates.value,
-    containerSize: {
-      width: canvasContainer.value.clientWidth,
-      height: canvasContainer.value.clientHeight
-    }
-  })
-  
   isLoading.value = true
   hasData.value = false
   
@@ -866,12 +858,6 @@ const runAnalysis = async () => {
     
     currentTimeIndex.value = filteredData.value.length - 1
     hasData.value = true
-    
-    console.log('HMM analysis completed successfully', {
-      dataPoints: filteredData.value.length,
-      rendererInitialized: !!renderer,
-      hmmModelInitialized: !!hmmModel.value
-    })
     
   } catch (error) {
     console.error('Error running analysis:', error)

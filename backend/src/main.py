@@ -157,6 +157,12 @@ async def _seed_admin() -> None:
             if len(admin_password) < 12:
                 logger.warning("ADMIN_PASSWORD too short (min 12 chars) — skipping admin seed")
                 return
+            import re
+            if not re.search(r'[A-Z]', admin_password) or \
+               not re.search(r'[a-z]', admin_password) or \
+               not re.search(r'\d', admin_password):
+                logger.warning("ADMIN_PASSWORD must contain uppercase, lowercase, and digit — skipping admin seed")
+                return
 
             admin_user = User(
                 username="admin",
@@ -214,12 +220,17 @@ cors_origins_env = os.getenv("CORS_ORIGINS", "")
 cors_origins = [o.strip() for o in cors_origins_env.split(",") if o.strip()]
 
 if not cors_origins:
-    cors_origins = [
-        "http://localhost:5173",
-        "https://russiankendricklamar.github.io",
-        "tauri://localhost",
-        "https://tauri.localhost",
-    ]
+    # Production MUST set CORS_ORIGINS. Fallback is dev-only.
+    if any(os.getenv(m) for m in ("RENDER", "ORACLE_CLOUD", "OCI_REGION", "PRODUCTION")):
+        cors_origins = ["https://russiankendricklamar.github.io"]
+        logger.warning("CORS_ORIGINS not set in production — restricting to GitHub Pages only")
+    else:
+        cors_origins = [
+            "http://localhost:5173",
+            "https://russiankendricklamar.github.io",
+            "tauri://localhost",
+            "https://tauri.localhost",
+        ]
 
 app.add_middleware(
     CORSMiddleware,

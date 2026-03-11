@@ -428,7 +428,6 @@ const loadPlotly = async () => {
   // Проверяем, уже ли загружен Plotly
   if ((window as unknown as Record<string, unknown>).Plotly) {
     Plotly.value = (window as unknown as Record<string, unknown>).Plotly
-    console.log('Plotly already loaded in CorrelationScatter3D')
     return Plotly.value
   }
   
@@ -440,7 +439,6 @@ const loadPlotly = async () => {
         if ((window as unknown as Record<string, unknown>).Plotly) {
           clearInterval(checkInterval)
           Plotly.value = (window as unknown as Record<string, unknown>).Plotly
-          console.log('Plotly loaded from existing script in CorrelationScatter3D')
           resolve(Plotly.value)
         }
       }, 100)
@@ -464,7 +462,6 @@ const loadPlotly = async () => {
     script.onload = () => {
       if ((window as unknown as Record<string, unknown>).Plotly) {
         Plotly.value = (window as unknown as Record<string, unknown>).Plotly
-        console.log('Plotly loaded successfully in CorrelationScatter3D')
         resolve(Plotly.value)
       } else {
         console.error('Plotly not found after script load in CorrelationScatter3D')
@@ -792,12 +789,6 @@ const computeStatistics = () => {
 
 // Update plot
 const updatePlot = async () => {
-  console.log('CorrelationScatter3D: updatePlot called', {
-    hasPlotly: !!Plotly.value,
-    hasContainer: !!plotContainer.value,
-    dataLength: filteredData.value.length
-  })
-  
   if (!Plotly.value) {
     console.error('CorrelationScatter3D: Plotly not loaded')
     return
@@ -814,8 +805,6 @@ const updatePlot = async () => {
     return
   }
   
-  console.log('CorrelationScatter3D: Plotting', data.length, 'data points')
-
   // Compute PCA if needed
   if (spaceMode.value === 'pca') {
     computePCA(data)
@@ -1163,9 +1152,6 @@ const updatePlot = async () => {
     return
   }
   
-  console.log('CorrelationScatter3D: Creating plot with', traces.length, 'traces')
-  console.log('CorrelationScatter3D: Container dimensions:', plotContainer.value.clientWidth, plotContainer.value.clientHeight)
-  
   // Проверяем, что контейнер видим и имеет размеры
   if (plotContainer.value.clientWidth === 0 || plotContainer.value.clientHeight === 0) {
     console.warn('CorrelationScatter3D: Container has zero dimensions, waiting for layout...')
@@ -1175,13 +1161,11 @@ const updatePlot = async () => {
       console.error('CorrelationScatter3D: Container still has zero dimensions after wait')
       return
     }
-    console.log('CorrelationScatter3D: Container dimensions after wait:', plotContainer.value.clientWidth, plotContainer.value.clientHeight)
   }
-  
+
   try {
     await Plotly.value.newPlot(plotContainer.value, traces, layout, config)
-    console.log('CorrelationScatter3D: Plot created successfully')
-    
+
     // Force resize to use full container
     if (Plotly.value.Plots && plotContainer.value) {
       Plotly.value.Plots.resize(plotContainer.value)
@@ -1272,8 +1256,7 @@ const exportPNG = async () => {
 // Initialize
 onMounted(async () => {
   isLoading.value = true
-  console.log('CorrelationScatter3D: Initializing...')
-  
+
   try {
     const plotlyResult = await loadPlotly()
     if (!plotlyResult) {
@@ -1282,11 +1265,9 @@ onMounted(async () => {
       return
     }
     Plotly.value = plotlyResult
-    console.log('CorrelationScatter3D: Plotly loaded successfully')
-    
+
     // Generate mock data
     allData.value = generateMockData()
-    console.log('CorrelationScatter3D: Generated', allData.value.length, 'data points')
     
     // Initialize time range
     if (allData.value.length > 0) {
@@ -1302,8 +1283,7 @@ onMounted(async () => {
     
     // Initial plot
     await updatePlot()
-    console.log('CorrelationScatter3D: Initial plot created')
-    
+
     isLoading.value = false
   } catch (error) {
     console.error('CorrelationScatter3D: Error during initialization:', error)

@@ -42,7 +42,10 @@ def _normalize_database_url(url: str) -> str:
 
 _raw_url = os.getenv("DATABASE_URL", "")
 if not _raw_url:
-    logger.warning("DATABASE_URL is not set — using local fallback")
+    _production_markers = ["RENDER", "ORACLE_CLOUD", "OCI_REGION", "PRODUCTION"]
+    if any(os.getenv(m) for m in _production_markers):
+        raise RuntimeError("FATAL: DATABASE_URL is not set in production environment")
+    logger.warning("DATABASE_URL is not set — using local fallback (dev only)")
     _raw_url = "postgresql+asyncpg://localhost/zetaterminal"
 
 DATABASE_URL = _normalize_database_url(_raw_url)

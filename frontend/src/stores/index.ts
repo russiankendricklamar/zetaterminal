@@ -26,7 +26,6 @@ export const useThemeStore = defineStore('theme', () => {
   const toggleTheme = () => {
     theme.value = theme.value === 'dark' ? 'light' : 'dark'
     localStorage.setItem('theme', theme.value)
-    console.log('🎨 Theme changed to:', theme.value)
     applyTheme(theme.value)
   }
 

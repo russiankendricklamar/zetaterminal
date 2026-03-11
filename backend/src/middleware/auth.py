@@ -25,7 +25,7 @@ _bearer_scheme = HTTPBearer(auto_error=False)
 # ── Lightweight user-status cache (M1 fix) ─────────────────────────────
 # Avoids a DB query on every single request while still catching blocked
 # users within _STATUS_CACHE_TTL seconds.
-_STATUS_CACHE_TTL = 60  # seconds
+_STATUS_CACHE_TTL = 15  # seconds (short TTL to catch blocked users quickly)
 _user_status_cache: dict[int, tuple[str, float]] = {}  # user_id -> (status, cached_at)
 _status_cache_lock = asyncio.Lock()
 

@@ -728,8 +728,7 @@ const shockMultiplier = ref(1.0)
 const stressTestResults = ref<StressTestResponse | null>(null)
 
 // Helper function for toast notifications
-const showToast = (message: string, type: 'success' | 'error' | 'info' = 'success') => {
-  console.log(`[${type.toUpperCase()}] ${message}`)
+const showToast = (_message: string, _type: 'success' | 'error' | 'info' = 'success') => {
   // TODO: Integrate with toast notification system if available
 }
 

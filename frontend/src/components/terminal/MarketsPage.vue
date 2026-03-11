@@ -393,9 +393,7 @@ onBeforeUnmount(() => {
 // Функция для загрузки популярных тикеров и расширения списка акций
 const loadPopularTickers = async () => {
   try {
-    console.log('🔄 Loading popular tickers from API...');
     const tickers = await getPopularTickers();
-    console.log(`✅ Loaded ${tickers.length} popular tickers from API`);
     
     // Создаем мапу существующих символов для быстрой проверки
     const existingSymbols = new Set(allAssets.value.map(a => a.symbol));
@@ -480,7 +478,6 @@ const loadPopularTickers = async () => {
       }
     });
     
-    console.log(`✅ Added ${addedCount} new tickers to the list`);
   } catch (error: unknown) {
     console.error('❌ Error loading popular tickers:', error);
     console.warn('⚠️ Using static tickers only');
@@ -490,7 +487,6 @@ const loadPopularTickers = async () => {
 // Функция для загрузки реальных данных с yfinance
 const loadRealData = async () => {
   if (!useRealData.value) {
-    console.log('Real data loading is disabled');
     return;
   }
   
@@ -502,16 +498,12 @@ const loadRealData = async () => {
     // Получаем список всех тикеров из статических данных
     const allTickers = allAssets.value.map(asset => asset.symbol);
     
-    console.log('🔄 Loading market data for', allTickers.length, 'tickers...');
-    
     // Загружаем данные батчами по 50 тикеров для оптимизации
     const batchSize = 50;
     let updatedCount = 0;
     
     for (let i = 0; i < allTickers.length; i += batchSize) {
       const batch = allTickers.slice(i, i + batchSize);
-      console.log(`📦 Loading batch ${Math.floor(i / batchSize) + 1}/${Math.ceil(allTickers.length / batchSize)} (${batch.length} tickers)...`);
-      
       try {
         const stocksData = await getMultipleStocks(batch);
         
@@ -544,7 +536,6 @@ const loadRealData = async () => {
       }
     }
     
-    console.log(`✅ Updated ${updatedCount} assets with real data`);
   } catch (error: unknown) {
     console.error('❌ Error loading real market data:', error);
     console.error('Error message:', error instanceof Error ? error.message : String(error));
@@ -557,7 +548,6 @@ const loadRealData = async () => {
     console.warn('⚠️ Falling back to static data');
   } finally {
     loading.value = false;
-    console.log('🏁 Data loading finished');
   }
 };
 

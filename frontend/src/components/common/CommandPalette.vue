@@ -493,7 +493,7 @@ const commands: Command[] = [
     desc: 'Включить/выключить',
     action: () => {
       if (!document.fullscreenElement) {
-        document.documentElement.requestFullscreen().catch(err => console.log(err))
+        document.documentElement.requestFullscreen().catch(() => {})
       } else {
         document.exitFullscreen()
       }

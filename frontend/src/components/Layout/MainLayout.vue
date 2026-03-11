@@ -208,7 +208,6 @@ import { useRoute, useRouter } from 'vue-router'
 import Sidebar from '@/components/Layout/Sidebar.vue'
 import TaskWidget from '@/components/common/TaskWidget.vue'
 import { getAuthUser, logout } from '@/services/authService'
-import { getApiKey } from '@/utils/apiHeaders'
 
 const route = useRoute()
 const router = useRouter()
@@ -245,16 +244,9 @@ async function handleLogout() {
 }
 
 const isAdminUser = computed(() => {
-  // Read role from JWT claims (harder to tamper than localStorage JSON).
-  // Backend enforces require_admin on every admin endpoint — this is UX only.
-  const token = getApiKey()
-  if (!token) return false
-  try {
-    const payload = JSON.parse(atob(token.split('.')[1]))
-    return payload.role === 'admin'
-  } catch {
-    return false
-  }
+  // UX-only — backend enforces require_admin on every admin endpoint.
+  const user = getAuthUser()
+  return user?.role === 'admin'
 })
 
 function goToProfile() {

@@ -458,25 +458,11 @@ export class RegimeSpaceRenderer {
    * Настройка данных
    */
   setData(marketData: MarketPoint[], hmmModel: HMMModel, regimeConfigs: RegimeConfig[]) {
-    console.log('RegimeSpaceRenderer.setData called:', {
-      marketDataLength: marketData.length,
-      hmmModelExists: !!hmmModel,
-      regimeConfigsLength: regimeConfigs.length,
-      showTrajectory: this.showTrajectory,
-      samplePoint: marketData.length > 0 ? marketData[0] : null
-    })
-    
     this.marketData = marketData
     this.hmmModel = hmmModel
     this.regimeConfigs = regimeConfigs
     this.currentTimeIndex = marketData.length - 1 // Показываем все данные сразу
     this.updateVisualization()
-    
-    console.log('After updateVisualization:', {
-      trajectoryNodesCount: this.trajectoryNodes.length,
-      trajectoryLineExists: !!this.trajectoryLine,
-      regimeEllipsoidsCount: this.regimeEllipsoids.length
-    })
   }
 
   /**
@@ -1240,8 +1226,6 @@ export class RegimeSpaceRenderer {
   private createRegimeCentroids() {
     if (!this.showCentroids || !this.hmmModel) return
 
-    console.log('createRegimeCentroids called, showCentroids:', this.showCentroids)
-
     const means = this.hmmModel.getEmissionMeans()
 
     means.forEach((mean, regimeId) => {
@@ -1260,8 +1244,6 @@ export class RegimeSpaceRenderer {
       const sphereRadius = this.regimeSphereRadii.get(regimeId) || 10
       const coreRadius = Math.max(3, sphereRadius * 0.25)
       const glowRadius = Math.max(5, sphereRadius * 0.4)
-      
-      console.log('Creating centroid for regime', regimeId, 'sphereRadius:', sphereRadius, 'coreRadius:', coreRadius)
 
       // Ядро сферы - яркое и светящееся
       const geometry = new SphereGeometry(coreRadius, 24, 24)
@@ -1321,8 +1303,6 @@ export class RegimeSpaceRenderer {
    * Показывает путь рынка через пространство режимов и переходы s_t−1 → s_t
    */
   private createTrajectory() {
-    console.log('createTrajectory called, marketData.length:', this.marketData.length, 'showTrajectory:', this.showTrajectory)
-    
     if (this.marketData.length === 0) return
 
     // Создаем массив точек для кривой из ВСЕХ наблюдений
@@ -1393,11 +1373,6 @@ export class RegimeSpaceRenderer {
       const color = new Color(regimeColor)
       pointColors.push(color)
     })
-
-    console.log('Trajectory points created:', points.length, 'showTrajectory:', this.showTrajectory)
-    if (points.length > 0) {
-      console.log('Sample point coordinates:', points[0], points[points.length - 1])
-    }
 
     // Trajectory line - используем кривые вместо прямых линий
     // Соединяем последовательные наблюдения, показывая путь рынка через пространство режимов
@@ -1536,16 +1511,10 @@ export class RegimeSpaceRenderer {
         this.scene.add(node)
       })
       
-      console.log('Trajectory nodes created:', this.trajectoryNodes.length)
     }
-    
+
     // Устанавливаем currentTimeIndex на конец данных
     this.currentTimeIndex = this.marketData.length - 1
-    
-    console.log('createTrajectory finished:', {
-      trajectoryLineExists: !!this.trajectoryLine,
-      trajectoryNodesCount: this.trajectoryNodes.length
-    })
   }
   
   /**

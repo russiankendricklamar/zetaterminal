@@ -449,7 +449,6 @@ const loadingRates = ref(false);
 const loadCurrencyRates = async () => {
   loadingRates.value = true;
   try {
-    console.log('Loading currency rates...');
     // Загружаем курсы относительно USD
     const ratePromises = currencies
       .filter(c => c !== 'USD')
@@ -459,14 +458,12 @@ const loadCurrencyRates = async () => {
           const rateData = await getCurrencyRate(currency, 'USD');
           // Если курс возвращается как currency/USD, конвертируем в USD/currency
           bases.value[currency] = 1 / rateData.rate;
-          console.log(`Loaded ${currency}/USD:`, rateData.rate);
         } catch (error: unknown) {
           console.error(`Error loading rate for ${currency}:`, error instanceof Error ? error.message : String(error));
         }
       });
     
     await Promise.all(ratePromises);
-    console.log('Currency rates loaded successfully');
   } catch (error: unknown) {
     console.error('Error loading currency rates:', error);
     if (error instanceof Error) console.error('Error details:', error.message, error.stack);

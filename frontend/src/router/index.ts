@@ -3,6 +3,7 @@ import { createRouter, createWebHashHistory } from 'vue-router'
 import MainLayout from '@/components/Layout/MainLayout.vue'
 import Home from '@/pages/Home.vue'
 import { getApiKey } from '@/utils/apiHeaders'
+import { getAuthUser } from '@/services/authService'
 import { hasSession, restoreSession } from '@/utils/sessionManager'
 
 // Everything else is lazy-loaded for code splitting
@@ -166,17 +167,10 @@ router.beforeEach(async (to, _from, next) => {
   }
 
   if (to.meta?.requiresAdmin) {
-    // Read role from JWT claims — harder to tamper than localStorage.
-    // Backend enforces require_admin independently on every admin endpoint.
-    let role = ''
-    try {
-      const token = getApiKey()
-      if (token) {
-        const payload = JSON.parse(atob(token.split('.')[1]))
-        role = payload.role || ''
-      }
-    } catch { /* malformed token */ }
-    if (role !== 'admin') {
+    // UX-only guard — backend enforces require_admin on every admin endpoint.
+    // Role comes from login response stored in localStorage, not from JWT decode.
+    const user = getAuthUser()
+    if (!user || user.role !== 'admin') {
       next('/')
       return
     }

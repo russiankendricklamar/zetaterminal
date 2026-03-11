@@ -258,13 +258,10 @@ const widgets = ref<Widget[]>([]);
 // Инициализируем виджеты после монтирования
 onMounted(() => {
   widgets.value = loadWidgets();
-  console.log('Loaded widgets:', widgets.value);
-  console.log('Widget components:', widgetComponents);
-  
+
   // Слушаем обновления виджетов из настроек
   window.addEventListener('widgets-updated', () => {
     widgets.value = loadWidgets();
-    console.log('Widgets updated:', widgets.value);
   });
 });
 
@@ -295,9 +292,8 @@ const resizeWidget = (id: string, width: number, height: number) => {
   }
 };
 
-const editWidget = (id: string) => {
+const editWidget = (_id: string) => {
   // Открыть настройки виджета
-  console.log('Edit widget:', id);
 };
 
 watch(() => props.orderBook, () => {
