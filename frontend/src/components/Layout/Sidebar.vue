@@ -266,8 +266,6 @@ const toolGroups = {
       { path: '/analytics/adversarial-stress', label: 'Adversarial Stress' },
       { path: '/analytics/pbo', label: 'PBO / DSR' },
       { path: '/analytics/sharpe-stats', label: 'Статистика Шарпа' },
-      { path: '/analytics/realized-kernels', label: 'Realized Kernels' },
-      { path: '/analytics/har-model', label: 'HAR Model' },
       { path: '/analytics/factor-analysis', label: 'Factor Analysis' },
       { path: '/repo', label: 'REPO Analysis' },
     ]

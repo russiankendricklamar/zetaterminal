@@ -36,6 +36,7 @@ from src.api import (
     etf,
     factor_analysis,
     forward,
+    garch,
     gemini,
     har,
     hjb,
@@ -272,6 +273,7 @@ app.include_router(bond.router, prefix="/api/bond", tags=["Bond"], dependencies=
 app.include_router(swap.router, prefix="/api/swap", tags=["Swap"], dependencies=_auth)
 app.include_router(forward.router, prefix="/api/forward", tags=["Forward"], dependencies=_auth)
 app.include_router(compute.router, prefix="/api/compute", tags=["Compute"], dependencies=_auth)
+app.include_router(garch.router, prefix="/api/garch", tags=["GARCH"], dependencies=_auth)
 app.include_router(backtest.router, prefix="/api/backtest", tags=["Backtest"], dependencies=_auth)
 app.include_router(stress.router, prefix="/api/stress", tags=["Stress"], dependencies=_auth)
 app.include_router(ccmv.router, prefix="/api/ccmv", tags=["CCMV"], dependencies=_auth)

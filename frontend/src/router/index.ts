@@ -42,8 +42,6 @@ const KnowledgeBase = () => import('@/pages/KnowledgeBase.vue')
 const Terminal = () => import('@/pages/Terminal.vue')
 const Profile = () => import('@/pages/Profile.vue')
 const SharpeStats = () => import('@/pages/SharpeStats.vue')
-const RealizedKernels = () => import('@/pages/RealizedKernels.vue')
-const HARModel = () => import('@/pages/HARModel.vue')
 const FactorAnalysis = () => import('@/pages/FactorAnalysis.vue')
 const Eigenportfolio = () => import('@/pages/Eigenportfolio.vue')
 const PBOAnalysis = () => import('@/pages/PBOAnalysis.vue')
@@ -120,8 +118,6 @@ const routes = [
       { path: 'analytics/volatility', component: VolatilitySurface, name: 'VolatilitySurface', meta: { title: 'Volatility Surface', icon: '📊' } },
       { path: 'optimization', name: 'PortfolioOptimization', component: PortfolioOptimization, meta: { title: 'Оптимизация портфеля', icon: '📊' } },
       { path: 'analytics/sharpe-stats', name: 'SharpeStats', component: SharpeStats, meta: { title: 'Статистика Шарпа', icon: '📐' } },
-      { path: 'analytics/realized-kernels', name: 'RealizedKernels', component: RealizedKernels, meta: { title: 'Realized Kernels', icon: '📡' } },
-      { path: 'analytics/har-model', name: 'HARModel', component: HARModel, meta: { title: 'HAR Model', icon: '📊' } },
       { path: 'analytics/factor-analysis', name: 'FactorAnalysis', component: FactorAnalysis, meta: { title: 'TS vs CS Factor Analysis', icon: '🧮' } },
       { path: 'analytics/eigenportfolio', name: 'Eigenportfolio', component: Eigenportfolio, meta: { title: 'Eigenportfolios (PCA)', icon: '🔬' } },
       { path: 'analytics/pbo', name: 'PBOAnalysis', component: PBOAnalysis, meta: { title: 'PBO / DSR', icon: '🧪' } },

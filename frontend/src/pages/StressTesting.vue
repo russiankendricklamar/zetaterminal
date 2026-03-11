@@ -516,16 +516,35 @@
                 >
                   <div class="form-group">
                     <label>Множитель волатильности</label>
-                    <input 
-                      v-model.number="formData.volatility_multiplier" 
-                      type="number" 
+                    <input
+                      v-model.number="formData.volatility_multiplier"
+                      type="number"
                       class="glass-input"
                       min="0.5"
                       max="5"
                       step="0.1"
                       placeholder="1.5"
+                      :disabled="useGarchForecast"
                     >
                     <span class="form-hint">Множитель для волатильности (1.5 = увеличение на 50%)</span>
+                  </div>
+                  <div class="form-group">
+                    <label class="toggle-label">
+                      <input
+                        v-model="useGarchForecast"
+                        type="checkbox"
+                        @change="onGarchToggle"
+                      >
+                      <span>Использовать GARCH-прогноз</span>
+                    </label>
+                    <span
+                      v-if="garchLoading"
+                      class="form-hint"
+                    >Загрузка GARCH...</span>
+                    <span
+                      v-else-if="garchVolDisplay"
+                      class="form-hint text-accent"
+                    >GARCH sigma: {{ garchVolDisplay }}</span>
                   </div>
                 </div>
                 
@@ -717,11 +736,13 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import { runStressTests, type StressScenario, type StressTestResponse } from '@/services/stressService'
+import { forecastGarch } from '@/services/garchService'
 import { usePortfolioStore } from '@/stores/portfolio'
 
 const portfolioStore = usePortfolioStore()
 
 const selectedBank = computed(() => portfolioStore.selectedBank)
+const positions = computed(() => portfolioStore.positions)
 
 const isRunning = ref(false)
 const shockMultiplier = ref(1.0)
@@ -798,6 +819,43 @@ const scenarios = ref([
     custom: false
   }
 ])
+
+// GARCH-conditional volatility state
+const useGarchForecast = ref(false)
+const garchLoading = ref(false)
+const garchVolDisplay = ref('')
+
+const onGarchToggle = async () => {
+  if (!useGarchForecast.value) {
+    garchVolDisplay.value = ''
+    return
+  }
+  // Use positions dayChange as proxy returns
+  const returns = positions.value
+    .map((p: Record<string, unknown>) => ((p.dayChange as number) || 0) / 100)
+    .filter((v: number) => Number.isFinite(v))
+  if (returns.length < 10) {
+    garchVolDisplay.value = 'Недостаточно данных'
+    useGarchForecast.value = false
+    return
+  }
+  garchLoading.value = true
+  try {
+    const result = await forecastGarch({ returns, model: 'garch_11', n_steps: 22 })
+    const annualVol = result.forecast.annualized_volatilities[0]
+    garchVolDisplay.value = (annualVol * 100).toFixed(2) + '%'
+    // Set volatility multiplier as ratio of GARCH vol to sample vol
+    const sampleVol = Math.sqrt(returns.reduce((s: number, r: number) => s + r * r, 0) / returns.length) * Math.sqrt(252)
+    if (sampleVol > 0) {
+      formData.value.volatility_multiplier = parseFloat((annualVol / sampleVol).toFixed(2))
+    }
+  } catch {
+    garchVolDisplay.value = 'Ошибка GARCH'
+    useGarchForecast.value = false
+  } finally {
+    garchLoading.value = false
+  }
+}
 
 // Scenario Editor State
 const isEditorOpen = ref(false)

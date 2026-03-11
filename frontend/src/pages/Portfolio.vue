@@ -222,6 +222,9 @@
       </div>
     </div>
 
+    <!-- GARCH Volatility Forecast -->
+    <GarchForecastBlock :returns="portfolioReturns" />
+
     <!-- Main Dashboard Grid -->
     <div class="dashboard-grid">
       <!-- LEFT COLUMN -->
@@ -1023,6 +1026,7 @@
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { storeToRefs } from 'pinia'
 import CorrelationScatter3D from '../components/common/CorrelationScatter3D.vue'
+import GarchForecastBlock from '../components/portfolio/GarchForecastBlock.vue'
 import { usePortfolioStore, defaultBank } from '../stores/portfolio'
 import { calculatePortfolioMetrics, type PortfolioMetricsResponse } from '../services/portfolioService'
 
@@ -1468,6 +1472,14 @@ const closePortfolioDetails = () => {
     document.body.style.overflow = ''
   }
 }
+
+// Portfolio returns extracted from positions' dayChange for GARCH input
+const portfolioReturns = computed(() => {
+  if (!positions.value || positions.value.length === 0) return []
+  return positions.value
+    .map((p: Record<string, unknown>) => (p.dayChange as number) / 100)
+    .filter((v: number) => Number.isFinite(v))
+})
 
 // Генерация детерминированной матрицы корреляций на основе текущего портфеля (все 25 активов)
 const correlationMatrix = computed(() => {
