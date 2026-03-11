@@ -35,8 +35,8 @@ class HJBRequest(MeanVarianceBase):
     risk_free_rate: float = Field(..., ge=-1, le=1, description="Безрисковая ставка (в долях)")
     monte_carlo: MonteCarloParams | None = Field(None, description="Параметры Монте-Карло симуляции")
 
-    class Config:
-        schema_extra = {
+    model_config = {
+        "json_schema_extra": {
             "example": {
                 "mu": [0.10, 0.12, 0.08],
                 "cov_matrix": [[0.04, 0.02, 0.01], [0.02, 0.05, 0.015], [0.01, 0.015, 0.03]],
@@ -45,6 +45,7 @@ class HJBRequest(MeanVarianceBase):
                 "monte_carlo": {"initial_capital": 1000000, "horizon_years": 1.0, "n_paths": 5000, "n_steps": 252, "random_seed": 42}
             }
         }
+    }
 
 
 class HJBResponse(BaseModel):

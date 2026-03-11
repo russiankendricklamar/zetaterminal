@@ -40,8 +40,8 @@ class ZCYCResponse(BaseModel):
     mean_rate: float
     error: str | None = None
 
-    class Config:
-        json_schema_extra = {
+    model_config = {
+        "json_schema_extra": {
             "example": {
                 "status": "ok",
                 "date": "2026-01-03",
@@ -58,6 +58,7 @@ class ZCYCResponse(BaseModel):
                 "mean_rate": 14.12
             }
         }
+    }
 
 
 class InterpolateRequest(FinancialBaseModel):

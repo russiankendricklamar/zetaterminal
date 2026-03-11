@@ -30,8 +30,8 @@ class SpectralAnalysisRequest(FinancialBaseModel):
     auto_optimize: bool = Field(default=False, description="Автоматически определить оптимальные n_poles и window_size")
     criterion: str = Field(default='bic', description="Критерий для выбора количества полюсов: 'aic', 'bic', или 'aicc'")
 
-    class Config:
-        json_schema_extra = {
+    model_config = {
+        "json_schema_extra": {
             "example": {
                 "returns": [0.01, -0.02, 0.015, 0.005, -0.01],
                 "n_poles": None,
@@ -40,6 +40,7 @@ class SpectralAnalysisRequest(FinancialBaseModel):
                 "criterion": "bic"
             }
         }
+    }
 
 
 class AssetDataRequest(BaseModel):
@@ -55,8 +56,8 @@ class SpectralAnalysisResponse(BaseModel):
     summary: dict[str, Any]
     visualization: dict[str, Any]
 
-    class Config:
-        json_schema_extra = {
+    model_config = {
+        "json_schema_extra": {
             "example": {
                 "success": True,
                 "summary": {
@@ -70,6 +71,7 @@ class SpectralAnalysisResponse(BaseModel):
                 }
             }
         }
+    }
 
 
 # Список доступных активов

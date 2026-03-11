@@ -23,8 +23,8 @@ class CCMVRequest(MeanVarianceBase):
     bar_w: float = Field(..., gt=0, le=1, description="Максимальный вес на актив")
     method: str = Field(default='delta', description="Метод оптимизации: 'delta' или 'alpha'")
 
-    class Config:
-        schema_extra = {
+    model_config = {
+        "json_schema_extra": {
             "example": {
                 "R": [[0.01, 0.02, 0.015], [0.02, 0.01, 0.02], [0.015, 0.02, 0.01]],
                 "mu": [0.10, 0.12, 0.08],
@@ -33,6 +33,7 @@ class CCMVRequest(MeanVarianceBase):
                 "asset_names": ["Asset1", "Asset2", "Asset3"]
             }
         }
+    }
 
 
 class CCMVResponse(BaseModel):
