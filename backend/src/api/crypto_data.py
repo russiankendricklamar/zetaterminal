@@ -7,15 +7,14 @@ Prefix: /api/crypto-data
 import logging
 
 from fastapi import APIRouter, HTTPException, Query
-from typing import Optional
 
 from src.services.crypto_data_service import (
-    coingecko_markets,
-    coingecko_coin,
-    coingecko_market_chart,
-    coingecko_trending,
-    coingecko_global,
     coingap_arbitrage,
+    coingecko_coin,
+    coingecko_global,
+    coingecko_market_chart,
+    coingecko_markets,
+    coingecko_trending,
 )
 
 logger = logging.getLogger(__name__)
@@ -35,7 +34,7 @@ async def cg_markets(
         return await coingecko_markets(vs_currency, per_page, page, order)
     except Exception as e:
         logger.error("CoinGecko markets failed: %s", e, exc_info=True)
-        raise HTTPException(status_code=500, detail="Internal server error")
+        raise HTTPException(status_code=500, detail="Internal server error") from e
 
 
 @router.get("/coingecko/coin/{coin_id}")
@@ -45,7 +44,7 @@ async def cg_coin(coin_id: str):
         return await coingecko_coin(coin_id)
     except Exception as e:
         logger.error("CoinGecko coin details failed: %s", e, exc_info=True)
-        raise HTTPException(status_code=500, detail="Internal server error")
+        raise HTTPException(status_code=500, detail="Internal server error") from e
 
 
 @router.get("/coingecko/coin/{coin_id}/chart")
@@ -59,7 +58,7 @@ async def cg_chart(
         return await coingecko_market_chart(coin_id, vs_currency, days)
     except Exception as e:
         logger.error("CoinGecko market chart failed: %s", e, exc_info=True)
-        raise HTTPException(status_code=500, detail="Internal server error")
+        raise HTTPException(status_code=500, detail="Internal server error") from e
 
 
 @router.get("/coingecko/trending")
@@ -69,7 +68,7 @@ async def cg_trending():
         return await coingecko_trending()
     except Exception as e:
         logger.error("CoinGecko trending failed: %s", e, exc_info=True)
-        raise HTTPException(status_code=500, detail="Internal server error")
+        raise HTTPException(status_code=500, detail="Internal server error") from e
 
 
 @router.get("/coingecko/global")
@@ -79,7 +78,7 @@ async def cg_global():
         return await coingecko_global()
     except Exception as e:
         logger.error("CoinGecko global stats failed: %s", e, exc_info=True)
-        raise HTTPException(status_code=500, detail="Internal server error")
+        raise HTTPException(status_code=500, detail="Internal server error") from e
 
 
 @router.get("/coingap/arbitrage")
@@ -89,7 +88,7 @@ async def gap_arbitrage():
         return await coingap_arbitrage()
     except Exception as e:
         logger.error("CoinGap arbitrage failed: %s", e, exc_info=True)
-        raise HTTPException(status_code=500, detail="Internal server error")
+        raise HTTPException(status_code=500, detail="Internal server error") from e
 
 
 @router.get("/health")

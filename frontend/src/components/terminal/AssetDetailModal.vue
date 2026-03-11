@@ -3,31 +3,34 @@
     <div 
       class="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity" 
       @click="$emit('close')"
-    ></div>
+    />
     
     <div class="relative w-full max-w-lg data-panel overflow-hidden transition-all transform scale-100 flex flex-col max-h-[90vh]">
-      
       <!-- Header -->
       <div class="p-6 border-b border-white/5 flex items-start justify-between bg-white/5">
         <div class="flex items-center gap-4">
-          <div :class="`w-14 h-14 rounded-2xl flex items-center justify-center text-xl font-bold shadow-lg ${
-            asset.category === 'Crypto' ? 'bg-gradient-to-br from-orange-500/20 to-yellow-500/20 text-orange-400' :
-            'bg-gradient-to-br from-blue-500/20 to-cyan-500/20 text-blue-400'
-          }`">
+          <div
+            :class="`w-14 h-14 rounded-2xl flex items-center justify-center text-xl font-bold shadow-lg ${
+              asset.category === 'Crypto' ? 'bg-gradient-to-br from-orange-500/20 to-yellow-500/20 text-orange-400' :
+              'bg-gradient-to-br from-blue-500/20 to-cyan-500/20 text-blue-400'
+            }`"
+          >
             {{ asset.symbol.substring(0, 2) }}
           </div>
           <div>
-            <h2 class="text-2xl font-bold text-white tracking-tight">{{ asset.name }}</h2>
+            <h2 class="text-2xl font-bold text-white tracking-tight">
+              {{ asset.name }}
+            </h2>
             <div class="flex items-center gap-2 text-sm text-gray-400">
               <span class="font-mono">{{ asset.symbol }}</span>
-              <span class="w-1 h-1 rounded-full bg-gray-600"></span>
+              <span class="w-1 h-1 rounded-full bg-gray-600" />
               <span class="bg-white/10 px-1.5 py-0.5 rounded text-[10px] uppercase">{{ asset.category || 'Asset' }}</span>
             </div>
           </div>
         </div>
         <button 
-          @click="$emit('close')"
           class="p-2 rounded-full hover:bg-white/10 text-gray-400 hover:text-white transition-colors"
+          @click="$emit('close')"
         >
           <XIcon class="w-5 h-5" />
         </button>
@@ -39,14 +42,23 @@
           <div class="flex items-baseline gap-4 mb-6">
             <span class="text-4xl font-mono font-bold text-white">{{ asset.price }}</span>
             <div :class="`flex items-center gap-1 px-2 py-1 rounded-lg text-sm font-bold ${isPositive ? 'bg-emerald-500/10 text-emerald-400' : 'bg-rose-500/10 text-rose-400'}`">
-              <component :is="isPositive ? 'TrendingUpIcon' : 'TrendingDownIcon'" class="w-4 h-4" />
+              <component
+                :is="isPositive ? 'TrendingUpIcon' : 'TrendingDownIcon'"
+                class="w-4 h-4"
+              />
               {{ asset.change }}
             </div>
           </div>
 
           <div class="h-48 w-full bg-black/20 rounded-xl border border-white/5 overflow-hidden relative mb-6">
-            <div class="absolute top-3 left-3 z-10 text-[10px] font-bold text-gray-500 uppercase tracking-wider">1H Performance</div>
-            <v-chart class="w-full h-full" :option="chartOption" autoresize />
+            <div class="absolute top-3 left-3 z-10 text-[10px] font-bold text-gray-500 uppercase tracking-wider">
+              1H Performance
+            </div>
+            <v-chart
+              class="w-full h-full"
+              :option="chartOption"
+              autoresize
+            />
           </div>
 
           <!-- Statistics Grid -->
@@ -55,25 +67,33 @@
               <div class="flex items-center gap-2 text-gray-500 text-xs mb-1">
                 <ActivityIcon class="w-3 h-3" /> Vol (24h)
               </div>
-              <div class="font-mono text-white font-medium">{{ asset.vol || '1.2B' }}</div>
+              <div class="font-mono text-white font-medium">
+                {{ asset.vol || '1.2B' }}
+              </div>
             </div>
             <div class="p-3 rounded-xl bg-white/5 border border-white/5">
               <div class="flex items-center gap-2 text-gray-500 text-xs mb-1">
                 <BarChart3Icon class="w-3 h-3" /> Mkt Cap
               </div>
-              <div class="font-mono text-white font-medium">{{ asset.cap || '850M' }}</div>
+              <div class="font-mono text-white font-medium">
+                {{ asset.cap || '850M' }}
+              </div>
             </div>
             <div class="p-3 rounded-xl bg-white/5 border border-white/5">
               <div class="flex items-center gap-2 text-gray-500 text-xs mb-1">
                 <DollarSignIcon class="w-3 h-3" /> High (24h)
               </div>
-              <div class="font-mono text-white font-medium">{{ high24h }}</div>
+              <div class="font-mono text-white font-medium">
+                {{ high24h }}
+              </div>
             </div>
             <div class="p-3 rounded-xl bg-white/5 border border-white/5">
               <div class="flex items-center gap-2 text-gray-500 text-xs mb-1">
                 <DollarSignIcon class="w-3 h-3" /> Low (24h)
               </div>
-              <div class="font-mono text-white font-medium">{{ low24h }}</div>
+              <div class="font-mono text-white font-medium">
+                {{ low24h }}
+              </div>
             </div>
           </div>
 
@@ -97,8 +117,8 @@
           <StarIcon class="w-4 h-4" /> Favorite
         </button>
         <button 
-          @click="handleTrade"
           class="flex-[2] py-3 rounded-xl bg-white text-black font-bold text-sm hover:scale-[1.02] transition-transform shadow-lg shadow-white/10 flex items-center justify-center gap-2"
+          @click="handleTrade"
         >
           Go to Analysis <ArrowRightIcon class="w-4 h-4" />
         </button>

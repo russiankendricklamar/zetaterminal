@@ -2,11 +2,11 @@
 API endpoints для PBO (Probability of Backtest Overfitting) и DSR.
 """
 import logging
+from datetime import datetime
+from typing import Any
 
 from fastapi import APIRouter, HTTPException
-from typing import Dict, Any, List, Optional
 from pydantic import BaseModel, Field
-from datetime import datetime
 
 from src.services.pbo_service import compute_pbo
 
@@ -16,7 +16,7 @@ router = APIRouter()
 
 
 class PBORequest(BaseModel):
-    strategy_returns: List[List[float]] = Field(
+    strategy_returns: list[list[float]] = Field(
         ..., description="Матрица доходностей T × N (строки=периоды, столбцы=стратегии)"
     )
     n_splits: int = Field(16, ge=4, le=64, description="Число подмножеств S для CSCV (чётное)")
@@ -36,7 +36,7 @@ class PBORequest(BaseModel):
 
 
 class PBOResponse(BaseModel):
-    result: Dict[str, Any]
+    result: dict[str, Any]
     timestamp: datetime = Field(default_factory=datetime.now)
 
 
@@ -63,10 +63,10 @@ async def analyze_pbo(request: PBORequest):
         return PBOResponse(result=result)
     except ValueError as e:
         logger.error("PBO validation error: %s", e, exc_info=True)
-        raise HTTPException(status_code=400, detail="Invalid input parameters")
+        raise HTTPException(status_code=400, detail="Invalid input parameters") from e
     except Exception as e:
         logger.error("PBO computation failed: %s", e, exc_info=True)
-        raise HTTPException(status_code=500, detail="Internal server error")
+        raise HTTPException(status_code=500, detail="Internal server error") from e
 
 
 @router.get("/health")

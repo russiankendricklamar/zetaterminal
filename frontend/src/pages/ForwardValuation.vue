@@ -1,12 +1,15 @@
 <!-- src/pages/ForwardValuation.vue -->
 <template>
   <div class="forward-valuation-page">
-    
     <!-- Header Section -->
     <div class="page-header">
       <div class="header-left">
-        <h1 class="page-title">Оценка форвардов</h1>
-        <p class="page-subtitle">Справедливая стоимость и анализ форвардных контрактов</p>
+        <h1 class="page-title">
+          Оценка форвардов
+        </h1>
+        <p class="page-subtitle">
+          Справедливая стоимость и анализ форвардных контрактов
+        </p>
       </div>
       
       <div class="header-right">
@@ -14,17 +17,17 @@
         <div class="control-group">
           <label class="control-label">Реестр:</label>
           <input 
-            type="file" 
+            id="excel-upload" 
             ref="fileInputRef"
-            @change="handleFileUpload" 
+            type="file" 
             accept=".xlsx,.xls"
             style="display: none"
-            id="excel-upload"
-          />
+            @change="handleFileUpload"
+          >
           <button 
-            @click="() => { if (fileInputRef) fileInputRef.click() }" 
-            class="btn-secondary"
+            class="btn-secondary" 
             title="Загрузить реестр контрактов из Excel"
+            @click="() => { if (fileInputRef) fileInputRef.click() }"
           >
             Загрузить Excel
           </button>
@@ -33,29 +36,43 @@
         <!-- Forward Type -->
         <div class="control-group">
           <label class="control-label">Тип форварда:</label>
-          <select v-model="selectedForwardType" class="forward-type-select" @change="updateValuation">
-            <option value="bond">Форвард на облигацию</option>
-            <option value="fx">Валютный форвард</option>
-            <option value="commodity">Форвард на товар</option>
-            <option value="equity">Форвард на акцию</option>
-            <option value="rate">Форвард на ставку</option>
+          <select
+            v-model="selectedForwardType"
+            class="forward-type-select"
+            @change="updateValuation"
+          >
+            <option value="bond">
+              Форвард на облигацию
+            </option>
+            <option value="fx">
+              Валютный форвард
+            </option>
+            <option value="commodity">
+              Форвард на товар
+            </option>
+            <option value="equity">
+              Форвард на акцию
+            </option>
+            <option value="rate">
+              Форвард на ставку
+            </option>
           </select>
         </div>
 
         <!-- Add to Registry Button -->
         <button 
-          @click="addForwardManually" 
-          class="btn-secondary"
+          class="btn-secondary" 
           title="Добавить текущий форвард в реестр"
+          @click="addForwardManually"
         >
           ➕ Добавить в реестр
         </button>
 
         <!-- Calculation Button -->
         <button 
-          @click="calculateValuation" 
-          class="btn-primary"
+          class="btn-primary" 
           :disabled="calculating"
+          @click="calculateValuation"
         >
           <span v-if="!calculating">Пересчитать</span>
           <span v-else>↺ Считаю...</span>
@@ -64,50 +81,60 @@
     </div>
 
     <!-- Error Message -->
-    <div v-if="error" class="error-message">
+    <div
+      v-if="error"
+      class="error-message"
+    >
       ⚠️ {{ error }}
     </div>
 
     <!-- Registry Table (if loaded) -->
-    <div v-if="loadedContracts.length > 0" class="card full-width" style="margin-bottom: 24px;">
-      <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
+    <div
+      v-if="loadedContracts.length > 0"
+      class="card full-width"
+      style="margin-bottom: 24px;"
+    >
+      <div
+        class="card-header"
+        style="display: flex; justify-content: space-between; align-items: center;"
+      >
         <div>
           <h3>Реестр контрактов</h3>
           <span class="card-subtitle">Загружено контрактов: {{ loadedContracts.length }}</span>
         </div>
         <div style="display: flex; gap: 8px;">
           <button 
-            @click="exportRegistryToExcel" 
-            class="btn-secondary"
+            class="btn-secondary" 
             :disabled="loadedContracts.length === 0"
             style="font-size: 11px; padding: 6px 12px;"
             title="Выгрузить реестр в Excel"
+            @click="exportRegistryToExcel"
           >
             📥 Выгрузить Excel
           </button>
           <button 
-            @click="saveRegistryToParquetHandler" 
-            class="btn-secondary"
+            class="btn-secondary" 
             :disabled="loadedContracts.length === 0 || savingParquet"
             style="font-size: 11px; padding: 6px 12px;"
             title="Сохранить реестр (parquet)"
+            @click="saveRegistryToParquetHandler"
           >
             <span v-if="!savingParquet">💾 Сохранить в БД</span>
             <span v-else>↺ Сохранение...</span>
           </button>
           <button 
-            @click="calculateAllContracts" 
-            class="btn-secondary"
+            class="btn-secondary" 
             :disabled="calculatingAll"
             style="font-size: 11px; padding: 6px 12px;"
+            @click="calculateAllContracts"
           >
             <span v-if="!calculatingAll">Рассчитать все</span>
             <span v-else>↺ Считаю...</span>
           </button>
           <button 
-            @click="clearRegistry" 
-            class="btn-secondary"
+            class="btn-secondary" 
             style="font-size: 11px; padding: 6px 12px; background: rgba(239, 68, 68, 0.2); border-color: rgba(239, 68, 68, 0.3);"
+            @click="clearRegistry"
           >
             ✕ Очистить
           </button>
@@ -119,16 +146,30 @@
             <tr>
               <th>№</th>
               <th>Тип</th>
-              <th v-if="selectedForwardType === 'fx'">Валюта продажи</th>
-              <th v-if="selectedForwardType === 'fx'">Валюта покупки</th>
-              <th v-if="selectedForwardType === 'fx'">Сумма продажи</th>
-              <th v-if="selectedForwardType === 'fx'">Сумма покупки</th>
-              <th v-if="selectedForwardType !== 'fx'">Спот цена</th>
+              <th v-if="selectedForwardType === 'fx'">
+                Валюта продажи
+              </th>
+              <th v-if="selectedForwardType === 'fx'">
+                Валюта покупки
+              </th>
+              <th v-if="selectedForwardType === 'fx'">
+                Сумма продажи
+              </th>
+              <th v-if="selectedForwardType === 'fx'">
+                Сумма покупки
+              </th>
+              <th v-if="selectedForwardType !== 'fx'">
+                Спот цена
+              </th>
               <th>Дата оценки</th>
               <th>Дата экспирации</th>
               <th>Рыночная цена</th>
-              <th v-if="contractResults.length > 0">Справедливая цена</th>
-              <th v-if="contractResults.length > 0">Стоимость</th>
+              <th v-if="contractResults.length > 0">
+                Справедливая цена
+              </th>
+              <th v-if="contractResults.length > 0">
+                Стоимость
+              </th>
               <th>Действие</th>
             </tr>
           </thead>
@@ -141,25 +182,57 @@
             >
               <td>{{ idx + 1 }}</td>
               <td>{{ contract.forwardType || selectedForwardType }}</td>
-              <td v-if="selectedForwardType === 'fx'">{{ contract.fxSellCurrency || '-' }}</td>
-              <td v-if="selectedForwardType === 'fx'">{{ contract.fxBuyCurrency || '-' }}</td>
-              <td v-if="selectedForwardType === 'fx'" class="mono">{{ contract.fxSellAmount ? formatCompactCurrency(contract.fxSellAmount) : '-' }}</td>
-              <td v-if="selectedForwardType === 'fx'" class="mono">{{ contract.fxBuyAmount ? formatCompactCurrency(contract.fxBuyAmount) : '-' }}</td>
-              <td v-if="selectedForwardType !== 'fx'" class="mono">{{ contract.spotPrice ? formatCurrency(contract.spotPrice) : '-' }}</td>
-              <td class="mono">{{ contract.valuationDate || '-' }}</td>
-              <td class="mono">{{ contract.expirationDate || '-' }}</td>
-              <td class="mono">{{ contract.marketForwardPrice ? formatCurrency(contract.marketForwardPrice) : '-' }}</td>
-              <td v-if="contractResults.length > 0 && contractResults[idx]" class="mono accent">
+              <td v-if="selectedForwardType === 'fx'">
+                {{ contract.fxSellCurrency || '-' }}
+              </td>
+              <td v-if="selectedForwardType === 'fx'">
+                {{ contract.fxBuyCurrency || '-' }}
+              </td>
+              <td
+                v-if="selectedForwardType === 'fx'"
+                class="mono"
+              >
+                {{ contract.fxSellAmount ? formatCompactCurrency(contract.fxSellAmount) : '-' }}
+              </td>
+              <td
+                v-if="selectedForwardType === 'fx'"
+                class="mono"
+              >
+                {{ contract.fxBuyAmount ? formatCompactCurrency(contract.fxBuyAmount) : '-' }}
+              </td>
+              <td
+                v-if="selectedForwardType !== 'fx'"
+                class="mono"
+              >
+                {{ contract.spotPrice ? formatCurrency(contract.spotPrice) : '-' }}
+              </td>
+              <td class="mono">
+                {{ contract.valuationDate || '-' }}
+              </td>
+              <td class="mono">
+                {{ contract.expirationDate || '-' }}
+              </td>
+              <td class="mono">
+                {{ contract.marketForwardPrice ? formatCurrency(contract.marketForwardPrice) : '-' }}
+              </td>
+              <td
+                v-if="contractResults.length > 0 && contractResults[idx]"
+                class="mono accent"
+              >
                 {{ contractResults[idx]?.fairForwardPrice ? formatCurrency(contractResults[idx].fairForwardPrice) : '-' }}
               </td>
-              <td v-if="contractResults.length > 0 && contractResults[idx]" class="mono" :class="(contractResults[idx]?.forwardValue || 0) >= 0 ? 'positive' : 'negative'">
+              <td
+                v-if="contractResults.length > 0 && contractResults[idx]"
+                class="mono"
+                :class="(contractResults[idx]?.forwardValue || 0) >= 0 ? 'positive' : 'negative'"
+              >
                 {{ contractResults[idx]?.forwardValue ? formatCompactCurrency(contractResults[idx].forwardValue) : '-' }}
               </td>
               <td>
                 <button 
-                  @click.stop="loadContractToForm(idx)" 
-                  class="btn-small"
+                  class="btn-small" 
                   title="Загрузить в форму"
+                  @click.stop="loadContractToForm(idx)"
                 >
                   📝
                 </button>
@@ -182,21 +255,47 @@
           <div class="parameter-group">
             <div class="param-row">
               <label>Валюта</label>
-              <select v-model="params.fxSellCurrency" class="param-input" @change="updateValuation">
-                <option value="CNY">CNY</option>
-                <option value="RUB">RUB</option>
-                <option value="EUR">EUR</option>
-                <option value="GBP">GBP</option>
-                <option value="JPY">JPY</option>
+              <select
+                v-model="params.fxSellCurrency"
+                class="param-input"
+                @change="updateValuation"
+              >
+                <option value="CNY">
+                  CNY
+                </option>
+                <option value="RUB">
+                  RUB
+                </option>
+                <option value="EUR">
+                  EUR
+                </option>
+                <option value="GBP">
+                  GBP
+                </option>
+                <option value="JPY">
+                  JPY
+                </option>
               </select>
             </div>
             <div class="param-row">
               <label>Сумма продажи</label>
-              <input v-model.number="params.fxSellAmount" type="number" class="param-input" step="0.01" @change="updateValuation" />
+              <input
+                v-model.number="params.fxSellAmount"
+                type="number"
+                class="param-input"
+                step="0.01"
+                @change="updateValuation"
+              >
             </div>
             <div class="param-row">
               <label>Ставка для {{ params.fxSellCurrency }} (%)</label>
-              <input v-model.number="params.fxExternalRate" type="number" class="param-input" step="0.01" @change="updateValuation" />
+              <input
+                v-model.number="params.fxExternalRate"
+                type="number"
+                class="param-input"
+                step="0.01"
+                @change="updateValuation"
+              >
             </div>
           </div>
         </div>
@@ -209,21 +308,47 @@
           <div class="parameter-group">
             <div class="param-row">
               <label>Валюта</label>
-              <select v-model="params.fxBuyCurrency" class="param-input" @change="updateValuation">
-                <option value="RUB">RUB</option>
-                <option value="EUR">EUR</option>
-                <option value="CNY">CNY</option>
-                <option value="GBP">GBP</option>
-                <option value="JPY">JPY</option>
+              <select
+                v-model="params.fxBuyCurrency"
+                class="param-input"
+                @change="updateValuation"
+              >
+                <option value="RUB">
+                  RUB
+                </option>
+                <option value="EUR">
+                  EUR
+                </option>
+                <option value="CNY">
+                  CNY
+                </option>
+                <option value="GBP">
+                  GBP
+                </option>
+                <option value="JPY">
+                  JPY
+                </option>
               </select>
             </div>
             <div class="param-row">
               <label>Сумма покупки</label>
-              <input v-model.number="params.fxBuyAmount" type="number" class="param-input" step="0.01" @change="updateValuation" />
+              <input
+                v-model.number="params.fxBuyAmount"
+                type="number"
+                class="param-input"
+                step="0.01"
+                @change="updateValuation"
+              >
             </div>
             <div class="param-row">
               <label>Ставка для {{ params.fxBuyCurrency }} (%)</label>
-              <input v-model.number="params.fxInternalRate" type="number" class="param-input" step="0.01" @change="updateValuation" />
+              <input
+                v-model.number="params.fxInternalRate"
+                type="number"
+                class="param-input"
+                step="0.01"
+                @change="updateValuation"
+              >
             </div>
           </div>
         </div>
@@ -236,23 +361,50 @@
           <div class="parameter-group">
             <div class="param-row">
               <label>Дата сделки</label>
-              <input v-model="params.fxDealDate" type="date" class="param-input" @change="updateValuation" />
+              <input
+                v-model="params.fxDealDate"
+                type="date"
+                class="param-input"
+                @change="updateValuation"
+              >
             </div>
             <div class="param-row">
               <label>Дата оценки</label>
-              <input v-model="params.fxValuationDate" type="date" class="param-input" @change="updateValuation" />
+              <input
+                v-model="params.fxValuationDate"
+                type="date"
+                class="param-input"
+                @change="updateValuation"
+              >
             </div>
             <div class="param-row">
               <label>Дата экспирации</label>
-              <input v-model="params.fxExpirationDate" type="date" class="param-input" @change="updateValuation" />
+              <input
+                v-model="params.fxExpirationDate"
+                type="date"
+                class="param-input"
+                @change="updateValuation"
+              >
             </div>
             <div class="param-row">
               <label>Спот курс</label>
-              <input v-model.number="params.spotPrice" type="number" class="param-input" step="0.0001" @change="updateValuation" />
+              <input
+                v-model.number="params.spotPrice"
+                type="number"
+                class="param-input"
+                step="0.0001"
+                @change="updateValuation"
+              >
             </div>
             <div class="param-row">
               <label>Курс сделки (форвард)</label>
-              <input v-model.number="params.marketForwardPrice" type="number" class="param-input" step="0.0001" @change="updateValuation" />
+              <input
+                v-model.number="params.marketForwardPrice"
+                type="number"
+                class="param-input"
+                step="0.0001"
+                @change="updateValuation"
+              >
             </div>
           </div>
         </div>
@@ -268,49 +420,111 @@
           <div class="parameter-group">
             <div class="param-row">
               <label>Спот цена (clean, %)</label>
-              <input v-model.number="params.spotPrice" type="number" class="param-input" step="0.01" @change="updateValuation" />
+              <input
+                v-model.number="params.spotPrice"
+                type="number"
+                class="param-input"
+                step="0.01"
+                @change="updateValuation"
+              >
             </div>
             <div class="param-row">
               <label>Номинал</label>
-              <input v-model.number="params.faceValue" type="number" class="param-input" step="0.01" @change="updateValuation" />
+              <input
+                v-model.number="params.faceValue"
+                type="number"
+                class="param-input"
+                step="0.01"
+                @change="updateValuation"
+              >
             </div>
             <div class="param-row">
               <label>Купонная ставка (%)</label>
-              <input v-model.number="params.couponRate" type="number" class="param-input" step="0.01" @change="updateValuation" />
+              <input
+                v-model.number="params.couponRate"
+                type="number"
+                class="param-input"
+                step="0.01"
+                @change="updateValuation"
+              >
             </div>
             <div class="param-row">
               <label>Частота купонов (раз/год)</label>
-              <select v-model.number="params.couponFrequency" class="param-input" @change="updateValuation">
-                <option :value="1">1 (ежегодно)</option>
-                <option :value="2">2 (раз в полгода)</option>
-                <option :value="4">4 (ежеквартально)</option>
-                <option :value="12">12 (ежемесячно)</option>
+              <select
+                v-model.number="params.couponFrequency"
+                class="param-input"
+                @change="updateValuation"
+              >
+                <option :value="1">
+                  1 (ежегодно)
+                </option>
+                <option :value="2">
+                  2 (раз в полгода)
+                </option>
+                <option :value="4">
+                  4 (ежеквартально)
+                </option>
+                <option :value="12">
+                  12 (ежемесячно)
+                </option>
               </select>
             </div>
             <div class="param-row">
               <label>Накопленный купонный доход (НКД)</label>
-              <input v-model.number="params.accruedInterest" type="number" class="param-input" step="0.01" @change="updateValuation" />
+              <input
+                v-model.number="params.accruedInterest"
+                type="number"
+                class="param-input"
+                step="0.01"
+                @change="updateValuation"
+              >
             </div>
             <div class="param-row">
               <label>Дата последнего купона</label>
-              <input v-model="params.lastCouponDate" type="date" class="param-input" @change="updateValuation" />
+              <input
+                v-model="params.lastCouponDate"
+                type="date"
+                class="param-input"
+                @change="updateValuation"
+              >
             </div>
             <div class="param-row">
               <label>Дата погашения</label>
-              <input v-model="params.maturityDate" type="date" class="param-input" @change="updateValuation" />
+              <input
+                v-model="params.maturityDate"
+                type="date"
+                class="param-input"
+                @change="updateValuation"
+              >
             </div>
             <div class="param-row">
               <label>Конвенция подсчета дней</label>
-              <select v-model="params.dayCountConvention" class="param-input" @change="updateValuation">
-                <option value="ACT/ACT">ACT/ACT (ISDA)</option>
-                <option value="ACT/365">ACT/365</option>
-                <option value="ACT/360">ACT/360</option>
-                <option value="30/360">30/360</option>
+              <select
+                v-model="params.dayCountConvention"
+                class="param-input"
+                @change="updateValuation"
+              >
+                <option value="ACT/ACT">
+                  ACT/ACT (ISDA)
+                </option>
+                <option value="ACT/365">
+                  ACT/365
+                </option>
+                <option value="ACT/360">
+                  ACT/360
+                </option>
+                <option value="30/360">
+                  30/360
+                </option>
               </select>
             </div>
             <div class="param-row">
               <label>
-                <input type="checkbox" v-model="params.autoCalculateAI" @change="updateValuation" />
+                <input
+                  v-model="params.autoCalculateAI"
+                  type="checkbox"
+                  @change="updateValuation"
+                >
                 Автоматически рассчитывать НКД
               </label>
             </div>
@@ -325,31 +539,71 @@
           <div class="parameter-group">
             <div class="param-row">
               <label>Дата оценки</label>
-              <input v-model="params.bondValuationDate" type="date" class="param-input" @change="updateValuation" />
+              <input
+                v-model="params.bondValuationDate"
+                type="date"
+                class="param-input"
+                @change="updateValuation"
+              >
             </div>
             <div class="param-row">
               <label>Дата экспирации</label>
-              <input v-model="params.bondExpirationDate" type="date" class="param-input" @change="updateValuation" />
+              <input
+                v-model="params.bondExpirationDate"
+                type="date"
+                class="param-input"
+                @change="updateValuation"
+              >
             </div>
             <div class="param-row">
               <label>Время до экспирации (лет)</label>
-              <input v-model.number="params.timeToMaturity" type="number" class="param-input" step="0.01" @change="updateValuation" />
+              <input
+                v-model.number="params.timeToMaturity"
+                type="number"
+                class="param-input"
+                step="0.01"
+                @change="updateValuation"
+              >
             </div>
             <div class="param-row">
               <label>Репо ставка (%)</label>
-              <input v-model.number="params.repoRate" type="number" class="param-input" step="0.01" @change="updateValuation" />
+              <input
+                v-model.number="params.repoRate"
+                type="number"
+                class="param-input"
+                step="0.01"
+                @change="updateValuation"
+              >
             </div>
             <div class="param-row">
               <label>Безрисковая ставка (%)</label>
-              <input v-model.number="params.riskFreeRate" type="number" class="param-input" step="0.01" @change="updateValuation" />
+              <input
+                v-model.number="params.riskFreeRate"
+                type="number"
+                class="param-input"
+                step="0.01"
+                @change="updateValuation"
+              >
             </div>
             <div class="param-row">
               <label>Рыночная цена форварда (clean, %)</label>
-              <input v-model.number="params.marketForwardPrice" type="number" class="param-input" step="0.01" @change="updateValuation" />
+              <input
+                v-model.number="params.marketForwardPrice"
+                type="number"
+                class="param-input"
+                step="0.01"
+                @change="updateValuation"
+              >
             </div>
             <div class="param-row">
               <label>Размер контракта (шт.)</label>
-              <input v-model.number="params.contractSize" type="number" class="param-input" step="1" @change="updateValuation" />
+              <input
+                v-model.number="params.contractSize"
+                type="number"
+                class="param-input"
+                step="1"
+                @change="updateValuation"
+              >
             </div>
           </div>
         </div>
@@ -363,14 +617,31 @@
           <div class="parameter-group">
             <div class="param-row">
               <label>
-                <input type="checkbox" v-model="params.useYieldCurve" @change="updateValuation" />
+                <input
+                  v-model="params.useYieldCurve"
+                  type="checkbox"
+                  @change="updateValuation"
+                >
                 Использовать кривую доходности
               </label>
             </div>
-            <div v-if="params.useYieldCurve" class="yield-curve-inputs">
-              <div class="param-row" v-for="(point, idx) in params.yieldCurvePoints" :key="idx">
+            <div
+              v-if="params.useYieldCurve"
+              class="yield-curve-inputs"
+            >
+              <div
+                v-for="(point, idx) in params.yieldCurvePoints"
+                :key="idx"
+                class="param-row"
+              >
                 <label>{{ point.tenor }} мес.</label>
-                <input v-model.number="point.rate" type="number" class="param-input" step="0.01" @change="updateValuation" />
+                <input
+                  v-model.number="point.rate"
+                  type="number"
+                  class="param-input"
+                  step="0.01"
+                  @change="updateValuation"
+                >
                 <span style="color: rgba(255,255,255,0.5); margin-left: 8px;">%</span>
               </div>
             </div>
@@ -388,19 +659,52 @@
           <div class="parameter-group">
             <div class="param-row">
               <label>Спот цена (S₀)</label>
-              <input v-model.number="params.spotPrice" type="number" class="param-input" step="0.01" @change="updateValuation" />
+              <input
+                v-model.number="params.spotPrice"
+                type="number"
+                class="param-input"
+                step="0.01"
+                @change="updateValuation"
+              >
             </div>
-            <div class="param-row" v-if="selectedForwardType === 'equity'">
+            <div
+              v-if="selectedForwardType === 'equity'"
+              class="param-row"
+            >
               <label>Дивиденды (%)</label>
-              <input v-model.number="params.dividendYield" type="number" class="param-input" step="0.01" @change="updateValuation" />
+              <input
+                v-model.number="params.dividendYield"
+                type="number"
+                class="param-input"
+                step="0.01"
+                @change="updateValuation"
+              >
             </div>
-            <div class="param-row" v-if="selectedForwardType === 'commodity'">
+            <div
+              v-if="selectedForwardType === 'commodity'"
+              class="param-row"
+            >
               <label>Стоимость хранения (%)</label>
-              <input v-model.number="params.carryingCost" type="number" class="param-input" step="0.01" @change="updateValuation" />
+              <input
+                v-model.number="params.carryingCost"
+                type="number"
+                class="param-input"
+                step="0.01"
+                @change="updateValuation"
+              >
             </div>
-            <div class="param-row" v-if="selectedForwardType === 'commodity'">
+            <div
+              v-if="selectedForwardType === 'commodity'"
+              class="param-row"
+            >
               <label>Удобство владения (Convenience Yield, %)</label>
-              <input v-model.number="params.convenienceYield" type="number" class="param-input" step="0.01" @change="updateValuation" />
+              <input
+                v-model.number="params.convenienceYield"
+                type="number"
+                class="param-input"
+                step="0.01"
+                @change="updateValuation"
+              >
             </div>
           </div>
         </div>
@@ -413,15 +717,33 @@
           <div class="parameter-group">
             <div class="param-row">
               <label>Время до экспирации (лет)</label>
-              <input v-model.number="params.timeToMaturity" type="number" class="param-input" step="0.01" @change="updateValuation" />
+              <input
+                v-model.number="params.timeToMaturity"
+                type="number"
+                class="param-input"
+                step="0.01"
+                @change="updateValuation"
+              >
             </div>
             <div class="param-row">
               <label>Безрисковая ставка (%)</label>
-              <input v-model.number="params.riskFreeRate" type="number" class="param-input" step="0.01" @change="updateValuation" />
+              <input
+                v-model.number="params.riskFreeRate"
+                type="number"
+                class="param-input"
+                step="0.01"
+                @change="updateValuation"
+              >
             </div>
             <div class="param-row">
               <label>Рыночная цена форварда</label>
-              <input v-model.number="params.marketForwardPrice" type="number" class="param-input" step="0.01" @change="updateValuation" />
+              <input
+                v-model.number="params.marketForwardPrice"
+                type="number"
+                class="param-input"
+                step="0.01"
+                @change="updateValuation"
+              >
             </div>
           </div>
         </div>
@@ -466,17 +788,26 @@
           <h3>Стоимость форвардного контракта</h3>
           <span class="metric-unit">По единице</span>
         </div>
-        <div class="metric-value" :class="valuationResults.forwardValue >= 0 ? 'positive' : 'negative'">
+        <div
+          class="metric-value"
+          :class="valuationResults.forwardValue >= 0 ? 'positive' : 'negative'"
+        >
           {{ formatCurrency(valuationResults.forwardValue) }}
         </div>
         <div class="metric-detail">
           <span class="detail-label">За контракт:</span>
           <!-- Для FX форвардов forwardValue уже рассчитан с учетом buy_amount, не умножаем на contractSize -->
-          <span class="detail-value" v-if="selectedForwardType === 'fx'">
+          <span
+            v-if="selectedForwardType === 'fx'"
+            class="detail-value"
+          >
             {{ formatCompactCurrency(valuationResults.forwardValue) }}
           </span>
           <!-- Для других типов форвардов используем contractSize -->
-          <span class="detail-value" v-else>
+          <span
+            v-else
+            class="detail-value"
+          >
             {{ formatCompactCurrency(valuationResults.forwardValue * params.contractSize) }}
           </span>
         </div>
@@ -515,7 +846,10 @@
             </div>
           </div>
         </div>
-        <div class="grid-2" style="margin-top: 20px;">
+        <div
+          class="grid-2"
+          style="margin-top: 20px;"
+        >
           <div class="card">
             <div class="card-header">
               <h3>Дисконт-факторы</h3>
@@ -544,9 +878,15 @@
                 <label>Максимальная (тыс. {{ params.settlementCurrency || 'RUB' }})</label>
                 <span class="param-value">{{ valuationResults.fairValueMax?.toFixed(3) || 'N/A' }}</span>
               </div>
-              <div class="param-row" v-if="valuationResults.forwardDiff !== undefined">
+              <div
+                v-if="valuationResults.forwardDiff !== undefined"
+                class="param-row"
+              >
                 <label>Расхождение с курсом сделки</label>
-                <span class="param-value" :class="typeof valuationResults.forwardDiff === 'string' ? '' : (valuationResults.forwardDiff >= 0 ? 'positive' : 'negative')">
+                <span
+                  class="param-value"
+                  :class="typeof valuationResults.forwardDiff === 'string' ? '' : (valuationResults.forwardDiff >= 0 ? 'positive' : 'negative')"
+                >
                   {{ typeof valuationResults.forwardDiff === 'string' ? valuationResults.forwardDiff : valuationResults.forwardDiff.toFixed(3) }}
                 </span>
               </div>
@@ -557,7 +897,10 @@
     </template>
 
     <!-- Cost-of-Carry Breakdown (только для не-FX форвардов) -->
-    <div v-if="selectedForwardType !== 'fx'" class="card full-width">
+    <div
+      v-if="selectedForwardType !== 'fx'"
+      class="card full-width"
+    >
       <div class="card-header">
         <h3>Модель Cost-of-Carry</h3>
       </div>
@@ -590,7 +933,10 @@
         </div>
         <div class="carry-item final">
           <span class="carry-label">= Справедливая стоимость форварда F</span>
-          <span class="carry-value" :class="valuationResults.fairForwardPrice >= params.spotPrice ? 'positive' : 'negative'">
+          <span
+            class="carry-value"
+            :class="valuationResults.fairForwardPrice >= params.spotPrice ? 'positive' : 'negative'"
+          >
             {{ formatCurrency(valuationResults.fairForwardPrice) }}
           </span>
         </div>
@@ -598,7 +944,10 @@
     </div>
 
     <!-- Forward Value Components (только для не-FX форвардов) -->
-    <div v-if="selectedForwardType !== 'fx'" class="grid-3">
+    <div
+      v-if="selectedForwardType !== 'fx'"
+      class="grid-3"
+    >
       <!-- Intrinsic Value -->
       <div class="card">
         <div class="card-header">
@@ -616,7 +965,10 @@
           </div>
           <div class="item total">
             <span class="label">Внутренняя стоимость</span>
-            <span class="value" :class="valuationResults.intrinsicValue >= 0 ? 'positive' : 'negative'">
+            <span
+              class="value"
+              :class="valuationResults.intrinsicValue >= 0 ? 'positive' : 'negative'"
+            >
               {{ valuationResults.intrinsicValue >= 0 ? '+' : '' }}{{ formatCurrency(valuationResults.intrinsicValue) }}
             </span>
           </div>
@@ -640,7 +992,10 @@
           </div>
           <div class="item total">
             <span class="label">Временная стоимость</span>
-            <span class="value" :class="valuationResults.timeValue >= 0 ? 'positive' : 'negative'">
+            <span
+              class="value"
+              :class="valuationResults.timeValue >= 0 ? 'positive' : 'negative'"
+            >
               {{ valuationResults.timeValue >= 0 ? '+' : '' }}{{ formatCurrency(valuationResults.timeValue) }}
             </span>
           </div>
@@ -656,13 +1011,19 @@
         <div class="value-breakdown">
           <div class="item">
             <span class="label">Внутренняя стоимость</span>
-            <span class="value" :class="valuationResults.intrinsicValue >= 0 ? 'positive' : 'negative'">
+            <span
+              class="value"
+              :class="valuationResults.intrinsicValue >= 0 ? 'positive' : 'negative'"
+            >
               {{ valuationResults.intrinsicValue >= 0 ? '+' : '' }}{{ formatCurrency(valuationResults.intrinsicValue) }}
             </span>
           </div>
           <div class="item">
             <span class="label">Временная стоимость</span>
-            <span class="value" :class="valuationResults.timeValue >= 0 ? 'positive' : 'negative'">
+            <span
+              class="value"
+              :class="valuationResults.timeValue >= 0 ? 'positive' : 'negative'"
+            >
               {{ valuationResults.timeValue >= 0 ? '+' : '' }}{{ formatCurrency(valuationResults.timeValue) }}
             </span>
           </div>
@@ -699,19 +1060,44 @@
               </tr>
             </thead>
             <tbody>
-              <tr v-for="coupon in valuationResults.couponSchedule" :key="coupon.couponNumber">
+              <tr
+                v-for="coupon in valuationResults.couponSchedule"
+                :key="coupon.couponNumber"
+              >
                 <td>{{ coupon.couponNumber }}</td>
                 <td>{{ formatDate(coupon.couponDate) }}</td>
-                <td class="mono">{{ coupon.daysToPayment }}</td>
-                <td class="mono">{{ coupon.yearsToPayment.toFixed(4) }}</td>
-                <td class="mono">{{ formatCurrency(coupon.couponAmount) }}</td>
-                <td class="mono">{{ coupon.discountRate.toFixed(3) }}%</td>
-                <td class="mono">{{ coupon.discountFactor.toFixed(6) }}</td>
-                <td class="mono positive">{{ formatCurrency(coupon.presentValue) }}</td>
+                <td class="mono">
+                  {{ coupon.daysToPayment }}
+                </td>
+                <td class="mono">
+                  {{ coupon.yearsToPayment.toFixed(4) }}
+                </td>
+                <td class="mono">
+                  {{ formatCurrency(coupon.couponAmount) }}
+                </td>
+                <td class="mono">
+                  {{ coupon.discountRate.toFixed(3) }}%
+                </td>
+                <td class="mono">
+                  {{ coupon.discountFactor.toFixed(6) }}
+                </td>
+                <td class="mono positive">
+                  {{ formatCurrency(coupon.presentValue) }}
+                </td>
               </tr>
               <tr class="base">
-                <td colspan="7" style="text-align: right; font-weight: 600;">Итого PV купонов:</td>
-                <td class="mono accent" style="font-weight: 700;">{{ formatCurrency(valuationResults.pvCoupons || 0) }}</td>
+                <td
+                  colspan="7"
+                  style="text-align: right; font-weight: 600;"
+                >
+                  Итого PV купонов:
+                </td>
+                <td
+                  class="mono accent"
+                  style="font-weight: 700;"
+                >
+                  {{ formatCurrency(valuationResults.pvCoupons || 0) }}
+                </td>
               </tr>
             </tbody>
           </table>
@@ -719,7 +1105,10 @@
       </div>
 
       <!-- Formula Breakdown -->
-      <div class="card full-width" v-if="valuationResults.formulaBreakdown">
+      <div
+        v-if="valuationResults.formulaBreakdown"
+        class="card full-width"
+      >
         <div class="card-header">
           <h3>Детальный разбор формулы</h3>
           <span class="card-subtitle">F = [(S₀ + AI₀) × (1 + r_repo × T) - Σ(Cᵢ × DFᵢ)] / DF(T) - AI_T</span>
@@ -763,13 +1152,19 @@
           </div>
           <div class="param-row final">
             <label>Справедливая форвардная цена (clean, F)</label>
-            <span class="param-value accent" style="font-size: 16px; font-weight: 700;">{{ formatCurrency(valuationResults.formulaBreakdown.forwardCleanPrice) }}</span>
+            <span
+              class="param-value accent"
+              style="font-size: 16px; font-weight: 700;"
+            >{{ formatCurrency(valuationResults.formulaBreakdown.forwardCleanPrice) }}</span>
           </div>
         </div>
       </div>
 
       <!-- Extended Greeks -->
-      <div class="grid-3" v-if="valuationResults.dv01 !== undefined">
+      <div
+        v-if="valuationResults.dv01 !== undefined"
+        class="grid-3"
+      >
         <div class="card">
           <div class="card-header">
             <h3>DV01</h3>
@@ -801,7 +1196,10 @@
             <h3>Repo Sensitivity</h3>
             <span class="card-subtitle">Чувствительность к репо (1 bp)</span>
           </div>
-          <div class="metric-value" :class="(valuationResults.repoSensitivity || 0) >= 0 ? 'positive' : 'negative'">
+          <div
+            class="metric-value"
+            :class="(valuationResults.repoSensitivity || 0) >= 0 ? 'positive' : 'negative'"
+          >
             {{ valuationResults.repoSensitivity?.toFixed(6) || 'N/A' }}
           </div>
           <div class="metric-detail">
@@ -823,7 +1221,7 @@
           </span>
         </div>
         <div class="chart-container">
-          <canvas ref="priceProfileRef"></canvas>
+          <canvas ref="priceProfileRef" />
         </div>
       </div>
 
@@ -836,7 +1234,7 @@
           </span>
         </div>
         <div class="chart-container">
-          <canvas ref="valueVsTimeRef"></canvas>
+          <canvas ref="valueVsTimeRef" />
         </div>
       </div>
     </div>
@@ -860,19 +1258,39 @@
             </tr>
           </thead>
           <tbody>
-            <tr v-for="scenario in scenarioAnalysis" :key="scenario.id" :class="scenario.isBase ? 'base' : ''">
-              <td class="scenario-name">{{ scenario.name }}</td>
-              <td class="spot-price mono">{{ formatCurrency(scenario.spotPrice) }}</td>
-              <td class="change mono" :class="scenario.change >= 0 ? 'positive' : 'negative'">
+            <tr
+              v-for="scenario in scenarioAnalysis"
+              :key="scenario.id"
+              :class="scenario.isBase ? 'base' : ''"
+            >
+              <td class="scenario-name">
+                {{ scenario.name }}
+              </td>
+              <td class="spot-price mono">
+                {{ formatCurrency(scenario.spotPrice) }}
+              </td>
+              <td
+                class="change mono"
+                :class="scenario.change >= 0 ? 'positive' : 'negative'"
+              >
                 {{ scenario.change >= 0 ? '+' : '' }}{{ scenario.change.toFixed(1) }}%
               </td>
-              <td class="forward-value mono" :class="scenario.forwardValue >= 0 ? 'positive' : 'negative'">
+              <td
+                class="forward-value mono"
+                :class="scenario.forwardValue >= 0 ? 'positive' : 'negative'"
+              >
                 {{ scenario.forwardValue >= 0 ? '+' : '' }}{{ formatCurrency(scenario.forwardValue) }}
               </td>
-              <td class="pnl mono" :class="scenario.pnlLong >= 0 ? 'positive' : 'negative'">
+              <td
+                class="pnl mono"
+                :class="scenario.pnlLong >= 0 ? 'positive' : 'negative'"
+              >
                 {{ scenario.pnlLong >= 0 ? '+' : '' }}{{ formatCompactCurrency(scenario.pnlLong) }}
               </td>
-              <td class="pnl mono" :class="scenario.pnlShort >= 0 ? 'positive' : 'negative'">
+              <td
+                class="pnl mono"
+                :class="scenario.pnlShort >= 0 ? 'positive' : 'negative'"
+              >
                 {{ scenario.pnlShort >= 0 ? '+' : '' }}{{ formatCompactCurrency(scenario.pnlShort) }}
               </td>
             </tr>
@@ -882,7 +1300,10 @@
     </div>
 
     <!-- Sensitivity Analysis (только для не-FX форвардов) -->
-    <div v-if="selectedForwardType !== 'fx'" class="grid-2">
+    <div
+      v-if="selectedForwardType !== 'fx'"
+      class="grid-2"
+    >
       <!-- Sensitivity to Spot Price -->
       <div class="card">
         <div class="chart-header">
@@ -936,7 +1357,6 @@
       <span>• Метод: {{ selectedForwardType === 'fx' ? 'Дисконтирование денежных потоков' : (selectedForwardType === 'bond' ? 'Репо финансирование' : 'Непрерывное начисление') }}</span>
       <span>• Обновление: В реальном времени</span>
     </div>
-
   </div>
 </template>
 

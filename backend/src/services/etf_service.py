@@ -4,7 +4,7 @@ ETF Data Service — Russian ETFs via MOEX ISS, foreign ETFs via yfinance.
 Combines MOEX TQTF board data with yfinance for international ETFs.
 """
 
-from typing import Optional, Dict, Any, List
+from typing import Any
 
 from src.services.cache_service import cache_get, cache_set, make_cache_key
 from src.utils.http_client import get_session
@@ -12,7 +12,7 @@ from src.utils.http_client import get_session
 MOEX_BASE = "https://iss.moex.com/iss"
 
 
-async def moex_etf_list() -> Dict[str, Any]:
+async def moex_etf_list() -> dict[str, Any]:
     """Get list of Russian ETFs from MOEX TQTF board."""
     key = make_cache_key("etf", "moex_list")
     cached = cache_get(key)
@@ -39,12 +39,12 @@ async def moex_etf_list() -> Dict[str, Any]:
 
     securities_map = {}
     for row in sec_rows:
-        item = dict(zip(sec_cols, row))
+        item = dict(zip(sec_cols, row, strict=False))
         securities_map[item.get("SECID", "")] = item
 
     etfs = []
     for row in md_rows:
-        md = dict(zip(md_cols, row))
+        md = dict(zip(md_cols, row, strict=False))
         secid = md.get("SECID", "")
         sec = securities_map.get(secid, {})
         etfs.append({
@@ -73,10 +73,10 @@ async def moex_etf_list() -> Dict[str, Any]:
 async def etf_candles(
     ticker: str,
     interval: int = 24,
-    from_date: Optional[str] = None,
-    till_date: Optional[str] = None,
+    from_date: str | None = None,
+    till_date: str | None = None,
     limit: int = 100,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Get ETF candles from MOEX TQTF board."""
     key = make_cache_key("etf", "candles", ticker, interval, from_date, till_date, limit)
     cached = cache_get(key)
@@ -84,7 +84,7 @@ async def etf_candles(
         return cached
 
     url = f"{MOEX_BASE}/engines/stock/markets/shares/boards/TQTF/securities/{ticker}/candles.json"
-    params: Dict[str, Any] = {"iss.meta": "off", "interval": interval}
+    params: dict[str, Any] = {"iss.meta": "off", "interval": interval}
     if from_date:
         params["from"] = from_date
     if till_date:
@@ -100,7 +100,7 @@ async def etf_candles(
 
     candles = []
     for row in rows[:limit]:
-        c = dict(zip(cols, row))
+        c = dict(zip(cols, row, strict=False))
         candles.append({
             "open": c.get("open"),
             "close": c.get("close"),

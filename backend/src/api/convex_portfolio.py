@@ -2,11 +2,11 @@
 API endpoints для Convex Portfolio Construction.
 """
 import logging
+from datetime import datetime
+from typing import Any
 
 from fastapi import APIRouter, HTTPException
-from typing import Dict, Any, List, Optional
 from pydantic import BaseModel, Field
-from datetime import datetime
 
 from src.services.convex_portfolio_service import compute_convex_portfolio
 
@@ -18,19 +18,19 @@ VALID_OBJECTIVES = {"min_variance", "max_sharpe", "mean_variance", "cvar", "risk
 
 
 class ConvexPortfolioRequest(BaseModel):
-    returns: List[List[float]] = Field(
+    returns: list[list[float]] = Field(
         ..., description="Матрица T × N доходностей (строки=периоды, столбцы=активы)"
     )
-    asset_names: Optional[List[str]] = Field(None, description="Названия N активов")
-    objectives: Optional[List[str]] = Field(
+    asset_names: list[str] | None = Field(None, description="Названия N активов")
+    objectives: list[str] | None = Field(
         None,
         description="Задачи: min_variance, max_sharpe, cvar, risk_parity, kelly, mean_variance"
     )
     long_only: bool = Field(True, description="Только длинные позиции")
     lb: float = Field(0.0, ge=0.0, description="Нижняя граница весов")
     ub: float = Field(1.0, le=2.0, description="Верхняя граница весов")
-    max_weight: Optional[float] = Field(None, ge=0.0, le=1.0, description="Максимальный вес актива")
-    target_return: Optional[float] = Field(None, description="Минимальная ожидаемая доходность (дневная)")
+    max_weight: float | None = Field(None, ge=0.0, le=1.0, description="Максимальный вес актива")
+    target_return: float | None = Field(None, description="Минимальная ожидаемая доходность (дневная)")
     leverage: float = Field(1.0, ge=1.0, le=3.0, description="Максимальное плечо ||w||₁")
     cvar_alpha: float = Field(0.95, ge=0.5, le=0.999, description="Уровень доверия CVaR")
     risk_free: float = Field(0.0, description="Дневная безрисковая ставка")
@@ -53,7 +53,7 @@ class ConvexPortfolioRequest(BaseModel):
 
 
 class ConvexPortfolioResponse(BaseModel):
-    result: Dict[str, Any]
+    result: dict[str, Any]
     timestamp: datetime = Field(default_factory=datetime.now)
 
 
@@ -98,10 +98,10 @@ async def optimize(request: ConvexPortfolioRequest):
         return ConvexPortfolioResponse(result=result)
     except ValueError as e:
         logger.error("Convex portfolio validation error: %s", e, exc_info=True)
-        raise HTTPException(status_code=400, detail="Invalid input parameters")
+        raise HTTPException(status_code=400, detail="Invalid input parameters") from e
     except Exception as e:
         logger.error("Convex portfolio optimization failed: %s", e, exc_info=True)
-        raise HTTPException(status_code=500, detail="Internal server error")
+        raise HTTPException(status_code=500, detail="Internal server error") from e
 
 
 @router.get("/health")

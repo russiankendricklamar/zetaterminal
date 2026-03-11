@@ -13,50 +13,113 @@
       <div class="form-grid">
         <div class="form-group">
           <label>Profit-Take множитель</label>
-          <input v-model.number="params.pt_multiplier" type="number" min="0.1" step="0.1" />
+          <input
+            v-model.number="params.pt_multiplier"
+            type="number"
+            min="0.1"
+            step="0.1"
+          >
           <span class="hint">PT барьер = pt × daily_vol. Рекомендовано 1.5–3.</span>
         </div>
         <div class="form-group">
           <label>Stop-Loss множитель</label>
-          <input v-model.number="params.sl_multiplier" type="number" min="0.1" step="0.1" />
+          <input
+            v-model.number="params.sl_multiplier"
+            type="number"
+            min="0.1"
+            step="0.1"
+          >
           <span class="hint">SL барьер = sl × daily_vol. Рекомендовано 0.5–1.5.</span>
         </div>
         <div class="form-group">
           <label>Макс. горизонт (баров)</label>
-          <input v-model.number="params.max_holding" type="number" min="1" max="100" />
+          <input
+            v-model.number="params.max_holding"
+            type="number"
+            min="1"
+            max="100"
+          >
           <span class="hint">Временной барьер. 5 = 1 неделя для дневных.</span>
         </div>
         <div class="form-group">
           <label>Окно rolling vol</label>
-          <input v-model.number="params.vol_window" type="number" min="5" max="252" />
+          <input
+            v-model.number="params.vol_window"
+            type="number"
+            min="5"
+            max="252"
+          >
           <span class="hint">Используется для нормировки барьеров.</span>
         </div>
         <div class="form-group">
           <label>Обучающая выборка</label>
-          <input v-model.number="params.train_ratio" type="number" min="0.1" max="0.9" step="0.05" />
+          <input
+            v-model.number="params.train_ratio"
+            type="number"
+            min="0.1"
+            max="0.9"
+            step="0.05"
+          >
           <span class="hint">0.7 = первые 70% для обучения.</span>
         </div>
         <div class="form-group">
           <label>Порог вероятности</label>
-          <input v-model.number="params.meta_threshold" type="number" min="0.1" max="0.9" step="0.05" />
+          <input
+            v-model.number="params.meta_threshold"
+            type="number"
+            min="0.1"
+            max="0.9"
+            step="0.05"
+          >
           <span class="hint">Открывать позицию только при P(profit) ≥ порог.</span>
         </div>
       </div>
 
-      <div class="form-group" style="margin-bottom:16px">
+      <div
+        class="form-group"
+        style="margin-bottom:16px"
+      >
         <label>Ценовой ряд (одно значение на строку или через запятую)</label>
-        <textarea v-model="pricesText" rows="6" placeholder="100.0&#10;100.5&#10;101.2&#10;..." />
-        <div class="parse-info" v-if="parsedPrices">{{ parsedPrices.length }} цен загружено</div>
-        <div class="parse-error" v-if="priceError">{{ priceError }}</div>
+        <textarea
+          v-model="pricesText"
+          rows="6"
+          placeholder="100.0&#10;100.5&#10;101.2&#10;..."
+        />
+        <div
+          v-if="parsedPrices"
+          class="parse-info"
+        >
+          {{ parsedPrices.length }} цен загружено
+        </div>
+        <div
+          v-if="priceError"
+          class="parse-error"
+        >
+          {{ priceError }}
+        </div>
       </div>
 
       <div class="actions">
-        <button class="btn-primary" @click="compute" :disabled="loading || !!priceError || !pricesText.trim()">
+        <button
+          class="btn-primary"
+          :disabled="loading || !!priceError || !pricesText.trim()"
+          @click="compute"
+        >
           {{ loading ? 'Вычисление...' : 'Запустить анализ' }}
         </button>
-        <button class="btn-secondary" @click="loadDemo">Демо-данные (300 баров)</button>
+        <button
+          class="btn-secondary"
+          @click="loadDemo"
+        >
+          Демо-данные (300 баров)
+        </button>
       </div>
-      <div class="error-msg" v-if="error">{{ error }}</div>
+      <div
+        v-if="error"
+        class="error-msg"
+      >
+        {{ error }}
+      </div>
     </div>
 
     <!-- Results -->
@@ -64,42 +127,82 @@
       <!-- KPI Row -->
       <div class="kpi-grid">
         <div class="kpi-card">
-          <div class="kpi-label">Precision (тест)</div>
-          <div class="kpi-value" :class="colorPct(result.test_metrics.precision)">
+          <div class="kpi-label">
+            Precision (тест)
+          </div>
+          <div
+            class="kpi-value"
+            :class="colorPct(result.test_metrics.precision)"
+          >
             {{ pct(result.test_metrics.precision) }}
           </div>
-          <div class="kpi-sub">точность мета-сигнала</div>
+          <div class="kpi-sub">
+            точность мета-сигнала
+          </div>
         </div>
         <div class="kpi-card">
-          <div class="kpi-label">Recall (тест)</div>
-          <div class="kpi-value" :class="colorPct(result.test_metrics.recall)">
+          <div class="kpi-label">
+            Recall (тест)
+          </div>
+          <div
+            class="kpi-value"
+            :class="colorPct(result.test_metrics.recall)"
+          >
             {{ pct(result.test_metrics.recall) }}
           </div>
-          <div class="kpi-sub">полнота</div>
+          <div class="kpi-sub">
+            полнота
+          </div>
         </div>
         <div class="kpi-card">
-          <div class="kpi-label">F1 (тест)</div>
-          <div class="kpi-value" :class="colorPct(result.test_metrics.f1)">
+          <div class="kpi-label">
+            F1 (тест)
+          </div>
+          <div
+            class="kpi-value"
+            :class="colorPct(result.test_metrics.f1)"
+          >
             {{ pct(result.test_metrics.f1) }}
           </div>
-          <div class="kpi-sub">гармоническое среднее</div>
+          <div class="kpi-sub">
+            гармоническое среднее
+          </div>
         </div>
         <div class="kpi-card">
-          <div class="kpi-label">SR (мета)</div>
-          <div class="kpi-value" :class="result.test_metrics.sr > result.test_metrics.raw_sr ? 'ok-val' : 'danger-val'">
+          <div class="kpi-label">
+            SR (мета)
+          </div>
+          <div
+            class="kpi-value"
+            :class="result.test_metrics.sr > result.test_metrics.raw_sr ? 'ok-val' : 'danger-val'"
+          >
             {{ result.test_metrics.sr.toFixed(3) }}
           </div>
-          <div class="kpi-sub">фильтрованный Sharpe</div>
+          <div class="kpi-sub">
+            фильтрованный Sharpe
+          </div>
         </div>
         <div class="kpi-card">
-          <div class="kpi-label">SR (baseline)</div>
-          <div class="kpi-value">{{ result.test_metrics.raw_sr.toFixed(3) }}</div>
-          <div class="kpi-sub">без фильтра</div>
+          <div class="kpi-label">
+            SR (baseline)
+          </div>
+          <div class="kpi-value">
+            {{ result.test_metrics.raw_sr.toFixed(3) }}
+          </div>
+          <div class="kpi-sub">
+            без фильтра
+          </div>
         </div>
         <div class="kpi-card">
-          <div class="kpi-label">Ставок / Всего</div>
-          <div class="kpi-value">{{ result.test_metrics.n_bets }} / {{ result.test_metrics.n_total }}</div>
-          <div class="kpi-sub">avg bet={{ pct(result.test_metrics.avg_bet_size) }}</div>
+          <div class="kpi-label">
+            Ставок / Всего
+          </div>
+          <div class="kpi-value">
+            {{ result.test_metrics.n_bets }} / {{ result.test_metrics.n_total }}
+          </div>
+          <div class="kpi-sub">
+            avg bet={{ pct(result.test_metrics.avg_bet_size) }}
+          </div>
         </div>
       </div>
 
@@ -119,14 +222,23 @@
         </div>
         <div class="info-card">
           <span class="info-label">Primary acc (тест)</span>
-          <span class="info-val" :class="colorPct(result.primary_accuracy_test)">
+          <span
+            class="info-val"
+            :class="colorPct(result.primary_accuracy_test)"
+          >
             {{ pct(result.primary_accuracy_test) }}
           </span>
         </div>
-        <div class="info-card" v-for="(cnt, lbl) in result.label_distribution" :key="lbl">
+        <div
+          v-for="(cnt, lbl) in result.label_distribution"
+          :key="lbl"
+          class="info-card"
+        >
           <span class="info-label">Label {{ lbl }}</span>
-          <span class="info-val"
-            :class="lbl == 1 ? 'ok-val' : lbl == -1 ? 'danger-val' : 'neutral-val'">
+          <span
+            class="info-val"
+            :class="lbl == 1 ? 'ok-val' : lbl == -1 ? 'danger-val' : 'neutral-val'"
+          >
             {{ cnt }}
           </span>
         </div>
@@ -136,11 +248,17 @@
       <div class="charts-row">
         <div class="card chart-card">
           <h3>Equity кривые (тест)</h3>
-          <div ref="equityChart" class="chart" />
+          <div
+            ref="equityChart"
+            class="chart"
+          />
         </div>
         <div class="card chart-card">
           <h3>Precision-Recall кривая (threshold sweep)</h3>
-          <div ref="prChart" class="chart" />
+          <div
+            ref="prChart"
+            class="chart"
+          />
         </div>
       </div>
 
@@ -148,18 +266,27 @@
       <div class="charts-row">
         <div class="card chart-card">
           <h3>Распределение мета-вероятностей (тест)</h3>
-          <div ref="probHistChart" class="chart" />
+          <div
+            ref="probHistChart"
+            class="chart"
+          />
         </div>
         <div class="card chart-card">
           <h3>Feature Importances (мета-модель)</h3>
-          <div ref="featChart" class="chart" />
+          <div
+            ref="featChart"
+            class="chart"
+          />
         </div>
       </div>
 
       <!-- Bet Scatter -->
       <div class="card">
         <h3>Ставки: вероятность vs реализованная доходность (тест)</h3>
-        <div ref="betScatter" class="chart tall-chart" />
+        <div
+          ref="betScatter"
+          class="chart tall-chart"
+        />
       </div>
 
       <!-- Metrics Table -->
@@ -174,7 +301,10 @@
             </tr>
           </thead>
           <tbody>
-            <tr v-for="key in metricKeys" :key="key">
+            <tr
+              v-for="key in metricKeys"
+              :key="key"
+            >
               <td>{{ metricLabel(key) }}</td>
               <td :class="metricClass(key, result.train_metrics[key])">
                 {{ formatMetric(key, result.train_metrics[key]) }}

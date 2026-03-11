@@ -10,7 +10,10 @@
       >
         <div class="task-header">
           <span class="task-icon">
-            <span v-if="task.status === 'running'" class="spinner">⟳</span>
+            <span
+              v-if="task.status === 'running'"
+              class="spinner"
+            >⟳</span>
             <span v-else-if="task.status === 'completed'">✓</span>
             <span v-else-if="task.status === 'error'">✕</span>
           </span>
@@ -24,7 +27,7 @@
             class="progress-fill" 
             :style="{ width: task.progress + '%' }"
             :class="task.status"
-          ></div>
+          />
         </div>
       </div>
     </TransitionGroup>

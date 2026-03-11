@@ -315,3 +315,41 @@ bash start.sh
 - **Never migrate to React / Next.js** or other frameworks
 - **Never refactor financial math** without test coverage with reference values first
 - **Never hardcode hex colors or backend URLs** in Vue components
+
+---
+
+## Code Review Standards
+
+Every code change must satisfy these checks before commit.
+
+### Python (backend) — Checklist
+- [ ] `ruff check` passes with zero errors
+- [ ] Type hints on all function parameters and return values
+- [ ] Pydantic v2 model for every request/response — no raw dicts in router signatures
+- [ ] Router → Service → Repository layering respected (no DB calls in routers)
+- [ ] All `except` blocks log with `logger.error(msg, e, exc_info=True)` — never bare `except:`
+- [ ] HTTPException detail is user-friendly, never leaks internals (stack traces, SQL, paths)
+- [ ] No hardcoded secrets, API keys, or DB credentials — only `os.environ` / `.env`
+- [ ] Financial math changes require unit test with known reference value
+- [ ] `asyncio.to_thread()` wraps CPU-heavy sync calculations in async routes
+- [ ] Rate limiting (`@limiter.limit`) on all public-facing heavy endpoints
+
+### TypeScript / Vue (frontend) — Checklist
+- [ ] `npx eslint` passes with zero errors
+- [ ] `<script setup lang="ts">` — no Options API, no `defineComponent()`
+- [ ] No hardcoded hex colors — use CSS variables from `main.css`
+- [ ] No hardcoded URLs — use `getApiBaseUrl()` from `@/utils/apiBase`
+- [ ] No `any` type — use proper interfaces/types from `@/types/`
+- [ ] Composables (`use*`) for reusable logic — no logic duplication across pages
+- [ ] No `console.log` in committed code (use `console.warn`/`console.error` if needed)
+- [ ] Brutalist design rules: no rounded-full, no shadows, no gradients, border-radius ≤ 6px
+- [ ] API error handling: catch, show user-friendly message, never swallow silently
+- [ ] Pinia store for shared state — no prop drilling beyond 2 levels
+
+### Security — Checklist
+- [ ] No secrets in source code (grep for API_KEY, password, token, secret)
+- [ ] All user input validated via Pydantic (backend) or Zod/runtime check (frontend)
+- [ ] SQL injection: only parameterized queries via SQLAlchemy ORM — never raw SQL strings
+- [ ] CORS origins restricted in production (not `*`)
+- [ ] Rate limiting on auth endpoints and heavy computations
+- [ ] JWT tokens: short expiry, refresh token rotation

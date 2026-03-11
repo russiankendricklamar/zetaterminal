@@ -2,10 +2,10 @@
 Сервис для оценки форвардов различных типов.
 Основан на логике из _FORWARD для переноса на внутренний.ipynb
 """
-import numpy as np
-from typing import Dict, List, Optional
-from datetime import datetime, timedelta
 import logging
+from datetime import datetime
+
+import numpy as np
 
 from src.services.bond_forward_service import calculate_bond_forward_valuation
 
@@ -111,16 +111,16 @@ def calculate_fx_forward_valuation(
     market_forward_price: float,
     time_to_maturity: float,
     # Ставки: передаем напрямую или используем дефолтные значения
-    internal_rate: Optional[float] = None,
-    external_rate: Optional[float] = None,
-    expiration_date: Optional[str] = None
-) -> Dict:
+    internal_rate: float | None = None,
+    external_rate: float | None = None,
+    expiration_date: str | None = None
+) -> dict:
     """
     Рассчитывает справедливую стоимость валютного форварда по логике из notebook.
     """
     # Определяем валютную пару
     currency_pair_str = currency_pair(sell_currency, buy_currency)
-    
+
     # КРИТИЧНО: Определяем ставки для конкретных валют
     # internal_rate - ставка для покупаемой валюты (buy_currency)
     # external_rate - ставка для продаваемой валюты (sell_currency)
@@ -129,20 +129,20 @@ def calculate_fx_forward_valuation(
         'RUB': 15.0, 'EUR': 1.7, 'USD': 4.5, 'CNY': 1.7,
         'GBP': 4.0, 'JPY': 0.1, 'CHF': 1.0, 'AUD': 4.0
     }
-    
+
     if internal_rate is None:
         internal_rate = default_rates.get(buy_currency, 4.0)
-    
+
     if external_rate is None:
         external_rate = default_rates.get(sell_currency, 4.0)
-    
+
     # Определяем ставки для валютной пары
     # Валютная пара определяется по приоритету: currency_pair(sell, buy)
     # Базовая валюта (base) - первые 3 символа пары
     # Котируемая валюта (quote) - последние 3 символа пары
     base_currency = currency_pair_str[:3]
     quote_currency = currency_pair_str[3:]
-    
+
     # Определяем ставки для базовой и котируемой валют
     if base_currency == buy_currency:
         rate_base = internal_rate
@@ -150,18 +150,18 @@ def calculate_fx_forward_valuation(
         rate_base = external_rate
     else:
         rate_base = default_rates.get(base_currency, 4.0)
-    
+
     if quote_currency == buy_currency:
         rate_quote = internal_rate
     elif quote_currency == sell_currency:
         rate_quote = external_rate
     else:
         rate_quote = default_rates.get(quote_currency, 4.0)
-    
+
     # Для обратной совместимости с остальным кодом
     rate_buy_currency = internal_rate
     rate_sell_currency = external_rate
-    
+
     # КРИТИЧНО: Если expiration_date предоставлен, пересчитываем T точно из дат
     if expiration_date and valuation_date:
         val_dt = datetime.strptime(valuation_date, "%Y-%m-%d")
@@ -171,48 +171,44 @@ def calculate_fx_forward_valuation(
     else:
         # Конвертируем время до экспирации в дни
         days_to_maturity = int(time_to_maturity * 365)
-    
+
     # Определяем тенора
     tenor_low, tenor_high = tenor_for_days(days_to_maturity)
-    
+
     # Упрощенная интерполяция ставок (в реальности из БД)
     # КРИТИЧНО: Если ставки переданы явно (не None), используем их без интерполяции
     # Интерполяция применяется только для дефолтных ставок
     if internal_rate is not None and external_rate is not None:
         # Используем исходные ставки без интерполяции для точного соответствия Investing.com
-        interp_rate_base = rate_base
-        interp_rate_quote = rate_quote
         interp_rate_buy = rate_buy_currency
         interp_rate_sell = rate_sell_currency
     else:
         # Применяем интерполяцию только для дефолтных ставок
         if days_to_maturity <= tenor_low:
-            interp_rate_base = rate_base
-            interp_rate_quote = rate_quote
             interp_rate_buy = rate_buy_currency
             interp_rate_sell = rate_sell_currency
         elif days_to_maturity >= tenor_high:
-            interp_rate_base = rate_base * 1.1  # Упрощение
-            interp_rate_quote = rate_quote * 1.05
+            rate_base * 1.1  # Упрощение
+            rate_quote * 1.05
             interp_rate_buy = rate_buy_currency * 1.1
             interp_rate_sell = rate_sell_currency * 1.05
         else:
             # Линейная интерполяция
             ratio = (days_to_maturity - tenor_low) / (tenor_high - tenor_low)
-            interp_rate_base = rate_base * (1 + ratio * 0.1)
-            interp_rate_quote = rate_quote * (1 + ratio * 0.05)
+            rate_base * (1 + ratio * 0.1)
+            rate_quote * (1 + ratio * 0.05)
             interp_rate_buy = rate_buy_currency * (1 + ratio * 0.1)
             interp_rate_sell = rate_sell_currency * (1 + ratio * 0.05)
-    
+
     # Для обратной совместимости
     interp_internal_rate = interp_rate_buy
     interp_external_rate = interp_rate_sell
-    
+
     # Расчет дисконт-факторов (из notebook, формула 2)
     days_to_settlement = days_to_maturity
     disc_internal = 1 / (1 + interp_internal_rate / 100 * days_to_settlement / 365)
     disc_external = 1 / (1 + interp_external_rate / 100 * days_to_settlement / 365)
-    
+
     # Расчет справедливой стоимости
     fair_value_min = fair_value_fx(
         buy_currency=buy_currency,
@@ -222,7 +218,7 @@ def calculate_fx_forward_valuation(
         disc_external=disc_external,
         spot=spot_price * 0.99  # Спот мин (упрощение)
     )
-    
+
     fair_value_max = fair_value_fx(
         buy_currency=buy_currency,
         buy_amount=buy_amount,
@@ -231,7 +227,7 @@ def calculate_fx_forward_valuation(
         disc_external=disc_external,
         spot=spot_price * 1.01  # Спот макс (упрощение)
     )
-    
+
     # Расчет справедливого форвардного курса по Covered Interest Parity
     # ПРАВИЛЬНЫЙ РАСЧЕТ: Используем ставки по валютам, а не по приоритету
     # interp_rate_buy - ставка для покупаемой валюты (внутренняя)
@@ -241,18 +237,18 @@ def calculate_fx_forward_valuation(
     T = time_to_maturity
     rate_buy_decimal = interp_rate_buy / 100.0  # Ставка для покупаемой валюты (в долях)
     rate_sell_decimal = interp_rate_sell / 100.0  # Ставка для продаваемой валюты (в долях)
-    
+
     # Коэффициент изменения форвардного курса
     # fair_forward = spot × (1 + r_sell × T) / (1 + r_buy × T)
     forward_rate_change_val = (1 + rate_sell_decimal * T) / (1 + rate_buy_decimal * T)
-    
+
     # Справедливый форвардный курс
     fair_forward_rate = spot_price * forward_rate_change_val
-    
+
     # Расчет форвардных курсов для диапазона (MIN/MAX) - тоже используют правильную формулу
     forward_rate_min = (spot_price * 0.99) * forward_rate_change_val
     forward_rate_max = (spot_price * 1.01) * forward_rate_change_val
-    
+
     # Сравнение с рыночным курсом
     if market_forward_price >= forward_rate_min and market_forward_price <= forward_rate_max:
         forward_diff = "В рынке"
@@ -260,30 +256,30 @@ def calculate_fx_forward_valuation(
         forward_diff = market_forward_price - forward_rate_min
     else:
         forward_diff = market_forward_price - forward_rate_max
-    
+
     # КРИТИЧНО: Расчет NPV по правильным формулам
     # 1. PnL на момент экспирации = (forwardDealRate - fairForwardRate) * notionalBuy
     #    где notionalBuy - это buy_amount в валюте покупки (buy_currency)
     #    ВАЖНО: buy_amount должен быть в валюте покупки (EUR), не в валюте расчетов (RUB)
     #    Формула: PnL = (market_forward - fair_forward) * buy_amount_eur
     #    Результат в валюте расчетов (RUB)
-    
+
     # КРИТИЧНО: buy_amount должен быть в валюте покупки (buy_currency)
     # Формула PnL: (market_forward - fair_forward) * buy_amount_eur
     # Результат автоматически в валюте расчетов (RUB), так как курсы в ₽/EUR
-    
+
     # ОТЛАДКА: Логируем входные параметры для диагностики бага NPV
     logger.info(f"NPV Debug - buy_amount={buy_amount:,.2f}, buy_currency={buy_currency}, "
                 f"sell_currency={sell_currency}, spot_price={spot_price:.6f}, "
                 f"market_forward={market_forward_price:.6f}, fair_forward={fair_forward_rate:.6f}")
-    
+
     buy_amount_in_buy_currency = buy_amount
-    
+
     # Расчет PnL на момент экспирации
     pnl_at_maturity = (market_forward_price - fair_forward_rate) * buy_amount_in_buy_currency
     logger.debug(f"NPV Debug - pnl_at_maturity={pnl_at_maturity:,.2f} RUB, "
                 f"buy_amount_in_buy_currency={buy_amount_in_buy_currency:,.2f} {buy_currency}")
-    
+
     # 2. NPV контракта в валюте расчетов = pnlAtMaturity / (1 + rate_settlement * T)
     #    Дисконтируем по ставке валюты расчетов (settlement_currency)
     #    Если settlement_currency = RUB, используем ставку для RUB
@@ -295,31 +291,31 @@ def calculate_fx_forward_valuation(
     else:
         # По умолчанию используем ставку для sell_currency
         rate_settlement = interp_rate_sell
-    
+
     rate_settlement_decimal = rate_settlement / 100.0
     npv_contract_rub = pnl_at_maturity / (1 + rate_settlement_decimal * T)
-    
+
     # ОТЛАДКА: Логируем результат NPV
     logger.info(f"NPV Debug - rate_settlement={rate_settlement:.4f}%, T={T:.6f}, "
                 f"discount_factor={1 + rate_settlement_decimal * T:.6f}, "
                 f"pnl_at_maturity={pnl_at_maturity:,.2f} RUB, "
                 f"npv_contract_rub={npv_contract_rub:,.2f} RUB")
-    
+
     # 3. NPV на единицу (опционально, для справки)
     # ВАЖНО: Используем buy_amount_in_buy_currency для правильного расчета
     npv_per_unit_rub_per_eur = npv_contract_rub / buy_amount_in_buy_currency if buy_amount_in_buy_currency > 0 else 0.0
-    
+
     # Анализ сценариев
     scenarios = []
     spot_scenarios = [spot_price * 0.8, spot_price * 0.9, spot_price, spot_price * 1.1, spot_price * 1.2]
-    
+
     for idx, spot in enumerate(spot_scenarios):
         # Для каждого сценария пересчитываем справедливый форвардный курс по CIP
         # Формула: fair_forward = spot × (1 + r_sell × T) / (1 + r_buy × T)
         scenario_forward_rate = spot * (1 + rate_sell_decimal * T) / (1 + rate_buy_decimal * T)
         scenario_pnl_at_maturity = (market_forward_price - scenario_forward_rate) * buy_amount_in_buy_currency
         scenario_npv = scenario_pnl_at_maturity / (1 + rate_settlement_decimal * T)
-        
+
         scenarios.append({
             "id": idx,
             "name": "Base Case" if idx == 2 else ("Bear" if idx < 2 else "Bull"),
@@ -330,7 +326,7 @@ def calculate_fx_forward_valuation(
             "pnlShort": float(-scenario_npv),
             "isBase": idx == 2
         })
-    
+
     return {
         "fairForwardPrice": float(fair_forward_rate),
         "forwardValue": float(npv_contract_rub),  # NPV контракта в RUB
@@ -365,7 +361,7 @@ def calculate_cost_of_carry_forward(
     risk_free_rate: float,
     market_forward_price: float,
     contract_size: float
-) -> Dict:
+) -> dict:
     """
     Рассчитывает справедливую стоимость форварда по модели Cost-of-Carry.
     Используется для облигаций, товаров, акций, ставок.
@@ -376,25 +372,25 @@ def calculate_cost_of_carry_forward(
     c = carrying_cost / 100.0
     y = convenience_yield / 100.0
     T = time_to_maturity
-    
+
     # Справедливая цена форварда: F = S0 * e^((r + c - d - y) * T)
     net_carry = r + c - d - y
     fair_forward_price = spot_price * np.exp(net_carry * T)
-    
+
     # Стоимость форвардного контракта для лонга: (S - K) / e^(r*T)
     K = market_forward_price
     forward_value = (spot_price - K) / np.exp(r * T)
-    
+
     # Внутренняя стоимость
     intrinsic_value = spot_price - K
-    
+
     # Временная стоимость
     time_value = forward_value - intrinsic_value
-    
+
     # Greeks
     delta = np.exp(-r * T)
     rho = spot_price * T * np.exp(net_carry * T)
-    
+
     # Анализ сценариев
     scenarios = []
     spot_prices = [
@@ -404,13 +400,13 @@ def calculate_cost_of_carry_forward(
         spot_price * 1.1,
         spot_price * 1.2
     ]
-    
+
     for idx, spot in enumerate(spot_prices):
         change = ((spot - spot_price) / spot_price) * 100
         scenario_forward_value = (spot - K) / np.exp(r * T)
         pnl_long = (spot - K) * contract_size
         pnl_short = (K - spot) * contract_size
-        
+
         scenarios.append({
             "id": idx,
             "name": "Base Case" if idx == 2 else ("Bear" if idx < 2 else "Bull"),
@@ -421,7 +417,7 @@ def calculate_cost_of_carry_forward(
             "pnlShort": float(pnl_short),
             "isBase": idx == 2
         })
-    
+
     return {
         "fairForwardPrice": float(fair_forward_price),
         "forwardValue": float(forward_value),
@@ -442,34 +438,34 @@ def calculate_forward_valuation(
     market_forward_price: float,
     contract_size: float = 1.0,
     # Cost-of-Carry параметры
-    dividend_yield: Optional[float] = 0.0,
-    carrying_cost: Optional[float] = 0.0,
-    convenience_yield: Optional[float] = 0.0,
-    risk_free_rate: Optional[float] = None,
-    repo_rate: Optional[float] = None,
+    dividend_yield: float | None = 0.0,
+    carrying_cost: float | None = 0.0,
+    convenience_yield: float | None = 0.0,
+    risk_free_rate: float | None = None,
+    repo_rate: float | None = None,
     # Bond параметры
-    accrued_interest: Optional[float] = 0.0,
-    coupon_rate: Optional[float] = None,
-    coupon_frequency: Optional[int] = 2,
-    face_value: Optional[float] = 100.0,
-    last_coupon_date: Optional[str] = None,
-    maturity_date: Optional[str] = None,
-    day_count_convention: Optional[str] = "ACT/365",
-    yield_curve_tenors: Optional[List[float]] = None,
-    yield_curve_rates: Optional[List[float]] = None,
-    auto_calculate_ai: Optional[bool] = True,
+    accrued_interest: float | None = 0.0,
+    coupon_rate: float | None = None,
+    coupon_frequency: int | None = 2,
+    face_value: float | None = 100.0,
+    last_coupon_date: str | None = None,
+    maturity_date: str | None = None,
+    day_count_convention: str | None = "ACT/365",
+    yield_curve_tenors: list[float] | None = None,
+    yield_curve_rates: list[float] | None = None,
+    auto_calculate_ai: bool | None = True,
     # FX параметры
-    buy_currency: Optional[str] = None,
-    sell_currency: Optional[str] = None,
-    buy_amount: Optional[float] = None,
-    sell_amount: Optional[float] = None,
-    deal_date: Optional[str] = None,
-    valuation_date: Optional[str] = None,
-    expiration_date: Optional[str] = None,
-    settlement_currency: Optional[str] = "RUB",
-    internal_rate: Optional[float] = None,
-    external_rate: Optional[float] = None
-) -> Dict:
+    buy_currency: str | None = None,
+    sell_currency: str | None = None,
+    buy_amount: float | None = None,
+    sell_amount: float | None = None,
+    deal_date: str | None = None,
+    valuation_date: str | None = None,
+    expiration_date: str | None = None,
+    settlement_currency: str | None = "RUB",
+    internal_rate: float | None = None,
+    external_rate: float | None = None
+) -> dict:
     """
     Рассчитывает справедливую стоимость форварда различных типов.
     
@@ -498,7 +494,7 @@ def calculate_forward_valuation(
         # Валютный форвард - используем логику из notebook
         if not all([buy_currency, sell_currency, buy_amount, sell_amount]):
             raise ValueError("Для валютного форварда необходимо указать buy_currency, sell_currency, buy_amount, sell_amount")
-        
+
         return calculate_fx_forward_valuation(
             buy_currency=buy_currency,
             sell_currency=sell_currency,
@@ -522,7 +518,7 @@ def calculate_forward_valuation(
             raise ValueError("Для форварда на облигацию необходимо указать repo_rate")
         if coupon_rate is None:
             raise ValueError("Для форварда на облигацию необходимо указать coupon_rate")
-        
+
         return calculate_bond_forward_valuation(
             spot_clean_price=spot_price,
             market_forward_price=market_forward_price,
@@ -547,7 +543,7 @@ def calculate_forward_valuation(
         # Остальные типы - используем Cost-of-Carry
         if risk_free_rate is None:
             raise ValueError("Для форвардов типа commodity/equity/rate необходимо указать risk_free_rate")
-        
+
         return calculate_cost_of_carry_forward(
             spot_price=spot_price,
             dividend_yield=dividend_yield or 0.0,

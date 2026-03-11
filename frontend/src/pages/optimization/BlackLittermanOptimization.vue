@@ -13,11 +13,30 @@
         </div>
       </div>
       <div class="hero-actions">
-        <button class="btn-glass primary" @click="handleRunOptimization" :disabled="isComputing">
-          <svg v-if="!isComputing" width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+        <button
+          class="btn-glass primary"
+          :disabled="isComputing"
+          @click="handleRunOptimization"
+        >
+          <svg
+            v-if="!isComputing"
+            width="16"
+            height="16"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+            />
           </svg>
-          <span v-else class="spinner"></span>
+          <span
+            v-else
+            class="spinner"
+          />
           {{ isComputing ? 'Расчёт...' : 'Запустить оптимизацию' }}
         </button>
       </div>
@@ -35,34 +54,60 @@
             <div class="param-group">
               <label>Скаляр неопределённости (τ)</label>
               <div class="param-input-group">
-                <input type="number" v-model.number="params.tau" min="0.001" max="1" step="0.01" />
+                <input
+                  v-model.number="params.tau"
+                  type="number"
+                  min="0.001"
+                  max="1"
+                  step="0.01"
+                >
                 <span class="param-hint">Типично 0.01–0.10</span>
               </div>
             </div>
             <div class="param-group">
               <label>Неприятие риска (δ)</label>
               <div class="param-input-group">
-                <input type="number" v-model.number="params.delta" min="0.1" max="20" step="0.1" />
+                <input
+                  v-model.number="params.delta"
+                  type="number"
+                  min="0.1"
+                  max="20"
+                  step="0.1"
+                >
                 <span class="param-hint">Типично 2.0–3.5</span>
               </div>
             </div>
             <div class="param-group">
               <label>Безрисковая ставка (r)</label>
               <div class="param-input-group">
-                <input type="number" v-model.number="params.riskFreeRate" min="0" max="0.3" step="0.005" />
+                <input
+                  v-model.number="params.riskFreeRate"
+                  type="number"
+                  min="0"
+                  max="0.3"
+                  step="0.005"
+                >
                 <span class="param-hint">{{ (params.riskFreeRate * 100).toFixed(1) }}%</span>
               </div>
             </div>
             <div class="param-group">
               <label>Макс. вес на актив</label>
               <div class="param-input-group">
-                <input type="number" v-model.number="params.maxWeight" min="0.05" max="1" step="0.05" />
+                <input
+                  v-model.number="params.maxWeight"
+                  type="number"
+                  min="0.05"
+                  max="1"
+                  step="0.05"
+                >
                 <span class="param-hint">{{ (params.maxWeight * 100).toFixed(0) }}%</span>
               </div>
             </div>
             <div class="formula-box">
               <span class="formula-label">Black-Litterman Formula</span>
-              <div class="formula">E[R] = [(τΣ)⁻¹ + P'Ω⁻¹P]⁻¹ [(τΣ)⁻¹π + P'Ω⁻¹Q]</div>
+              <div class="formula">
+                E[R] = [(τΣ)⁻¹ + P'Ω⁻¹P]⁻¹ [(τΣ)⁻¹π + P'Ω⁻¹Q]
+              </div>
             </div>
           </div>
         </div>
@@ -73,23 +118,41 @@
         <div class="glass-panel views-panel">
           <div class="panel-header">
             <h3>Взгляды инвестора (Views)</h3>
-            <button class="btn-add-view" @click="addView">+ Добавить</button>
+            <button
+              class="btn-add-view"
+              @click="addView"
+            >
+              + Добавить
+            </button>
           </div>
           <div class="panel-body views-body">
-            <div v-for="(view, idx) in views" :key="view.id" class="view-card">
+            <div
+              v-for="(view, idx) in views"
+              :key="view.id"
+              class="view-card"
+            >
               <div class="view-header">
                 <span class="view-badge">V{{ idx + 1 }}</span>
                 <div class="view-type-toggle">
                   <button
                     :class="['type-btn', { active: view.type === 'absolute' }]"
                     @click="view.type = 'absolute'"
-                  >Абсолютный</button>
+                  >
+                    Абсолютный
+                  </button>
                   <button
                     :class="['type-btn', { active: view.type === 'relative' }]"
                     @click="view.type = 'relative'"
-                  >Относительный</button>
+                  >
+                    Относительный
+                  </button>
                 </div>
-                <button class="btn-remove-view" @click="removeView(view.id)">×</button>
+                <button
+                  class="btn-remove-view"
+                  @click="removeView(view.id)"
+                >
+                  ×
+                </button>
               </div>
               <div class="view-body">
                 <div class="view-row">
@@ -100,17 +163,24 @@
                         v-for="(pos, i) in portfolioPositions"
                         :key="pos.symbol"
                         :value="i"
-                      >{{ pos.symbol }}</option>
+                      >
+                        {{ pos.symbol }}
+                      </option>
                     </select>
                   </div>
-                  <div class="view-field" v-if="view.type === 'relative'">
+                  <div
+                    v-if="view.type === 'relative'"
+                    class="view-field"
+                  >
                     <label>Актив 2 (short)</label>
                     <select v-model.number="view.asset2Index">
                       <option
                         v-for="(pos, i) in portfolioPositions"
                         :key="pos.symbol"
                         :value="i"
-                      >{{ pos.symbol }}</option>
+                      >
+                        {{ pos.symbol }}
+                      </option>
                     </select>
                   </div>
                 </div>
@@ -118,15 +188,28 @@
                   <div class="view-field">
                     <label>Ожидаемая доходность</label>
                     <div class="param-input-group">
-                      <input type="number" v-model.number="view.expectedReturn" step="0.01" />
+                      <input
+                        v-model.number="view.expectedReturn"
+                        type="number"
+                        step="0.01"
+                      >
                       <span class="param-hint">{{ (view.expectedReturn * 100).toFixed(1) }}%</span>
                     </div>
                   </div>
                   <div class="view-field">
                     <label>Уверенность</label>
                     <div class="confidence-slider">
-                      <input type="range" v-model.number="view.confidence" min="0.01" max="1" step="0.01" />
-                      <span class="confidence-val" :class="confidenceClass(view.confidence)">
+                      <input
+                        v-model.number="view.confidence"
+                        type="range"
+                        min="0.01"
+                        max="1"
+                        step="0.01"
+                      >
+                      <span
+                        class="confidence-val"
+                        :class="confidenceClass(view.confidence)"
+                      >
                         {{ (view.confidence * 100).toFixed(0) }}%
                       </span>
                     </div>
@@ -148,7 +231,10 @@
                 </div>
               </div>
             </div>
-            <div v-if="views.length === 0" class="views-empty">
+            <div
+              v-if="views.length === 0"
+              class="views-empty"
+            >
               Нет взглядов. Нажмите «+ Добавить» чтобы задать прогнозы.
             </div>
           </div>
@@ -164,41 +250,72 @@
           <div class="panel-header">
             <h3>Сравнение весов</h3>
             <div class="header-tabs">
-              <button :class="['tab-btn', { active: weightsTab === 'comparison' }]" @click="weightsTab = 'comparison'">
+              <button
+                :class="['tab-btn', { active: weightsTab === 'comparison' }]"
+                @click="weightsTab = 'comparison'"
+              >
                 Сравнение
               </button>
-              <button :class="['tab-btn', { active: weightsTab === 'bars' }]" @click="weightsTab = 'bars'">
+              <button
+                :class="['tab-btn', { active: weightsTab === 'bars' }]"
+                @click="weightsTab = 'bars'"
+              >
                 Визуализация
               </button>
             </div>
           </div>
           <div class="panel-body weights-body">
-            <div v-if="weightsTab === 'comparison'" class="weights-comparison">
+            <div
+              v-if="weightsTab === 'comparison'"
+              class="weights-comparison"
+            >
               <div class="weights-table-container">
                 <table class="weights-table">
                   <thead>
                     <tr>
                       <th>Инструмент</th>
-                      <th class="text-right">Рыночный вес</th>
-                      <th class="text-right">Равновесный</th>
-                      <th class="text-right">BL оптимальный</th>
-                      <th class="text-right">Изменение</th>
+                      <th class="text-right">
+                        Рыночный вес
+                      </th>
+                      <th class="text-right">
+                        Равновесный
+                      </th>
+                      <th class="text-right">
+                        BL оптимальный
+                      </th>
+                      <th class="text-right">
+                        Изменение
+                      </th>
                     </tr>
                   </thead>
                   <tbody>
-                    <tr v-for="pos in portfolioPositions" :key="pos.symbol">
+                    <tr
+                      v-for="pos in portfolioPositions"
+                      :key="pos.symbol"
+                    >
                       <td>
                         <div class="asset-cell">
-                          <div class="asset-icon" :style="{ background: pos.color }">{{ pos.symbol[0] }}</div>
+                          <div
+                            class="asset-icon"
+                            :style="{ background: pos.color }"
+                          >
+                            {{ pos.symbol[0] }}
+                          </div>
                           <div class="asset-info">
                             <span class="symbol">{{ pos.symbol }}</span>
                             <span class="name">{{ pos.name }}</span>
                           </div>
                         </div>
                       </td>
-                      <td class="text-right mono opacity-80">{{ pos.allocation.toFixed(1) }}%</td>
-                      <td class="text-right mono">{{ getEquilibriumWeight(pos.symbol).toFixed(1) }}%</td>
-                      <td class="text-right mono font-bold">{{ getOptimalWeight(pos.symbol).toFixed(1) }}%</td>
+                      <td class="text-right mono opacity-80">
+                        {{ pos.allocation.toFixed(1) }}%
+                      </td>
+                      <td class="text-right mono">
+                        {{ getEquilibriumWeight(pos.symbol).toFixed(1) }}%
+                      </td>
+                      <td class="text-right mono font-bold">
+                        {{ getOptimalWeight(pos.symbol).toFixed(1) }}%
+                      </td>
                       <td class="text-right mono">
                         <span :class="['change-pill', getDeltaClass(getWeightDelta(pos.symbol))]">
                           {{ getWeightDelta(pos.symbol) > 0 ? '+' : '' }}{{ getWeightDelta(pos.symbol).toFixed(1) }}%
@@ -210,24 +327,44 @@
               </div>
             </div>
 
-            <div v-if="weightsTab === 'bars'" class="weights-bars-view">
-              <div v-for="pos in portfolioPositions" :key="pos.symbol" class="weight-bar-container">
+            <div
+              v-if="weightsTab === 'bars'"
+              class="weights-bars-view"
+            >
+              <div
+                v-for="pos in portfolioPositions"
+                :key="pos.symbol"
+                class="weight-bar-container"
+              >
                 <div class="weight-bar-info">
-                  <div class="asset-icon-small" :style="{ background: pos.color }">{{ pos.symbol[0] }}</div>
-                  <div class="weight-bar-label">{{ pos.symbol }}</div>
+                  <div
+                    class="asset-icon-small"
+                    :style="{ background: pos.color }"
+                  >
+                    {{ pos.symbol[0] }}
+                  </div>
+                  <div class="weight-bar-label">
+                    {{ pos.symbol }}
+                  </div>
                 </div>
                 <div class="weight-bars-group">
                   <div class="weight-bar-row-dual">
                     <span class="bar-label-sm">Рынок</span>
                     <div class="weight-bar-bg">
-                      <div class="weight-bar-fill eq" :style="{ width: pos.allocation + '%' }" />
+                      <div
+                        class="weight-bar-fill eq"
+                        :style="{ width: pos.allocation + '%' }"
+                      />
                     </div>
                     <span class="weight-bar-value mono">{{ pos.allocation.toFixed(1) }}%</span>
                   </div>
                   <div class="weight-bar-row-dual">
                     <span class="bar-label-sm">BL</span>
                     <div class="weight-bar-bg">
-                      <div class="weight-bar-fill bl" :style="{ width: getOptimalWeight(pos.symbol) + '%', background: pos.color }" />
+                      <div
+                        class="weight-bar-fill bl"
+                        :style="{ width: getOptimalWeight(pos.symbol) + '%', background: pos.color }"
+                      />
                     </div>
                     <span class="weight-bar-value mono font-bold">{{ getOptimalWeight(pos.symbol).toFixed(1) }}%</span>
                   </div>
@@ -251,21 +388,40 @@
                   <thead>
                     <tr>
                       <th>Актив</th>
-                      <th class="text-right">π (равнов.)</th>
-                      <th class="text-right">E[R] (BL)</th>
-                      <th class="text-right">Δ</th>
+                      <th class="text-right">
+                        π (равнов.)
+                      </th>
+                      <th class="text-right">
+                        E[R] (BL)
+                      </th>
+                      <th class="text-right">
+                        Δ
+                      </th>
                     </tr>
                   </thead>
                   <tbody>
-                    <tr v-for="(pos, idx) in portfolioPositions" :key="pos.symbol">
+                    <tr
+                      v-for="(pos, idx) in portfolioPositions"
+                      :key="pos.symbol"
+                    >
                       <td>
                         <div class="asset-cell">
-                          <div class="asset-icon" :style="{ background: pos.color }">{{ pos.symbol[0] }}</div>
+                          <div
+                            class="asset-icon"
+                            :style="{ background: pos.color }"
+                          >
+                            {{ pos.symbol[0] }}
+                          </div>
                           <span class="symbol">{{ pos.symbol }}</span>
                         </div>
                       </td>
-                      <td class="text-right mono">{{ formatPct(equilibriumReturns[idx]) }}</td>
-                      <td class="text-right mono font-bold" :class="posteriorReturns[idx] >= 0 ? 'text-green' : 'text-red'">
+                      <td class="text-right mono">
+                        {{ formatPct(equilibriumReturns[idx]) }}
+                      </td>
+                      <td
+                        class="text-right mono font-bold"
+                        :class="posteriorReturns[idx] >= 0 ? 'text-green' : 'text-red'"
+                      >
                         {{ formatPct(posteriorReturns[idx]) }}
                       </td>
                       <td class="text-right mono">
@@ -284,13 +440,20 @@
     </div>
 
     <!-- Views Impact Panel -->
-    <div class="glass-panel views-impact-panel" v-if="viewsImpact.length > 0">
+    <div
+      v-if="viewsImpact.length > 0"
+      class="glass-panel views-impact-panel"
+    >
       <div class="panel-header">
         <h3>Влияние взглядов на портфель</h3>
       </div>
       <div class="panel-body">
         <div class="impact-grid">
-          <div v-for="(impact, idx) in viewsImpact" :key="idx" class="impact-card">
+          <div
+            v-for="(impact, idx) in viewsImpact"
+            :key="idx"
+            class="impact-card"
+          >
             <div class="impact-header">
               <span class="view-badge-sm">V{{ idx + 1 }}</span>
               <span class="impact-assets">{{ impact.affected_assets.join(', ') }}</span>
@@ -298,19 +461,28 @@
             <div class="impact-metrics">
               <div class="impact-metric">
                 <span class="metric-label">Ожидаемая доходность</span>
-                <span class="metric-value" :class="impact.view_return >= 0 ? 'text-green' : 'text-red'">
+                <span
+                  class="metric-value"
+                  :class="impact.view_return >= 0 ? 'text-green' : 'text-red'"
+                >
                   {{ formatPct(impact.view_return) }}
                 </span>
               </div>
               <div class="impact-metric">
                 <span class="metric-label">Уверенность</span>
-                <span class="metric-value" :class="confidenceClass(impact.confidence)">
+                <span
+                  class="metric-value"
+                  :class="confidenceClass(impact.confidence)"
+                >
                   {{ (impact.confidence * 100).toFixed(0) }}%
                 </span>
               </div>
               <div class="impact-metric">
                 <span class="metric-label">Сдвиг веса</span>
-                <span class="metric-value" :class="impact.weight_shift >= 0 ? 'text-green' : 'text-red'">
+                <span
+                  class="metric-value"
+                  :class="impact.weight_shift >= 0 ? 'text-green' : 'text-red'"
+                >
                   {{ impact.weight_shift >= 0 ? '+' : '' }}{{ (impact.weight_shift * 100).toFixed(2) }}%
                 </span>
               </div>
@@ -321,15 +493,27 @@
     </div>
 
     <!-- Risk Contributions -->
-    <div class="glass-panel" v-if="blResult">
+    <div
+      v-if="blResult"
+      class="glass-panel"
+    >
       <div class="panel-header">
         <h3>Вклад в риск портфеля</h3>
       </div>
       <div class="panel-body">
         <div class="risk-bars">
-          <div v-for="(pos, idx) in portfolioPositions" :key="pos.symbol" class="risk-bar-row">
+          <div
+            v-for="(pos, idx) in portfolioPositions"
+            :key="pos.symbol"
+            class="risk-bar-row"
+          >
             <div class="risk-bar-info">
-              <div class="asset-icon-small" :style="{ background: pos.color }">{{ pos.symbol[0] }}</div>
+              <div
+                class="asset-icon-small"
+                :style="{ background: pos.color }"
+              >
+                {{ pos.symbol[0] }}
+              </div>
               <span class="risk-bar-label">{{ pos.symbol }}</span>
             </div>
             <div class="weight-bar-bg">
@@ -366,7 +550,10 @@
             </div>
             <div class="stat-row">
               <span class="stat-label">Sharpe Ratio</span>
-              <span class="stat-val" :class="portfolioStats.sharpeRatio >= 0 ? 'text-green' : 'text-red'">
+              <span
+                class="stat-val"
+                :class="portfolioStats.sharpeRatio >= 0 ? 'text-green' : 'text-red'"
+              >
                 {{ portfolioStats.sharpeRatio.toFixed(3) }}
               </span>
             </div>
@@ -410,19 +597,28 @@
           <div class="panel-body">
             <div class="stat-row">
               <span class="stat-label">Δ Return</span>
-              <span class="stat-val" :class="returnDelta >= 0 ? 'text-green' : 'text-red'">
+              <span
+                class="stat-val"
+                :class="returnDelta >= 0 ? 'text-green' : 'text-red'"
+              >
                 {{ returnDelta >= 0 ? '+' : '' }}{{ formatPct(returnDelta) }}
               </span>
             </div>
             <div class="stat-row">
               <span class="stat-label">Δ Volatility</span>
-              <span class="stat-val" :class="volDelta <= 0 ? 'text-green' : 'text-red'">
+              <span
+                class="stat-val"
+                :class="volDelta <= 0 ? 'text-green' : 'text-red'"
+              >
                 {{ volDelta >= 0 ? '+' : '' }}{{ formatPct(volDelta) }}
               </span>
             </div>
             <div class="stat-row">
               <span class="stat-label">Δ Sharpe</span>
-              <span class="stat-val" :class="sharpeDelta >= 0 ? 'text-green' : 'text-red'">
+              <span
+                class="stat-val"
+                :class="sharpeDelta >= 0 ? 'text-green' : 'text-red'"
+              >
                 {{ sharpeDelta >= 0 ? '+' : '' }}{{ sharpeDelta.toFixed(3) }}
               </span>
             </div>

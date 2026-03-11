@@ -4,7 +4,7 @@ DaData Service — Russian company and bank data.
 Suggestions API: https://suggestions.dadata.ru/suggestions/api/4_1/rs
 """
 
-from typing import Optional, Dict, Any, List
+from typing import Any
 
 from src.services.cache_service import cache_get, cache_set, make_cache_key
 from src.services.secrets_service import get_key_sync
@@ -17,7 +17,7 @@ def _dadata_token() -> str: return get_key_sync("DADATA_API_TOKEN")
 def _dadata_secret() -> str: return get_key_sync("DADATA_SECRET_KEY")
 
 
-def _dadata_headers() -> Dict[str, str]:
+def _dadata_headers() -> dict[str, str]:
     headers = {
         "Content-Type": "application/json",
         "Accept": "application/json",
@@ -28,7 +28,7 @@ def _dadata_headers() -> Dict[str, str]:
     return headers
 
 
-async def dadata_find_company(inn: str) -> Dict[str, Any]:
+async def dadata_find_company(inn: str) -> dict[str, Any]:
     """Find company by INN/OGRN."""
     key = make_cache_key("dadata", "company", inn)
     cached = cache_get(key)
@@ -73,7 +73,7 @@ async def dadata_find_company(inn: str) -> Dict[str, Any]:
     return result
 
 
-async def dadata_suggest_company(query: str, count: int = 10) -> Dict[str, Any]:
+async def dadata_suggest_company(query: str, count: int = 10) -> dict[str, Any]:
     """Suggest companies by name or partial INN."""
     key = make_cache_key("dadata", "suggest_company", query, count)
     cached = cache_get(key)
@@ -106,7 +106,7 @@ async def dadata_suggest_company(query: str, count: int = 10) -> Dict[str, Any]:
     return result
 
 
-async def dadata_find_bank(bik: str) -> Dict[str, Any]:
+async def dadata_find_bank(bik: str) -> dict[str, Any]:
     """Find bank by BIK."""
     key = make_cache_key("dadata", "bank", bik)
     cached = cache_get(key)

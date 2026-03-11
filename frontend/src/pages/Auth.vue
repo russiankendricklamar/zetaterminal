@@ -1,17 +1,22 @@
 <template>
   <div class="auth-root">
-    <div class="bg-noise"></div>
+    <div class="bg-noise" />
 
     <!-- Back link -->
-    <a class="back-link font-mono" @click.prevent="$router.push('/')">
+    <a
+      class="back-link font-mono"
+      @click.prevent="$router.push('/')"
+    >
       &larr; ZETA TERMINAL
     </a>
 
     <!-- Main container -->
     <div class="auth-container">
       <div class="auth-header">
-        <h1 class="auth-title font-anton">ACCESS</h1>
-        <div class="auth-underline"></div>
+        <h1 class="auth-title font-anton">
+          ACCESS
+        </h1>
+        <div class="auth-underline" />
       </div>
 
       <!-- Tabs -->
@@ -20,16 +25,24 @@
           class="auth-tab font-oswald"
           :class="{ active: mode === 'login' }"
           @click="switchMode('login')"
-        >ВХОД</button>
+        >
+          ВХОД
+        </button>
         <button
           class="auth-tab font-oswald"
           :class="{ active: mode === 'register' }"
           @click="switchMode('register')"
-        >РЕГИСТРАЦИЯ</button>
+        >
+          РЕГИСТРАЦИЯ
+        </button>
       </div>
 
       <!-- Login form -->
-      <form v-if="mode === 'login'" class="auth-form" @submit.prevent="handleLogin">
+      <form
+        v-if="mode === 'login'"
+        class="auth-form"
+        @submit.prevent="handleLogin"
+      >
         <div class="auth-field">
           <label class="auth-label font-mono">USERNAME</label>
           <input
@@ -39,7 +52,7 @@
             placeholder="username"
             autocomplete="username"
             required
-          />
+          >
         </div>
         <div class="auth-field">
           <label class="auth-label font-mono">PASSWORD</label>
@@ -50,18 +63,29 @@
             placeholder="password"
             autocomplete="current-password"
             required
-          />
+          >
         </div>
-        <button type="submit" class="auth-submit font-oswald" :disabled="loading">
+        <button
+          type="submit"
+          class="auth-submit font-oswald"
+          :disabled="loading"
+        >
           {{ loading ? statusText : 'ВОЙТИ' }}
         </button>
-        <p class="auth-switch font-mono" @click="switchMode('register')">
+        <p
+          class="auth-switch font-mono"
+          @click="switchMode('register')"
+        >
           Нет аккаунта? Регистрация &rarr;
         </p>
       </form>
 
       <!-- Register form -->
-      <form v-if="mode === 'register'" class="auth-form" @submit.prevent="handleRegister">
+      <form
+        v-if="mode === 'register'"
+        class="auth-form"
+        @submit.prevent="handleRegister"
+      >
         <div class="auth-field">
           <label class="auth-label font-mono">USERNAME</label>
           <input
@@ -71,8 +95,11 @@
             placeholder="username"
             autocomplete="username"
             required
-          />
-          <span v-if="registerForm.username" class="auth-hint font-mono">
+          >
+          <span
+            v-if="registerForm.username"
+            class="auth-hint font-mono"
+          >
             {{ registerForm.username.toLowerCase() }}@zetaterminal.dev
           </span>
         </div>
@@ -85,7 +112,7 @@
             placeholder="email@example.com"
             autocomplete="email"
             required
-          />
+          >
         </div>
         <div class="auth-field">
           <label class="auth-label font-mono">PASSWORD</label>
@@ -96,7 +123,7 @@
             placeholder="min 6 chars"
             autocomplete="new-password"
             required
-          />
+          >
         </div>
         <div class="auth-field">
           <label class="auth-label font-mono">CONFIRM PASSWORD</label>
@@ -107,25 +134,48 @@
             placeholder="repeat password"
             autocomplete="new-password"
             required
-          />
+          >
         </div>
-        <button type="submit" class="auth-submit font-oswald" :disabled="loading">
+        <button
+          type="submit"
+          class="auth-submit font-oswald"
+          :disabled="loading"
+        >
           {{ loading ? statusText : 'ЗАРЕГИСТРИРОВАТЬСЯ' }}
         </button>
-        <p class="auth-switch font-mono" @click="switchMode('login')">
+        <p
+          class="auth-switch font-mono"
+          @click="switchMode('login')"
+        >
           &larr; Уже есть аккаунт? Войти
         </p>
       </form>
 
       <!-- Messages -->
-      <div v-if="errorMsg" class="auth-message auth-error font-mono">{{ errorMsg }}</div>
-      <div v-if="successMsg" class="auth-message auth-success font-mono">{{ successMsg }}</div>
+      <div
+        v-if="errorMsg"
+        class="auth-message auth-error font-mono"
+      >
+        {{ errorMsg }}
+      </div>
+      <div
+        v-if="successMsg"
+        class="auth-message auth-success font-mono"
+      >
+        {{ successMsg }}
+      </div>
 
       <!-- Backend URL override -->
-      <div class="server-toggle font-mono" @click="showServerUrl = !showServerUrl">
+      <div
+        class="server-toggle font-mono"
+        @click="showServerUrl = !showServerUrl"
+      >
         SERVER {{ showServerUrl ? '▾' : '▸' }}
       </div>
-      <div v-if="showServerUrl" class="server-field">
+      <div
+        v-if="showServerUrl"
+        class="server-field"
+      >
         <input
           v-model="serverUrl"
           type="text"
@@ -133,7 +183,7 @@
           placeholder="https://zeta-terminal-backend.onrender.com"
           @blur="saveServerUrl"
           @keydown.enter="saveServerUrl"
-        />
+        >
         <span class="auth-hint font-mono">URL бэкенда (пустое = по умолчанию)</span>
       </div>
     </div>
@@ -141,14 +191,23 @@
     <!-- Activation Modal -->
     <teleport to="body">
       <transition name="modal-fade">
-        <div v-if="showActivationModal" class="modal-overlay" @click.self="closeModal">
+        <div
+          v-if="showActivationModal"
+          class="modal-overlay"
+          @click.self="closeModal"
+        >
           <div class="modal-card">
-            <h2 class="modal-title font-anton">АКТИВАЦИЯ</h2>
-            <div class="modal-underline"></div>
+            <h2 class="modal-title font-anton">
+              АКТИВАЦИЯ
+            </h2>
+            <div class="modal-underline" />
             <p class="modal-desc font-mono">
               Введите инвайт-код, отправленный администратором
             </p>
-            <form class="auth-form" @submit.prevent="handleActivate">
+            <form
+              class="auth-form"
+              @submit.prevent="handleActivate"
+            >
               <div class="auth-field">
                 <label class="auth-label font-mono">INVITE CODE</label>
                 <input
@@ -158,15 +217,34 @@
                   placeholder="XXXXXXXX"
                   maxlength="8"
                   required
-                />
+                >
               </div>
-              <button type="submit" class="auth-submit font-oswald" :disabled="loading">
+              <button
+                type="submit"
+                class="auth-submit font-oswald"
+                :disabled="loading"
+              >
                 {{ loading ? statusText : 'АКТИВИРОВАТЬ' }}
               </button>
             </form>
-            <div v-if="modalError" class="auth-message auth-error font-mono">{{ modalError }}</div>
-            <div v-if="modalSuccess" class="auth-message auth-success font-mono">{{ modalSuccess }}</div>
-            <p class="modal-close font-mono" @click="closeModal">ЗАКРЫТЬ</p>
+            <div
+              v-if="modalError"
+              class="auth-message auth-error font-mono"
+            >
+              {{ modalError }}
+            </div>
+            <div
+              v-if="modalSuccess"
+              class="auth-message auth-success font-mono"
+            >
+              {{ modalSuccess }}
+            </div>
+            <p
+              class="modal-close font-mono"
+              @click="closeModal"
+            >
+              ЗАКРЫТЬ
+            </p>
           </div>
         </div>
       </transition>

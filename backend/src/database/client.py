@@ -4,9 +4,9 @@ SQLAlchemy async database connection (Neon PostgreSQL).
 import logging
 import os
 import ssl
-from typing import AsyncGenerator
+from collections.abc import AsyncGenerator
 
-from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
 from .sa_models import Base
 
@@ -29,7 +29,7 @@ def _normalize_database_url(url: str) -> str:
 
     # asyncpg does not support sslmode or channel_binding as URL params —
     # strip them and handle SSL via connect_args instead
-    from urllib.parse import urlparse, parse_qs, urlencode, urlunparse
+    from urllib.parse import parse_qs, urlencode, urlparse, urlunparse
     parsed = urlparse(url)
     params = parse_qs(parsed.query)
     params.pop("channel_binding", None)

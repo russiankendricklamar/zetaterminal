@@ -11,9 +11,9 @@
   Omega — матрица неопределённости взглядов (K x K)
   tau — скаляр масштаба неопределённости рынка
 """
-import numpy as np
-from typing import Dict, List, Optional
 import warnings
+
+import numpy as np
 
 warnings.filterwarnings('ignore', category=DeprecationWarning)
 
@@ -35,7 +35,7 @@ def build_omega(
     P: np.ndarray,
     cov_matrix: np.ndarray,
     tau: float,
-    confidence: Optional[np.ndarray] = None,
+    confidence: np.ndarray | None = None,
 ) -> np.ndarray:
     """
     Строит матрицу неопределённости взглядов Omega.
@@ -114,10 +114,10 @@ def optimize_black_litterman(
     tau: float = 0.05,
     delta: float = 2.5,
     risk_free_rate: float = 0.0,
-    confidence: Optional[np.ndarray] = None,
-    asset_names: Optional[List[str]] = None,
+    confidence: np.ndarray | None = None,
+    asset_names: list[str] | None = None,
     max_weight: float = 1.0,
-) -> Dict:
+) -> dict:
     """
     Полная Black-Litterman оптимизация.
 

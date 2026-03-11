@@ -2,8 +2,12 @@
   <div class="repo-page">
     <!-- Header -->
     <div class="page-header">
-      <h1 class="font-anton page-title">REPO ANALYSIS</h1>
-      <p class="font-mono page-subtitle">CONCENTRATION / COLLATERAL / LIQUIDITY / SYSTEMIC / STRESS</p>
+      <h1 class="font-anton page-title">
+        REPO ANALYSIS
+      </h1>
+      <p class="font-mono page-subtitle">
+        CONCENTRATION / COLLATERAL / LIQUIDITY / SYSTEMIC / STRESS
+      </p>
     </div>
 
     <!-- Upload Zone -->
@@ -16,26 +20,50 @@
       @drop.prevent="handleDrop"
     >
       <div class="upload-content">
-        <div class="font-anton upload-title">UPLOAD DATA</div>
-        <p class="font-mono upload-hint">CSV or Excel (.xlsx) with REPO transaction data</p>
-        <p class="font-mono upload-hint-cols">Required: seller, buyer, loan_amount, repayment_amount, collateral_value, price, units, days</p>
+        <div class="font-anton upload-title">
+          UPLOAD DATA
+        </div>
+        <p class="font-mono upload-hint">
+          CSV or Excel (.xlsx) with REPO transaction data
+        </p>
+        <p class="font-mono upload-hint-cols">
+          Required: seller, buyer, loan_amount, repayment_amount, collateral_value, price, units, days
+        </p>
         <label class="btn btn-primary font-oswald">
           SELECT FILE
-          <input type="file" accept=".csv,.xlsx,.xls" hidden @change="handleFileSelect" />
+          <input
+            type="file"
+            accept=".csv,.xlsx,.xls"
+            hidden
+            @change="handleFileSelect"
+          >
         </label>
       </div>
     </div>
 
     <!-- Loading -->
-    <div v-if="loading" class="loading-state">
-      <div class="loading-spinner"></div>
-      <p class="font-mono">Analyzing REPO data...</p>
+    <div
+      v-if="loading"
+      class="loading-state"
+    >
+      <div class="loading-spinner" />
+      <p class="font-mono">
+        Analyzing REPO data...
+      </p>
     </div>
 
     <!-- Error -->
-    <div v-if="error" class="error-banner font-mono">
+    <div
+      v-if="error"
+      class="error-banner font-mono"
+    >
       {{ error }}
-      <button class="btn btn-outline font-oswald" @click="reset">RETRY</button>
+      <button
+        class="btn btn-outline font-oswald"
+        @click="reset"
+      >
+        RETRY
+      </button>
     </div>
 
     <!-- Results -->
@@ -48,11 +76,19 @@
         </div>
         <div class="summary-item">
           <span class="font-mono summary-label">OVERALL</span>
-          <span class="font-mono summary-value" :class="'light-' + result.traffic_light.overall">
+          <span
+            class="font-mono summary-value"
+            :class="'light-' + result.traffic_light.overall"
+          >
             {{ result.traffic_light.overall.toUpperCase() }}
           </span>
         </div>
-        <button class="btn btn-outline font-oswald" @click="reset">NEW FILE</button>
+        <button
+          class="btn btn-outline font-oswald"
+          @click="reset"
+        >
+          NEW FILE
+        </button>
       </div>
 
       <!-- Tab Navigation -->
@@ -70,7 +106,6 @@
 
       <!-- Tab Content -->
       <div class="tab-content">
-
         <!-- Concentration -->
         <div v-if="activeTab === 'concentration'">
           <div class="metrics-grid">
@@ -100,20 +135,37 @@
             </div>
           </div>
 
-          <h3 class="font-oswald section-title">TOP PARTICIPANTS</h3>
+          <h3 class="font-oswald section-title">
+            TOP PARTICIPANTS
+          </h3>
           <table class="data-table">
             <thead>
               <tr>
-                <th class="font-mono">NAME</th>
-                <th class="font-mono">VOLUME</th>
-                <th class="font-mono">SHARE %</th>
+                <th class="font-mono">
+                  NAME
+                </th>
+                <th class="font-mono">
+                  VOLUME
+                </th>
+                <th class="font-mono">
+                  SHARE %
+                </th>
               </tr>
             </thead>
             <tbody>
-              <tr v-for="p in result.concentration.top_participants" :key="p.name">
-                <td class="font-mono">{{ p.name }}</td>
-                <td class="font-mono">{{ formatNumber(p.volume) }}</td>
-                <td class="font-mono">{{ p.share_pct.toFixed(2) }}%</td>
+              <tr
+                v-for="p in result.concentration.top_participants"
+                :key="p.name"
+              >
+                <td class="font-mono">
+                  {{ p.name }}
+                </td>
+                <td class="font-mono">
+                  {{ formatNumber(p.volume) }}
+                </td>
+                <td class="font-mono">
+                  {{ p.share_pct.toFixed(2) }}%
+                </td>
               </tr>
             </tbody>
           </table>
@@ -132,18 +184,32 @@
             </div>
           </div>
 
-          <div v-if="result.collateral.haircut_stats" class="subsection">
-            <h3 class="font-oswald section-title">HAIRCUT STATISTICS</h3>
+          <div
+            v-if="result.collateral.haircut_stats"
+            class="subsection"
+          >
+            <h3 class="font-oswald section-title">
+              HAIRCUT STATISTICS
+            </h3>
             <div class="metrics-grid">
-              <div class="metric-card" v-for="(val, key) in result.collateral.haircut_stats" :key="key">
+              <div
+                v-for="(val, key) in result.collateral.haircut_stats"
+                :key="key"
+                class="metric-card"
+              >
                 <span class="font-mono metric-label">{{ String(key).toUpperCase() }}</span>
                 <span class="font-mono metric-value">{{ val != null ? (val * 100).toFixed(2) + '%' : 'N/A' }}</span>
               </div>
             </div>
           </div>
 
-          <div v-if="result.coverage.coverage_ratio" class="subsection">
-            <h3 class="font-oswald section-title">COVERAGE RATIO</h3>
+          <div
+            v-if="result.coverage.coverage_ratio"
+            class="subsection"
+          >
+            <h3 class="font-oswald section-title">
+              COVERAGE RATIO
+            </h3>
             <div class="metrics-grid">
               <div class="metric-card">
                 <span class="font-mono metric-label">MEAN</span>
@@ -164,8 +230,13 @@
             </div>
           </div>
 
-          <div v-if="result.coverage.wrong_way_risk" class="subsection">
-            <h3 class="font-oswald section-title">WRONG-WAY RISK</h3>
+          <div
+            v-if="result.coverage.wrong_way_risk"
+            class="subsection"
+          >
+            <h3 class="font-oswald section-title">
+              WRONG-WAY RISK
+            </h3>
             <div class="metrics-grid">
               <div class="metric-card">
                 <span class="font-mono metric-label">COUNT</span>
@@ -192,26 +263,46 @@
             </div>
             <div class="metric-card">
               <span class="font-mono metric-label">ROLLOVER RISK</span>
-              <span class="font-mono metric-value" :class="result.liquidity.rollover_risk_pct >= 40 ? 'light-red' : result.liquidity.rollover_risk_pct >= 20 ? 'light-yellow' : 'light-green'">
+              <span
+                class="font-mono metric-value"
+                :class="result.liquidity.rollover_risk_pct >= 40 ? 'light-red' : result.liquidity.rollover_risk_pct >= 20 ? 'light-yellow' : 'light-green'"
+              >
                 {{ result.liquidity.rollover_risk_pct }}%
               </span>
             </div>
           </div>
 
-          <h3 class="font-oswald section-title">TENOR BUCKETS</h3>
+          <h3 class="font-oswald section-title">
+            TENOR BUCKETS
+          </h3>
           <table class="data-table">
             <thead>
               <tr>
-                <th class="font-mono">BUCKET</th>
-                <th class="font-mono">VOLUME</th>
-                <th class="font-mono">SHARE %</th>
+                <th class="font-mono">
+                  BUCKET
+                </th>
+                <th class="font-mono">
+                  VOLUME
+                </th>
+                <th class="font-mono">
+                  SHARE %
+                </th>
               </tr>
             </thead>
             <tbody>
-              <tr v-for="b in result.liquidity.tenor_buckets" :key="b.bucket">
-                <td class="font-mono">{{ b.bucket }}</td>
-                <td class="font-mono">{{ formatNumber(b.volume) }}</td>
-                <td class="font-mono">{{ b.share_pct.toFixed(2) }}%</td>
+              <tr
+                v-for="b in result.liquidity.tenor_buckets"
+                :key="b.bucket"
+              >
+                <td class="font-mono">
+                  {{ b.bucket }}
+                </td>
+                <td class="font-mono">
+                  {{ formatNumber(b.volume) }}
+                </td>
+                <td class="font-mono">
+                  {{ b.share_pct.toFixed(2) }}%
+                </td>
               </tr>
             </tbody>
           </table>
@@ -234,33 +325,65 @@
             </div>
             <div class="metric-card">
               <span class="font-mono metric-label">MAX DEBTRANK</span>
-              <span class="font-mono metric-value" :class="result.systemic.max_debt_rank >= 0.25 ? 'light-red' : result.systemic.max_debt_rank >= 0.1 ? 'light-yellow' : 'light-green'">
+              <span
+                class="font-mono metric-value"
+                :class="result.systemic.max_debt_rank >= 0.25 ? 'light-red' : result.systemic.max_debt_rank >= 0.1 ? 'light-yellow' : 'light-green'"
+              >
                 {{ result.systemic.max_debt_rank }}
               </span>
             </div>
           </div>
 
-          <h3 class="font-oswald section-title">CENTRALITY TABLE</h3>
+          <h3 class="font-oswald section-title">
+            CENTRALITY TABLE
+          </h3>
           <div class="table-scroll">
             <table class="data-table">
               <thead>
                 <tr>
-                  <th class="font-mono">NODE</th>
-                  <th class="font-mono">DEGREE</th>
-                  <th class="font-mono">BETWEENNESS</th>
-                  <th class="font-mono">PAGERANK</th>
-                  <th class="font-mono">EIGENVECTOR</th>
-                  <th class="font-mono">DEBTRANK</th>
+                  <th class="font-mono">
+                    NODE
+                  </th>
+                  <th class="font-mono">
+                    DEGREE
+                  </th>
+                  <th class="font-mono">
+                    BETWEENNESS
+                  </th>
+                  <th class="font-mono">
+                    PAGERANK
+                  </th>
+                  <th class="font-mono">
+                    EIGENVECTOR
+                  </th>
+                  <th class="font-mono">
+                    DEBTRANK
+                  </th>
                 </tr>
               </thead>
               <tbody>
-                <tr v-for="c in result.systemic.centrality_table" :key="c.node">
-                  <td class="font-mono">{{ c.node }}</td>
-                  <td class="font-mono">{{ c.degree }}</td>
-                  <td class="font-mono">{{ c.betweenness }}</td>
-                  <td class="font-mono">{{ c.pagerank }}</td>
-                  <td class="font-mono">{{ c.eigenvector }}</td>
-                  <td class="font-mono">{{ c.debt_rank }}</td>
+                <tr
+                  v-for="c in result.systemic.centrality_table"
+                  :key="c.node"
+                >
+                  <td class="font-mono">
+                    {{ c.node }}
+                  </td>
+                  <td class="font-mono">
+                    {{ c.degree }}
+                  </td>
+                  <td class="font-mono">
+                    {{ c.betweenness }}
+                  </td>
+                  <td class="font-mono">
+                    {{ c.pagerank }}
+                  </td>
+                  <td class="font-mono">
+                    {{ c.eigenvector }}
+                  </td>
+                  <td class="font-mono">
+                    {{ c.debt_rank }}
+                  </td>
                 </tr>
               </tbody>
             </table>
@@ -269,34 +392,71 @@
 
         <!-- Stress -->
         <div v-if="activeTab === 'stress'">
-          <h3 class="font-oswald section-title">SCENARIO RESULTS</h3>
+          <h3 class="font-oswald section-title">
+            SCENARIO RESULTS
+          </h3>
           <div class="table-scroll">
             <table class="data-table">
               <thead>
                 <tr>
-                  <th class="font-mono">SCENARIO</th>
-                  <th class="font-mono">HAIRCUT</th>
-                  <th class="font-mono">RATE</th>
-                  <th class="font-mono">COLLATERAL</th>
-                  <th class="font-mono">COVERAGE</th>
-                  <th class="font-mono">LOSS</th>
+                  <th class="font-mono">
+                    SCENARIO
+                  </th>
+                  <th class="font-mono">
+                    HAIRCUT
+                  </th>
+                  <th class="font-mono">
+                    RATE
+                  </th>
+                  <th class="font-mono">
+                    COLLATERAL
+                  </th>
+                  <th class="font-mono">
+                    COVERAGE
+                  </th>
+                  <th class="font-mono">
+                    LOSS
+                  </th>
                 </tr>
               </thead>
               <tbody>
-                <tr v-for="s in result.stress.scenarios" :key="s.scenario">
-                  <td class="font-mono">{{ s.scenario }}</td>
-                  <td class="font-mono">{{ (s.stressed_haircut * 100).toFixed(2) }}%</td>
-                  <td class="font-mono">{{ (s.stressed_rate * 100).toFixed(2) }}%</td>
-                  <td class="font-mono">{{ formatNumber(s.stressed_collateral) }}</td>
-                  <td class="font-mono">{{ s.coverage_ratio.toFixed(4) }}</td>
-                  <td class="font-mono" :class="s.potential_loss > 0 ? 'light-red' : ''">{{ formatNumber(s.potential_loss) }}</td>
+                <tr
+                  v-for="s in result.stress.scenarios"
+                  :key="s.scenario"
+                >
+                  <td class="font-mono">
+                    {{ s.scenario }}
+                  </td>
+                  <td class="font-mono">
+                    {{ (s.stressed_haircut * 100).toFixed(2) }}%
+                  </td>
+                  <td class="font-mono">
+                    {{ (s.stressed_rate * 100).toFixed(2) }}%
+                  </td>
+                  <td class="font-mono">
+                    {{ formatNumber(s.stressed_collateral) }}
+                  </td>
+                  <td class="font-mono">
+                    {{ s.coverage_ratio.toFixed(4) }}
+                  </td>
+                  <td
+                    class="font-mono"
+                    :class="s.potential_loss > 0 ? 'light-red' : ''"
+                  >
+                    {{ formatNumber(s.potential_loss) }}
+                  </td>
                 </tr>
               </tbody>
             </table>
           </div>
 
-          <div v-if="result.stress.adversarial" class="subsection">
-            <h3 class="font-oswald section-title">ADVERSARIAL STRESS</h3>
+          <div
+            v-if="result.stress.adversarial"
+            class="subsection"
+          >
+            <h3 class="font-oswald section-title">
+              ADVERSARIAL STRESS
+            </h3>
             <div class="metrics-grid">
               <div class="metric-card">
                 <span class="font-mono metric-label">HAIRCUT SHOCK</span>
@@ -323,23 +483,37 @@
               class="traffic-card"
               :class="'border-' + m.light"
             >
-              <div class="traffic-indicator" :class="'bg-' + m.light"></div>
+              <div
+                class="traffic-indicator"
+                :class="'bg-' + m.light"
+              />
               <div class="traffic-info">
                 <span class="font-oswald traffic-metric">{{ m.metric }}</span>
                 <span class="font-mono traffic-value">{{ m.value != null ? m.value : 'N/A' }}</span>
               </div>
-              <span class="font-mono traffic-light-label" :class="'light-' + m.light">{{ m.light.toUpperCase() }}</span>
+              <span
+                class="font-mono traffic-light-label"
+                :class="'light-' + m.light"
+              >{{ m.light.toUpperCase() }}</span>
             </div>
           </div>
 
-          <div v-if="result.traffic_light.recommendations.length > 0" class="recommendations">
-            <h3 class="font-oswald section-title">RECOMMENDATIONS</h3>
-            <div v-for="(rec, i) in result.traffic_light.recommendations" :key="i" class="rec-item font-mono">
+          <div
+            v-if="result.traffic_light.recommendations.length > 0"
+            class="recommendations"
+          >
+            <h3 class="font-oswald section-title">
+              RECOMMENDATIONS
+            </h3>
+            <div
+              v-for="(rec, i) in result.traffic_light.recommendations"
+              :key="i"
+              class="rec-item font-mono"
+            >
               {{ rec }}
             </div>
           </div>
         </div>
-
       </div>
     </div>
   </div>

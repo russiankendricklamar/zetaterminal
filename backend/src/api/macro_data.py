@@ -6,24 +6,23 @@ Prefix: /api/macro-data
 
 import logging
 
-from fastapi import APIRouter, HTTPException, Query, Body
-from typing import Optional, List, Dict
+from fastapi import APIRouter, Body, HTTPException, Query
 
 from src.services.macro_data_service import (
-    fred_series_observations,
-    fred_search,
-    ecb_latest_rates,
-    ecb_historical_rates,
     cbr_daily_rates,
-    cbr_key_rate,
-    cbr_ruonia,
-    cbr_precious_metals,
     cbr_deposit_rates,
+    cbr_key_rate,
+    cbr_precious_metals,
     cbr_repo_rates,
-    sec_company_filings,
-    sec_company_facts,
-    sec_full_text_search,
+    cbr_ruonia,
+    ecb_historical_rates,
+    ecb_latest_rates,
+    fred_search,
+    fred_series_observations,
     openfigi_map,
+    sec_company_facts,
+    sec_company_filings,
+    sec_full_text_search,
 )
 
 logger = logging.getLogger(__name__)
@@ -38,15 +37,15 @@ async def fred_series(
     series_id: str = Query(..., description="FRED series ID (e.g. GDP, CPIAUCSL, UNRATE)"),
     limit: int = Query(100),
     sort_order: str = Query("desc"),
-    observation_start: Optional[str] = Query(None),
-    observation_end: Optional[str] = Query(None),
+    observation_start: str | None = Query(None),
+    observation_end: str | None = Query(None),
 ):
     """Get observations for a FRED economic series."""
     try:
         return await fred_series_observations(series_id, limit, sort_order, observation_start, observation_end)
     except Exception as e:
         logger.error("FRED series observations failed: %s", e, exc_info=True)
-        raise HTTPException(status_code=500, detail="Internal server error")
+        raise HTTPException(status_code=500, detail="Internal server error") from e
 
 
 @router.get("/fred/search")
@@ -59,7 +58,7 @@ async def fred_search_endpoint(
         return await fred_search(q, limit)
     except Exception as e:
         logger.error("FRED search failed: %s", e, exc_info=True)
-        raise HTTPException(status_code=500, detail="Internal server error")
+        raise HTTPException(status_code=500, detail="Internal server error") from e
 
 
 # ─── Frankfurter (ECB) ───────────────────────────────────────────────────────
@@ -73,22 +72,22 @@ async def ecb_latest(
         return await ecb_latest_rates(base)
     except Exception as e:
         logger.error("ECB latest rates failed: %s", e, exc_info=True)
-        raise HTTPException(status_code=500, detail="Internal server error")
+        raise HTTPException(status_code=500, detail="Internal server error") from e
 
 
 @router.get("/ecb/history")
 async def ecb_history(
     base: str = Query("EUR"),
     start: str = Query(..., description="Start date (YYYY-MM-DD)"),
-    end: Optional[str] = Query(None, description="End date (YYYY-MM-DD)"),
-    symbols: Optional[str] = Query(None, description="Comma-separated currencies"),
+    end: str | None = Query(None, description="End date (YYYY-MM-DD)"),
+    symbols: str | None = Query(None, description="Comma-separated currencies"),
 ):
     """Historical ECB exchange rates via Frankfurter."""
     try:
         return await ecb_historical_rates(base, start, end, symbols)
     except Exception as e:
         logger.error("ECB historical rates failed: %s", e, exc_info=True)
-        raise HTTPException(status_code=500, detail="Internal server error")
+        raise HTTPException(status_code=500, detail="Internal server error") from e
 
 
 # ─── Bank of Russia ───────────────────────────────────────────────────────────
@@ -100,7 +99,7 @@ async def cbr_rates():
         return await cbr_daily_rates()
     except Exception as e:
         logger.error("CBR daily rates failed: %s", e, exc_info=True)
-        raise HTTPException(status_code=500, detail="Internal server error")
+        raise HTTPException(status_code=500, detail="Internal server error") from e
 
 
 @router.get("/cbr/key-rate")
@@ -110,7 +109,7 @@ async def cbr_key():
         return await cbr_key_rate()
     except Exception as e:
         logger.error("CBR key rate failed: %s", e, exc_info=True)
-        raise HTTPException(status_code=500, detail="Internal server error")
+        raise HTTPException(status_code=500, detail="Internal server error") from e
 
 
 @router.get("/cbr/ruonia")
@@ -123,7 +122,7 @@ async def cbr_ruonia_endpoint(
         return await cbr_ruonia(from_date, to_date)
     except Exception as e:
         logger.error("CBR RUONIA failed: %s", e, exc_info=True)
-        raise HTTPException(status_code=500, detail="Internal server error")
+        raise HTTPException(status_code=500, detail="Internal server error") from e
 
 
 @router.get("/cbr/metals")
@@ -136,7 +135,7 @@ async def cbr_metals_endpoint(
         return await cbr_precious_metals(from_date, to_date)
     except Exception as e:
         logger.error("CBR precious metals failed: %s", e, exc_info=True)
-        raise HTTPException(status_code=500, detail="Internal server error")
+        raise HTTPException(status_code=500, detail="Internal server error") from e
 
 
 @router.get("/cbr/deposit-rates")
@@ -149,7 +148,7 @@ async def cbr_deposit_endpoint(
         return await cbr_deposit_rates(from_date, to_date)
     except Exception as e:
         logger.error("CBR deposit rates failed: %s", e, exc_info=True)
-        raise HTTPException(status_code=500, detail="Internal server error")
+        raise HTTPException(status_code=500, detail="Internal server error") from e
 
 
 @router.get("/cbr/repo-rates")
@@ -162,7 +161,7 @@ async def cbr_repo_endpoint(
         return await cbr_repo_rates(from_date, to_date)
     except Exception as e:
         logger.error("CBR repo rates failed: %s", e, exc_info=True)
-        raise HTTPException(status_code=500, detail="Internal server error")
+        raise HTTPException(status_code=500, detail="Internal server error") from e
 
 
 # ─── SEC EDGAR ────────────────────────────────────────────────────────────────
@@ -174,13 +173,13 @@ async def sec_filings(cik: str):
         return await sec_company_filings(cik)
     except Exception as e:
         logger.error("SEC filings lookup failed: %s", e, exc_info=True)
-        raise HTTPException(status_code=500, detail="Internal server error")
+        raise HTTPException(status_code=500, detail="Internal server error") from e
 
 
 @router.get("/sec/search")
 async def sec_search_endpoint(
     q: str = Query(..., description="Full-text search query"),
-    forms: Optional[str] = Query(None, description="Form types (e.g. '10-K,10-Q')"),
+    forms: str | None = Query(None, description="Form types (e.g. '10-K,10-Q')"),
     limit: int = Query(20),
 ):
     """Full-text search of SEC EDGAR filings."""
@@ -188,7 +187,7 @@ async def sec_search_endpoint(
         return await sec_full_text_search(q, forms=forms or "", limit=limit)
     except Exception as e:
         logger.error("SEC full-text search failed: %s", e, exc_info=True)
-        raise HTTPException(status_code=500, detail="Internal server error")
+        raise HTTPException(status_code=500, detail="Internal server error") from e
 
 
 @router.get("/sec/company-facts/{cik}")
@@ -198,21 +197,21 @@ async def sec_facts(cik: str):
         return await sec_company_facts(cik)
     except Exception as e:
         logger.error("SEC company facts lookup failed: %s", e, exc_info=True)
-        raise HTTPException(status_code=500, detail="Internal server error")
+        raise HTTPException(status_code=500, detail="Internal server error") from e
 
 
 # ─── OpenFIGI ─────────────────────────────────────────────────────────────────
 
 @router.post("/openfigi/map")
 async def figi_map(
-    jobs: List[Dict[str, str]] = Body(..., description='[{"idType": "ID_ISIN", "idValue": "US0378331005"}]')
+    jobs: list[dict[str, str]] = Body(..., description='[{"idType": "ID_ISIN", "idValue": "US0378331005"}]')
 ):
     """Map financial identifiers via OpenFIGI."""
     try:
         return await openfigi_map(jobs)
     except Exception as e:
         logger.error("OpenFIGI map failed: %s", e, exc_info=True)
-        raise HTTPException(status_code=500, detail="Internal server error")
+        raise HTTPException(status_code=500, detail="Internal server error") from e
 
 
 @router.get("/health")

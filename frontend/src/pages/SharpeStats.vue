@@ -1,20 +1,36 @@
 <!-- src/pages/SharpeStats.vue -->
 <template>
   <div class="sharpe-stats-page">
-
     <!-- Header -->
     <div class="page-header">
       <div class="header-left">
-        <h1 class="page-title">Статистика коэффициента Шарпа</h1>
-        <p class="page-subtitle">SE, t-тест, PSR, DSR — проверка значимости и поправки на ненормальность</p>
+        <h1 class="page-title">
+          Статистика коэффициента Шарпа
+        </h1>
+        <p class="page-subtitle">
+          SE, t-тест, PSR, DSR — проверка значимости и поправки на ненормальность
+        </p>
       </div>
       <div class="header-right">
-        <select v-model="periodsPerYear" class="control-select">
-          <option :value="252">Дневные (252/год)</option>
-          <option :value="52">Недельные (52/год)</option>
-          <option :value="12">Месячные (12/год)</option>
+        <select
+          v-model="periodsPerYear"
+          class="control-select"
+        >
+          <option :value="252">
+            Дневные (252/год)
+          </option>
+          <option :value="52">
+            Недельные (52/год)
+          </option>
+          <option :value="12">
+            Месячные (12/год)
+          </option>
         </select>
-        <button @click="analyze" class="btn-primary" :disabled="loading">
+        <button
+          class="btn-primary"
+          :disabled="loading"
+          @click="analyze"
+        >
           <span v-if="!loading">Рассчитать</span>
           <span v-else>↺ Считаю...</span>
         </button>
@@ -36,7 +52,14 @@
         />
         <div class="input-row">
           <label>Безрисковая ставка (годовая):</label>
-          <input v-model.number="riskFreeRate" type="number" step="0.001" min="0" max="1" class="param-input" />
+          <input
+            v-model.number="riskFreeRate"
+            type="number"
+            step="0.001"
+            min="0"
+            max="1"
+            class="param-input"
+          >
         </div>
       </div>
 
@@ -47,89 +70,223 @@
         <div class="params-grid">
           <div class="param-row">
             <label>Пороговое SR (для PSR):</label>
-            <input v-model.number="benchmarkSr" type="number" step="0.1" class="param-input" />
+            <input
+              v-model.number="benchmarkSr"
+              type="number"
+              step="0.1"
+              class="param-input"
+            >
           </div>
           <div class="param-row">
             <label>Кол-во стратегий N (для DSR):</label>
-            <input v-model.number="nTrials" type="number" min="1" step="1" class="param-input" />
+            <input
+              v-model.number="nTrials"
+              type="number"
+              min="1"
+              step="1"
+              class="param-input"
+            >
           </div>
         </div>
         <div class="formula-box">
-          <div class="formula-title">Ключевые формулы</div>
-          <div class="formula">SR = μ<sub>e</sub> / σ · √T</div>
-          <div class="formula">SE<sub>adj</sub> = √[(1 + SR²/2 − γ₁·SR + γ₂/4) / n]</div>
-          <div class="formula">PSR(SR*) = Φ[(SR̂ − SR*)·√(n−1) / √D]</div>
-          <div class="formula small">D = 1 − γ₁·SR̂ + (γ₂+1)/4·SR̂²</div>
+          <div class="formula-title">
+            Ключевые формулы
+          </div>
+          <div class="formula">
+            SR = μ<sub>e</sub> / σ · √T
+          </div>
+          <div class="formula">
+            SE<sub>adj</sub> = √[(1 + SR²/2 − γ₁·SR + γ₂/4) / n]
+          </div>
+          <div class="formula">
+            PSR(SR*) = Φ[(SR̂ − SR*)·√(n−1) / √D]
+          </div>
+          <div class="formula small">
+            D = 1 − γ₁·SR̂ + (γ₂+1)/4·SR̂²
+          </div>
         </div>
       </div>
     </div>
 
     <!-- Error -->
-    <div v-if="error" class="error-banner">{{ error }}</div>
+    <div
+      v-if="error"
+      class="error-banner"
+    >
+      {{ error }}
+    </div>
 
     <!-- Results -->
     <template v-if="result">
-
       <!-- KPI cards -->
       <div class="kpi-grid">
-        <div class="kpi-card" :class="srClass">
-          <div class="kpi-label">Годовой SR</div>
-          <div class="kpi-value">{{ fmt2(result.sr_annual) }}</div>
-          <div class="kpi-sub">{{ result.is_significant_5pct ? 'значим на 5%' : 'не значим на 5%' }}</div>
+        <div
+          class="kpi-card"
+          :class="srClass"
+        >
+          <div class="kpi-label">
+            Годовой SR
+          </div>
+          <div class="kpi-value">
+            {{ fmt2(result.sr_annual) }}
+          </div>
+          <div class="kpi-sub">
+            {{ result.is_significant_5pct ? 'значим на 5%' : 'не значим на 5%' }}
+          </div>
         </div>
         <div class="kpi-card">
-          <div class="kpi-label">t-статистика</div>
-          <div class="kpi-value">{{ fmt2(result.t_stat) }}</div>
-          <div class="kpi-sub">p = {{ fmtP(result.p_value) }}</div>
+          <div class="kpi-label">
+            t-статистика
+          </div>
+          <div class="kpi-value">
+            {{ fmt2(result.t_stat) }}
+          </div>
+          <div class="kpi-sub">
+            p = {{ fmtP(result.p_value) }}
+          </div>
         </div>
         <div class="kpi-card">
-          <div class="kpi-label">SE (ненорм.)</div>
-          <div class="kpi-value">{{ fmt3(result.se_nonnormal) }}</div>
-          <div class="kpi-sub">IID: {{ fmt3(result.se_iid) }}</div>
+          <div class="kpi-label">
+            SE (ненорм.)
+          </div>
+          <div class="kpi-value">
+            {{ fmt3(result.se_nonnormal) }}
+          </div>
+          <div class="kpi-sub">
+            IID: {{ fmt3(result.se_iid) }}
+          </div>
         </div>
-        <div class="kpi-card" :class="psrClass">
-          <div class="kpi-label">PSR</div>
-          <div class="kpi-value">{{ pct(result.psr) }}</div>
-          <div class="kpi-sub">vs SR* = {{ fmt2(result.benchmark_sr) }}</div>
+        <div
+          class="kpi-card"
+          :class="psrClass"
+        >
+          <div class="kpi-label">
+            PSR
+          </div>
+          <div class="kpi-value">
+            {{ pct(result.psr) }}
+          </div>
+          <div class="kpi-sub">
+            vs SR* = {{ fmt2(result.benchmark_sr) }}
+          </div>
         </div>
-        <div class="kpi-card" :class="dsrClass">
-          <div class="kpi-label">DSR</div>
-          <div class="kpi-value">{{ pct(result.dsr) }}</div>
-          <div class="kpi-sub">N = {{ result.n_trials }} стратегий</div>
+        <div
+          class="kpi-card"
+          :class="dsrClass"
+        >
+          <div class="kpi-label">
+            DSR
+          </div>
+          <div class="kpi-value">
+            {{ pct(result.dsr) }}
+          </div>
+          <div class="kpi-sub">
+            N = {{ result.n_trials }} стратегий
+          </div>
         </div>
         <div class="kpi-card">
-          <div class="kpi-label">Наблюдений</div>
-          <div class="kpi-value">{{ result.n_observations }}</div>
-          <div class="kpi-sub">vol = {{ pct(result.vol_annual) }}</div>
+          <div class="kpi-label">
+            Наблюдений
+          </div>
+          <div class="kpi-value">
+            {{ result.n_observations }}
+          </div>
+          <div class="kpi-sub">
+            vol = {{ pct(result.vol_annual) }}
+          </div>
         </div>
       </div>
 
       <!-- Stats table + CI -->
       <div class="results-grid">
         <div class="panel">
-          <div class="panel-header"><h3>Распределение доходностей</h3></div>
+          <div class="panel-header">
+            <h3>Распределение доходностей</h3>
+          </div>
           <table class="stats-table">
             <tbody>
-              <tr><td>Среднегодовая доходность</td><td class="mono">{{ pct(result.mean_annual) }}</td></tr>
-              <tr><td>Годовая волатильность</td><td class="mono">{{ pct(result.vol_annual) }}</td></tr>
-              <tr><td>Асимметрия (skewness)</td><td class="mono" :class="result.skewness < 0 ? 'neg' : 'pos'">{{ fmt3(result.skewness) }}</td></tr>
-              <tr><td>Избыточный эксцесс</td><td class="mono" :class="result.excess_kurtosis > 0 ? 'neg' : 'pos'">{{ fmt3(result.excess_kurtosis) }}</td></tr>
-              <tr class="sep"><td>SR (за период)</td><td class="mono">{{ fmt4(result.sr_freq) }}</td></tr>
-              <tr><td>SR годовой</td><td class="mono accent">{{ fmt2(result.sr_annual) }}</td></tr>
-              <tr><td>SE (IID нормальность)</td><td class="mono">{{ fmt3(result.se_iid) }}</td></tr>
-              <tr><td>SE (с поправкой)</td><td class="mono accent">{{ fmt3(result.se_nonnormal) }}</td></tr>
-              <tr class="sep"><td>t-статистика</td><td class="mono">{{ fmt2(result.t_stat) }}</td></tr>
-              <tr><td>p-value (двустор.)</td><td class="mono" :class="result.p_value < 0.05 ? 'pos' : 'neg'">{{ fmtP(result.p_value) }}</td></tr>
-              <tr><td>95% ДИ</td><td class="mono">[{{ fmt2(result.ci_95[0]) }}, {{ fmt2(result.ci_95[1]) }}]</td></tr>
-              <tr><td>99% ДИ</td><td class="mono">[{{ fmt2(result.ci_99[0]) }}, {{ fmt2(result.ci_99[1]) }}]</td></tr>
+              <tr>
+                <td>Среднегодовая доходность</td><td class="mono">
+                  {{ pct(result.mean_annual) }}
+                </td>
+              </tr>
+              <tr>
+                <td>Годовая волатильность</td><td class="mono">
+                  {{ pct(result.vol_annual) }}
+                </td>
+              </tr>
+              <tr>
+                <td>Асимметрия (skewness)</td><td
+                  class="mono"
+                  :class="result.skewness < 0 ? 'neg' : 'pos'"
+                >
+                  {{ fmt3(result.skewness) }}
+                </td>
+              </tr>
+              <tr>
+                <td>Избыточный эксцесс</td><td
+                  class="mono"
+                  :class="result.excess_kurtosis > 0 ? 'neg' : 'pos'"
+                >
+                  {{ fmt3(result.excess_kurtosis) }}
+                </td>
+              </tr>
+              <tr class="sep">
+                <td>SR (за период)</td><td class="mono">
+                  {{ fmt4(result.sr_freq) }}
+                </td>
+              </tr>
+              <tr>
+                <td>SR годовой</td><td class="mono accent">
+                  {{ fmt2(result.sr_annual) }}
+                </td>
+              </tr>
+              <tr>
+                <td>SE (IID нормальность)</td><td class="mono">
+                  {{ fmt3(result.se_iid) }}
+                </td>
+              </tr>
+              <tr>
+                <td>SE (с поправкой)</td><td class="mono accent">
+                  {{ fmt3(result.se_nonnormal) }}
+                </td>
+              </tr>
+              <tr class="sep">
+                <td>t-статистика</td><td class="mono">
+                  {{ fmt2(result.t_stat) }}
+                </td>
+              </tr>
+              <tr>
+                <td>p-value (двустор.)</td><td
+                  class="mono"
+                  :class="result.p_value < 0.05 ? 'pos' : 'neg'"
+                >
+                  {{ fmtP(result.p_value) }}
+                </td>
+              </tr>
+              <tr>
+                <td>95% ДИ</td><td class="mono">
+                  [{{ fmt2(result.ci_95[0]) }}, {{ fmt2(result.ci_95[1]) }}]
+                </td>
+              </tr>
+              <tr>
+                <td>99% ДИ</td><td class="mono">
+                  [{{ fmt2(result.ci_99[0]) }}, {{ fmt2(result.ci_99[1]) }}]
+                </td>
+              </tr>
             </tbody>
           </table>
         </div>
 
         <!-- Null distribution chart -->
         <div class="panel">
-          <div class="panel-header"><h3>Распределение SR под H₀</h3></div>
-          <div ref="nullChartEl" class="chart-container" />
+          <div class="panel-header">
+            <h3>Распределение SR под H₀</h3>
+          </div>
+          <div
+            ref="nullChartEl"
+            class="chart-container"
+          />
         </div>
       </div>
 
@@ -139,9 +296,11 @@
           <h3>PSR-кривая — вероятность превышения SR*</h3>
           <span class="hint">Вертикальная линия — текущий SR*={{ fmt2(result.benchmark_sr) }}, PSR={{ pct(result.psr) }}</span>
         </div>
-        <div ref="psrChartEl" class="chart-container chart-tall" />
+        <div
+          ref="psrChartEl"
+          class="chart-container chart-tall"
+        />
       </div>
-
     </template>
   </div>
 </template>

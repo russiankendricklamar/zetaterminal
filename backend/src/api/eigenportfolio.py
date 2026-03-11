@@ -2,14 +2,14 @@
 API endpoints для анализа Eigenportfolios (PCA).
 """
 import logging
+from datetime import datetime
+from typing import Any
 
 from fastapi import APIRouter, HTTPException, Request
-from typing import Dict, Any, List, Optional
 from pydantic import BaseModel, Field
-from datetime import datetime
 
-from src.services.eigenportfolio_service import compute_eigenportfolios
 from src.middleware.rate_limit import limiter
+from src.services.eigenportfolio_service import compute_eigenportfolios
 
 logger = logging.getLogger(__name__)
 
@@ -17,13 +17,13 @@ router = APIRouter()
 
 
 class EigenportfolioRequest(BaseModel):
-    returns: List[List[float]] = Field(
+    returns: list[list[float]] = Field(
         ..., description="Матрица доходностей T × N (строки=периоды, столбцы=активы)"
     )
-    asset_names: Optional[List[str]] = Field(None, description="Названия активов")
+    asset_names: list[str] | None = Field(None, description="Названия активов")
     use_shrinkage: bool = Field(True, description="Применять Ledoit-Wolf shrinkage")
-    n_components: Optional[int] = Field(None, ge=1, description="Число PC для реконструкции")
-    portfolio_weights: Optional[List[float]] = Field(None, description="Веса портфеля для декомпозиции риска")
+    n_components: int | None = Field(None, ge=1, description="Число PC для реконструкции")
+    portfolio_weights: list[float] | None = Field(None, description="Веса портфеля для декомпозиции риска")
 
     model_config = {
         "json_schema_extra": {
@@ -37,7 +37,7 @@ class EigenportfolioRequest(BaseModel):
 
 
 class EigenportfolioResponse(BaseModel):
-    result: Dict[str, Any]
+    result: dict[str, Any]
     timestamp: datetime = Field(default_factory=datetime.now)
 
 
@@ -76,10 +76,10 @@ async def decompose(http_request: Request, request: EigenportfolioRequest):
         return EigenportfolioResponse(result=result)
     except ValueError as e:
         logger.error("Eigenportfolio validation error: %s", e, exc_info=True)
-        raise HTTPException(status_code=400, detail="Invalid input parameters")
+        raise HTTPException(status_code=400, detail="Invalid input parameters") from e
     except Exception as e:
         logger.error("Eigenportfolio computation failed: %s", e, exc_info=True)
-        raise HTTPException(status_code=500, detail="Internal server error")
+        raise HTTPException(status_code=500, detail="Internal server error") from e
 
 
 @router.get("/health")

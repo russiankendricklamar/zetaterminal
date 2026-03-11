@@ -7,8 +7,12 @@
           <ZapIcon class="w-6 h-6" />
         </div>
         <div>
-          <h2 class="section-title font-anton">ВАЛЮТНЫЙ РЫНОК</h2>
-          <p class="section-subtitle font-mono">SPOT RATES, FORWARDS & MACRO FLOWS</p>
+          <h2 class="section-title font-anton">
+            ВАЛЮТНЫЙ РЫНОК
+          </h2>
+          <p class="section-subtitle font-mono">
+            SPOT RATES, FORWARDS & MACRO FLOWS
+          </p>
         </div>
       </div>
 
@@ -16,10 +20,13 @@
         <button
           v-for="tab in tabs"
           :key="tab.id"
-          @click="section = tab.id"
           :class="['tab-btn', { active: section === tab.id }]"
+          @click="section = tab.id"
         >
-          <component :is="tab.icon" class="w-3.5 h-3.5" /> {{ tab.label }}
+          <component
+            :is="tab.icon"
+            class="w-3.5 h-3.5"
+          /> {{ tab.label }}
         </button>
       </div>
     </div>
@@ -27,34 +34,59 @@
     <!-- Content -->
     <div class="flex-1 overflow-y-auto custom-scrollbar p-6 bg-gradient-to-b from-black/10 to-transparent">
       <!-- Currency Matrix -->
-      <div v-if="section === 'FXC'" class="flex flex-col h-full">
+      <div
+        v-if="section === 'FXC'"
+        class="flex flex-col h-full"
+      >
         <div class="flex justify-between items-center mb-6">
-          <h3 class="text-lg font-bold text-white">Кросс-валютная матрица</h3>
+          <h3 class="text-lg font-bold text-white">
+            Кросс-валютная матрица
+          </h3>
           <div class="flex gap-2 text-xs">
-            <span class="flex items-center gap-1 text-emerald-400"><div class="w-2 h-2 rounded-full bg-emerald-500"></div> Strong</span>
-            <span class="flex items-center gap-1 text-rose-400"><div class="w-2 h-2 rounded-full bg-rose-500"></div> Weak</span>
+            <span class="flex items-center gap-1 text-emerald-400"><div class="w-2 h-2 rounded-full bg-emerald-500" /> Strong</span>
+            <span class="flex items-center gap-1 text-rose-400"><div class="w-2 h-2 rounded-full bg-rose-500" /> Weak</span>
           </div>
         </div>
 
         <!-- Индикатор загрузки -->
-        <div v-if="loadingRates" class="flex items-center justify-center py-4 text-gray-400 mb-4">
+        <div
+          v-if="loadingRates"
+          class="flex items-center justify-center py-4 text-gray-400 mb-4"
+        >
           <div class="flex items-center gap-2">
-            <div class="w-4 h-4 border-2 border-green-500 border-t-transparent rounded-full animate-spin"></div>
+            <div class="w-4 h-4 border-2 border-green-500 border-t-transparent rounded-full animate-spin" />
             <span class="text-xs font-bold">Загрузка курсов валют...</span>
           </div>
         </div>
 
-        <div class="flex-1 overflow-auto bg-black/20 rounded-2xl border border-white/5" :class="{ 'opacity-50': loadingRates }">
+        <div
+          class="flex-1 overflow-auto bg-black/20 rounded-2xl border border-white/5"
+          :class="{ 'opacity-50': loadingRates }"
+        >
           <table class="w-full text-center border-collapse">
             <thead>
               <tr>
-                <th class="p-4 bg-white/5 border-b border-white/10 text-xs font-bold text-gray-500 sticky top-0 left-0 z-20">Base / Quote</th>
-                <th v-for="c in currencies" :key="c" class="p-4 bg-white/5 border-b border-white/10 text-xs font-bold text-white sticky top-0 z-10">{{ c }}</th>
+                <th class="p-4 bg-white/5 border-b border-white/10 text-xs font-bold text-gray-500 sticky top-0 left-0 z-20">
+                  Base / Quote
+                </th>
+                <th
+                  v-for="c in currencies"
+                  :key="c"
+                  class="p-4 bg-white/5 border-b border-white/10 text-xs font-bold text-white sticky top-0 z-10"
+                >
+                  {{ c }}
+                </th>
               </tr>
             </thead>
             <tbody class="text-xs font-mono">
-              <tr v-for="base in currencies" :key="base" class="border-b border-white/5 hover:bg-white/5 transition-colors">
-                <td class="p-4 font-bold text-white bg-white/5 sticky left-0 border-r border-white/5">{{ base }}</td>
+              <tr
+                v-for="base in currencies"
+                :key="base"
+                class="border-b border-white/5 hover:bg-white/5 transition-colors"
+              >
+                <td class="p-4 font-bold text-white bg-white/5 sticky left-0 border-r border-white/5">
+                  {{ base }}
+                </td>
                 <td 
                   v-for="quote in currencies" 
                   :key="quote"
@@ -69,115 +101,213 @@
       </div>
 
       <!-- Currency Conversion -->
-      <div v-else-if="section === 'FXCA'" class="grid grid-cols-1 lg:grid-cols-3 gap-8 h-full">
+      <div
+        v-else-if="section === 'FXCA'"
+        class="grid grid-cols-1 lg:grid-cols-3 gap-8 h-full"
+      >
         <div class="p-6 rounded-2xl bg-white/5 border border-white/5 flex flex-col gap-6">
-          <h3 class="text-lg font-bold text-white">Расчет спот-курса</h3>
+          <h3 class="text-lg font-bold text-white">
+            Расчет спот-курса
+          </h3>
           
           <!-- Индикатор загрузки -->
-          <div v-if="loadingRates" class="flex items-center justify-center py-4 text-gray-400">
+          <div
+            v-if="loadingRates"
+            class="flex items-center justify-center py-4 text-gray-400"
+          >
             <div class="flex items-center gap-2">
-              <div class="w-4 h-4 border-2 border-green-500 border-t-transparent rounded-full animate-spin"></div>
+              <div class="w-4 h-4 border-2 border-green-500 border-t-transparent rounded-full animate-spin" />
               <span class="text-xs font-bold">Загрузка курсов...</span>
             </div>
           </div>
           
-          <div class="space-y-4" :class="{ 'opacity-50': loadingRates }">
+          <div
+            class="space-y-4"
+            :class="{ 'opacity-50': loadingRates }"
+          >
             <div>
               <label class="text-xs text-gray-500 font-bold uppercase mb-1 block">Количество</label>
               <input 
-                type="number" 
-                v-model="amount"
+                v-model="amount" 
+                type="number"
                 class="w-full bg-black/40 border border-white/10 rounded-xl py-3 px-4 text-white font-mono text-lg outline-none focus:border-green-500/50"
-              />
+              >
             </div>
             
             <div class="grid grid-cols-[1fr_auto_1fr] gap-2 items-end">
               <div>
                 <label class="text-xs text-gray-500 font-bold uppercase mb-1 block">Из</label>
-                <select v-model="fromCurrency" class="w-full bg-black/40 border border-white/10 rounded-xl py-3 px-4 text-white outline-none">
-                  <option v-for="c in ['USD', 'EUR', 'GBP', 'JPY', 'CAD']" :key="c">{{ c }}</option>
+                <select
+                  v-model="fromCurrency"
+                  class="w-full bg-black/40 border border-white/10 rounded-xl py-3 px-4 text-white outline-none"
+                >
+                  <option
+                    v-for="c in ['USD', 'EUR', 'GBP', 'JPY', 'CAD']"
+                    :key="c"
+                  >
+                    {{ c }}
+                  </option>
                 </select>
               </div>
-              <button @click="loadCurrencyRates" class="p-3 bg-white/10 rounded-xl hover:bg-white/20 text-white mb-1 transition-colors" :disabled="loadingRates">
+              <button
+                class="p-3 bg-white/10 rounded-xl hover:bg-white/20 text-white mb-1 transition-colors"
+                :disabled="loadingRates"
+                @click="loadCurrencyRates"
+              >
                 <RefreshCwIcon :class="`w-4 h-4 ${loadingRates ? 'animate-spin' : ''}`" />
               </button>
               <div>
                 <label class="text-xs text-gray-500 font-bold uppercase mb-1 block">В</label>
-                <select v-model="toCurrency" class="w-full bg-black/40 border border-white/10 rounded-xl py-3 px-4 text-white outline-none">
-                  <option v-for="c in ['EUR', 'USD', 'GBP', 'JPY', 'CAD']" :key="c">{{ c }}</option>
+                <select
+                  v-model="toCurrency"
+                  class="w-full bg-black/40 border border-white/10 rounded-xl py-3 px-4 text-white outline-none"
+                >
+                  <option
+                    v-for="c in ['EUR', 'USD', 'GBP', 'JPY', 'CAD']"
+                    :key="c"
+                  >
+                    {{ c }}
+                  </option>
                 </select>
               </div>
             </div>
           </div>
 
           <div class="mt-auto p-4 rounded-xl bg-black/30 border border-white/10 text-center">
-            <div class="text-xs text-gray-500 uppercase mb-1">Результат</div>
+            <div class="text-xs text-gray-500 uppercase mb-1">
+              Результат
+            </div>
             <div class="text-3xl font-bold text-green-400 font-mono">
               {{ (amount * conversionRate).toFixed(2) }} <span class="text-sm text-gray-400">{{ toCurrency }}</span>
             </div>
-            <div class="text-xs text-gray-500 mt-2">Курс: 1 {{ fromCurrency }} = {{ conversionRate.toFixed(4) }} {{ toCurrency }}</div>
+            <div class="text-xs text-gray-500 mt-2">
+              Курс: 1 {{ fromCurrency }} = {{ conversionRate.toFixed(4) }} {{ toCurrency }}
+            </div>
           </div>
         </div>
 
         <div class="lg:col-span-2 p-6 rounded-2xl bg-white/5 border border-white/5 flex flex-col">
           <div class="flex justify-between items-center mb-6">
-            <h3 class="text-lg font-bold text-white">Исторический курс валютной пары ({{ fromCurrency }}/{{ toCurrency }})</h3>
+            <h3 class="text-lg font-bold text-white">
+              Исторический курс валютной пары ({{ fromCurrency }}/{{ toCurrency }})
+            </h3>
             <div class="flex gap-2">
-              <button v-for="p in ['1W', '1M', '3M', '1Y']" :key="p" class="px-3 py-1 text-xs font-bold rounded-lg bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white transition-colors">
+              <button
+                v-for="p in ['1W', '1M', '3M', '1Y']"
+                :key="p"
+                class="px-3 py-1 text-xs font-bold rounded-lg bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white transition-colors"
+              >
                 {{ p }}
               </button>
             </div>
           </div>
           <div class="flex-1 min-h-[300px]">
-            <v-chart class="w-full h-full" :option="fxChartOption" autoresize />
+            <v-chart
+              class="w-full h-full"
+              :option="fxChartOption"
+              autoresize
+            />
           </div>
         </div>
       </div>
 
       <!-- FX Forecasts -->
-      <div v-else-if="section === 'FXFC'" class="flex flex-col h-full gap-6">
+      <div
+        v-else-if="section === 'FXFC'"
+        class="flex flex-col h-full gap-6"
+      >
         <div class="grid grid-cols-3 gap-6">
           <div class="p-6 rounded-2xl bg-white/5 border border-white/5">
-            <h3 class="text-sm font-bold text-gray-400 uppercase mb-2">Прогноз индекса DXY (Годовой)</h3>
-            <div class="text-3xl font-bold text-white">102.50</div>
-            <div class="text-xs text-rose-400 mt-1">Bearish vs Current (104.20)</div>
+            <h3 class="text-sm font-bold text-gray-400 uppercase mb-2">
+              Прогноз индекса DXY (Годовой)
+            </h3>
+            <div class="text-3xl font-bold text-white">
+              102.50
+            </div>
+            <div class="text-xs text-rose-400 mt-1">
+              Bearish vs Current (104.20)
+            </div>
           </div>
           <div class="p-6 rounded-2xl bg-white/5 border border-white/5">
-            <h3 class="text-sm font-bold text-gray-400 uppercase mb-2">Наиболее количество сделок (Q4)</h3>
-            <div class="text-3xl font-bold text-emerald-400">Short USD/JPY</div>
-            <div class="text-xs text-gray-500 mt-1">Carry Unwind Theme</div>
+            <h3 class="text-sm font-bold text-gray-400 uppercase mb-2">
+              Наиболее количество сделок (Q4)
+            </h3>
+            <div class="text-3xl font-bold text-emerald-400">
+              Short USD/JPY
+            </div>
+            <div class="text-xs text-gray-500 mt-1">
+              Carry Unwind Theme
+            </div>
           </div>
           <div class="p-6 rounded-2xl bg-white/5 border border-white/5">
-            <h3 class="text-sm font-bold text-gray-400 uppercase mb-2">Обзор волатильности рынка</h3>
-            <div class="text-3xl font-bold text-white">Повышающаяся</div>
-            <div class="text-xs text-gray-500 mt-1">Election Risk Premium</div>
+            <h3 class="text-sm font-bold text-gray-400 uppercase mb-2">
+              Обзор волатильности рынка
+            </h3>
+            <div class="text-3xl font-bold text-white">
+              Повышающаяся
+            </div>
+            <div class="text-xs text-gray-500 mt-1">
+              Election Risk Premium
+            </div>
           </div>
         </div>
 
         <div class="flex-1 bg-black/20 rounded-2xl border border-white/5 overflow-hidden">
           <div class="p-4 border-b border-white/10 bg-white/5">
-            <h3 class="font-bold text-white">Консенсус-прогнозы по валютным парам (Медиана)</h3>
+            <h3 class="font-bold text-white">
+              Консенсус-прогнозы по валютным парам (Медиана)
+            </h3>
           </div>
           <table class="w-full text-left border-collapse">
             <thead>
               <tr class="text-xs text-gray-500 uppercase">
-                <th class="p-4">Валютная пара</th>
-                <th class="p-4 text-right">Спот-курс</th>
-                <th class="p-4 text-right">Q1 26</th>
-                <th class="p-4 text-right">Q2 26</th>
-                <th class="p-4 text-right">Q3 26</th>
-                <th class="p-4 text-right">Q4 26</th>
-                <th class="p-4 text-right">Консенсус</th>
+                <th class="p-4">
+                  Валютная пара
+                </th>
+                <th class="p-4 text-right">
+                  Спот-курс
+                </th>
+                <th class="p-4 text-right">
+                  Q1 26
+                </th>
+                <th class="p-4 text-right">
+                  Q2 26
+                </th>
+                <th class="p-4 text-right">
+                  Q3 26
+                </th>
+                <th class="p-4 text-right">
+                  Q4 26
+                </th>
+                <th class="p-4 text-right">
+                  Консенсус
+                </th>
               </tr>
             </thead>
             <tbody class="text-sm font-mono text-gray-300">
-              <tr v-for="(f, i) in forecasts" :key="i" class="border-b border-white/5 hover:bg-white/5 transition-colors">
-                <td class="p-4 font-bold text-white">{{ f.pair }}</td>
-                <td class="p-4 text-right">{{ f.spot.toFixed(4) }}</td>
-                <td class="p-4 text-right text-gray-400">{{ f.q1.toFixed(2) }}</td>
-                <td class="p-4 text-right text-gray-400">{{ f.q2.toFixed(2) }}</td>
-                <td class="p-4 text-right text-gray-400">{{ f.q3.toFixed(2) }}</td>
-                <td class="p-4 text-right text-gray-400">{{ f.q4.toFixed(2) }}</td>
+              <tr
+                v-for="(f, i) in forecasts"
+                :key="i"
+                class="border-b border-white/5 hover:bg-white/5 transition-colors"
+              >
+                <td class="p-4 font-bold text-white">
+                  {{ f.pair }}
+                </td>
+                <td class="p-4 text-right">
+                  {{ f.spot.toFixed(4) }}
+                </td>
+                <td class="p-4 text-right text-gray-400">
+                  {{ f.q1.toFixed(2) }}
+                </td>
+                <td class="p-4 text-right text-gray-400">
+                  {{ f.q2.toFixed(2) }}
+                </td>
+                <td class="p-4 text-right text-gray-400">
+                  {{ f.q3.toFixed(2) }}
+                </td>
+                <td class="p-4 text-right text-gray-400">
+                  {{ f.q4.toFixed(2) }}
+                </td>
                 <td class="p-4 text-right">
                   <span :class="`px-2 py-1 rounded text-xs font-bold border ${f.consensus === 'Рост' ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' : 'bg-rose-500/10 border-rose-500/20 text-rose-400'}`">
                     {{ f.consensus }}
@@ -190,14 +320,25 @@
       </div>
 
       <!-- Global Markets Monitor -->
-      <div v-else-if="section === 'GMM'" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 h-full">
+      <div
+        v-else-if="section === 'GMM'"
+        class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 h-full"
+      >
         <div class="p-6 rounded-2xl bg-white/5 border border-white/5 flex flex-col">
-          <h3 class="text-sm font-bold text-gray-400 uppercase mb-4">G10 Currencies</h3>
+          <h3 class="text-sm font-bold text-gray-400 uppercase mb-4">
+            G10 Currencies
+          </h3>
           <div class="space-y-4 flex-1">
-            <div v-for="row in g10Currencies" :key="row.p" class="flex justify-between items-center p-3 rounded-xl bg-black/20">
+            <div
+              v-for="row in g10Currencies"
+              :key="row.p"
+              class="flex justify-between items-center p-3 rounded-xl bg-black/20"
+            >
               <span class="font-bold text-white">{{ row.p }}</span>
               <div class="text-right">
-                <div class="text-white font-mono">{{ row.r.toFixed(4) }}</div>
+                <div class="text-white font-mono">
+                  {{ row.r.toFixed(4) }}
+                </div>
                 <div :class="`text-xs ${row.c > 0 ? 'text-emerald-400' : 'text-rose-400'}`">
                   {{ row.c > 0 ? '+' : '' }}{{ row.c }}%
                 </div>
@@ -207,12 +348,20 @@
         </div>
 
         <div class="p-6 rounded-2xl bg-white/5 border border-white/5 flex flex-col">
-          <h3 class="text-sm font-bold text-gray-400 uppercase mb-4">Emerging Markets</h3>
+          <h3 class="text-sm font-bold text-gray-400 uppercase mb-4">
+            Emerging Markets
+          </h3>
           <div class="space-y-4 flex-1">
-            <div v-for="row in emCurrencies" :key="row.p" class="flex justify-between items-center p-3 rounded-xl bg-black/20">
+            <div
+              v-for="row in emCurrencies"
+              :key="row.p"
+              class="flex justify-between items-center p-3 rounded-xl bg-black/20"
+            >
               <span class="font-bold text-white">{{ row.p }}</span>
               <div class="text-right">
-                <div class="text-white font-mono">{{ row.r.toFixed(4) }}</div>
+                <div class="text-white font-mono">
+                  {{ row.r.toFixed(4) }}
+                </div>
                 <div :class="`text-xs ${row.c > 0 ? 'text-emerald-400' : 'text-rose-400'}`">
                   {{ row.c > 0 ? '+' : '' }}{{ row.c }}%
                 </div>
@@ -222,9 +371,15 @@
         </div>
 
         <div class="p-6 rounded-2xl bg-white/5 border border-white/5 flex flex-col">
-          <h3 class="text-sm font-bold text-gray-400 uppercase mb-4">Макроиндикаторы</h3>
+          <h3 class="text-sm font-bold text-gray-400 uppercase mb-4">
+            Макроиндикаторы
+          </h3>
           <div class="space-y-4 flex-1">
-            <div v-for="(row, i) in macroIndicators" :key="i" class="flex justify-between items-center p-3 rounded-xl bg-black/20">
+            <div
+              v-for="(row, i) in macroIndicators"
+              :key="i"
+              class="flex justify-between items-center p-3 rounded-xl bg-black/20"
+            >
               <span class="text-sm text-gray-300">{{ row.name }}</span>
               <span class="font-bold text-white">{{ row.value }}</span>
             </div>
@@ -233,10 +388,17 @@
       </div>
 
       <!-- Default -->
-      <div v-else class="flex items-center justify-center h-full">
+      <div
+        v-else
+        class="flex items-center justify-center h-full"
+      >
         <div class="text-center">
-          <h3 class="text-xl font-bold text-white mb-2">{{ section }} View</h3>
-          <p class="text-gray-400">Content coming soon</p>
+          <h3 class="text-xl font-bold text-white mb-2">
+            {{ section }} View
+          </h3>
+          <p class="text-gray-400">
+            Content coming soon
+          </p>
         </div>
       </div>
     </div>

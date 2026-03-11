@@ -24,7 +24,9 @@
           <span class="news-source font-mono">{{ item.source }}</span>
           <span class="news-time font-mono">{{ item.time }}</span>
         </div>
-        <h4 class="news-title font-oswald">{{ item.title }}</h4>
+        <h4 class="news-title font-oswald">
+          {{ item.title }}
+        </h4>
       </div>
     </div>
   </BaseWidget>

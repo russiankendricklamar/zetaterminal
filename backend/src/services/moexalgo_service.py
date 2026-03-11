@@ -4,7 +4,7 @@ MOEX ISS API Service — Russian stock market data.
 Public API (no key required): https://iss.moex.com/iss
 """
 
-from typing import Optional, Dict, Any, List
+from typing import Any
 
 from src.services.cache_service import cache_get, cache_set, make_cache_key
 from src.utils.http_client import get_session
@@ -17,7 +17,7 @@ async def moex_securities(
     market: str = "shares",
     engine: str = "stock",
     limit: int = 100,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Get list of securities from MOEX board."""
     key = make_cache_key("moex", "securities", engine, market, board, limit)
     cached = cache_get(key)
@@ -39,12 +39,12 @@ async def moex_securities(
 
     securities_map = {}
     for row in sec_rows:
-        item = dict(zip(sec_cols, row))
+        item = dict(zip(sec_cols, row, strict=False))
         securities_map[item.get("SECID", "")] = item
 
     securities = []
     for row in md_rows:
-        md = dict(zip(md_cols, row))
+        md = dict(zip(md_cols, row, strict=False))
         secid = md.get("SECID", "")
         sec = securities_map.get(secid, {})
         securities.append({
@@ -76,10 +76,10 @@ async def moex_candles(
     market: str = "shares",
     engine: str = "stock",
     interval: int = 24,
-    from_date: Optional[str] = None,
-    till_date: Optional[str] = None,
+    from_date: str | None = None,
+    till_date: str | None = None,
     limit: int = 100,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Get OHLCV candles for a MOEX ticker."""
     key = make_cache_key("moex", "candles", ticker, board, interval, from_date, till_date, limit)
     cached = cache_get(key)
@@ -87,7 +87,7 @@ async def moex_candles(
         return cached
 
     url = f"{MOEX_BASE}/engines/{engine}/markets/{market}/boards/{board}/securities/{ticker}/candles.json"
-    params: Dict[str, Any] = {"iss.meta": "off", "interval": interval, "start": 0}
+    params: dict[str, Any] = {"iss.meta": "off", "interval": interval, "start": 0}
     if from_date:
         params["from"] = from_date
     if till_date:
@@ -103,7 +103,7 @@ async def moex_candles(
 
     candles = []
     for row in rows[:limit]:
-        c = dict(zip(cols, row))
+        c = dict(zip(cols, row, strict=False))
         candles.append({
             "open": c.get("open"),
             "close": c.get("close"),
@@ -124,7 +124,7 @@ async def moex_orderbook(
     board: str = "TQBR",
     market: str = "shares",
     engine: str = "stock",
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Get order book (bids/asks) for a MOEX ticker."""
     key = make_cache_key("moex", "orderbook", ticker, board)
     cached = cache_get(key)
@@ -145,7 +145,7 @@ async def moex_orderbook(
     bids = []
     asks = []
     for row in rows:
-        entry = dict(zip(cols, row))
+        entry = dict(zip(cols, row, strict=False))
         item = {"price": entry.get("PRICE"), "quantity": entry.get("QUANTITY")}
         if entry.get("BUYSELL") == "B":
             bids.append(item)
@@ -163,7 +163,7 @@ async def moex_trades(
     market: str = "shares",
     engine: str = "stock",
     limit: int = 50,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Get recent trades for a MOEX ticker."""
     key = make_cache_key("moex", "trades", ticker, board, limit)
     cached = cache_get(key)
@@ -183,7 +183,7 @@ async def moex_trades(
 
     trades = []
     for row in rows:
-        t = dict(zip(cols, row))
+        t = dict(zip(cols, row, strict=False))
         trades.append({
             "trade_no": t.get("TRADENO"),
             "time": t.get("TRADETIME", ""),
@@ -201,9 +201,9 @@ async def moex_trades(
 async def moex_index(
     index_id: str = "IMOEX",
     limit: int = 100,
-    from_date: Optional[str] = None,
-    till_date: Optional[str] = None,
-) -> Dict[str, Any]:
+    from_date: str | None = None,
+    till_date: str | None = None,
+) -> dict[str, Any]:
     """Get MOEX index analytics (IMOEX, RTSI, etc.)."""
     key = make_cache_key("moex", "index", index_id, limit, from_date)
     cached = cache_get(key)
@@ -211,7 +211,7 @@ async def moex_index(
         return cached
 
     url = f"{MOEX_BASE}/statistics/engines/stock/markets/index/analytics/{index_id}.json"
-    params: Dict[str, Any] = {"iss.meta": "off", "limit": limit}
+    params: dict[str, Any] = {"iss.meta": "off", "limit": limit}
     if from_date:
         params["from"] = from_date
     if till_date:
@@ -227,7 +227,7 @@ async def moex_index(
 
     analytics = []
     for row in rows:
-        a = dict(zip(cols, row))
+        a = dict(zip(cols, row, strict=False))
         analytics.append(a)
 
     result = {"index_id": index_id, "analytics": analytics, "provider": "moex_iss"}
@@ -238,7 +238,7 @@ async def moex_index(
 async def moex_futures_oi(
     ticker: str,
     limit: int = 50,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Get futures open interest from MOEX."""
     key = make_cache_key("moex", "futures_oi", ticker, limit)
     cached = cache_get(key)
@@ -258,7 +258,7 @@ async def moex_futures_oi(
 
     futures_data = {}
     if md_rows:
-        md = dict(zip(md_cols, md_rows[0]))
+        md = dict(zip(md_cols, md_rows[0], strict=False))
         futures_data = {
             "ticker": ticker,
             "last": md.get("LAST"),

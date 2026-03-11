@@ -1,235 +1,436 @@
 <template>
   <div class="page-container custom-scroll">
-    
     <!-- Header -->
     <div class="section-header">
       <div class="header-left">
-        <h1 class="section-title">Детальный анализ режимов</h1>
-        <p class="section-subtitle">Метрики устойчивости, матрицы переходов и сценарное прогнозирование</p>
+        <h1 class="section-title">
+          Детальный анализ режимов
+        </h1>
+        <p class="section-subtitle">
+          Метрики устойчивости, матрицы переходов и сценарное прогнозирование
+        </p>
       </div>
       <div class="header-actions">
-         <div class="glass-pill status-pill">
-            <span class="status-label text-muted">Данные: <b class="text-white">01.11.2025</b></span>
-         </div>
+        <div class="glass-pill status-pill">
+          <span class="status-label text-muted">Данные: <b class="text-white">01.11.2025</b></span>
+        </div>
       </div>
     </div>
 
     <!-- Loading State -->
-    <div v-if="isLoading" class="loading-container">
-        <div class="spinner-large"></div>
-        <p>Загрузка данных режимов...</p>
+    <div
+      v-if="isLoading"
+      class="loading-container"
+    >
+      <div class="spinner-large" />
+      <p>Загрузка данных режимов...</p>
     </div>
 
     <!-- 1. KEY METRICS CARDS -->
-    <div v-else class="grid-3 mb-6">
-        <div 
-            v-for="(stat, i) in regimeStats" 
-            :key="i"
-            :class="['glass-card regime-card', `border-${getRegimeColor(i)}`]"
-        >
-            <div class="card-head">
-                <span :class="['dot', `bg-${getRegimeColor(i)}`]"></span>
-                <h3>Состояние {{ i }}: {{ getRegimeName(i) }}</h3>
-            </div>
-            <div class="card-body">
-                <p class="desc">{{ getRegimeDescription(i) }}</p>
-                <div class="metrics-table" v-if="getRegimeStats(i)">
-                    <div class="m-row">
-                        <span>Количество дней</span> 
-                        <strong>{{ getRegimeStats(i)!.days }}</strong>
-                    </div>
-                    <div class="m-row">
-                        <span>Доля периода</span> 
-                        <strong>{{ (getRegimeStats(i)!.frequency * 100).toFixed(1) }}%</strong>
-                    </div>
-                    <div class="m-row">
-                        <span>Ср. доходность</span> 
-                        <strong :class="getRegimeStats(i)!.meanReturn >= 0 ? 'text-green' : 'text-red'">
-                            {{ (getRegimeStats(i)!.meanReturn * 100).toFixed(3) }}%
-                        </strong>
-                    </div>
-                    <div class="m-row">
-                        <span>Волатильность</span> 
-                        <strong>{{ (getRegimeStats(i)!.volatility * 100).toFixed(3) }}%</strong>
-                    </div>
-                    <div class="m-row">
-                        <span>Устойчивость</span> 
-                        <strong>{{ getRegimeStats(i)!.persistence.toFixed(4) }}</strong>
-                    </div>
-                    <div class="m-row">
-                        <span>Ожид. длительность</span> 
-                        <strong>{{ getRegimeStats(i)!.duration ? getRegimeStats(i)!.duration.toFixed(1) + ' дня' : '∞' }}</strong>
-                    </div>
-                </div>
-            </div>
+    <div
+      v-else
+      class="grid-3 mb-6"
+    >
+      <div 
+        v-for="(stat, i) in regimeStats" 
+        :key="i"
+        :class="['glass-card regime-card', `border-${getRegimeColor(i)}`]"
+      >
+        <div class="card-head">
+          <span :class="['dot', `bg-${getRegimeColor(i)}`]" />
+          <h3>Состояние {{ i }}: {{ getRegimeName(i) }}</h3>
         </div>
+        <div class="card-body">
+          <p class="desc">
+            {{ getRegimeDescription(i) }}
+          </p>
+          <div
+            v-if="getRegimeStats(i)"
+            class="metrics-table"
+          >
+            <div class="m-row">
+              <span>Количество дней</span> 
+              <strong>{{ getRegimeStats(i)!.days }}</strong>
+            </div>
+            <div class="m-row">
+              <span>Доля периода</span> 
+              <strong>{{ (getRegimeStats(i)!.frequency * 100).toFixed(1) }}%</strong>
+            </div>
+            <div class="m-row">
+              <span>Ср. доходность</span> 
+              <strong :class="getRegimeStats(i)!.meanReturn >= 0 ? 'text-green' : 'text-red'">
+                {{ (getRegimeStats(i)!.meanReturn * 100).toFixed(3) }}%
+              </strong>
+            </div>
+            <div class="m-row">
+              <span>Волатильность</span> 
+              <strong>{{ (getRegimeStats(i)!.volatility * 100).toFixed(3) }}%</strong>
+            </div>
+            <div class="m-row">
+              <span>Устойчивость</span> 
+              <strong>{{ getRegimeStats(i)!.persistence.toFixed(4) }}</strong>
+            </div>
+            <div class="m-row">
+              <span>Ожид. длительность</span> 
+              <strong>{{ getRegimeStats(i)!.duration ? getRegimeStats(i)!.duration.toFixed(1) + ' дня' : '∞' }}</strong>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
 
     <!-- 2. TRANSITION & STATIONARY ANALYSIS -->
     <div class="grid-2 mb-6">
-        
-        <!-- Transition Matrix Heatmap -->
-        <div class="glass-card panel">
-            <div class="panel-header">
-                <h3>Матрица переходов</h3>
-            </div>
-            <div class="heatmap-container">
-                <div class="heatmap-grid" v-if="transitionMatrix">
-                    <div class="h-label">От \ К</div>
-                    <div 
-                        v-for="j in transitionMatrix.length" 
-                        :key="j"
-                        :class="['h-col-header', `text-${getRegimeColor(j-1)}`]"
-                    >
-                        {{ getRegimeName(j-1).substring(0, 6) }}
-                    </div>
-
-                    <template v-for="(row, i) in transitionMatrix" :key="i">
-                        <div :class="['h-row-header', `text-${getRegimeColor(i)}`]">
-                            {{ getRegimeName(i).substring(0, 6) }}
-                        </div>
-                        <div 
-                            v-for="(prob, j) in row" 
-                            :key="j"
-                            class="h-cell"
-                            :style="{ background: `rgba(${getRegimeColorRgb(j)}, ${prob * 0.8})` }"
-                        >
-                            {{ prob.toFixed(2) }}
-                        </div>
-                    </template>
-                </div>
-                <div class="analysis-note mt-4">
-                    <p>• <strong>Стабильность</strong> имеет наивысшую инерцию (0.96).<br>• Из <strong>Падения</strong> выход в Рост (25%) вероятнее, чем в Стабильность (8%).</p>
-                </div>
-            </div>
+      <!-- Transition Matrix Heatmap -->
+      <div class="glass-card panel">
+        <div class="panel-header">
+          <h3>Матрица переходов</h3>
         </div>
+        <div class="heatmap-container">
+          <div
+            v-if="transitionMatrix"
+            class="heatmap-grid"
+          >
+            <div class="h-label">
+              От \ К
+            </div>
+            <div 
+              v-for="j in transitionMatrix.length" 
+              :key="j"
+              :class="['h-col-header', `text-${getRegimeColor(j-1)}`]"
+            >
+              {{ getRegimeName(j-1).substring(0, 6) }}
+            </div>
 
-        <!-- Stationary Distribution & Forecast -->
-        <div class="glass-card panel flex-col">
-            <div class="panel-header">
-                <h3>Прогноз вероятностей</h3>
-                <span class="sub-label">Начальное состояние: <b>Рост</b></span>
-            </div>
-            
-            <div class="table-wrapper">
-                <table class="glass-table">
-                    <thead v-if="transitionMatrix">
-                        <tr>
-                            <th class="text-left pl-2">Горизонт</th>
-                            <th 
-                                v-for="(stat, i) in regimeStats" 
-                                :key="i"
-                                :class="[`text-${getRegimeColor(i)}`, 'text-right']"
-                            >
-                                P({{ getRegimeName(i).substring(0, 4) }})
-                            </th>
-                        </tr>
-                    </thead>
-                    <tbody v-if="transitionMatrix && stationaryDistribution.length > 0">
-                        <tr v-for="horizon in [1, 5, 10]" :key="horizon">
-                            <td class="pl-2">{{ horizon }} {{ horizon === 1 ? 'день' : 'дней' }}</td>
-                            <td 
-                                v-for="(prob, i) in computeForecast(horizon)" 
-                                :key="i"
-                                class="text-right"
-                            >
-                                {{ (prob * 100).toFixed(1) }}%
-                            </td>
-                        </tr>
-                        <tr class="stationary">
-                            <td class="pl-2 text-orange font-bold">∞ (Долгосрочный)</td>
-                            <td 
-                                v-for="(prob, i) in stationaryDistribution" 
-                                :key="i"
-                                class="text-right font-bold text-orange"
-                            >
-                                {{ (prob * 100).toFixed(1) }}%
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-            
-            <div class="chart-mini mt-4">
-                <div class="chart-label-sm">Сходимость к стационарному состоянию</div>
-                <svg viewBox="0 0 400 60" class="svg-curves">
-                     <!-- Simplified curves showing convergence -->
-                     <path d="M0,50 Q100,45 200,30 T400,10" fill="none" stroke="#3b82f6" stroke-width="2"/>
-                     <path d="M0,10 Q100,20 200,30 T400,45" fill="none" stroke="#4ade80" stroke-width="2"/>
-                     <line x1="0" y1="10" x2="400" y2="10" stroke="rgba(255,255,255,0.1)" stroke-dasharray="4"/>
-                     <line x1="0" y1="50" x2="400" y2="50" stroke="rgba(255,255,255,0.1)" stroke-dasharray="4"/>
-                </svg>
-            </div>
+            <template
+              v-for="(row, i) in transitionMatrix"
+              :key="i"
+            >
+              <div :class="['h-row-header', `text-${getRegimeColor(i)}`]">
+                {{ getRegimeName(i).substring(0, 6) }}
+              </div>
+              <div 
+                v-for="(prob, j) in row" 
+                :key="j"
+                class="h-cell"
+                :style="{ background: `rgba(${getRegimeColorRgb(j)}, ${prob * 0.8})` }"
+              >
+                {{ prob.toFixed(2) }}
+              </div>
+            </template>
+          </div>
+          <div class="analysis-note mt-4">
+            <p>• <strong>Стабильность</strong> имеет наивысшую инерцию (0.96).<br>• Из <strong>Падения</strong> выход в Рост (25%) вероятнее, чем в Стабильность (8%).</p>
+          </div>
         </div>
+      </div>
 
+      <!-- Stationary Distribution & Forecast -->
+      <div class="glass-card panel flex-col">
+        <div class="panel-header">
+          <h3>Прогноз вероятностей</h3>
+          <span class="sub-label">Начальное состояние: <b>Рост</b></span>
+        </div>
+            
+        <div class="table-wrapper">
+          <table class="glass-table">
+            <thead v-if="transitionMatrix">
+              <tr>
+                <th class="text-left pl-2">
+                  Горизонт
+                </th>
+                <th 
+                  v-for="(stat, i) in regimeStats" 
+                  :key="i"
+                  :class="[`text-${getRegimeColor(i)}`, 'text-right']"
+                >
+                  P({{ getRegimeName(i).substring(0, 4) }})
+                </th>
+              </tr>
+            </thead>
+            <tbody v-if="transitionMatrix && stationaryDistribution.length > 0">
+              <tr
+                v-for="horizon in [1, 5, 10]"
+                :key="horizon"
+              >
+                <td class="pl-2">
+                  {{ horizon }} {{ horizon === 1 ? 'день' : 'дней' }}
+                </td>
+                <td 
+                  v-for="(prob, i) in computeForecast(horizon)" 
+                  :key="i"
+                  class="text-right"
+                >
+                  {{ (prob * 100).toFixed(1) }}%
+                </td>
+              </tr>
+              <tr class="stationary">
+                <td class="pl-2 text-orange font-bold">
+                  ∞ (Долгосрочный)
+                </td>
+                <td 
+                  v-for="(prob, i) in stationaryDistribution" 
+                  :key="i"
+                  class="text-right font-bold text-orange"
+                >
+                  {{ (prob * 100).toFixed(1) }}%
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+            
+        <div class="chart-mini mt-4">
+          <div class="chart-label-sm">
+            Сходимость к стационарному состоянию
+          </div>
+          <svg
+            viewBox="0 0 400 60"
+            class="svg-curves"
+          >
+            <!-- Simplified curves showing convergence -->
+            <path
+              d="M0,50 Q100,45 200,30 T400,10"
+              fill="none"
+              stroke="#3b82f6"
+              stroke-width="2"
+            />
+            <path
+              d="M0,10 Q100,20 200,30 T400,45"
+              fill="none"
+              stroke="#4ade80"
+              stroke-width="2"
+            />
+            <line
+              x1="0"
+              y1="10"
+              x2="400"
+              y2="10"
+              stroke="rgba(255,255,255,0.1)"
+              stroke-dasharray="4"
+            />
+            <line
+              x1="0"
+              y1="50"
+              x2="400"
+              y2="50"
+              stroke="rgba(255,255,255,0.1)"
+              stroke-dasharray="4"
+            />
+          </svg>
+        </div>
+      </div>
     </div>
 
     <!-- 3. VISUALIZATION: HISTOGRAMS & COMPARISON -->
     <div class="grid-2 mb-6">
-        
-        <!-- Distribution Histograms -->
-        <div class="glass-card panel">
-            <div class="panel-header">
-                <h3>Распределение доходностей по режимам</h3>
-            </div>
-            <div class="chart-container-rect">
-                <svg viewBox="0 0 600 250" class="svg-chart">
-                    <!-- Axes -->
-                    <line x1="50" y1="220" x2="550" y2="220" stroke="rgba(255,255,255,0.1)" />
-                    <line x1="300" y1="20" x2="300" y2="220" stroke="rgba(255,255,255,0.1)" stroke-dasharray="4" /> <!-- Zero line -->
-
-                    <!-- Stability (Blue) - Narrow, Tall, Centered -->
-                    <path d="M150,220 Q300,-100 450,220" fill="rgba(59, 130, 246, 0.1)" stroke="#3b82f6" stroke-width="2" />
-                    
-                    <!-- Decline (Red) - Wide, Shifted Left -->
-                    <path d="M50,220 Q200,50 400,220" fill="rgba(248, 113, 113, 0.1)" stroke="#f87171" stroke-width="2" />
-                    
-                    <!-- Growth (Green) - Shifted Right -->
-                    <path d="M200,220 Q380,50 500,220" fill="rgba(74, 222, 128, 0.1)" stroke="#4ade80" stroke-width="2" />
-                    
-                    <!-- Labels -->
-                    <text x="310" y="30" fill="#3b82f6" font-size="10" font-weight="600">Стабильность (Низкая σ)</text>
-                    <text x="100" y="100" fill="#f87171" font-size="10" font-weight="600">Падение (Отрицательная μ)</text>
-                    <text x="450" y="100" fill="#4ade80" font-size="10" font-weight="600">Рост (Положительная μ)</text>
-                </svg>
-            </div>
-            <p class="chart-caption">Распределение изменений доходностей. Режим «Падение» имеет "толстый хвост" слева.</p>
+      <!-- Distribution Histograms -->
+      <div class="glass-card panel">
+        <div class="panel-header">
+          <h3>Распределение доходностей по режимам</h3>
         </div>
+        <div class="chart-container-rect">
+          <svg
+            viewBox="0 0 600 250"
+            class="svg-chart"
+          >
+            <!-- Axes -->
+            <line
+              x1="50"
+              y1="220"
+              x2="550"
+              y2="220"
+              stroke="rgba(255,255,255,0.1)"
+            />
+            <line
+              x1="300"
+              y1="20"
+              x2="300"
+              y2="220"
+              stroke="rgba(255,255,255,0.1)"
+              stroke-dasharray="4"
+            /> <!-- Zero line -->
 
-        <!-- Comparative Bars -->
-        <div class="glass-card panel">
-             <div class="panel-header">
-                <h3>Характеристики режимов (Волатильность vs Доходность)</h3>
-            </div>
-             <div class="chart-container-rect">
-                <svg viewBox="0 0 500 250" class="svg-chart">
-                    <!-- Bar Groups -->
-                    <!-- Stability -->
-                    <rect x="50" y="150" width="40" height="50" fill="#3b82f6" opacity="0.8" rx="4" /> <!-- Vol -->
-                    <rect x="100" y="195" width="40" height="5" fill="#3b82f6" opacity="0.3" rx="4" /> <!-- Ret -->
+            <!-- Stability (Blue) - Narrow, Tall, Centered -->
+            <path
+              d="M150,220 Q300,-100 450,220"
+              fill="rgba(59, 130, 246, 0.1)"
+              stroke="#3b82f6"
+              stroke-width="2"
+            />
                     
-                    <!-- Decline -->
-                    <rect x="200" y="50" width="40" height="150" fill="#f87171" opacity="0.8" rx="4" /> <!-- Vol High -->
-                    <rect x="250" y="200" width="40" height="40" fill="#f87171" opacity="0.3" rx="4" /> <!-- Ret Negative (down) -->
+            <!-- Decline (Red) - Wide, Shifted Left -->
+            <path
+              d="M50,220 Q200,50 400,220"
+              fill="rgba(248, 113, 113, 0.1)"
+              stroke="#f87171"
+              stroke-width="2"
+            />
                     
-                    <!-- Growth -->
-                    <rect x="350" y="100" width="40" height="100" fill="#4ade80" opacity="0.8" rx="4" /> <!-- Vol Med -->
-                    <rect x="400" y="160" width="40" height="40" fill="#4ade80" opacity="0.3" rx="4" /> <!-- Ret Positive -->
-
-                    <!-- Labels -->
-                    <text x="95" y="240" fill="rgba(255,255,255,0.6)" text-anchor="middle" font-size="12">Стабильность</text>
-                    <text x="245" y="240" fill="rgba(255,255,255,0.6)" text-anchor="middle" font-size="12">Падение</text>
-                    <text x="395" y="240" fill="rgba(255,255,255,0.6)" text-anchor="middle" font-size="12">Рост</text>
-
-                    <!-- Legend -->
-                    <rect x="340" y="20" width="10" height="10" fill="#fff" opacity="0.8" rx="2" /> <text x="360" y="30" fill="#fff" font-size="10">Волатильность (σ)</text>
-                    <rect x="340" y="40" width="10" height="10" fill="#fff" opacity="0.3" rx="2" /> <text x="360" y="50" fill="#fff" font-size="10">Доходность (|μ|)</text>
-                </svg>
-            </div>
+            <!-- Growth (Green) - Shifted Right -->
+            <path
+              d="M200,220 Q380,50 500,220"
+              fill="rgba(74, 222, 128, 0.1)"
+              stroke="#4ade80"
+              stroke-width="2"
+            />
+                    
+            <!-- Labels -->
+            <text
+              x="310"
+              y="30"
+              fill="#3b82f6"
+              font-size="10"
+              font-weight="600"
+            >Стабильность (Низкая σ)</text>
+            <text
+              x="100"
+              y="100"
+              fill="#f87171"
+              font-size="10"
+              font-weight="600"
+            >Падение (Отрицательная μ)</text>
+            <text
+              x="450"
+              y="100"
+              fill="#4ade80"
+              font-size="10"
+              font-weight="600"
+            >Рост (Положительная μ)</text>
+          </svg>
         </div>
+        <p class="chart-caption">
+          Распределение изменений доходностей. Режим «Падение» имеет "толстый хвост" слева.
+        </p>
+      </div>
 
+      <!-- Comparative Bars -->
+      <div class="glass-card panel">
+        <div class="panel-header">
+          <h3>Характеристики режимов (Волатильность vs Доходность)</h3>
+        </div>
+        <div class="chart-container-rect">
+          <svg
+            viewBox="0 0 500 250"
+            class="svg-chart"
+          >
+            <!-- Bar Groups -->
+            <!-- Stability -->
+            <rect
+              x="50"
+              y="150"
+              width="40"
+              height="50"
+              fill="#3b82f6"
+              opacity="0.8"
+              rx="4"
+            /> <!-- Vol -->
+            <rect
+              x="100"
+              y="195"
+              width="40"
+              height="5"
+              fill="#3b82f6"
+              opacity="0.3"
+              rx="4"
+            /> <!-- Ret -->
+                    
+            <!-- Decline -->
+            <rect
+              x="200"
+              y="50"
+              width="40"
+              height="150"
+              fill="#f87171"
+              opacity="0.8"
+              rx="4"
+            /> <!-- Vol High -->
+            <rect
+              x="250"
+              y="200"
+              width="40"
+              height="40"
+              fill="#f87171"
+              opacity="0.3"
+              rx="4"
+            /> <!-- Ret Negative (down) -->
+                    
+            <!-- Growth -->
+            <rect
+              x="350"
+              y="100"
+              width="40"
+              height="100"
+              fill="#4ade80"
+              opacity="0.8"
+              rx="4"
+            /> <!-- Vol Med -->
+            <rect
+              x="400"
+              y="160"
+              width="40"
+              height="40"
+              fill="#4ade80"
+              opacity="0.3"
+              rx="4"
+            /> <!-- Ret Positive -->
+
+            <!-- Labels -->
+            <text
+              x="95"
+              y="240"
+              fill="rgba(255,255,255,0.6)"
+              text-anchor="middle"
+              font-size="12"
+            >Стабильность</text>
+            <text
+              x="245"
+              y="240"
+              fill="rgba(255,255,255,0.6)"
+              text-anchor="middle"
+              font-size="12"
+            >Падение</text>
+            <text
+              x="395"
+              y="240"
+              fill="rgba(255,255,255,0.6)"
+              text-anchor="middle"
+              font-size="12"
+            >Рост</text>
+
+            <!-- Legend -->
+            <rect
+              x="340"
+              y="20"
+              width="10"
+              height="10"
+              fill="#fff"
+              opacity="0.8"
+              rx="2"
+            /> <text
+              x="360"
+              y="30"
+              fill="#fff"
+              font-size="10"
+            >Волатильность (σ)</text>
+            <rect
+              x="340"
+              y="40"
+              width="10"
+              height="10"
+              fill="#fff"
+              opacity="0.3"
+              rx="2"
+            /> <text
+              x="360"
+              y="50"
+              fill="#fff"
+              font-size="10"
+            >Доходность (|μ|)</text>
+          </svg>
+        </div>
+      </div>
     </div>
-    
   </div>
 </template>
 

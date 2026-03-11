@@ -1,14 +1,18 @@
 <template>
   <div class="page-container custom-scrollbar">
-
     <!-- Header & Tabs -->
     <div class="section-header flex-col md:flex-row md:items-center gap-6">
       <div class="flex items-center gap-4">
         <div :class="`icon-box ${getAccentColor()}`">
-          <component :is="getTabIcon()" class="w-6 h-6" />
+          <component
+            :is="getTabIcon()"
+            class="w-6 h-6"
+          />
         </div>
         <div>
-          <h1 class="section-title font-anton">АНАЛИТИЧЕСКИЙ ХАБ</h1>
+          <h1 class="section-title font-anton">
+            АНАЛИТИЧЕСКИЙ ХАБ
+          </h1>
           <p class="section-subtitle">
             <span v-if="activeTab === 'AI'">ПРОДВИНУТАЯ АНАЛИТИКА РЫНКА НА ОСНОВЕ ИИ</span>
             <span v-else-if="activeTab === 'Quant'">КОЛИЧЕСТВЕННЫЕ МЕТРИКИ И МОДЕЛИРОВАНИЕ РИСКОВ</span>
@@ -19,20 +23,20 @@
 
       <div class="tab-group">
         <button
-          @click="activeTab = 'AI'"
           :class="['tab-btn', { active: activeTab === 'AI' }]"
+          @click="activeTab = 'AI'"
         >
           <BrainIcon class="w-3.5 h-3.5" /> AI АНАЛИЗ
         </button>
         <button
-          @click="activeTab = 'Quant'"
           :class="['tab-btn', { active: activeTab === 'Quant' }]"
+          @click="activeTab = 'Quant'"
         >
           <CalculatorIcon class="w-3.5 h-3.5" /> КОЛИЧЕСТВЕННАЯ АНАЛИТИКА
         </button>
         <button
-          @click="activeTab = 'Finance'"
           :class="['tab-btn', { active: activeTab === 'Finance' }]"
+          @click="activeTab = 'Finance'"
         >
           <PieChartIcon class="w-3.5 h-3.5" /> ФИНАНСОВЫЙ АНАЛИЗ
         </button>
@@ -41,28 +45,38 @@
 
 
     <!-- Assets and Instruments Dropdowns for Quantitative Analytics -->
-    <div v-if="activeTab === 'Quant'" class="grid-2 mb-6">
+    <div
+      v-if="activeTab === 'Quant'"
+      class="grid-2 mb-6"
+    >
       <!-- Assets Dropdown -->
-      <div class="relative" data-dropdown-assets>
+      <div
+        class="relative"
+        data-dropdown-assets
+      >
         <button
-          @click="isAssetsOpen = !isAssetsOpen"
           class="dropdown-trigger"
+          @click="isAssetsOpen = !isAssetsOpen"
         >
           <div class="flex items-center gap-3">
             <div class="icon-box-sm icon-blue">
               <ActivityIcon class="w-4 h-4" />
             </div>
             <div>
-              <div class="dropdown-label font-oswald">АКТИВЫ</div>
-              <div class="dropdown-value font-mono">{{ selectedAsset || 'ВЫБЕРИТЕ АКТИВ' }}</div>
+              <div class="dropdown-label font-oswald">
+                АКТИВЫ
+              </div>
+              <div class="dropdown-value font-mono">
+                {{ selectedAsset || 'ВЫБЕРИТЕ АКТИВ' }}
+              </div>
             </div>
           </div>
           <ChevronDownIcon :class="['dropdown-chevron', { open: isAssetsOpen }]" />
         </button>
         <div
           v-if="isAssetsOpen"
-          @click.stop
           class="absolute top-full left-0 mt-2 w-full bg-black/95 backdrop-blur-xl border border-white/10 rounded-xl shadow-2xl z-50 max-h-[500px] overflow-hidden flex flex-col"
+          @click.stop
         >
           <!-- Search Input -->
           <div class="p-3 border-b border-white/10 bg-white/5">
@@ -70,19 +84,25 @@
               <SearchIcon class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
               <input
                 v-model="assetSearchQuery"
-                @click.stop
                 type="text"
                 placeholder="Поиск актива..."
                 class="w-full pl-10 pr-3 py-2 bg-black/40 border border-white/10 rounded-lg text-sm text-white placeholder-gray-500 focus:outline-none focus:border-blue-500/50 transition-colors"
-              />
+                @click.stop
+              >
             </div>
           </div>
           
           <!-- Assets List -->
           <div class="overflow-y-auto custom-scrollbar flex-1">
             <div class="p-2">
-              <template v-for="(assets, type) in filteredAssetsByType" :key="type">
-                <div v-if="assets.length > 0" class="mb-4">
+              <template
+                v-for="(assets, type) in filteredAssetsByType"
+                :key="type"
+              >
+                <div
+                  v-if="assets.length > 0"
+                  class="mb-4"
+                >
                   <!-- Category Header -->
                   <div class="px-3 py-2 text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">
                     {{ assetTypeLabels[type as keyof typeof assetTypeLabels] }}
@@ -92,21 +112,25 @@
                   <div
                     v-for="asset in assets"
                     :key="asset.symbol"
-                    @click="selectAsset(asset.symbol)"
                     :class="`flex items-center justify-between gap-3 px-4 py-2.5 rounded-lg text-sm transition-colors cursor-pointer ${
                       selectedAsset === asset.symbol
                         ? 'bg-blue-500/20 text-blue-300 border border-blue-500/30'
                         : 'text-gray-300 hover:bg-white/5 hover:text-white border border-transparent'
                     }`"
+                    @click="selectAsset(asset.symbol)"
                   >
                     <div class="flex-1 min-w-0">
-                      <div class="font-medium truncate">{{ asset.name }}</div>
+                      <div class="font-medium truncate">
+                        {{ asset.name }}
+                      </div>
                     </div>
-                    <span :class="`text-xs font-mono px-2 py-0.5 rounded ${
-                      selectedAsset === asset.symbol
-                        ? 'bg-blue-500/20 text-blue-300 border border-blue-500/30'
-                        : 'bg-white/5 text-gray-500 border border-white/5'
-                    }`">
+                    <span
+                      :class="`text-xs font-mono px-2 py-0.5 rounded ${
+                        selectedAsset === asset.symbol
+                          ? 'bg-blue-500/20 text-blue-300 border border-blue-500/30'
+                          : 'bg-white/5 text-gray-500 border border-white/5'
+                      }`"
+                    >
                       {{ asset.symbol }}
                     </span>
                   </div>
@@ -114,7 +138,10 @@
               </template>
               
               <!-- No Results -->
-              <div v-if="Object.values(filteredAssetsByType).every(arr => arr.length === 0)" class="py-8 text-center text-gray-500 text-sm">
+              <div
+                v-if="Object.values(filteredAssetsByType).every(arr => arr.length === 0)"
+                class="py-8 text-center text-gray-500 text-sm"
+              >
                 Активы не найдены
               </div>
             </div>
@@ -123,50 +150,66 @@
       </div>
 
       <!-- Instruments Dropdown -->
-      <div class="relative" data-dropdown-instruments>
+      <div
+        class="relative"
+        data-dropdown-instruments
+      >
         <button
-          @click="isInstrumentsOpen = !isInstrumentsOpen"
           class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl hover:border-emerald-500/50 transition-all flex items-center justify-between text-left group"
+          @click="isInstrumentsOpen = !isInstrumentsOpen"
         >
           <div class="flex items-center gap-3">
             <div class="p-2 rounded-lg bg-emerald-500/20 text-emerald-400">
               <LayoutTemplateIcon class="w-4 h-4" />
             </div>
             <div>
-              <div class="text-sm font-bold text-white">Инструменты</div>
-              <div class="text-xs text-gray-400">{{ selectedInstrument?.label || 'Выберите инструмент' }}</div>
+              <div class="text-sm font-bold text-white">
+                Инструменты
+              </div>
+              <div class="text-xs text-gray-400">
+                {{ selectedInstrument?.label || 'Выберите инструмент' }}
+              </div>
             </div>
           </div>
           <ChevronDownIcon :class="`w-4 h-4 text-gray-400 transition-transform ${isInstrumentsOpen ? 'rotate-180' : ''}`" />
         </button>
         <div
           v-if="isInstrumentsOpen"
-          @click.stop
           class="absolute top-full left-0 mt-2 w-full bg-black/95 backdrop-blur-xl border border-white/10 rounded-xl shadow-2xl z-50 max-h-96 overflow-y-auto custom-scrollbar"
+          @click.stop
         >
           <div class="p-2">
             <div
               v-for="tool in quantitativeTools"
               :key="tool.id"
-              @click="selectInstrument(tool)"
               :class="`flex items-center gap-3 px-4 py-3 rounded-lg text-sm transition-colors cursor-pointer ${
                 selectedInstrument?.id === tool.id
                   ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
                   : 'text-gray-300 hover:bg-white/5 hover:text-white border border-transparent'
               }`"
+              @click="selectInstrument(tool)"
             >
               <div :class="`p-1.5 rounded-lg ${selectedInstrument?.id === tool.id ? 'bg-emerald-500/30' : 'bg-white/5'}`">
-                <component :is="tool.icon" :class="`w-4 h-4 ${selectedInstrument?.id === tool.id ? 'text-emerald-300' : 'text-gray-400'}`" />
+                <component
+                  :is="tool.icon"
+                  :class="`w-4 h-4 ${selectedInstrument?.id === tool.id ? 'text-emerald-300' : 'text-gray-400'}`"
+                />
               </div>
               <div class="flex-1">
-                <div class="font-medium">{{ tool.label }}</div>
-                <div class="text-xs text-gray-500">{{ tool.description }}</div>
+                <div class="font-medium">
+                  {{ tool.label }}
+                </div>
+                <div class="text-xs text-gray-500">
+                  {{ tool.description }}
+                </div>
               </div>
-              <span :class="`text-xs font-mono px-2 py-0.5 rounded ${
-                selectedInstrument?.id === tool.id
-                  ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
-                  : 'bg-white/5 text-gray-500 border border-white/5'
-              }`">
+              <span
+                :class="`text-xs font-mono px-2 py-0.5 rounded ${
+                  selectedInstrument?.id === tool.id
+                    ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
+                    : 'bg-white/5 text-gray-500 border border-white/5'
+                }`"
+              >
                 {{ tool.code }}
               </span>
             </div>
@@ -177,12 +220,17 @@
 
     <!-- Main Chart Area -->
     <div class="flex-1 min-h-[400px] p-6 rounded-2xl bg-black/20 border border-white/5 relative flex flex-col lg:flex-row gap-6">
-      
       <!-- Quantitative Analysis Tool Content -->
-      <div v-if="activeTab === 'Quant' && selectedInstrument" class="w-full flex flex-col">
+      <div
+        v-if="activeTab === 'Quant' && selectedInstrument"
+        class="w-full flex flex-col"
+      >
         <div class="flex justify-between items-center mb-6">
           <h3 class="text-lg font-bold text-white flex items-center gap-2">
-            <component :is="selectedInstrument.icon" class="w-5 h-5 text-emerald-400" />
+            <component
+              :is="selectedInstrument.icon"
+              class="w-5 h-5 text-emerald-400"
+            />
             <span>{{ selectedInstrument.label }}</span>
           </h3>
           <span class="text-xs font-mono text-emerald-400 bg-emerald-500/10 px-2 py-1 rounded border border-emerald-500/20">
@@ -191,103 +239,191 @@
         </div>
         
         <!-- Volatility Surface -->
-        <div v-if="selectedInstrument.id === 'volatility-surface'" class="flex-1 flex flex-col gap-4">
-          <div v-if="!selectedAsset" class="flex-1 flex items-center justify-center">
+        <div
+          v-if="selectedInstrument.id === 'volatility-surface'"
+          class="flex-1 flex flex-col gap-4"
+        >
+          <div
+            v-if="!selectedAsset"
+            class="flex-1 flex items-center justify-center"
+          >
             <div class="text-center">
               <ActivityIcon class="w-16 h-16 text-gray-500 mx-auto mb-4 opacity-50" />
-              <p class="text-gray-400">Выберите актив для анализа</p>
+              <p class="text-gray-400">
+                Выберите актив для анализа
+              </p>
             </div>
           </div>
-          <div v-else class="flex-1 flex flex-col gap-4">
+          <div
+            v-else
+            class="flex-1 flex flex-col gap-4"
+          >
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
               <div class="p-4 rounded-xl bg-white/5 border border-white/10">
-                <div class="text-xs text-gray-400 mb-2">Актив</div>
-                <div class="text-lg font-bold text-white">{{ selectedAsset }}</div>
+                <div class="text-xs text-gray-400 mb-2">
+                  Актив
+                </div>
+                <div class="text-lg font-bold text-white">
+                  {{ selectedAsset }}
+                </div>
               </div>
               <div class="p-4 rounded-xl bg-white/5 border border-white/10">
-                <div class="text-xs text-gray-400 mb-2">Текущая волатильность</div>
-                <div class="text-2xl font-bold text-emerald-400">14.2%</div>
+                <div class="text-xs text-gray-400 mb-2">
+                  Текущая волатильность
+                </div>
+                <div class="text-2xl font-bold text-emerald-400">
+                  14.2%
+                </div>
               </div>
             </div>
             <div class="flex-1 min-h-[300px] bg-black/20 rounded-xl p-4">
-              <v-chart class="w-full h-full" :option="volatilitySurfaceOption" autoresize />
+              <v-chart
+                class="w-full h-full"
+                :option="volatilitySurfaceOption"
+                autoresize
+              />
             </div>
           </div>
         </div>
 
         <!-- Volatility Surface (by Greeks) -->
-        <div v-else-if="selectedInstrument.id === 'volatility-surface-greeks'" class="flex-1 flex flex-col gap-4">
-          <div v-if="!selectedAsset" class="flex-1 flex items-center justify-center">
+        <div
+          v-else-if="selectedInstrument.id === 'volatility-surface-greeks'"
+          class="flex-1 flex flex-col gap-4"
+        >
+          <div
+            v-if="!selectedAsset"
+            class="flex-1 flex items-center justify-center"
+          >
             <div class="text-center">
               <ActivityIcon class="w-16 h-16 text-gray-500 mx-auto mb-4 opacity-50" />
-              <p class="text-gray-400">Выберите актив для анализа</p>
+              <p class="text-gray-400">
+                Выберите актив для анализа
+              </p>
             </div>
           </div>
-          <div v-else class="flex-1 flex flex-col gap-4">
+          <div
+            v-else
+            class="flex-1 flex flex-col gap-4"
+          >
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
               <div class="p-4 rounded-xl bg-white/5 border border-white/10">
-                <div class="text-xs text-gray-400 mb-2">Актив</div>
-                <div class="text-lg font-bold text-white">{{ selectedAsset }}</div>
+                <div class="text-xs text-gray-400 mb-2">
+                  Актив
+                </div>
+                <div class="text-lg font-bold text-white">
+                  {{ selectedAsset }}
+                </div>
               </div>
               <div class="p-4 rounded-xl bg-white/5 border border-white/10">
-                <div class="text-xs text-gray-400 mb-2">Текущая волатильность</div>
-                <div class="text-2xl font-bold text-emerald-400">14.2%</div>
+                <div class="text-xs text-gray-400 mb-2">
+                  Текущая волатильность
+                </div>
+                <div class="text-2xl font-bold text-emerald-400">
+                  14.2%
+                </div>
               </div>
             </div>
             <div class="flex-1 min-h-[300px] bg-black/20 rounded-xl p-4">
-              <v-chart class="w-full h-full" :option="volatilitySurfaceOption" autoresize />
+              <v-chart
+                class="w-full h-full"
+                :option="volatilitySurfaceOption"
+                autoresize
+              />
             </div>
           </div>
         </div>
 
         <!-- WAVE_σ.9 Quant Model -->
-        <div v-else-if="selectedInstrument.id === 'wave-sigma'" class="flex-1 flex flex-col gap-4">
-          <div ref="waveSigmaContainer" class="flex-1 min-h-[400px] bg-black rounded-xl overflow-hidden relative">
+        <div
+          v-else-if="selectedInstrument.id === 'wave-sigma'"
+          class="flex-1 flex flex-col gap-4"
+        >
+          <div
+            ref="waveSigmaContainer"
+            class="flex-1 min-h-[400px] bg-black rounded-xl overflow-hidden relative"
+          >
             <!-- 3D Canvas will be mounted here -->
           </div>
           <!-- Stats Panel -->
           <div class="grid grid-cols-4 gap-4">
             <div class="p-4 rounded-xl bg-white/5 border border-white/10">
-              <div class="text-xs text-gray-400 mb-1">Режим</div>
+              <div class="text-xs text-gray-400 mb-1">
+                Режим
+              </div>
               <div :class="`text-lg font-bold ${waveSigmaRegime === 'TRENDING' ? 'text-green-400' : 'text-red-400'}`">
                 {{ waveSigmaRegime }}
               </div>
             </div>
             <div class="p-4 rounded-xl bg-white/5 border border-white/10">
-              <div class="text-xs text-gray-400 mb-1">Equity</div>
+              <div class="text-xs text-gray-400 mb-1">
+                Equity
+              </div>
               <div :class="`text-lg font-bold ${waveSigmaEquity > 1000 ? 'text-green-400' : 'text-red-400'}`">
                 ${{ waveSigmaEquity.toFixed(2) }}
               </div>
             </div>
             <div class="p-4 rounded-xl bg-white/5 border border-white/10">
-              <div class="text-xs text-gray-400 mb-1">Sharpe</div>
-              <div class="text-lg font-bold text-white">2.1</div>
+              <div class="text-xs text-gray-400 mb-1">
+                Sharpe
+              </div>
+              <div class="text-lg font-bold text-white">
+                2.1
+              </div>
             </div>
             <div class="p-4 rounded-xl bg-white/5 border border-white/10">
-              <div class="text-xs text-gray-400 mb-1">Период</div>
-              <div class="text-lg font-bold text-cyan-400">{{ formatWaveSigmaElapsed }}</div>
+              <div class="text-xs text-gray-400 mb-1">
+                Период
+              </div>
+              <div class="text-lg font-bold text-cyan-400">
+                {{ formatWaveSigmaElapsed }}
+              </div>
             </div>
           </div>
         </div>
 
         <!-- Other Tools Placeholder -->
-        <div v-else class="flex-1 flex items-center justify-center">
+        <div
+          v-else
+          class="flex-1 flex items-center justify-center"
+        >
           <div class="text-center">
-            <component :is="selectedInstrument.icon" class="w-16 h-16 text-emerald-400 mx-auto mb-4 opacity-50" />
-            <h4 class="text-xl font-bold text-white mb-2">{{ selectedInstrument.label }}</h4>
-            <p class="text-gray-400">{{ selectedInstrument.description }}</p>
-            <p v-if="!selectedAsset" class="text-xs text-gray-500 mt-4">Выберите актив для анализа</p>
-            <div v-else class="mt-4 p-4 rounded-xl bg-white/5 border border-white/10 inline-block">
-              <div class="text-xs text-gray-400 mb-1">Актив</div>
-              <div class="text-lg font-bold text-white">{{ selectedAsset }}</div>
+            <component
+              :is="selectedInstrument.icon"
+              class="w-16 h-16 text-emerald-400 mx-auto mb-4 opacity-50"
+            />
+            <h4 class="text-xl font-bold text-white mb-2">
+              {{ selectedInstrument.label }}
+            </h4>
+            <p class="text-gray-400">
+              {{ selectedInstrument.description }}
+            </p>
+            <p
+              v-if="!selectedAsset"
+              class="text-xs text-gray-500 mt-4"
+            >
+              Выберите актив для анализа
+            </p>
+            <div
+              v-else
+              class="mt-4 p-4 rounded-xl bg-white/5 border border-white/10 inline-block"
+            >
+              <div class="text-xs text-gray-400 mb-1">
+                Актив
+              </div>
+              <div class="text-lg font-bold text-white">
+                {{ selectedAsset }}
+              </div>
             </div>
           </div>
         </div>
-
       </div>
 
       <!-- Default Chart Container (for AI and Finance tabs) -->
-      <div v-else :class="`flex-1 flex flex-col ${activeTab === 'Finance' ? 'lg:w-2/3' : 'w-full'}`">
+      <div
+        v-else
+        :class="`flex-1 flex flex-col ${activeTab === 'Finance' ? 'lg:w-2/3' : 'w-full'}`"
+      >
         <div class="flex justify-between items-center mb-6">
           <h3 class="text-lg font-bold text-white flex items-center gap-2">
             <BarChart2Icon class="w-4 h-4 text-gray-400" />
@@ -295,29 +431,56 @@
             <span v-else-if="activeTab === 'Quant'">Выберите инструмент количественного анализа</span>
             <span v-else>История производительности портфеля</span>
           </h3>
-          <div v-if="activeTab === 'Quant' && !selectedInstrument" class="flex gap-2">
+          <div
+            v-if="activeTab === 'Quant' && !selectedInstrument"
+            class="flex gap-2"
+          >
             <span class="text-xs text-gray-500">Выберите инструмент из меню выше</span>
           </div>
-          <span v-if="activeTab === 'Finance'" class="text-xs font-mono text-emerald-400 bg-emerald-500/10 px-2 py-1 rounded border border-emerald-500/20">+15.4% За всё время</span>
+          <span
+            v-if="activeTab === 'Finance'"
+            class="text-xs font-mono text-emerald-400 bg-emerald-500/10 px-2 py-1 rounded border border-emerald-500/20"
+          >+15.4% За всё время</span>
         </div>
         
-        <div v-if="activeTab !== 'Quant' || !selectedInstrument" class="flex-1 min-h-[300px]">
-          <v-chart class="w-full h-full" :option="chartOption" autoresize />
+        <div
+          v-if="activeTab !== 'Quant' || !selectedInstrument"
+          class="flex-1 min-h-[300px]"
+        >
+          <v-chart
+            class="w-full h-full"
+            :option="chartOption"
+            autoresize
+          />
         </div>
       </div>
 
       <!-- Finance Side Panel (Pie Chart) -->
-      <div v-if="activeTab === 'Finance'" class="lg:w-1/3 bg-white/5 rounded-xl p-4 border border-white/5 flex flex-col">
+      <div
+        v-if="activeTab === 'Finance'"
+        class="lg:w-1/3 bg-white/5 rounded-xl p-4 border border-white/5 flex flex-col"
+      >
         <h3 class="text-sm font-bold text-white mb-4 flex items-center gap-2">
           <PieChartIcon class="w-3.5 h-3.5 text-gray-400" /> Распределение активов
         </h3>
         <div class="flex-1 min-h-[200px] relative">
-          <v-chart class="w-full h-full" :option="pieOption" autoresize />
+          <v-chart
+            class="w-full h-full"
+            :option="pieOption"
+            autoresize
+          />
         </div>
         <div class="mt-4 space-y-2">
-          <div v-for="(item, index) in financeData" :key="item.name" class="flex justify-between items-center text-xs">
+          <div
+            v-for="(item, index) in financeData"
+            :key="item.name"
+            class="flex justify-between items-center text-xs"
+          >
             <div class="flex items-center gap-2">
-              <div class="w-2 h-2 rounded-full" :style="{ backgroundColor: COLORS[index] }"></div>
+              <div
+                class="w-2 h-2 rounded-full"
+                :style="{ backgroundColor: COLORS[index] }"
+              />
               <span class="text-gray-300">{{ item.name }}</span>
             </div>
             <span class="text-white font-mono">{{ ((item.value / 1100) * 100).toFixed(0) }}%</span>
@@ -327,17 +490,26 @@
     </div>
 
     <!-- AI Opportunity Banner -->
-    <div v-if="activeTab === 'AI'" class="mt-6 p-6 rounded-2xl bg-gradient-to-r from-indigo-900/40 to-purple-900/40 border border-white/10 flex items-center justify-between">
+    <div
+      v-if="activeTab === 'AI'"
+      class="mt-6 p-6 rounded-2xl bg-gradient-to-r from-indigo-900/40 to-purple-900/40 border border-white/10 flex items-center justify-between"
+    >
       <div class="flex items-center gap-4">
         <div class="p-3 bg-white/10 rounded-xl backdrop-blur-md">
           <TrendingUpIcon class="w-6 h-6 text-white" />
         </div>
         <div>
-          <h3 class="font-bold text-white text-lg">Обнаружена следующая возможность</h3>
-          <p class="text-sm text-gray-400">Gemini выявил дивергенцию на часовом таймфрейме BTC/USDT.</p>
+          <h3 class="font-bold text-white text-lg">
+            Обнаружена следующая возможность
+          </h3>
+          <p class="text-sm text-gray-400">
+            Gemini выявил дивергенцию на часовом таймфрейме BTC/USDT.
+          </p>
         </div>
       </div>
-      <button class="px-6 py-2 bg-white text-black font-bold rounded-xl hover:scale-105 transition-transform shadow-lg shadow-white/10 text-sm">Подробнее</button>
+      <button class="px-6 py-2 bg-white text-black font-bold rounded-xl hover:scale-105 transition-transform shadow-lg shadow-white/10 text-sm">
+        Подробнее
+      </button>
     </div>
   </div>
 </template>

@@ -4,7 +4,7 @@ Crypto Data Service — CoinGecko, CoinGap
 Proxies crypto market data and arbitrage opportunities.
 """
 
-from typing import Optional, Dict, Any, List
+from typing import Any
 
 from src.services.cache_service import cache_get, cache_set, make_cache_key
 from src.services.secrets_service import get_key_sync
@@ -26,14 +26,14 @@ async def coingecko_markets(
     per_page: int = 100,
     page: int = 1,
     order: str = "market_cap_desc"
-) -> List[Dict[str, Any]]:
+) -> list[dict[str, Any]]:
     """Get top crypto markets from CoinGecko."""
     key = make_cache_key("cg", "markets", vs_currency, per_page, page, order)
     cached = cache_get(key)
     if cached is not None:
         return cached
 
-    params: Dict[str, Any] = {
+    params: dict[str, Any] = {
         "vs_currency": vs_currency,
         "order": order,
         "per_page": per_page,
@@ -41,7 +41,7 @@ async def coingecko_markets(
         "sparkline": "true",
         "price_change_percentage": "1h,24h,7d",
     }
-    headers: Dict[str, str] = {}
+    headers: dict[str, str] = {}
     cg_key = _cg_key()
     if cg_key:
         headers["x-cg-demo-api-key"] = cg_key
@@ -61,7 +61,7 @@ async def coingecko_markets(
     return data
 
 
-async def coingecko_coin(coin_id: str) -> Dict[str, Any]:
+async def coingecko_coin(coin_id: str) -> dict[str, Any]:
     """Get detailed coin info from CoinGecko."""
     key = make_cache_key("cg", "coin", coin_id)
     cached = cache_get(key)
@@ -75,7 +75,7 @@ async def coingecko_coin(coin_id: str) -> Dict[str, Any]:
         "community_data": "false",
         "developer_data": "false",
     }
-    headers: Dict[str, str] = {}
+    headers: dict[str, str] = {}
     cg_key = _cg_key()
     if cg_key:
         headers["x-cg-demo-api-key"] = cg_key
@@ -104,7 +104,7 @@ async def coingecko_market_chart(
     coin_id: str,
     vs_currency: str = "usd",
     days: int = 30
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Get price history chart data from CoinGecko."""
     key = make_cache_key("cg", "chart", coin_id, vs_currency, days)
     cached = cache_get(key)
@@ -112,7 +112,7 @@ async def coingecko_market_chart(
         return cached
 
     params = {"vs_currency": vs_currency, "days": days}
-    headers: Dict[str, str] = {}
+    headers: dict[str, str] = {}
     cg_key = _cg_key()
     if cg_key:
         headers["x-cg-demo-api-key"] = cg_key
@@ -134,14 +134,14 @@ async def coingecko_market_chart(
     return result
 
 
-async def coingecko_trending() -> Dict[str, Any]:
+async def coingecko_trending() -> dict[str, Any]:
     """Get trending coins from CoinGecko."""
     key = make_cache_key("cg", "trending")
     cached = cache_get(key)
     if cached is not None:
         return cached
 
-    headers: Dict[str, str] = {}
+    headers: dict[str, str] = {}
     cg_key = _cg_key()
     if cg_key:
         headers["x-cg-demo-api-key"] = cg_key
@@ -155,14 +155,14 @@ async def coingecko_trending() -> Dict[str, Any]:
     return data
 
 
-async def coingecko_global() -> Dict[str, Any]:
+async def coingecko_global() -> dict[str, Any]:
     """Get global crypto market stats."""
     key = make_cache_key("cg", "global")
     cached = cache_get(key)
     if cached is not None:
         return cached
 
-    headers: Dict[str, str] = {}
+    headers: dict[str, str] = {}
     cg_key = _cg_key()
     if cg_key:
         headers["x-cg-demo-api-key"] = cg_key
@@ -180,14 +180,14 @@ async def coingecko_global() -> Dict[str, Any]:
 
 # ─── CoinGap ──────────────────────────────────────────────────────────────────
 
-async def coingap_arbitrage() -> List[Dict[str, Any]]:
+async def coingap_arbitrage() -> list[dict[str, Any]]:
     """Get crypto arbitrage opportunities from CoinGap."""
     key = make_cache_key("coingap", "arb")
     cached = cache_get(key)
     if cached is not None:
         return cached
 
-    headers: Dict[str, str] = {}
+    headers: dict[str, str] = {}
     gap_key = _gap_key()
     if gap_key:
         headers["Authorization"] = f"Bearer {gap_key}"

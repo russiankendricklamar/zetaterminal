@@ -1,22 +1,46 @@
 <!-- src/pages/Reports.vue -->
 <template>
   <div class="page-container">
-    
     <!-- Header Page Actions -->
     <div class="section-header">
       <div class="header-left">
-        <h1 class="section-title">Аналитические отчеты</h1>
-        <p class="section-subtitle">Генерация PDF-сводки по состоянию портфеля</p>
+        <h1 class="section-title">
+          Аналитические отчеты
+        </h1>
+        <p class="section-subtitle">
+          Генерация PDF-сводки по состоянию портфеля
+        </p>
       </div>
       
       <div class="header-actions">
-        <button class="btn-glass primary" @click="generateReport" :disabled="isExporting">
-          <span v-if="isExporting" class="flex items-center gap-2">
-             <span class="spinner-mini"></span> Генерация...
+        <button
+          class="btn-glass primary"
+          :disabled="isExporting"
+          @click="generateReport"
+        >
+          <span
+            v-if="isExporting"
+            class="flex items-center gap-2"
+          >
+            <span class="spinner-mini" /> Генерация...
           </span>
-          <span v-else class="flex items-center gap-2">
-             <span>Скачать PDF</span>
-             <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+          <span
+            v-else
+            class="flex items-center gap-2"
+          >
+            <span>Скачать PDF</span>
+            <svg
+              width="14"
+              height="14"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            ><path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
+            /></svg>
           </span>
         </button>
       </div>
@@ -25,35 +49,47 @@
     <!-- REPORT PREVIEW AREA (A4 Layout) -->
     <div class="report-viewport custom-scroll">
       <!-- A4 Sheet (Target for PDF Export) -->
-      <div id="report-content" class="a4-sheet">
-        
+      <div
+        id="report-content"
+        class="a4-sheet"
+      >
         <!-- Report Header -->
         <div class="rep-header">
           <div class="rep-logo">
-             <div class="logo-icon">RK</div>
-             <span>Quant<span class="text-accent">Risk</span></span>
+            <div class="logo-icon">
+              RK
+            </div>
+            <span>Quant<span class="text-accent">Risk</span></span>
           </div>
           <div class="rep-meta">
-            <div class="rep-label">ДАТА ОТЧЕТА</div>
-            <div class="rep-date">{{ currentDate }}</div>
+            <div class="rep-label">
+              ДАТА ОТЧЕТА
+            </div>
+            <div class="rep-date">
+              {{ currentDate }}
+            </div>
           </div>
         </div>
 
-        <div class="rep-divider"></div>
+        <div class="rep-divider" />
 
         <!-- Main Title -->
         <div class="rep-hero">
-            <h2 class="rep-main-title">Отчет по оптимизации портфеля</h2>
-            <div class="rep-tags">
-               <span class="rep-tag">{{ selectedBank.name }}</span>
-               <span class="rep-tag">Risk Analysis</span>
-               <span class="rep-tag">{{ portfolioPositions.length }} Assets</span>
-            </div>
+          <h2 class="rep-main-title">
+            Отчет по оптимизации портфеля
+          </h2>
+          <div class="rep-tags">
+            <span class="rep-tag">{{ selectedBank.name }}</span>
+            <span class="rep-tag">Risk Analysis</span>
+            <span class="rep-tag">{{ portfolioPositions.length }} Assets</span>
+          </div>
         </div>
 
         <!-- Executive Summary -->
         <section class="rep-section">
-          <h3 class="sec-title">1. Краткое резюме</h3>
+          <h3 class="sec-title">
+            1. Краткое резюме
+          </h3>
           <p class="sec-text">
             {{ executiveSummary }}
           </p>
@@ -75,11 +111,16 @@
 
         <!-- Key Metrics Grid -->
         <section class="rep-section">
-          <h3 class="sec-title">2. Ключевые метрики</h3>
+          <h3 class="sec-title">
+            2. Ключевые метрики
+          </h3>
           <div class="metrics-grid">
             <div class="metric-box">
               <span class="m-label">Ожидаемая доходность (годовая)</span>
-              <span class="m-value" :class="expectedReturn >= 0 ? 'positive' : 'negative'">
+              <span
+                class="m-value"
+                :class="expectedReturn >= 0 ? 'positive' : 'negative'"
+              >
                 {{ expectedReturn >= 0 ? '+' : '' }}{{ formatPercent(expectedReturn) }}
               </span>
             </div>
@@ -109,13 +150,19 @@
             </div>
             <div class="metric-box">
               <span class="m-label">Макс. просадка</span>
-              <span class="m-value" :class="maxDrawdown < 0.15 ? 'positive' : 'warning'">
+              <span
+                class="m-value"
+                :class="maxDrawdown < 0.15 ? 'positive' : 'warning'"
+              >
                 {{ formatPercent(maxDrawdown) }}
               </span>
             </div>
             <div class="metric-box">
               <span class="m-label">P&L (YTD, оценка)</span>
-              <span class="m-value" :class="ytdPnL >= 0 ? 'positive' : 'negative'">
+              <span
+                class="m-value"
+                :class="ytdPnL >= 0 ? 'positive' : 'negative'"
+              >
                 {{ ytdPnL >= 0 ? '+' : '' }}{{ formatPercent(ytdPnL) }}
               </span>
             </div>
@@ -124,134 +171,218 @@
 
         <!-- Charts Simulation -->
         <section class="rep-section">
-          <h3 class="sec-title">3. Структура риска (Risk Contribution)</h3>
+          <h3 class="sec-title">
+            3. Структура риска (Risk Contribution)
+          </h3>
           <div class="chart-container-print">
-             <!-- SVG Chart for Print -->
-             <svg viewBox="0 0 600 200" class="print-chart">
-                 <!-- Grid -->
-                 <line x1="0" y1="150" x2="600" y2="150" stroke="rgba(255,255,255,0.1)" stroke-width="1" />
-                 <line x1="0" y1="100" x2="600" y2="100" stroke="rgba(255,255,255,0.1)" stroke-width="1" />
-                 <line x1="0" y1="50" x2="600" y2="50" stroke="rgba(255,255,255,0.1)" stroke-width="1" />
+            <!-- SVG Chart for Print -->
+            <svg
+              viewBox="0 0 600 200"
+              class="print-chart"
+            >
+              <!-- Grid -->
+              <line
+                x1="0"
+                y1="150"
+                x2="600"
+                y2="150"
+                stroke="rgba(255,255,255,0.1)"
+                stroke-width="1"
+              />
+              <line
+                x1="0"
+                y1="100"
+                x2="600"
+                y2="100"
+                stroke="rgba(255,255,255,0.1)"
+                stroke-width="1"
+              />
+              <line
+                x1="0"
+                y1="50"
+                x2="600"
+                y2="50"
+                stroke="rgba(255,255,255,0.1)"
+                stroke-width="1"
+              />
                  
-                 <!-- Bars based on risk contributions -->
-                 <template v-for="(item, idx) in riskExposureData" :key="idx">
-                   <rect 
-                     :x="50 + idx * 100" 
-                     :y="150 - (item.value / item.maxValue * 100)" 
-                     width="60" 
-                     :height="item.value / item.maxValue * 100" 
-                     :fill="item.color" 
-                     rx="2" 
-                   />
-                   <text 
-                     :x="80 + idx * 100" 
-                     y="170" 
-                     fill="#94a3b8" 
-                     font-size="9" 
-                     text-anchor="middle"
-                   >
-                     {{ item.label }}
-                   </text>
-                   <text 
-                     :x="80 + idx * 100" 
-                     :y="145 - (item.value / item.maxValue * 100)" 
-                     fill="#fff" 
-                     font-size="8" 
-                     text-anchor="middle"
-                     font-weight="600"
-                   >
-                     {{ item.value.toFixed(1) }}%
-                   </text>
-                 </template>
+              <!-- Bars based on risk contributions -->
+              <template
+                v-for="(item, idx) in riskExposureData"
+                :key="idx"
+              >
+                <rect 
+                  :x="50 + idx * 100" 
+                  :y="150 - (item.value / item.maxValue * 100)" 
+                  width="60" 
+                  :height="item.value / item.maxValue * 100" 
+                  :fill="item.color" 
+                  rx="2" 
+                />
+                <text 
+                  :x="80 + idx * 100" 
+                  y="170" 
+                  fill="#94a3b8" 
+                  font-size="9" 
+                  text-anchor="middle"
+                >
+                  {{ item.label }}
+                </text>
+                <text 
+                  :x="80 + idx * 100" 
+                  :y="145 - (item.value / item.maxValue * 100)" 
+                  fill="#fff" 
+                  font-size="8" 
+                  text-anchor="middle"
+                  font-weight="600"
+                >
+                  {{ item.value.toFixed(1) }}%
+                </text>
+              </template>
                  
-                 <!-- Fallback if no data -->
-                 <template v-if="riskExposureData.length === 0">
-                   <rect x="50" y="80" width="60" height="70" fill="#3b82f6" rx="2" />
-                   <rect x="150" y="40" width="60" height="110" fill="#8b5cf6" rx="2" />
-                   <rect x="250" y="100" width="60" height="50" fill="#fbbf24" rx="2" />
-                   <rect x="350" y="60" width="60" height="90" fill="#ef4444" rx="2" />
-                   <rect x="450" y="90" width="60" height="60" fill="#10b981" rx="2" />
-                   <text x="80" y="170" fill="#94a3b8" font-size="10" text-anchor="middle">N/A</text>
-                 </template>
-             </svg>
+              <!-- Fallback if no data -->
+              <template v-if="riskExposureData.length === 0">
+                <rect
+                  x="50"
+                  y="80"
+                  width="60"
+                  height="70"
+                  fill="#3b82f6"
+                  rx="2"
+                />
+                <rect
+                  x="150"
+                  y="40"
+                  width="60"
+                  height="110"
+                  fill="#8b5cf6"
+                  rx="2"
+                />
+                <rect
+                  x="250"
+                  y="100"
+                  width="60"
+                  height="50"
+                  fill="#fbbf24"
+                  rx="2"
+                />
+                <rect
+                  x="350"
+                  y="60"
+                  width="60"
+                  height="90"
+                  fill="#ef4444"
+                  rx="2"
+                />
+                <rect
+                  x="450"
+                  y="90"
+                  width="60"
+                  height="60"
+                  fill="#10b981"
+                  rx="2"
+                />
+                <text
+                  x="80"
+                  y="170"
+                  fill="#94a3b8"
+                  font-size="10"
+                  text-anchor="middle"
+                >N/A</text>
+              </template>
+            </svg>
           </div>
         </section>
         
         <!-- Table -->
         <section class="rep-section">
-            <h3 class="sec-title">4. Топ-5 активов по вкладу в риск (Marginal VaR)</h3>
-            <table class="print-table">
-                <thead>
-                    <tr>
-                        <th>Актив</th>
-                        <th>Вес</th>
-                        <th>Вклад в VaR</th>
-                        <th>% от общего риска</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr v-for="(asset, idx) in topVolatileAssets" :key="idx">
-                        <td>{{ asset.symbol }} ({{ asset.name }})</td>
-                        <td>{{ asset.weight.toFixed(1) }}%</td>
-                        <td class="text-red">{{ formatCurrency(riskContributions.find(c => c.symbol === asset.symbol)?.contribution || 0) }}</td>
-                        <td class="text-red">{{ asset.varContribution.toFixed(1) }}%</td>
-                    </tr>
-                    <tr v-if="topVolatileAssets.length === 0">
-                        <td colspan="4" style="text-align: center; color: rgba(255,255,255,0.5);">
-                          Данные оптимизации недоступны. Выполните оптимизацию в разделе CCMV Optimization.
-                        </td>
-                    </tr>
-                </tbody>
-            </table>
+          <h3 class="sec-title">
+            4. Топ-5 активов по вкладу в риск (Marginal VaR)
+          </h3>
+          <table class="print-table">
+            <thead>
+              <tr>
+                <th>Актив</th>
+                <th>Вес</th>
+                <th>Вклад в VaR</th>
+                <th>% от общего риска</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr
+                v-for="(asset, idx) in topVolatileAssets"
+                :key="idx"
+              >
+                <td>{{ asset.symbol }} ({{ asset.name }})</td>
+                <td>{{ asset.weight.toFixed(1) }}%</td>
+                <td class="text-red">
+                  {{ formatCurrency(riskContributions.find(c => c.symbol === asset.symbol)?.contribution || 0) }}
+                </td>
+                <td class="text-red">
+                  {{ asset.varContribution.toFixed(1) }}%
+                </td>
+              </tr>
+              <tr v-if="topVolatileAssets.length === 0">
+                <td
+                  colspan="4"
+                  style="text-align: center; color: rgba(255,255,255,0.5);"
+                >
+                  Данные оптимизации недоступны. Выполните оптимизацию в разделе CCMV Optimization.
+                </td>
+              </tr>
+            </tbody>
+          </table>
         </section>
         
         <!-- Portfolio Composition Summary -->
         <section class="rep-section">
-            <h3 class="sec-title">5. Состав портфеля</h3>
-            <div class="portfolio-summary">
-              <div class="summary-stats">
-                <div class="stat-item">
-                  <span class="stat-label">Всего активов:</span>
-                  <span class="stat-value">{{ portfolioPositions.length }}</span>
-                </div>
-                <div class="stat-item">
-                  <span class="stat-label">Стоимость портфеля:</span>
-                  <span class="stat-value">{{ formatCurrency(portfolioValue) }}</span>
-                </div>
-                <div class="stat-item">
-                  <span class="stat-label">Средний вес актива:</span>
-                  <span class="stat-value">{{ portfolioPositions.length > 0 ? (100 / portfolioPositions.length).toFixed(1) : 0 }}%</span>
-                </div>
+          <h3 class="sec-title">
+            5. Состав портфеля
+          </h3>
+          <div class="portfolio-summary">
+            <div class="summary-stats">
+              <div class="stat-item">
+                <span class="stat-label">Всего активов:</span>
+                <span class="stat-value">{{ portfolioPositions.length }}</span>
               </div>
-              <div class="top-positions">
-                <div class="positions-label">Топ-5 позиций по весу:</div>
-                <div class="positions-list">
-                  <div 
-                    v-for="(pos, idx) in portfolioPositions.slice(0, 5)" 
-                    :key="pos.symbol"
-                    class="position-item"
-                  >
-                    <span class="pos-symbol">{{ pos.symbol }}</span>
-                    <span class="pos-weight">{{ pos.allocation }}%</span>
-                    <span class="pos-value">{{ formatCurrency(pos.notional) }}</span>
-                  </div>
+              <div class="stat-item">
+                <span class="stat-label">Стоимость портфеля:</span>
+                <span class="stat-value">{{ formatCurrency(portfolioValue) }}</span>
+              </div>
+              <div class="stat-item">
+                <span class="stat-label">Средний вес актива:</span>
+                <span class="stat-value">{{ portfolioPositions.length > 0 ? (100 / portfolioPositions.length).toFixed(1) : 0 }}%</span>
+              </div>
+            </div>
+            <div class="top-positions">
+              <div class="positions-label">
+                Топ-5 позиций по весу:
+              </div>
+              <div class="positions-list">
+                <div 
+                  v-for="(pos, idx) in portfolioPositions.slice(0, 5)" 
+                  :key="pos.symbol"
+                  class="position-item"
+                >
+                  <span class="pos-symbol">{{ pos.symbol }}</span>
+                  <span class="pos-weight">{{ pos.allocation }}%</span>
+                  <span class="pos-value">{{ formatCurrency(pos.notional) }}</span>
                 </div>
               </div>
             </div>
+          </div>
         </section>
 
         <!-- Footer -->
         <div class="rep-footer">
-          <div class="footer-line"></div>
+          <div class="footer-line" />
           <div class="footer-info">
             <span>© 2026 QuantRisk Analytics. Confidential.</span>
             <span>Page 1 of 1</span>
           </div>
         </div>
-
       </div>
     </div>
-
   </div>
 </template>
 

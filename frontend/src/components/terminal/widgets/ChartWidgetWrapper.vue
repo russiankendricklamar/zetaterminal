@@ -13,7 +13,7 @@
   >
     <ChartWidget 
       :data="data" 
-      :isExpanded="false"
+      :is-expanded="false"
       :symbol="symbol"
     />
   </BaseWidget>

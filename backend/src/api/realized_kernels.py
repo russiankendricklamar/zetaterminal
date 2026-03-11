@@ -2,11 +2,11 @@
 API endpoints для оценщиков реализованной волатильности.
 """
 import logging
+from datetime import datetime
+from typing import Any
 
 from fastapi import APIRouter, HTTPException
-from typing import Dict, Any, List, Optional
 from pydantic import BaseModel, Field
-from datetime import datetime
 
 from src.services.realized_kernels_service import compute_realized_kernels
 
@@ -16,9 +16,9 @@ router = APIRouter()
 
 
 class RealizedKernelsRequest(BaseModel):
-    prices: List[float] = Field(..., description="Ряд цен высокочастотных наблюдений (хронологический порядок)")
+    prices: list[float] = Field(..., description="Ряд цен высокочастотных наблюдений (хронологический порядок)")
     kernel: str = Field("parzen", description="Ядро для RK: 'parzen', 'tukey-hanning', 'bartlett'")
-    bandwidth: Optional[int] = Field(None, ge=1, description="Bandwidth H для RK (None = n^(3/5))")
+    bandwidth: int | None = Field(None, ge=1, description="Bandwidth H для RK (None = n^(3/5))")
     tsrv_scales: int = Field(5, ge=2, le=50, description="Количество масштабов K для TSRV")
     annualize: bool = Field(True, description="Приводить к годовой волатильности")
     periods_per_day: int = Field(390, ge=1, le=1440, description="Наблюдений в торговом дне (390 = минуты NYSE, 1 = дни)")
@@ -36,7 +36,7 @@ class RealizedKernelsRequest(BaseModel):
 
 
 class RealizedKernelsResponse(BaseModel):
-    result: Dict[str, Any]
+    result: dict[str, Any]
     timestamp: datetime = Field(default_factory=datetime.now)
 
 
@@ -67,10 +67,10 @@ async def estimate_realized_kernels(request: RealizedKernelsRequest):
         return RealizedKernelsResponse(result=result)
     except ValueError as e:
         logger.error("Realized kernels validation error: %s", e, exc_info=True)
-        raise HTTPException(status_code=400, detail="Invalid input parameters")
+        raise HTTPException(status_code=400, detail="Invalid input parameters") from e
     except Exception as e:
         logger.error("Realized kernels computation failed: %s", e, exc_info=True)
-        raise HTTPException(status_code=500, detail="Internal server error")
+        raise HTTPException(status_code=500, detail="Internal server error") from e
 
 
 @router.get("/health")

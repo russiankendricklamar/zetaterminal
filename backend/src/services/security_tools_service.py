@@ -5,7 +5,7 @@ Security Tools Service — VirusTotal, AbuseIPDB, URLScan.io, IP2WHOIS,
 Network security and IP intelligence utilities.
 """
 
-from typing import Dict, Any
+from typing import Any
 
 from src.services.cache_service import cache_get, cache_set, make_cache_key
 from src.services.secrets_service import get_key_sync
@@ -22,7 +22,7 @@ def _ip2loc_key() -> str: return get_key_sync("IP2LOCATION_API_KEY")
 
 # ─── ipinfo.io ────────────────────────────────────────────────────────────────
 
-async def ipinfo_lookup(ip: str) -> Dict[str, Any]:
+async def ipinfo_lookup(ip: str) -> dict[str, Any]:
     """Get IP geolocation from ipinfo.io."""
     key = make_cache_key("ipinfo", ip)
     cached = cache_get(key)
@@ -44,7 +44,7 @@ async def ipinfo_lookup(ip: str) -> Dict[str, Any]:
 
 # ─── IP2Location ──────────────────────────────────────────────────────────────
 
-async def ip2location_lookup(ip: str) -> Dict[str, Any]:
+async def ip2location_lookup(ip: str) -> dict[str, Any]:
     """Get IP geolocation from IP2Location."""
     key = make_cache_key("ip2loc", ip)
     cached = cache_get(key)
@@ -64,7 +64,7 @@ async def ip2location_lookup(ip: str) -> Dict[str, Any]:
 
 # ─── BigDataCloud ─────────────────────────────────────────────────────────────
 
-async def bigdatacloud_lookup(ip: str) -> Dict[str, Any]:
+async def bigdatacloud_lookup(ip: str) -> dict[str, Any]:
     """Get IP geolocation from BigDataCloud (free tier)."""
     key = make_cache_key("bdc", ip)
     cached = cache_get(key)
@@ -87,9 +87,8 @@ async def bigdatacloud_lookup(ip: str) -> Dict[str, Any]:
 
 # ─── VirusTotal ───────────────────────────────────────────────────────────────
 
-async def virustotal_scan_url(url_to_scan: str) -> Dict[str, Any]:
+async def virustotal_scan_url(url_to_scan: str) -> dict[str, Any]:
     """Submit a URL for scanning to VirusTotal."""
-    import base64
     headers = {"x-apikey": _vt_key()}
     session = await get_session()
     async with session.post(
@@ -108,7 +107,7 @@ async def virustotal_scan_url(url_to_scan: str) -> Dict[str, Any]:
     }
 
 
-async def virustotal_analysis(analysis_id: str) -> Dict[str, Any]:
+async def virustotal_analysis(analysis_id: str) -> dict[str, Any]:
     """Get VirusTotal analysis result."""
     key = make_cache_key("vt", "analysis", analysis_id)
     cached = cache_get(key)
@@ -145,7 +144,7 @@ async def virustotal_analysis(analysis_id: str) -> Dict[str, Any]:
 
 # ─── AbuseIPDB ────────────────────────────────────────────────────────────────
 
-async def abuseipdb_check(ip: str) -> Dict[str, Any]:
+async def abuseipdb_check(ip: str) -> dict[str, Any]:
     """Check an IP against AbuseIPDB."""
     key = make_cache_key("abuse", ip)
     cached = cache_get(key)
@@ -182,7 +181,7 @@ async def abuseipdb_check(ip: str) -> Dict[str, Any]:
 
 # ─── URLScan.io ───────────────────────────────────────────────────────────────
 
-async def urlscan_submit(url_to_scan: str) -> Dict[str, Any]:
+async def urlscan_submit(url_to_scan: str) -> dict[str, Any]:
     """Submit a URL for scanning to URLScan.io."""
     headers = {"API-Key": _urlscan_key(), "Content-Type": "application/json"}
     body = {"url": url_to_scan, "visibility": "public"}
@@ -205,7 +204,7 @@ async def urlscan_submit(url_to_scan: str) -> Dict[str, Any]:
     }
 
 
-async def urlscan_result(uuid: str) -> Dict[str, Any]:
+async def urlscan_result(uuid: str) -> dict[str, Any]:
     """Get URLScan.io scan result."""
     key = make_cache_key("urlscan", "result", uuid)
     cached = cache_get(key)
@@ -246,7 +245,7 @@ async def urlscan_result(uuid: str) -> Dict[str, Any]:
 
 # ─── IP2WHOIS ─────────────────────────────────────────────────────────────────
 
-async def ip2whois_lookup(domain: str) -> Dict[str, Any]:
+async def ip2whois_lookup(domain: str) -> dict[str, Any]:
     """WHOIS lookup for a domain."""
     key = make_cache_key("whois", domain)
     cached = cache_get(key)

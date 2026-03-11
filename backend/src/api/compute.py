@@ -2,15 +2,15 @@
 API endpoints для вычислительных задач.
 """
 import logging
+from datetime import datetime
 
 from fastapi import APIRouter, Body, HTTPException, Request
-from typing import List, Optional
 from pydantic import Field
-from src.models.schemas import ComputeRequest, ComputeResponse
-from src.services.compute_service import ComputeService
-from src.utils.financial_validation import FinancialBaseModel, MAX_DATA_POINTS
+
 from src.middleware.rate_limit import limiter
-from datetime import datetime
+from src.models.schemas import ComputeResponse
+from src.services.compute_service import ComputeService
+from src.utils.financial_validation import MAX_DATA_POINTS, FinancialBaseModel
 
 logger = logging.getLogger(__name__)
 
@@ -20,15 +20,15 @@ compute_service = ComputeService()
 
 class GARCHRequest(FinancialBaseModel):
     """Схема запроса для GARCH моделирования."""
-    returns: List[float] = Field(..., max_length=MAX_DATA_POINTS)
-    omega: Optional[float] = Field(0.000025, gt=0, le=1.0)
-    alpha: Optional[float] = Field(0.082, ge=0, le=1.0)
-    beta: Optional[float] = Field(0.893, ge=0, le=1.0)
-    initial_variance: Optional[float] = Field(None, gt=0, le=1.0)
+    returns: list[float] = Field(..., max_length=MAX_DATA_POINTS)
+    omega: float | None = Field(0.000025, gt=0, le=1.0)
+    alpha: float | None = Field(0.082, ge=0, le=1.0)
+    beta: float | None = Field(0.893, ge=0, le=1.0)
+    initial_variance: float | None = Field(None, gt=0, le=1.0)
 
 
 @router.post("/statistics", response_model=ComputeResponse)
-async def calculate_statistics(data: List[float] = Body(..., max_length=100000)):
+async def calculate_statistics(data: list[float] = Body(..., max_length=100000)):
     """
     Вычисляет статистику для массива данных.
     
@@ -47,7 +47,7 @@ async def calculate_statistics(data: List[float] = Body(..., max_length=100000))
         )
     except Exception as e:
         logger.error("Compute operation failed: %s", e, exc_info=True)
-        raise HTTPException(status_code=400, detail="Invalid input parameters")
+        raise HTTPException(status_code=400, detail="Invalid input parameters") from e
 
 
 @router.post("/garch")
@@ -77,7 +77,7 @@ async def calculate_garch(http_request: Request, request: GARCHRequest):
         }
     except Exception as e:
         logger.error("Compute operation failed: %s", e, exc_info=True)
-        raise HTTPException(status_code=400, detail="Invalid input parameters")
+        raise HTTPException(status_code=400, detail="Invalid input parameters") from e
 
 
 @router.get("/health")

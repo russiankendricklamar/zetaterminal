@@ -1,40 +1,49 @@
 <!-- src/pages/RegimeAnalysis.vue -->
 <template>
   <div class="page-container custom-scroll">
-    
     <!-- Header -->
     <div class="section-header">
       <div class="header-left">
-        <h1 class="section-title">Анализ рыночных режимов</h1>
-        <p class="section-subtitle">HMM: Классификация скрытых состояний рынка</p>
+        <h1 class="section-title">
+          Анализ рыночных режимов
+        </h1>
+        <p class="section-subtitle">
+          HMM: Классификация скрытых состояний рынка
+        </p>
       </div>
       
       <div class="header-actions">
-         <div class="glass-pill status-pill">
-            <span class="dot" :class="currentRegimeColor"></span>
-            <span class="status-label">Текущий режим: <b class="text-white">{{ currentRegimeLabel }}</b></span>
-         </div>
+        <div class="glass-pill status-pill">
+          <span
+            class="dot"
+            :class="currentRegimeColor"
+          />
+          <span class="status-label">Текущий режим: <b class="text-white">{{ currentRegimeLabel }}</b></span>
+        </div>
       </div>
     </div>
 
     <!-- View Tabs -->
     <div class="view-tabs">
       <button 
-        @click="viewMode = '2d'" 
-        :class="['tab-btn', { active: viewMode === '2d' }]"
+        :class="['tab-btn', { active: viewMode === '2d' }]" 
+        @click="viewMode = '2d'"
       >
         2D Анализ
       </button>
       <button 
-        @click="viewMode = '3d'" 
-        :class="['tab-btn', { active: viewMode === '3d' }]"
+        :class="['tab-btn', { active: viewMode === '3d' }]" 
+        @click="viewMode = '3d'"
       >
         3D Пространство режимов
       </button>
     </div>
 
     <!-- 3D View -->
-    <div v-if="viewMode === '3d'" class="regime-3d-container">
+    <div
+      v-if="viewMode === '3d'"
+      class="regime-3d-container"
+    >
       <RegimeSpace3D 
         :initial-asset="selectedAsset"
         :initial-n-states="nComponents"
@@ -42,216 +51,372 @@
     </div>
 
     <!-- 2D View -->
-    <div v-else class="dashboard-grid">
-        
-        <!-- LEFT PANEL: Controls, Matrix, Stats -->
-        <aside class="left-panel">
-            
-            <!-- Controls Card -->
-            <div class="glass-card panel">
-                <div class="panel-header"><h3>Параметры модели</h3></div>
+    <div
+      v-else
+      class="dashboard-grid"
+    >
+      <!-- LEFT PANEL: Controls, Matrix, Stats -->
+      <aside class="left-panel">
+        <!-- Controls Card -->
+        <div class="glass-card panel">
+          <div class="panel-header">
+            <h3>Параметры модели</h3>
+          </div>
                 
-                <div class="controls-form">
-                    <!-- Bank Portfolio Info -->
-                    <div class="input-group">
-                        <label class="lbl">Портфель банка</label>
-                        <div class="glass-pill status-pill">
-                            <span class="status-label text-muted">
-                                <b class="text-white">{{ portfolioStore.selectedBank?.name || 'Не выбран' }}</b>
-                            </span>
-                        </div>
-                        <p class="info-text">Используется портфель из {{ portfolioStore.positions.length }} активов</p>
-                    </div>
+          <div class="controls-form">
+            <!-- Bank Portfolio Info -->
+            <div class="input-group">
+              <label class="lbl">Портфель банка</label>
+              <div class="glass-pill status-pill">
+                <span class="status-label text-muted">
+                  <b class="text-white">{{ portfolioStore.selectedBank?.name || 'Не выбран' }}</b>
+                </span>
+              </div>
+              <p class="info-text">
+                Используется портфель из {{ portfolioStore.positions.length }} активов
+              </p>
+            </div>
                     
-                    <!-- Auto Optimize -->
-                    <div class="input-group mt-2">
-                        <label class="checkbox-label">
-                            <input type="checkbox" v-model="autoOptimize" />
-                            <span>Автоматически определить количество режимов</span>
-                        </label>
-                    </div>
+            <!-- Auto Optimize -->
+            <div class="input-group mt-2">
+              <label class="checkbox-label">
+                <input
+                  v-model="autoOptimize"
+                  type="checkbox"
+                >
+                <span>Автоматически определить количество режимов</span>
+              </label>
+            </div>
 
-                    <!-- N States -->
-                    <div class="input-group mt-2" v-if="!autoOptimize">
-                        <label class="lbl">Количество режимов</label>
-                        <div class="scrub-row">
-                            <ScrubInput 
-                                v-model="nComponents" 
-                                :min="2" :max="5" :step="1" 
-                                class="text-accent font-bold"
-                            />
-                            <span class="unit">режимов</span>
-                        </div>
-                    </div>
+            <!-- N States -->
+            <div
+              v-if="!autoOptimize"
+              class="input-group mt-2"
+            >
+              <label class="lbl">Количество режимов</label>
+              <div class="scrub-row">
+                <ScrubInput 
+                  v-model="nComponents" 
+                  :min="2"
+                  :max="5"
+                  :step="1" 
+                  class="text-accent font-bold"
+                />
+                <span class="unit">режимов</span>
+              </div>
+            </div>
 
-                    <!-- Run Button -->
-                    <button @click="runHMM" :disabled="isLoading" class="btn-primary-gradient mt-6">
-                        <span v-if="!isLoading">Запустить анализ</span>
-                        <span v-else class="flex items-center gap-2">
-                            <span class="spinner-mini"></span> Обучение...
-                        </span>
-                    </button>
+            <!-- Run Button -->
+            <button
+              :disabled="isLoading"
+              class="btn-primary-gradient mt-6"
+              @click="runHMM"
+            >
+              <span v-if="!isLoading">Запустить анализ</span>
+              <span
+                v-else
+                class="flex items-center gap-2"
+              >
+                <span class="spinner-mini" /> Обучение...
+              </span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Transition Matrix -->
+        <transition name="fade">
+          <div
+            v-if="transitionMatrix"
+            class="glass-card panel"
+          >
+            <div class="panel-header">
+              <h3>Матрица переходов</h3>
+            </div>
+            <div
+              class="matrix-grid"
+              :style="{ gridTemplateColumns: `repeat(${nComponents}, 1fr)` }"
+            >
+              <div
+                v-for="(row, i) in transitionMatrix"
+                :key="i"
+                class="matrix-row-group"
+              >
+                <div
+                  v-for="(prob, j) in row"
+                  :key="j"
+                  class="matrix-cell" 
+                  :style="{ backgroundColor: `rgba(59, 130, 246, ${prob * 0.8})` }"
+                >
+                  <span class="m-val">{{ (prob * 100).toFixed(0) }}%</span>
+                  <span class="m-lbl">S{{ i }}→S{{ j }}</span>
                 </div>
+              </div>
             </div>
+          </div>
+        </transition>
 
-            <!-- Transition Matrix -->
-            <transition name="fade">
-            <div class="glass-card panel" v-if="transitionMatrix">
-                <div class="panel-header"><h3>Матрица переходов</h3></div>
-                <div class="matrix-grid" :style="{ gridTemplateColumns: `repeat(${nComponents}, 1fr)` }">
-                    <div v-for="(row, i) in transitionMatrix" :key="i" class="matrix-row-group">
-                        <div v-for="(prob, j) in row" :key="j" class="matrix-cell" 
-                             :style="{ backgroundColor: `rgba(59, 130, 246, ${prob * 0.8})` }">
-                            <span class="m-val">{{ (prob * 100).toFixed(0) }}%</span>
-                            <span class="m-lbl">S{{i}}→S{{j}}</span>
-                        </div>
-                    </div>
+        <!-- Regime Stats Legend -->
+        <transition name="fade">
+          <div
+            v-if="regimeStats.length"
+            class="glass-card panel"
+          >
+            <div class="panel-header">
+              <h3>Статистика режимов</h3>
+            </div>
+            <div class="stats-list">
+              <div
+                v-for="(stat, i) in regimeStats"
+                :key="i"
+                class="stat-item"
+              >
+                <div class="stat-head">
+                  <span
+                    class="dot"
+                    :class="getRegimeColorClass(i)"
+                  /> 
+                  <span class="s-name">{{ getRegimeName(i) }}</span>
                 </div>
+                <div class="stat-metrics">
+                  <span :class="parseFloat(stat.ret) > 0 ? 'text-green' : 'text-red'">μ: {{ stat.ret }}%</span>
+                  <span class="text-muted">σ: {{ stat.vol }}%</span>
+                </div>
+              </div>
             </div>
-            </transition>
+          </div>
+        </transition>
+      </aside>
 
-            <!-- Regime Stats Legend -->
-            <transition name="fade">
-            <div class="glass-card panel" v-if="regimeStats.length">
-                 <div class="panel-header"><h3>Статистика режимов</h3></div>
-                 <div class="stats-list">
-                     <div class="stat-item" v-for="(stat, i) in regimeStats" :key="i">
-                         <div class="stat-head">
-                             <span class="dot" :class="getRegimeColorClass(i)"></span> 
-                             <span class="s-name">{{ getRegimeName(i) }}</span>
-                         </div>
-                         <div class="stat-metrics">
-                             <span :class="parseFloat(stat.ret) > 0 ? 'text-green' : 'text-red'">μ: {{ stat.ret }}%</span>
-                             <span class="text-muted">σ: {{ stat.vol }}%</span>
-                         </div>
-                     </div>
-                 </div>
+      <!-- RIGHT PANEL: Visualization -->
+      <main class="main-panel">
+        <!-- Chart 1: Price with Regimes (UPDATED HEIGHT: 400px) -->
+        <div class="glass-card chart-card">
+          <div class="chart-header">
+            <div class="ch-left">
+              <h3>Динамика цены и режимы</h3>
+              <span
+                v-if="isPlaying"
+                class="badge-live"
+              >В ПРЯМОМ ЭФИРЕ</span>
             </div>
-            </transition>
-
-        </aside>
-
-        <!-- RIGHT PANEL: Visualization -->
-        <main class="main-panel">
-            
-            <!-- Chart 1: Price with Regimes (UPDATED HEIGHT: 400px) -->
-            <div class="glass-card chart-card">
-                <div class="chart-header">
-                    <div class="ch-left">
-                        <h3>Динамика цены и режимы</h3>
-                        <span v-if="isPlaying" class="badge-live">В ПРЯМОМ ЭФИРЕ</span>
-                    </div>
                     
-                    <!-- PLAYBACK CONTROLS -->
-                    <div class="playback-controls" v-if="chartData.length">
-                        <button class="icon-btn" @click="togglePlay" title="Воспроизвести/Пауза">
-                            <span v-if="isPlaying">⏸</span>
-                            <span v-else>▶</span>
-                        </button>
+            <!-- PLAYBACK CONTROLS -->
+            <div
+              v-if="chartData.length"
+              class="playback-controls"
+            >
+              <button
+                class="icon-btn"
+                title="Воспроизвести/Пауза"
+                @click="togglePlay"
+              >
+                <span v-if="isPlaying">⏸</span>
+                <span v-else>▶</span>
+              </button>
                         
-                        <div class="timeline-wrapper">
-                            <input 
-                                type="range" min="0" :max="chartData.length - 1" 
-                                v-model.number="playbackIndex" 
-                                @input="stopPlay" 
-                                class="timeline-slider"
-                            >
-                            <div class="timeline-track" :style="{ width: progressPercent + '%' }"></div>
-                            <div class="timeline-thumb" :style="{ left: progressPercent + '%' }"></div>
-                        </div>
+              <div class="timeline-wrapper">
+                <input 
+                  v-model.number="playbackIndex"
+                  type="range"
+                  min="0" 
+                  :max="chartData.length - 1" 
+                  class="timeline-slider" 
+                  @input="stopPlay"
+                >
+                <div
+                  class="timeline-track"
+                  :style="{ width: progressPercent + '%' }"
+                />
+                <div
+                  class="timeline-thumb"
+                  :style="{ left: progressPercent + '%' }"
+                />
+              </div>
 
-                        <button class="icon-btn" @click="resetPlayback" title="Сброс">↺</button>
-                    </div>
-                </div>
-
-                <div class="chart-container">
-                    <!-- VIEWBOX UPDATED TO 800 400 -->
-                    <svg v-if="chartData.length" viewBox="0 0 800 400" preserveAspectRatio="none" class="regime-svg">
-                         <!-- Background Bars -->
-                         <rect v-for="(d, i) in chartData" :key="'bg-'+i"
-                               v-show="i <= playbackIndex"
-                               :x="scaleX(i)" y="0" 
-                               :width="barWidth + 0.5" height="400"
-                               :fill="getRegimeColor(d.regime, 0.15)"
-                         />
-                        
-                        <!-- Grid Lines (re-calculated for 400px) -->
-                        <line x1="0" y1="100" x2="800" y2="100" stroke="rgba(255,255,255,0.05)" />
-                        <line x1="0" y1="200" x2="800" y2="200" stroke="rgba(255,255,255,0.05)" />
-                        <line x1="0" y1="300" x2="800" y2="300" stroke="rgba(255,255,255,0.05)" />
-
-                        <!-- Price Line -->
-                        <path :d="slicedPricePath" fill="none" stroke="#fff" stroke-width="2" stroke-linejoin="round" filter="drop-shadow(0 0 4px rgba(0,0,0,0.5))" />
-                        
-                        <!-- Cursor Line -->
-                        <line v-if="playbackIndex < chartData.length - 1"
-                              :x1="scaleX(playbackIndex)" y1="0" 
-                              :x2="scaleX(playbackIndex)" y2="400" 
-                              stroke="rgba(255,255,255,0.8)" stroke-dasharray="3" />
-                    </svg>
-
-                    <div v-else class="empty-state">
-                        <div v-if="isLoading" class="spinner-large"></div>
-                        <span v-else>Нажмите «Запустить анализ» для генерации</span>
-                    </div>
-                </div>
+              <button
+                class="icon-btn"
+                title="Сброс"
+                @click="resetPlayback"
+              >
+                ↺
+              </button>
             </div>
+          </div>
 
-            <!-- Chart 2: Rolling Volatility (UPDATED HEIGHT: 160px) -->
-            <div class="glass-card chart-card mt-4">
-                <div class="chart-header">
-                    <h3>Скользящая волатильность (20Д)</h3>
-                </div>
-                <div class="chart-container-sm">
-                    <!-- VIEWBOX UPDATED TO 800 160 -->
-                    <svg v-if="chartData.length" viewBox="0 0 800 160" preserveAspectRatio="none" class="regime-svg">
-                        <line v-for="i in 3" :key="i" x1="0" :y1="i*40" x2="800" :y2="i*40" stroke="rgba(255,255,255,0.05)" />
+          <div class="chart-container">
+            <!-- VIEWBOX UPDATED TO 800 400 -->
+            <svg
+              v-if="chartData.length"
+              viewBox="0 0 800 400"
+              preserveAspectRatio="none"
+              class="regime-svg"
+            >
+              <!-- Background Bars -->
+              <rect
+                v-for="(d, i) in chartData"
+                v-show="i <= playbackIndex"
+                :key="'bg-'+i"
+                :x="scaleX(i)"
+                y="0" 
+                :width="barWidth + 0.5"
+                height="400"
+                :fill="getRegimeColor(d.regime, 0.15)"
+              />
                         
-                        <!-- Colored Dots -->
-                        <circle 
-                            v-for="(d, i) in chartData" 
-                            v-show="i <= playbackIndex"
-                            :key="'v-'+i"
-                            :cx="scaleX(i)" 
-                            :cy="scaleYVol(d.vol)" 
-                            r="2"
-                            :fill="getRegimeColorHex(d.regime)"
-                        />
-                    </svg>
-                </div>
-            </div>
+              <!-- Grid Lines (re-calculated for 400px) -->
+              <line
+                x1="0"
+                y1="100"
+                x2="800"
+                y2="100"
+                stroke="rgba(255,255,255,0.05)"
+              />
+              <line
+                x1="0"
+                y1="200"
+                x2="800"
+                y2="200"
+                stroke="rgba(255,255,255,0.05)"
+              />
+              <line
+                x1="0"
+                y1="300"
+                x2="800"
+                y2="300"
+                stroke="rgba(255,255,255,0.05)"
+              />
 
-            <!-- Chart 3: Predicted Hidden States (UPDATED HEIGHT: 160px) -->
-            <div class="glass-card chart-card mt-4">
-                <div class="chart-header">
-                    <h3>Предсказанные скрытые состояния</h3>
-                </div>
-                <div class="chart-container-sm">
-                    <!-- VIEWBOX UPDATED TO 800 160 -->
-                    <svg v-if="chartData.length" viewBox="0 0 800 160" preserveAspectRatio="none" class="regime-svg">
-                        <!-- State Lines -->
-                        <line v-for="s in [0, 1, 2]" :key="'g-'+s" x1="0" :y1="scaleYState(s)" x2="800" :y2="scaleYState(s)" stroke="rgba(255,255,255,0.05)" stroke-dasharray="4"/>
+              <!-- Price Line -->
+              <path
+                :d="slicedPricePath"
+                fill="none"
+                stroke="#fff"
+                stroke-width="2"
+                stroke-linejoin="round"
+                filter="drop-shadow(0 0 4px rgba(0,0,0,0.5))"
+              />
                         
-                        <!-- Labels -->
-                        <text x="10" :y="scaleYState(0) - 8" fill="rgba(255,255,255,0.2)" font-size="10">Стабильный (0)</text>
-                        <text x="10" :y="scaleYState(1) - 8" fill="rgba(255,255,255,0.2)" font-size="10">Рост (1)</text>
-                        <text x="10" :y="scaleYState(2) - 8" fill="rgba(255,255,255,0.2)" font-size="10">Стресс (2)</text>
+              <!-- Cursor Line -->
+              <line
+                v-if="playbackIndex < chartData.length - 1"
+                :x1="scaleX(playbackIndex)"
+                y1="0" 
+                :x2="scaleX(playbackIndex)"
+                y2="400" 
+                stroke="rgba(255,255,255,0.8)"
+                stroke-dasharray="3"
+              />
+            </svg>
 
-                        <!-- Scatter Points -->
-                        <circle 
-                            v-for="(d, i) in chartData" 
-                            v-show="i <= playbackIndex"
-                            :key="'s-'+i"
-                            :cx="scaleX(i)" 
-                            :cy="scaleYState(d.regime)" 
-                            r="3"
-                            :fill="getRegimeColorHex(d.regime)"
-                        />
-                    </svg>
-                </div>
+            <div
+              v-else
+              class="empty-state"
+            >
+              <div
+                v-if="isLoading"
+                class="spinner-large"
+              />
+              <span v-else>Нажмите «Запустить анализ» для генерации</span>
             </div>
+          </div>
+        </div>
 
-        </main>
+        <!-- Chart 2: Rolling Volatility (UPDATED HEIGHT: 160px) -->
+        <div class="glass-card chart-card mt-4">
+          <div class="chart-header">
+            <h3>Скользящая волатильность (20Д)</h3>
+          </div>
+          <div class="chart-container-sm">
+            <!-- VIEWBOX UPDATED TO 800 160 -->
+            <svg
+              v-if="chartData.length"
+              viewBox="0 0 800 160"
+              preserveAspectRatio="none"
+              class="regime-svg"
+            >
+              <line
+                v-for="i in 3"
+                :key="i"
+                x1="0"
+                :y1="i*40"
+                x2="800"
+                :y2="i*40"
+                stroke="rgba(255,255,255,0.05)"
+              />
+                        
+              <!-- Colored Dots -->
+              <circle 
+                v-for="(d, i) in chartData" 
+                v-show="i <= playbackIndex"
+                :key="'v-'+i"
+                :cx="scaleX(i)" 
+                :cy="scaleYVol(d.vol)" 
+                r="2"
+                :fill="getRegimeColorHex(d.regime)"
+              />
+            </svg>
+          </div>
+        </div>
+
+        <!-- Chart 3: Predicted Hidden States (UPDATED HEIGHT: 160px) -->
+        <div class="glass-card chart-card mt-4">
+          <div class="chart-header">
+            <h3>Предсказанные скрытые состояния</h3>
+          </div>
+          <div class="chart-container-sm">
+            <!-- VIEWBOX UPDATED TO 800 160 -->
+            <svg
+              v-if="chartData.length"
+              viewBox="0 0 800 160"
+              preserveAspectRatio="none"
+              class="regime-svg"
+            >
+              <!-- State Lines -->
+              <line
+                v-for="s in [0, 1, 2]"
+                :key="'g-'+s"
+                x1="0"
+                :y1="scaleYState(s)"
+                x2="800"
+                :y2="scaleYState(s)"
+                stroke="rgba(255,255,255,0.05)"
+                stroke-dasharray="4"
+              />
+                        
+              <!-- Labels -->
+              <text
+                x="10"
+                :y="scaleYState(0) - 8"
+                fill="rgba(255,255,255,0.2)"
+                font-size="10"
+              >Стабильный (0)</text>
+              <text
+                x="10"
+                :y="scaleYState(1) - 8"
+                fill="rgba(255,255,255,0.2)"
+                font-size="10"
+              >Рост (1)</text>
+              <text
+                x="10"
+                :y="scaleYState(2) - 8"
+                fill="rgba(255,255,255,0.2)"
+                font-size="10"
+              >Стресс (2)</text>
+
+              <!-- Scatter Points -->
+              <circle 
+                v-for="(d, i) in chartData" 
+                v-show="i <= playbackIndex"
+                :key="'s-'+i"
+                :cx="scaleX(i)" 
+                :cy="scaleYState(d.regime)" 
+                r="3"
+                :fill="getRegimeColorHex(d.regime)"
+              />
+            </svg>
+          </div>
+        </div>
+      </main>
     </div>
   </div>
 </template>

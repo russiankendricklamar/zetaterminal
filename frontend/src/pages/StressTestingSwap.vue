@@ -1,12 +1,15 @@
 <!-- src/pages/StressTestingSwap.vue -->
 <template>
   <div class="stress-swap-page">
-    
     <!-- Header Section -->
     <div class="page-header">
       <div class="header-left">
-        <h1 class="page-title">Стресс-тест СВОП портфеля</h1>
-        <p class="page-subtitle">Анализ чувствительности к сдвигам кривой, спредам и волатильности</p>
+        <h1 class="page-title">
+          Стресс-тест СВОП портфеля
+        </h1>
+        <p class="page-subtitle">
+          Анализ чувствительности к сдвигам кривой, спредам и волатильности
+        </p>
       </div>
       
       <div class="header-right">
@@ -15,21 +18,21 @@
           <label class="control-label">Множитель:</label>
           <div class="multiplier-control">
             <input 
-              type="range"
               v-model.number="shockMultiplier"
+              type="range"
               :step="0.1"
               :min="0.5"
               :max="3.0"
               class="range-input"
-            />
+            >
             <span class="multiplier-display">{{ shockMultiplier.toFixed(1) }}x</span>
           </div>
         </div>
 
         <button 
-          @click="runStressTests" 
-          class="btn-primary"
+          class="btn-primary" 
           :disabled="isRunning"
+          @click="runStressTests"
         >
           <span v-if="!isRunning">Запустить</span>
           <span v-else>Считаю...</span>
@@ -42,9 +45,9 @@
       <button 
         v-for="shockType in shockTypes"
         :key="shockType.id"
-        @click="activeShockType = shockType.id"
         class="filter-btn"
         :class="{ active: activeShockType === shockType.id }"
+        @click="activeShockType = shockType.id"
       >
         <span class="filter-icon">{{ shockType.icon }}</span>
         <span class="filter-text">{{ shockType.name }}</span>
@@ -53,24 +56,33 @@
 
     <!-- Scenarios Grid -->
     <div class="scenarios-container">
-      <div class="grid-header">Сценарии стресс-тестирования</div>
+      <div class="grid-header">
+        Сценарии стресс-тестирования
+      </div>
       <div class="scenarios-grid">
         <div 
           v-for="scenario in filteredScenarios" 
           :key="scenario.id"
-          @click="selectScenario(scenario)"
           class="scenario-tile"
           :class="{ active: selectedScenario?.id === scenario.id }"
+          @click="selectScenario(scenario)"
         >
           <div class="tile-header">
-            <h3 class="tile-title">{{ scenario.name }}</h3>
+            <h3 class="tile-title">
+              {{ scenario.name }}
+            </h3>
             <span class="severity-indicator">
               {{ getSeverityIcon(scenario.severity) }}
             </span>
           </div>
-          <p class="tile-description">{{ scenario.description }}</p>
+          <p class="tile-description">
+            {{ scenario.description }}
+          </p>
           <div class="tile-metrics">
-            <span class="metric-value" :class="scenario.pnlImpact < 0 ? 'loss' : 'gain'">
+            <span
+              class="metric-value"
+              :class="scenario.pnlImpact < 0 ? 'loss' : 'gain'"
+            >
               {{ formatCompactCurrency(scenario.pnlImpact * shockMultiplier) }}
             </span>
             <span class="metric-probability">Вер.: {{ (scenario.probability * 100).toFixed(0) }}%</span>
@@ -81,11 +93,12 @@
 
     <!-- Details Panel -->
     <transition name="expand">
-      <div v-if="selectedScenario" class="details-container">
-        
+      <div
+        v-if="selectedScenario"
+        class="details-container"
+      >
         <!-- Left Column -->
         <div class="details-left">
-          
           <!-- Impact Summary Card -->
           <div class="card">
             <div class="card-header">
@@ -94,7 +107,10 @@
             <div class="metrics-grid">
               <div class="metric-box">
                 <span class="metric-label">Влияние на P&L</span>
-                <span class="metric-num" :class="selectedScenario.pnlImpact < 0 ? 'loss' : 'gain'">
+                <span
+                  class="metric-num"
+                  :class="selectedScenario.pnlImpact < 0 ? 'loss' : 'gain'"
+                >
                   {{ formatCurrency(selectedScenario.pnlImpact * shockMultiplier) }}
                 </span>
               </div>
@@ -156,7 +172,11 @@
               <h3>Срочный риск (Key Rate Durations)</h3>
             </div>
             <div class="krd-bars">
-              <div v-for="(krd, tenor) in selectedScenario.keyRateDurations" :key="tenor" class="krd-row">
+              <div
+                v-for="(krd, tenor) in selectedScenario.keyRateDurations"
+                :key="tenor"
+                class="krd-row"
+              >
                 <span class="krd-label">{{ tenor }}</span>
                 <div class="krd-track">
                   <div 
@@ -165,7 +185,10 @@
                     :style="{ width: Math.min(100, Math.abs(krd * shockMultiplier * 8)) + '%' }"
                   />
                 </div>
-                <span class="krd-value" :class="krd < 0 ? 'loss' : 'gain'">
+                <span
+                  class="krd-value"
+                  :class="krd < 0 ? 'loss' : 'gain'"
+                >
                   {{ krd > 0 ? '+' : '' }}{{ (krd * shockMultiplier).toFixed(2) }}
                 </span>
               </div>
@@ -175,16 +198,22 @@
 
         <!-- Right Column -->
         <div class="details-right">
-          
           <!-- Market Shocks Card -->
           <div class="card">
             <div class="card-header">
               <h3>Параметры шока</h3>
             </div>
             <div class="shocks-list">
-              <div v-for="(change, key) in selectedScenario.marketShocks" :key="key" class="shock-row">
+              <div
+                v-for="(change, key) in selectedScenario.marketShocks"
+                :key="key"
+                class="shock-row"
+              >
                 <span class="shock-label">{{ formatLabel(key) }}</span>
-                <span class="shock-val" :class="change.includes('-') ? 'loss' : 'gain'">
+                <span
+                  class="shock-val"
+                  :class="change.includes('-') ? 'loss' : 'gain'"
+                >
                   {{ change }}
                 </span>
               </div>
@@ -197,9 +226,16 @@
               <h3>Позиции под риском</h3>
             </div>
             <div class="positions-list">
-              <div v-for="(posImpact, posName) in selectedScenario.positionImpact" :key="posName" class="position-row">
+              <div
+                v-for="(posImpact, posName) in selectedScenario.positionImpact"
+                :key="posName"
+                class="position-row"
+              >
                 <span class="pos-name">{{ posName }}</span>
-                <span class="pos-val" :class="posImpact < 0 ? 'loss' : 'gain'">
+                <span
+                  class="pos-val"
+                  :class="posImpact < 0 ? 'loss' : 'gain'"
+                >
                   {{ posImpact > 0 ? '+' : '' }}{{ formatCompactCurrency(posImpact * shockMultiplier) }}
                 </span>
               </div>
@@ -224,16 +260,30 @@
 
     <!-- Summary Table -->
     <div class="table-container">
-      <div class="table-header">Матрица стресс-тестов</div>
+      <div class="table-header">
+        Матрица стресс-тестов
+      </div>
       <table class="data-table">
         <thead>
           <tr>
-            <th class="col-name">Сценарий</th>
-            <th class="col-type">Тип</th>
-            <th class="col-value">P&L</th>
-            <th class="col-value">ΔDV01</th>
-            <th class="col-value">Spread DV01</th>
-            <th class="col-value">Вероят.</th>
+            <th class="col-name">
+              Сценарий
+            </th>
+            <th class="col-type">
+              Тип
+            </th>
+            <th class="col-value">
+              P&L
+            </th>
+            <th class="col-value">
+              ΔDV01
+            </th>
+            <th class="col-value">
+              Spread DV01
+            </th>
+            <th class="col-value">
+              Вероят.
+            </th>
           </tr>
         </thead>
         <tbody>
@@ -244,14 +294,27 @@
             :class="{ active: selectedScenario?.id === scenario.id }"
             @click="selectScenario(scenario)"
           >
-            <td class="col-name">{{ scenario.name }}</td>
-            <td class="col-type">{{ scenario.shockType }}</td>
-            <td class="col-value" :class="scenario.pnlImpact < 0 ? 'loss' : 'gain'">
+            <td class="col-name">
+              {{ scenario.name }}
+            </td>
+            <td class="col-type">
+              {{ scenario.shockType }}
+            </td>
+            <td
+              class="col-value"
+              :class="scenario.pnlImpact < 0 ? 'loss' : 'gain'"
+            >
               {{ formatCurrency(scenario.pnlImpact * shockMultiplier) }}
             </td>
-            <td class="col-value accent">{{ (scenario.dv01Change * shockMultiplier).toFixed(1) }}</td>
-            <td class="col-value blue">{{ (scenario.spreadDv01 * shockMultiplier).toFixed(2) }}</td>
-            <td class="col-value accent">{{ (scenario.probability * 100).toFixed(0) }}%</td>
+            <td class="col-value accent">
+              {{ (scenario.dv01Change * shockMultiplier).toFixed(1) }}
+            </td>
+            <td class="col-value blue">
+              {{ (scenario.spreadDv01 * shockMultiplier).toFixed(2) }}
+            </td>
+            <td class="col-value accent">
+              {{ (scenario.probability * 100).toFixed(0) }}%
+            </td>
           </tr>
         </tbody>
       </table>

@@ -6,7 +6,9 @@
           FA
         </div>
         <div>
-          <h2 class="text-2xl font-bold text-white tracking-tight">Фундаментальный анализ</h2>
+          <h2 class="text-2xl font-bold text-white tracking-tight">
+            Фундаментальный анализ
+          </h2>
           <div class="flex items-center gap-4 text-xs text-gray-400">
             <span class="px-1.5 py-0.5 rounded bg-white/5 text-[10px] uppercase">DaData + SEC + yfinance</span>
           </div>
@@ -17,8 +19,8 @@
         <button
           v-for="tab in tabs"
           :key="tab.id"
-          @click="section = tab.id"
           :class="`px-3 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap ${section === tab.id ? 'bg-indigo-500/20 text-indigo-300 border border-indigo-500/30' : 'text-gray-500 hover:text-white hover:bg-white/5'}`"
+          @click="section = tab.id"
         >
           {{ tab.label }}
         </button>
@@ -27,7 +29,10 @@
 
     <div class="flex-1 overflow-y-auto custom-scrollbar p-6 bg-gradient-to-b from-black/10 to-transparent">
       <!-- ═══ Stock Info (yfinance) ═══ -->
-      <div v-if="section === 'EE'" class="space-y-6">
+      <div
+        v-if="section === 'EE'"
+        class="space-y-6"
+      >
         <div class="flex gap-4 items-end">
           <div class="flex-1">
             <label class="text-xs text-gray-400 uppercase font-bold block mb-2">Тикер акции (yfinance)</label>
@@ -37,9 +42,12 @@
               placeholder="AAPL, MSFT, SBER.ME..."
               class="w-full bg-black/40 border border-white/10 rounded-xl py-3 px-4 text-white font-mono focus:border-indigo-500/50 outline-none"
               @keydown.enter="loadStockInfo"
-            />
+            >
           </div>
-          <button @click="loadStockInfo" class="px-6 py-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl font-bold text-sm transition-colors">
+          <button
+            class="px-6 py-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl font-bold text-sm transition-colors"
+            @click="loadStockInfo"
+          >
             Загрузить
           </button>
         </div>
@@ -48,43 +56,81 @@
           <button
             v-for="t in quickStockTickers"
             :key="t"
-            @click="stockTicker = t; loadStockInfo()"
             class="px-3 py-1.5 bg-white/5 hover:bg-white/10 text-xs font-bold text-gray-300 rounded-lg border border-white/5 transition-colors"
+            @click="stockTicker = t; loadStockInfo()"
           >
             {{ t }}
           </button>
         </div>
 
-        <div v-if="stockLoading" class="flex items-center gap-2 text-gray-400 text-xs">
-          <div class="w-3 h-3 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
+        <div
+          v-if="stockLoading"
+          class="flex items-center gap-2 text-gray-400 text-xs"
+        >
+          <div class="w-3 h-3 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" />
           Загрузка...
         </div>
 
-        <div v-if="stockInfo" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div
+          v-if="stockInfo"
+          class="grid grid-cols-1 md:grid-cols-2 gap-6"
+        >
           <div class="p-6 rounded-2xl bg-white/5 border border-white/5">
-            <h3 class="text-lg font-bold text-white mb-4">{{ stockInfo.name }}</h3>
+            <h3 class="text-lg font-bold text-white mb-4">
+              {{ stockInfo.name }}
+            </h3>
             <div class="space-y-3 text-sm">
-              <div class="flex justify-between"><span class="text-gray-400">Цена</span><span class="text-white font-mono font-bold">{{ stockInfo.price?.toFixed(2) }} {{ stockInfo.currency }}</span></div>
-              <div class="flex justify-between"><span class="text-gray-400">Изменение</span><span :class="(stockInfo.changePercent || 0) >= 0 ? 'text-emerald-400' : 'text-rose-400'" class="font-mono">{{ (stockInfo.changePercent || 0) >= 0 ? '+' : '' }}{{ stockInfo.changePercent?.toFixed(2) }}%</span></div>
-              <div class="flex justify-between"><span class="text-gray-400">Market Cap</span><span class="text-white font-mono">{{ formatLargeNumber(stockInfo.marketCap) }}</span></div>
-              <div class="flex justify-between"><span class="text-gray-400">P/E</span><span class="text-white font-mono">{{ stockInfo.peRatio?.toFixed(2) || '—' }}</span></div>
-              <div class="flex justify-between"><span class="text-gray-400">P/B</span><span class="text-white font-mono">{{ stockInfo.priceToBook?.toFixed(2) || '—' }}</span></div>
-              <div class="flex justify-between"><span class="text-gray-400">Beta</span><span class="text-white font-mono">{{ stockInfo.beta?.toFixed(2) || '—' }}</span></div>
-              <div class="flex justify-between"><span class="text-gray-400">Dividend Yield</span><span class="text-white font-mono">{{ stockInfo.dividendYield ? (stockInfo.dividendYield * 100).toFixed(2) + '%' : '—' }}</span></div>
-              <div class="flex justify-between"><span class="text-gray-400">Sector</span><span class="text-white">{{ stockInfo.sector || '—' }}</span></div>
-              <div class="flex justify-between"><span class="text-gray-400">Industry</span><span class="text-white">{{ stockInfo.industry || '—' }}</span></div>
+              <div class="flex justify-between">
+                <span class="text-gray-400">Цена</span><span class="text-white font-mono font-bold">{{ stockInfo.price?.toFixed(2) }} {{ stockInfo.currency }}</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-gray-400">Изменение</span><span
+                  :class="(stockInfo.changePercent || 0) >= 0 ? 'text-emerald-400' : 'text-rose-400'"
+                  class="font-mono"
+                >{{ (stockInfo.changePercent || 0) >= 0 ? '+' : '' }}{{ stockInfo.changePercent?.toFixed(2) }}%</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-gray-400">Market Cap</span><span class="text-white font-mono">{{ formatLargeNumber(stockInfo.marketCap) }}</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-gray-400">P/E</span><span class="text-white font-mono">{{ stockInfo.peRatio?.toFixed(2) || '—' }}</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-gray-400">P/B</span><span class="text-white font-mono">{{ stockInfo.priceToBook?.toFixed(2) || '—' }}</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-gray-400">Beta</span><span class="text-white font-mono">{{ stockInfo.beta?.toFixed(2) || '—' }}</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-gray-400">Dividend Yield</span><span class="text-white font-mono">{{ stockInfo.dividendYield ? (stockInfo.dividendYield * 100).toFixed(2) + '%' : '—' }}</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-gray-400">Sector</span><span class="text-white">{{ stockInfo.sector || '—' }}</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-gray-400">Industry</span><span class="text-white">{{ stockInfo.industry || '—' }}</span>
+              </div>
             </div>
           </div>
           <div class="p-6 rounded-2xl bg-white/5 border border-white/5">
-            <h3 class="text-sm font-bold text-gray-400 uppercase mb-4">Описание</h3>
-            <p class="text-sm text-gray-300 leading-relaxed">{{ stockInfo.description || 'Нет описания' }}</p>
+            <h3 class="text-sm font-bold text-gray-400 uppercase mb-4">
+              Описание
+            </h3>
+            <p class="text-sm text-gray-300 leading-relaxed">
+              {{ stockInfo.description || 'Нет описания' }}
+            </p>
           </div>
         </div>
       </div>
 
       <!-- ═══ DaData Company Search ═══ -->
-      <div v-else-if="section === 'ERN'" class="space-y-6">
-        <h3 class="text-lg font-bold text-white">Поиск российских компаний (DaData)</h3>
+      <div
+        v-else-if="section === 'ERN'"
+        class="space-y-6"
+      >
+        <h3 class="text-lg font-bold text-white">
+          Поиск российских компаний (DaData)
+        </h3>
         <div class="flex gap-4 items-end">
           <div class="flex-1">
             <label class="text-xs text-gray-400 uppercase font-bold block mb-2">ИНН / Название компании</label>
@@ -94,24 +140,41 @@
               placeholder="7707083893 или Сбербанк..."
               class="w-full bg-black/40 border border-white/10 rounded-xl py-3 px-4 text-white font-mono focus:border-indigo-500/50 outline-none"
               @keydown.enter="searchDadata"
-            />
+            >
           </div>
-          <button @click="searchDadata" class="px-6 py-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl font-bold text-sm transition-colors">
+          <button
+            class="px-6 py-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl font-bold text-sm transition-colors"
+            @click="searchDadata"
+          >
             Найти
           </button>
         </div>
 
-        <div v-if="dadataLoading" class="flex items-center gap-2 text-gray-400 text-xs">
-          <div class="w-3 h-3 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
+        <div
+          v-if="dadataLoading"
+          class="flex items-center gap-2 text-gray-400 text-xs"
+        >
+          <div class="w-3 h-3 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" />
           Поиск компании...
         </div>
 
-        <div v-if="dadataResults.length > 0" class="space-y-4">
-          <div v-for="(company, i) in dadataResults" :key="i" class="p-6 rounded-2xl bg-white/5 border border-white/5">
+        <div
+          v-if="dadataResults.length > 0"
+          class="space-y-4"
+        >
+          <div
+            v-for="(company, i) in dadataResults"
+            :key="i"
+            class="p-6 rounded-2xl bg-white/5 border border-white/5"
+          >
             <div class="flex justify-between items-start mb-4">
               <div>
-                <h4 class="text-lg font-bold text-white">{{ company.name }}</h4>
-                <p class="text-xs text-gray-500 mt-1">{{ company.full_name }}</p>
+                <h4 class="text-lg font-bold text-white">
+                  {{ company.name }}
+                </h4>
+                <p class="text-xs text-gray-500 mt-1">
+                  {{ company.full_name }}
+                </p>
               </div>
               <span :class="['px-2 py-1 rounded text-xs font-bold border', company.status === 'ACTIVE' ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' : 'bg-rose-500/10 border-rose-500/20 text-rose-400']">
                 {{ company.status }}
@@ -123,10 +186,16 @@
               <div><span class="text-gray-500 block text-xs">КПП</span><span class="text-white font-mono">{{ company.kpp }}</span></div>
               <div><span class="text-gray-500 block text-xs">Тип</span><span class="text-white">{{ company.type }}</span></div>
             </div>
-            <div v-if="company.address" class="mt-4 text-xs text-gray-400">
+            <div
+              v-if="company.address"
+              class="mt-4 text-xs text-gray-400"
+            >
               {{ company.address }}
             </div>
-            <div v-if="company.management_name" class="mt-2 text-xs text-gray-400">
+            <div
+              v-if="company.management_name"
+              class="mt-2 text-xs text-gray-400"
+            >
               Руководитель: {{ company.management_name }} ({{ company.management_post }})
             </div>
           </div>
@@ -134,8 +203,13 @@
       </div>
 
       <!-- ═══ SEC Filings Search ═══ -->
-      <div v-else-if="section === 'ANR'" class="space-y-6">
-        <h3 class="text-lg font-bold text-white">SEC EDGAR — Поиск отчётности</h3>
+      <div
+        v-else-if="section === 'ANR'"
+        class="space-y-6"
+      >
+        <h3 class="text-lg font-bold text-white">
+          SEC EDGAR — Поиск отчётности
+        </h3>
         <div class="flex gap-4 items-end">
           <div class="flex-1">
             <label class="text-xs text-gray-400 uppercase font-bold block mb-2">Поиск (компания, CIK или форма)</label>
@@ -145,44 +219,80 @@
               placeholder="Apple, Tesla, 10-K..."
               class="w-full bg-black/40 border border-white/10 rounded-xl py-3 px-4 text-white font-mono focus:border-indigo-500/50 outline-none"
               @keydown.enter="searchSec"
-            />
+            >
           </div>
-          <button @click="searchSec" class="px-6 py-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl font-bold text-sm transition-colors">
+          <button
+            class="px-6 py-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl font-bold text-sm transition-colors"
+            @click="searchSec"
+          >
             Поиск
           </button>
         </div>
 
-        <div v-if="secLoading" class="flex items-center gap-2 text-gray-400 text-xs">
-          <div class="w-3 h-3 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
+        <div
+          v-if="secLoading"
+          class="flex items-center gap-2 text-gray-400 text-xs"
+        >
+          <div class="w-3 h-3 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" />
           Поиск в SEC EDGAR...
         </div>
 
-        <div v-if="secResults.length > 0" class="flex-1 overflow-auto rounded-2xl border border-white/5 bg-black/20">
+        <div
+          v-if="secResults.length > 0"
+          class="flex-1 overflow-auto rounded-2xl border border-white/5 bg-black/20"
+        >
           <table class="w-full text-left border-collapse">
             <thead>
               <tr class="text-xs text-gray-400 uppercase bg-white/5">
-                <th class="p-4">Форма</th>
-                <th class="p-4">Компания</th>
-                <th class="p-4">Дата</th>
-                <th class="p-4">Описание</th>
+                <th class="p-4">
+                  Форма
+                </th>
+                <th class="p-4">
+                  Компания
+                </th>
+                <th class="p-4">
+                  Дата
+                </th>
+                <th class="p-4">
+                  Описание
+                </th>
               </tr>
             </thead>
             <tbody class="text-sm text-gray-300">
-              <tr v-for="(filing, i) in secResults" :key="i" class="border-b border-white/5 hover:bg-white/5">
-                <td class="p-4"><span class="text-xs font-bold bg-white/10 px-2 py-1 rounded text-white">{{ filing.form_type }}</span></td>
-                <td class="p-4 text-white font-bold">{{ filing.entity_name }}</td>
-                <td class="p-4 text-gray-400 font-mono text-xs">{{ filing.file_date }}</td>
-                <td class="p-4 text-gray-500 text-xs">{{ filing.file_description }}</td>
+              <tr
+                v-for="(filing, i) in secResults"
+                :key="i"
+                class="border-b border-white/5 hover:bg-white/5"
+              >
+                <td class="p-4">
+                  <span class="text-xs font-bold bg-white/10 px-2 py-1 rounded text-white">{{ filing.form_type }}</span>
+                </td>
+                <td class="p-4 text-white font-bold">
+                  {{ filing.entity_name }}
+                </td>
+                <td class="p-4 text-gray-400 font-mono text-xs">
+                  {{ filing.file_date }}
+                </td>
+                <td class="p-4 text-gray-500 text-xs">
+                  {{ filing.file_description }}
+                </td>
               </tr>
             </tbody>
           </table>
         </div>
       </div>
 
-      <div v-else class="flex items-center justify-center h-full">
+      <div
+        v-else
+        class="flex items-center justify-center h-full"
+      >
         <div class="text-center">
-          <h3 class="text-xl font-bold text-white mb-2">{{ tabs.find(t => t.id === section)?.label }}</h3>
-          <p class="text-gray-400">Содержимое появится в ближайшее время</p>
+          <h3 class="text-xl font-bold text-white mb-2">
+            {{ tabs.find(t => t.id === section)?.label }}
+          </h3>
+          <p class="text-gray-400">
+            Содержимое появится в ближайшее время
+          </p>
         </div>
       </div>
     </div>

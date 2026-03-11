@@ -7,8 +7,12 @@
           <SigmaIcon class="w-6 h-6" />
         </div>
         <div>
-          <h2 class="section-title font-anton">ОПЦИОНЫ</h2>
-          <p class="section-subtitle font-mono">ЦЕНООБРАЗОВАНИЕ И АНАЛИЗ ВОЛАТИЛЬНОСТИ</p>
+          <h2 class="section-title font-anton">
+            ОПЦИОНЫ
+          </h2>
+          <p class="section-subtitle font-mono">
+            ЦЕНООБРАЗОВАНИЕ И АНАЛИЗ ВОЛАТИЛЬНОСТИ
+          </p>
         </div>
       </div>
 
@@ -16,21 +20,39 @@
         <button
           v-for="tab in tabs"
           :key="tab.id"
-          @click="section = tab.id"
           :class="['tab-btn', { active: section === tab.id }]"
+          @click="section = tab.id"
         >
-          <component :is="tab.icon" class="w-3.5 h-3.5" /> {{ tab.label }}
+          <component
+            :is="tab.icon"
+            class="w-3.5 h-3.5"
+          /> {{ tab.label }}
         </button>
       </div>
     </div>
 
     <!-- Content -->
     <div class="flex-1 flex flex-col gap-6">
-      <OptionAnalytics v-if="section === 'OVML'" :symbol="symbol" />
-      <VolatilitySurface v-else-if="section === 'VOL'" :symbol="symbol" />
-      <OptionScreening v-else-if="section === 'OCRN'" :symbol="symbol" />
-      <ImpliedVsRealized v-else-if="section === 'VARL'" :symbol="symbol" />
-      <OptionAnalytics v-else :symbol="symbol" />
+      <OptionAnalytics
+        v-if="section === 'OVML'"
+        :symbol="symbol"
+      />
+      <VolatilitySurface
+        v-else-if="section === 'VOL'"
+        :symbol="symbol"
+      />
+      <OptionScreening
+        v-else-if="section === 'OCRN'"
+        :symbol="symbol"
+      />
+      <ImpliedVsRealized
+        v-else-if="section === 'VARL'"
+        :symbol="symbol"
+      />
+      <OptionAnalytics
+        v-else
+        :symbol="symbol"
+      />
     </div>
   </div>
 </template>

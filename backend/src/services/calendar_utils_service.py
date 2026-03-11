@@ -5,7 +5,7 @@ Public holiday data and work calendar information.
 """
 
 import xml.etree.ElementTree as ET
-from typing import Dict, Any, List
+from typing import Any
 
 from src.services.cache_service import cache_get, cache_set, make_cache_key
 from src.utils.http_client import get_session
@@ -16,7 +16,7 @@ XMLCAL_BASE = "https://xmlcalendar.ru/data/ru"
 
 # ─── Nager.Date ───────────────────────────────────────────────────────────────
 
-async def nager_public_holidays(country_code: str, year: int) -> List[Dict[str, Any]]:
+async def nager_public_holidays(country_code: str, year: int) -> list[dict[str, Any]]:
     """Get public holidays for a country and year."""
     key = make_cache_key("nager", "holidays", country_code, year)
     cached = cache_get(key)
@@ -44,7 +44,7 @@ async def nager_public_holidays(country_code: str, year: int) -> List[Dict[str, 
     return holidays
 
 
-async def nager_next_holidays(country_code: str) -> List[Dict[str, Any]]:
+async def nager_next_holidays(country_code: str) -> list[dict[str, Any]]:
     """Get upcoming public holidays."""
     key = make_cache_key("nager", "next", country_code)
     cached = cache_get(key)
@@ -60,7 +60,7 @@ async def nager_next_holidays(country_code: str) -> List[Dict[str, Any]]:
     return data
 
 
-async def nager_is_today_holiday(country_code: str) -> Dict[str, Any]:
+async def nager_is_today_holiday(country_code: str) -> dict[str, Any]:
     """Check if today is a public holiday."""
     key = make_cache_key("nager", "today", country_code)
     cached = cache_get(key)
@@ -78,7 +78,7 @@ async def nager_is_today_holiday(country_code: str) -> Dict[str, Any]:
 
 # ─── Russian Calendar (xmlcalendar.ru) ────────────────────────────────────────
 
-async def russian_calendar(year: int) -> Dict[str, Any]:
+async def russian_calendar(year: int) -> dict[str, Any]:
     """Get Russian work/holiday calendar for a given year.
 
     Day types from xmlcalendar.ru:

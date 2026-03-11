@@ -1,14 +1,18 @@
 <!-- src/pages/ForwardsGreeksDashboard.vue -->
 <template>
   <div class="greeks-dashboard-page">
-    
     <!-- Header Section -->
     <div class="page-header">
       <div class="header-left">
-        <h1 class="page-title">Панель греков</h1>
+        <h1 class="page-title">
+          Панель греков
+        </h1>
         <p class="page-subtitle">
           Анализ чувствительности форвардных позиций
-          <span v-if="forwardRegistryStore.registryForwards.length > 0" style="margin-left: 12px; color: rgba(255,255,255,0.6);">
+          <span
+            v-if="forwardRegistryStore.registryForwards.length > 0"
+            style="margin-left: 12px; color: rgba(255,255,255,0.6);"
+          >
             • Портфель: {{ forwardRegistryStore.registryForwards.length }} форвардов
             <span v-if="forwardRegistryStore.calculatedForwards.length > 0">
               ({{ forwardRegistryStore.calculatedForwards.length }} рассчитано)
@@ -21,27 +25,55 @@
         <!-- Position Type -->
         <div class="control-group">
           <label class="control-label">Позиция:</label>
-          <select v-model="selectedPosition" class="position-select" @change="updateGreeks">
-            <option value="long-bond">Long форвард на облигацию</option>
-            <option value="short-bond">Short форвард на облигацию</option>
-            <option value="long-fx">Long валютный форвард</option>
-            <option value="short-fx">Short валютный форвард</option>
-            <option value="long-commodity">Long форвард на товар</option>
+          <select
+            v-model="selectedPosition"
+            class="position-select"
+            @change="updateGreeks"
+          >
+            <option value="long-bond">
+              Long форвард на облигацию
+            </option>
+            <option value="short-bond">
+              Short форвард на облигацию
+            </option>
+            <option value="long-fx">
+              Long валютный форвард
+            </option>
+            <option value="short-fx">
+              Short валютный форвард
+            </option>
+            <option value="long-commodity">
+              Long форвард на товар
+            </option>
           </select>
         </div>
 
         <!-- View Type -->
         <div class="control-group">
           <label class="control-label">Вид:</label>
-          <select v-model="selectedViewType" class="view-select" @change="updateGreeks">
-            <option value="summary">Резюме</option>
-            <option value="detailed">Детальные греки</option>
-            <option value="sensitivity">Графики чувствительности</option>
+          <select
+            v-model="selectedViewType"
+            class="view-select"
+            @change="updateGreeks"
+          >
+            <option value="summary">
+              Резюме
+            </option>
+            <option value="detailed">
+              Детальные греки
+            </option>
+            <option value="sensitivity">
+              Графики чувствительности
+            </option>
           </select>
         </div>
 
         <!-- Update Button -->
-        <button @click="updateGreeks" class="btn-primary" :disabled="calculating">
+        <button
+          class="btn-primary"
+          :disabled="calculating"
+          @click="updateGreeks"
+        >
           <span v-if="!calculating">Обновить</span>
           <span v-else>↺ Считаю...</span>
         </button>
@@ -56,7 +88,9 @@
           <span class="greek-symbol">Δ (Delta)</span>
           <span class="greek-name">Чувствительность к спот цене</span>
         </div>
-        <div class="greek-value positive">{{ greeksValues.delta.toFixed(4) }}</div>
+        <div class="greek-value positive">
+          {{ greeksValues.delta.toFixed(4) }}
+        </div>
         <div class="greek-details">
           <div class="detail">
             <span class="label">P&L / 1% спота</span>
@@ -64,7 +98,10 @@
           </div>
           <div class="detail">
             <span class="label">Gamma (рост дельты)</span>
-            <span class="value" :class="greeksValues.gamma >= 0 ? 'positive' : 'negative'">
+            <span
+              class="value"
+              :class="greeksValues.gamma >= 0 ? 'positive' : 'negative'"
+            >
               {{ greeksValues.gamma >= 0 ? '+' : '' }}{{ greeksValues.gamma.toFixed(6) }}
             </span>
           </div>
@@ -77,7 +114,9 @@
           <span class="greek-symbol">ν (Vega)</span>
           <span class="greek-name">Чувствительность к волатильности</span>
         </div>
-        <div class="greek-value blue">{{ greeksValues.vega.toFixed(4) }}</div>
+        <div class="greek-value blue">
+          {{ greeksValues.vega.toFixed(4) }}
+        </div>
         <div class="greek-details">
           <div class="detail">
             <span class="label">P&L / 1% vol</span>
@@ -85,7 +124,10 @@
           </div>
           <div class="detail">
             <span class="label">Volga (кривизна)</span>
-            <span class="value" :class="greeksValues.volga >= 0 ? 'positive' : 'negative'">
+            <span
+              class="value"
+              :class="greeksValues.volga >= 0 ? 'positive' : 'negative'"
+            >
               {{ greeksValues.volga >= 0 ? '+' : '' }}{{ greeksValues.volga.toFixed(6) }}
             </span>
           </div>
@@ -98,7 +140,10 @@
           <span class="greek-symbol">Θ (Theta)</span>
           <span class="greek-name">Временное затухание (P&L от времени)</span>
         </div>
-        <div class="greek-value" :class="greeksValues.theta >= 0 ? 'positive' : 'negative'">
+        <div
+          class="greek-value"
+          :class="greeksValues.theta >= 0 ? 'positive' : 'negative'"
+        >
           {{ greeksValues.theta >= 0 ? '+' : '' }}{{ greeksValues.theta.toFixed(4) }}
         </div>
         <div class="greek-details">
@@ -119,7 +164,9 @@
           <span class="greek-symbol">ρ (Rho)</span>
           <span class="greek-name">Чувствительность к ставкам</span>
         </div>
-        <div class="greek-value cyan">{{ greeksValues.rho.toFixed(4) }}</div>
+        <div class="greek-value cyan">
+          {{ greeksValues.rho.toFixed(4) }}
+        </div>
         <div class="greek-details">
           <div class="detail">
             <span class="label">P&L / 1% ставки</span>
@@ -127,7 +174,10 @@
           </div>
           <div class="detail">
             <span class="label">Rogas (кривизна)</span>
-            <span class="value" :class="greeksValues.rogas >= 0 ? 'positive' : 'negative'">
+            <span
+              class="value"
+              :class="greeksValues.rogas >= 0 ? 'positive' : 'negative'"
+            >
               {{ greeksValues.rogas >= 0 ? '+' : '' }}{{ greeksValues.rogas.toFixed(6) }}
             </span>
           </div>
@@ -144,7 +194,7 @@
           <span class="chart-subtitle">∂F/∂S — как меняется стоимость форварда</span>
         </div>
         <div class="chart-container">
-          <canvas ref="deltaChartRef"></canvas>
+          <canvas ref="deltaChartRef" />
         </div>
       </div>
 
@@ -155,7 +205,7 @@
           <span class="chart-subtitle">∂²F/∂S² — как меняется дельта</span>
         </div>
         <div class="chart-container">
-          <canvas ref="gammaChartRef"></canvas>
+          <canvas ref="gammaChartRef" />
         </div>
       </div>
     </div>
@@ -169,7 +219,7 @@
           <span class="chart-subtitle">∂F/∂σ — как меняется стоимость с волатильностью</span>
         </div>
         <div class="chart-container">
-          <canvas ref="vegaChartRef"></canvas>
+          <canvas ref="vegaChartRef" />
         </div>
       </div>
 
@@ -180,7 +230,7 @@
           <span class="chart-subtitle">Вклад каждого срока в итоговый vega</span>
         </div>
         <div class="chart-container">
-          <canvas ref="vegaDecompRef"></canvas>
+          <canvas ref="vegaDecompRef" />
         </div>
       </div>
     </div>
@@ -194,7 +244,7 @@
           <span class="chart-subtitle">∂F/∂t — P&L от изменения времени</span>
         </div>
         <div class="chart-container">
-          <canvas ref="thetaChartRef"></canvas>
+          <canvas ref="thetaChartRef" />
         </div>
       </div>
 
@@ -205,7 +255,7 @@
           <span class="chart-subtitle">∂²F/∂S∂σ — взаимодействие факторов</span>
         </div>
         <div class="chart-container">
-          <canvas ref="crossGammaChartRef"></canvas>
+          <canvas ref="crossGammaChartRef" />
         </div>
       </div>
     </div>
@@ -220,107 +270,237 @@
         <table class="greeks-table">
           <thead>
             <tr>
-              <th class="col-name">Greeks</th>
-              <th class="col-symbol">Символ</th>
-              <th class="col-value">Значение</th>
-              <th class="col-meaning">Интерпретация</th>
-              <th class="col-impact">Влияние @ 1%</th>
-              <th class="col-order">Порядок</th>
+              <th class="col-name">
+                Greeks
+              </th>
+              <th class="col-symbol">
+                Символ
+              </th>
+              <th class="col-value">
+                Значение
+              </th>
+              <th class="col-meaning">
+                Интерпретация
+              </th>
+              <th class="col-impact">
+                Влияние @ 1%
+              </th>
+              <th class="col-order">
+                Порядок
+              </th>
             </tr>
           </thead>
           <tbody>
             <!-- First-order Greeks -->
             <tr class="section-header">
-              <td colspan="6">ГРЕКИ ПЕРВОГО ПОРЯДКА</td>
+              <td colspan="6">
+                ГРЕКИ ПЕРВОГО ПОРЯДКА
+              </td>
             </tr>
             <tr>
-              <td class="greek-name">Delta</td>
-              <td class="symbol">Δ = ∂F/∂S</td>
-              <td class="value mono positive">{{ greeksValues.delta.toFixed(4) }}</td>
-              <td class="meaning">Forward при изменении спота</td>
-              <td class="impact mono">{{ formatCompactCurrency(pnlMetrics.deltaP1pct) }}</td>
-              <td class="order">1st</td>
+              <td class="greek-name">
+                Delta
+              </td>
+              <td class="symbol">
+                Δ = ∂F/∂S
+              </td>
+              <td class="value mono positive">
+                {{ greeksValues.delta.toFixed(4) }}
+              </td>
+              <td class="meaning">
+                Forward при изменении спота
+              </td>
+              <td class="impact mono">
+                {{ formatCompactCurrency(pnlMetrics.deltaP1pct) }}
+              </td>
+              <td class="order">
+                1st
+              </td>
             </tr>
             <tr>
-              <td class="greek-name">Vega</td>
-              <td class="symbol">ν = ∂F/∂σ</td>
-              <td class="value mono blue">{{ greeksValues.vega.toFixed(4) }}</td>
-              <td class="meaning">Forward при изменении волатильности</td>
-              <td class="impact mono">{{ formatCompactCurrency(pnlMetrics.vegaP1pct) }}</td>
-              <td class="order">1st</td>
+              <td class="greek-name">
+                Vega
+              </td>
+              <td class="symbol">
+                ν = ∂F/∂σ
+              </td>
+              <td class="value mono blue">
+                {{ greeksValues.vega.toFixed(4) }}
+              </td>
+              <td class="meaning">
+                Forward при изменении волатильности
+              </td>
+              <td class="impact mono">
+                {{ formatCompactCurrency(pnlMetrics.vegaP1pct) }}
+              </td>
+              <td class="order">
+                1st
+              </td>
             </tr>
             <tr>
-              <td class="greek-name">Theta</td>
-              <td class="symbol">Θ = ∂F/∂t</td>
-              <td class="value mono" :class="greeksValues.theta >= 0 ? 'positive' : 'negative'">
+              <td class="greek-name">
+                Theta
+              </td>
+              <td class="symbol">
+                Θ = ∂F/∂t
+              </td>
+              <td
+                class="value mono"
+                :class="greeksValues.theta >= 0 ? 'positive' : 'negative'"
+              >
                 {{ greeksValues.theta >= 0 ? '+' : '' }}{{ greeksValues.theta.toFixed(4) }}
               </td>
-              <td class="meaning">Forward при изменении времени</td>
-              <td class="impact mono">{{ formatCompactCurrency(pnlMetrics.thetaPerDay) }}/day</td>
-              <td class="order">1st</td>
+              <td class="meaning">
+                Forward при изменении времени
+              </td>
+              <td class="impact mono">
+                {{ formatCompactCurrency(pnlMetrics.thetaPerDay) }}/day
+              </td>
+              <td class="order">
+                1st
+              </td>
             </tr>
             <tr>
-              <td class="greek-name">Rho</td>
-              <td class="symbol">ρ = ∂F/∂r</td>
-              <td class="value mono cyan">{{ greeksValues.rho.toFixed(4) }}</td>
-              <td class="meaning">Forward при изменении ставки</td>
-              <td class="impact mono">{{ formatCompactCurrency(pnlMetrics.rhoP1pct) }}</td>
-              <td class="order">1st</td>
+              <td class="greek-name">
+                Rho
+              </td>
+              <td class="symbol">
+                ρ = ∂F/∂r
+              </td>
+              <td class="value mono cyan">
+                {{ greeksValues.rho.toFixed(4) }}
+              </td>
+              <td class="meaning">
+                Forward при изменении ставки
+              </td>
+              <td class="impact mono">
+                {{ formatCompactCurrency(pnlMetrics.rhoP1pct) }}
+              </td>
+              <td class="order">
+                1st
+              </td>
             </tr>
 
             <!-- Second-order Greeks -->
             <tr class="section-header">
-              <td colspan="6">ГРЕКИ ВТОРОГО ПОРЯДКА</td>
+              <td colspan="6">
+                ГРЕКИ ВТОРОГО ПОРЯДКА
+              </td>
             </tr>
             <tr>
-              <td class="greek-name">Gamma</td>
-              <td class="symbol">Γ = ∂²F/∂S²</td>
-              <td class="value mono" :class="greeksValues.gamma >= 0 ? 'positive' : 'negative'">
+              <td class="greek-name">
+                Gamma
+              </td>
+              <td class="symbol">
+                Γ = ∂²F/∂S²
+              </td>
+              <td
+                class="value mono"
+                :class="greeksValues.gamma >= 0 ? 'positive' : 'negative'"
+              >
                 {{ greeksValues.gamma >= 0 ? '+' : '' }}{{ greeksValues.gamma.toFixed(6) }}
               </td>
-              <td class="meaning">Как меняется дельта при изменении спота</td>
-              <td class="impact mono">{{ greeksValues.gamma.toFixed(6) }}</td>
-              <td class="order">2nd</td>
+              <td class="meaning">
+                Как меняется дельта при изменении спота
+              </td>
+              <td class="impact mono">
+                {{ greeksValues.gamma.toFixed(6) }}
+              </td>
+              <td class="order">
+                2nd
+              </td>
             </tr>
             <tr>
-              <td class="greek-name">Volga</td>
-              <td class="symbol">ϝ = ∂²F/∂σ²</td>
-              <td class="value mono" :class="greeksValues.volga >= 0 ? 'positive' : 'negative'">
+              <td class="greek-name">
+                Volga
+              </td>
+              <td class="symbol">
+                ϝ = ∂²F/∂σ²
+              </td>
+              <td
+                class="value mono"
+                :class="greeksValues.volga >= 0 ? 'positive' : 'negative'"
+              >
                 {{ greeksValues.volga >= 0 ? '+' : '' }}{{ greeksValues.volga.toFixed(6) }}
               </td>
-              <td class="meaning">Как меняется vega при изменении волатильности</td>
-              <td class="impact mono">{{ greeksValues.volga.toFixed(6) }}</td>
-              <td class="order">2nd</td>
+              <td class="meaning">
+                Как меняется vega при изменении волатильности
+              </td>
+              <td class="impact mono">
+                {{ greeksValues.volga.toFixed(6) }}
+              </td>
+              <td class="order">
+                2nd
+              </td>
             </tr>
             <tr>
-              <td class="greek-name">Vanna</td>
-              <td class="symbol">χ = ∂²F/∂S∂σ</td>
-              <td class="value mono" :class="greeksValues.vanna >= 0 ? 'positive' : 'negative'">
+              <td class="greek-name">
+                Vanna
+              </td>
+              <td class="symbol">
+                χ = ∂²F/∂S∂σ
+              </td>
+              <td
+                class="value mono"
+                :class="greeksValues.vanna >= 0 ? 'positive' : 'negative'"
+              >
                 {{ greeksValues.vanna >= 0 ? '+' : '' }}{{ greeksValues.vanna.toFixed(6) }}
               </td>
-              <td class="meaning">Взаимодействие спота и волатильности</td>
-              <td class="impact mono">{{ greeksValues.vanna.toFixed(6) }}</td>
-              <td class="order">2nd</td>
+              <td class="meaning">
+                Взаимодействие спота и волатильности
+              </td>
+              <td class="impact mono">
+                {{ greeksValues.vanna.toFixed(6) }}
+              </td>
+              <td class="order">
+                2nd
+              </td>
             </tr>
             <tr>
-              <td class="greek-name">Charm</td>
-              <td class="symbol">χ = ∂²F/∂t∂S</td>
-              <td class="value mono" :class="greeksValues.charm >= 0 ? 'positive' : 'negative'">
+              <td class="greek-name">
+                Charm
+              </td>
+              <td class="symbol">
+                χ = ∂²F/∂t∂S
+              </td>
+              <td
+                class="value mono"
+                :class="greeksValues.charm >= 0 ? 'positive' : 'negative'"
+              >
                 {{ greeksValues.charm >= 0 ? '+' : '' }}{{ greeksValues.charm.toFixed(6) }}
               </td>
-              <td class="meaning">Как меняется дельта при изменении времени</td>
-              <td class="impact mono">{{ greeksValues.charm.toFixed(6) }}</td>
-              <td class="order">2nd</td>
+              <td class="meaning">
+                Как меняется дельта при изменении времени
+              </td>
+              <td class="impact mono">
+                {{ greeksValues.charm.toFixed(6) }}
+              </td>
+              <td class="order">
+                2nd
+              </td>
             </tr>
             <tr>
-              <td class="greek-name">Rogas</td>
-              <td class="symbol">ρρ = ∂²F/∂r²</td>
-              <td class="value mono" :class="greeksValues.rogas >= 0 ? 'positive' : 'negative'">
+              <td class="greek-name">
+                Rogas
+              </td>
+              <td class="symbol">
+                ρρ = ∂²F/∂r²
+              </td>
+              <td
+                class="value mono"
+                :class="greeksValues.rogas >= 0 ? 'positive' : 'negative'"
+              >
                 {{ greeksValues.rogas >= 0 ? '+' : '' }}{{ greeksValues.rogas.toFixed(6) }}
               </td>
-              <td class="meaning">Как меняется rho при изменении ставки</td>
-              <td class="impact mono">{{ greeksValues.rogas.toFixed(6) }}</td>
-              <td class="order">2nd</td>
+              <td class="meaning">
+                Как меняется rho при изменении ставки
+              </td>
+              <td class="impact mono">
+                {{ greeksValues.rogas.toFixed(6) }}
+              </td>
+              <td class="order">
+                2nd
+              </td>
             </tr>
           </tbody>
         </table>
@@ -334,7 +514,7 @@
         <span class="card-subtitle">Тепловая карта по движениям рынка</span>
       </div>
       <div class="heatmap-container">
-        <canvas ref="heatmapRef"></canvas>
+        <canvas ref="heatmapRef" />
       </div>
     </div>
 
@@ -347,7 +527,7 @@
           <span class="chart-subtitle">Вклад каждого грека в общий P&L</span>
         </div>
         <div class="chart-container">
-          <canvas ref="pnlAttributionRef"></canvas>
+          <canvas ref="pnlAttributionRef" />
         </div>
       </div>
 
@@ -360,31 +540,46 @@
         <div class="greeks-pnl-summary">
           <div class="pnl-item">
             <span class="factor-label">Delta P&L (Движение спота)</span>
-            <span class="factor-value" :class="greeksValues.delta >= 0 ? 'positive' : 'negative'">
+            <span
+              class="factor-value"
+              :class="greeksValues.delta >= 0 ? 'positive' : 'negative'"
+            >
               {{ greeksValues.delta >= 0 ? '+' : '' }}{{ formatCompactCurrency(pnlMetrics.deltaPnL) }}
             </span>
           </div>
           <div class="pnl-item">
             <span class="factor-label">Gamma P&L (Выпуклость)</span>
-            <span class="factor-value" :class="greeksValues.gamma >= 0 ? 'positive' : 'negative'">
+            <span
+              class="factor-value"
+              :class="greeksValues.gamma >= 0 ? 'positive' : 'negative'"
+            >
               {{ greeksValues.gamma >= 0 ? '+' : '' }}{{ formatCompactCurrency(pnlMetrics.gammaPnL) }}
             </span>
           </div>
           <div class="pnl-item">
             <span class="factor-label">Vega P&L (Движение Vol)</span>
-            <span class="factor-value" :class="greeksValues.vega >= 0 ? 'positive' : 'negative'">
+            <span
+              class="factor-value"
+              :class="greeksValues.vega >= 0 ? 'positive' : 'negative'"
+            >
               {{ greeksValues.vega >= 0 ? '+' : '' }}{{ formatCompactCurrency(pnlMetrics.vegaPnL) }}
             </span>
           </div>
           <div class="pnl-item">
             <span class="factor-label">Theta P&L (Временное затухание)</span>
-            <span class="factor-value" :class="greeksValues.theta >= 0 ? 'positive' : 'negative'">
+            <span
+              class="factor-value"
+              :class="greeksValues.theta >= 0 ? 'positive' : 'negative'"
+            >
               {{ greeksValues.theta >= 0 ? '+' : '' }}{{ formatCompactCurrency(pnlMetrics.thetaPnL) }}
             </span>
           </div>
           <div class="pnl-item">
             <span class="factor-label">Rho P&L (Движение ставки)</span>
-            <span class="factor-value" :class="greeksValues.rho >= 0 ? 'positive' : 'negative'">
+            <span
+              class="factor-value"
+              :class="greeksValues.rho >= 0 ? 'positive' : 'negative'"
+            >
               {{ greeksValues.rho >= 0 ? '+' : '' }}{{ formatCompactCurrency(pnlMetrics.rhoPnL) }}
             </span>
           </div>
@@ -417,23 +612,52 @@
             </tr>
           </thead>
           <tbody>
-            <tr v-for="limit in riskLimits" :key="limit.greeks" :class="limit.status.toLowerCase()">
-              <td class="greeks-name">{{ limit.greeks }}</td>
-              <td class="current mono">{{ limit.current.toFixed(4) }}</td>
-              <td class="limit mono">{{ limit.limit }}</td>
+            <tr
+              v-for="limit in riskLimits"
+              :key="limit.greeks"
+              :class="limit.status.toLowerCase()"
+            >
+              <td class="greeks-name">
+                {{ limit.greeks }}
+              </td>
+              <td class="current mono">
+                {{ limit.current.toFixed(4) }}
+              </td>
+              <td class="limit mono">
+                {{ limit.limit }}
+              </td>
               <td class="utilization">
                 <div class="util-bar">
-                  <div class="util-fill" :style="{ width: (limit.utilization * 100) + '%' }"></div>
+                  <div
+                    class="util-fill"
+                    :style="{ width: (limit.utilization * 100) + '%' }"
+                  />
                 </div>
                 <span class="util-text">{{ (limit.utilization * 100).toFixed(0) }}%</span>
               </td>
-              <td class="status" :class="limit.status.toLowerCase()">
+              <td
+                class="status"
+                :class="limit.status.toLowerCase()"
+              >
                 {{ limit.status }}
               </td>
               <td class="action">
-                <button v-if="limit.status === 'Warning'" class="btn-action warning">Уменьшить</button>
-                <button v-else-if="limit.status === 'Critical'" class="btn-action critical">Хеджировать!</button>
-                <span v-else class="btn-action ok">OK</span>
+                <button
+                  v-if="limit.status === 'Warning'"
+                  class="btn-action warning"
+                >
+                  Уменьшить
+                </button>
+                <button
+                  v-else-if="limit.status === 'Critical'"
+                  class="btn-action critical"
+                >
+                  Хеджировать!
+                </button>
+                <span
+                  v-else
+                  class="btn-action ok"
+                >OK</span>
               </td>
             </tr>
           </tbody>
@@ -448,7 +672,7 @@
         <span class="chart-subtitle">Как меняется P&L при различных комбинациях движений</span>
       </div>
       <div class="chart-container tall">
-        <canvas ref="scenariosRef"></canvas>
+        <canvas ref="scenariosRef" />
       </div>
     </div>
 
@@ -458,7 +682,6 @@
       <span>• Частота: Непрерывная</span>
       <span>• Обновление: В реальном времени</span>
     </div>
-
   </div>
 </template>
 

@@ -17,17 +17,15 @@ Convex Portfolio Construction.
 
 Диагностика: Sharpe, CVaR, VaR, max drawdown, risk contributions, eff-N.
 """
-import numpy as np
-import scipy.stats
-import cvxpy as cp
-from typing import Dict, List, Optional, Tuple
 
+import cvxpy as cp
+import numpy as np
 
 # ── Утилиты ──────────────────────────────────────────────────────────────────
 
 def _portfolio_stats(w: np.ndarray, mu: np.ndarray, Sigma: np.ndarray,
                      R: np.ndarray, alpha: float = 0.95,
-                     annualize: int = 252) -> Dict:
+                     annualize: int = 252) -> dict:
     """Полная диагностика портфеля."""
     port_ret = float(mu @ w)
     port_var = float(w @ Sigma @ w)
@@ -74,9 +72,9 @@ def _portfolio_stats(w: np.ndarray, mu: np.ndarray, Sigma: np.ndarray,
 
 def _build_constraints(w: cp.Variable, N: int, mu: np.ndarray,
                        long_only: bool, lb: float, ub: float,
-                       max_weight: Optional[float],
-                       target_return: Optional[float],
-                       leverage: float) -> List:
+                       max_weight: float | None,
+                       target_return: float | None,
+                       leverage: float) -> list:
     cons = [cp.sum(w) == 1.0]
     if long_only:
         cons.append(w >= lb)
@@ -107,7 +105,7 @@ def _solve(problem: cp.Problem) -> bool:
 
 # ── Задачи оптимизации ────────────────────────────────────────────────────────
 
-def _min_variance(Sigma: np.ndarray, N: int, mu: np.ndarray, **kw) -> Optional[np.ndarray]:
+def _min_variance(Sigma: np.ndarray, N: int, mu: np.ndarray, **kw) -> np.ndarray | None:
     w = cp.Variable(N)
     obj = cp.Minimize(cp.quad_form(w, Sigma))
     cons = _build_constraints(w, N, mu, **kw)
@@ -116,7 +114,7 @@ def _min_variance(Sigma: np.ndarray, N: int, mu: np.ndarray, **kw) -> Optional[n
     return None
 
 
-def _max_sharpe(mu: np.ndarray, Sigma: np.ndarray, N: int, rf: float = 0.0, **kw) -> Optional[np.ndarray]:
+def _max_sharpe(mu: np.ndarray, Sigma: np.ndarray, N: int, rf: float = 0.0, **kw) -> np.ndarray | None:
     """
     Charnes-Cooper: пусть κ = 1/(μ'w − rf), y = κ·w.
     Тогда: min y'Σy  s.t. (μ-rf)'y = 1, Σyᵢ = κ, y ≥ 0.
@@ -142,7 +140,7 @@ def _max_sharpe(mu: np.ndarray, Sigma: np.ndarray, N: int, rf: float = 0.0, **kw
     return _min_variance(Sigma, N, mu, **kw)
 
 
-def _mean_variance(mu: np.ndarray, Sigma: np.ndarray, N: int, gamma: float = 1.0, **kw) -> Optional[np.ndarray]:
+def _mean_variance(mu: np.ndarray, Sigma: np.ndarray, N: int, gamma: float = 1.0, **kw) -> np.ndarray | None:
     """min w'Σw − (1/γ) μ'w"""
     w = cp.Variable(N)
     obj = cp.Minimize(cp.quad_form(w, Sigma) - (1.0 / (gamma + 1e-15)) * mu @ w)
@@ -152,7 +150,7 @@ def _mean_variance(mu: np.ndarray, Sigma: np.ndarray, N: int, gamma: float = 1.0
     return None
 
 
-def _cvar_opt(R: np.ndarray, N: int, mu: np.ndarray, alpha: float = 0.95, **kw) -> Optional[np.ndarray]:
+def _cvar_opt(R: np.ndarray, N: int, mu: np.ndarray, alpha: float = 0.95, **kw) -> np.ndarray | None:
     """
     min CVaR_α(w) = min VaR + 1/((1-α)T) · Σ zₜ
     s.t. zₜ ≥ -Rₜ'w − VaR, zₜ ≥ 0
@@ -163,16 +161,13 @@ def _cvar_opt(R: np.ndarray, N: int, mu: np.ndarray, alpha: float = 0.95, **kw) 
     z = cp.Variable(T)             # exceedances
     cvar_obj = var_var + (1.0 / ((1.0 - alpha) * T)) * cp.sum(z)
     obj = cp.Minimize(cvar_obj)
-    cons = _build_constraints(w, N, mu, **kw) + [
-        z >= -R @ w - var_var,
-        z >= 0,
-    ]
+    cons = [*_build_constraints(w, N, mu, **kw), z >= -R @ w - var_var, z >= 0]
     if _solve(cp.Problem(obj, cons)):
         return np.array(w.value)
     return None
 
 
-def _risk_parity(Sigma: np.ndarray, N: int, mu: np.ndarray, c_barrier: float = 0.1, **kw) -> Optional[np.ndarray]:
+def _risk_parity(Sigma: np.ndarray, N: int, mu: np.ndarray, c_barrier: float = 0.1, **kw) -> np.ndarray | None:
     """
     ERC via log-barrier: min w'Σw − c · Σ log(wᵢ)  s.t. Σwᵢ=1, w≥ε
     Convex (QP + concave barrier → overall convex).
@@ -189,7 +184,7 @@ def _risk_parity(Sigma: np.ndarray, N: int, mu: np.ndarray, c_barrier: float = 0
     return None
 
 
-def _kelly(mu: np.ndarray, Sigma: np.ndarray, N: int, fraction: float = 0.5, **kw) -> Optional[np.ndarray]:
+def _kelly(mu: np.ndarray, Sigma: np.ndarray, N: int, fraction: float = 0.5, **kw) -> np.ndarray | None:
     """
     Fractional Kelly: max f·μ'w − ½ f² w'Σw
     При f=1 — полный Kelly; f=0.5 — половинный.
@@ -207,7 +202,7 @@ def _kelly(mu: np.ndarray, Sigma: np.ndarray, N: int, fraction: float = 0.5, **k
 # ── Efficient Frontier ────────────────────────────────────────────────────────
 
 def _efficient_frontier(mu: np.ndarray, Sigma: np.ndarray, N: int,
-                         n_points: int = 30, **kw) -> List[Dict]:
+                         n_points: int = 30, **kw) -> list[dict]:
     """Sweep γ от высокого (min vol) до низкого (max return) значения."""
     gammas = np.logspace(3, -1, n_points)  # от осторожного к агрессивному
     frontier = []
@@ -230,21 +225,21 @@ def _efficient_frontier(mu: np.ndarray, Sigma: np.ndarray, N: int,
 # ── Главная функция ───────────────────────────────────────────────────────────
 
 def compute_convex_portfolio(
-    returns: List[List[float]],
-    asset_names: Optional[List[str]] = None,
-    objectives: Optional[List[str]] = None,
+    returns: list[list[float]],
+    asset_names: list[str] | None = None,
+    objectives: list[str] | None = None,
     long_only: bool = True,
     lb: float = 0.0,
     ub: float = 1.0,
-    max_weight: Optional[float] = None,
-    target_return: Optional[float] = None,
+    max_weight: float | None = None,
+    target_return: float | None = None,
     leverage: float = 1.0,
     cvar_alpha: float = 0.95,
     risk_free: float = 0.0,
     kelly_fraction: float = 0.5,
     annualize: int = 252,
     n_frontier: int = 30,
-) -> Dict:
+) -> dict:
     """
     Convex Portfolio Construction.
 
@@ -295,7 +290,7 @@ def compute_convex_portfolio(
     # Equal weight (baseline)
     w_eq = np.ones(N) / N
 
-    results: Dict[str, Dict] = {}
+    results: dict[str, dict] = {}
 
     objective_map = {
         "min_variance": lambda: _min_variance(Sigma, N, mu, **kw),
@@ -323,10 +318,7 @@ def compute_convex_portfolio(
             if long_only:
                 w = np.clip(w, 0, None)
             s = w.sum()
-            if abs(s) > 1e-10:
-                w = w / s
-            else:
-                w = w_eq.copy()
+            w = w / s if abs(s) > 1e-10 else w_eq.copy()
 
         stats = _portfolio_stats(w, mu, Sigma, R, alpha=cvar_alpha, annualize=annualize)
         results[obj_name] = {

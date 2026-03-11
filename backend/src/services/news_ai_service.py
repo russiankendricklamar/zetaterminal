@@ -5,11 +5,11 @@ Proxies news feeds and ML inference endpoints.
 """
 
 import re
-from typing import Optional, Dict, Any, List
-from src.utils.http_client import get_session
+from typing import Any
 
 from src.services.cache_service import cache_get, cache_set, make_cache_key
 from src.services.secrets_service import get_key_sync
+from src.utils.http_client import get_session
 
 NEWSAPI_BASE = "https://newsapi.org/v2"
 
@@ -27,17 +27,17 @@ def _hf_token() -> str: return get_key_sync("HUGGINGFACE_TOKEN")
 
 async def newsapi_top_headlines(
     country: str = "us",
-    category: Optional[str] = None,
-    q: Optional[str] = None,
+    category: str | None = None,
+    q: str | None = None,
     page_size: int = 20,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Get top headlines from NewsAPI."""
     key = make_cache_key("newsapi", "headlines", country, category, q, page_size)
     cached = cache_get(key)
     if cached is not None:
         return cached
 
-    params: Dict[str, Any] = {
+    params: dict[str, Any] = {
         "country": country,
         "pageSize": page_size,
         "apiKey": _newsapi_key(),
@@ -76,19 +76,19 @@ async def newsapi_top_headlines(
 
 async def newsapi_everything(
     q: str = "",
-    from_date: Optional[str] = None,
-    to_date: Optional[str] = None,
+    from_date: str | None = None,
+    to_date: str | None = None,
     sort_by: str = "publishedAt",
     page_size: int = 20,
     language: str = "en",
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Search all articles from NewsAPI."""
     key = make_cache_key("newsapi", "everything", q, from_date, to_date, sort_by, page_size)
     cached = cache_get(key)
     if cached is not None:
         return cached
 
-    params: Dict[str, Any] = {
+    params: dict[str, Any] = {
         "q": q,
         "sortBy": sort_by,
         "pageSize": page_size,
@@ -130,16 +130,16 @@ async def newsapi_everything(
 
 async def currents_latest(
     language: str = "en",
-    keywords: Optional[str] = None,
-    category: Optional[str] = None,
-) -> Dict[str, Any]:
+    keywords: str | None = None,
+    category: str | None = None,
+) -> dict[str, Any]:
     """Get latest news from Currents API."""
     key = make_cache_key("currents", "latest", language, keywords, category)
     cached = cache_get(key)
     if cached is not None:
         return cached
 
-    params: Dict[str, Any] = {
+    params: dict[str, Any] = {
         "language": language,
         "apiKey": _currents_key(),
     }
@@ -178,14 +178,14 @@ async def currents_latest(
 async def currents_search(
     keywords: str = "",
     language: str = "en",
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Search news from Currents API."""
     key = make_cache_key("currents", "search", keywords, language)
     cached = cache_get(key)
     if cached is not None:
         return cached
 
-    params: Dict[str, Any] = {
+    params: dict[str, Any] = {
         "keywords": keywords,
         "language": language,
         "apiKey": _currents_key(),
@@ -240,7 +240,7 @@ async def hf_inference(model_id: str, inputs: str) -> Any:
         return data
 
 
-async def hf_sentiment(text: str) -> Dict[str, Any]:
+async def hf_sentiment(text: str) -> dict[str, Any]:
     """Run financial sentiment analysis using ProsusAI/finbert."""
     result = await hf_inference("ProsusAI/finbert", text)
     if isinstance(result, dict) and result.get("loading"):
@@ -255,7 +255,7 @@ async def hf_sentiment(text: str) -> Dict[str, Any]:
     }
 
 
-async def hf_summarize(text: str, max_length: int = 150) -> Dict[str, Any]:
+async def hf_summarize(text: str, max_length: int = 150) -> dict[str, Any]:
     """Summarize text using facebook/bart-large-cnn."""
     headers = {"Authorization": f"Bearer {_hf_token()}"}
     session = await get_session()

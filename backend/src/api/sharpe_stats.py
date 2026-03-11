@@ -2,11 +2,11 @@
 API endpoints для статистического анализа коэффициента Шарпа.
 """
 import logging
+from datetime import datetime
+from typing import Any
 
 from fastapi import APIRouter, HTTPException
-from typing import Dict, Any, List
 from pydantic import BaseModel, Field
-from datetime import datetime
 
 from src.services.sharpe_stats_service import compute_sharpe_stats
 
@@ -16,7 +16,7 @@ router = APIRouter()
 
 
 class SharpeStatsRequest(BaseModel):
-    returns: List[float] = Field(..., description="Ряд периодических доходностей (в долях, напр. 0.01 = 1%)")
+    returns: list[float] = Field(..., description="Ряд периодических доходностей (в долях, напр. 0.01 = 1%)")
     risk_free_rate: float = Field(0.0, ge=0.0, description="Безрисковая ставка годовая (в долях)")
     periods_per_year: int = Field(252, ge=1, le=365, description="Периодов в году: 252=дни, 52=недели, 12=месяцы")
     benchmark_sr: float = Field(0.0, description="Пороговое SR для PSR (годовое)")
@@ -36,7 +36,7 @@ class SharpeStatsRequest(BaseModel):
 
 
 class SharpeStatsResponse(BaseModel):
-    result: Dict[str, Any]
+    result: dict[str, Any]
     timestamp: datetime = Field(default_factory=datetime.now)
 
 
@@ -63,10 +63,10 @@ async def analyze_sharpe(request: SharpeStatsRequest):
         return SharpeStatsResponse(result=result)
     except ValueError as e:
         logger.error("Sharpe stats validation error: %s", e, exc_info=True)
-        raise HTTPException(status_code=400, detail="Invalid input parameters")
+        raise HTTPException(status_code=400, detail="Invalid input parameters") from e
     except Exception as e:
         logger.error("Sharpe stats computation failed: %s", e, exc_info=True)
-        raise HTTPException(status_code=500, detail="Internal server error")
+        raise HTTPException(status_code=500, detail="Internal server error") from e
 
 
 @router.get("/health")

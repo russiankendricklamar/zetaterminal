@@ -8,11 +8,10 @@
 - IS vs OOS performance scatter (degradation curve)
 - Логит-распределение OOS ранга
 """
+import itertools
+
 import numpy as np
 import scipy.stats
-import itertools
-from typing import Dict, List, Optional, Tuple
-
 
 # ── Вспомогательные функции ───────────────────────────────────────────────────
 
@@ -43,7 +42,7 @@ def _cscv(
     returns_matrix: np.ndarray,  # T × N
     n_splits: int = 16,
     annualize: int = 1,
-) -> Dict:
+) -> dict:
     """
     Combinatorially Symmetric Cross-Validation (Bailey et al. 2014).
 
@@ -138,7 +137,7 @@ def _compute_dsr_and_minbtl(
     returns_matrix: np.ndarray,  # T × N
     sr_benchmark: float = 0.0,
     annualize: int = 252,
-) -> Dict:
+) -> dict:
     """
     Deflated Sharpe Ratio и Minimum Backtest Length.
 
@@ -216,7 +215,7 @@ def _compute_dsr_and_minbtl(
         "dsr": float(dsr),
         "min_btl": int(max(min_btl, 1)),
         "current_t": int(T),
-        "btl_sufficient": bool(T >= min_btl),
+        "btl_sufficient": bool(min_btl <= T),
         "n_strategies": int(N),
         "strategy_stats": strategy_stats,
     }
@@ -225,11 +224,11 @@ def _compute_dsr_and_minbtl(
 # ── Главная функция ───────────────────────────────────────────────────────────
 
 def compute_pbo(
-    strategy_returns: List[List[float]],
+    strategy_returns: list[list[float]],
     n_splits: int = 16,
     annualize: int = 252,
     sr_benchmark: float = 0.0,
-) -> Dict:
+) -> dict:
     """
     Полный анализ переобучения бэктеста: PBO (CSCV) + DSR + MinBTL.
 

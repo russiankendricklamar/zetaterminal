@@ -1,14 +1,22 @@
 <!-- src/pages/SettingsView.vue -->
 <template>
   <div class="page-container">
-
     <!-- Header -->
     <div class="section-header">
       <div class="header-left">
-        <h1 class="section-title">Настройки</h1>
-        <p class="section-subtitle">Конфигурация моделей и интерфейса</p>
+        <h1 class="section-title">
+          Настройки
+        </h1>
+        <p class="section-subtitle">
+          Конфигурация моделей и интерфейса
+        </p>
       </div>
-      <button @click="saveSettings" class="btn-glass primary btn-save" :class="{ 'has-changes': hasChanges }" :disabled="!hasChanges">
+      <button
+        class="btn-glass primary btn-save"
+        :class="{ 'has-changes': hasChanges }"
+        :disabled="!hasChanges"
+        @click="saveSettings"
+      >
         <span v-if="hasChanges">Сохранить</span>
         <span v-else>Сохранено</span>
       </button>
@@ -19,9 +27,9 @@
       <button
         v-for="tab in tabs"
         :key="tab.id"
-        @click="activeTab = tab.id"
         class="tab-item"
         :class="{ active: activeTab === tab.id }"
+        @click="activeTab = tab.id"
       >
         <span class="tab-label">{{ tab.name }}</span>
       </button>
@@ -29,274 +37,445 @@
 
     <!-- Content Grid Layout -->
     <div class="settings-grid">
-
       <!-- Tab: GENERAL -->
-      <transition name="fade" mode="out-in">
-      <div v-show="activeTab === 'general'" class="grid-content">
-
-        <div class="glass-panel settings-block">
-          <h3 class="block-title">Интерфейс</h3>
-          <div class="control-group">
-            <div class="control-row">
-              <label>Тема оформления</label>
-              <div class="segmented-control">
-                <button :class="{ active: settings.general.theme === 'dark' }" @click="settings.general.theme = 'dark'">Тёмная</button>
-                <button :class="{ active: settings.general.theme === 'light' }" @click="settings.general.theme = 'light'">Светлая</button>
-                <button :class="{ active: settings.general.theme === 'auto' }" @click="settings.general.theme = 'auto'">Авто</button>
+      <transition
+        name="fade"
+        mode="out-in"
+      >
+        <div
+          v-show="activeTab === 'general'"
+          class="grid-content"
+        >
+          <div class="glass-panel settings-block">
+            <h3 class="block-title">
+              Интерфейс
+            </h3>
+            <div class="control-group">
+              <div class="control-row">
+                <label>Тема оформления</label>
+                <div class="segmented-control">
+                  <button
+                    :class="{ active: settings.general.theme === 'dark' }"
+                    @click="settings.general.theme = 'dark'"
+                  >
+                    Тёмная
+                  </button>
+                  <button
+                    :class="{ active: settings.general.theme === 'light' }"
+                    @click="settings.general.theme = 'light'"
+                  >
+                    Светлая
+                  </button>
+                  <button
+                    :class="{ active: settings.general.theme === 'auto' }"
+                    @click="settings.general.theme = 'auto'"
+                  >
+                    Авто
+                  </button>
+                </div>
               </div>
-            </div>
 
-            <div class="divider"></div>
+              <div class="divider" />
 
-            <div class="control-row">
-              <label>Язык интерфейса</label>
-              <div class="control-right">
-                <select v-model="settings.general.language" class="glass-select">
-                  <option value="ru">Русский</option>
-                  <option value="en">English</option>
-                  <option value="de">Deutsch</option>
-                </select>
+              <div class="control-row">
+                <label>Язык интерфейса</label>
+                <div class="control-right">
+                  <select
+                    v-model="settings.general.language"
+                    class="glass-select"
+                  >
+                    <option value="ru">
+                      Русский
+                    </option>
+                    <option value="en">
+                      English
+                    </option>
+                    <option value="de">
+                      Deutsch
+                    </option>
+                  </select>
+                </div>
               </div>
-            </div>
 
-            <div class="divider"></div>
+              <div class="divider" />
 
-            <div class="control-row">
-              <label>Валюта портфеля</label>
-              <div class="control-right">
-                <select v-model="settings.general.currency" class="glass-select">
-                  <option value="RUB">RUB (₽)</option>
-                  <option value="RUB">RUB (₽)</option>
-                  <option value="EUR">EUR (€)</option>
-                  <option value="CNY">CNY (¥)</option>
-                </select>
+              <div class="control-row">
+                <label>Валюта портфеля</label>
+                <div class="control-right">
+                  <select
+                    v-model="settings.general.currency"
+                    class="glass-select"
+                  >
+                    <option value="RUB">
+                      RUB (₽)
+                    </option>
+                    <option value="RUB">
+                      RUB (₽)
+                    </option>
+                    <option value="EUR">
+                      EUR (€)
+                    </option>
+                    <option value="CNY">
+                      CNY (¥)
+                    </option>
+                  </select>
+                </div>
               </div>
             </div>
           </div>
         </div>
-
-      </div>
       </transition>
 
       <!-- Tab: MODELS -->
-      <transition name="fade" mode="out-in">
-      <div v-show="activeTab === 'models'" class="grid-content">
-
-        <div class="glass-panel settings-block">
-          <h3 class="block-title">Модели Оптимизации</h3>
-          <div class="control-group">
-            <div class="control-row">
-              <div class="label-group">
-                <label>Алгоритм весов</label>
-                <span class="sub-label">Метод ребалансировки портфеля</span>
+      <transition
+        name="fade"
+        mode="out-in"
+      >
+        <div
+          v-show="activeTab === 'models'"
+          class="grid-content"
+        >
+          <div class="glass-panel settings-block">
+            <h3 class="block-title">
+              Модели Оптимизации
+            </h3>
+            <div class="control-group">
+              <div class="control-row">
+                <div class="label-group">
+                  <label>Алгоритм весов</label>
+                  <span class="sub-label">Метод ребалансировки портфеля</span>
+                </div>
+                <div class="control-right">
+                  <select
+                    v-model="settings.models.portfolioModel"
+                    class="glass-select"
+                  >
+                    <option value="markowitz">
+                      Markowitz (Mean-Variance)
+                    </option>
+                    <option value="black-litterman">
+                      Black-Litterman
+                    </option>
+                    <option value="risk-parity">
+                      Risk Parity (ERC)
+                    </option>
+                    <option value="hrp">
+                      Hierarchical Risk Parity
+                    </option>
+                  </select>
+                </div>
               </div>
-              <div class="control-right">
-                <select v-model="settings.models.portfolioModel" class="glass-select">
-                  <option value="markowitz">Markowitz (Mean-Variance)</option>
-                  <option value="black-litterman">Black-Litterman</option>
-                  <option value="risk-parity">Risk Parity (ERC)</option>
-                  <option value="hrp">Hierarchical Risk Parity</option>
-                </select>
+
+              <div class="divider" />
+
+              <div class="control-row">
+                <div class="label-group">
+                  <label>Модель VaR</label>
+                  <span class="sub-label">Оценка хвостового риска</span>
+                </div>
+                <div class="control-right">
+                  <select
+                    v-model="settings.models.varModel"
+                    class="glass-select"
+                  >
+                    <option value="historical">
+                      Историческая (Historical)
+                    </option>
+                    <option value="parametric">
+                      Параметрическая (Normal)
+                    </option>
+                    <option value="cornish">
+                      Cornish-Fisher (Modified)
+                    </option>
+                    <option value="gpd">
+                      Extreme Value Theory (GPD)
+                    </option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="divider" />
+
+              <div class="control-row">
+                <label>Доверительный интервал</label>
+                <div class="control-right">
+                  <select
+                    v-model="settings.models.varConfidence"
+                    class="glass-select"
+                  >
+                    <option value="0.90">
+                      90.0%
+                    </option>
+                    <option value="0.95">
+                      95.0%
+                    </option>
+                    <option value="0.99">
+                      99.0%
+                    </option>
+                  </select>
+                </div>
               </div>
             </div>
+          </div>
 
-            <div class="divider"></div>
-
-            <div class="control-row">
-              <div class="label-group">
-                <label>Модель VaR</label>
-                <span class="sub-label">Оценка хвостового риска</span>
+          <div class="glass-panel settings-block">
+            <h3 class="block-title">
+              Обработка данных
+            </h3>
+            <div class="control-group">
+              <div class="control-row">
+                <label>Скользящее окно (Rolling Window)</label>
+                <label class="switch">
+                  <input
+                    v-model="settings.models.useRollingWindow"
+                    type="checkbox"
+                  >
+                  <span class="slider" />
+                </label>
               </div>
-              <div class="control-right">
-                <select v-model="settings.models.varModel" class="glass-select">
-                  <option value="historical">Историческая (Historical)</option>
-                  <option value="parametric">Параметрическая (Normal)</option>
-                  <option value="cornish">Cornish-Fisher (Modified)</option>
-                  <option value="gpd">Extreme Value Theory (GPD)</option>
-                </select>
-              </div>
-            </div>
 
-            <div class="divider"></div>
+              <div class="divider" />
 
-            <div class="control-row">
-              <label>Доверительный интервал</label>
-              <div class="control-right">
-                <select v-model="settings.models.varConfidence" class="glass-select">
-                  <option value="0.90">90.0%</option>
-                  <option value="0.95">95.0%</option>
-                  <option value="0.99">99.0%</option>
-                </select>
+              <div class="control-row">
+                <label>EWMA (Экспоненциальное взвешивание)</label>
+                <label class="switch">
+                  <input
+                    v-model="settings.models.exponentialWeighting"
+                    type="checkbox"
+                  >
+                  <span class="slider" />
+                </label>
               </div>
             </div>
           </div>
         </div>
-
-        <div class="glass-panel settings-block">
-          <h3 class="block-title">Обработка данных</h3>
-          <div class="control-group">
-            <div class="control-row">
-              <label>Скользящее окно (Rolling Window)</label>
-              <label class="switch">
-                <input type="checkbox" v-model="settings.models.useRollingWindow">
-                <span class="slider"></span>
-              </label>
-            </div>
-
-            <div class="divider"></div>
-
-            <div class="control-row">
-              <label>EWMA (Экспоненциальное взвешивание)</label>
-              <label class="switch">
-                <input type="checkbox" v-model="settings.models.exponentialWeighting">
-                <span class="slider"></span>
-              </label>
-            </div>
-          </div>
-        </div>
-
-      </div>
       </transition>
 
       <!-- Tab: RISK -->
-      <transition name="fade" mode="out-in">
-      <div v-show="activeTab === 'risk'" class="grid-content">
+      <transition
+        name="fade"
+        mode="out-in"
+      >
+        <div
+          v-show="activeTab === 'risk'"
+          class="grid-content"
+        >
+          <div class="glass-panel settings-block">
+            <h3 class="block-title">
+              Глобальные Лимиты
+            </h3>
+            <div class="control-group risk-limits">
+              <div class="control-row">
+                <label>Макс. VaR портфеля</label>
+                <div class="input-wrapper">
+                  <input
+                    v-model.number="settings.risk.maxVaR"
+                    type="number"
+                    class="glass-input right-align"
+                  >
+                  <span class="unit">%</span>
+                </div>
+              </div>
 
-        <div class="glass-panel settings-block">
-          <h3 class="block-title">Глобальные Лимиты</h3>
-          <div class="control-group risk-limits">
-            <div class="control-row">
-              <label>Макс. VaR портфеля</label>
-              <div class="input-wrapper">
-                <input type="number" v-model.number="settings.risk.maxVaR" class="glass-input right-align">
-                <span class="unit">%</span>
+              <div class="divider" />
+
+              <div class="control-row">
+                <label>Макс. концентрация (на актив)</label>
+                <div class="input-wrapper">
+                  <input
+                    v-model.number="settings.risk.maxConcentration"
+                    type="number"
+                    class="glass-input right-align"
+                  >
+                  <span class="unit">%</span>
+                </div>
+              </div>
+
+              <div class="divider" />
+
+              <div class="control-row">
+                <label>Мин. коэффициент Шарпа</label>
+                <div class="input-wrapper">
+                  <input
+                    v-model.number="settings.risk.minSharpeRatio"
+                    type="number"
+                    class="glass-input right-align"
+                    step="0.1"
+                  >
+                </div>
               </div>
             </div>
+          </div>
 
-            <div class="divider"></div>
-
-            <div class="control-row">
-              <label>Макс. концентрация (на актив)</label>
-              <div class="input-wrapper">
-                <input type="number" v-model.number="settings.risk.maxConcentration" class="glass-input right-align">
-                <span class="unit">%</span>
-              </div>
-            </div>
-
-            <div class="divider"></div>
-
-            <div class="control-row">
-              <label>Мин. коэффициент Шарпа</label>
-              <div class="input-wrapper">
-                <input type="number" v-model.number="settings.risk.minSharpeRatio" class="glass-input right-align" step="0.1">
+          <div class="glass-panel settings-block">
+            <h3 class="block-title">
+              Автоматизация
+            </h3>
+            <div class="control-group">
+              <div class="control-row">
+                <div class="label-group">
+                  <label>Автоматическое стресс-тестирование</label>
+                  <span class="sub-label">Запускать при каждом обновлении весов</span>
+                </div>
+                <label class="switch">
+                  <input
+                    v-model="settings.risk.enableStressTesting"
+                    type="checkbox"
+                  >
+                  <span class="slider" />
+                </label>
               </div>
             </div>
           </div>
         </div>
-
-        <div class="glass-panel settings-block">
-          <h3 class="block-title">Автоматизация</h3>
-          <div class="control-group">
-            <div class="control-row">
-              <div class="label-group">
-                <label>Автоматическое стресс-тестирование</label>
-                <span class="sub-label">Запускать при каждом обновлении весов</span>
-              </div>
-              <label class="switch">
-                <input type="checkbox" v-model="settings.risk.enableStressTesting">
-                <span class="slider"></span>
-              </label>
-            </div>
-          </div>
-        </div>
-
-      </div>
       </transition>
 
       <!-- Tab: CONNECTIONS -->
-      <transition name="fade" mode="out-in">
-      <div v-show="activeTab === 'connections'" class="grid-content">
-
-        <!-- Backend URL -->
-        <div class="glass-panel settings-block">
-          <h3 class="block-title">Backend URL</h3>
-          <div class="control-group">
-            <div class="control-row">
-              <label>Режим подключения</label>
-              <div class="segmented-control">
-                <button :class="{ active: backendMode === 'cloud' }" @click="setBackendMode('cloud')">Cloud</button>
-                <button :class="{ active: backendMode === 'local' }" @click="setBackendMode('local')">Local</button>
+      <transition
+        name="fade"
+        mode="out-in"
+      >
+        <div
+          v-show="activeTab === 'connections'"
+          class="grid-content"
+        >
+          <!-- Backend URL -->
+          <div class="glass-panel settings-block">
+            <h3 class="block-title">
+              Backend URL
+            </h3>
+            <div class="control-group">
+              <div class="control-row">
+                <label>Режим подключения</label>
+                <div class="segmented-control">
+                  <button
+                    :class="{ active: backendMode === 'cloud' }"
+                    @click="setBackendMode('cloud')"
+                  >
+                    Cloud
+                  </button>
+                  <button
+                    :class="{ active: backendMode === 'local' }"
+                    @click="setBackendMode('local')"
+                  >
+                    Local
+                  </button>
+                </div>
+              </div>
+              <div class="divider" />
+              <div class="control-row vertical">
+                <label>URL бэкенда</label>
+                <input
+                  v-model="backendUrl"
+                  type="text"
+                  class="glass-input full font-mono"
+                  :placeholder="backendMode === 'cloud' ? 'https://zeta-terminal-backend.onrender.com' : 'http://localhost:8000'"
+                  :disabled="backendMode === 'cloud'"
+                >
               </div>
             </div>
-            <div class="divider"></div>
-            <div class="control-row vertical">
-              <label>URL бэкенда</label>
-              <input
-                type="text"
-                v-model="backendUrl"
-                class="glass-input full font-mono"
-                :placeholder="backendMode === 'cloud' ? 'https://zeta-terminal-backend.onrender.com' : 'http://localhost:8000'"
-                :disabled="backendMode === 'cloud'"
+            <div class="status-footer">
+              <button
+                class="btn-glass xs"
+                :disabled="backendTestLoading"
+                @click="testBackendConnection"
               >
+                {{ backendTestLoading ? 'Проверка...' : 'Проверить' }}
+              </button>
+              <span
+                class="status-text"
+                :class="backendTestStatus.class"
+              >
+                {{ backendTestStatus.text }}
+              </span>
             </div>
           </div>
-          <div class="status-footer">
-            <button class="btn-glass xs" @click="testBackendConnection" :disabled="backendTestLoading">
-              {{ backendTestLoading ? 'Проверка...' : 'Проверить' }}
-            </button>
-            <span class="status-text" :class="backendTestStatus.class">
-              {{ backendTestStatus.text }}
-            </span>
+
+          <!-- Cbonds API Section -->
+          <div class="glass-panel settings-block">
+            <h3 class="block-title">
+              Cbonds API
+            </h3>
+            <div class="control-group">
+              <div class="control-row vertical">
+                <label>Login</label>
+                <input
+                  v-model="settings.api.cbondsLogin"
+                  type="text"
+                  class="glass-input full"
+                  placeholder="username@company.com"
+                >
+              </div>
+              <div class="divider" />
+              <div class="control-row vertical">
+                <label>Password</label>
+                <input
+                  v-model="settings.api.cbondsPassword"
+                  type="password"
+                  class="glass-input full"
+                  placeholder="••••••••"
+                >
+              </div>
+            </div>
+            <div class="status-footer">
+              <button
+                class="btn-glass xs"
+                @click="testConnection('cbonds')"
+              >
+                Проверить
+              </button>
+              <span
+                class="status-text"
+                :class="getConnectionStatus('cbonds').class"
+              >
+                {{ getConnectionStatus('cbonds').text }}
+              </span>
+            </div>
+          </div>
+
+          <!-- RuData API Section -->
+          <div class="glass-panel settings-block">
+            <h3 class="block-title">
+              RuData / Interfax
+            </h3>
+            <div class="control-group">
+              <div class="control-row vertical">
+                <label>Login</label>
+                <input
+                  v-model="settings.api.rudataLogin"
+                  type="text"
+                  class="glass-input full"
+                  placeholder="login"
+                >
+              </div>
+              <div class="divider" />
+              <div class="control-row vertical">
+                <label>Password</label>
+                <input
+                  v-model="settings.api.rudataPassword"
+                  type="password"
+                  class="glass-input full"
+                  placeholder="••••••••"
+                >
+              </div>
+            </div>
+            <div class="status-footer">
+              <button
+                class="btn-glass xs"
+                @click="testConnection('rudata')"
+              >
+                Проверить
+              </button>
+              <span
+                class="status-text"
+                :class="getConnectionStatus('rudata').class"
+              >
+                {{ getConnectionStatus('rudata').text }}
+              </span>
+            </div>
           </div>
         </div>
-
-        <!-- Cbonds API Section -->
-        <div class="glass-panel settings-block">
-          <h3 class="block-title">Cbonds API</h3>
-          <div class="control-group">
-            <div class="control-row vertical">
-              <label>Login</label>
-              <input type="text" v-model="settings.api.cbondsLogin" class="glass-input full" placeholder="username@company.com">
-            </div>
-            <div class="divider"></div>
-            <div class="control-row vertical">
-              <label>Password</label>
-              <input type="password" v-model="settings.api.cbondsPassword" class="glass-input full" placeholder="••••••••">
-            </div>
-          </div>
-          <div class="status-footer">
-            <button class="btn-glass xs" @click="testConnection('cbonds')">Проверить</button>
-            <span class="status-text" :class="getConnectionStatus('cbonds').class">
-              {{ getConnectionStatus('cbonds').text }}
-            </span>
-          </div>
-        </div>
-
-        <!-- RuData API Section -->
-        <div class="glass-panel settings-block">
-          <h3 class="block-title">RuData / Interfax</h3>
-          <div class="control-group">
-            <div class="control-row vertical">
-              <label>Login</label>
-              <input type="text" v-model="settings.api.rudataLogin" class="glass-input full" placeholder="login">
-            </div>
-            <div class="divider"></div>
-            <div class="control-row vertical">
-              <label>Password</label>
-              <input type="password" v-model="settings.api.rudataPassword" class="glass-input full" placeholder="••••••••">
-            </div>
-          </div>
-          <div class="status-footer">
-            <button class="btn-glass xs" @click="testConnection('rudata')">Проверить</button>
-            <span class="status-text" :class="getConnectionStatus('rudata').class">
-              {{ getConnectionStatus('rudata').text }}
-            </span>
-          </div>
-        </div>
-
-      </div>
       </transition>
-
     </div>
   </div>
 </template>

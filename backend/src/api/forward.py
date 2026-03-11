@@ -1,12 +1,14 @@
 """
 API endpoints для оценки валютных форвардов.
 """
-from fastapi import APIRouter, HTTPException
-from typing import Optional, Dict, Any
-from pydantic import Field
-from src.services.forward_service import calculate_forward_valuation
-from src.utils.financial_validation import FinancialBaseModel, MAX_NOTIONAL, MAX_TENOR_YEARS, MAX_RATE_PCT
 import logging
+from typing import Any
+
+from fastapi import APIRouter, HTTPException
+from pydantic import Field
+
+from src.services.forward_service import calculate_forward_valuation
+from src.utils.financial_validation import MAX_NOTIONAL, MAX_TENOR_YEARS, FinancialBaseModel
 
 logger = logging.getLogger(__name__)
 
@@ -21,40 +23,40 @@ class ForwardValuationRequest(FinancialBaseModel):
     timeToMaturity: float = Field(..., gt=0, le=MAX_TENOR_YEARS, description="Время до экспирации (лет)")
     marketForwardPrice: float = Field(..., gt=0, le=MAX_NOTIONAL, description="Рыночная цена форварда")
     contractSize: float = Field(1.0, gt=0, le=MAX_NOTIONAL, description="Размер контракта")
-    
+
     # Параметры для Cost-of-Carry (bond, commodity, equity, rate)
-    dividendYield: Optional[float] = Field(0.0, description="Дивиденды / Купоны (%)")
-    carryingCost: Optional[float] = Field(0.0, description="Стоимость хранения (%)")
-    convenienceYield: Optional[float] = Field(0.0, description="Удобство владения (Convenience Yield, %)")
-    riskFreeRate: Optional[float] = Field(None, description="Безрисковая ставка (%)")
-    repoRate: Optional[float] = Field(None, description="Репо ставка (%)")
-    
+    dividendYield: float | None = Field(0.0, description="Дивиденды / Купоны (%)")
+    carryingCost: float | None = Field(0.0, description="Стоимость хранения (%)")
+    convenienceYield: float | None = Field(0.0, description="Удобство владения (Convenience Yield, %)")
+    riskFreeRate: float | None = Field(None, description="Безрисковая ставка (%)")
+    repoRate: float | None = Field(None, description="Репо ставка (%)")
+
     # Параметры для форварда на облигацию (bond)
-    accruedInterest: Optional[float] = Field(0.0, description="Накопленный купонный доход (AI)")
-    couponRate: Optional[float] = Field(None, description="Купонная ставка (годовая, %)")
-    couponFrequency: Optional[int] = Field(2, description="Частота выплаты купонов (1, 2, 4, 12 - раз в год)")
-    faceValue: Optional[float] = Field(100.0, description="Номинал облигации")
-    lastCouponDate: Optional[str] = Field(None, description="Дата последнего купона (YYYY-MM-DD)")
-    maturityDate: Optional[str] = Field(None, description="Дата погашения облигации (YYYY-MM-DD)")
-    dayCountConvention: Optional[str] = Field("ACT/365", description="Конвенция подсчета дней: ACT/ACT, ACT/365, ACT/360, 30/360")
-    autoCalculateAI: Optional[bool] = Field(True, description="Автоматически рассчитывать НКД из даты последнего купона")
-    yieldCurveTenors: Optional[list[float]] = Field(None, description="Теноры кривой доходности (в годах)")
-    yieldCurveRates: Optional[list[float]] = Field(None, description="Ставки кривой доходности (в процентах)")
-    
+    accruedInterest: float | None = Field(0.0, description="Накопленный купонный доход (AI)")
+    couponRate: float | None = Field(None, description="Купонная ставка (годовая, %)")
+    couponFrequency: int | None = Field(2, description="Частота выплаты купонов (1, 2, 4, 12 - раз в год)")
+    faceValue: float | None = Field(100.0, description="Номинал облигации")
+    lastCouponDate: str | None = Field(None, description="Дата последнего купона (YYYY-MM-DD)")
+    maturityDate: str | None = Field(None, description="Дата погашения облигации (YYYY-MM-DD)")
+    dayCountConvention: str | None = Field("ACT/365", description="Конвенция подсчета дней: ACT/ACT, ACT/365, ACT/360, 30/360")
+    autoCalculateAI: bool | None = Field(True, description="Автоматически рассчитывать НКД из даты последнего купона")
+    yieldCurveTenors: list[float] | None = Field(None, description="Теноры кривой доходности (в годах)")
+    yieldCurveRates: list[float] | None = Field(None, description="Ставки кривой доходности (в процентах)")
+
     # Параметры для валютных форвардов (fx)
-    buyCurrency: Optional[str] = Field(None, description="Покупаемая валюта (для fx)")
-    sellCurrency: Optional[str] = Field(None, description="Продаваемая валюта (для fx)")
-    buyAmount: Optional[float] = Field(None, description="Сумма покупки (для fx)")
-    sellAmount: Optional[float] = Field(None, description="Сумма продажи (для fx)")
-    dealDate: Optional[str] = Field(None, description="Дата сделки (YYYY-MM-DD, для fx)")
-    valuationDate: Optional[str] = Field(None, description="Дата оценки (YYYY-MM-DD, для fx)")
-    expirationDate: Optional[str] = Field(None, description="Дата экспирации (YYYY-MM-DD, для fx)")
-    settlementCurrency: Optional[str] = Field("RUB", description="Валюта расчетов (для fx)")
-    internalRate: Optional[float] = Field(None, description="Ставка для покупаемой валюты (%) (для fx)")
-    externalRate: Optional[float] = Field(None, description="Ставка для продаваемой валюты (%) (для fx)")
+    buyCurrency: str | None = Field(None, description="Покупаемая валюта (для fx)")
+    sellCurrency: str | None = Field(None, description="Продаваемая валюта (для fx)")
+    buyAmount: float | None = Field(None, description="Сумма покупки (для fx)")
+    sellAmount: float | None = Field(None, description="Сумма продажи (для fx)")
+    dealDate: str | None = Field(None, description="Дата сделки (YYYY-MM-DD, для fx)")
+    valuationDate: str | None = Field(None, description="Дата оценки (YYYY-MM-DD, для fx)")
+    expirationDate: str | None = Field(None, description="Дата экспирации (YYYY-MM-DD, для fx)")
+    settlementCurrency: str | None = Field("RUB", description="Валюта расчетов (для fx)")
+    internalRate: float | None = Field(None, description="Ставка для покупаемой валюты (%) (для fx)")
+    externalRate: float | None = Field(None, description="Ставка для продаваемой валюты (%) (для fx)")
 
 
-@router.post("/valuate", response_model=Dict[str, Any])
+@router.post("/valuate", response_model=dict[str, Any])
 async def valuate_forward(request: ForwardValuationRequest):
     """
     Выполняет оценку форварда различных типов.
@@ -98,13 +100,13 @@ async def valuate_forward(request: ForwardValuationRequest):
         return result
     except ValueError as e:
         logger.error("Forward valuation validation error: %s", e, exc_info=True)
-        raise HTTPException(status_code=400, detail="Invalid input parameters")
+        raise HTTPException(status_code=400, detail="Invalid input parameters") from e
     except RuntimeError as e:
         logger.error("Forward valuation runtime error: %s", e, exc_info=True)
-        raise HTTPException(status_code=400, detail="Calculation error")
+        raise HTTPException(status_code=400, detail="Calculation error") from e
     except Exception as e:
         logger.error("Forward valuation failed: %s", e, exc_info=True)
-        raise HTTPException(status_code=500, detail="Internal server error")
+        raise HTTPException(status_code=500, detail="Internal server error") from e
 
 
 @router.get("/health")

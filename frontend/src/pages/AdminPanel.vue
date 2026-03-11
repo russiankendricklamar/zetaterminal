@@ -2,7 +2,9 @@
   <div class="admin-panel">
     <!-- Header -->
     <div class="admin-header">
-      <h1 class="font-anton admin-title">ADMIN PANEL</h1>
+      <h1 class="font-anton admin-title">
+        ADMIN PANEL
+      </h1>
       <span class="font-mono admin-subtitle">SYSTEM CONTROL</span>
     </div>
 
@@ -21,34 +23,70 @@
 
     <!-- Tab Content -->
     <div class="tab-content">
-
       <!-- ─── USERS ─────────────────────────────────────────────────── -->
-      <div v-if="activeTab === 'users'" class="panel-section">
+      <div
+        v-if="activeTab === 'users'"
+        class="panel-section"
+      >
         <div class="section-toolbar">
           <span class="font-mono section-count">{{ users.length }} users</span>
-          <button class="btn btn-outline btn-sm" @click="loadUsers">REFRESH</button>
+          <button
+            class="btn btn-outline btn-sm"
+            @click="loadUsers"
+          >
+            REFRESH
+          </button>
         </div>
         <div class="table-wrap custom-scrollbar">
           <table class="data-table">
             <thead>
               <tr>
-                <th class="font-mono">ID</th>
-                <th class="font-mono">USERNAME</th>
-                <th class="font-mono">EMAIL</th>
-                <th class="font-mono">ROLE</th>
-                <th class="font-mono">STATUS</th>
-                <th class="font-mono">INVITE CODE</th>
-                <th class="font-mono">CREATED</th>
-                <th class="font-mono">ACTIONS</th>
+                <th class="font-mono">
+                  ID
+                </th>
+                <th class="font-mono">
+                  USERNAME
+                </th>
+                <th class="font-mono">
+                  EMAIL
+                </th>
+                <th class="font-mono">
+                  ROLE
+                </th>
+                <th class="font-mono">
+                  STATUS
+                </th>
+                <th class="font-mono">
+                  INVITE CODE
+                </th>
+                <th class="font-mono">
+                  CREATED
+                </th>
+                <th class="font-mono">
+                  ACTIONS
+                </th>
               </tr>
             </thead>
             <tbody>
-              <tr v-for="u in users" :key="u.id" :class="{ 'row-pending': u.status === 'pending' }">
-                <td class="font-mono">{{ u.id }}</td>
-                <td class="font-mono">{{ u.username }}</td>
-                <td class="font-mono td-truncate">{{ u.email }}</td>
+              <tr
+                v-for="u in users"
+                :key="u.id"
+                :class="{ 'row-pending': u.status === 'pending' }"
+              >
+                <td class="font-mono">
+                  {{ u.id }}
+                </td>
+                <td class="font-mono">
+                  {{ u.username }}
+                </td>
+                <td class="font-mono td-truncate">
+                  {{ u.email }}
+                </td>
                 <td>
-                  <span class="badge font-mono" :class="u.role === 'admin' ? 'badge-accent' : 'badge-muted'">
+                  <span
+                    class="badge font-mono"
+                    :class="u.role === 'admin' ? 'badge-accent' : 'badge-muted'"
+                  >
                     {{ u.role.toUpperCase() }}
                   </span>
                 </td>
@@ -64,33 +102,47 @@
                     {{ u.status.toUpperCase() }}
                   </span>
                 </td>
-                <td class="font-mono">{{ u.invite_code }}</td>
-                <td class="font-mono td-date">{{ formatDate(u.created_at) }}</td>
+                <td class="font-mono">
+                  {{ u.invite_code }}
+                </td>
+                <td class="font-mono td-date">
+                  {{ formatDate(u.created_at) }}
+                </td>
                 <td class="td-actions">
                   <button
                     v-if="u.status !== 'blocked'"
                     class="action-btn font-mono action-block"
                     @click="toggleBlock(u)"
-                  >BLOCK</button>
+                  >
+                    BLOCK
+                  </button>
                   <button
                     v-else
                     class="action-btn font-mono action-unblock"
                     @click="toggleBlock(u)"
-                  >UNBLOCK</button>
+                  >
+                    UNBLOCK
+                  </button>
                   <button
                     class="action-btn font-mono"
                     :class="u.role === 'admin' ? 'action-demote' : 'action-promote'"
                     @click="toggleRole(u)"
-                  >{{ u.role === 'admin' ? 'DEMOTE' : 'PROMOTE' }}</button>
+                  >
+                    {{ u.role === 'admin' ? 'DEMOTE' : 'PROMOTE' }}
+                  </button>
                   <button
                     class="action-btn font-mono action-kick"
                     @click="doKick(u)"
-                  >KICK</button>
+                  >
+                    KICK
+                  </button>
                   <button
                     v-if="u.status !== 'blocked'"
                     class="action-btn font-mono action-ban"
                     @click="doBan(u)"
-                  >BAN</button>
+                  >
+                    BAN
+                  </button>
                 </td>
               </tr>
             </tbody>
@@ -99,31 +151,75 @@
 
         <!-- IP Bans -->
         <div class="ip-bans-section">
-          <div class="font-mono sub-heading">IP BANS ({{ ipBans.length }})</div>
-          <div class="ip-ban-add">
-            <input v-model="newBanIp" class="ban-input font-mono" placeholder="IP address" />
-            <input v-model="newBanReason" class="ban-input font-mono ban-reason" placeholder="Reason (optional)" />
-            <button class="action-btn font-mono action-ban" @click="doIpBan">IP BAN</button>
+          <div class="font-mono sub-heading">
+            IP BANS ({{ ipBans.length }})
           </div>
-          <div class="table-wrap custom-scrollbar" v-if="ipBans.length">
+          <div class="ip-ban-add">
+            <input
+              v-model="newBanIp"
+              class="ban-input font-mono"
+              placeholder="IP address"
+            >
+            <input
+              v-model="newBanReason"
+              class="ban-input font-mono ban-reason"
+              placeholder="Reason (optional)"
+            >
+            <button
+              class="action-btn font-mono action-ban"
+              @click="doIpBan"
+            >
+              IP BAN
+            </button>
+          </div>
+          <div
+            v-if="ipBans.length"
+            class="table-wrap custom-scrollbar"
+          >
             <table class="data-table">
               <thead>
                 <tr>
-                  <th class="font-mono">IP</th>
-                  <th class="font-mono">REASON</th>
-                  <th class="font-mono">BANNED BY</th>
-                  <th class="font-mono">DATE</th>
-                  <th class="font-mono">ACTION</th>
+                  <th class="font-mono">
+                    IP
+                  </th>
+                  <th class="font-mono">
+                    REASON
+                  </th>
+                  <th class="font-mono">
+                    BANNED BY
+                  </th>
+                  <th class="font-mono">
+                    DATE
+                  </th>
+                  <th class="font-mono">
+                    ACTION
+                  </th>
                 </tr>
               </thead>
               <tbody>
-                <tr v-for="b in ipBans" :key="b.id">
-                  <td class="font-mono">{{ b.ip_address }}</td>
-                  <td class="font-mono">{{ b.reason || '---' }}</td>
-                  <td class="font-mono">{{ b.banned_by || '---' }}</td>
-                  <td class="font-mono td-date">{{ formatDate(b.created_at) }}</td>
+                <tr
+                  v-for="b in ipBans"
+                  :key="b.id"
+                >
+                  <td class="font-mono">
+                    {{ b.ip_address }}
+                  </td>
+                  <td class="font-mono">
+                    {{ b.reason || '---' }}
+                  </td>
+                  <td class="font-mono">
+                    {{ b.banned_by || '---' }}
+                  </td>
+                  <td class="font-mono td-date">
+                    {{ formatDate(b.created_at) }}
+                  </td>
                   <td>
-                    <button class="action-btn font-mono action-unblock" @click="doIpUnban(b.ip_address)">UNBAN</button>
+                    <button
+                      class="action-btn font-mono action-unblock"
+                      @click="doIpUnban(b.ip_address)"
+                    >
+                      UNBAN
+                    </button>
                   </td>
                 </tr>
               </tbody>
@@ -133,11 +229,19 @@
       </div>
 
       <!-- ─── MONITORING ────────────────────────────────────────────── -->
-      <div v-if="activeTab === 'monitoring'" class="panel-section">
+      <div
+        v-if="activeTab === 'monitoring'"
+        class="panel-section"
+      >
         <div class="section-toolbar">
           <span class="font-mono section-count">{{ services.length }} services</span>
           <span class="font-mono auto-refresh-label">AUTO-REFRESH 30s</span>
-          <button class="btn btn-outline btn-sm" @click="loadHealth">REFRESH</button>
+          <button
+            class="btn btn-outline btn-sm"
+            @click="loadHealth"
+          >
+            REFRESH
+          </button>
         </div>
         <div class="services-grid">
           <div
@@ -147,34 +251,57 @@
             :class="'svc-' + svc.status"
           >
             <div class="svc-header">
-              <span class="svc-dot" :class="'dot-' + svc.status"></span>
+              <span
+                class="svc-dot"
+                :class="'dot-' + svc.status"
+              />
               <span class="font-oswald svc-name">{{ svc.name }}</span>
             </div>
             <div class="svc-details">
               <span class="font-mono svc-status">{{ svc.status.toUpperCase() }}</span>
               <span class="font-mono svc-ms">{{ svc.response_ms }}ms</span>
             </div>
-            <div v-if="svc.error" class="font-mono svc-error">{{ svc.error }}</div>
+            <div
+              v-if="svc.error"
+              class="font-mono svc-error"
+            >
+              {{ svc.error }}
+            </div>
           </div>
         </div>
       </div>
 
       <!-- ─── API ────────────────────────────────────────────────────── -->
-      <div v-if="activeTab === 'api'" class="panel-section">
+      <div
+        v-if="activeTab === 'api'"
+        class="panel-section"
+      >
         <div class="section-toolbar">
           <span class="font-mono section-count">API MANAGEMENT</span>
         </div>
 
         <!-- Connected Services -->
         <div class="api-block">
-          <div class="font-mono sub-heading">CONNECTED SERVICES</div>
+          <div class="font-mono sub-heading">
+            CONNECTED SERVICES
+          </div>
           <div class="services-grid compact">
-            <div v-for="srv in connectedServices" :key="srv.id" class="service-card compact-card">
+            <div
+              v-for="srv in connectedServices"
+              :key="srv.id"
+              class="service-card compact-card"
+            >
               <div class="svc-header">
-                <span class="svc-dot" :class="srv.connected ? 'dot-ok' : 'dot-down'"></span>
+                <span
+                  class="svc-dot"
+                  :class="srv.connected ? 'dot-ok' : 'dot-down'"
+                />
                 <span class="font-oswald svc-name">{{ srv.name }}</span>
               </div>
-              <span class="font-mono" :class="srv.connected ? 'svc-active' : 'svc-offline'">
+              <span
+                class="font-mono"
+                :class="srv.connected ? 'svc-active' : 'svc-offline'"
+              >
                 {{ srv.connected ? 'ACTIVE' : 'OFFLINE' }}
               </span>
             </div>
@@ -183,22 +310,46 @@
 
         <!-- Backend API Health -->
         <div class="api-block">
-          <div class="font-mono sub-heading">BACKEND API HEALTH</div>
+          <div class="font-mono sub-heading">
+            BACKEND API HEALTH
+          </div>
           <div class="services-grid compact">
-            <div v-for="(ok, svc) in apiHealthStatus" :key="svc" class="service-card compact-card">
+            <div
+              v-for="(ok, svc) in apiHealthStatus"
+              :key="svc"
+              class="service-card compact-card"
+            >
               <div class="svc-header">
-                <span class="svc-dot" :class="ok ? 'dot-ok' : 'dot-down'"></span>
-                <span class="font-mono svc-name" style="font-size:11px">{{ svc }}</span>
+                <span
+                  class="svc-dot"
+                  :class="ok ? 'dot-ok' : 'dot-down'"
+                />
+                <span
+                  class="font-mono svc-name"
+                  style="font-size:11px"
+                >{{ svc }}</span>
               </div>
-              <span class="font-mono" :class="ok ? 'svc-active' : 'svc-offline'">{{ ok ? 'OK' : 'DOWN' }}</span>
+              <span
+                class="font-mono"
+                :class="ok ? 'svc-active' : 'svc-offline'"
+              >{{ ok ? 'OK' : 'DOWN' }}</span>
             </div>
           </div>
-          <button class="btn btn-outline btn-sm" style="margin-top:12px" @click="checkApiHealth">REFRESH HEALTH</button>
+          <button
+            class="btn btn-outline btn-sm"
+            style="margin-top:12px"
+            @click="checkApiHealth"
+          >
+            REFRESH HEALTH
+          </button>
         </div>
       </div>
 
       <!-- ─── SECURITY ───────────────────────────────────────────────── -->
-      <div v-if="activeTab === 'security'" class="panel-section">
+      <div
+        v-if="activeTab === 'security'"
+        class="panel-section"
+      >
         <div class="security-sub-tabs">
           <button
             v-for="st in sec.securitySubTabs"
@@ -211,86 +362,216 @@
           </button>
         </div>
 
-        <div v-if="sec.securityError.value" class="security-error-banner font-mono">{{ sec.securityError.value }}</div>
+        <div
+          v-if="sec.securityError.value"
+          class="security-error-banner font-mono"
+        >
+          {{ sec.securityError.value }}
+        </div>
 
         <!-- IP Lookup -->
-        <div v-show="sec.securitySubTab.value === 'ip-lookup'" class="sec-tab-content">
+        <div
+          v-show="sec.securitySubTab.value === 'ip-lookup'"
+          class="sec-tab-content"
+        >
           <div class="sec-input-row">
-            <input v-model="sec.ipInput.value" class="sec-input font-mono" placeholder="IP address (e.g. 8.8.8.8)" @keyup.enter="sec.runIpLookup()" />
-            <button class="action-btn font-mono action-promote" :disabled="sec.ipLoading.value || !sec.ipInput.value.trim()" @click="sec.runIpLookup()">
+            <input
+              v-model="sec.ipInput.value"
+              class="sec-input font-mono"
+              placeholder="IP address (e.g. 8.8.8.8)"
+              @keyup.enter="sec.runIpLookup()"
+            >
+            <button
+              class="action-btn font-mono action-promote"
+              :disabled="sec.ipLoading.value || !sec.ipInput.value.trim()"
+              @click="sec.runIpLookup()"
+            >
               {{ sec.ipLoading.value ? 'LOADING...' : 'LOOKUP' }}
             </button>
           </div>
-          <div v-if="sec.ipLoading.value" class="font-mono sec-loading">LOADING...</div>
-          <div v-if="sec.hasIpResults.value" class="sec-results-grid">
-            <div v-if="sec.ipInfoData.value" class="sec-result-card">
-              <div class="font-mono sub-heading">IPINFO.IO</div>
+          <div
+            v-if="sec.ipLoading.value"
+            class="font-mono sec-loading"
+          >
+            LOADING...
+          </div>
+          <div
+            v-if="sec.hasIpResults.value"
+            class="sec-results-grid"
+          >
+            <div
+              v-if="sec.ipInfoData.value"
+              class="sec-result-card"
+            >
+              <div class="font-mono sub-heading">
+                IPINFO.IO
+              </div>
               <div class="sec-fields">
-                <div class="sec-field"><span class="sec-label font-mono">IP</span><span class="sec-value font-mono">{{ sec.ipInfoData.value.ip }}</span></div>
-                <div class="sec-field"><span class="sec-label font-mono">COUNTRY</span><span class="sec-value font-mono">{{ sec.ipInfoData.value.country || '---' }}</span></div>
-                <div class="sec-field"><span class="sec-label font-mono">CITY</span><span class="sec-value font-mono">{{ sec.ipInfoData.value.city || '---' }}</span></div>
-                <div class="sec-field"><span class="sec-label font-mono">ORG</span><span class="sec-value font-mono">{{ sec.ipInfoData.value.org || '---' }}</span></div>
-                <div class="sec-field"><span class="sec-label font-mono">TIMEZONE</span><span class="sec-value font-mono">{{ sec.ipInfoData.value.timezone || '---' }}</span></div>
+                <div class="sec-field">
+                  <span class="sec-label font-mono">IP</span><span class="sec-value font-mono">{{ sec.ipInfoData.value.ip }}</span>
+                </div>
+                <div class="sec-field">
+                  <span class="sec-label font-mono">COUNTRY</span><span class="sec-value font-mono">{{ sec.ipInfoData.value.country || '---' }}</span>
+                </div>
+                <div class="sec-field">
+                  <span class="sec-label font-mono">CITY</span><span class="sec-value font-mono">{{ sec.ipInfoData.value.city || '---' }}</span>
+                </div>
+                <div class="sec-field">
+                  <span class="sec-label font-mono">ORG</span><span class="sec-value font-mono">{{ sec.ipInfoData.value.org || '---' }}</span>
+                </div>
+                <div class="sec-field">
+                  <span class="sec-label font-mono">TIMEZONE</span><span class="sec-value font-mono">{{ sec.ipInfoData.value.timezone || '---' }}</span>
+                </div>
               </div>
             </div>
-            <div v-if="sec.ip2locData.value" class="sec-result-card">
-              <div class="font-mono sub-heading">IP2LOCATION</div>
+            <div
+              v-if="sec.ip2locData.value"
+              class="sec-result-card"
+            >
+              <div class="font-mono sub-heading">
+                IP2LOCATION
+              </div>
               <div class="sec-fields">
-                <div class="sec-field"><span class="sec-label font-mono">IP</span><span class="sec-value font-mono">{{ sec.ip2locData.value.ip }}</span></div>
-                <div class="sec-field"><span class="sec-label font-mono">COUNTRY</span><span class="sec-value font-mono">{{ sec.ip2locData.value.country_name || '---' }}</span></div>
-                <div class="sec-field"><span class="sec-label font-mono">CITY</span><span class="sec-value font-mono">{{ sec.ip2locData.value.city_name || '---' }}</span></div>
-                <div class="sec-field"><span class="sec-label font-mono">ISP</span><span class="sec-value font-mono">{{ sec.ip2locData.value.as || '---' }}</span></div>
-                <div class="sec-field"><span class="sec-label font-mono">PROXY</span><span class="sec-value font-mono">{{ sec.ip2locData.value.is_proxy ? 'YES' : 'NO' }}</span></div>
+                <div class="sec-field">
+                  <span class="sec-label font-mono">IP</span><span class="sec-value font-mono">{{ sec.ip2locData.value.ip }}</span>
+                </div>
+                <div class="sec-field">
+                  <span class="sec-label font-mono">COUNTRY</span><span class="sec-value font-mono">{{ sec.ip2locData.value.country_name || '---' }}</span>
+                </div>
+                <div class="sec-field">
+                  <span class="sec-label font-mono">CITY</span><span class="sec-value font-mono">{{ sec.ip2locData.value.city_name || '---' }}</span>
+                </div>
+                <div class="sec-field">
+                  <span class="sec-label font-mono">ISP</span><span class="sec-value font-mono">{{ sec.ip2locData.value.as || '---' }}</span>
+                </div>
+                <div class="sec-field">
+                  <span class="sec-label font-mono">PROXY</span><span class="sec-value font-mono">{{ sec.ip2locData.value.is_proxy ? 'YES' : 'NO' }}</span>
+                </div>
               </div>
             </div>
-            <div v-if="sec.bdcData.value" class="sec-result-card">
-              <div class="font-mono sub-heading">BIGDATACLOUD</div>
+            <div
+              v-if="sec.bdcData.value"
+              class="sec-result-card"
+            >
+              <div class="font-mono sub-heading">
+                BIGDATACLOUD
+              </div>
               <div class="sec-fields">
-                <div class="sec-field"><span class="sec-label font-mono">COUNTRY</span><span class="sec-value font-mono">{{ sec.bdcData.value.country?.name || '---' }}</span></div>
-                <div class="sec-field"><span class="sec-label font-mono">CITY</span><span class="sec-value font-mono">{{ sec.bdcData.value.city?.name || '---' }}</span></div>
-                <div class="sec-field"><span class="sec-label font-mono">ORG</span><span class="sec-value font-mono">{{ sec.bdcData.value.network?.organisation || '---' }}</span></div>
+                <div class="sec-field">
+                  <span class="sec-label font-mono">COUNTRY</span><span class="sec-value font-mono">{{ sec.bdcData.value.country?.name || '---' }}</span>
+                </div>
+                <div class="sec-field">
+                  <span class="sec-label font-mono">CITY</span><span class="sec-value font-mono">{{ sec.bdcData.value.city?.name || '---' }}</span>
+                </div>
+                <div class="sec-field">
+                  <span class="sec-label font-mono">ORG</span><span class="sec-value font-mono">{{ sec.bdcData.value.network?.organisation || '---' }}</span>
+                </div>
               </div>
             </div>
           </div>
         </div>
 
         <!-- URL Scanner -->
-        <div v-show="sec.securitySubTab.value === 'url-scanner'" class="sec-tab-content">
+        <div
+          v-show="sec.securitySubTab.value === 'url-scanner'"
+          class="sec-tab-content"
+        >
           <div class="sec-input-row">
-            <input v-model="sec.urlInput.value" class="sec-input font-mono" placeholder="URL (e.g. https://example.com)" @keyup.enter="sec.runUrlScan()" />
-            <button class="action-btn font-mono action-promote" :disabled="sec.urlLoading.value || !sec.urlInput.value.trim()" @click="sec.runUrlScan()">
+            <input
+              v-model="sec.urlInput.value"
+              class="sec-input font-mono"
+              placeholder="URL (e.g. https://example.com)"
+              @keyup.enter="sec.runUrlScan()"
+            >
+            <button
+              class="action-btn font-mono action-promote"
+              :disabled="sec.urlLoading.value || !sec.urlInput.value.trim()"
+              @click="sec.runUrlScan()"
+            >
               {{ sec.urlLoading.value ? 'SCANNING...' : 'SCAN' }}
             </button>
           </div>
-          <div v-if="sec.urlLoading.value" class="font-mono sec-loading">SCANNING URL...</div>
-          <div v-if="sec.vtScan.value || sec.urlScanData.value" class="sec-results-grid two-col">
+          <div
+            v-if="sec.urlLoading.value"
+            class="font-mono sec-loading"
+          >
+            SCANNING URL...
+          </div>
+          <div
+            v-if="sec.vtScan.value || sec.urlScanData.value"
+            class="sec-results-grid two-col"
+          >
             <div class="sec-result-card">
-              <div class="font-mono sub-heading">VIRUSTOTAL</div>
+              <div class="font-mono sub-heading">
+                VIRUSTOTAL
+              </div>
               <div class="sec-fields">
-                <div v-if="sec.vtPolling.value" class="font-mono sec-polling">POLLING... ({{ sec.vtPollCount.value }}s)</div>
+                <div
+                  v-if="sec.vtPolling.value"
+                  class="font-mono sec-polling"
+                >
+                  POLLING... ({{ sec.vtPollCount.value }}s)
+                </div>
                 <template v-if="sec.vtAnalysisData.value">
-                  <div class="sec-field"><span class="sec-label font-mono">STATUS</span><span class="sec-value font-mono">{{ sec.vtAnalysisData.value.status.toUpperCase() }}</span></div>
-                  <div class="sec-field"><span class="sec-label font-mono">MALICIOUS</span><span class="sec-value font-mono" style="color:var(--accent)">{{ sec.vtAnalysisData.value.stats.malicious }}</span></div>
-                  <div class="sec-field"><span class="sec-label font-mono">SUSPICIOUS</span><span class="sec-value font-mono" style="color:#fb923c">{{ sec.vtAnalysisData.value.stats.suspicious }}</span></div>
-                  <div class="sec-field"><span class="sec-label font-mono">HARMLESS</span><span class="sec-value font-mono" style="color:#22C55E">{{ sec.vtAnalysisData.value.stats.harmless }}</span></div>
-                  <div class="sec-field"><span class="sec-label font-mono">UNDETECTED</span><span class="sec-value font-mono">{{ sec.vtAnalysisData.value.stats.undetected }}</span></div>
+                  <div class="sec-field">
+                    <span class="sec-label font-mono">STATUS</span><span class="sec-value font-mono">{{ sec.vtAnalysisData.value.status.toUpperCase() }}</span>
+                  </div>
+                  <div class="sec-field">
+                    <span class="sec-label font-mono">MALICIOUS</span><span
+                      class="sec-value font-mono"
+                      style="color:var(--accent)"
+                    >{{ sec.vtAnalysisData.value.stats.malicious }}</span>
+                  </div>
+                  <div class="sec-field">
+                    <span class="sec-label font-mono">SUSPICIOUS</span><span
+                      class="sec-value font-mono"
+                      style="color:#fb923c"
+                    >{{ sec.vtAnalysisData.value.stats.suspicious }}</span>
+                  </div>
+                  <div class="sec-field">
+                    <span class="sec-label font-mono">HARMLESS</span><span
+                      class="sec-value font-mono"
+                      style="color:#22C55E"
+                    >{{ sec.vtAnalysisData.value.stats.harmless }}</span>
+                  </div>
+                  <div class="sec-field">
+                    <span class="sec-label font-mono">UNDETECTED</span><span class="sec-value font-mono">{{ sec.vtAnalysisData.value.stats.undetected }}</span>
+                  </div>
                 </template>
               </div>
             </div>
             <div class="sec-result-card">
-              <div class="font-mono sub-heading">URLSCAN.IO</div>
+              <div class="font-mono sub-heading">
+                URLSCAN.IO
+              </div>
               <div class="sec-fields">
-                <div v-if="sec.urlScanPolling.value" class="font-mono sec-polling">POLLING... ({{ sec.urlScanPollCount.value }}s)</div>
+                <div
+                  v-if="sec.urlScanPolling.value"
+                  class="font-mono sec-polling"
+                >
+                  POLLING... ({{ sec.urlScanPollCount.value }}s)
+                </div>
                 <template v-if="sec.urlScanResultData.value?.page">
-                  <div class="sec-field"><span class="sec-label font-mono">DOMAIN</span><span class="sec-value font-mono">{{ sec.urlScanResultData.value.page.domain }}</span></div>
-                  <div class="sec-field"><span class="sec-label font-mono">IP</span><span class="sec-value font-mono">{{ sec.urlScanResultData.value.page.ip }}</span></div>
-                  <div class="sec-field"><span class="sec-label font-mono">COUNTRY</span><span class="sec-value font-mono">{{ sec.urlScanResultData.value.page.country }}</span></div>
-                  <div class="sec-field"><span class="sec-label font-mono">STATUS</span><span class="sec-value font-mono">{{ sec.urlScanResultData.value.page.status_code }}</span></div>
+                  <div class="sec-field">
+                    <span class="sec-label font-mono">DOMAIN</span><span class="sec-value font-mono">{{ sec.urlScanResultData.value.page.domain }}</span>
+                  </div>
+                  <div class="sec-field">
+                    <span class="sec-label font-mono">IP</span><span class="sec-value font-mono">{{ sec.urlScanResultData.value.page.ip }}</span>
+                  </div>
+                  <div class="sec-field">
+                    <span class="sec-label font-mono">COUNTRY</span><span class="sec-value font-mono">{{ sec.urlScanResultData.value.page.country }}</span>
+                  </div>
+                  <div class="sec-field">
+                    <span class="sec-label font-mono">STATUS</span><span class="sec-value font-mono">{{ sec.urlScanResultData.value.page.status_code }}</span>
+                  </div>
                 </template>
                 <template v-if="sec.urlScanResultData.value?.verdicts">
                   <div class="sec-field">
                     <span class="sec-label font-mono">MALICIOUS</span>
-                    <span class="sec-value font-mono" :style="{ color: sec.urlScanResultData.value.verdicts.malicious ? 'var(--accent)' : '#22C55E' }">
+                    <span
+                      class="sec-value font-mono"
+                      :style="{ color: sec.urlScanResultData.value.verdicts.malicious ? 'var(--accent)' : '#22C55E' }"
+                    >
                       {{ sec.urlScanResultData.value.verdicts.malicious ? 'YES' : 'NO' }}
                     </span>
                   </div>
@@ -301,54 +582,135 @@
         </div>
 
         <!-- IP Abuse -->
-        <div v-show="sec.securitySubTab.value === 'ip-abuse'" class="sec-tab-content">
+        <div
+          v-show="sec.securitySubTab.value === 'ip-abuse'"
+          class="sec-tab-content"
+        >
           <div class="sec-input-row">
-            <input v-model="sec.abuseIpInput.value" class="sec-input font-mono" placeholder="IP address for abuse check" @keyup.enter="sec.runAbuseCheck()" />
-            <button class="action-btn font-mono action-promote" :disabled="sec.abuseLoading.value || !sec.abuseIpInput.value.trim()" @click="sec.runAbuseCheck()">
+            <input
+              v-model="sec.abuseIpInput.value"
+              class="sec-input font-mono"
+              placeholder="IP address for abuse check"
+              @keyup.enter="sec.runAbuseCheck()"
+            >
+            <button
+              class="action-btn font-mono action-promote"
+              :disabled="sec.abuseLoading.value || !sec.abuseIpInput.value.trim()"
+              @click="sec.runAbuseCheck()"
+            >
               {{ sec.abuseLoading.value ? 'LOADING...' : 'CHECK' }}
             </button>
           </div>
-          <div v-if="sec.abuseLoading.value" class="font-mono sec-loading">LOADING...</div>
-          <div v-if="sec.abuseResult.value" class="sec-results-grid single-col">
+          <div
+            v-if="sec.abuseLoading.value"
+            class="font-mono sec-loading"
+          >
+            LOADING...
+          </div>
+          <div
+            v-if="sec.abuseResult.value"
+            class="sec-results-grid single-col"
+          >
             <div class="sec-result-card">
-              <div class="font-mono sub-heading">ABUSEIPDB REPORT</div>
+              <div class="font-mono sub-heading">
+                ABUSEIPDB REPORT
+              </div>
               <div class="abuse-score-wrap">
-                <div class="abuse-score-circle" :style="{ borderColor: sec.abuseScoreColor.value }">
-                  <span class="abuse-score-value font-mono" :style="{ color: sec.abuseScoreColor.value }">{{ sec.abuseResult.value.abuse_confidence_score }}</span>
+                <div
+                  class="abuse-score-circle"
+                  :style="{ borderColor: sec.abuseScoreColor.value }"
+                >
+                  <span
+                    class="abuse-score-value font-mono"
+                    :style="{ color: sec.abuseScoreColor.value }"
+                  >{{ sec.abuseResult.value.abuse_confidence_score }}</span>
                   <span class="abuse-score-label font-mono">CONFIDENCE</span>
                 </div>
               </div>
               <div class="sec-fields">
-                <div class="sec-field"><span class="sec-label font-mono">IP</span><span class="sec-value font-mono">{{ sec.abuseResult.value.ip }}</span></div>
-                <div class="sec-field"><span class="sec-label font-mono">SCORE</span><span class="sec-value font-mono" :style="{ color: sec.abuseScoreColor.value }">{{ sec.abuseResult.value.abuse_confidence_score }}%</span></div>
-                <div class="sec-field"><span class="sec-label font-mono">TOTAL REPORTS</span><span class="sec-value font-mono">{{ sec.abuseResult.value.total_reports }}</span></div>
-                <div class="sec-field"><span class="sec-label font-mono">ISP</span><span class="sec-value font-mono">{{ sec.abuseResult.value.isp || '---' }}</span></div>
-                <div class="sec-field"><span class="sec-label font-mono">COUNTRY</span><span class="sec-value font-mono">{{ sec.abuseResult.value.country_code || '---' }}</span></div>
-                <div class="sec-field"><span class="sec-label font-mono">LAST REPORTED</span><span class="sec-value font-mono">{{ sec.abuseResult.value.last_reported_at || 'NEVER' }}</span></div>
+                <div class="sec-field">
+                  <span class="sec-label font-mono">IP</span><span class="sec-value font-mono">{{ sec.abuseResult.value.ip }}</span>
+                </div>
+                <div class="sec-field">
+                  <span class="sec-label font-mono">SCORE</span><span
+                    class="sec-value font-mono"
+                    :style="{ color: sec.abuseScoreColor.value }"
+                  >{{ sec.abuseResult.value.abuse_confidence_score }}%</span>
+                </div>
+                <div class="sec-field">
+                  <span class="sec-label font-mono">TOTAL REPORTS</span><span class="sec-value font-mono">{{ sec.abuseResult.value.total_reports }}</span>
+                </div>
+                <div class="sec-field">
+                  <span class="sec-label font-mono">ISP</span><span class="sec-value font-mono">{{ sec.abuseResult.value.isp || '---' }}</span>
+                </div>
+                <div class="sec-field">
+                  <span class="sec-label font-mono">COUNTRY</span><span class="sec-value font-mono">{{ sec.abuseResult.value.country_code || '---' }}</span>
+                </div>
+                <div class="sec-field">
+                  <span class="sec-label font-mono">LAST REPORTED</span><span class="sec-value font-mono">{{ sec.abuseResult.value.last_reported_at || 'NEVER' }}</span>
+                </div>
               </div>
             </div>
           </div>
         </div>
 
         <!-- WHOIS -->
-        <div v-show="sec.securitySubTab.value === 'whois'" class="sec-tab-content">
+        <div
+          v-show="sec.securitySubTab.value === 'whois'"
+          class="sec-tab-content"
+        >
           <div class="sec-input-row">
-            <input v-model="sec.whoisInput.value" class="sec-input font-mono" placeholder="Domain (e.g. example.com)" @keyup.enter="sec.runWhois()" />
-            <button class="action-btn font-mono action-promote" :disabled="sec.whoisLoading.value || !sec.whoisInput.value.trim()" @click="sec.runWhois()">
+            <input
+              v-model="sec.whoisInput.value"
+              class="sec-input font-mono"
+              placeholder="Domain (e.g. example.com)"
+              @keyup.enter="sec.runWhois()"
+            >
+            <button
+              class="action-btn font-mono action-promote"
+              :disabled="sec.whoisLoading.value || !sec.whoisInput.value.trim()"
+              @click="sec.runWhois()"
+            >
               {{ sec.whoisLoading.value ? 'LOADING...' : 'LOOKUP' }}
             </button>
           </div>
-          <div v-if="sec.whoisLoading.value" class="font-mono sec-loading">LOADING...</div>
-          <div v-if="sec.whoisResult.value" class="sec-results-grid single-col">
+          <div
+            v-if="sec.whoisLoading.value"
+            class="font-mono sec-loading"
+          >
+            LOADING...
+          </div>
+          <div
+            v-if="sec.whoisResult.value"
+            class="sec-results-grid single-col"
+          >
             <div class="sec-result-card">
-              <div class="font-mono sub-heading">WHOIS — {{ sec.whoisResult.value.domain || sec.whoisInput.value }}</div>
+              <div class="font-mono sub-heading">
+                WHOIS — {{ sec.whoisResult.value.domain || sec.whoisInput.value }}
+              </div>
               <div class="sec-fields">
-                <div class="sec-field"><span class="sec-label font-mono">DOMAIN</span><span class="sec-value font-mono">{{ sec.whoisResult.value.domain || '---' }}</span></div>
-                <div class="sec-field"><span class="sec-label font-mono">REGISTRAR</span><span class="sec-value font-mono">{{ sec.whoisResult.value.registrar?.name || '---' }}</span></div>
-                <div class="sec-field"><span class="sec-label font-mono">CREATED</span><span class="sec-value font-mono">{{ sec.whoisResult.value.create_date || '---' }}</span></div>
-                <div class="sec-field"><span class="sec-label font-mono">EXPIRES</span><span class="sec-value font-mono">{{ sec.whoisResult.value.expire_date || '---' }}</span></div>
-                <div v-if="sec.whoisResult.value.registrant" class="sec-field"><span class="sec-label font-mono">REGISTRANT</span><span class="sec-value font-mono">{{ sec.whoisResult.value.registrant.organization || '---' }}</span></div>
-                <div v-if="sec.whoisResult.value.nameservers?.length" class="sec-field">
+                <div class="sec-field">
+                  <span class="sec-label font-mono">DOMAIN</span><span class="sec-value font-mono">{{ sec.whoisResult.value.domain || '---' }}</span>
+                </div>
+                <div class="sec-field">
+                  <span class="sec-label font-mono">REGISTRAR</span><span class="sec-value font-mono">{{ sec.whoisResult.value.registrar?.name || '---' }}</span>
+                </div>
+                <div class="sec-field">
+                  <span class="sec-label font-mono">CREATED</span><span class="sec-value font-mono">{{ sec.whoisResult.value.create_date || '---' }}</span>
+                </div>
+                <div class="sec-field">
+                  <span class="sec-label font-mono">EXPIRES</span><span class="sec-value font-mono">{{ sec.whoisResult.value.expire_date || '---' }}</span>
+                </div>
+                <div
+                  v-if="sec.whoisResult.value.registrant"
+                  class="sec-field"
+                >
+                  <span class="sec-label font-mono">REGISTRANT</span><span class="sec-value font-mono">{{ sec.whoisResult.value.registrant.organization || '---' }}</span>
+                </div>
+                <div
+                  v-if="sec.whoisResult.value.nameservers?.length"
+                  class="sec-field"
+                >
                   <span class="sec-label font-mono">NS</span>
                   <span class="sec-value font-mono">{{ sec.whoisResult.value.nameservers.join(', ') }}</span>
                 </div>
@@ -359,35 +721,78 @@
       </div>
 
       <!-- ─── REQUESTS ──────────────────────────────────────────────── -->
-      <div v-if="activeTab === 'requests'" class="panel-section">
+      <div
+        v-if="activeTab === 'requests'"
+        class="panel-section"
+      >
         <div class="section-toolbar">
           <span class="font-mono section-count">{{ requests.length }} recent</span>
           <span class="font-mono auto-refresh-label">AUTO-REFRESH 10s</span>
-          <button class="btn btn-outline btn-sm" @click="loadRequests">REFRESH</button>
+          <button
+            class="btn btn-outline btn-sm"
+            @click="loadRequests"
+          >
+            REFRESH
+          </button>
         </div>
-        <div v-if="activeRequests.length" class="active-requests-block">
-          <div class="font-mono sub-heading">ACTIVE REQUESTS ({{ activeRequests.length }})</div>
+        <div
+          v-if="activeRequests.length"
+          class="active-requests-block"
+        >
+          <div class="font-mono sub-heading">
+            ACTIVE REQUESTS ({{ activeRequests.length }})
+          </div>
           <div class="table-wrap custom-scrollbar">
             <table class="data-table">
               <thead>
                 <tr>
-                  <th class="font-mono">ID</th>
-                  <th class="font-mono">METHOD</th>
-                  <th class="font-mono">PATH</th>
-                  <th class="font-mono">IP</th>
-                  <th class="font-mono">ELAPSED</th>
-                  <th class="font-mono">ACTION</th>
+                  <th class="font-mono">
+                    ID
+                  </th>
+                  <th class="font-mono">
+                    METHOD
+                  </th>
+                  <th class="font-mono">
+                    PATH
+                  </th>
+                  <th class="font-mono">
+                    IP
+                  </th>
+                  <th class="font-mono">
+                    ELAPSED
+                  </th>
+                  <th class="font-mono">
+                    ACTION
+                  </th>
                 </tr>
               </thead>
               <tbody>
-                <tr v-for="ar in activeRequests" :key="ar.request_id">
-                  <td class="font-mono">{{ ar.request_id }}</td>
-                  <td class="font-mono">{{ ar.method }}</td>
-                  <td class="font-mono td-truncate">{{ ar.path }}</td>
-                  <td class="font-mono">{{ ar.client_ip }}</td>
-                  <td class="font-mono">{{ ar.elapsed_ms }}ms</td>
+                <tr
+                  v-for="ar in activeRequests"
+                  :key="ar.request_id"
+                >
+                  <td class="font-mono">
+                    {{ ar.request_id }}
+                  </td>
+                  <td class="font-mono">
+                    {{ ar.method }}
+                  </td>
+                  <td class="font-mono td-truncate">
+                    {{ ar.path }}
+                  </td>
+                  <td class="font-mono">
+                    {{ ar.client_ip }}
+                  </td>
+                  <td class="font-mono">
+                    {{ ar.elapsed_ms }}ms
+                  </td>
                   <td>
-                    <button class="action-btn font-mono action-cancel" @click="doCancel(ar.request_id)">CANCEL</button>
+                    <button
+                      class="action-btn font-mono action-cancel"
+                      @click="doCancel(ar.request_id)"
+                    >
+                      CANCEL
+                    </button>
                   </td>
                 </tr>
               </tbody>
@@ -398,12 +803,24 @@
           <table class="data-table">
             <thead>
               <tr>
-                <th class="font-mono">TIME</th>
-                <th class="font-mono">IP</th>
-                <th class="font-mono">METHOD</th>
-                <th class="font-mono">PATH</th>
-                <th class="font-mono">STATUS</th>
-                <th class="font-mono">DURATION</th>
+                <th class="font-mono">
+                  TIME
+                </th>
+                <th class="font-mono">
+                  IP
+                </th>
+                <th class="font-mono">
+                  METHOD
+                </th>
+                <th class="font-mono">
+                  PATH
+                </th>
+                <th class="font-mono">
+                  STATUS
+                </th>
+                <th class="font-mono">
+                  DURATION
+                </th>
               </tr>
             </thead>
             <tbody>
@@ -412,10 +829,18 @@
                 :key="r.request_id"
                 :class="{ 'row-error': r.status_code >= 400 }"
               >
-                <td class="font-mono td-date">{{ formatTime(r.timestamp) }}</td>
-                <td class="font-mono">{{ r.client_ip }}</td>
-                <td class="font-mono">{{ r.method }}</td>
-                <td class="font-mono td-truncate">{{ r.path }}</td>
+                <td class="font-mono td-date">
+                  {{ formatTime(r.timestamp) }}
+                </td>
+                <td class="font-mono">
+                  {{ r.client_ip }}
+                </td>
+                <td class="font-mono">
+                  {{ r.method }}
+                </td>
+                <td class="font-mono td-truncate">
+                  {{ r.path }}
+                </td>
                 <td>
                   <span
                     class="badge font-mono"
@@ -426,7 +851,9 @@
                     }"
                   >{{ r.status_code }}</span>
                 </td>
-                <td class="font-mono">{{ r.duration_ms }}ms</td>
+                <td class="font-mono">
+                  {{ r.duration_ms }}ms
+                </td>
               </tr>
             </tbody>
           </table>
@@ -434,14 +861,29 @@
       </div>
 
       <!-- ─── ERRORS ────────────────────────────────────────────────── -->
-      <div v-if="activeTab === 'errors'" class="panel-section">
+      <div
+        v-if="activeTab === 'errors'"
+        class="panel-section"
+      >
         <div class="section-toolbar">
           <span class="font-mono section-count">{{ errors.length }} errors</span>
-          <button class="btn btn-outline btn-sm" @click="loadErrors">REFRESH</button>
+          <button
+            class="btn btn-outline btn-sm"
+            @click="loadErrors"
+          >
+            REFRESH
+          </button>
         </div>
         <div class="errors-list">
-          <div v-for="e in errors" :key="e.request_id + e.timestamp" class="error-card">
-            <div class="error-header" @click="toggleError(e.request_id)">
+          <div
+            v-for="e in errors"
+            :key="e.request_id + e.timestamp"
+            class="error-card"
+          >
+            <div
+              class="error-header"
+              @click="toggleError(e.request_id)"
+            >
               <span class="badge badge-err font-mono">{{ e.status_code }}</span>
               <span class="font-mono error-method">{{ e.method }}</span>
               <span class="font-mono error-path">{{ e.path }}</span>
@@ -449,51 +891,105 @@
               <span class="font-mono error-ip">{{ e.client_ip }}</span>
               <span class="font-mono error-chevron">{{ expandedErrors.has(e.request_id) ? '&minus;' : '+' }}</span>
             </div>
-            <div class="font-mono error-message">{{ e.error }}</div>
-            <div v-if="expandedErrors.has(e.request_id) && e.traceback_short" class="error-traceback">
+            <div class="font-mono error-message">
+              {{ e.error }}
+            </div>
+            <div
+              v-if="expandedErrors.has(e.request_id) && e.traceback_short"
+              class="error-traceback"
+            >
               <pre class="font-mono">{{ e.traceback_short }}</pre>
             </div>
           </div>
-          <div v-if="!errors.length" class="empty-state font-mono">NO ERRORS RECORDED</div>
+          <div
+            v-if="!errors.length"
+            class="empty-state font-mono"
+          >
+            NO ERRORS RECORDED
+          </div>
         </div>
       </div>
 
       <!-- ─── SYSTEM ────────────────────────────────────────────────── -->
-      <div v-if="activeTab === 'system'" class="panel-section">
+      <div
+        v-if="activeTab === 'system'"
+        class="panel-section"
+      >
         <div class="section-toolbar">
-          <button class="btn btn-outline btn-sm" @click="loadSystem">REFRESH</button>
+          <button
+            class="btn btn-outline btn-sm"
+            @click="loadSystem"
+          >
+            REFRESH
+          </button>
         </div>
-        <div v-if="systemInfo" class="system-grid">
+        <div
+          v-if="systemInfo"
+          class="system-grid"
+        >
           <div class="sys-card">
-            <div class="font-mono sys-label">PYTHON</div>
-            <div class="font-mono sys-value">{{ systemInfo.python_version.split(' ')[0] }}</div>
+            <div class="font-mono sys-label">
+              PYTHON
+            </div>
+            <div class="font-mono sys-value">
+              {{ systemInfo.python_version.split(' ')[0] }}
+            </div>
           </div>
           <div class="sys-card">
-            <div class="font-mono sys-label">PLATFORM</div>
-            <div class="font-mono sys-value sys-value-sm">{{ systemInfo.platform }}</div>
+            <div class="font-mono sys-label">
+              PLATFORM
+            </div>
+            <div class="font-mono sys-value sys-value-sm">
+              {{ systemInfo.platform }}
+            </div>
           </div>
           <div class="sys-card">
-            <div class="font-mono sys-label">UPTIME</div>
-            <div class="font-mono sys-value">{{ formatUptime(systemInfo.uptime_seconds) }}</div>
+            <div class="font-mono sys-label">
+              UPTIME
+            </div>
+            <div class="font-mono sys-value">
+              {{ formatUptime(systemInfo.uptime_seconds) }}
+            </div>
           </div>
           <div class="sys-card">
-            <div class="font-mono sys-label">MEMORY</div>
-            <div class="font-mono sys-value">{{ systemInfo.memory_mb }} MB</div>
+            <div class="font-mono sys-label">
+              MEMORY
+            </div>
+            <div class="font-mono sys-value">
+              {{ systemInfo.memory_mb }} MB
+            </div>
           </div>
           <div class="sys-card">
-            <div class="font-mono sys-label">DB POOL SIZE</div>
-            <div class="font-mono sys-value">{{ systemInfo.db_pool.size }}</div>
+            <div class="font-mono sys-label">
+              DB POOL SIZE
+            </div>
+            <div class="font-mono sys-value">
+              {{ systemInfo.db_pool.size }}
+            </div>
           </div>
           <div class="sys-card">
-            <div class="font-mono sys-label">DB CHECKED OUT</div>
-            <div class="font-mono sys-value">{{ systemInfo.db_pool.checked_out }}</div>
+            <div class="font-mono sys-label">
+              DB CHECKED OUT
+            </div>
+            <div class="font-mono sys-value">
+              {{ systemInfo.db_pool.checked_out }}
+            </div>
           </div>
           <div class="sys-card">
-            <div class="font-mono sys-label">DB OVERFLOW</div>
-            <div class="font-mono sys-value">{{ systemInfo.db_pool.overflow }}</div>
+            <div class="font-mono sys-label">
+              DB OVERFLOW
+            </div>
+            <div class="font-mono sys-value">
+              {{ systemInfo.db_pool.overflow }}
+            </div>
           </div>
         </div>
-        <div v-else class="empty-state font-mono">LOADING...</div>
+        <div
+          v-else
+          class="empty-state font-mono"
+        >
+          LOADING...
+        </div>
       </div>
     </div>
   </div>

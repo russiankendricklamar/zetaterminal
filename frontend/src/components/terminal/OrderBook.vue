@@ -3,9 +3,9 @@
     <div class="orderbook-header">
       <span class="orderbook-title font-mono">СТАКАН</span>
       <div class="orderbook-dots">
-        <div class="dot"></div>
-        <div class="dot"></div>
-        <div class="dot"></div>
+        <div class="dot" />
+        <div class="dot" />
+        <div class="dot" />
       </div>
     </div>
 
@@ -31,7 +31,7 @@
           <span class="price-value font-mono">{{ currentPrice.toFixed(2) }}</span>
           <span class="price-usd font-mono">≈ ${{ currentPrice.toFixed(2) }}</span>
         </div>
-        <div class="price-indicator"></div>
+        <div class="price-indicator" />
       </div>
 
       <!-- Bids (Buys) -->

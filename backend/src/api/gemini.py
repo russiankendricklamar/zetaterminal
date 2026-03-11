@@ -5,7 +5,6 @@ import logging
 
 from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel, Field
-from typing import List, Optional
 
 from src.middleware.rate_limit import limiter
 from src.services.secrets_service import get_key_sync
@@ -28,8 +27,8 @@ class CandleInput(BaseModel):
 
 
 class GenerateRequest(BaseModel):
-    candles: List[CandleInput] = Field(..., max_length=500, description="OHLCV candle data")
-    prompt: Optional[str] = Field(None, max_length=2000, description="Custom prompt override")
+    candles: list[CandleInput] = Field(..., max_length=500, description="OHLCV candle data")
+    prompt: str | None = Field(None, max_length=2000, description="Custom prompt override")
 
 
 @router.post("/analyze")
@@ -74,17 +73,16 @@ async def analyze_market(http_request: Request, request: GenerateRequest):
             },
         }
 
-        async with aiohttp.ClientSession() as session:
-            async with session.post(
-                url,
-                json=payload,
-                params={"key": gemini_api_key},
-                timeout=aiohttp.ClientTimeout(total=30),
-            ) as resp:
-                if resp.status != 200:
-                    logger.error("Gemini API error: %s", await resp.text())
-                    raise HTTPException(status_code=502, detail="Gemini API error")
-                result = await resp.json()
+        async with aiohttp.ClientSession() as session, session.post(
+            url,
+            json=payload,
+            params={"key": gemini_api_key},
+            timeout=aiohttp.ClientTimeout(total=30),
+        ) as resp:
+            if resp.status != 200:
+                logger.error("Gemini API error: %s", await resp.text())
+                raise HTTPException(status_code=502, detail="Gemini API error")
+            result = await resp.json()
 
         text = result.get("candidates", [{}])[0].get("content", {}).get("parts", [{}])[0].get("text", "{}")
 
@@ -95,7 +93,7 @@ async def analyze_market(http_request: Request, request: GenerateRequest):
         raise
     except Exception as e:
         logger.error("Gemini proxy error: %s", e, exc_info=True)
-        raise HTTPException(status_code=500, detail="Internal server error")
+        raise HTTPException(status_code=500, detail="Internal server error") from e
 
 
 @router.get("/health")

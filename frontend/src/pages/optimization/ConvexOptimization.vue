@@ -4,10 +4,20 @@
     <div class="card input-card">
       <h2>Параметры</h2>
 
-      <div class="section-label">Задачи оптимизации</div>
+      <div class="section-label">
+        Задачи оптимизации
+      </div>
       <div class="objectives-row">
-        <label v-for="obj in ALL_OBJECTIVES" :key="obj.key" class="obj-check">
-          <input type="checkbox" v-model="selectedObjectives" :value="obj.key" />
+        <label
+          v-for="obj in ALL_OBJECTIVES"
+          :key="obj.key"
+          class="obj-check"
+        >
+          <input
+            v-model="selectedObjectives"
+            type="checkbox"
+            :value="obj.key"
+          >
           {{ obj.label }}
         </label>
       </div>
@@ -16,56 +26,120 @@
         <div class="form-group">
           <label>Long-Only</label>
           <select v-model="params.long_only">
-            <option :value="true">Да (w ≥ 0)</option>
-            <option :value="false">Long-Short</option>
+            <option :value="true">
+              Да (w ≥ 0)
+            </option>
+            <option :value="false">
+              Long-Short
+            </option>
           </select>
         </div>
         <div class="form-group">
           <label>Макс. вес актива</label>
-          <input v-model.number="params.max_weight" type="number" min="0.01" max="1" step="0.05" />
+          <input
+            v-model.number="params.max_weight"
+            type="number"
+            min="0.01"
+            max="1"
+            step="0.05"
+          >
           <span class="hint">Ограничение концентрации.</span>
         </div>
         <div class="form-group">
           <label>CVaR уровень (α)</label>
-          <input v-model.number="params.cvar_alpha" type="number" min="0.5" max="0.999" step="0.01" />
+          <input
+            v-model.number="params.cvar_alpha"
+            type="number"
+            min="0.5"
+            max="0.999"
+            step="0.01"
+          >
           <span class="hint">0.95 = 95% CVaR (Expected Shortfall).</span>
         </div>
         <div class="form-group">
           <label>Kelly дробь</label>
-          <input v-model.number="params.kelly_fraction" type="number" min="0.1" max="1" step="0.1" />
+          <input
+            v-model.number="params.kelly_fraction"
+            type="number"
+            min="0.1"
+            max="1"
+            step="0.1"
+          >
           <span class="hint">0.5 = half-Kelly, 1 = full Kelly.</span>
         </div>
         <div class="form-group">
           <label>Безрисковая ставка (дн.)</label>
-          <input v-model.number="params.risk_free" type="number" step="0.00001" />
+          <input
+            v-model.number="params.risk_free"
+            type="number"
+            step="0.00001"
+          >
         </div>
         <div class="form-group">
           <label>Периодов в году</label>
-          <input v-model.number="params.annualize" type="number" min="1" />
+          <input
+            v-model.number="params.annualize"
+            type="number"
+            min="1"
+          >
           <span class="hint">252 (дн.), 52 (нед.), 12 (мес.).</span>
         </div>
       </div>
 
       <div class="form-group names-group">
         <label>Названия активов (через запятую)</label>
-        <input v-model="assetNamesText" type="text" placeholder="SPY,QQQ,IEF,GLD,BTC" />
+        <input
+          v-model="assetNamesText"
+          type="text"
+          placeholder="SPY,QQQ,IEF,GLD,BTC"
+        >
       </div>
 
-      <div class="form-group" style="margin-bottom:16px">
+      <div
+        class="form-group"
+        style="margin-bottom:16px"
+      >
         <label>Матрица доходностей (T × N, CSV, строка = период)</label>
-        <textarea v-model="returnsText" rows="10"
-          placeholder="0.001,0.002,-0.001&#10;-0.001,0.000,0.002&#10;0.002,0.001,0.000" />
-        <div class="parse-info" v-if="parsedShape">{{ parsedShape.T }} × {{ parsedShape.N }} (T × N)</div>
-        <div class="parse-error" v-if="parseError">{{ parseError }}</div>
+        <textarea
+          v-model="returnsText"
+          rows="10"
+          placeholder="0.001,0.002,-0.001&#10;-0.001,0.000,0.002&#10;0.002,0.001,0.000"
+        />
+        <div
+          v-if="parsedShape"
+          class="parse-info"
+        >
+          {{ parsedShape.T }} × {{ parsedShape.N }} (T × N)
+        </div>
+        <div
+          v-if="parseError"
+          class="parse-error"
+        >
+          {{ parseError }}
+        </div>
       </div>
 
       <div class="actions">
-        <button class="btn-primary" @click="compute" :disabled="loading || !!parseError || !returnsText.trim()">
+        <button
+          class="btn-primary"
+          :disabled="loading || !!parseError || !returnsText.trim()"
+          @click="compute"
+        >
           {{ loading ? 'Оптимизация...' : 'Оптимизировать' }}
         </button>
-        <button class="btn-secondary" @click="loadDemo">Демо (5 активов, 200 дней)</button>
+        <button
+          class="btn-secondary"
+          @click="loadDemo"
+        >
+          Демо (5 активов, 200 дней)
+        </button>
       </div>
-      <div class="error-msg" v-if="error">{{ error }}</div>
+      <div
+        v-if="error"
+        class="error-msg"
+      >
+        {{ error }}
+      </div>
     </div>
 
     <!-- Results -->
@@ -86,15 +160,25 @@
             </tr>
           </thead>
           <tbody>
-            <tr v-for="s in result.summary" :key="s.objective"
-                :class="{ 'best-row': isBestSharpe(s) }">
+            <tr
+              v-for="s in result.summary"
+              :key="s.objective"
+              :class="{ 'best-row': isBestSharpe(s) }"
+            >
               <td>
-                <span class="obj-badge" :style="{ background: objColor(s.objective) }">
+                <span
+                  class="obj-badge"
+                  :style="{ background: objColor(s.objective) }"
+                >
                   {{ objLabel(s.objective) }}
                 </span>
               </td>
-              <td :class="s.sharpe > 0 ? 'ok-val' : 'danger-val'">{{ s.sharpe.toFixed(3) }}</td>
-              <td :class="s.return_annual > 0 ? 'ok-val' : 'danger-val'">{{ pct(s.return_annual) }}</td>
+              <td :class="s.sharpe > 0 ? 'ok-val' : 'danger-val'">
+                {{ s.sharpe.toFixed(3) }}
+              </td>
+              <td :class="s.return_annual > 0 ? 'ok-val' : 'danger-val'">
+                {{ pct(s.return_annual) }}
+              </td>
               <td>{{ pct(s.vol_annual) }}</td>
               <td>{{ s.cvar.toFixed(4) }}</td>
               <td>{{ s.effective_n.toFixed(1) }}</td>
@@ -108,49 +192,78 @@
       <div class="charts-row">
         <div class="card chart-card">
           <h3>Веса портфелей (stacked bar)</h3>
-          <div ref="weightsChart" class="chart tall-chart" />
+          <div
+            ref="weightsChart"
+            class="chart tall-chart"
+          />
         </div>
         <div class="card chart-card">
           <h3>Вклад риска (Risk Parity)</h3>
-          <div ref="rcChart" class="chart tall-chart" />
+          <div
+            ref="rcChart"
+            class="chart tall-chart"
+          />
         </div>
       </div>
 
       <!-- Efficient Frontier -->
       <div class="card">
         <h3>Эффективная граница (Mean-Variance)</h3>
-        <div ref="frontierChart" class="chart" />
+        <div
+          ref="frontierChart"
+          class="chart"
+        />
       </div>
 
       <!-- Per-objective detail -->
       <div class="obj-details">
         <div
           v-for="obj in result.objectives_computed"
+          v-if="result.results[obj]"
           :key="obj"
           class="card obj-detail-card"
-          v-if="result.results[obj]"
         >
           <h3>
-            <span class="obj-badge-sm" :style="{ background: objColor(obj) }">{{ objLabel(obj) }}</span>
+            <span
+              class="obj-badge-sm"
+              :style="{ background: objColor(obj) }"
+            >{{ objLabel(obj) }}</span>
           </h3>
           <div class="detail-kpi-row">
             <div class="detail-kpi">
-              <div class="kpi-label">Sharpe</div>
-              <div class="kpi-val" :class="result.results[obj].sharpe > 0 ? 'ok-val' : 'danger-val'">
+              <div class="kpi-label">
+                Sharpe
+              </div>
+              <div
+                class="kpi-val"
+                :class="result.results[obj].sharpe > 0 ? 'ok-val' : 'danger-val'"
+              >
                 {{ result.results[obj].sharpe.toFixed(3) }}
               </div>
             </div>
             <div class="detail-kpi">
-              <div class="kpi-label">CVaR</div>
-              <div class="kpi-val">{{ result.results[obj].cvar.toFixed(4) }}</div>
+              <div class="kpi-label">
+                CVaR
+              </div>
+              <div class="kpi-val">
+                {{ result.results[obj].cvar.toFixed(4) }}
+              </div>
             </div>
             <div class="detail-kpi">
-              <div class="kpi-label">Max DD</div>
-              <div class="kpi-val danger-val">{{ pct(result.results[obj].max_drawdown) }}</div>
+              <div class="kpi-label">
+                Max DD
+              </div>
+              <div class="kpi-val danger-val">
+                {{ pct(result.results[obj].max_drawdown) }}
+              </div>
             </div>
             <div class="detail-kpi">
-              <div class="kpi-label">Eff. N</div>
-              <div class="kpi-val">{{ result.results[obj].effective_n.toFixed(2) }}</div>
+              <div class="kpi-label">
+                Eff. N
+              </div>
+              <div class="kpi-val">
+                {{ result.results[obj].effective_n.toFixed(2) }}
+              </div>
             </div>
           </div>
           <div class="weight-bars">
@@ -161,11 +274,13 @@
             >
               <span class="asset-name">{{ name }}</span>
               <div class="bar-track">
-                <div class="bar-fill"
+                <div
+                  class="bar-fill"
                   :style="{
                     width: pct(Math.abs(result.results[obj].weights_list[i])),
                     background: result.results[obj].weights_list[i] >= 0 ? '#5b8af5' : '#e05c5c'
-                  }" />
+                  }"
+                />
               </div>
               <span class="weight-label">{{ pct(result.results[obj].weights_list[i]) }}</span>
             </div>

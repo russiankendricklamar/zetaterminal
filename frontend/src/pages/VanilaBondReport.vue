@@ -1,18 +1,31 @@
 <!-- src/pages/VanillaBondReport.vue -->
 <template>
   <div class="page-container">
-
     <!-- Header Section -->
     <div class="section-header">
       <div class="header-left">
-        <h1 class="section-title" v-if="report">
+        <h1
+          v-if="report"
+          class="section-title"
+        >
           {{ report.issuer }}, {{ report.isin }}
         </h1>
-        <h1 class="section-title" v-else>Vanilla Bond Report</h1>
-        <p class="section-subtitle" v-if="report">
+        <h1
+          v-else
+          class="section-title"
+        >
+          Vanilla Bond Report
+        </h1>
+        <p
+          v-if="report"
+          class="section-subtitle"
+        >
           Паспорт выпуска и аналитика по ISIN: <span class="text-accent">{{ report.isin }}</span>
         </p>
-        <p class="section-subtitle" v-else>
+        <p
+          v-else
+          class="section-subtitle"
+        >
           Паспорт выпуска и аналитика по ISIN: <span class="text-accent">{{ isin || '—' }}</span>
         </p>
       </div>
@@ -26,23 +39,23 @@
             type="date"
             class="date-input-small"
             @change="onValuationDateChange"
-          />
+          >
         </div>
 
         <!-- Edit Mode Toggle -->
         <button
-          @click="toggleEditMode"
           class="btn-toggle-edit"
           :class="{ 'active': editMode }"
+          @click="toggleEditMode"
         >
           {{ editMode ? '✓ Режим редактирования' : '✎ Редактировать' }}
         </button>
 
         <!-- Export to Excel -->
         <button
-          @click="exportToExcel"
           class="btn-export-excel"
           :disabled="!report"
+          @click="exportToExcel"
         >
           📊 Excel
         </button>
@@ -56,30 +69,51 @@
             class="search-input"
             placeholder="RU000A103943"
             @keyup.enter="onChangeIsin"
-          />
-          <button class="btn-search" @click="onChangeIsin" :disabled="!localIsin">🔍</button>
+          >
+          <button
+            class="btn-search"
+            :disabled="!localIsin"
+            @click="onChangeIsin"
+          >
+            🔍
+          </button>
         </div>
       </div>
     </div>
 
     <!-- States -->
-    <section v-if="loading" class="state-section">
+    <section
+      v-if="loading"
+      class="state-section"
+    >
       <div class="glass-card">
-        <span class="spinner"></span> {{ loadingMessage }}
+        <span class="spinner" /> {{ loadingMessage }}
       </div>
     </section>
 
-    <section v-else-if="error" class="state-section">
-      <div class="glass-card error">⚠ {{ error }}</div>
+    <section
+      v-else-if="error"
+      class="state-section"
+    >
+      <div class="glass-card error">
+        ⚠ {{ error }}
+      </div>
     </section>
 
-    <section v-else-if="!report" class="state-section">
-      <div class="glass-card">Введите ISIN для генерации отчёта</div>
+    <section
+      v-else-if="!report"
+      class="state-section"
+    >
+      <div class="glass-card">
+        Введите ISIN для генерации отчёта
+      </div>
     </section>
 
     <!-- Report Content -->
-    <section v-else class="report-content">
-
+    <section
+      v-else
+      class="report-content"
+    >
       <!-- General Info Section -->
       <div class="grid-2">
         <div class="glass-card">
@@ -88,38 +122,79 @@
           </div>
           <table class="info-table">
             <tr>
-              <td class="label">Эмитент</td>
+              <td class="label">
+                Эмитент
+              </td>
               <td class="value">
-                <input v-if="editMode && editableReport" v-model="editableReport.issuer" type="text" class="edit-input" />
+                <input
+                  v-if="editMode && editableReport"
+                  v-model="editableReport.issuer"
+                  type="text"
+                  class="edit-input"
+                >
                 <span v-else>{{ report.issuer }}</span>
               </td>
             </tr>
-            <tr><td class="label">ISIN</td><td class="value mono">{{ report.isin }}</td></tr>
             <tr>
-              <td class="label">Страна</td>
+              <td class="label">
+                ISIN
+              </td><td class="value mono">
+                {{ report.isin }}
+              </td>
+            </tr>
+            <tr>
+              <td class="label">
+                Страна
+              </td>
               <td class="value">
-                <input v-if="editMode && editableReport" v-model="editableReport.risk_country" type="text" class="edit-input" />
+                <input
+                  v-if="editMode && editableReport"
+                  v-model="editableReport.risk_country"
+                  type="text"
+                  class="edit-input"
+                >
                 <span v-else>{{ report.risk_country || '—' }}</span>
               </td>
             </tr>
             <tr>
-              <td class="label">Сектор</td>
+              <td class="label">
+                Сектор
+              </td>
               <td class="value">
-                <input v-if="editMode && editableReport" v-model="editableReport.sector" type="text" class="edit-input" />
+                <input
+                  v-if="editMode && editableReport"
+                  v-model="editableReport.sector"
+                  type="text"
+                  class="edit-input"
+                >
                 <span v-else>{{ report.sector || '—' }}</span>
               </td>
             </tr>
             <tr>
-              <td class="label">Отрасль</td>
+              <td class="label">
+                Отрасль
+              </td>
               <td class="value">
-                <input v-if="editMode && editableReport" v-model="editableReport.industry" type="text" class="edit-input" />
+                <input
+                  v-if="editMode && editableReport"
+                  v-model="editableReport.industry"
+                  type="text"
+                  class="edit-input"
+                >
                 <span v-else>{{ report.industry || '—' }}</span>
               </td>
             </tr>
             <tr>
-              <td class="label">Объём</td>
+              <td class="label">
+                Объём
+              </td>
               <td class="value mono">
-                <input v-if="editMode && editableReport" v-model.number="editableReport.outstanding_amount" type="number" class="edit-input" />
+                <input
+                  v-if="editMode && editableReport"
+                  v-model.number="editableReport.outstanding_amount"
+                  type="number"
+                  class="edit-input"
+                >
                 <span v-else>{{ formatNumber(report.outstanding_amount) || '—' }}</span>
               </td>
             </tr>
@@ -132,56 +207,106 @@
           </div>
           <table class="info-table">
             <tr>
-              <td class="label">Дата начала</td>
+              <td class="label">
+                Дата начала
+              </td>
               <td class="value mono">
-                <input v-if="editMode && editableReport?.issue_info" v-model="editableReport.issue_info.issue_date" type="date" class="edit-input" />
+                <input
+                  v-if="editMode && editableReport?.issue_info"
+                  v-model="editableReport.issue_info.issue_date"
+                  type="date"
+                  class="edit-input"
+                >
                 <span v-else>{{ formatDate(report.issue_info?.issue_date) }}</span>
               </td>
             </tr>
             <tr>
-              <td class="label">Дата погашения</td>
+              <td class="label">
+                Дата погашения
+              </td>
               <td class="value mono">
-                <input v-if="editMode && editableReport?.issue_info" v-model="editableReport.issue_info.maturity_date" type="date" class="edit-input" />
+                <input
+                  v-if="editMode && editableReport?.issue_info"
+                  v-model="editableReport.issue_info.maturity_date"
+                  type="date"
+                  class="edit-input"
+                >
                 <span v-else>{{ formatDate(report.issue_info?.maturity_date) }}</span>
               </td>
             </tr>
             <tr>
-              <td class="label">Ставка купона</td>
+              <td class="label">
+                Ставка купона
+              </td>
               <td class="value">
-                <input v-if="editMode && editableReport?.issue_info" v-model.number="editableReport.issue_info.coupon_rate" type="number" step="0.01" class="edit-input" placeholder="0.00" />
+                <input
+                  v-if="editMode && editableReport?.issue_info"
+                  v-model.number="editableReport.issue_info.coupon_rate"
+                  type="number"
+                  step="0.01"
+                  class="edit-input"
+                  placeholder="0.00"
+                >
                 <span v-else>
-                  <span v-if="report.issue_info?.coupon_rate !== null && report.issue_info?.coupon_rate !== undefined" class="accent">{{ ((report.issue_info?.coupon_rate || 0) * 100).toFixed(2) }}%</span>
+                  <span
+                    v-if="report.issue_info?.coupon_rate !== null && report.issue_info?.coupon_rate !== undefined"
+                    class="accent"
+                  >{{ ((report.issue_info?.coupon_rate || 0) * 100).toFixed(2) }}%</span>
                   <span v-else>—</span>
                 </span>
               </td>
             </tr>
             <tr>
-              <td class="label">Купонов в год</td>
+              <td class="label">
+                Купонов в год
+              </td>
               <td class="value mono">
-                <input v-if="editMode && editableReport?.issue_info" v-model.number="editableReport.issue_info.coupon_per_year" type="number" class="edit-input" />
+                <input
+                  v-if="editMode && editableReport?.issue_info"
+                  v-model.number="editableReport.issue_info.coupon_per_year"
+                  type="number"
+                  class="edit-input"
+                >
                 <span v-else>{{ report.issue_info?.coupon_per_year ?? '—' }}</span>
               </td>
             </tr>
             <tr>
-              <td class="label">Номинал</td>
-              <td class="value mono">{{ report.issue_info?.nominal ? formatNumber(report.issue_info.nominal) : '—' }}</td>
+              <td class="label">
+                Номинал
+              </td>
+              <td class="value mono">
+                {{ report.issue_info?.nominal ? formatNumber(report.issue_info.nominal) : '—' }}
+              </td>
             </tr>
             <tr>
-              <td class="label">Оферта</td>
+              <td class="label">
+                Оферта
+              </td>
               <td class="value">
-                <span v-if="report.issue_info?.offer && report.issue_info.offer.type !== 'Нет'" class="accent">
+                <span
+                  v-if="report.issue_info?.offer && report.issue_info.offer.type !== 'Нет'"
+                  class="accent"
+                >
                   {{ report.issue_info.offer.type }} — {{ formatDate(report.issue_info.offer.date) }}
                 </span>
                 <span v-else>Нет</span>
               </td>
             </tr>
             <tr>
-              <td class="label">Уровень листинга</td>
-              <td class="value">{{ report.listing_level ? (report.listing_level + ' уровень') : '—' }}</td>
+              <td class="label">
+                Уровень листинга
+              </td>
+              <td class="value">
+                {{ report.listing_level ? (report.listing_level + ' уровень') : '—' }}
+              </td>
             </tr>
             <tr>
-              <td class="label">Валюта</td>
-              <td class="value">{{ report.currency || '—' }}</td>
+              <td class="label">
+                Валюта
+              </td>
+              <td class="value">
+                {{ report.currency || '—' }}
+              </td>
             </tr>
           </table>
         </div>
@@ -193,45 +318,84 @@
           <div class="card-header">
             <h3>Рейтинг эмиссии</h3>
           </div>
-          <div v-if="report.ratings?.issue?.length" class="ratings-list">
-            <div v-for="(r, idx) in report.ratings.issue" :key="idx" class="rating-item">
+          <div
+            v-if="report.ratings?.issue?.length"
+            class="ratings-list"
+          >
+            <div
+              v-for="(r, idx) in report.ratings.issue"
+              :key="idx"
+              class="rating-item"
+            >
               <span class="agency">{{ r.agency }}</span>
               <span class="grade">{{ r.rating }}</span>
               <span class="date mono">{{ formatDate(r.date) }}</span>
             </div>
           </div>
-          <p v-else class="muted">Нет данных</p>
+          <p
+            v-else
+            class="muted"
+          >
+            Нет данных
+          </p>
         </div>
 
         <div class="glass-card">
           <div class="card-header">
             <h3>Рейтинг эмитента</h3>
           </div>
-          <div v-if="report.ratings?.issuer?.length" class="ratings-list">
-            <div v-for="(r, idx) in report.ratings.issuer" :key="idx" class="rating-item">
+          <div
+            v-if="report.ratings?.issuer?.length"
+            class="ratings-list"
+          >
+            <div
+              v-for="(r, idx) in report.ratings.issuer"
+              :key="idx"
+              class="rating-item"
+            >
               <span class="agency">{{ r.agency }}</span>
               <div class="rating-info">
                 <span class="grade">{{ r.rating }}</span>
-                <span class="outlook" v-if="r.outlook">{{ r.outlook }}</span>
+                <span
+                  v-if="r.outlook"
+                  class="outlook"
+                >{{ r.outlook }}</span>
               </div>
               <span class="date mono">{{ formatDate(r.date) }}</span>
             </div>
           </div>
-          <p v-else class="muted">Нет данных</p>
+          <p
+            v-else
+            class="muted"
+          >
+            Нет данных
+          </p>
         </div>
 
         <div class="glass-card">
           <div class="card-header">
             <h3>Рейтинг гаранта</h3>
           </div>
-          <div v-if="report.ratings?.guarantor?.length" class="ratings-list">
-            <div v-for="(r, idx) in report.ratings.guarantor" :key="idx" class="rating-item">
+          <div
+            v-if="report.ratings?.guarantor?.length"
+            class="ratings-list"
+          >
+            <div
+              v-for="(r, idx) in report.ratings.guarantor"
+              :key="idx"
+              class="rating-item"
+            >
               <span class="agency">{{ r.agency }}</span>
               <span class="grade">{{ r.rating }}</span>
               <span class="date mono">{{ formatDate(r.date) }}</span>
             </div>
           </div>
-          <p v-else class="muted">Нет данных</p>
+          <p
+            v-else
+            class="muted"
+          >
+            Нет данных
+          </p>
         </div>
       </div>
 
@@ -240,14 +404,31 @@
         <div class="glass-card">
           <div class="card-header">
             <h3>Активность рынка</h3>
-            <span class="status-badge fulfilled" v-if="report.market_activity?.is_active">АКТИВНЫЙ</span>
-            <span class="status-badge inactive" v-else>НЕАКТИВНЫЙ</span>
+            <span
+              v-if="report.market_activity?.is_active"
+              class="status-badge fulfilled"
+            >АКТИВНЫЙ</span>
+            <span
+              v-else
+              class="status-badge inactive"
+            >НЕАКТИВНЫЙ</span>
           </div>
           <div class="metric-list">
-            <div class="metric"><span>Кол-во торговых дней</span><span class="val">{{ report.market_activity?.trading_days ?? '—' }}</span></div>
-            <div class="metric"><span>Кол-во сделок</span><span class="val">{{ report.market_activity?.trades ?? '—' }}</span></div>
-            <div class="metric"><span>Объем торгов/выпуск</span><span class="val">{{ report.market_activity?.turnover_to_outstanding ? ((report.market_activity.turnover_to_outstanding * 100).toFixed(2) + '%') : '—' }}</span></div>
-            <div class="metric"><span>Торги 30 дней</span><span class="val"><span v-if="report.market_activity?.traded_last_30d" class="status-badge fulfilled">Да</span><span v-else>Нет</span></span></div>
+            <div class="metric">
+              <span>Кол-во торговых дней</span><span class="val">{{ report.market_activity?.trading_days ?? '—' }}</span>
+            </div>
+            <div class="metric">
+              <span>Кол-во сделок</span><span class="val">{{ report.market_activity?.trades ?? '—' }}</span>
+            </div>
+            <div class="metric">
+              <span>Объем торгов/выпуск</span><span class="val">{{ report.market_activity?.turnover_to_outstanding ? ((report.market_activity.turnover_to_outstanding * 100).toFixed(2) + '%') : '—' }}</span>
+            </div>
+            <div class="metric">
+              <span>Торги 30 дней</span><span class="val"><span
+                v-if="report.market_activity?.traded_last_30d"
+                class="status-badge fulfilled"
+              >Да</span><span v-else>Нет</span></span>
+            </div>
           </div>
         </div>
 
@@ -259,28 +440,51 @@
             <div class="metric">
               <span>Чистая цена</span>
               <span class="val accent">
-                <input v-if="editMode && editableReport?.pricing" v-model.number="editableReport.pricing.clean_price_pct" type="number" step="0.01" class="edit-input-inline" />
+                <input
+                  v-if="editMode && editableReport?.pricing"
+                  v-model.number="editableReport.pricing.clean_price_pct"
+                  type="number"
+                  step="0.01"
+                  class="edit-input-inline"
+                >
                 <span v-else>{{ report.pricing?.clean_price_pct?.toFixed(2) }}%</span>
               </span>
             </div>
             <div class="metric">
               <span>{{ report.pricing?.yield_type || 'YTM' }}</span>
               <span class="val accent">
-                <input v-if="editMode && editableReport?.pricing" v-model.number="editableReport.pricing.ytm" type="number" step="0.0001" class="edit-input-inline" />
+                <input
+                  v-if="editMode && editableReport?.pricing"
+                  v-model.number="editableReport.pricing.ytm"
+                  type="number"
+                  step="0.0001"
+                  class="edit-input-inline"
+                >
                 <span v-else>{{ report.pricing?.ytm_pct != null ? (report.pricing.ytm_pct.toFixed(2) + '%') : (report.pricing?.ytm ? ((report.pricing.ytm * 100).toFixed(2) + '%') : '—') }}</span>
               </span>
             </div>
             <div class="metric">
               <span>G-spread</span>
               <span class="val mono">
-                <input v-if="editMode && editableReport?.pricing" v-model.number="editableReport.pricing.g_spread_bps" type="number" class="edit-input-inline" />
+                <input
+                  v-if="editMode && editableReport?.pricing"
+                  v-model.number="editableReport.pricing.g_spread_bps"
+                  type="number"
+                  class="edit-input-inline"
+                >
                 <span v-else>{{ report.pricing?.g_spread_bps ?? '—' }}<span v-if="report.pricing?.g_spread_bps"> bps</span></span>
               </span>
             </div>
             <div class="metric">
               <span>G-curve</span>
               <span class="val mono">
-                <input v-if="editMode && editableReport?.pricing" v-model.number="editableReport.pricing.g_curve_yield" type="number" step="0.0001" class="edit-input-inline" />
+                <input
+                  v-if="editMode && editableReport?.pricing"
+                  v-model.number="editableReport.pricing.g_curve_yield"
+                  type="number"
+                  step="0.0001"
+                  class="edit-input-inline"
+                >
                 <span v-else>{{ report.pricing?.g_curve_pct != null ? (report.pricing.g_curve_pct.toFixed(2) + '%') : (report.pricing?.g_curve_yield ? ((report.pricing.g_curve_yield * 100).toFixed(2) + '%') : '—') }}</span>
               </span>
             </div>
@@ -303,28 +507,52 @@
             <div class="metric">
               <span>Мод. дюрация</span>
               <span class="val">
-                <input v-if="editMode && editableReport?.risk_indicators" v-model.number="editableReport.risk_indicators.mod_duration" type="number" step="0.0001" class="edit-input-inline" />
+                <input
+                  v-if="editMode && editableReport?.risk_indicators"
+                  v-model.number="editableReport.risk_indicators.mod_duration"
+                  type="number"
+                  step="0.0001"
+                  class="edit-input-inline"
+                >
                 <span v-else>{{ report.risk_indicators?.mod_duration?.toFixed(4) || report.risk_indicators?.duration?.toFixed(4) || '—' }}</span>
               </span>
             </div>
             <div class="metric">
               <span>Дюрация</span>
               <span class="val">
-                <input v-if="editMode && editableReport?.risk_indicators" v-model.number="editableReport.risk_indicators.duration" type="number" step="0.0001" class="edit-input-inline" />
+                <input
+                  v-if="editMode && editableReport?.risk_indicators"
+                  v-model.number="editableReport.risk_indicators.duration"
+                  type="number"
+                  step="0.0001"
+                  class="edit-input-inline"
+                >
                 <span v-else>{{ report.risk_indicators?.duration?.toFixed(4) }}</span>
               </span>
             </div>
             <div class="metric">
               <span>Выпуклость</span>
               <span class="val">
-                <input v-if="editMode && editableReport?.risk_indicators" v-model.number="editableReport.risk_indicators.convexity" type="number" step="0.01" class="edit-input-inline" />
+                <input
+                  v-if="editMode && editableReport?.risk_indicators"
+                  v-model.number="editableReport.risk_indicators.convexity"
+                  type="number"
+                  step="0.01"
+                  class="edit-input-inline"
+                >
                 <span v-else>{{ report.risk_indicators?.convexity?.toFixed(2) }}</span>
               </span>
             </div>
             <div class="metric">
               <span>DV01</span>
               <span class="val">
-                <input v-if="editMode && editableReport?.risk_indicators" v-model.number="editableReport.risk_indicators.dv01" type="number" step="0.01" class="edit-input-inline" />
+                <input
+                  v-if="editMode && editableReport?.risk_indicators"
+                  v-model.number="editableReport.risk_indicators.dv01"
+                  type="number"
+                  step="0.01"
+                  class="edit-input-inline"
+                >
                 <span v-else>{{ formatNumber(report.risk_indicators?.dv01) }}</span>
               </span>
             </div>
@@ -336,10 +564,15 @@
       <div class="glass-card full-width">
         <div class="chart-header">
           <h3>Динамика цены</h3>
-          <button class="btn-export" @click="exportChart('price')">💾 PNG</button>
+          <button
+            class="btn-export"
+            @click="exportChart('price')"
+          >
+            💾 PNG
+          </button>
         </div>
         <div class="chart-container tall">
-          <canvas ref="priceHistoryRef"></canvas>
+          <canvas ref="priceHistoryRef" />
         </div>
       </div>
 
@@ -347,10 +580,15 @@
       <div class="glass-card full-width">
         <div class="chart-header">
           <h3>Динамика доходности облигации в RUB, g-curve, g-spread</h3>
-          <button class="btn-export" @click="exportChart('yield')">💾 PNG</button>
+          <button
+            class="btn-export"
+            @click="exportChart('yield')"
+          >
+            💾 PNG
+          </button>
         </div>
         <div class="chart-container tall">
-          <canvas ref="yieldDynamicsRef"></canvas>
+          <canvas ref="yieldDynamicsRef" />
         </div>
       </div>
 
@@ -370,32 +608,44 @@
             <tbody>
               <tr>
                 <td>Доходность индекса государственных облигаций</td>
-                <td class="mono">{{ govIndexYield != null ? ((govIndexYield * 100).toFixed(2) + '%') : '—' }}</td>
+                <td class="mono">
+                  {{ govIndexYield != null ? ((govIndexYield * 100).toFixed(2) + '%') : '—' }}
+                </td>
               </tr>
               <tr>
                 <td>Доходность индекса корпоративных облигаций с рейтингом ААА</td>
-                <td class="mono">{{ report.indices?.corp_aaa != null ? ((report.indices.corp_aaa * 100).toFixed(2) + '%') : '—' }}</td>
+                <td class="mono">
+                  {{ report.indices?.corp_aaa != null ? ((report.indices.corp_aaa * 100).toFixed(2) + '%') : '—' }}
+                </td>
               </tr>
               <tr>
                 <td>Доходность индекса корпоративных облигаций с рейтингом АА</td>
-                <td class="mono">{{ report.indices?.corp_aa != null ? ((report.indices.corp_aa * 100).toFixed(2) + '%') : '—' }}</td>
+                <td class="mono">
+                  {{ report.indices?.corp_aa != null ? ((report.indices.corp_aa * 100).toFixed(2) + '%') : '—' }}
+                </td>
               </tr>
               <tr class="highlight-row">
                 <td><strong>Оцениваемая облигация ({{ report.pricing?.yield_type || 'YTM' }})</strong></td>
-                <td class="mono accent"><strong>{{ report.pricing?.ytm_pct != null ? (report.pricing.ytm_pct.toFixed(2) + '%') : (report.pricing?.ytm ? ((report.pricing.ytm * 100).toFixed(2) + '%') : '—') }}</strong></td>
+                <td class="mono accent">
+                  <strong>{{ report.pricing?.ytm_pct != null ? (report.pricing.ytm_pct.toFixed(2) + '%') : (report.pricing?.ytm ? ((report.pricing.ytm * 100).toFixed(2) + '%') : '—') }}</strong>
+                </td>
               </tr>
               <tr>
                 <td>Доходность индекса корпоративных облигаций с рейтингом А</td>
-                <td class="mono">{{ report.indices?.corp_a != null ? ((report.indices.corp_a * 100).toFixed(2) + '%') : '—' }}</td>
+                <td class="mono">
+                  {{ report.indices?.corp_a != null ? ((report.indices.corp_a * 100).toFixed(2) + '%') : '—' }}
+                </td>
               </tr>
               <tr>
                 <td>Доходность индекса корпоративных облигаций с рейтингом ВВВ</td>
-                <td class="mono">{{ report.indices?.corp_bbb != null ? ((report.indices.corp_bbb * 100).toFixed(2) + '%') : '—' }}</td>
+                <td class="mono">
+                  {{ report.indices?.corp_bbb != null ? ((report.indices.corp_bbb * 100).toFixed(2) + '%') : '—' }}
+                </td>
               </tr>
             </tbody>
           </table>
           <div class="chart-container indices-chart">
-            <canvas ref="indicesComparisonRef"></canvas>
+            <canvas ref="indicesComparisonRef" />
           </div>
         </div>
       </div>
@@ -416,27 +666,49 @@
               class="search-input"
               placeholder="RU000A10XXXX"
               @keyup.enter="addAnalogBond"
-            />
-            <button class="btn-search" @click="addAnalogBond" :disabled="!newAnalogIsin || loadingAnalogs">➕</button>
+            >
+            <button
+              class="btn-search"
+              :disabled="!newAnalogIsin || loadingAnalogs"
+              @click="addAnalogBond"
+            >
+              ➕
+            </button>
           </div>
 
           <!-- List of added analogs -->
-          <div v-if="analogBondsList.length > 0" class="analogs-list">
-            <div v-for="(bond, idx) in analogBondsList" :key="idx" class="analog-item">
+          <div
+            v-if="analogBondsList.length > 0"
+            class="analogs-list"
+          >
+            <div
+              v-for="(bond, idx) in analogBondsList"
+              :key="idx"
+              class="analog-item"
+            >
               <span class="analog-isin mono">{{ bond.isin }}</span>
               <span class="analog-name">{{ bond.name || 'Загрузка...' }}</span>
-              <button class="btn-remove" @click="removeAnalogBond(idx)" title="Удалить">×</button>
+              <button
+                class="btn-remove"
+                title="Удалить"
+                @click="removeAnalogBond(idx)"
+              >
+                ×
+              </button>
             </div>
           </div>
         </div>
 
         <div class="chart-container tall">
-          <canvas ref="analogousBondsRef"></canvas>
+          <canvas ref="analogousBondsRef" />
         </div>
       </div>
 
       <!-- BLOCK 6: Coupon Schedule -->
-      <div class="glass-card full-width" v-if="report.coupon_schedule?.length">
+      <div
+        v-if="report.coupon_schedule?.length"
+        class="glass-card full-width"
+      >
         <div class="card-header">
           <h3>Купонное расписание (предстоящие)</h3>
           <span class="muted">{{ report.coupon_schedule.length }} выплат</span>
@@ -451,10 +723,19 @@
               </tr>
             </thead>
             <tbody>
-              <tr v-for="(cpn, idx) in report.coupon_schedule.slice(0, showAllCoupons ? undefined : 6)" :key="idx">
-                <td class="mono">{{ formatDate(cpn.date) }}</td>
-                <td class="mono">{{ cpn.valueprc ? cpn.valueprc.toFixed(2) : '—' }}</td>
-                <td class="mono">{{ cpn.value ? cpn.value.toFixed(2) : '—' }}</td>
+              <tr
+                v-for="(cpn, idx) in report.coupon_schedule.slice(0, showAllCoupons ? undefined : 6)"
+                :key="idx"
+              >
+                <td class="mono">
+                  {{ formatDate(cpn.date) }}
+                </td>
+                <td class="mono">
+                  {{ cpn.valueprc ? cpn.valueprc.toFixed(2) : '—' }}
+                </td>
+                <td class="mono">
+                  {{ cpn.value ? cpn.value.toFixed(2) : '—' }}
+                </td>
               </tr>
             </tbody>
           </table>
@@ -469,7 +750,10 @@
       </div>
 
       <!-- BLOCK 6b: Amortization Schedule -->
-      <div class="glass-card full-width" v-if="report.amortization_schedule?.length">
+      <div
+        v-if="report.amortization_schedule?.length"
+        class="glass-card full-width"
+      >
         <div class="card-header">
           <h3>График амортизации</h3>
           <span class="muted">{{ report.amortization_schedule.length }} выплат</span>
@@ -484,10 +768,19 @@
               </tr>
             </thead>
             <tbody>
-              <tr v-for="(amort, idx) in report.amortization_schedule" :key="idx">
-                <td class="mono">{{ formatDate(amort.date) }}</td>
-                <td class="mono">{{ amort.valueprc ? amort.valueprc.toFixed(2) + '%' : '—' }}</td>
-                <td class="mono">{{ amort.value ? amort.value.toFixed(2) : '—' }}</td>
+              <tr
+                v-for="(amort, idx) in report.amortization_schedule"
+                :key="idx"
+              >
+                <td class="mono">
+                  {{ formatDate(amort.date) }}
+                </td>
+                <td class="mono">
+                  {{ amort.valueprc ? amort.valueprc.toFixed(2) + '%' : '—' }}
+                </td>
+                <td class="mono">
+                  {{ amort.value ? amort.value.toFixed(2) : '—' }}
+                </td>
               </tr>
             </tbody>
           </table>
@@ -499,17 +792,27 @@
         <div class="card-header">
           <h3>Корпоративные события</h3>
         </div>
-        <div v-if="report.corporate_events?.length" class="events-list">
-          <div v-for="(event, idx) in report.corporate_events" :key="idx" class="event-item">
+        <div
+          v-if="report.corporate_events?.length"
+          class="events-list"
+        >
+          <div
+            v-for="(event, idx) in report.corporate_events"
+            :key="idx"
+            class="event-item"
+          >
             <span class="event-date mono">{{ formatDate(event.date) }}</span>
             <span class="event-description">{{ event.description }}</span>
           </div>
         </div>
-        <p v-else class="muted">Нет данных о корпоративных событиях</p>
+        <p
+          v-else
+          class="muted"
+        >
+          Нет данных о корпоративных событиях
+        </p>
       </div>
-
     </section>
-
   </div>
 </template>
 

@@ -1,47 +1,79 @@
 <template>
   <div class="page-container custom-scroll">
-    
     <!-- Header & Controls -->
     <div class="section-header">
       <div class="header-left">
-        <h1 class="section-title">Анализ кривых доходности</h1>
-        <p class="section-subtitle">Сценарное моделирование и стресс-тестирование (Monte Carlo)</p>
+        <h1 class="section-title">
+          Анализ кривых доходности
+        </h1>
+        <p class="section-subtitle">
+          Сценарное моделирование и стресс-тестирование (Monte Carlo)
+        </p>
       </div>
       
       <div class="header-actions">
         <!-- Selected Bank -->
         <div class="glass-pill control-pill">
-           <span class="lbl-mini">Банк:</span>
-           <span class="text-white font-bold">{{ selectedBank.name }}</span>
+          <span class="lbl-mini">Банк:</span>
+          <span class="text-white font-bold">{{ selectedBank.name }}</span>
         </div>
         
         <!-- Asset Selector -->
-        <div class="glass-pill control-pill asset-selector-pill" :class="{ 'is-open': isAssetMenuOpen }" @click.stop="toggleAssetMenu">
-           <span class="lbl-mini">Активы:</span>
-           <span class="text-white font-bold">{{ selectedAssets.length > 0 ? `${selectedAssets.length} выбрано` : 'Не выбрано' }}</span>
-           <svg class="chevron" width="12" height="8" viewBox="0 0 12 8" fill="none" stroke="currentColor" stroke-width="2">
-             <path d="M1 1L6 6L11 1"/>
-           </svg>
+        <div
+          class="glass-pill control-pill asset-selector-pill"
+          :class="{ 'is-open': isAssetMenuOpen }"
+          @click.stop="toggleAssetMenu"
+        >
+          <span class="lbl-mini">Активы:</span>
+          <span class="text-white font-bold">{{ selectedAssets.length > 0 ? `${selectedAssets.length} выбрано` : 'Не выбрано' }}</span>
+          <svg
+            class="chevron"
+            width="12"
+            height="8"
+            viewBox="0 0 12 8"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+          >
+            <path d="M1 1L6 6L11 1" />
+          </svg>
         </div>
         
-        <button class="btn-glass" @click="generateData">
-             <span class="icon">↻</span> Обновить симуляцию
+        <button
+          class="btn-glass"
+          @click="generateData"
+        >
+          <span class="icon">↻</span> Обновить симуляцию
         </button>
       </div>
       
       <!-- Asset Selection Dropdown -->
       <transition name="dropdown-fade">
-        <div v-if="isAssetMenuOpen" class="asset-dropdown" @click.stop>
+        <div
+          v-if="isAssetMenuOpen"
+          class="asset-dropdown"
+          @click.stop
+        >
           <div class="dropdown-header">
             <input 
-              type="text" 
               v-model="assetSearchQuery" 
+              type="text" 
               placeholder="Поиск активов..."
               class="asset-search-input"
-            />
+            >
             <div class="dropdown-actions">
-              <button @click="selectAllAssets" class="btn-link-sm">Выбрать все</button>
-              <button @click="deselectAllAssets" class="btn-link-sm">Снять все</button>
+              <button
+                class="btn-link-sm"
+                @click="selectAllAssets"
+              >
+                Выбрать все
+              </button>
+              <button
+                class="btn-link-sm"
+                @click="deselectAllAssets"
+              >
+                Снять все
+              </button>
             </div>
           </div>
           <div class="asset-list">
@@ -52,13 +84,16 @@
               :class="{ 'is-selected': selectedAssets.includes(asset.symbol) }"
             >
               <input 
-                type="checkbox" 
+                v-model="selectedAssets" 
+                type="checkbox"
                 :value="asset.symbol"
-                v-model="selectedAssets"
                 @change="onAssetSelectionChange"
-              />
+              >
               <div class="asset-checkbox-content">
-                <span class="asset-dot" :style="{ background: asset.color }"></span>
+                <span
+                  class="asset-dot"
+                  :style="{ background: asset.color }"
+                />
                 <div class="asset-info">
                   <span class="asset-symbol">{{ asset.symbol }}</span>
                   <span class="asset-name">{{ asset.name }}</span>
@@ -73,145 +108,197 @@
 
     <!-- Main Content -->
     <div class="analysis-grid">
-        
-        <!-- Left Column: Charts -->
-        <div class="charts-column">
-            
-            <!-- Chart 1: Daily Changes (Volatile "Spaghetti") -->
-            <div class="glass-card chart-container">
-                <div class="panel-header">
-                    <h3>Ежедневные изменения</h3>
-                    <div class="legend">
-                         <span class="l-item faded"><span class="dot bg-gray"></span> Сценарии</span>
-                         <span class="l-item"><span class="dot bg-green"></span> Выбросы</span>
-                    </div>
-                </div>
+      <!-- Left Column: Charts -->
+      <div class="charts-column">
+        <!-- Chart 1: Daily Changes (Volatile "Spaghetti") -->
+        <div class="glass-card chart-container">
+          <div class="panel-header">
+            <h3>Ежедневные изменения</h3>
+            <div class="legend">
+              <span class="l-item faded"><span class="dot bg-gray" /> Сценарии</span>
+              <span class="l-item"><span class="dot bg-green" /> Выбросы</span>
+            </div>
+          </div>
                 
-                <div class="chart-area big-chart">
-                    <svg viewBox="0 0 1000 320" preserveAspectRatio="none" class="svg-chart">
-                        <!-- Grid -->
-                        <line v-for="i in 6" :key="'g1-'+i" x1="0" :y1="i*50" x2="1000" :y2="i*50" stroke="rgba(255,255,255,0.05)" />
-                        <line x1="0" y1="160" x2="1000" y2="160" stroke="rgba(255,255,255,0.2)" stroke-dasharray="4"/> 
+          <div class="chart-area big-chart">
+            <svg
+              viewBox="0 0 1000 320"
+              preserveAspectRatio="none"
+              class="svg-chart"
+            >
+              <!-- Grid -->
+              <line
+                v-for="i in 6"
+                :key="'g1-'+i"
+                x1="0"
+                :y1="i*50"
+                x2="1000"
+                :y2="i*50"
+                stroke="rgba(255,255,255,0.05)"
+              />
+              <line
+                x1="0"
+                y1="160"
+                x2="1000"
+                y2="160"
+                stroke="rgba(255,255,255,0.2)"
+                stroke-dasharray="4"
+              /> 
 
-                        <!-- Daily Change Paths (Noise) -->
-                        <path 
-                            v-for="(path, idx) in dailyPaths" 
-                            :key="'d-'+idx" 
-                            :d="makePath(path, 12, -12)" 
-                            fill="none" 
-                            :stroke="getDailyColor(idx)" 
-                            stroke-width="0.8"
-                            opacity="0.5"
-                            style="mix-blend-mode: screen;"
-                        />
+              <!-- Daily Change Paths (Noise) -->
+              <path 
+                v-for="(path, idx) in dailyPaths" 
+                :key="'d-'+idx" 
+                :d="makePath(path, 12, -12)" 
+                fill="none" 
+                :stroke="getDailyColor(idx)" 
+                stroke-width="0.8"
+                opacity="0.5"
+                style="mix-blend-mode: screen;"
+              />
                          
-                         <!-- Spike Highlighting (Green Line) -->
-                         <path v-if="dailyPaths.length" :d="makePath(dailyPaths[48], 12, -12)" fill="none" stroke="#4ade80" stroke-width="2" filter="drop-shadow(0 0 4px rgba(74,222,128,0.5))" />
-                    </svg>
-                    <div class="chart-label">Симуляция волатильности (250 шагов)</div>
-                </div>
+              <!-- Spike Highlighting (Green Line) -->
+              <path
+                v-if="dailyPaths.length"
+                :d="makePath(dailyPaths[48], 12, -12)"
+                fill="none"
+                stroke="#4ade80"
+                stroke-width="2"
+                filter="drop-shadow(0 0 4px rgba(74,222,128,0.5))"
+              />
+            </svg>
+            <div class="chart-label">
+              Симуляция волатильности (250 шагов)
             </div>
-
-            <!-- Chart 2: Cumulative Changes (Trends) -->
-            <div class="glass-card chart-container">
-                <div class="panel-header">
-                    <h3>Накопленная доходность</h3>
-                    <div class="legend">
-                         <span 
-                           v-for="asset in selectedAssetsForDisplay" 
-                           :key="asset.symbol"
-                           class="l-item"
-                         >
-                           <span class="dot" :style="{ background: asset.color }"></span> 
-                           {{ asset.symbol }}
-                         </span>
-                    </div>
-                </div>
-                
-                <div class="chart-area big-chart">
-                    <svg viewBox="0 0 1000 320" preserveAspectRatio="none" class="svg-chart">
-                        <line v-for="i in 6" :key="'g2-'+i" x1="0" :y1="i*50" x2="1000" :y2="i*50" stroke="rgba(255,255,255,0.05)" />
-                        <line x1="0" y1="160" x2="1000" y2="160" stroke="rgba(255,255,255,0.2)" stroke-dasharray="4"/>
-
-                        <!-- Cumulative Scenario Paths (Background) -->
-                        <path 
-                            v-for="(path, idx) in scenarioPaths" 
-                            :key="'c-'+idx" 
-                            :d="makePath(path, 50, -50)" 
-                            fill="none" 
-                            stroke="rgba(255,255,255,0.05)" 
-                            stroke-width="1"
-                        />
-
-                        <!-- Real Asset Trends (Foreground) - Dynamic based on selected assets -->
-                        <path 
-                          v-for="(path, symbol) in assetPaths" 
-                          :key="symbol"
-                          :d="makePath(path, 50, -50)" 
-                          fill="none" 
-                          :stroke="getAssetColor(symbol)"
-                          stroke-width="3" 
-                          :filter="`drop-shadow(0 0 6px ${getAssetColor(symbol)}40)`"
-                        />
-                    </svg>
-                    <div class="chart-label">Долгосрочные тренды</div>
-                </div>
-            </div>
-
+          </div>
         </div>
 
-        <!-- Right: Info & Stats -->
-        <aside class="stats-column">
-            <div class="glass-card sticky-panel">
-                <div class="panel-header-sm"><h3>Статистика волатильности</h3></div>
-                
-                <div class="stat-list">
-                    <div class="stat-row">
-                        <span class="lbl">Макс. дневное изменение</span>
-                        <span class="val text-red font-mono">+8.4%</span>
-                    </div>
-                    <div class="stat-row">
-                        <span class="lbl">Возврат к среднему</span>
-                        <span class="val font-mono">0.45</span>
-                    </div>
-                    <div class="stat-row">
-                        <span class="lbl">Kurtosis (Эксцесс)</span>
-                        <span class="val text-orange font-mono">5.2</span>
-                    </div>
-                </div>
-                
-                <div class="divider"></div>
-
-                <div class="panel-header-sm"><h3>Параметры симуляции</h3></div>
-                <div class="stat-list">
-                    <div class="stat-row">
-                        <span class="lbl">Количество сценариев</span>
-                        <span class="val font-mono">50</span>
-                    </div>
-                    <div class="stat-row">
-                        <span class="lbl">Горизонт</span>
-                        <span class="val font-mono">250 дней</span>
-                    </div>
-                    <div class="stat-row">
-                        <span class="lbl">Модель</span>
-                        <span class="val font-mono text-blue">—</span>
-                    </div>
-                </div>
-
-                <div class="divider"></div>
-                <div class="info-block">
-                    <div class="info-item">
-                        <span class="icon">PARAMS</span>
-                        <p><strong>График 1</strong> визуализирует "шум" и кластеризацию волатильности. Зеленая линия выделяет экстремальный сценарий (tail risk).</p>
-                    </div>
-                    <div class="info-item mt-4">
-                        <span class="icon">TRENDS</span>
-                        <p><strong>График 2</strong> показывает интегральные траектории (накопленный итог), формирующие долгосрочные тренды US10Y и US02Y.</p>
-                    </div>
-                </div>
+        <!-- Chart 2: Cumulative Changes (Trends) -->
+        <div class="glass-card chart-container">
+          <div class="panel-header">
+            <h3>Накопленная доходность</h3>
+            <div class="legend">
+              <span 
+                v-for="asset in selectedAssetsForDisplay" 
+                :key="asset.symbol"
+                class="l-item"
+              >
+                <span
+                  class="dot"
+                  :style="{ background: asset.color }"
+                /> 
+                {{ asset.symbol }}
+              </span>
             </div>
-        </aside>
+          </div>
+                
+          <div class="chart-area big-chart">
+            <svg
+              viewBox="0 0 1000 320"
+              preserveAspectRatio="none"
+              class="svg-chart"
+            >
+              <line
+                v-for="i in 6"
+                :key="'g2-'+i"
+                x1="0"
+                :y1="i*50"
+                x2="1000"
+                :y2="i*50"
+                stroke="rgba(255,255,255,0.05)"
+              />
+              <line
+                x1="0"
+                y1="160"
+                x2="1000"
+                y2="160"
+                stroke="rgba(255,255,255,0.2)"
+                stroke-dasharray="4"
+              />
 
+              <!-- Cumulative Scenario Paths (Background) -->
+              <path 
+                v-for="(path, idx) in scenarioPaths" 
+                :key="'c-'+idx" 
+                :d="makePath(path, 50, -50)" 
+                fill="none" 
+                stroke="rgba(255,255,255,0.05)" 
+                stroke-width="1"
+              />
+
+              <!-- Real Asset Trends (Foreground) - Dynamic based on selected assets -->
+              <path 
+                v-for="(path, symbol) in assetPaths" 
+                :key="symbol"
+                :d="makePath(path, 50, -50)" 
+                fill="none" 
+                :stroke="getAssetColor(symbol)"
+                stroke-width="3" 
+                :filter="`drop-shadow(0 0 6px ${getAssetColor(symbol)}40)`"
+              />
+            </svg>
+            <div class="chart-label">
+              Долгосрочные тренды
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right: Info & Stats -->
+      <aside class="stats-column">
+        <div class="glass-card sticky-panel">
+          <div class="panel-header-sm">
+            <h3>Статистика волатильности</h3>
+          </div>
+                
+          <div class="stat-list">
+            <div class="stat-row">
+              <span class="lbl">Макс. дневное изменение</span>
+              <span class="val text-red font-mono">+8.4%</span>
+            </div>
+            <div class="stat-row">
+              <span class="lbl">Возврат к среднему</span>
+              <span class="val font-mono">0.45</span>
+            </div>
+            <div class="stat-row">
+              <span class="lbl">Kurtosis (Эксцесс)</span>
+              <span class="val text-orange font-mono">5.2</span>
+            </div>
+          </div>
+                
+          <div class="divider" />
+
+          <div class="panel-header-sm">
+            <h3>Параметры симуляции</h3>
+          </div>
+          <div class="stat-list">
+            <div class="stat-row">
+              <span class="lbl">Количество сценариев</span>
+              <span class="val font-mono">50</span>
+            </div>
+            <div class="stat-row">
+              <span class="lbl">Горизонт</span>
+              <span class="val font-mono">250 дней</span>
+            </div>
+            <div class="stat-row">
+              <span class="lbl">Модель</span>
+              <span class="val font-mono text-blue">—</span>
+            </div>
+          </div>
+
+          <div class="divider" />
+          <div class="info-block">
+            <div class="info-item">
+              <span class="icon">PARAMS</span>
+              <p><strong>График 1</strong> визуализирует "шум" и кластеризацию волатильности. Зеленая линия выделяет экстремальный сценарий (tail risk).</p>
+            </div>
+            <div class="info-item mt-4">
+              <span class="icon">TRENDS</span>
+              <p><strong>График 2</strong> показывает интегральные траектории (накопленный итог), формирующие долгосрочные тренды US10Y и US02Y.</p>
+            </div>
+          </div>
+        </div>
+      </aside>
     </div>
   </div>
 </template>

@@ -14,27 +14,48 @@
         <div class="form-group">
           <label>Метод ортогонализации</label>
           <select v-model="params.ortho_method">
-            <option value="sequential">Sequential (Gram-Schmidt)</option>
-            <option value="pairwise">Pairwise (каждый vs все)</option>
+            <option value="sequential">
+              Sequential (Gram-Schmidt)
+            </option>
+            <option value="pairwise">
+              Pairwise (каждый vs все)
+            </option>
           </select>
           <span class="hint">Sequential — порядок важен (сигнал 1 — базовый).</span>
         </div>
         <div class="form-group">
           <label>Shrinkage к равным весам</label>
-          <input v-model.number="params.shrinkage" type="number" min="0" max="1" step="0.05" />
+          <input
+            v-model.number="params.shrinkage"
+            type="number"
+            min="0"
+            max="1"
+            step="0.05"
+          >
           <span class="hint">0 = чисто IR², 1 = равные веса.</span>
         </div>
         <div class="form-group">
           <label>IC горизонты (через запятую)</label>
-          <input v-model="horizonsText" type="text" placeholder="1,5,10,21" />
+          <input
+            v-model="horizonsText"
+            type="text"
+            placeholder="1,5,10,21"
+          >
           <span class="hint">Периоды для decay анализа.</span>
         </div>
       </div>
 
       <!-- Signal Names -->
-      <div class="form-group" style="margin-bottom:16px">
+      <div
+        class="form-group"
+        style="margin-bottom:16px"
+      >
         <label>Названия сигналов (через запятую)</label>
-        <input v-model="signalNamesText" type="text" placeholder="Momentum,Reversal,Quality,Value" />
+        <input
+          v-model="signalNamesText"
+          type="text"
+          placeholder="Momentum,Reversal,Quality,Value"
+        >
       </div>
 
       <!-- Panel Data Format Help -->
@@ -45,7 +66,9 @@
           столбцы: <code>period, asset, signal_1, signal_2, ..., fwd_return</code>.
           Последний столбец — форвардная доходность, остальные после первых двух — сигналы.
         </p>
-        <p class="hint">Пример (2 периода, 3 актива, 2 сигнала):</p>
+        <p class="hint">
+          Пример (2 периода, 3 актива, 2 сигнала):
+        </p>
         <pre class="code-example">0,0,0.5,0.2,0.01
 0,1,-0.3,0.4,-0.005
 0,2,0.1,-0.1,0.003
@@ -54,20 +77,51 @@
 1,2,0.2,0.3,0.001</pre>
       </div>
 
-      <div class="form-group" style="margin-bottom:16px">
+      <div
+        class="form-group"
+        style="margin-bottom:16px"
+      >
         <label>Данные (period, asset, sig_1, ..., sig_N, fwd_return)</label>
-        <textarea v-model="dataText" rows="10" :placeholder="demoPlaceholder" />
-        <div class="parse-info" v-if="parsedInfo">{{ parsedInfo }}</div>
-        <div class="parse-error" v-if="parseError">{{ parseError }}</div>
+        <textarea
+          v-model="dataText"
+          rows="10"
+          :placeholder="demoPlaceholder"
+        />
+        <div
+          v-if="parsedInfo"
+          class="parse-info"
+        >
+          {{ parsedInfo }}
+        </div>
+        <div
+          v-if="parseError"
+          class="parse-error"
+        >
+          {{ parseError }}
+        </div>
       </div>
 
       <div class="actions">
-        <button class="btn-primary" @click="compute" :disabled="loading || !!parseError || !dataText.trim()">
+        <button
+          class="btn-primary"
+          :disabled="loading || !!parseError || !dataText.trim()"
+          @click="compute"
+        >
           {{ loading ? 'Вычисление...' : 'Запустить анализ' }}
         </button>
-        <button class="btn-secondary" @click="loadDemo">Демо-данные</button>
+        <button
+          class="btn-secondary"
+          @click="loadDemo"
+        >
+          Демо-данные
+        </button>
       </div>
-      <div class="error-msg" v-if="error">{{ error }}</div>
+      <div
+        v-if="error"
+        class="error-msg"
+      >
+        {{ error }}
+      </div>
     </div>
 
     <!-- Results -->
@@ -75,40 +129,76 @@
       <!-- KPI Cards -->
       <div class="kpi-grid">
         <div class="kpi-card highlight">
-          <div class="kpi-label">IC стэка</div>
-          <div class="kpi-value" :class="icClass(result.stack_ic)">
+          <div class="kpi-label">
+            IC стэка
+          </div>
+          <div
+            class="kpi-value"
+            :class="icClass(result.stack_ic)"
+          >
             {{ (result.stack_ic * 100).toFixed(2) }}%
           </div>
-          <div class="kpi-sub">mean Spearman rank IC</div>
+          <div class="kpi-sub">
+            mean Spearman rank IC
+          </div>
         </div>
         <div class="kpi-card highlight">
-          <div class="kpi-label">IR стэка</div>
-          <div class="kpi-value" :class="irClass(result.stack_ir)">
+          <div class="kpi-label">
+            IR стэка
+          </div>
+          <div
+            class="kpi-value"
+            :class="irClass(result.stack_ir)"
+          >
             {{ result.stack_ir.toFixed(3) }}
           </div>
-          <div class="kpi-sub">IC / std(IC)</div>
+          <div class="kpi-sub">
+            IC / std(IC)
+          </div>
         </div>
         <div class="kpi-card">
-          <div class="kpi-label">Avg Cross-IC до</div>
-          <div class="kpi-value danger-val">{{ (result.avg_cross_ic_before * 100).toFixed(1) }}%</div>
-          <div class="kpi-sub">средняя корреляция сигналов</div>
+          <div class="kpi-label">
+            Avg Cross-IC до
+          </div>
+          <div class="kpi-value danger-val">
+            {{ (result.avg_cross_ic_before * 100).toFixed(1) }}%
+          </div>
+          <div class="kpi-sub">
+            средняя корреляция сигналов
+          </div>
         </div>
         <div class="kpi-card">
-          <div class="kpi-label">Avg Cross-IC после</div>
-          <div class="kpi-value ok-val">{{ (result.avg_cross_ic_after * 100).toFixed(1) }}%</div>
-          <div class="kpi-sub">после ортогонализации</div>
+          <div class="kpi-label">
+            Avg Cross-IC после
+          </div>
+          <div class="kpi-value ok-val">
+            {{ (result.avg_cross_ic_after * 100).toFixed(1) }}%
+          </div>
+          <div class="kpi-sub">
+            после ортогонализации
+          </div>
         </div>
         <div class="kpi-card">
-          <div class="kpi-label">Diversification Ratio</div>
+          <div class="kpi-label">
+            Diversification Ratio
+          </div>
           <div class="kpi-value">
             {{ result.diversification_ratio > 100 ? '>100×' : result.diversification_ratio.toFixed(1) + '×' }}
           </div>
-          <div class="kpi-sub">Cross-IC снижение</div>
+          <div class="kpi-sub">
+            Cross-IC снижение
+          </div>
         </div>
         <div class="kpi-card">
-          <div class="kpi-label">Сигналов / Активов</div>
-          <div class="kpi-value">{{ result.n_signals }} / {{ result.n_assets }}</div>
-          <div class="kpi-sub">{{ result.n_periods }} периодов</div>
+          <div class="kpi-label">
+            Сигналов / Активов
+          </div>
+          <div class="kpi-value">
+            {{ result.n_signals }} / {{ result.n_assets }}
+          </div>
+          <div class="kpi-sub">
+            {{ result.n_periods }} периодов
+          </div>
         </div>
       </div>
 
@@ -116,11 +206,17 @@
       <div class="charts-row">
         <div class="card chart-card">
           <h3>IC / IR: до и после ортогонализации</h3>
-          <div ref="irBarChart" class="chart" />
+          <div
+            ref="irBarChart"
+            class="chart"
+          />
         </div>
         <div class="card chart-card">
           <h3>Веса стэкингового портфеля</h3>
-          <div ref="weightsChart" class="chart" />
+          <div
+            ref="weightsChart"
+            class="chart"
+          />
         </div>
       </div>
 
@@ -128,24 +224,36 @@
       <div class="charts-row">
         <div class="card chart-card">
           <h3>Cross-IC до ортогонализации</h3>
-          <div ref="crossIcBefore" class="chart" />
+          <div
+            ref="crossIcBefore"
+            class="chart"
+          />
         </div>
         <div class="card chart-card">
           <h3>Cross-IC после ортогонализации</h3>
-          <div ref="crossIcAfter" class="chart" />
+          <div
+            ref="crossIcAfter"
+            class="chart"
+          />
         </div>
       </div>
 
       <!-- IC Decay -->
       <div class="card">
         <h3>IC Decay по горизонтам</h3>
-        <div ref="decayChart" class="chart tall-chart" />
+        <div
+          ref="decayChart"
+          class="chart tall-chart"
+        />
       </div>
 
       <!-- IC Time Series -->
       <div class="card">
         <h3>IC во времени (горизонт 1 период)</h3>
-        <div ref="icTimeChart" class="chart tall-chart" />
+        <div
+          ref="icTimeChart"
+          class="chart tall-chart"
+        />
       </div>
 
       <!-- Signal Stats Table -->
@@ -165,15 +273,28 @@
             </tr>
           </thead>
           <tbody>
-            <tr v-for="s in result.signal_stats" :key="s.name">
+            <tr
+              v-for="s in result.signal_stats"
+              :key="s.name"
+            >
               <td><strong>{{ s.name }}</strong></td>
-              <td :class="icClass(s.raw_ic)">{{ (s.raw_ic * 100).toFixed(2) }}%</td>
+              <td :class="icClass(s.raw_ic)">
+                {{ (s.raw_ic * 100).toFixed(2) }}%
+              </td>
               <td>{{ (s.raw_ic_std * 100).toFixed(2) }}%</td>
-              <td :class="irClass(s.raw_ir)">{{ s.raw_ir.toFixed(3) }}</td>
-              <td :class="icClass(s.ortho_ic)">{{ (s.ortho_ic * 100).toFixed(2) }}%</td>
+              <td :class="irClass(s.raw_ir)">
+                {{ s.raw_ir.toFixed(3) }}
+              </td>
+              <td :class="icClass(s.ortho_ic)">
+                {{ (s.ortho_ic * 100).toFixed(2) }}%
+              </td>
               <td>{{ (s.ortho_ic_std * 100).toFixed(2) }}%</td>
-              <td :class="irClass(s.ortho_ir)">{{ s.ortho_ir.toFixed(3) }}</td>
-              <td class="weight-col">{{ (s.weight * 100).toFixed(1) }}%</td>
+              <td :class="irClass(s.ortho_ir)">
+                {{ s.ortho_ir.toFixed(3) }}
+              </td>
+              <td class="weight-col">
+                {{ (s.weight * 100).toFixed(1) }}%
+              </td>
             </tr>
           </tbody>
         </table>

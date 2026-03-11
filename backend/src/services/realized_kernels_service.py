@@ -11,10 +11,9 @@
 - Тест на наличие скачков (BN-Shephard ratio test)
 - Сигнатурный график: RV(Δ) по разным частотам дискретизации
 """
+
 import numpy as np
 import scipy.stats
-from typing import Dict, List, Optional, Tuple
-
 
 # ── Ядерные функции ────────────────────────────────────────────────────────────
 
@@ -80,7 +79,7 @@ def _bipower_variation(returns: np.ndarray) -> float:
     return float((np.pi / 2.0) * np.sum(np.abs(returns[:-1]) * np.abs(returns[1:])))
 
 
-def _tsrv(prices: np.ndarray, K: int = 5) -> Tuple[float, float]:
+def _tsrv(prices: np.ndarray, K: int = 5) -> tuple[float, float]:
     """
     TSRV — Two-Scale Realized Variance (Zhang, Mykland, Aït-Sahalia 2005).
 
@@ -175,7 +174,7 @@ def _msrv(prices: np.ndarray, K_max: int = 20) -> float:
     return float(max(msrv, 0.0))
 
 
-def _realized_kernel(returns: np.ndarray, H: Optional[int] = None, kernel: str = "parzen") -> float:
+def _realized_kernel(returns: np.ndarray, H: int | None = None, kernel: str = "parzen") -> float:
     """
     RK — Realized Kernel (Barndorff-Nielsen et al. 2008).
 
@@ -211,7 +210,7 @@ def _realized_kernel(returns: np.ndarray, H: Optional[int] = None, kernel: str =
 
 # ── Тест на скачки ────────────────────────────────────────────────────────────
 
-def _jump_test(rv: float, bv: float, n: int) -> Dict:
+def _jump_test(rv: float, bv: float, n: int) -> dict:
     """
     BN-Shephard отношение для теста на наличие скачков.
     H₀: нет скачков → (RV − BV) / RV → 0
@@ -244,7 +243,7 @@ def _jump_test(rv: float, bv: float, n: int) -> Dict:
 
 # ── Сигнатурный график ────────────────────────────────────────────────────────
 
-def _signature_plot(prices: np.ndarray, steps: Optional[List[int]] = None) -> Dict:
+def _signature_plot(prices: np.ndarray, steps: list[int] | None = None) -> dict:
     """
     Сигнатурный график: RV(Δ) для разных шагов дискретизации Δ.
     Без шума: RV(Δ) ≈ const (истинная IV)
@@ -273,13 +272,13 @@ def _signature_plot(prices: np.ndarray, steps: Optional[List[int]] = None) -> Di
 # ── Главная функция ───────────────────────────────────────────────────────────
 
 def compute_realized_kernels(
-    prices: List[float],
+    prices: list[float],
     kernel: str = "parzen",
-    bandwidth: Optional[int] = None,
+    bandwidth: int | None = None,
     tsrv_scales: int = 5,
     annualize: bool = True,
     periods_per_day: int = 390,  # минут в торговой сессии NYSE
-) -> Dict:
+) -> dict:
     """
     Вычисляет все оценщики реализованной волатильности.
 

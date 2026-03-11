@@ -14,45 +14,97 @@
       <div class="form-grid">
         <div class="form-group">
           <label>κ — интенсивность (mean shift)</label>
-          <input type="range" v-model.number="params.kappa" min="0.1" max="3.0" step="0.1" class="range-input" />
+          <input
+            v-model.number="params.kappa"
+            type="range"
+            min="0.1"
+            max="3.0"
+            step="0.1"
+            class="range-input"
+          >
           <span class="range-val">{{ params.kappa.toFixed(1) }}</span>
           <span class="hint">Радиус эллипсоидальной неопределённости для μ</span>
         </div>
         <div class="form-group">
           <label>ε — пертурбация ковариации</label>
-          <input type="range" v-model.number="params.epsilon" min="0.01" max="0.5" step="0.01" class="range-input" />
+          <input
+            v-model.number="params.epsilon"
+            type="range"
+            min="0.01"
+            max="0.5"
+            step="0.01"
+            class="range-input"
+          >
           <span class="range-val">{{ params.epsilon.toFixed(2) }}</span>
           <span class="hint">Радиус Фробениуса для Σ*</span>
         </div>
         <div class="form-group">
           <label>MC траектории</label>
-          <input type="number" v-model.number="params.nPaths" min="500" max="5000" step="500" />
+          <input
+            v-model.number="params.nPaths"
+            type="number"
+            min="500"
+            max="5000"
+            step="500"
+          >
         </div>
         <div class="form-group">
           <label>Начальный капитал</label>
-          <input type="number" v-model.number="params.initialCapital" min="100000" step="100000" />
+          <input
+            v-model.number="params.initialCapital"
+            type="number"
+            min="100000"
+            step="100000"
+          >
         </div>
         <div class="form-group">
           <label>Безрисковая ставка</label>
-          <input type="number" v-model.number="params.riskFreeRate" min="0" max="0.5" step="0.01" />
+          <input
+            v-model.number="params.riskFreeRate"
+            type="number"
+            min="0"
+            max="0.5"
+            step="0.01"
+          >
         </div>
         <div class="form-group">
           <label>γ (risk aversion)</label>
-          <input type="number" v-model.number="params.gamma" min="0.5" max="10" step="0.5" />
+          <input
+            v-model.number="params.gamma"
+            type="number"
+            min="0.5"
+            max="10"
+            step="0.5"
+          >
         </div>
       </div>
 
       <div class="actions">
-        <button class="btn-primary" @click="runStress" :disabled="loading || positions.length === 0">
+        <button
+          class="btn-primary"
+          :disabled="loading || positions.length === 0"
+          @click="runStress"
+        >
           {{ loading ? 'Генерация...' : 'Запустить Adversarial Stress' }}
         </button>
-        <span class="asset-count" v-if="positions.length > 0">
+        <span
+          v-if="positions.length > 0"
+          class="asset-count"
+        >
           {{ positions.length }} активов в портфеле
         </span>
-        <span class="asset-count warn" v-else>Портфель пуст — добавьте активы</span>
+        <span
+          v-else
+          class="asset-count warn"
+        >Портфель пуст — добавьте активы</span>
       </div>
 
-      <div class="error-msg" v-if="error">{{ error }}</div>
+      <div
+        v-if="error"
+        class="error-msg"
+      >
+        {{ error }}
+      </div>
     </div>
 
     <!-- Results -->
@@ -60,34 +112,76 @@
       <!-- KPI Cards -->
       <div class="kpi-grid">
         <div class="kpi-card danger">
-          <div class="kpi-label">Worst-Case VaR 95%</div>
-          <div class="kpi-value">{{ formatCurrency(result.adversarial_scenario.var_95) }}</div>
-          <div class="kpi-sub">потеря: {{ formatCurrency(params.initialCapital - result.adversarial_scenario.var_95) }}</div>
+          <div class="kpi-label">
+            Worst-Case VaR 95%
+          </div>
+          <div class="kpi-value">
+            {{ formatCurrency(result.adversarial_scenario.var_95) }}
+          </div>
+          <div class="kpi-sub">
+            потеря: {{ formatCurrency(params.initialCapital - result.adversarial_scenario.var_95) }}
+          </div>
         </div>
         <div class="kpi-card danger">
-          <div class="kpi-label">Worst-Case CVaR 95%</div>
-          <div class="kpi-value">{{ formatCurrency(result.adversarial_scenario.cvar_95) }}</div>
-          <div class="kpi-sub">expected shortfall</div>
+          <div class="kpi-label">
+            Worst-Case CVaR 95%
+          </div>
+          <div class="kpi-value">
+            {{ formatCurrency(result.adversarial_scenario.cvar_95) }}
+          </div>
+          <div class="kpi-sub">
+            expected shortfall
+          </div>
         </div>
         <div class="kpi-card danger">
-          <div class="kpi-label">Worst-Case VaR 99%</div>
-          <div class="kpi-value">{{ formatCurrency(result.adversarial_scenario.var_99) }}</div>
-          <div class="kpi-sub">потеря: {{ formatCurrency(params.initialCapital - result.adversarial_scenario.var_99) }}</div>
+          <div class="kpi-label">
+            Worst-Case VaR 99%
+          </div>
+          <div class="kpi-value">
+            {{ formatCurrency(result.adversarial_scenario.var_99) }}
+          </div>
+          <div class="kpi-sub">
+            потеря: {{ formatCurrency(params.initialCapital - result.adversarial_scenario.var_99) }}
+          </div>
         </div>
         <div class="kpi-card">
-          <div class="kpi-label">Max Drawdown</div>
-          <div class="kpi-value">{{ (result.adversarial_scenario.max_drawdown * 100).toFixed(1) }}%</div>
-          <div class="kpi-sub">adversarial сценарий</div>
+          <div class="kpi-label">
+            Max Drawdown
+          </div>
+          <div class="kpi-value">
+            {{ (result.adversarial_scenario.max_drawdown * 100).toFixed(1) }}%
+          </div>
+          <div class="kpi-sub">
+            adversarial сценарий
+          </div>
         </div>
-        <div class="kpi-card" :class="getPlausClass(result.plausibility.combined_score)">
-          <div class="kpi-label">Plausibility</div>
-          <div class="kpi-value">{{ (result.plausibility.combined_score * 100).toFixed(0) }}%</div>
-          <div class="kpi-sub">Mahalanobis: {{ result.plausibility.mahalanobis_distance.toFixed(2) }}</div>
+        <div
+          class="kpi-card"
+          :class="getPlausClass(result.plausibility.combined_score)"
+        >
+          <div class="kpi-label">
+            Plausibility
+          </div>
+          <div class="kpi-value">
+            {{ (result.plausibility.combined_score * 100).toFixed(0) }}%
+          </div>
+          <div class="kpi-sub">
+            Mahalanobis: {{ result.plausibility.mahalanobis_distance.toFixed(2) }}
+          </div>
         </div>
-        <div class="kpi-card" v-if="result.evt_tail.fit_success">
-          <div class="kpi-label">EVT VaR 99.9%</div>
-          <div class="kpi-value">{{ formatCurrency(params.initialCapital - result.evt_tail.var_999) }}</div>
-          <div class="kpi-sub">ξ = {{ result.evt_tail.xi.toFixed(3) }} (GPD shape)</div>
+        <div
+          v-if="result.evt_tail.fit_success"
+          class="kpi-card"
+        >
+          <div class="kpi-label">
+            EVT VaR 99.9%
+          </div>
+          <div class="kpi-value">
+            {{ formatCurrency(params.initialCapital - result.evt_tail.var_999) }}
+          </div>
+          <div class="kpi-sub">
+            ξ = {{ result.evt_tail.xi.toFixed(3) }} (GPD shape)
+          </div>
         </div>
       </div>
 
@@ -104,11 +198,16 @@
             </tr>
           </thead>
           <tbody>
-            <tr v-for="row in comparisonRows" :key="row.label">
+            <tr
+              v-for="row in comparisonRows"
+              :key="row.label"
+            >
               <td>{{ row.label }}</td>
               <td>{{ row.base }}</td>
               <td>{{ row.adv }}</td>
-              <td :class="row.deltaClass">{{ row.delta }}</td>
+              <td :class="row.deltaClass">
+                {{ row.delta }}
+              </td>
             </tr>
           </tbody>
         </table>
@@ -118,11 +217,17 @@
       <div class="charts-row">
         <div class="card chart-card">
           <h3>Распределение доходностей: Base vs Adversarial</h3>
-          <div ref="distChart" class="chart" />
+          <div
+            ref="distChart"
+            class="chart"
+          />
         </div>
         <div class="card chart-card">
           <h3>MC Trajectories (Adversarial)</h3>
-          <div ref="pathsChart" class="chart" />
+          <div
+            ref="pathsChart"
+            class="chart"
+          />
         </div>
       </div>
 
@@ -130,11 +235,20 @@
       <div class="charts-row">
         <div class="card chart-card">
           <h3>Per-Asset μ Shift (Adversarial − Base)</h3>
-          <div ref="shiftChart" class="chart" />
+          <div
+            ref="shiftChart"
+            class="chart"
+          />
         </div>
-        <div class="card chart-card" v-if="result.evt_tail.fit_success">
+        <div
+          v-if="result.evt_tail.fit_success"
+          class="card chart-card"
+        >
           <h3>EVT Tail: GPD Fit</h3>
-          <div ref="tailChart" class="chart" />
+          <div
+            ref="tailChart"
+            class="chart"
+          />
         </div>
       </div>
     </template>

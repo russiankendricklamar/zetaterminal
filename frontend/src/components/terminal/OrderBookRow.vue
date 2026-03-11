@@ -1,5 +1,8 @@
 <template>
-  <div class="relative flex justify-between items-center text-[9px] px-2 hover:bg-white/5 cursor-pointer group transition-colors flex-shrink-0" style="height: calc(100% / 12);">
+  <div
+    class="relative flex justify-between items-center text-[9px] px-2 hover:bg-white/5 cursor-pointer group transition-colors flex-shrink-0"
+    style="height: calc(100% / 12);"
+  >
     <div 
       :class="`absolute top-0 right-0 h-full opacity-10 ${colorClass}`" 
       :style="{ width: barWidth }"

@@ -6,32 +6,55 @@
           <BoxIcon class="w-6 h-6" />
         </div>
         <div>
-          <h2 class="section-title font-anton">СЫРЬЁ</h2>
-          <p class="section-subtitle font-mono">ЭНЕРГОРЕСУРСЫ, МЕТАЛЛЫ, АГРОКОМПЛЕКС</p>
+          <h2 class="section-title font-anton">
+            СЫРЬЁ
+          </h2>
+          <p class="section-subtitle font-mono">
+            ЭНЕРГОРЕСУРСЫ, МЕТАЛЛЫ, АГРОКОМПЛЕКС
+          </p>
         </div>
       </div>
       <div class="tab-group">
-        <button v-for="tab in tabs" :key="tab.id" @click="section = tab.id" :class="['tab-btn', { active: section === tab.id }]">
+        <button
+          v-for="tab in tabs"
+          :key="tab.id"
+          :class="['tab-btn', { active: section === tab.id }]"
+          @click="section = tab.id"
+        >
           {{ tab.label }}
         </button>
       </div>
     </div>
 
-    <div v-if="loading" class="flex items-center gap-2 text-gray-400 text-xs p-4">
-      <div class="w-3 h-3 border-2 border-orange-500 border-t-transparent rounded-full animate-spin"></div>
+    <div
+      v-if="loading"
+      class="flex items-center gap-2 text-gray-400 text-xs p-4"
+    >
+      <div class="w-3 h-3 border-2 border-orange-500 border-t-transparent rounded-full animate-spin" />
       Загрузка котировок сырья...
     </div>
 
-    <div v-if="loadError" class="p-4 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400 text-sm font-mono mx-4">
+    <div
+      v-if="loadError"
+      class="p-4 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400 text-sm font-mono mx-4"
+    >
       {{ loadError }}
     </div>
 
     <div class="flex-1 flex flex-col gap-6">
       <!-- ═══ Global Commodities ═══ -->
-      <div v-if="section === 'GLCO'" class="flex flex-col h-full gap-6">
+      <div
+        v-if="section === 'GLCO'"
+        class="flex flex-col h-full gap-6"
+      >
         <div class="flex justify-between items-center">
-          <h3 class="text-lg font-bold text-white">Global Benchmark Prices</h3>
-          <button @click="loadCommodities" class="px-3 py-1.5 bg-white/10 hover:bg-white/20 text-xs font-bold text-white rounded-lg transition-colors">
+          <h3 class="text-lg font-bold text-white">
+            Global Benchmark Prices
+          </h3>
+          <button
+            class="px-3 py-1.5 bg-white/10 hover:bg-white/20 text-xs font-bold text-white rounded-lg transition-colors"
+            @click="loadCommodities"
+          >
             Обновить
           </button>
         </div>
@@ -42,14 +65,19 @@
             class="p-4 rounded-xl bg-white/5 border border-white/5 hover:bg-white/10 transition-all cursor-pointer group"
           >
             <div class="flex justify-between items-start mb-2">
-              <h4 class="text-sm font-bold text-gray-300 group-hover:text-white">{{ item.name }}</h4>
+              <h4 class="text-sm font-bold text-gray-300 group-hover:text-white">
+                {{ item.name }}
+              </h4>
               <span class="text-[10px] text-gray-500 font-mono">{{ item.ticker }}</span>
             </div>
             <div class="flex items-baseline gap-2 mb-1">
               <span class="text-2xl font-bold text-white">{{ item.price != null ? formatPrice(item.price) : '—' }}</span>
               <span class="text-xs text-gray-500">{{ item.currency }}</span>
             </div>
-            <div v-if="item.changePercent != null" :class="['text-xs font-bold', item.changePercent >= 0 ? 'text-emerald-400' : 'text-rose-400']">
+            <div
+              v-if="item.changePercent != null"
+              :class="['text-xs font-bold', item.changePercent >= 0 ? 'text-emerald-400' : 'text-rose-400']"
+            >
               {{ item.changePercent > 0 ? '+' : '' }}{{ item.changePercent.toFixed(2) }}%
             </div>
           </div>
@@ -57,58 +85,118 @@
       </div>
 
       <!-- ═══ CBR Precious Metals ═══ -->
-      <div v-else-if="section === 'NRG'" class="flex flex-col h-full gap-6">
-        <h3 class="text-lg font-bold text-white">Драгоценные металлы — Банк России</h3>
-        <div v-if="metals.length > 0" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <div v-for="metal in metals" :key="metal.name" class="p-6 rounded-2xl bg-white/5 border border-white/5">
-            <h3 class="text-sm font-bold text-gray-400 uppercase mb-2">{{ metal.name }}</h3>
-            <div class="text-3xl font-bold text-white">{{ metal.price.toFixed(2) }}</div>
-            <div class="text-xs text-gray-500 mt-1">RUB / грамм</div>
-            <div class="text-xs text-gray-500 mt-1">{{ metal.date }}</div>
+      <div
+        v-else-if="section === 'NRG'"
+        class="flex flex-col h-full gap-6"
+      >
+        <h3 class="text-lg font-bold text-white">
+          Драгоценные металлы — Банк России
+        </h3>
+        <div
+          v-if="metals.length > 0"
+          class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4"
+        >
+          <div
+            v-for="metal in metals"
+            :key="metal.name"
+            class="p-6 rounded-2xl bg-white/5 border border-white/5"
+          >
+            <h3 class="text-sm font-bold text-gray-400 uppercase mb-2">
+              {{ metal.name }}
+            </h3>
+            <div class="text-3xl font-bold text-white">
+              {{ metal.price.toFixed(2) }}
+            </div>
+            <div class="text-xs text-gray-500 mt-1">
+              RUB / грамм
+            </div>
+            <div class="text-xs text-gray-500 mt-1">
+              {{ metal.date }}
+            </div>
           </div>
         </div>
-        <div v-else class="flex items-center justify-center h-64 text-gray-500 font-mono text-sm">
+        <div
+          v-else
+          class="flex items-center justify-center h-64 text-gray-500 font-mono text-sm"
+        >
           Нет данных по металлам
         </div>
       </div>
 
       <!-- ═══ Commodity Tickers (yfinance) ═══ -->
-      <div v-else-if="section === 'NGAS'" class="flex flex-col h-full gap-6">
-        <h3 class="text-lg font-bold text-white">Котировки через yfinance</h3>
-        <div v-if="yfinanceCommodities.length > 0" class="flex-1 overflow-auto rounded-2xl border border-white/5 bg-black/20">
+      <div
+        v-else-if="section === 'NGAS'"
+        class="flex flex-col h-full gap-6"
+      >
+        <h3 class="text-lg font-bold text-white">
+          Котировки через yfinance
+        </h3>
+        <div
+          v-if="yfinanceCommodities.length > 0"
+          class="flex-1 overflow-auto rounded-2xl border border-white/5 bg-black/20"
+        >
           <table class="w-full text-left border-collapse">
             <thead>
               <tr class="text-xs text-gray-400 uppercase bg-white/5">
-                <th class="p-4">Тикер</th>
-                <th class="p-4">Название</th>
-                <th class="p-4 text-right">Цена</th>
-                <th class="p-4 text-right">Изменение</th>
-                <th class="p-4 text-right">Объём</th>
+                <th class="p-4">
+                  Тикер
+                </th>
+                <th class="p-4">
+                  Название
+                </th>
+                <th class="p-4 text-right">
+                  Цена
+                </th>
+                <th class="p-4 text-right">
+                  Изменение
+                </th>
+                <th class="p-4 text-right">
+                  Объём
+                </th>
               </tr>
             </thead>
             <tbody class="text-sm font-mono text-gray-300">
-              <tr v-for="c in yfinanceCommodities" :key="c.ticker" class="border-b border-white/5 hover:bg-white/5">
+              <tr
+                v-for="c in yfinanceCommodities"
+                :key="c.ticker"
+                class="border-b border-white/5 hover:bg-white/5"
+              >
                 <td class="p-4">
                   <span class="text-xs font-bold bg-white/10 px-2 py-1 rounded text-white">{{ c.ticker }}</span>
                 </td>
-                <td class="p-4 text-gray-300">{{ c.name }}</td>
-                <td class="p-4 text-right font-bold text-white">{{ c.price.toFixed(2) }}</td>
+                <td class="p-4 text-gray-300">
+                  {{ c.name }}
+                </td>
+                <td class="p-4 text-right font-bold text-white">
+                  {{ c.price.toFixed(2) }}
+                </td>
                 <td class="p-4 text-right">
-                  <span :class="c.changePercent >= 0 ? 'text-emerald-400' : 'text-rose-400'" class="font-mono text-xs">
+                  <span
+                    :class="c.changePercent >= 0 ? 'text-emerald-400' : 'text-rose-400'"
+                    class="font-mono text-xs"
+                  >
                     {{ c.changePercent >= 0 ? '+' : '' }}{{ c.changePercent.toFixed(2) }}%
                   </span>
                 </td>
-                <td class="p-4 text-right text-gray-400 text-xs">{{ formatVolume(c.volume) }}</td>
+                <td class="p-4 text-right text-gray-400 text-xs">
+                  {{ formatVolume(c.volume) }}
+                </td>
               </tr>
             </tbody>
           </table>
         </div>
-        <div v-else class="flex items-center justify-center h-64 text-gray-500 font-mono text-sm">
+        <div
+          v-else
+          class="flex items-center justify-center h-64 text-gray-500 font-mono text-sm"
+        >
           Загрузка...
         </div>
       </div>
 
-      <div v-else class="flex items-center justify-center h-64 text-gray-500 font-mono text-sm">
+      <div
+        v-else
+        class="flex items-center justify-center h-64 text-gray-500 font-mono text-sm"
+      >
         Выберите раздел
       </div>
     </div>

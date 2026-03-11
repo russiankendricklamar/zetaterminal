@@ -12,11 +12,30 @@
         </div>
       </div>
       <div class="hero-actions">
-        <button class="btn-glass primary" @click="handleRecompute" :disabled="isComputing">
-          <svg v-if="!isComputing" width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+        <button
+          class="btn-glass primary"
+          :disabled="isComputing"
+          @click="handleRecompute"
+        >
+          <svg
+            v-if="!isComputing"
+            width="16"
+            height="16"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+            />
           </svg>
-          <span v-else class="spinner"></span>
+          <span
+            v-else
+            class="spinner"
+          />
           {{ isComputing ? 'Расчёт...' : 'Пересчитать' }}
         </button>
       </div>
@@ -36,31 +55,53 @@
                   <thead>
                     <tr>
                       <th>Инструмент</th>
-                      <th class="text-right">Цена</th>
-                      <th class="text-right">День %</th>
-                      <th class="text-right">Позиция</th>
-                      <th class="text-right">Вес</th>
+                      <th class="text-right">
+                        Цена
+                      </th>
+                      <th class="text-right">
+                        День %
+                      </th>
+                      <th class="text-right">
+                        Позиция
+                      </th>
+                      <th class="text-right">
+                        Вес
+                      </th>
                     </tr>
                   </thead>
                   <tbody>
-                    <tr v-for="pos in portfolioPositions" :key="pos.symbol">
+                    <tr
+                      v-for="pos in portfolioPositions"
+                      :key="pos.symbol"
+                    >
                       <td>
                         <div class="asset-cell">
-                          <div class="asset-icon" :style="{ background: pos.color }">{{ pos.symbol[0] }}</div>
+                          <div
+                            class="asset-icon"
+                            :style="{ background: pos.color }"
+                          >
+                            {{ pos.symbol[0] }}
+                          </div>
                           <div class="asset-info">
                             <span class="symbol">{{ pos.symbol }}</span>
                             <span class="name">{{ pos.name }}</span>
                           </div>
                         </div>
                       </td>
-                      <td class="text-right mono">₽{{ pos.price }}</td>
+                      <td class="text-right mono">
+                        ₽{{ pos.price }}
+                      </td>
                       <td class="text-right mono">
                         <span :class="['change-pill', pos.dayChange > 0 ? 'text-green' : 'text-red']">
                           {{ pos.dayChange > 0 ? '+' : '' }}{{ pos.dayChange }}%
                         </span>
                       </td>
-                      <td class="text-right mono opacity-80">₽{{ (pos.notional / 1000).toFixed(1) }}k</td>
-                      <td class="text-right mono font-bold">{{ pos.allocation }}%</td>
+                      <td class="text-right mono opacity-80">
+                        ₽{{ (pos.notional / 1000).toFixed(1) }}k
+                      </td>
+                      <td class="text-right mono font-bold">
+                        {{ pos.allocation }}%
+                      </td>
                     </tr>
                   </tbody>
                 </table>
@@ -95,21 +136,38 @@
               <div class="param-group">
                 <label>Максимум активов (Δ)</label>
                 <div class="param-input-group">
-                  <input type="number" v-model.number="params.Delta" min="1" :max="clusteringResult.numAssets" />
+                  <input
+                    v-model.number="params.Delta"
+                    type="number"
+                    min="1"
+                    :max="clusteringResult.numAssets"
+                  >
                   <span class="param-hint">из {{ clusteringResult.numAssets }}</span>
                 </div>
               </div>
               <div class="param-group">
                 <label>Макс. вес на актив (w̄)</label>
                 <div class="param-input-group">
-                  <input type="number" v-model.number="params.bar_w" min="0.01" max="1" step="0.01" />
+                  <input
+                    v-model.number="params.bar_w"
+                    type="number"
+                    min="0.01"
+                    max="1"
+                    step="0.01"
+                  >
                   <span class="param-hint">{{ (params.bar_w * 100).toFixed(1) }}%</span>
                 </div>
               </div>
               <div class="param-group">
                 <label>Коэффициент неприятия риска (γ)</label>
                 <div class="param-input-group">
-                  <input type="number" v-model.number="params.gamma" min="0.1" max="10" step="0.1" />
+                  <input
+                    v-model.number="params.gamma"
+                    type="number"
+                    min="0.1"
+                    max="10"
+                    step="0.1"
+                  >
                   <span class="param-hint">выше = консервативнее</span>
                 </div>
               </div>
@@ -120,11 +178,19 @@
                 <label>Методология</label>
                 <div class="radio-group">
                   <label class="radio-item">
-                    <input type="radio" v-model="params.method" value="delta" />
+                    <input
+                      v-model="params.method"
+                      type="radio"
+                      value="delta"
+                    >
                     <span>Δ-CCMV (по количеству активов)</span>
                   </label>
                   <label class="radio-item">
-                    <input type="radio" v-model="params.method" value="alpha" />
+                    <input
+                      v-model="params.method"
+                      type="radio"
+                      value="alpha"
+                    >
                     <span>α-CCMV (по распределению)</span>
                   </label>
                 </div>
@@ -180,30 +246,51 @@
             </div>
           </div>
           <div class="panel-body weights-body">
-            <div v-if="weightsTab === 'comparison'" class="weights-comparison">
+            <div
+              v-if="weightsTab === 'comparison'"
+              class="weights-comparison"
+            >
               <div class="weights-table-container">
                 <table class="weights-table">
                   <thead>
                     <tr>
                       <th>Инструмент</th>
-                      <th class="text-right">Текущий вес</th>
-                      <th class="text-right">Оптимальный вес</th>
-                      <th class="text-right">Изменение</th>
+                      <th class="text-right">
+                        Текущий вес
+                      </th>
+                      <th class="text-right">
+                        Оптимальный вес
+                      </th>
+                      <th class="text-right">
+                        Изменение
+                      </th>
                     </tr>
                   </thead>
                   <tbody>
-                    <tr v-for="pos in portfolioPositions" :key="pos.symbol">
+                    <tr
+                      v-for="pos in portfolioPositions"
+                      :key="pos.symbol"
+                    >
                       <td>
                         <div class="asset-cell">
-                          <div class="asset-icon" :style="{ background: pos.color }">{{ pos.symbol[0] }}</div>
+                          <div
+                            class="asset-icon"
+                            :style="{ background: pos.color }"
+                          >
+                            {{ pos.symbol[0] }}
+                          </div>
                           <div class="asset-info">
                             <span class="symbol">{{ pos.symbol }}</span>
                             <span class="name">{{ pos.name }}</span>
                           </div>
                         </div>
                       </td>
-                      <td class="text-right mono">{{ pos.allocation }}%</td>
-                      <td class="text-right mono font-bold">{{ getOptimalWeight(pos.symbol).toFixed(1) }}%</td>
+                      <td class="text-right mono">
+                        {{ pos.allocation }}%
+                      </td>
+                      <td class="text-right mono font-bold">
+                        {{ getOptimalWeight(pos.symbol).toFixed(1) }}%
+                      </td>
                       <td class="text-right mono">
                         <span :class="['change-pill', getDeltaClass(getWeightDelta(pos))]">
                           {{ getWeightDelta(pos) > 0 ? '+' : '' }}{{ getWeightDelta(pos).toFixed(1) }}%
@@ -215,17 +302,36 @@
               </div>
             </div>
 
-            <div v-if="weightsTab === 'optimal'" class="weights-optimal">
+            <div
+              v-if="weightsTab === 'optimal'"
+              class="weights-optimal"
+            >
               <div class="weight-chart">
-                <div v-for="pos in portfolioPositions" :key="pos.symbol" class="weight-bar-container">
+                <div
+                  v-for="pos in portfolioPositions"
+                  :key="pos.symbol"
+                  class="weight-bar-container"
+                >
                   <div class="weight-bar-info">
-                    <div class="asset-icon-small" :style="{ background: pos.color }">{{ pos.symbol[0] }}</div>
-                    <div class="weight-bar-label">{{ pos.symbol }}</div>
+                    <div
+                      class="asset-icon-small"
+                      :style="{ background: pos.color }"
+                    >
+                      {{ pos.symbol[0] }}
+                    </div>
+                    <div class="weight-bar-label">
+                      {{ pos.symbol }}
+                    </div>
                   </div>
                   <div class="weight-bar-bg">
-                    <div class="weight-bar-fill" :style="{ width: getOptimalWeight(pos.symbol) + '%', background: pos.color }" />
+                    <div
+                      class="weight-bar-fill"
+                      :style="{ width: getOptimalWeight(pos.symbol) + '%', background: pos.color }"
+                    />
                   </div>
-                  <div class="weight-bar-value mono">{{ getOptimalWeight(pos.symbol).toFixed(1) }}%</div>
+                  <div class="weight-bar-value mono">
+                    {{ getOptimalWeight(pos.symbol).toFixed(1) }}%
+                  </div>
                 </div>
               </div>
             </div>
@@ -259,20 +365,38 @@
               </div>
             </div>
             <div class="clusters-list">
-              <div class="cluster-row" v-for="(cluster, idx) in clusteringResult.clusters" :key="idx">
-                <div class="cluster-badge" :style="{ background: clusterColors[idx % clusterColors.length] }">
+              <div
+                v-for="(cluster, idx) in clusteringResult.clusters"
+                :key="idx"
+                class="cluster-row"
+              >
+                <div
+                  class="cluster-badge"
+                  :style="{ background: clusterColors[idx % clusterColors.length] }"
+                >
                   C{{ idx + 1 }}
                 </div>
                 <div class="cluster-detail">
-                  <div class="cluster-label">Кластер {{ idx + 1 }}</div>
+                  <div class="cluster-label">
+                    Кластер {{ idx + 1 }}
+                  </div>
                   <div class="cluster-assets">
-                    <div class="asset-tag" v-for="symbol in cluster.assets" :key="symbol">
+                    <div
+                      v-for="symbol in cluster.assets"
+                      :key="symbol"
+                      class="asset-tag"
+                    >
                       <span class="asset-tag-symbol">{{ symbol }}</span>
-                      <span class="asset-tag-weight" v-if="getAssetAllocation(symbol)">{{ getAssetAllocation(symbol) }}%</span>
+                      <span
+                        v-if="getAssetAllocation(symbol)"
+                        class="asset-tag-weight"
+                      >{{ getAssetAllocation(symbol) }}%</span>
                     </div>
                   </div>
                 </div>
-                <div class="cluster-count">{{ cluster.assets.length }} {{ cluster.assets.length === 1 ? 'актив' : cluster.assets.length < 5 ? 'актива' : 'активов' }}</div>
+                <div class="cluster-count">
+                  {{ cluster.assets.length }} {{ cluster.assets.length === 1 ? 'актив' : cluster.assets.length < 5 ? 'актива' : 'активов' }}
+                </div>
               </div>
             </div>
           </div>
@@ -301,18 +425,34 @@
                 </tr>
               </thead>
               <tbody>
-                <tr v-for="(metric, idx) in clusterMetrics" :key="idx">
+                <tr
+                  v-for="(metric, idx) in clusterMetrics"
+                  :key="idx"
+                >
                   <td>
                     <div class="cluster-cell">
-                      <div class="cluster-dot" :style="{ background: clusterColors[idx] }"></div>
+                      <div
+                        class="cluster-dot"
+                        :style="{ background: clusterColors[idx] }"
+                      />
                       <span>C{{ idx + 1 }}</span>
                     </div>
                   </td>
-                  <td class="mono text-right">{{ (metric.expectedReturn * 100).toFixed(2) }}%</td>
-                  <td class="mono text-right">{{ (metric.volatility * 100).toFixed(2) }}%</td>
-                  <td class="mono text-right">{{ metric.avgCorrelation.toFixed(3) }}</td>
-                  <td class="mono text-right font-bold">{{ metric.deltaK }}</td>
-                  <td class="mono text-right font-bold">{{ (metric.alphaK * 100).toFixed(1) }}%</td>
+                  <td class="mono text-right">
+                    {{ (metric.expectedReturn * 100).toFixed(2) }}%
+                  </td>
+                  <td class="mono text-right">
+                    {{ (metric.volatility * 100).toFixed(2) }}%
+                  </td>
+                  <td class="mono text-right">
+                    {{ metric.avgCorrelation.toFixed(3) }}
+                  </td>
+                  <td class="mono text-right font-bold">
+                    {{ metric.deltaK }}
+                  </td>
+                  <td class="mono text-right font-bold">
+                    {{ (metric.alphaK * 100).toFixed(1) }}%
+                  </td>
                 </tr>
               </tbody>
             </table>
@@ -328,13 +468,25 @@
           </div>
           <div class="panel-body allocation-body">
             <div class="allocation-chart">
-              <div v-for="(alloc, idx) in clusterAllocations" :key="idx" class="alloc-segment" :style="{ flexGrow: alloc.percentage, background: clusterColors[idx] }">
-                <span class="alloc-label">C{{ idx + 1 }}<br/>{{ alloc.percentage.toFixed(1) }}%</span>
+              <div
+                v-for="(alloc, idx) in clusterAllocations"
+                :key="idx"
+                class="alloc-segment"
+                :style="{ flexGrow: alloc.percentage, background: clusterColors[idx] }"
+              >
+                <span class="alloc-label">C{{ idx + 1 }}<br>{{ alloc.percentage.toFixed(1) }}%</span>
               </div>
             </div>
             <div class="allocation-details">
-              <div v-for="(alloc, idx) in clusterAllocations" :key="idx" class="alloc-row">
-                <div class="alloc-dot" :style="{ background: clusterColors[idx] }"></div>
+              <div
+                v-for="(alloc, idx) in clusterAllocations"
+                :key="idx"
+                class="alloc-row"
+              >
+                <div
+                  class="alloc-dot"
+                  :style="{ background: clusterColors[idx] }"
+                />
                 <span class="alloc-name">Кластер {{ idx + 1 }}</span>
                 <span class="alloc-pct mono">{{ alloc.percentage.toFixed(1) }}%</span>
               </div>

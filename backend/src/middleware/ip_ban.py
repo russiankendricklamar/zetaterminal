@@ -45,6 +45,7 @@ class IpBanMiddleware(BaseHTTPMiddleware):
 async def load_banned_ips() -> None:
     """Load banned IPs from database into memory cache."""
     from sqlalchemy import select
+
     from src.database.client import async_session_factory
     from src.database.sa_models import IpBan
 

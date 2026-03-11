@@ -3,14 +3,18 @@
     <!-- Sidebar -->
     <div class="settings-sidebar">
       <div class="settings-sidebar-header">
-        <h2 class="settings-title font-oswald">НАСТРОЙКИ</h2>
-        <p class="settings-subtitle font-mono">Конфигурация системы</p>
+        <h2 class="settings-title font-oswald">
+          НАСТРОЙКИ
+        </h2>
+        <p class="settings-subtitle font-mono">
+          Конфигурация системы
+        </p>
       </div>
       <button
         v-for="item in menuItems"
         :key="item.id"
-        @click="section = item.id"
         :class="['settings-menu-item font-oswald', { 'settings-menu-active': section === item.id }]"
+        @click="section = item.id"
       >
         {{ item.label }}
       </button>
@@ -19,10 +23,17 @@
     <!-- Content Area -->
     <div class="settings-content custom-scrollbar">
       <!-- Launchpad -->
-      <div v-if="section === 'BLP'" class="space-y-8">
+      <div
+        v-if="section === 'BLP'"
+        class="space-y-8"
+      >
         <div>
-          <h3 class="text-2xl font-bold text-white mb-2">Мониторинг панели</h3>
-          <p class="text-sm text-gray-400">Настройте рабочие пространства и пользовательские панели.</p>
+          <h3 class="text-2xl font-bold text-white mb-2">
+            Мониторинг панели
+          </h3>
+          <p class="text-sm text-gray-400">
+            Настройте рабочие пространства и пользовательские панели.
+          </p>
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -33,13 +44,17 @@
               </div>
               <span class="bg-emerald-500/10 text-emerald-400 text-xs px-2 py-1 rounded border border-emerald-500/20">Активно</span>
             </div>
-            <h4 class="text-lg font-bold text-white mb-1">Главный терминал</h4>
-            <p class="text-xs text-gray-500 mb-4">4 графика, стакан, лента новостей</p>
+            <h4 class="text-lg font-bold text-white mb-1">
+              Главный терминал
+            </h4>
+            <p class="text-xs text-gray-500 mb-4">
+              4 графика, стакан, лента новостей
+            </p>
             <div class="h-24 bg-black/40 rounded-lg border border-white/5 relative overflow-hidden">
               <div class="absolute top-2 left-2 right-2 bottom-2 grid grid-cols-3 gap-1 opacity-50">
-                <div class="col-span-2 bg-white/20 rounded"></div>
-                <div class="bg-white/20 rounded"></div>
-                <div class="col-span-3 h-8 bg-white/20 rounded mt-auto"></div>
+                <div class="col-span-2 bg-white/20 rounded" />
+                <div class="bg-white/20 rounded" />
+                <div class="col-span-3 h-8 bg-white/20 rounded mt-auto" />
               </div>
             </div>
           </div>
@@ -48,22 +63,35 @@
             <div class="p-4 bg-white/5 rounded-full mb-4">
               <PlusIcon class="w-6 h-6 text-gray-400" />
             </div>
-            <h4 class="text-sm font-bold text-white">Создать монитор</h4>
-            <p class="text-xs text-gray-500 mt-1">Начать с нуля или шаблона</p>
+            <h4 class="text-sm font-bold text-white">
+              Создать монитор
+            </h4>
+            <p class="text-xs text-gray-500 mt-1">
+              Начать с нуля или шаблона
+            </p>
           </div>
         </div>
       </div>
 
       <!-- Screen Constructor -->
-      <div v-else-if="section === 'CONSTRUCTOR'" class="space-y-8">
+      <div
+        v-else-if="section === 'CONSTRUCTOR'"
+        class="space-y-8"
+      >
         <div>
-          <h3 class="text-2xl font-bold text-white mb-2">Конструктор экрана</h3>
-          <p class="text-sm text-gray-400">Добавляйте и настраивайте виджеты для главной страницы терминала.</p>
+          <h3 class="text-2xl font-bold text-white mb-2">
+            Конструктор экрана
+          </h3>
+          <p class="text-sm text-gray-400">
+            Добавляйте и настраивайте виджеты для главной страницы терминала.
+          </p>
         </div>
 
         <!-- Available Widgets -->
         <div>
-          <h4 class="text-lg font-bold text-white mb-4">Доступные виджеты</h4>
+          <h4 class="text-lg font-bold text-white mb-4">
+            Доступные виджеты
+          </h4>
           <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             <div
               v-for="widget in availableWidgets"
@@ -73,11 +101,18 @@
             >
               <div class="flex items-center gap-3 mb-3">
                 <div :class="`p-2 rounded-lg ${widget.iconBg}`">
-                  <component :is="widget.icon" :class="`w-5 h-5 ${widget.iconColor}`" />
+                  <component
+                    :is="widget.icon"
+                    :class="`w-5 h-5 ${widget.iconColor}`"
+                  />
                 </div>
                 <div>
-                  <h5 class="text-sm font-bold text-white">{{ widget.title }}</h5>
-                  <p class="text-xs text-gray-500">{{ widget.description }}</p>
+                  <h5 class="text-sm font-bold text-white">
+                    {{ widget.title }}
+                  </h5>
+                  <p class="text-xs text-gray-500">
+                    {{ widget.description }}
+                  </p>
                 </div>
               </div>
               <div class="flex items-center gap-2 text-xs text-gray-400">
@@ -91,17 +126,28 @@
         <!-- Active Widgets Preview -->
         <div>
           <div class="flex justify-between items-center mb-4">
-            <h4 class="text-lg font-bold text-white">Предпросмотр экрана</h4>
+            <h4 class="text-lg font-bold text-white">
+              Предпросмотр экрана
+            </h4>
             <span class="text-xs text-gray-500">{{ activeWidgets.length }} виджетов</span>
           </div>
           
           <!-- Visual Constructor Grid -->
           <div class="bg-black/20 rounded-2xl border border-white/10 p-6 min-h-[500px] relative">
-            <div v-if="activeWidgets.length === 0" class="flex items-center justify-center h-[400px] text-center">
+            <div
+              v-if="activeWidgets.length === 0"
+              class="flex items-center justify-center h-[400px] text-center"
+            >
               <div>
-                <div class="text-gray-500 text-sm mb-2">Нет активных виджетов</div>
-                <div class="text-xs text-gray-600 mb-4">Добавьте виджеты из списка выше</div>
-                <div class="text-xs text-gray-700">Кликните на любой виджет из списка "Доступные виджеты"</div>
+                <div class="text-gray-500 text-sm mb-2">
+                  Нет активных виджетов
+                </div>
+                <div class="text-xs text-gray-600 mb-4">
+                  Добавьте виджеты из списка выше
+                </div>
+                <div class="text-xs text-gray-700">
+                  Кликните на любой виджет из списка "Доступные виджеты"
+                </div>
               </div>
             </div>
             <div 
@@ -110,17 +156,17 @@
               :style="{ gridTemplateColumns: `repeat(12, 1fr)` }"
             >
               <component
+                :is="getWidgetComponent(widget.type)"
                 v-for="widget in activeWidgets"
                 :key="widget.id"
-                :is="getWidgetComponent(widget.type)"
                 v-bind="getWidgetProps(widget)"
                 :width="widget.width"
                 :height="widget.height"
                 :resizable="true"
                 :show-controls="true"
+                :style="{ gridColumn: `span ${widget.width}`, gridRow: `span ${widget.height}` }"
                 @remove="removeWidget(widget.id)"
                 @resize="(w, h) => resizeWidgetInSettings(widget.id, w, h)"
-                :style="{ gridColumn: `span ${widget.width}`, gridRow: `span ${widget.height}` }"
               />
             </div>
           </div>
@@ -128,11 +174,18 @@
       </div>
 
       <!-- Custom Screens -->
-      <div v-else-if="section === 'NW'" class="space-y-8">
+      <div
+        v-else-if="section === 'NW'"
+        class="space-y-8"
+      >
         <div class="flex justify-between items-center">
           <div>
-            <h3 class="text-2xl font-bold text-white mb-2">Рабочие листы и списки</h3>
-            <p class="text-sm text-gray-400">Управляйте пользовательскими экранами и списками активов.</p>
+            <h3 class="text-2xl font-bold text-white mb-2">
+              Рабочие листы и списки
+            </h3>
+            <p class="text-sm text-gray-400">
+              Управляйте пользовательскими экранами и списками активов.
+            </p>
           </div>
           <button class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl font-bold text-xs flex items-center gap-2">
             <PlusIcon class="w-3.5 h-3.5" /> Новый лист
@@ -143,23 +196,43 @@
           <table class="w-full text-left">
             <thead>
               <tr class="bg-white/5 text-xs text-gray-500 uppercase border-b border-white/10">
-                <th class="p-4">Имя</th>
-                <th class="p-4">Тип</th>
-                <th class="p-4">Активы</th>
-                <th class="p-4">Изменено</th>
-                <th class="p-4 text-right">Действия</th>
+                <th class="p-4">
+                  Имя
+                </th>
+                <th class="p-4">
+                  Тип
+                </th>
+                <th class="p-4">
+                  Активы
+                </th>
+                <th class="p-4">
+                  Изменено
+                </th>
+                <th class="p-4 text-right">
+                  Действия
+                </th>
               </tr>
             </thead>
             <tbody class="text-sm font-mono text-gray-300">
-              <tr v-for="(row, i) in worksheets" :key="i" class="border-b border-white/5 hover:bg-white/5 transition-colors">
-                <td class="p-4 font-bold text-white">{{ row.name }}</td>
+              <tr
+                v-for="(row, i) in worksheets"
+                :key="i"
+                class="border-b border-white/5 hover:bg-white/5 transition-colors"
+              >
+                <td class="p-4 font-bold text-white">
+                  {{ row.name }}
+                </td>
                 <td class="p-4">
                   <span :class="`px-2 py-1 rounded text-xs border ${row.type === 'Watchlist' ? 'bg-blue-500/10 border-blue-500/20 text-blue-400' : 'bg-purple-500/10 border-purple-500/20 text-purple-400'}`">
                     {{ row.type === 'Watchlist' ? 'Список' : 'Макет' }}
                   </span>
                 </td>
-                <td class="p-4">{{ row.count }}</td>
-                <td class="p-4 text-gray-500 text-xs">{{ row.date }}</td>
+                <td class="p-4">
+                  {{ row.count }}
+                </td>
+                <td class="p-4 text-gray-500 text-xs">
+                  {{ row.date }}
+                </td>
                 <td class="p-4 text-right">
                   <button class="p-2 hover:bg-white/10 rounded-lg text-gray-400 hover:text-white transition-colors">
                     <SlidersIcon class="w-3.5 h-3.5" />
@@ -172,10 +245,17 @@
       </div>
 
       <!-- Personal Settings -->
-      <div v-else-if="section === 'PDF'" class="space-y-8">
+      <div
+        v-else-if="section === 'PDF'"
+        class="space-y-8"
+      >
         <div>
-          <h3 class="text-2xl font-bold text-white mb-2">Личные предпочтения</h3>
-          <p class="text-sm text-gray-400">Настройте работу терминала под себя.</p>
+          <h3 class="text-2xl font-bold text-white mb-2">
+            Личные предпочтения
+          </h3>
+          <p class="text-sm text-gray-400">
+            Настройте работу терминала под себя.
+          </p>
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -230,34 +310,48 @@
             <div>
               <label class="block text-xs font-bold text-gray-500 uppercase mb-2">Плотность макета</label>
               <div class="flex bg-black/20 rounded-xl p-1 border border-white/10">
-                <button class="flex-1 py-2 text-xs font-bold text-gray-500 hover:text-white">Комфортная</button>
-                <button class="flex-1 py-2 text-xs font-bold text-white bg-white/10 rounded-lg shadow">Компактная</button>
+                <button class="flex-1 py-2 text-xs font-bold text-gray-500 hover:text-white">
+                  Комфортная
+                </button>
+                <button class="flex-1 py-2 text-xs font-bold text-white bg-white/10 rounded-lg shadow">
+                  Компактная
+                </button>
               </div>
             </div>
             <div>
               <label class="block text-xs font-bold text-gray-500 uppercase mb-2">Избранные активы</label>
               <div class="space-y-2 max-h-48 overflow-y-auto custom-scrollbar">
-                <div v-for="asset in favoriteAssets" :key="asset" class="flex items-center justify-between p-2 bg-black/20 rounded-lg border border-white/5 hover:bg-white/5 transition-colors">
+                <div
+                  v-for="asset in favoriteAssets"
+                  :key="asset"
+                  class="flex items-center justify-between p-2 bg-black/20 rounded-lg border border-white/5 hover:bg-white/5 transition-colors"
+                >
                   <span class="text-sm text-white font-mono">{{ asset }}</span>
-                  <button @click="removeFavorite(asset)" class="text-gray-500 hover:text-rose-400 transition-colors">
+                  <button
+                    class="text-gray-500 hover:text-rose-400 transition-colors"
+                    @click="removeFavorite(asset)"
+                  >
                     <XIcon class="w-4 h-4" />
                   </button>
                 </div>
-                <div v-if="favoriteAssets.length === 0" class="text-xs text-gray-500 text-center py-4">
+                <div
+                  v-if="favoriteAssets.length === 0"
+                  class="text-xs text-gray-500 text-center py-4"
+                >
                   Нет избранных активов
                 </div>
               </div>
               <div class="mt-3 flex gap-2">
                 <input 
                   v-model="newAsset"
-                  @keyup.enter="addFavorite"
                   type="text"
                   placeholder="Введите тикер (например: BTC/USDT)"
                   class="flex-1 bg-black/20 border border-white/10 rounded-lg py-2 px-3 text-sm text-white focus:border-indigo-500/50 outline-none"
-                />
+                  @keyup.enter="addFavorite"
+                >
                 <button 
-                  @click="addFavorite"
                   class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-xs font-bold transition-colors"
+                  @click="addFavorite"
                 >
                   Добавить
                 </button>
@@ -268,10 +362,17 @@
       </div>
 
       <!-- Default -->
-      <div v-else class="flex items-center justify-center h-full">
+      <div
+        v-else
+        class="flex items-center justify-center h-full"
+      >
         <div class="text-center">
-          <h3 class="text-xl font-bold text-white mb-2">{{ section }} Раздел</h3>
-          <p class="text-gray-400">Содержимое появится в ближайшее время</p>
+          <h3 class="text-xl font-bold text-white mb-2">
+            {{ section }} Раздел
+          </h3>
+          <p class="text-gray-400">
+            Содержимое появится в ближайшее время
+          </p>
         </div>
       </div>
     </div>

@@ -59,8 +59,8 @@ export function useMonteCarlo3D(
   const playbackStep3D = ref(0)
   let animationFrame3D: number | null = null
 
-  let gridObjects: Group[] = []
-  let axisLabels: Sprite[] = []
+  const gridObjects: Group[] = []
+  const axisLabels: Sprite[] = []
 
   const maxStep3D = computed(() => {
     if (!simulationResult3D.value || !simulationResult3D.value.paths.length) return 0
@@ -168,7 +168,7 @@ export function useMonteCarlo3D(
         const u1 = Math.random()
         const u2 = Math.random()
         const z = Math.sqrt(-2.0 * Math.log(u1)) * Math.cos(2.0 * Math.PI * u2)
-        let diffusion = (drift - 0.5 * volatility * volatility) * dt + volatility * Math.sqrt(dt) * z
+        const diffusion = (drift - 0.5 * volatility * volatility) * dt + volatility * Math.sqrt(dt) * z
 
         let jumpMultiplier = 1
         let isJumpStep = false

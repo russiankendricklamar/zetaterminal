@@ -2,11 +2,11 @@
 API endpoints для HAR модели прогнозирования волатильности.
 """
 import logging
+from datetime import datetime
+from typing import Any
 
 from fastapi import APIRouter, HTTPException
-from typing import Dict, Any, List, Optional
 from pydantic import BaseModel, Field
-from datetime import datetime
 
 from src.services.har_service import fit_har_model
 
@@ -16,10 +16,10 @@ router = APIRouter()
 
 
 class HARRequest(BaseModel):
-    rv: List[float] = Field(..., description="Ряд ежедневных реализованных дисперсий (RV)")
-    bv: Optional[List[float]] = Field(None, description="Bipower Variation для HAR-RV-CJ (опционально)")
+    rv: list[float] = Field(..., description="Ряд ежедневных реализованных дисперсий (RV)")
+    bv: list[float] | None = Field(None, description="Bipower Variation для HAR-RV-CJ (опционально)")
     log_transform: bool = Field(False, description="Применять log(RV) как зависимую переменную")
-    forecast_horizons: List[int] = Field([1, 5, 22], description="Горизонты прогноза в днях")
+    forecast_horizons: list[int] = Field([1, 5, 22], description="Горизонты прогноза в днях")
     train_ratio: float = Field(0.8, ge=0.5, le=0.95, description="Доля обучающей выборки")
 
     model_config = {
@@ -35,7 +35,7 @@ class HARRequest(BaseModel):
 
 
 class HARResponse(BaseModel):
-    result: Dict[str, Any]
+    result: dict[str, Any]
     timestamp: datetime = Field(default_factory=datetime.now)
 
 
@@ -69,10 +69,10 @@ async def fit_har(request: HARRequest):
         return HARResponse(result=result)
     except ValueError as e:
         logger.error("HAR model validation error: %s", e, exc_info=True)
-        raise HTTPException(status_code=400, detail="Invalid input parameters")
+        raise HTTPException(status_code=400, detail="Invalid input parameters") from e
     except Exception as e:
         logger.error("HAR model estimation failed: %s", e, exc_info=True)
-        raise HTTPException(status_code=500, detail="Internal server error")
+        raise HTTPException(status_code=500, detail="Internal server error") from e
 
 
 @router.get("/health")

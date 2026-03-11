@@ -1,24 +1,58 @@
 <!-- StatCard.vue - Brutalist KPI/Metric Card -->
 <template>
-  <div class="stat-card" :class="[`stat-card--${variant}`, { 'stat-card--glow': glow }]">
+  <div
+    class="stat-card"
+    :class="[`stat-card--${variant}`, { 'stat-card--glow': glow }]"
+  >
     <div class="stat-header">
       <span class="stat-label font-mono">{{ label }}</span>
-      <div v-if="trend !== undefined" class="stat-trend" :class="trendClass">
-        <svg v-if="trend >= 0" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
-          <path d="M18 15l-6-6-6 6"/>
+      <div
+        v-if="trend !== undefined"
+        class="stat-trend"
+        :class="trendClass"
+      >
+        <svg
+          v-if="trend >= 0"
+          width="10"
+          height="10"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="3"
+        >
+          <path d="M18 15l-6-6-6 6" />
         </svg>
-        <svg v-else width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
-          <path d="M6 9l6 6 6-6"/>
+        <svg
+          v-else
+          width="10"
+          height="10"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="3"
+        >
+          <path d="M6 9l6 6 6-6" />
         </svg>
         <span class="font-mono">{{ formatTrend(trend) }}</span>
       </div>
     </div>
     <div class="stat-content">
-      <div class="stat-value font-oswald" :class="valueClass">
+      <div
+        class="stat-value font-oswald"
+        :class="valueClass"
+      >
         {{ formattedValue }}
-        <small v-if="unit" class="stat-unit">{{ unit }}</small>
+        <small
+          v-if="unit"
+          class="stat-unit"
+        >{{ unit }}</small>
       </div>
-      <div v-if="subtext" class="stat-subtext font-mono">{{ subtext }}</div>
+      <div
+        v-if="subtext"
+        class="stat-subtext font-mono"
+      >
+        {{ subtext }}
+      </div>
     </div>
   </div>
 </template>

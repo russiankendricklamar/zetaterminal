@@ -19,11 +19,23 @@
             <!-- Asset Selection -->
             <div class="input-group">
               <label class="lbl">Актив</label>
-              <select v-model="selectedAsset" class="glass-select" @change="onAssetChange">
-                <option value="SPY">S&P 500 (SPY)</option>
-                <option value="QQQ">Nasdaq 100 (QQQ)</option>
-                <option value="BTC">Bitcoin (BTC)</option>
-                <option value="IMOEX">IMOEX Index</option>
+              <select
+                v-model="selectedAsset"
+                class="glass-select"
+                @change="onAssetChange"
+              >
+                <option value="SPY">
+                  S&P 500 (SPY)
+                </option>
+                <option value="QQQ">
+                  Nasdaq 100 (QQQ)
+                </option>
+                <option value="BTC">
+                  Bitcoin (BTC)
+                </option>
+                <option value="IMOEX">
+                  IMOEX Index
+                </option>
               </select>
             </div>
 
@@ -33,9 +45,11 @@
               <div class="scrub-row">
                 <ScrubInput 
                   v-model="nStates" 
-                  :min="2" :max="5" :step="1" 
+                  :min="2"
+                  :max="5"
+                  :step="1" 
                   class="text-accent font-bold"
-                  @update:modelValue="onStatesChange"
+                  @update:model-value="onStatesChange"
                 />
                 <span class="unit">states</span>
               </div>
@@ -44,78 +58,133 @@
             <!-- Time Period -->
             <div class="input-group">
               <label class="lbl">Временной период</label>
-              <select v-model="timePeriod" class="glass-select" @change="onTimePeriodChange">
-                <option value="3M">3 месяца</option>
-                <option value="6M">6 месяцев</option>
-                <option value="1Y">1 год</option>
-                <option value="2Y">2 года</option>
-                <option value="ALL">Все данные</option>
+              <select
+                v-model="timePeriod"
+                class="glass-select"
+                @change="onTimePeriodChange"
+              >
+                <option value="3M">
+                  3 месяца
+                </option>
+                <option value="6M">
+                  6 месяцев
+                </option>
+                <option value="1Y">
+                  1 год
+                </option>
+                <option value="2Y">
+                  2 года
+                </option>
+                <option value="ALL">
+                  Все данные
+                </option>
               </select>
             </div>
 
             <!-- Run Button -->
-            <button @click="runAnalysis" :disabled="isLoading" class="btn-primary-gradient">
+            <button
+              :disabled="isLoading"
+              class="btn-primary-gradient"
+              @click="runAnalysis"
+            >
               <span v-if="!isLoading">Запустить анализ</span>
-              <span v-else class="flex items-center gap-2">
-                <span class="spinner-mini"></span> Обучение HMM...
+              <span
+                v-else
+                class="flex items-center gap-2"
+              >
+                <span class="spinner-mini" /> Обучение HMM...
               </span>
             </button>
           </div>
         </div>
 
         <!-- View Controls -->
-        <div class="glass-card panel" v-if="hasData">
+        <div
+          v-if="hasData"
+          class="glass-card panel"
+        >
           <div class="panel-header">
             <h3>Вид</h3>
           </div>
 
           <div class="view-controls">
             <label class="checkbox-label">
-              <input type="checkbox" v-model="showTrajectory" @change="onVisibilityChange" />
+              <input
+                v-model="showTrajectory"
+                type="checkbox"
+                @change="onVisibilityChange"
+              >
               <span>Траектория</span>
             </label>
             <label class="checkbox-label">
-              <input type="checkbox" v-model="showEllipsoids" @change="onVisibilityChange" />
+              <input
+                v-model="showEllipsoids"
+                type="checkbox"
+                @change="onVisibilityChange"
+              >
               <span>Эллипсоиды</span>
             </label>
             <label class="checkbox-label">
-              <input type="checkbox" v-model="showCentroids" @change="onVisibilityChange" />
+              <input
+                v-model="showCentroids"
+                type="checkbox"
+                @change="onVisibilityChange"
+              >
               <span>Центроиды</span>
             </label>
             <label class="checkbox-label">
-              <input type="checkbox" v-model="showGrid" @change="onVisibilityChange" />
+              <input
+                v-model="showGrid"
+                type="checkbox"
+                @change="onVisibilityChange"
+              >
               <span>Сетка</span>
             </label>
           </div>
 
           <!-- Camera Presets -->
           <div class="camera-presets">
-            <h4 class="presets-title">Вид камеры</h4>
+            <h4 class="presets-title">
+              Вид камеры
+            </h4>
             <div class="preset-buttons">
               <button 
                 v-for="preset in cameraPresets" 
                 :key="preset.name"
-                @click="setCameraPreset(preset)"
                 class="btn-preset"
+                @click="setCameraPreset(preset)"
               >
                 {{ preset.label }}
               </button>
             </div>
             <label class="checkbox-label">
-              <input type="checkbox" v-model="autoRotate" @change="onAutoRotateChange" />
+              <input
+                v-model="autoRotate"
+                type="checkbox"
+                @change="onAutoRotateChange"
+              >
               <span>Авто-вращение</span>
             </label>
           </div>
         </div>
 
         <!-- Current Regime Info -->
-        <div class="glass-card panel" v-if="currentRegimeInfo">
+        <div
+          v-if="currentRegimeInfo"
+          class="glass-card panel"
+        >
           <div class="panel-header">
             <h3>Текущий режим</h3>
           </div>
           <div class="regime-info">
-            <div class="regime-badge" :style="{ borderColor: currentRegimeInfo.color }">
-              <span class="regime-dot" :style="{ backgroundColor: currentRegimeInfo.color }"></span>
+            <div
+              class="regime-badge"
+              :style="{ borderColor: currentRegimeInfo.color }"
+            >
+              <span
+                class="regime-dot"
+                :style="{ backgroundColor: currentRegimeInfo.color }"
+              />
               <span class="regime-name">{{ currentRegimeInfo.name }}</span>
             </div>
             <div class="regime-stats">
@@ -125,7 +194,10 @@
               </div>
               <div class="stat-row">
                 <span class="stat-label">Доходность:</span>
-                <span class="stat-value" :class="currentRegimeInfo.meanReturn >= 0 ? 'text-green' : 'text-red'">
+                <span
+                  class="stat-value"
+                  :class="currentRegimeInfo.meanReturn >= 0 ? 'text-green' : 'text-red'"
+                >
                   {{ currentRegimeInfo.meanReturn.toFixed(2) }}%
                 </span>
               </div>
@@ -139,12 +211,22 @@
 
         <!-- Transition Matrix -->
         <transition name="fade">
-          <div class="glass-card panel" v-if="transitionMatrix">
+          <div
+            v-if="transitionMatrix"
+            class="glass-card panel"
+          >
             <div class="panel-header">
               <h3>Матрица переходов</h3>
             </div>
-            <div class="matrix-grid" :style="{ gridTemplateColumns: `repeat(${nStates}, 1fr)` }">
-              <div v-for="(row, i) in transitionMatrix" :key="i" class="matrix-row-group">
+            <div
+              class="matrix-grid"
+              :style="{ gridTemplateColumns: `repeat(${nStates}, 1fr)` }"
+            >
+              <div
+                v-for="(row, i) in transitionMatrix"
+                :key="i"
+                class="matrix-row-group"
+              >
                 <div 
                   v-for="(prob, j) in row" 
                   :key="j" 
@@ -152,7 +234,7 @@
                   :style="{ backgroundColor: `rgba(96, 165, 250, ${prob * 0.6})` }"
                 >
                   <span class="m-val">{{ (prob * 100).toFixed(0) }}%</span>
-                  <span class="m-lbl">S{{i}}→S{{j}}</span>
+                  <span class="m-lbl">S{{ i }}→S{{ j }}</span>
                 </div>
               </div>
             </div>
@@ -162,57 +244,94 @@
 
       <!-- Main Content: 3D Visualization -->
       <main class="main-content">
-          <!-- Header with Timeline Controls -->
-          <div class="visualization-header" v-if="hasData">
-            <div class="header-left">
-              <h2 class="vis-title">Пространство скрытых состояний</h2>
-              <p class="vis-subtitle">
-                3D визуализация рыночных режимов (HMM)
-              </p>
-            </div>
+        <!-- Header with Timeline Controls -->
+        <div
+          v-if="hasData"
+          class="visualization-header"
+        >
+          <div class="header-left">
+            <h2 class="vis-title">
+              Пространство скрытых состояний
+            </h2>
+            <p class="vis-subtitle">
+              3D визуализация рыночных режимов (HMM)
+            </p>
+          </div>
 
           <!-- Timeline Controls -->
           <div class="timeline-controls">
             <button 
-              @click="togglePlayback" 
-              class="btn-play"
+              class="btn-play" 
               :class="{ active: isPlaying }"
               :disabled="!hasData || filteredData.length === 0"
+              @click="togglePlayback"
             >
               {{ isPlaying ? '⏸' : '▶' }}
             </button>
 
             <div class="timeline-wrapper">
               <input 
+                v-model.number="currentTimeIndex" 
                 type="range" 
                 :min="0" 
                 :max="Math.max(0, (filteredData.length || 1) - 1)" 
-                v-model.number="currentTimeIndex" 
-                @input="onTimelineChange"
                 class="timeline-slider"
                 :disabled="!hasData"
+                @input="onTimelineChange"
+              >
+              <div
+                class="timeline-track"
+                :style="{ width: timelineProgress + '%' }"
               />
-              <div class="timeline-track" :style="{ width: timelineProgress + '%' }"></div>
-              <div class="timeline-thumb" :style="{ left: timelineProgress + '%' }"></div>
+              <div
+                class="timeline-thumb"
+                :style="{ left: timelineProgress + '%' }"
+              />
             </div>
 
-            <select v-model="playbackSpeed" class="speed-select">
-              <option value="0.5">0.5x</option>
-              <option value="1">1x</option>
-              <option value="2">2x</option>
-              <option value="5">5x</option>
+            <select
+              v-model="playbackSpeed"
+              class="speed-select"
+            >
+              <option value="0.5">
+                0.5x
+              </option>
+              <option value="1">
+                1x
+              </option>
+              <option value="2">
+                2x
+              </option>
+              <option value="5">
+                5x
+              </option>
             </select>
 
-            <button @click="resetPlayback" class="btn-reset" :disabled="!hasData || filteredData.length === 0">↺</button>
+            <button
+              class="btn-reset"
+              :disabled="!hasData || filteredData.length === 0"
+              @click="resetPlayback"
+            >
+              ↺
+            </button>
 
-            <div class="current-date">{{ currentDate }}</div>
+            <div class="current-date">
+              {{ currentDate }}
+            </div>
           </div>
         </div>
 
         <!-- 3D Canvas Container -->
-        <div ref="canvasContainer" class="canvas-container" :class="{ loading: isLoading }">
-          <div v-if="isLoading" class="loading-overlay">
-            <div class="spinner-large"></div>
+        <div
+          ref="canvasContainer"
+          class="canvas-container"
+          :class="{ loading: isLoading }"
+        >
+          <div
+            v-if="isLoading"
+            class="loading-overlay"
+          >
+            <div class="spinner-large" />
             <p>Инициализация 3D пространства...</p>
           </div>
           
@@ -226,7 +345,9 @@
             }"
           >
             <div class="tooltip-header">
-              <h4 class="tooltip-title">{{ hoverInfo.title }}</h4>
+              <h4 class="tooltip-title">
+                {{ hoverInfo.title }}
+              </h4>
               <span class="tooltip-type">{{ hoverInfo.type }}</span>
             </div>
             <div class="tooltip-body">
@@ -243,11 +364,16 @@
         </div>
 
         <!-- Bottom Panel: Statistics -->
-        <div class="stats-panel" v-if="hasData">
+        <div
+          v-if="hasData"
+          class="stats-panel"
+        >
           <!-- Stationary Distribution -->
           <div class="stats-card">
             <h4>Стационарное распределение</h4>
-            <p class="info-hint">Долгосрочная вероятность каждого режима</p>
+            <p class="info-hint">
+              Долгосрочная вероятность каждого режима
+            </p>
             <div class="distribution-bars">
               <div 
                 v-for="(prob, i) in stationaryDistribution" 
@@ -258,7 +384,7 @@
                   backgroundColor: regimeConfigs[i]?.color || '#888'
                 }"
               >
-                <span class="dist-label">S{{i}}: {{ (prob * 100).toFixed(1) }}%</span>
+                <span class="dist-label">S{{ i }}: {{ (prob * 100).toFixed(1) }}%</span>
               </div>
             </div>
           </div>
@@ -266,14 +392,19 @@
           <!-- Expected Durations -->
           <div class="stats-card">
             <h4>Ожидаемая длительность режимов</h4>
-            <p class="info-hint">Средняя продолжительность режима в днях</p>
+            <p class="info-hint">
+              Средняя продолжительность режима в днях
+            </p>
             <div class="duration-list">
               <div 
                 v-for="(duration, i) in expectedDurations" 
                 :key="i"
                 class="duration-item"
               >
-                <span class="duration-dot" :style="{ backgroundColor: regimeConfigs[i]?.color || '#888' }"></span>
+                <span
+                  class="duration-dot"
+                  :style="{ backgroundColor: regimeConfigs[i]?.color || '#888' }"
+                />
                 <span class="duration-name">{{ regimeConfigs[i]?.name || `Режим ${i}` }}</span>
                 <span class="duration-value">{{ duration.toFixed(1) }} дней</span>
               </div>
@@ -281,9 +412,14 @@
           </div>
 
           <!-- Hovered Trajectory Node Details -->
-          <div class="stats-card trajectory-node-details" v-if="hoveredTrajectoryNode">
+          <div
+            v-if="hoveredTrajectoryNode"
+            class="stats-card trajectory-node-details"
+          >
             <h4>Детализация узла траектории</h4>
-            <p class="info-hint">Информация о наведенном наблюдении</p>
+            <p class="info-hint">
+              Информация о наведенном наблюдении
+            </p>
             <div class="trajectory-node-data">
               <div class="data-row">
                 <span class="data-label">Индекс:</span>
@@ -295,13 +431,19 @@
               </div>
               <div class="data-row">
                 <span class="data-label">Режим:</span>
-                <span class="data-value" :style="{ color: regimeConfigs[hoveredTrajectoryNode.regimeId]?.color || '#fff' }">
+                <span
+                  class="data-value"
+                  :style="{ color: regimeConfigs[hoveredTrajectoryNode.regimeId]?.color || '#fff' }"
+                >
                   {{ regimeConfigs[hoveredTrajectoryNode.regimeId]?.name || `Режим ${hoveredTrajectoryNode.regimeId}` }}
                 </span>
               </div>
               <div class="data-row">
                 <span class="data-label">Доходность:</span>
-                <span class="data-value" :class="hoveredTrajectoryNode.point.return && hoveredTrajectoryNode.point.return >= 0 ? 'text-green' : 'text-red'">
+                <span
+                  class="data-value"
+                  :class="hoveredTrajectoryNode.point.return && hoveredTrajectoryNode.point.return >= 0 ? 'text-green' : 'text-red'"
+                >
                   {{ hoveredTrajectoryNode.point.return !== undefined ? (hoveredTrajectoryNode.point.return * 100).toFixed(2) + '%' : 'N/A' }}
                 </span>
               </div>
@@ -313,7 +455,10 @@
                 <span class="data-label">Ликвидность:</span>
                 <span class="data-value">{{ hoveredTrajectoryNode.point.liquidity !== undefined ? hoveredTrajectoryNode.point.liquidity.toFixed(3) : 'N/A' }}</span>
               </div>
-              <div class="data-row" v-if="hoveredTrajectoryNode.point.probability">
+              <div
+                v-if="hoveredTrajectoryNode.point.probability"
+                class="data-row"
+              >
                 <span class="data-label">Вероятность режима:</span>
                 <span class="data-value">{{ (hoveredTrajectoryNode.point.probability[hoveredTrajectoryNode.regimeId] * 100).toFixed(1) + '%' }}</span>
               </div>
@@ -322,10 +467,16 @@
 
           <!-- Export Buttons -->
           <div class="export-section">
-            <button @click="exportScreenshot" class="btn-export">
+            <button
+              class="btn-export"
+              @click="exportScreenshot"
+            >
               📷 Скриншот
             </button>
-            <button @click="exportData" class="btn-export">
+            <button
+              class="btn-export"
+              @click="exportData"
+            >
               📊 CSV
             </button>
           </div>

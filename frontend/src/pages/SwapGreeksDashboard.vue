@@ -1,35 +1,62 @@
 <!-- src/pages/SwapGreeksDashboard.vue -->
 <template>
   <div class="swap-greeks-page">
-    
     <!-- Header Section -->
     <div class="page-header">
       <div class="header-left">
-        <h1 class="page-title">Панель греков свопов</h1>
-        <p class="page-subtitle">Анализ чувствительности swap-портфеля к рыночным факторам</p>
+        <h1 class="page-title">
+          Панель греков свопов
+        </h1>
+        <p class="page-subtitle">
+          Анализ чувствительности swap-портфеля к рыночным факторам
+        </p>
       </div>
       
       <div class="header-right">
         <!-- Swap Type Filter -->
         <div class="control-group">
           <label class="control-label">Тип свопа:</label>
-          <select v-model="selectedSwapType" class="swap-select">
-            <option value="all">Все свопы</option>
-            <option value="irs">Interest Rate Swaps</option>
-            <option value="cds">Credit Default Swaps</option>
-            <option value="basis">Basis Swaps</option>
-            <option value="cross-currency">Cross-Currency Swaps</option>
+          <select
+            v-model="selectedSwapType"
+            class="swap-select"
+          >
+            <option value="all">
+              Все свопы
+            </option>
+            <option value="irs">
+              Interest Rate Swaps
+            </option>
+            <option value="cds">
+              Credit Default Swaps
+            </option>
+            <option value="basis">
+              Basis Swaps
+            </option>
+            <option value="cross-currency">
+              Cross-Currency Swaps
+            </option>
           </select>
         </div>
 
         <!-- Currency/Index -->
         <div class="control-group">
           <label class="control-label">Индекс:</label>
-          <select v-model="selectedIndex" class="index-select">
-            <option value="rub3m">RUB 3M RUONIA</option>
-            <option value="rub6m">RUB 6M RUONIA</option>
-            <option value="eur3m">EUR 3M EURIBOR</option>
-            <option value="gbp6m">GBP 6M SONIA</option>
+          <select
+            v-model="selectedIndex"
+            class="index-select"
+          >
+            <option value="rub3m">
+              RUB 3M RUONIA
+            </option>
+            <option value="rub6m">
+              RUB 6M RUONIA
+            </option>
+            <option value="eur3m">
+              EUR 3M EURIBOR
+            </option>
+            <option value="gbp6m">
+              GBP 6M SONIA
+            </option>
           </select>
         </div>
       </div>
@@ -43,14 +70,24 @@
           <span class="greek-name">DV01</span>
         </div>
         <div class="greek-content">
-          <div class="greek-value">{{ formatCurrency(swapGreeks.dv01) }}</div>
-          <div class="greek-unit">М / 1bp</div>
-          <div class="greek-change" :class="swapGreeks.dv01 >= 0 ? 'positive' : 'negative'">
+          <div class="greek-value">
+            {{ formatCurrency(swapGreeks.dv01) }}
+          </div>
+          <div class="greek-unit">
+            М / 1bp
+          </div>
+          <div
+            class="greek-change"
+            :class="swapGreeks.dv01 >= 0 ? 'positive' : 'negative'"
+          >
             {{ swapGreeks.dv01 >= 0 ? '+' : '' }}{{ formatCompactCurrency(swapGreeks.dv01) }}
           </div>
         </div>
         <div class="greek-bar">
-          <div class="bar-fill" :style="{ width: Math.min(100, Math.abs(swapGreeks.dv01 / 50000)) + '%' }"></div>
+          <div
+            class="bar-fill"
+            :style="{ width: Math.min(100, Math.abs(swapGreeks.dv01 / 50000)) + '%' }"
+          />
         </div>
       </div>
 
@@ -60,14 +97,24 @@
           <span class="greek-name">Spread DV01</span>
         </div>
         <div class="greek-content">
-          <div class="greek-value">{{ formatCurrency(swapGreeks.spreadDv01) }}</div>
-          <div class="greek-unit">М / 1bp</div>
-          <div class="greek-change" :class="swapGreeks.spreadDv01 >= 0 ? 'positive' : 'negative'">
+          <div class="greek-value">
+            {{ formatCurrency(swapGreeks.spreadDv01) }}
+          </div>
+          <div class="greek-unit">
+            М / 1bp
+          </div>
+          <div
+            class="greek-change"
+            :class="swapGreeks.spreadDv01 >= 0 ? 'positive' : 'negative'"
+          >
             {{ swapGreeks.spreadDv01 >= 0 ? '+' : '' }}{{ formatCompactCurrency(swapGreeks.spreadDv01) }}
           </div>
         </div>
         <div class="greek-bar">
-          <div class="bar-fill" :style="{ width: Math.min(100, Math.abs(swapGreeks.spreadDv01 / 30000)) + '%' }"></div>
+          <div
+            class="bar-fill"
+            :style="{ width: Math.min(100, Math.abs(swapGreeks.spreadDv01 / 30000)) + '%' }"
+          />
         </div>
       </div>
 
@@ -77,14 +124,24 @@
           <span class="greek-name">Basis Risk</span>
         </div>
         <div class="greek-content">
-          <div class="greek-value">{{ formatCurrency(swapGreeks.basisRisk) }}</div>
-          <div class="greek-unit">М / 1bp</div>
-          <div class="greek-change" :class="swapGreeks.basisRisk >= 0 ? 'positive' : 'negative'">
+          <div class="greek-value">
+            {{ formatCurrency(swapGreeks.basisRisk) }}
+          </div>
+          <div class="greek-unit">
+            М / 1bp
+          </div>
+          <div
+            class="greek-change"
+            :class="swapGreeks.basisRisk >= 0 ? 'positive' : 'negative'"
+          >
             {{ swapGreeks.basisRisk >= 0 ? '+' : '' }}{{ formatCompactCurrency(swapGreeks.basisRisk) }}
           </div>
         </div>
         <div class="greek-bar">
-          <div class="bar-fill" :style="{ width: Math.min(100, Math.abs(swapGreeks.basisRisk / 20000)) + '%' }"></div>
+          <div
+            class="bar-fill"
+            :style="{ width: Math.min(100, Math.abs(swapGreeks.basisRisk / 20000)) + '%' }"
+          />
         </div>
       </div>
 
@@ -94,14 +151,24 @@
           <span class="greek-name">Convexity</span>
         </div>
         <div class="greek-content">
-          <div class="greek-value">{{ swapGreeks.convexity.toFixed(2) }}</div>
-          <div class="greek-unit">М / bp²</div>
-          <div class="greek-change" :class="swapGreeks.convexity >= 0 ? 'positive' : 'negative'">
+          <div class="greek-value">
+            {{ swapGreeks.convexity.toFixed(2) }}
+          </div>
+          <div class="greek-unit">
+            М / bp²
+          </div>
+          <div
+            class="greek-change"
+            :class="swapGreeks.convexity >= 0 ? 'positive' : 'negative'"
+          >
             {{ swapGreeks.convexity >= 0 ? '+' : '' }}{{ swapGreeks.convexity.toFixed(2) }}
           </div>
         </div>
         <div class="greek-bar">
-          <div class="bar-fill" :style="{ width: Math.min(100, Math.abs(swapGreeks.convexity * 20)) + '%' }"></div>
+          <div
+            class="bar-fill"
+            :style="{ width: Math.min(100, Math.abs(swapGreeks.convexity * 20)) + '%' }"
+          />
         </div>
       </div>
 
@@ -111,14 +178,24 @@
           <span class="greek-name">Vol Exposure</span>
         </div>
         <div class="greek-content">
-          <div class="greek-value">{{ formatCurrency(swapGreeks.volExposure) }}</div>
-          <div class="greek-unit">М / 1% vol</div>
-          <div class="greek-change" :class="swapGreeks.volExposure >= 0 ? 'positive' : 'negative'">
+          <div class="greek-value">
+            {{ formatCurrency(swapGreeks.volExposure) }}
+          </div>
+          <div class="greek-unit">
+            М / 1% vol
+          </div>
+          <div
+            class="greek-change"
+            :class="swapGreeks.volExposure >= 0 ? 'positive' : 'negative'"
+          >
             {{ swapGreeks.volExposure >= 0 ? '+' : '' }}{{ formatCompactCurrency(swapGreeks.volExposure) }}
           </div>
         </div>
         <div class="greek-bar">
-          <div class="bar-fill" :style="{ width: Math.min(100, Math.abs(swapGreeks.volExposure / 40000)) + '%' }"></div>
+          <div
+            class="bar-fill"
+            :style="{ width: Math.min(100, Math.abs(swapGreeks.volExposure / 40000)) + '%' }"
+          />
         </div>
       </div>
     </div>
@@ -130,7 +207,11 @@
         <span class="card-subtitle">Чувствительность по сроках кривой</span>
       </div>
       <div class="krd-container">
-        <div v-for="(duration, tenor) in keyRateDurations" :key="tenor" class="krd-item">
+        <div
+          v-for="(duration, tenor) in keyRateDurations"
+          :key="tenor"
+          class="krd-item"
+        >
           <span class="krd-tenor">{{ tenor }}</span>
           <div class="krd-bar-container">
             <div 
@@ -139,7 +220,10 @@
               :style="{ width: Math.min(100, Math.abs(duration * 15)) + '%' }"
             />
           </div>
-          <span class="krd-value" :class="duration >= 0 ? 'positive' : 'negative'">
+          <span
+            class="krd-value"
+            :class="duration >= 0 ? 'positive' : 'negative'"
+          >
             {{ duration >= 0 ? '+' : '' }}{{ duration.toFixed(2) }}
           </span>
         </div>
@@ -154,22 +238,35 @@
           <h3>Long позиции (Payer)</h3>
         </div>
         <div class="swap-positions">
-          <div v-for="position in longPositions" :key="position.id" class="swap-item">
+          <div
+            v-for="position in longPositions"
+            :key="position.id"
+            class="swap-item"
+          >
             <div class="swap-header">
               <span class="swap-name">{{ position.name }}</span>
               <span class="swap-tenor">{{ position.tenor }}</span>
-              <span class="swap-status" :class="position.direction.toLowerCase()">{{ position.direction }}</span>
+              <span
+                class="swap-status"
+                :class="position.direction.toLowerCase()"
+              >{{ position.direction }}</span>
             </div>
             <div class="swap-metrics">
               <div class="metric">
                 <span class="label">DV01</span>
-                <span class="value" :class="position.dv01 >= 0 ? 'positive' : 'negative'">
+                <span
+                  class="value"
+                  :class="position.dv01 >= 0 ? 'positive' : 'negative'"
+                >
                   {{ formatCompactCurrency(position.dv01) }}
                 </span>
               </div>
               <div class="metric">
                 <span class="label">Spread</span>
-                <span class="value" :class="position.spread >= 0 ? 'positive' : 'negative'">
+                <span
+                  class="value"
+                  :class="position.spread >= 0 ? 'positive' : 'negative'"
+                >
                   {{ position.spread >= 0 ? '+' : '' }}{{ position.spread }} bp
                 </span>
               </div>
@@ -188,22 +285,35 @@
           <h3>Short позиции (Receiver)</h3>
         </div>
         <div class="swap-positions">
-          <div v-for="position in shortPositions" :key="position.id" class="swap-item">
+          <div
+            v-for="position in shortPositions"
+            :key="position.id"
+            class="swap-item"
+          >
             <div class="swap-header">
               <span class="swap-name">{{ position.name }}</span>
               <span class="swap-tenor">{{ position.tenor }}</span>
-              <span class="swap-status" :class="position.direction.toLowerCase()">{{ position.direction }}</span>
+              <span
+                class="swap-status"
+                :class="position.direction.toLowerCase()"
+              >{{ position.direction }}</span>
             </div>
             <div class="swap-metrics">
               <div class="metric">
                 <span class="label">DV01</span>
-                <span class="value" :class="position.dv01 >= 0 ? 'positive' : 'negative'">
+                <span
+                  class="value"
+                  :class="position.dv01 >= 0 ? 'positive' : 'negative'"
+                >
                   {{ formatCompactCurrency(position.dv01) }}
                 </span>
               </div>
               <div class="metric">
                 <span class="label">Spread</span>
-                <span class="value" :class="position.spread >= 0 ? 'positive' : 'negative'">
+                <span
+                  class="value"
+                  :class="position.spread >= 0 ? 'positive' : 'negative'"
+                >
                   {{ position.spread >= 0 ? '+' : '' }}{{ position.spread }} bp
                 </span>
               </div>
@@ -225,7 +335,7 @@
           <h3>Кривая свопов</h3>
         </div>
         <div class="chart-container">
-          <canvas ref="curveChartRef"></canvas>
+          <canvas ref="curveChartRef" />
         </div>
       </div>
 
@@ -235,7 +345,7 @@
           <h3>Кривая спреда (Par - Spot)</h3>
         </div>
         <div class="chart-container">
-          <canvas ref="spreadChartRef"></canvas>
+          <canvas ref="spreadChartRef" />
         </div>
       </div>
     </div>
@@ -248,7 +358,7 @@
           <h3>Чувствительность DV01 (Rate Shock)</h3>
         </div>
         <div class="chart-container">
-          <canvas ref="rateSensitivityRef"></canvas>
+          <canvas ref="rateSensitivityRef" />
         </div>
       </div>
 
@@ -258,7 +368,7 @@
           <h3>Чувствительность спреда (Spread Shock)</h3>
         </div>
         <div class="chart-container">
-          <canvas ref="spreadSensitivityRef"></canvas>
+          <canvas ref="spreadSensitivityRef" />
         </div>
       </div>
     </div>
@@ -283,14 +393,31 @@
             </tr>
           </thead>
           <tbody>
-            <tr v-for="scenario in scenarioMatrix" :key="scenario.name">
-              <td class="scenario-name">{{ scenario.name }}</td>
-              <td :class="getPnlClass(scenario.rate50)">{{ formatCurrency(scenario.rate50) }}</td>
-              <td :class="getPnlClass(scenario.rate100)">{{ formatCurrency(scenario.rate100) }}</td>
-              <td :class="getPnlClass(scenario.rateNeg50)">{{ formatCurrency(scenario.rateNeg50) }}</td>
-              <td :class="getPnlClass(scenario.rateNeg100)">{{ formatCurrency(scenario.rateNeg100) }}</td>
-              <td :class="getPnlClass(scenario.spread50)">{{ formatCurrency(scenario.spread50) }}</td>
-              <td :class="getPnlClass(scenario.spreadNeg50)">{{ formatCurrency(scenario.spreadNeg50) }}</td>
+            <tr
+              v-for="scenario in scenarioMatrix"
+              :key="scenario.name"
+            >
+              <td class="scenario-name">
+                {{ scenario.name }}
+              </td>
+              <td :class="getPnlClass(scenario.rate50)">
+                {{ formatCurrency(scenario.rate50) }}
+              </td>
+              <td :class="getPnlClass(scenario.rate100)">
+                {{ formatCurrency(scenario.rate100) }}
+              </td>
+              <td :class="getPnlClass(scenario.rateNeg50)">
+                {{ formatCurrency(scenario.rateNeg50) }}
+              </td>
+              <td :class="getPnlClass(scenario.rateNeg100)">
+                {{ formatCurrency(scenario.rateNeg100) }}
+              </td>
+              <td :class="getPnlClass(scenario.spread50)">
+                {{ formatCurrency(scenario.spread50) }}
+              </td>
+              <td :class="getPnlClass(scenario.spreadNeg50)">
+                {{ formatCurrency(scenario.spreadNeg50) }}
+              </td>
             </tr>
           </tbody>
         </table>
@@ -310,7 +437,10 @@
         </div>
         <div class="basis-item">
           <span class="basis-label">Basis DV01</span>
-          <span class="basis-value" :class="basisAnalysis.basisDv01 >= 0 ? 'positive' : 'negative'">
+          <span
+            class="basis-value"
+            :class="basisAnalysis.basisDv01 >= 0 ? 'positive' : 'negative'"
+          >
             {{ formatCompactCurrency(basisAnalysis.basisDv01) }}
           </span>
         </div>
@@ -320,7 +450,10 @@
         </div>
         <div class="basis-item">
           <span class="basis-label">P&L (Spread +25bp)</span>
-          <span class="basis-value" :class="basisAnalysis.pnlSpread25 >= 0 ? 'positive' : 'negative'">
+          <span
+            class="basis-value"
+            :class="basisAnalysis.pnlSpread25 >= 0 ? 'positive' : 'negative'"
+          >
             {{ formatCurrency(basisAnalysis.pnlSpread25) }}
           </span>
         </div>
@@ -333,7 +466,6 @@
       <span>• Spread DV01 — чувствительность к спредам</span>
       <span>• Обновление каждые 5 минут</span>
     </div>
-
   </div>
 </template>
 

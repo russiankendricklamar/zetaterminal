@@ -1,72 +1,128 @@
 <!-- src/views/PortfolioView.vue - FINAL VERSION -->
 <template>
   <div class="portfolio-page">
-    
     <!-- Hero Section -->
     <div class="hero-section">
       <div class="hero-left">
         <div class="hero-title-row">
-          <h1>Управление портфелем ценных бумаг банка: <span class="bank-selector-inline-wrapper">
-            <div class="bank-selector-wrapper">
-              <div class="bank-selector" :class="{ 'is-open': isBankMenuOpen }" @click="toggleBankMenu">
-                <div class="bank-selector-content">
-                  <span class="bank-selector-name">{{ selectedBank?.name || 'Выберите банк' }}</span>
-                  <span class="bank-selector-reg">№ {{ selectedBank?.regNumber || '' }}</span>
-          </div>
-                <svg class="bank-selector-chevron" width="12" height="8" viewBox="0 0 12 8" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M1 1L6 6L11 1"/>
-                </svg>
-        </div>
-              <transition name="dropdown-fade">
-                <div v-if="isBankMenuOpen" class="bank-dropdown">
-                  <div class="bank-dropdown-search">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                      <circle cx="11" cy="11" r="8"/>
-                      <line x1="21" y1="21" x2="16.65" y2="16.65"/>
-                    </svg>
-                    <input 
-                      type="text" 
-                      v-model="bankSearchQuery" 
-                      placeholder="Поиск банка..."
-                      class="bank-search-input"
-                      @click.stop
-                    />
+          <h1>
+            Управление портфелем ценных бумаг банка: <span class="bank-selector-inline-wrapper">
+              <div class="bank-selector-wrapper">
+                <div
+                  class="bank-selector"
+                  :class="{ 'is-open': isBankMenuOpen }"
+                  @click="toggleBankMenu"
+                >
+                  <div class="bank-selector-content">
+                    <span class="bank-selector-name">{{ selectedBank?.name || 'Выберите банк' }}</span>
+                    <span class="bank-selector-reg">№ {{ selectedBank?.regNumber || '' }}</span>
                   </div>
-                  <div class="bank-dropdown-list">
-                    <div 
-                      v-for="bank in filteredBanks" 
-                      :key="bank.regNumber"
-                      class="bank-dropdown-item"
-                      :class="{ 'is-selected': bank.regNumber === selectedBank.regNumber }"
-                      @click="selectBank(bank)"
-                    >
-                      <div class="bank-item-content">
-                        <span class="bank-item-name">{{ bank.name }}</span>
-                        <span class="bank-item-reg">№ {{ bank.regNumber }}</span>
-                      </div>
-                      <svg v-if="bank.regNumber === selectedBank.regNumber" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
-                        <polyline points="20 6 9 17 4 12"></polyline>
+                  <svg
+                    class="bank-selector-chevron"
+                    width="12"
+                    height="8"
+                    viewBox="0 0 12 8"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                  >
+                    <path d="M1 1L6 6L11 1" />
+                  </svg>
+                </div>
+                <transition name="dropdown-fade">
+                  <div
+                    v-if="isBankMenuOpen"
+                    class="bank-dropdown"
+                  >
+                    <div class="bank-dropdown-search">
+                      <svg
+                        width="14"
+                        height="14"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                      >
+                        <circle
+                          cx="11"
+                          cy="11"
+                          r="8"
+                        />
+                        <line
+                          x1="21"
+                          y1="21"
+                          x2="16.65"
+                          y2="16.65"
+                        />
                       </svg>
+                      <input 
+                        v-model="bankSearchQuery" 
+                        type="text" 
+                        placeholder="Поиск банка..."
+                        class="bank-search-input"
+                        @click.stop
+                      >
+                    </div>
+                    <div class="bank-dropdown-list">
+                      <div 
+                        v-for="bank in filteredBanks" 
+                        :key="bank.regNumber"
+                        class="bank-dropdown-item"
+                        :class="{ 'is-selected': bank.regNumber === selectedBank.regNumber }"
+                        @click="selectBank(bank)"
+                      >
+                        <div class="bank-item-content">
+                          <span class="bank-item-name">{{ bank.name }}</span>
+                          <span class="bank-item-reg">№ {{ bank.regNumber }}</span>
+                        </div>
+                        <svg
+                          v-if="bank.regNumber === selectedBank.regNumber"
+                          width="14"
+                          height="14"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          stroke-width="3"
+                        >
+                          <polyline points="20 6 9 17 4 12" />
+                        </svg>
+                      </div>
                     </div>
                   </div>
-      </div>
-    </transition>
-            </div>
-          </span></h1>
+                </transition>
+              </div>
+            </span>
+          </h1>
         </div>
         <div class="hero-meta">
           <span class="glass-pill">Стратегия: <strong>Мультиактив</strong></span>
           <span class="glass-pill">Ребалансировка: <strong>Ежемесячно</strong></span>
           <span class="glass-pill risk-aggressive">
-            <span class="status-dot"></span>
+            <span class="status-dot" />
             Риск: Агрессивный
           </span>
         </div>
       </div>
       <div class="hero-actions">
-        <div class="last-update">Обновлено: <span class="mono">{{ lastUpdate }}</span></div>
-        <button class="btn-glass outline" @click="exportPdf">
-          <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+        <div class="last-update">
+          Обновлено: <span class="mono">{{ lastUpdate }}</span>
+        </div>
+        <button
+          class="btn-glass outline"
+          @click="exportPdf"
+        >
+          <svg
+            width="16"
+            height="16"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          ><path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+          /></svg>
           Экспорт PDF
         </button>
       </div>
@@ -77,10 +133,26 @@
       <div class="glass-card kpi-card glow-green">
         <div class="kpi-header">
           <span class="kpi-label">Общий P&L</span>
-          <div class="trend-badge" :class="portfolioMetrics?.annual_return && portfolioMetrics.annual_return >= 0 ? 'positive' : 'negative'">
-            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="4">
-              <path v-if="portfolioMetrics?.annual_return && portfolioMetrics.annual_return >= 0" d="M18 15l-6-6-6 6"/>
-              <path v-else d="M6 9l6 6 6-6"/>
+          <div
+            class="trend-badge"
+            :class="portfolioMetrics?.annual_return && portfolioMetrics.annual_return >= 0 ? 'positive' : 'negative'"
+          >
+            <svg
+              width="10"
+              height="10"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="4"
+            >
+              <path
+                v-if="portfolioMetrics?.annual_return && portfolioMetrics.annual_return >= 0"
+                d="M18 15l-6-6-6 6"
+              />
+              <path
+                v-else
+                d="M6 9l6 6 6-6"
+              />
             </svg>
             {{ portfolioMetrics ? (portfolioMetrics.annual_return * 100).toFixed(1) + '%' : '12.4%' }}
           </div>
@@ -90,7 +162,9 @@
             {{ portfolioMetrics ? portfolioMetrics.total_pnl.toLocaleString('ru-RU', { maximumFractionDigits: 0 }) : '452,109' }} 
             <small>RUB</small>
           </div>
-          <div class="kpi-sub">ЧСА: {{ portfolioMetrics ? (portfolioMetrics.nav / 1000000).toFixed(2) + 'M' : '3.64M' }}</div>
+          <div class="kpi-sub">
+            ЧСА: {{ portfolioMetrics ? (portfolioMetrics.nav / 1000000).toFixed(2) + 'M' : '3.64M' }}
+          </div>
         </div>
       </div>
 
@@ -98,13 +172,24 @@
         <div class="kpi-header">
           <span class="kpi-label">VaR 95%</span>
           <div class="trend-badge negative">
-            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="4"><path d="M6 9l6 6 6-6"/></svg>
+            <svg
+              width="10"
+              height="10"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="4"
+            ><path d="M6 9l6 6 6-6" /></svg>
             {{ portfolioMetrics ? portfolioMetrics.var_95_percent.toFixed(1) + '%' : '1.2%' }}
           </div>
         </div>
         <div class="kpi-content">
-          <div class="kpi-value text-white">{{ portfolioMetrics ? portfolioMetrics.var_95_percent.toFixed(2) + '%' : '2.45%' }}</div>
-          <div class="kpi-sub">Дневной риск</div>
+          <div class="kpi-value text-white">
+            {{ portfolioMetrics ? portfolioMetrics.var_95_percent.toFixed(2) + '%' : '2.45%' }}
+          </div>
+          <div class="kpi-sub">
+            Дневной риск
+          </div>
         </div>
       </div>
 
@@ -113,8 +198,12 @@
           <span class="kpi-label">Sharpe Ratio</span>
         </div>
         <div class="kpi-content">
-          <div class="kpi-value text-gradient-blue">{{ portfolioMetrics ? portfolioMetrics.sharpe_ratio.toFixed(2) : '1.85' }}</div>
-          <div class="kpi-sub">Безрисковая ставка: {{ portfolioMetrics ? (portfolioMetrics.risk_free_rate * 100).toFixed(1) + '%' : '4.2%' }}</div>
+          <div class="kpi-value text-gradient-blue">
+            {{ portfolioMetrics ? portfolioMetrics.sharpe_ratio.toFixed(2) : '1.85' }}
+          </div>
+          <div class="kpi-sub">
+            Безрисковая ставка: {{ portfolioMetrics ? (portfolioMetrics.risk_free_rate * 100).toFixed(1) + '%' : '4.2%' }}
+          </div>
         </div>
       </div>
 
@@ -123,389 +212,541 @@
           <span class="kpi-label">Диверсификация</span>
         </div>
         <div class="kpi-content">
-          <div class="kpi-value text-white">{{ portfolioMetrics ? portfolioMetrics.diversification.toFixed(2) : '0.34' }}</div>
-          <div class="kpi-sub">Коэфф. корреляции: {{ portfolioMetrics ? portfolioMetrics.avg_correlation.toFixed(2) : '0.34' }}</div>
+          <div class="kpi-value text-white">
+            {{ portfolioMetrics ? portfolioMetrics.diversification.toFixed(2) : '0.34' }}
+          </div>
+          <div class="kpi-sub">
+            Коэфф. корреляции: {{ portfolioMetrics ? portfolioMetrics.avg_correlation.toFixed(2) : '0.34' }}
+          </div>
         </div>
       </div>
     </div>
 
     <!-- Main Dashboard Grid -->
     <div class="dashboard-grid">
-      
       <!-- LEFT COLUMN -->
       <div class="col-main">
-        
         <!-- Positions Table -->
         <div class="glass-panel">
           <div class="panel-header">
             <div>
-            <h3>Открытые позиции</h3>
+              <h3>Открытые позиции</h3>
               <span class="panel-subtitle">Топ-5 по весу в портфеле</span>
             </div>
             <div class="panel-header-actions">
-              <button class="btn-glass outline compact" @click="openPortfolioDetails">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                  <polyline points="14 2 14 8 20 8"></polyline>
-                  <line x1="16" y1="13" x2="8" y2="13"></line>
-                  <line x1="16" y1="17" x2="8" y2="17"></line>
-                  <polyline points="10 9 9 9 8 9"></polyline>
+              <button
+                class="btn-glass outline compact"
+                @click="openPortfolioDetails"
+              >
+                <svg
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                >
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                  <polyline points="14 2 14 8 20 8" />
+                  <line
+                    x1="16"
+                    y1="13"
+                    x2="8"
+                    y2="13"
+                  />
+                  <line
+                    x1="16"
+                    y1="17"
+                    x2="8"
+                    y2="17"
+                  />
+                  <polyline points="10 9 9 9 8 9" />
                 </svg>
                 Детализация
               </button>
             </div>
           </div>
           <div class="panel-body p-0">
-             <div class="table-container">
-               <table class="glass-table">
-                 <thead>
-                   <tr>
-                     <th>Инструмент</th>
-                     <th class="text-right">Цена</th>
-                     <th class="text-right">День %</th>
-                     <th class="text-right">Позиция</th>
-                     <th class="text-right">Вес</th>
-                     <th class="text-right">Таргет</th>
-                     <th class="text-right">Дрифт</th>
-                   </tr>
-                 </thead>
-                 <tbody>
-                   <tr 
-                      v-for="pos in top5Positions" 
-                      :key="pos.symbol"
-                      @click="selectAsset(pos)"
-                      :class="{ active: selectedAsset?.symbol === pos.symbol }"
-                   >
-                     <td>
-                       <div class="asset-cell">
-                         <div class="asset-icon" :style="{ background: pos.color }">{{ pos.symbol[0] }}</div>
-                         <div class="asset-info">
-                           <span class="symbol">{{ pos.symbol }}</span>
-                           <span class="name">{{ pos.name }}</span>
-                         </div>
-                       </div>
-                     </td>
-                     <td class="text-right mono">${{ pos.price }}</td>
-                     <td class="text-right mono">
-                       <span :class="['change-pill', pos.dayChange > 0 ? 'text-green' : 'text-red']">{{ pos.dayChange > 0 ? '+' : '' }}{{ pos.dayChange }}%</span>
-                     </td>
-                     <td class="text-right mono opacity-80">${{ (pos.notional / 1000).toFixed(1) }}k</td>
-                     <td class="text-right mono font-bold">{{ pos.allocation }}%</td>
-                     <td class="text-right mono opacity-50">{{ pos.targetAllocation }}%</td>
-                     <td class="text-right">
-                        <div :class="['drift-val', getDriftClass(pos)]">{{ (pos.allocation - pos.targetAllocation).toFixed(1) }}%</div>
-                     </td>
-                   </tr>
-                 </tbody>
-               </table>
-             </div>
+            <div class="table-container">
+              <table class="glass-table">
+                <thead>
+                  <tr>
+                    <th>Инструмент</th>
+                    <th class="text-right">
+                      Цена
+                    </th>
+                    <th class="text-right">
+                      День %
+                    </th>
+                    <th class="text-right">
+                      Позиция
+                    </th>
+                    <th class="text-right">
+                      Вес
+                    </th>
+                    <th class="text-right">
+                      Таргет
+                    </th>
+                    <th class="text-right">
+                      Дрифт
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr 
+                    v-for="pos in top5Positions" 
+                    :key="pos.symbol"
+                    :class="{ active: selectedAsset?.symbol === pos.symbol }"
+                    @click="selectAsset(pos)"
+                  >
+                    <td>
+                      <div class="asset-cell">
+                        <div
+                          class="asset-icon"
+                          :style="{ background: pos.color }"
+                        >
+                          {{ pos.symbol[0] }}
+                        </div>
+                        <div class="asset-info">
+                          <span class="symbol">{{ pos.symbol }}</span>
+                          <span class="name">{{ pos.name }}</span>
+                        </div>
+                      </div>
+                    </td>
+                    <td class="text-right mono">
+                      ${{ pos.price }}
+                    </td>
+                    <td class="text-right mono">
+                      <span :class="['change-pill', pos.dayChange > 0 ? 'text-green' : 'text-red']">{{ pos.dayChange > 0 ? '+' : '' }}{{ pos.dayChange }}%</span>
+                    </td>
+                    <td class="text-right mono opacity-80">
+                      ${{ (pos.notional / 1000).toFixed(1) }}k
+                    </td>
+                    <td class="text-right mono font-bold">
+                      {{ pos.allocation }}%
+                    </td>
+                    <td class="text-right mono opacity-50">
+                      {{ pos.targetAllocation }}%
+                    </td>
+                    <td class="text-right">
+                      <div :class="['drift-val', getDriftClass(pos)]">
+                        {{ (pos.allocation - pos.targetAllocation).toFixed(1) }}%
+                      </div>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
 
-            <!-- Correlation Matrix -->
-            <div class="glass-panel">
-               <div class="panel-header">
-                  <h3>Матрица Корреляций</h3>
-               </div>
-               <div class="panel-body heatmap-body">
-                  <div class="heatmap-wrapper">
-                     <div class="heatmap-header-row">
-                        <div class="heatmap-empty"></div>
-                    <div v-for="col in correlationMatrix.slice(0, 10)" :key="col.label" class="heatmap-th">{{ col.label }}</div>
-                     </div>
-                 <div class="heatmap-row" v-for="(row, r) in correlationMatrix.slice(0, 10)" :key="r">
-                        <div class="heatmap-rh">{{ row.label }}</div>
-                        <div 
-                          class="heatmap-cell" 
-                      v-for="(val, c) in row.values.slice(0, 10)" 
-                          :key="c"
-                          :style="{ backgroundColor: getHeatmapColor(val) }"
-                        >
-                          {{ val === 1 ? '1.0' : val.toFixed(2) }}
-                     </div>
-                  </div>
-               </div>
+        <!-- Correlation Matrix -->
+        <div class="glass-panel">
+          <div class="panel-header">
+            <h3>Матрица Корреляций</h3>
+          </div>
+          <div class="panel-body heatmap-body">
+            <div class="heatmap-wrapper">
+              <div class="heatmap-header-row">
+                <div class="heatmap-empty" />
+                <div
+                  v-for="col in correlationMatrix.slice(0, 10)"
+                  :key="col.label"
+                  class="heatmap-th"
+                >
+                  {{ col.label }}
+                </div>
+              </div>
+              <div
+                v-for="(row, r) in correlationMatrix.slice(0, 10)"
+                :key="r"
+                class="heatmap-row"
+              >
+                <div class="heatmap-rh">
+                  {{ row.label }}
+                </div>
+                <div 
+                  v-for="(val, c) in row.values.slice(0, 10)" 
+                  :key="c" 
+                  class="heatmap-cell"
+                  :style="{ backgroundColor: getHeatmapColor(val) }"
+                >
+                  {{ val === 1 ? '1.0' : val.toFixed(2) }}
+                </div>
+              </div>
             </div>
+          </div>
         </div>
 
         <!-- 3D Correlation Heatmap - Full Width -->
-        <div class="glass-panel heatmap-panel" style="margin-bottom: 0;">
-           <div class="panel-header">
-              <h3>3D Тепловая карта активов</h3>
-              <span class="panel-badge">Интерактивная визуализация</span>
-           </div>
-           <div class="panel-body" style="padding: 8px 10px 0 10px; position: relative; margin-bottom: 0;">
-              <p class="section-description" style="margin-bottom: 8px; padding: 6px 10px; border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; background: rgba(0,0,0,0.2); font-size: 11px; line-height: 1.4;">
-                 Каждый актив представлен шариком. Размер = вес в портфеле, цвет = цвет актива. 
-                 Позиция в 3D пространстве основана на корреляциях между активами.
-                 <br><strong>Наведите на шарик</strong> для детализации позиции.
-              </p>
-              <div id="correlation-3d-heatmap" style="width:100%; height:500px; position: relative; min-height: 500px; background: rgba(0,0,0,0.1); border-radius: 8px; margin-bottom: 0; display: block; visibility: visible; opacity: 1;"></div>
-              <div v-if="hoveredAsset" class="asset-tooltip-3d">
-                 <div class="tooltip-header">
-                    <div class="asset-icon" :style="{ background: hoveredAsset.color }">{{ hoveredAsset.symbol[0] }}</div>
-                    <div>
-                       <div class="tooltip-symbol">{{ hoveredAsset.symbol }}</div>
-                       <div class="tooltip-name">{{ hoveredAsset.name }}</div>
-                 </div>
+        <div
+          class="glass-panel heatmap-panel"
+          style="margin-bottom: 0;"
+        >
+          <div class="panel-header">
+            <h3>3D Тепловая карта активов</h3>
+            <span class="panel-badge">Интерактивная визуализация</span>
+          </div>
+          <div
+            class="panel-body"
+            style="padding: 8px 10px 0 10px; position: relative; margin-bottom: 0;"
+          >
+            <p
+              class="section-description"
+              style="margin-bottom: 8px; padding: 6px 10px; border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; background: rgba(0,0,0,0.2); font-size: 11px; line-height: 1.4;"
+            >
+              Каждый актив представлен шариком. Размер = вес в портфеле, цвет = цвет актива. 
+              Позиция в 3D пространстве основана на корреляциях между активами.
+              <br><strong>Наведите на шарик</strong> для детализации позиции.
+            </p>
+            <div
+              id="correlation-3d-heatmap"
+              style="width:100%; height:500px; position: relative; min-height: 500px; background: rgba(0,0,0,0.1); border-radius: 8px; margin-bottom: 0; display: block; visibility: visible; opacity: 1;"
+            />
+            <div
+              v-if="hoveredAsset"
+              class="asset-tooltip-3d"
+            >
+              <div class="tooltip-header">
+                <div
+                  class="asset-icon"
+                  :style="{ background: hoveredAsset.color }"
+                >
+                  {{ hoveredAsset.symbol[0] }}
+                </div>
+                <div>
+                  <div class="tooltip-symbol">
+                    {{ hoveredAsset.symbol }}
+                  </div>
+                  <div class="tooltip-name">
+                    {{ hoveredAsset.name }}
+                  </div>
+                </div>
               </div>
-                 <div class="tooltip-details">
-                    <div class="tooltip-row">
-                       <span>Тип:</span>
-                       <strong>{{ (hoveredAsset.symbol.includes('ОФЗ') || hoveredAsset.symbol.includes('Облигац')) ? 'Облигация' : 'Акция' }}</strong>
-                    </div>
-                    <div class="tooltip-row" v-if="hoveredAsset.volatility !== undefined">
-                       <span>Волатильность:</span>
-                       <strong>{{ hoveredAsset.volatility?.toFixed(1) || 'Н/Д' }}%</strong>
-                    </div>
-                    <div class="tooltip-row" v-if="hoveredAsset.avgCorrelation !== undefined">
-                       <span>Ср. корреляция:</span>
-                       <strong>{{ hoveredAsset.avgCorrelation?.toFixed(2) || 'Н/Д' }}</strong>
-                    </div>
-                    <div class="tooltip-row">
-                       <span>Вес в портфеле:</span>
-                       <strong>{{ hoveredAsset.allocation?.toFixed(2) || hoveredAsset.allocation }}%</strong>
-                    </div>
-                    <div class="tooltip-row">
-                       <span>Цена:</span>
-                       <strong>{{ hoveredAsset.price?.toLocaleString('ru-RU') || hoveredAsset.price }} ₽</strong>
-                    </div>
-                    <div class="tooltip-row">
-                       <span>Дневное изм.:</span>
-                       <strong :class="hoveredAsset.dayChange >= 0 ? 'text-green' : 'text-red'">
-                          {{ hoveredAsset.dayChange >= 0 ? '+' : '' }}{{ hoveredAsset.dayChange?.toFixed(2) || hoveredAsset.dayChange }}%
-                       </strong>
-                    </div>
-                    <div class="tooltip-row" v-if="hoveredAsset.notional">
-                       <span>Позиция:</span>
-                       <strong>${{ (hoveredAsset.notional / 1000).toFixed(1) }}k</strong>
-                    </div>
-                 </div>
+              <div class="tooltip-details">
+                <div class="tooltip-row">
+                  <span>Тип:</span>
+                  <strong>{{ (hoveredAsset.symbol.includes('ОФЗ') || hoveredAsset.symbol.includes('Облигац')) ? 'Облигация' : 'Акция' }}</strong>
+                </div>
+                <div
+                  v-if="hoveredAsset.volatility !== undefined"
+                  class="tooltip-row"
+                >
+                  <span>Волатильность:</span>
+                  <strong>{{ hoveredAsset.volatility?.toFixed(1) || 'Н/Д' }}%</strong>
+                </div>
+                <div
+                  v-if="hoveredAsset.avgCorrelation !== undefined"
+                  class="tooltip-row"
+                >
+                  <span>Ср. корреляция:</span>
+                  <strong>{{ hoveredAsset.avgCorrelation?.toFixed(2) || 'Н/Д' }}</strong>
+                </div>
+                <div class="tooltip-row">
+                  <span>Вес в портфеле:</span>
+                  <strong>{{ hoveredAsset.allocation?.toFixed(2) || hoveredAsset.allocation }}%</strong>
+                </div>
+                <div class="tooltip-row">
+                  <span>Цена:</span>
+                  <strong>{{ hoveredAsset.price?.toLocaleString('ru-RU') || hoveredAsset.price }} ₽</strong>
+                </div>
+                <div class="tooltip-row">
+                  <span>Дневное изм.:</span>
+                  <strong :class="hoveredAsset.dayChange >= 0 ? 'text-green' : 'text-red'">
+                    {{ hoveredAsset.dayChange >= 0 ? '+' : '' }}{{ hoveredAsset.dayChange?.toFixed(2) || hoveredAsset.dayChange }}%
+                  </strong>
+                </div>
+                <div
+                  v-if="hoveredAsset.notional"
+                  class="tooltip-row"
+                >
+                  <span>Позиция:</span>
+                  <strong>${{ (hoveredAsset.notional / 1000).toFixed(1) }}k</strong>
+                </div>
               </div>
-           </div>
+            </div>
+          </div>
         </div>
-
-
       </div>
 
       <!-- RIGHT COLUMN -->
       <aside class="col-side-flex">
-        
         <!-- Asset Details -->
         <transition name="fade">
-        <div class="glass-panel inspector-card" v-if="selectedAsset">
-          <div class="panel-header">
-             <div class="inspector-header-top">
-                 <div class="asset-lg-icon" :style="{ background: selectedAsset.color }">{{ selectedAsset.symbol[0] }}</div>
-                 <div class="inspector-title">
-                     <h2>{{ selectedAsset.symbol }}</h2>
-                     <span>{{ selectedAsset.name }}</span>
-                 </div>
-             </div>
-             <div class="badge-glass">{{ (selectedAsset.symbol.includes('ОФЗ') || selectedAsset.symbol.includes('Облигац') || selectedAsset.symbol.includes('обл')) ? 'Облигация' : 'Акция' }}</div>
-          </div>
-          <div class="panel-body">
-             <div class="mini-chart-container">
-                 <div class="chart-bars">
-                    <div 
-                       v-for="(h, i) in getMockHistogram(selectedAsset.symbol)" 
-                       :key="i"
-                       class="chart-bar"
-                       :style="{ height: h + '%', backgroundColor: i > 15 ? '#4ade80' : 'rgba(255,255,255,0.2)' }"
-                    ></div>
-                 </div>
-                 <div class="chart-meta">
-                    <span class="active">1Д</span><span>1Н</span><span>1М</span><span>3М</span><span>1Г</span>
-                 </div>
-             </div>
+          <div
+            v-if="selectedAsset"
+            class="glass-panel inspector-card"
+          >
+            <div class="panel-header">
+              <div class="inspector-header-top">
+                <div
+                  class="asset-lg-icon"
+                  :style="{ background: selectedAsset.color }"
+                >
+                  {{ selectedAsset.symbol[0] }}
+                </div>
+                <div class="inspector-title">
+                  <h2>{{ selectedAsset.symbol }}</h2>
+                  <span>{{ selectedAsset.name }}</span>
+                </div>
+              </div>
+              <div class="badge-glass">
+                {{ (selectedAsset.symbol.includes('ОФЗ') || selectedAsset.symbol.includes('Облигац') || selectedAsset.symbol.includes('обл')) ? 'Облигация' : 'Акция' }}
+              </div>
+            </div>
+            <div class="panel-body">
+              <div class="mini-chart-container">
+                <div class="chart-bars">
+                  <div 
+                    v-for="(h, i) in getMockHistogram(selectedAsset.symbol)" 
+                    :key="i"
+                    class="chart-bar"
+                    :style="{ height: h + '%', backgroundColor: i > 15 ? '#4ade80' : 'rgba(255,255,255,0.2)' }"
+                  />
+                </div>
+                <div class="chart-meta">
+                  <span class="active">1Д</span><span>1Н</span><span>1М</span><span>3М</span><span>1Г</span>
+                </div>
+              </div>
 
-             <div class="inspector-grid">
+              <div class="inspector-grid">
                 <div class="metric-cell">
-                   <label>Доходность</label>
-                   <span class="text-green">+14.2%</span>
+                  <label>Доходность</label>
+                  <span class="text-green">+14.2%</span>
                 </div>
                 <div class="metric-cell">
-                   <label>Волатильность</label>
-                   <span>18.5%</span>
+                  <label>Волатильность</label>
+                  <span>18.5%</span>
                 </div>
                 <div class="metric-cell">
-                   <label>Beta</label>
-                   <span>1.12</span>
+                  <label>Beta</label>
+                  <span>1.12</span>
                 </div>
                 <div class="metric-cell">
-                   <label>Max DD</label>
-                   <span class="text-red">-12.4%</span>
+                  <label>Max DD</label>
+                  <span class="text-red">-12.4%</span>
                 </div>
-             </div>
+              </div>
              
-             <div class="micro-metrics">
+              <div class="micro-metrics">
                 <div class="micro-metric">
-                   <span class="label">Sharpe</span>
-                   <span class="value">0.92</span>
+                  <span class="label">Sharpe</span>
+                  <span class="value">0.92</span>
                 </div>
                 <div class="micro-metric">
-                   <span class="label">Sortino</span>
-                   <span class="value">1.38</span>
+                  <span class="label">Sortino</span>
+                  <span class="value">1.38</span>
                 </div>
                 <div class="micro-metric">
-                   <span class="label">Skew</span>
-                   <span class="value">-0.24</span>
+                  <span class="label">Skew</span>
+                  <span class="value">-0.24</span>
                 </div>
-             </div>
+              </div>
+            </div>
           </div>
-        </div>
         </transition>
 
         <!-- CCMV OPTIMIZATION LINK -->
         <div class="glass-panel optimizer-link-card">
-           <div class="optimizer-link-content">
-              <div class="optimizer-link-icon">
-                 <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                    <path d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
-                 </svg>
-           </div>
-              <h3 class="optimizer-link-title">Оптимизация портфеля</h3>
-              <p class="optimizer-link-description">
-                 Стохастическое оптимизирование с HJB-стратегией и CCMV модель оптимизации
-              </p>
-              <div class="optimizer-link-features">
-                 <span class="feature-tag">HJB-стратегия</span>
-                 <span class="feature-tag">CCMV</span>
-              </div>
-              <router-link to="/CCMVoptimization" class="btn-glass primary w-full optimizer-link-btn">
-                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M9 5l7 7-7 7"/>
-                 </svg>
-                 Перейти к оптимизации
-              </router-link>
-                 </div>
-              </div>
+          <div class="optimizer-link-content">
+            <div class="optimizer-link-icon">
+              <svg
+                width="48"
+                height="48"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.5"
+              >
+                <path d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+              </svg>
+            </div>
+            <h3 class="optimizer-link-title">
+              Оптимизация портфеля
+            </h3>
+            <p class="optimizer-link-description">
+              Стохастическое оптимизирование с HJB-стратегией и CCMV модель оптимизации
+            </p>
+            <div class="optimizer-link-features">
+              <span class="feature-tag">HJB-стратегия</span>
+              <span class="feature-tag">CCMV</span>
+            </div>
+            <router-link
+              to="/CCMVoptimization"
+              class="btn-glass primary w-full optimizer-link-btn"
+            >
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <path d="M9 5l7 7-7 7" />
+              </svg>
+              Перейти к оптимизации
+            </router-link>
+          </div>
+        </div>
               
         <!-- Риск и Статистика (объединенный блок) -->
         <div class="glass-panel combined-metrics metrics-panel">
-           <div class="panel-header-mini">
-              <span class="panel-title-mini">Риск и Статистика</span>
-           </div>
+          <div class="panel-header-mini">
+            <span class="panel-title-mini">Риск и Статистика</span>
+          </div>
 
-           <!-- Все метрики в виде строк -->
-           <div class="metrics-section">
-              <div class="metric-row">
-                 <div class="metric-label">
-                    <span>Expected Shortfall</span>
-                    <span class="meta-hint">CVaR 95%</span>
-                 </div>
-                 <div class="metric-value text-red">-3.78%</div>
+          <!-- Все метрики в виде строк -->
+          <div class="metrics-section">
+            <div class="metric-row">
+              <div class="metric-label">
+                <span>Expected Shortfall</span>
+                <span class="meta-hint">CVaR 95%</span>
               </div>
-              <div class="metric-row">
-                 <div class="metric-label">
-                    <span>Max Drawdown</span>
-                    <span class="meta-hint">От пика до минимума</span>
-                 </div>
-                 <div class="metric-value text-red">{{ portfolioMetrics ? (portfolioMetrics.max_drawdown * 100).toFixed(2) + '%' : '-18.24%' }}</div>
+              <div class="metric-value text-red">
+                -3.78%
               </div>
-              <div class="metric-row">
-                 <div class="metric-label">
-                    <span>Calmar Ratio</span>
-                    <span class="meta-hint">Доходность / Max DD</span>
-                 </div>
-                 <div class="metric-value text-white">1.41</div>
+            </div>
+            <div class="metric-row">
+              <div class="metric-label">
+                <span>Max Drawdown</span>
+                <span class="meta-hint">От пика до минимума</span>
               </div>
-              <div class="metric-row">
-                 <div class="metric-label">
-                    <span>Скользящая волатильность (30Д)</span>
-                    <span class="meta-hint">Годовая</span>
-                 </div>
-                 <div class="metric-value text-white">12.8%</div>
+              <div class="metric-value text-red">
+                {{ portfolioMetrics ? (portfolioMetrics.max_drawdown * 100).toFixed(2) + '%' : '-18.24%' }}
               </div>
-              <div class="metric-row">
-                 <div class="metric-label">
-                    <span>Доходность с начала года</span>
-                    <span class="meta-hint">YTD</span>
-           </div>
-                 <div class="metric-value text-green">+8.42%</div>
-                 </div>
-              <div class="metric-row">
-                 <div class="metric-label">
-                    <span>Процент выигрышей</span>
-                    <span class="meta-hint">% прибыльных</span>
-                 </div>
-                 <div class="metric-value text-green">58.3%</div>
-                 </div>
-              <div class="metric-row">
-                 <div class="metric-label">
-                    <span>Фактор прибыли</span>
-                    <span class="meta-hint">Валовая П / Валовая У</span>
-                 </div>
-                 <div class="metric-value text-white">1.87x</div>
+            </div>
+            <div class="metric-row">
+              <div class="metric-label">
+                <span>Calmar Ratio</span>
+                <span class="meta-hint">Доходность / Max DD</span>
               </div>
-              <div class="metric-row">
-                 <div class="metric-label">
-                    <span>Средняя сделка</span>
-                    <span class="meta-hint">Средняя доходность</span>
-           </div>
-                 <div class="metric-value text-white">+0.34%</div>
-                 </div>
-              <div class="metric-row">
-                 <div class="metric-label">
-                    <span>Sharpe Ratio</span>
-                    <span class="meta-hint">Скорректированный на риск</span>
-                 </div>
-                 <div class="metric-value text-green">{{ portfolioMetrics ? portfolioMetrics.sharpe_ratio.toFixed(2) : '1.52' }}</div>
+              <div class="metric-value text-white">
+                1.41
               </div>
-              <div class="metric-row">
-                 <div class="metric-label">
-                    <span>Sortino Ratio</span>
-                    <span class="meta-hint">Риск снижения</span>
-           </div>
-                 <div class="metric-value text-green">{{ portfolioMetrics ? portfolioMetrics.sortino_ratio.toFixed(2) : '2.14' }}</div>
+            </div>
+            <div class="metric-row">
+              <div class="metric-label">
+                <span>Скользящая волатильность (30Д)</span>
+                <span class="meta-hint">Годовая</span>
+              </div>
+              <div class="metric-value text-white">
+                12.8%
+              </div>
+            </div>
+            <div class="metric-row">
+              <div class="metric-label">
+                <span>Доходность с начала года</span>
+                <span class="meta-hint">YTD</span>
+              </div>
+              <div class="metric-value text-green">
+                +8.42%
+              </div>
+            </div>
+            <div class="metric-row">
+              <div class="metric-label">
+                <span>Процент выигрышей</span>
+                <span class="meta-hint">% прибыльных</span>
+              </div>
+              <div class="metric-value text-green">
+                58.3%
+              </div>
+            </div>
+            <div class="metric-row">
+              <div class="metric-label">
+                <span>Фактор прибыли</span>
+                <span class="meta-hint">Валовая П / Валовая У</span>
+              </div>
+              <div class="metric-value text-white">
+                1.87x
+              </div>
+            </div>
+            <div class="metric-row">
+              <div class="metric-label">
+                <span>Средняя сделка</span>
+                <span class="meta-hint">Средняя доходность</span>
+              </div>
+              <div class="metric-value text-white">
+                +0.34%
+              </div>
+            </div>
+            <div class="metric-row">
+              <div class="metric-label">
+                <span>Sharpe Ratio</span>
+                <span class="meta-hint">Скорректированный на риск</span>
+              </div>
+              <div class="metric-value text-green">
+                {{ portfolioMetrics ? portfolioMetrics.sharpe_ratio.toFixed(2) : '1.52' }}
+              </div>
+            </div>
+            <div class="metric-row">
+              <div class="metric-label">
+                <span>Sortino Ratio</span>
+                <span class="meta-hint">Риск снижения</span>
+              </div>
+              <div class="metric-value text-green">
+                {{ portfolioMetrics ? portfolioMetrics.sortino_ratio.toFixed(2) : '2.14' }}
+              </div>
+            </div>
+            <div class="metric-row">
+              <div class="metric-label">
+                <span>Beta</span>
+                <span class="meta-hint">относительно бенчмарка</span>
+              </div>
+              <div class="metric-value text-white">
+                {{ portfolioMetrics ? portfolioMetrics.beta.toFixed(2) : '0.87' }}
+              </div>
+            </div>
+            <div class="metric-row">
+              <div class="metric-label">
+                <span>Alpha</span>
+                <span class="meta-hint">Избыточная доходность</span>
+              </div>
+              <div
+                class="metric-value"
+                :class="portfolioMetrics?.alpha && portfolioMetrics.alpha >= 0 ? 'text-green' : 'text-red'"
+              >
+                {{ portfolioMetrics ? (portfolioMetrics.alpha >= 0 ? '+' : '') + (portfolioMetrics.alpha * 100).toFixed(2) + '%' : '+2.31%' }}
+              </div>
+            </div>
+            <div class="metric-row">
+              <div class="metric-label">
+                <span>VaR (95%)</span>
+                <span class="meta-hint">Дневной</span>
+              </div>
+              <div class="metric-value text-red">
+                {{ portfolioMetrics ? (portfolioMetrics.var_95_percent * -1).toFixed(2) + '%' : '-2.15%' }}
+              </div>
+            </div>
+            <div class="metric-row">
+              <div class="metric-label">
+                <span>Information Ratio</span>
+                <span class="meta-hint">Активная доходность / Ошибка отслеживания</span>
+              </div>
+              <div class="metric-value text-green">
+                0.94
+              </div>
+            </div>
+            <div class="metric-row">
+              <div class="metric-label">
+                <span>Treynor Ratio</span>
+                <span class="meta-hint">Доходность / Beta</span>
+              </div>
+              <div class="metric-value text-white">
+                9.67%
+              </div>
+            </div>
+            <div class="metric-row">
+              <div class="metric-label">
+                <span>Tracking Error</span>
+                <span class="meta-hint">относительно индекса</span>
+              </div>
+              <div class="metric-value text-white">
+                3.42%
+              </div>
+            </div>
+          </div>
         </div>
-              <div class="metric-row">
-                 <div class="metric-label">
-                    <span>Beta</span>
-                    <span class="meta-hint">относительно бенчмарка</span>
-    </div>
-                 <div class="metric-value text-white">{{ portfolioMetrics ? portfolioMetrics.beta.toFixed(2) : '0.87' }}</div>
-      </div>
-              <div class="metric-row">
-                 <div class="metric-label">
-                    <span>Alpha</span>
-                    <span class="meta-hint">Избыточная доходность</span>
-      </div>
-                 <div class="metric-value" :class="portfolioMetrics?.alpha && portfolioMetrics.alpha >= 0 ? 'text-green' : 'text-red'">
-                   {{ portfolioMetrics ? (portfolioMetrics.alpha >= 0 ? '+' : '') + (portfolioMetrics.alpha * 100).toFixed(2) + '%' : '+2.31%' }}
-                 </div>
-    </div>
-              <div class="metric-row">
-                 <div class="metric-label">
-                    <span>VaR (95%)</span>
-                    <span class="meta-hint">Дневной</span>
-       </div>
-                 <div class="metric-value text-red">{{ portfolioMetrics ? (portfolioMetrics.var_95_percent * -1).toFixed(2) + '%' : '-2.15%' }}</div>
-             </div>
-              <div class="metric-row">
-                 <div class="metric-label">
-                    <span>Information Ratio</span>
-                    <span class="meta-hint">Активная доходность / Ошибка отслеживания</span>
-             </div>
-                 <div class="metric-value text-green">0.94</div>
-             </div>
-              <div class="metric-row">
-                 <div class="metric-label">
-                    <span>Treynor Ratio</span>
-                    <span class="meta-hint">Доходность / Beta</span>
-             </div>
-                 <div class="metric-value text-white">9.67%</div>
-          </div>
-              <div class="metric-row">
-                 <div class="metric-label">
-                    <span>Tracking Error</span>
-                    <span class="meta-hint">относительно индекса</span>
-                </div>
-                 <div class="metric-value text-white">3.42%</div>
-             </div>
-          </div>
-       </div>
-
       </aside>
     </div>
 
@@ -616,68 +857,139 @@
 
     <!-- Portfolio Details Modal -->
     <transition name="modal-fade">
-      <div v-if="isPortfolioDetailsOpen" class="modal-overlay" @click="closePortfolioDetails">
-        <div class="modal-container" :class="{ 'modal-compact': portfolioDetailsFiltered.length <= 20 }" @click.stop>
+      <div
+        v-if="isPortfolioDetailsOpen"
+        class="modal-overlay"
+        @click="closePortfolioDetails"
+      >
+        <div
+          class="modal-container"
+          :class="{ 'modal-compact': portfolioDetailsFiltered.length <= 20 }"
+          @click.stop
+        >
           <div class="modal-header">
             <h2>Детализация портфеля ценных бумаг</h2>
-            <button class="modal-close" @click="closePortfolioDetails">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <line x1="18" y1="6" x2="6" y2="18"></line>
-                <line x1="6" y1="6" x2="18" y2="18"></line>
+            <button
+              class="modal-close"
+              @click="closePortfolioDetails"
+            >
+              <svg
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <line
+                  x1="18"
+                  y1="6"
+                  x2="6"
+                  y2="18"
+                />
+                <line
+                  x1="6"
+                  y1="6"
+                  x2="18"
+                  y2="18"
+                />
               </svg>
             </button>
           </div>
           <div class="modal-body">
             <div class="modal-search">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <circle cx="11" cy="11" r="8"/>
-                <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <circle
+                  cx="11"
+                  cy="11"
+                  r="8"
+                />
+                <line
+                  x1="21"
+                  y1="21"
+                  x2="16.65"
+                  y2="16.65"
+                />
               </svg>
               <input 
-                type="text" 
                 v-model="portfolioDetailsSearch" 
+                type="text" 
                 placeholder="Поиск по инструменту или названию..."
                 class="modal-search-input"
-              />
+              >
             </div>
             <div class="modal-table-container">
               <table class="glass-table modal-table">
                 <thead>
                   <tr>
                     <th>Инструмент</th>
-                    <th class="text-right">Цена</th>
-                    <th class="text-right">День %</th>
-                    <th class="text-right">Позиция</th>
-                    <th class="text-right">Вес</th>
-                    <th class="text-right">Таргет</th>
-                    <th class="text-right">Дрифт</th>
+                    <th class="text-right">
+                      Цена
+                    </th>
+                    <th class="text-right">
+                      День %
+                    </th>
+                    <th class="text-right">
+                      Позиция
+                    </th>
+                    <th class="text-right">
+                      Вес
+                    </th>
+                    <th class="text-right">
+                      Таргет
+                    </th>
+                    <th class="text-right">
+                      Дрифт
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
                   <tr 
                     v-for="pos in portfolioDetailsFiltered" 
                     :key="pos.symbol"
-                    @click="selectAsset(pos); closePortfolioDetails()"
                     :class="{ active: selectedAsset?.symbol === pos.symbol }"
+                    @click="selectAsset(pos); closePortfolioDetails()"
                   >
                     <td>
                       <div class="asset-cell">
-                        <div class="asset-icon" :style="{ background: pos.color }">{{ pos.symbol[0] }}</div>
+                        <div
+                          class="asset-icon"
+                          :style="{ background: pos.color }"
+                        >
+                          {{ pos.symbol[0] }}
+                        </div>
                         <div class="asset-info">
                           <span class="symbol">{{ pos.symbol }}</span>
                           <span class="name">{{ pos.name }}</span>
                         </div>
                       </div>
                     </td>
-                    <td class="text-right mono">${{ pos.price }}</td>
+                    <td class="text-right mono">
+                      ${{ pos.price }}
+                    </td>
                     <td class="text-right mono">
                       <span :class="['change-pill', pos.dayChange > 0 ? 'text-green' : 'text-red']">{{ pos.dayChange > 0 ? '+' : '' }}{{ pos.dayChange }}%</span>
                     </td>
-                    <td class="text-right mono opacity-80">${{ (pos.notional / 1000).toFixed(1) }}k</td>
-                    <td class="text-right mono font-bold">{{ pos.allocation }}%</td>
-                    <td class="text-right mono opacity-50">{{ pos.targetAllocation }}%</td>
+                    <td class="text-right mono opacity-80">
+                      ${{ (pos.notional / 1000).toFixed(1) }}k
+                    </td>
+                    <td class="text-right mono font-bold">
+                      {{ pos.allocation }}%
+                    </td>
+                    <td class="text-right mono opacity-50">
+                      {{ pos.targetAllocation }}%
+                    </td>
                     <td class="text-right">
-                      <div :class="['drift-val', getDriftClass(pos)]">{{ (pos.allocation - pos.targetAllocation).toFixed(1) }}%</div>
+                      <div :class="['drift-val', getDriftClass(pos)]">
+                        {{ (pos.allocation - pos.targetAllocation).toFixed(1) }}%
+                      </div>
                     </td>
                   </tr>
                 </tbody>
@@ -696,7 +1008,11 @@
 
     <!-- Toast -->
     <transition name="slide-up">
-      <div v-if="toast.show" class="toast-notification" :class="'toast-' + toast.type">
+      <div
+        v-if="toast.show"
+        class="toast-notification"
+        :class="'toast-' + toast.type"
+      >
         {{ toast.message }}
       </div>
     </transition>

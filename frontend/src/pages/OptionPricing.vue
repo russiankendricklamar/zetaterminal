@@ -1,12 +1,15 @@
 <!-- src/pages/OptionPricingAnalyzer.vue -->
 <template>
   <div class="page-container custom-scroll">
-    
     <!-- Header -->
     <div class="section-header">
       <div class="header-left">
-        <h1 class="section-title">Справедливая стоимость опционов</h1>
-        <p class="section-subtitle">Black-Scholes, модель Хестона, процессы Леви, FFT-ценообразование</p>
+        <h1 class="section-title">
+          Справедливая стоимость опционов
+        </h1>
+        <p class="section-subtitle">
+          Black-Scholes, модель Хестона, процессы Леви, FFT-ценообразование
+        </p>
       </div>
       
       <div class="header-actions">
@@ -14,31 +17,34 @@
           <div class="control-group">
             <label class="control-label">Реестр:</label>
             <input 
-              type="file" 
+              id="excel-upload" 
               ref="fileInputRef"
-              @change="handleFileUpload" 
+              type="file" 
               accept=".xlsx,.xls"
               style="display: none"
-              id="excel-upload"
-            />
+              @change="handleFileUpload"
+            >
             <button 
-              @click="() => { if (fileInputRef) fileInputRef.click() }" 
-              class="btn-secondary"
+              class="btn-secondary" 
               title="Загрузить реестр опционов из Excel"
+              @click="() => { if (fileInputRef) fileInputRef.click() }"
             >
               Загрузить Excel
             </button>
           </div>
         </div>
         <div class="glass-pill status-pill">
-          <span class="dot" :class="params.optionType === 'call' ? 'bg-green' : 'bg-red'"></span>
+          <span
+            class="dot"
+            :class="params.optionType === 'call' ? 'bg-green' : 'bg-red'"
+          />
           <span class="status-label">Модель: <b class="text-white">{{ params.model === 'bsm' ? 'Black-Scholes' : 'Heston' }}</b></span>
         </div>
         <button 
-          @click="showHelpModal = true" 
-          class="btn-secondary"
+          class="btn-secondary" 
           style="font-size: 11px; padding: 6px 12px;"
           title="Справка по моделям ценообразования"
+          @click="showHelpModal = true"
         >
           📖 Справка
         </button>
@@ -46,52 +52,63 @@
     </div>
 
     <!-- Error Message -->
-    <div v-if="error" class="glass-card full-width" style="margin-bottom: 24px; background: rgba(239, 68, 68, 0.1); border-color: rgba(239, 68, 68, 0.3);">
+    <div
+      v-if="error"
+      class="glass-card full-width"
+      style="margin-bottom: 24px; background: rgba(239, 68, 68, 0.1); border-color: rgba(239, 68, 68, 0.3);"
+    >
       <div style="padding: 12px; color: rgba(239, 68, 68, 0.9); font-size: 13px;">
         {{ error }}
       </div>
     </div>
 
     <!-- Registry Table (if loaded) -->
-    <div v-if="loadedOptions.length > 0" class="glass-card full-width" style="margin-bottom: 24px;">
-      <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
+    <div
+      v-if="loadedOptions.length > 0"
+      class="glass-card full-width"
+      style="margin-bottom: 24px;"
+    >
+      <div
+        class="card-header"
+        style="display: flex; justify-content: space-between; align-items: center;"
+      >
         <div>
           <h3>Реестр опционов</h3>
           <span class="card-subtitle">Загружено опционов: {{ loadedOptions.length }}</span>
         </div>
         <div style="display: flex; gap: 8px;">
           <button 
-            @click="calculateAllOptions" 
-            class="btn-secondary"
+            class="btn-secondary" 
             :disabled="calculatingAll"
             style="font-size: 11px; padding: 6px 12px;"
+            @click="calculateAllOptions"
           >
             <span v-if="!calculatingAll">Рассчитать все</span>
             <span v-else>↺ Считаю...</span>
           </button>
           <button 
-            @click="exportRegistryToExcel" 
-            class="btn-secondary"
+            class="btn-secondary" 
             :disabled="loadedOptions.length === 0"
             style="font-size: 11px; padding: 6px 12px;"
             title="Выгрузить реестр в Excel (включая все греки и расчеты)"
+            @click="exportRegistryToExcel"
           >
             📥 Выгрузить Excel
           </button>
           <button 
-            @click="saveRegistryToParquetHandler" 
-            class="btn-secondary"
+            class="btn-secondary" 
             :disabled="loadedOptions.length === 0 || savingParquet"
             style="font-size: 11px; padding: 6px 12px;"
             title="Сохранить реестр в Parquet"
+            @click="saveRegistryToParquetHandler"
           >
             <span v-if="!savingParquet">💾 Сохранить в DB</span>
             <span v-else>↺ Сохранение...</span>
           </button>
           <button 
-            @click="clearRegistry" 
-            class="btn-secondary"
+            class="btn-secondary" 
             style="font-size: 11px; padding: 6px 12px; background: rgba(239, 68, 68, 0.2); border-color: rgba(239, 68, 68, 0.3);"
+            @click="clearRegistry"
           >
             ✕ Очистить
           </button>
@@ -109,8 +126,12 @@
               <th>Ставка (r)</th>
               <th>Время (T)</th>
               <th>Дата экспирации</th>
-              <th v-if="optionResults.length > 0">Цена</th>
-              <th v-if="optionResults.length > 0">Дельта</th>
+              <th v-if="optionResults.length > 0">
+                Цена
+              </th>
+              <th v-if="optionResults.length > 0">
+                Дельта
+              </th>
               <th>Действие</th>
             </tr>
           </thead>
@@ -123,23 +144,41 @@
             >
               <td>{{ idx + 1 }}</td>
               <td>{{ option.optionType === 'call' ? 'Call' : 'Put' }}</td>
-              <td class="mono">{{ option.S ? option.S.toFixed(2) : '-' }}</td>
-              <td class="mono">{{ option.K ? option.K.toFixed(2) : '-' }}</td>
-              <td class="mono">{{ option.sigma ? option.sigma.toFixed(2) + '%' : '-' }}</td>
-              <td class="mono">{{ option.r ? option.r.toFixed(2) + '%' : '-' }}</td>
-              <td class="mono">{{ option.T ? option.T.toFixed(4) : '-' }}</td>
-              <td class="mono">{{ option.expirationDate || '-' }}</td>
-              <td v-if="optionResults.length > 0 && optionResults[idx]" class="mono accent">
+              <td class="mono">
+                {{ option.S ? option.S.toFixed(2) : '-' }}
+              </td>
+              <td class="mono">
+                {{ option.K ? option.K.toFixed(2) : '-' }}
+              </td>
+              <td class="mono">
+                {{ option.sigma ? option.sigma.toFixed(2) + '%' : '-' }}
+              </td>
+              <td class="mono">
+                {{ option.r ? option.r.toFixed(2) + '%' : '-' }}
+              </td>
+              <td class="mono">
+                {{ option.T ? option.T.toFixed(4) : '-' }}
+              </td>
+              <td class="mono">
+                {{ option.expirationDate || '-' }}
+              </td>
+              <td
+                v-if="optionResults.length > 0 && optionResults[idx]"
+                class="mono accent"
+              >
                 {{ optionResults[idx]?.price ? optionResults[idx].price.toFixed(4) : '-' }}
               </td>
-              <td v-if="optionResults.length > 0 && optionResults[idx]" class="mono">
+              <td
+                v-if="optionResults.length > 0 && optionResults[idx]"
+                class="mono"
+              >
                 {{ optionResults[idx]?.delta ? optionResults[idx].delta.toFixed(4) : '-' }}
               </td>
               <td>
                 <button 
-                  @click.stop="loadOptionToForm(idx)" 
-                  class="btn-small"
+                  class="btn-small" 
                   title="Загрузить в форму"
+                  @click.stop="loadOptionToForm(idx)"
                 >
                   Загрузить
                 </button>
@@ -151,435 +190,709 @@
     </div>
 
     <div class="dashboard-grid">
-        
-        <!-- LEFT PANEL: Controls -->
-        <aside class="left-panel">
-            
-            <!-- Parameters Card -->
-            <div class="glass-card panel">
-                <div class="panel-header"><h3>Входные параметры</h3></div>
+      <!-- LEFT PANEL: Controls -->
+      <aside class="left-panel">
+        <!-- Parameters Card -->
+        <div class="glass-card panel">
+          <div class="panel-header">
+            <h3>Входные параметры</h3>
+          </div>
                 
-                <div class="controls-form">
-                    <!-- Asset Selection -->
-                    <div class="input-group">
-                        <label class="lbl">Актив</label>
-                        <div class="custom-select-wrapper" @click="toggleAssetDropdown">
-                            <div class="custom-select" :class="{ 'open': assetDropdownOpen }">
-                                <div class="select-selected">
-                                    <span class="select-icon icon-asset">{{ getAssetIcon(params.asset) }}</span>
-                                    <span class="select-text">{{ getAssetName(params.asset) }}</span>
-                                    <svg class="select-arrow" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                        <polyline points="6 9 12 15 18 9" />
-                                    </svg>
-                                </div>
-                                <transition name="dropdown">
-                                    <div class="select-options" v-if="assetDropdownOpen">
-                                        <div 
-                                            v-for="asset in availableAssets" 
-                                            :key="asset.value"
-                                            class="select-option" 
-                                            :class="{ 'selected': params.asset === asset.value }"
-                                            @click.stop="selectAsset(asset.value)"
-                                        >
-                                            <span class="option-icon icon-asset">{{ asset.icon }}</span>
-                                            <div style="flex: 1; display: flex; flex-direction: column; gap: 2px;">
-                                                <span class="option-text">{{ asset.label }}</span>
-                                                <span class="option-subtext" v-if="asset.description">{{ asset.description }}</span>
-                                            </div>
-                                            <span class="option-badge" v-if="params.asset === asset.value">✓</span>
-                                        </div>
-                                    </div>
-                                </transition>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Spot Price -->
-                    <div class="input-group">
-                        <label class="lbl">S (Spot)</label>
-                        <input v-model.number="params.S" type="number" step="0.01" class="glass-input" @change="calculatePrice" />
-                    </div>
-                    
-                    <!-- Strike -->
-                    <div class="input-group">
-                        <label class="lbl">K (Strike)</label>
-                        <input v-model.number="params.K" type="number" step="0.01" class="glass-input" @change="calculatePrice" />
-                    </div>
-
-                    <!-- Rate -->
-                    <div class="input-group">
-                        <label class="lbl">r (Rate), %</label>
-                        <input v-model.number="params.r" type="number" step="0.01" class="glass-input" @change="calculatePrice" />
-                    </div>
-
-                    <!-- Volatility -->
-                    <div class="input-group">
-                        <label class="lbl">σ (Vol), %</label>
-                        <input v-model.number="params.sigma" type="number" step="0.01" class="glass-input" @change="calculatePrice" />
-                    </div>
-
-                    <!-- Valuation Date -->
-                    <div class="input-group">
-                        <label class="lbl">Дата оценки</label>
-                        <input v-model="params.valuationDate" type="date" class="glass-input" @change="updateTimeFromDates" />
-                    </div>
-
-                    <!-- Expiration Date -->
-                    <div class="input-group">
-                        <label class="lbl">Дата экспирации</label>
-                        <input v-model="params.expirationDate" type="date" class="glass-input" @change="updateTimeFromDates" />
-                    </div>
-
-                    <!-- Time to Maturity -->
-                    <div class="input-group">
-                        <label class="lbl">T (Time), лет</label>
-                        <input v-model.number="params.T" type="number" step="0.01" min="0.001" class="glass-input" @change="calculatePrice" />
-                    </div>
-
-                    <!-- Dividend Yield -->
-                    <div class="input-group">
-                        <label class="lbl">q (Див. доходность), %</label>
-                        <input v-model.number="params.q" type="number" step="0.01" class="glass-input" @change="calculatePrice" />
-                    </div>
-
-                    <!-- Exercise Style -->
-                    <div class="input-group">
-                        <label class="lbl">Стиль исполнения</label>
-                        <div class="custom-select-wrapper" @click="toggleExerciseStyleDropdown">
-                            <div class="custom-select" :class="{ 'open': exerciseStyleDropdownOpen }">
-                                <div class="select-selected">
-                                    <span class="select-icon" :class="getExerciseStyleIconClass(params.exerciseStyle)">
-                                        {{ getExerciseStyleIcon(params.exerciseStyle) }}
-                                    </span>
-                                    <span class="select-text">{{ getExerciseStyleName(params.exerciseStyle) }}</span>
-                                    <svg class="select-arrow" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                        <polyline points="6 9 12 15 18 9" />
-                                    </svg>
-                                </div>
-                                <transition name="dropdown">
-                                    <div class="select-options" v-if="exerciseStyleDropdownOpen">
-                                        <div 
-                                            v-for="style in availableExerciseStyles" 
-                                            :key="style.value"
-                                            class="select-option" 
-                                            :class="{ 'selected': params.exerciseStyle === style.value }"
-                                            @click.stop="selectExerciseStyle(style.value)"
-                                        >
-                                            <span class="option-icon" :class="style.iconClass">{{ style.icon }}</span>
-                                            <div style="flex: 1; display: flex; flex-direction: column; gap: 2px;">
-                                                <span class="option-text">{{ style.label }}</span>
-                                                <span class="option-subtext">{{ style.description }}</span>
-                                            </div>
-                                            <span class="option-badge" v-if="params.exerciseStyle === style.value">✓</span>
-                                        </div>
-                                    </div>
-                                </transition>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Option Type -->
-                    <div class="input-group">
-                        <label class="lbl">Тип опциона</label>
-                        <div class="custom-select-wrapper" @click="toggleOptionTypeDropdown">
-                            <div class="custom-select" :class="{ 'open': optionTypeDropdownOpen }">
-                                <div class="select-selected">
-                                    <span class="select-icon" :class="params.optionType === 'call' ? 'icon-call' : 'icon-put'">
-                                        {{ params.optionType === 'call' ? '↑' : '↓' }}
-                                    </span>
-                                    <span class="select-text">{{ params.optionType === 'call' ? 'Call' : 'Put' }}</span>
-                                    <svg class="select-arrow" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                        <polyline points="6 9 12 15 18 9" />
-                                    </svg>
-                                </div>
-                                <transition name="dropdown">
-                                    <div class="select-options" v-if="optionTypeDropdownOpen">
-                                        <div 
-                                            class="select-option" 
-                                            :class="{ 'selected': params.optionType === 'call' }"
-                                            @click.stop="selectOptionType('call')"
-                                        >
-                                            <span class="option-icon icon-call">↑</span>
-                                            <span class="option-text">Call</span>
-                                            <span class="option-badge" v-if="params.optionType === 'call'">✓</span>
-                                        </div>
-                                        <div 
-                                            class="select-option" 
-                                            :class="{ 'selected': params.optionType === 'put' }"
-                                            @click.stop="selectOptionType('put')"
-                                        >
-                                            <span class="option-icon icon-put">↓</span>
-                                            <span class="option-text">Put</span>
-                                            <span class="option-badge" v-if="params.optionType === 'put'">✓</span>
-                                        </div>
-                                    </div>
-                                </transition>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Model Type -->
-                    <div class="input-group">
-                        <label class="lbl">Модель</label>
-                        <div class="custom-select-wrapper" @click="toggleModelDropdown">
-                            <div class="custom-select" :class="{ 'open': modelDropdownOpen }">
-                                <div class="select-selected">
-                                    <span class="select-icon" :class="params.model === 'bsm' ? 'icon-bsm' : 'icon-heston'">
-                                        {{ params.model === 'bsm' ? 'BS' : 'H' }}
-                                    </span>
-                                    <span class="select-text">{{ params.model === 'bsm' ? 'Black-Scholes' : 'Heston' }}</span>
-                                    <svg class="select-arrow" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                        <polyline points="6 9 12 15 18 9" />
-                                    </svg>
-                                </div>
-                                <transition name="dropdown">
-                                    <div class="select-options" v-if="modelDropdownOpen">
-                                        <div 
-                                            class="select-option" 
-                                            :class="{ 'selected': params.model === 'bsm' }"
-                                            @click.stop="selectModel('bsm')"
-                                        >
-                                            <span class="option-icon icon-bsm">BS</span>
-                                            <div style="flex: 1; display: flex; flex-direction: column; gap: 2px;">
-                                                <span class="option-text">Black-Scholes</span>
-                                                <span class="option-subtext">BSM</span>
-                                            </div>
-                                            <span class="option-badge" v-if="params.model === 'bsm'">✓</span>
-                                        </div>
-                                        <div 
-                                            class="select-option" 
-                                            :class="{ 'selected': params.model === 'heston' }"
-                                            @click.stop="selectModel('heston')"
-                                        >
-                                            <span class="option-icon icon-heston">H</span>
-                                            <div style="flex: 1; display: flex; flex-direction: column; gap: 2px;">
-                                                <span class="option-text">Heston</span>
-                                                <span class="option-subtext">Stochastic Volatility</span>
-                                            </div>
-                                            <span class="option-badge" v-if="params.model === 'heston'">✓</span>
-                                        </div>
-                                        <div 
-                                            class="select-option" 
-                                            :class="{ 'selected': params.model === 'merton' }"
-                                            @click.stop="selectModel('merton')"
-                                        >
-                                            <span class="option-icon icon-merton">M</span>
-                                            <div style="flex: 1; display: flex; flex-direction: column; gap: 2px;">
-                                                <span class="option-text">Merton</span>
-                                                <span class="option-subtext">Jump Diffusion</span>
-                                            </div>
-                                            <span class="option-badge" v-if="params.model === 'merton'">✓</span>
-                                        </div>
-                                        <div 
-                                            class="select-option" 
-                                            :class="{ 'selected': params.model === 'bates' }"
-                                            @click.stop="selectModel('bates')"
-                                        >
-                                            <span class="option-icon icon-bates">B</span>
-                                            <div style="flex: 1; display: flex; flex-direction: column; gap: 2px;">
-                                                <span class="option-text">Bates</span>
-                                                <span class="option-subtext">Heston + Jumps</span>
-                                            </div>
-                                            <span class="option-badge" v-if="params.model === 'bates'">✓</span>
-                                        </div>
-                                        <div 
-                                            class="select-option" 
-                                            :class="{ 'selected': params.model === 'sabr' }"
-                                            @click.stop="selectModel('sabr')"
-                                        >
-                                            <span class="option-icon icon-sabr">S</span>
-                                            <div style="flex: 1; display: flex; flex-direction: column; gap: 2px;">
-                                                <span class="option-text">SABR</span>
-                                                <span class="option-subtext">Stochastic Alpha Beta Rho</span>
-                                            </div>
-                                            <span class="option-badge" v-if="params.model === 'sabr'">✓</span>
-                                        </div>
-                                        <div 
-                                            class="select-option" 
-                                            :class="{ 'selected': params.model === 'vg' }"
-                                            @click.stop="selectModel('vg')"
-                                        >
-                                            <span class="option-icon icon-vg">VG</span>
-                                            <div style="flex: 1; display: flex; flex-direction: column; gap: 2px;">
-                                                <span class="option-text">Variance Gamma</span>
-                                                <span class="option-subtext">VG Process</span>
-                                            </div>
-                                            <span class="option-badge" v-if="params.model === 'vg'">✓</span>
-                                        </div>
-                                    </div>
-                                </transition>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-        </aside>
-
-        <!-- RIGHT PANEL: Analysis -->
-        <main class="main-panel">
-            
-            <!-- Price & Greeks Stats -->
-            <transition name="fade">
-            <div class="glass-card chart-card" v-if="results.price !== null">
-                 <div class="chart-header">
-                     <h3>Цена и греки</h3>
-                 </div>
-                 <div class="stats-list">
-                     <div class="stat-item price-highlight">
-                         <div class="stat-head">
-                             <span class="stat-icon"></span> 
-                             <span class="s-name">Цена опциона</span>
-                         </div>
-                         <span class="val mono" style="font-size: 16px; color: #3b82f6;">{{ results.price.toFixed(4) }}</span>
-                     </div>
-
-                     <div class="divider"></div>
-
-                     <div class="stat-item">
-                         <div class="stat-head">
-                             <span class="greek-symbol">Δ</span> 
-                             <span class="s-name">Дельта</span>
-                         </div>
-                         <span class="val mono">{{ results.delta?.toFixed(4) }}</span>
-                     </div>
-                     <div class="stat-item">
-                         <div class="stat-head">
-                             <span class="greek-symbol">Γ</span> 
-                             <span class="s-name">Гамма</span>
-                         </div>
-                         <span class="val mono">{{ results.gamma?.toFixed(6) }}</span>
-                     </div>
-                     <div class="stat-item">
-                         <div class="stat-head">
-                             <span class="greek-symbol">ν</span> 
-                             <span class="s-name">Вега</span>
-                         </div>
-                         <span class="val mono">{{ results.vega?.toFixed(4) }}</span>
-                     </div>
-                     <div class="stat-item">
-                         <div class="stat-head">
-                             <span class="greek-symbol">Θ</span> 
-                             <span class="s-name">Тета</span>
-                         </div>
-                         <span class="val mono" :class="(results.theta || 0) < 0 ? 'text-red' : 'text-green'">{{ results.theta?.toFixed(4) || '0.0000' }}</span>
-                     </div>
-                     <div class="stat-item">
-                         <div class="stat-head">
-                             <span class="greek-symbol">ρ</span> 
-                             <span class="s-name">Ро</span>
-                         </div>
-                         <span class="val mono">{{ results.rho?.toFixed(4) }}</span>
-                     </div>
-                 </div>
-            </div>
-            </transition>
-            
-            <!-- Price Decomposition -->
-            <div class="glass-card chart-card">
-                <div class="chart-header">
-                    <h3>Декомпозиция стоимости</h3>
-                </div>
-
-                <div class="decomposition-grid" v-if="results.price !== null">
-                    <div class="decomp-item">
-                        <div class="decomp-label">Внутренняя стоимость</div>
-                        <div class="decomp-value">{{ results.intrinsicValue?.toFixed(4) || '0.0000' }}</div>
-                        <div class="decomp-percent">{{ results.price ? ((results.intrinsicValue || 0) / results.price * 100).toFixed(1) : '0.0' }}%</div>
-                    </div>
-                    <div class="decomp-item">
-                        <div class="decomp-label">Временная стоимость</div>
-                        <div class="decomp-value">{{ results.timeValue?.toFixed(4) || '0.0000' }}</div>
-                        <div class="decomp-percent">{{ results.price ? ((results.timeValue || 0) / results.price * 100).toFixed(1) : '0.0' }}%</div>
-                    </div>
-                    <div class="decomp-item">
-                        <div class="decomp-label">Moneyness</div>
-                        <div class="decomp-value">{{ (params.S / params.K).toFixed(4) }}</div>
-                        <div class="decomp-percent" :class="params.S/params.K > 1 ? 'text-green' : params.S/params.K < 1 ? 'text-red' : ''">
-                            {{ params.S > params.K ? 'ITM' : params.S < params.K ? 'OTM' : 'ATM' }}
-                        </div>
-                    </div>
-                </div>
-
-                <div class="empty-state" v-else>
-                    <span>Рассчитайте стоимость для анализа</span>
-                </div>
-            </div>
-
-            <!-- Greeks Sensitivity -->
-            <div class="glass-card chart-card mt-4">
-                <div class="chart-header">
-                    <h3>Матрица чувствительности (S × σ)</h3>
-                </div>
-                
-                <div class="sensitivity-table" v-if="sensitivityMatrix.length">
-                    <table class="data-table">
-                        <thead>
-                            <tr>
-                                <th>S \ σ</th>
-                                <th>σ - 5%</th>
-                                <th>σ - 2.5%</th>
-                                <th>σ базовое</th>
-                                <th>σ + 2.5%</th>
-                                <th>σ + 5%</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr v-for="(row, i) in sensitivityMatrix" :key="i">
-                                <td class="row-header">{{ [-20, -10, 0, 10, 20][i] }}%</td>
-                                <td v-for="(val, j) in row" :key="j" :class="{ positive: results.price !== null && val > results.price, negative: results.price !== null && val < results.price }">
-                                    {{ val.toFixed(3) }}
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-
-                <div class="empty-state" v-else>
-                    <span>Матрица будет заполнена после расчёта</span>
-                </div>
-            </div>
-
-            <!-- Payoff Diagram -->
-            <div class="glass-card chart-card mt-4">
-                <div class="chart-header">
-                    <h3>Payoff диаграмма</h3>
-                </div>
-                
-                <div class="chart-container">
-                    <svg v-if="payoffData.length" viewBox="0 0 800 300" preserveAspectRatio="none" class="payoff-svg">
-                        <!-- Grid -->
-                        <line x1="0" y1="150" x2="800" y2="150" stroke="rgba(255,255,255,0.1)" stroke-dasharray="2" />
-                        <line v-for="x in [0, 200, 400, 600, 800]" :key="x" :x1="x" y1="140" :x2="x" y2="160" stroke="rgba(255,255,255,0.2)" />
-                        
-                        <!-- Strike line -->
-                        <line :x1="strikeX" y1="0" :x2="strikeX" y2="300" stroke="rgba(148, 163, 184, 0.3)" stroke-dasharray="4" />
-                        
-                        <!-- Payoff line -->
-                        <polyline :points="payoffPath" fill="none" stroke="#3b82f6" stroke-width="3" stroke-linejoin="round" />
-                        
-                        <!-- Current price marker -->
-                        <circle :cx="currentPriceX" :cy="currentPriceY" r="5" fill="#ef4444" />
+          <div class="controls-form">
+            <!-- Asset Selection -->
+            <div class="input-group">
+              <label class="lbl">Актив</label>
+              <div
+                class="custom-select-wrapper"
+                @click="toggleAssetDropdown"
+              >
+                <div
+                  class="custom-select"
+                  :class="{ 'open': assetDropdownOpen }"
+                >
+                  <div class="select-selected">
+                    <span class="select-icon icon-asset">{{ getAssetIcon(params.asset) }}</span>
+                    <span class="select-text">{{ getAssetName(params.asset) }}</span>
+                    <svg
+                      class="select-arrow"
+                      width="12"
+                      height="12"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                    >
+                      <polyline points="6 9 12 15 18 9" />
                     </svg>
-                    <div v-else class="empty-state">
-                        <span>График будет построен после расчёта</span>
+                  </div>
+                  <transition name="dropdown">
+                    <div
+                      v-if="assetDropdownOpen"
+                      class="select-options"
+                    >
+                      <div 
+                        v-for="asset in availableAssets" 
+                        :key="asset.value"
+                        class="select-option" 
+                        :class="{ 'selected': params.asset === asset.value }"
+                        @click.stop="selectAsset(asset.value)"
+                      >
+                        <span class="option-icon icon-asset">{{ asset.icon }}</span>
+                        <div style="flex: 1; display: flex; flex-direction: column; gap: 2px;">
+                          <span class="option-text">{{ asset.label }}</span>
+                          <span
+                            v-if="asset.description"
+                            class="option-subtext"
+                          >{{ asset.description }}</span>
+                        </div>
+                        <span
+                          v-if="params.asset === asset.value"
+                          class="option-badge"
+                        >✓</span>
+                      </div>
                     </div>
+                  </transition>
                 </div>
+              </div>
             </div>
 
-        </main>
+            <!-- Spot Price -->
+            <div class="input-group">
+              <label class="lbl">S (Spot)</label>
+              <input
+                v-model.number="params.S"
+                type="number"
+                step="0.01"
+                class="glass-input"
+                @change="calculatePrice"
+              >
+            </div>
+                    
+            <!-- Strike -->
+            <div class="input-group">
+              <label class="lbl">K (Strike)</label>
+              <input
+                v-model.number="params.K"
+                type="number"
+                step="0.01"
+                class="glass-input"
+                @change="calculatePrice"
+              >
+            </div>
+
+            <!-- Rate -->
+            <div class="input-group">
+              <label class="lbl">r (Rate), %</label>
+              <input
+                v-model.number="params.r"
+                type="number"
+                step="0.01"
+                class="glass-input"
+                @change="calculatePrice"
+              >
+            </div>
+
+            <!-- Volatility -->
+            <div class="input-group">
+              <label class="lbl">σ (Vol), %</label>
+              <input
+                v-model.number="params.sigma"
+                type="number"
+                step="0.01"
+                class="glass-input"
+                @change="calculatePrice"
+              >
+            </div>
+
+            <!-- Valuation Date -->
+            <div class="input-group">
+              <label class="lbl">Дата оценки</label>
+              <input
+                v-model="params.valuationDate"
+                type="date"
+                class="glass-input"
+                @change="updateTimeFromDates"
+              >
+            </div>
+
+            <!-- Expiration Date -->
+            <div class="input-group">
+              <label class="lbl">Дата экспирации</label>
+              <input
+                v-model="params.expirationDate"
+                type="date"
+                class="glass-input"
+                @change="updateTimeFromDates"
+              >
+            </div>
+
+            <!-- Time to Maturity -->
+            <div class="input-group">
+              <label class="lbl">T (Time), лет</label>
+              <input
+                v-model.number="params.T"
+                type="number"
+                step="0.01"
+                min="0.001"
+                class="glass-input"
+                @change="calculatePrice"
+              >
+            </div>
+
+            <!-- Dividend Yield -->
+            <div class="input-group">
+              <label class="lbl">q (Див. доходность), %</label>
+              <input
+                v-model.number="params.q"
+                type="number"
+                step="0.01"
+                class="glass-input"
+                @change="calculatePrice"
+              >
+            </div>
+
+            <!-- Exercise Style -->
+            <div class="input-group">
+              <label class="lbl">Стиль исполнения</label>
+              <div
+                class="custom-select-wrapper"
+                @click="toggleExerciseStyleDropdown"
+              >
+                <div
+                  class="custom-select"
+                  :class="{ 'open': exerciseStyleDropdownOpen }"
+                >
+                  <div class="select-selected">
+                    <span
+                      class="select-icon"
+                      :class="getExerciseStyleIconClass(params.exerciseStyle)"
+                    >
+                      {{ getExerciseStyleIcon(params.exerciseStyle) }}
+                    </span>
+                    <span class="select-text">{{ getExerciseStyleName(params.exerciseStyle) }}</span>
+                    <svg
+                      class="select-arrow"
+                      width="12"
+                      height="12"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                    >
+                      <polyline points="6 9 12 15 18 9" />
+                    </svg>
+                  </div>
+                  <transition name="dropdown">
+                    <div
+                      v-if="exerciseStyleDropdownOpen"
+                      class="select-options"
+                    >
+                      <div 
+                        v-for="style in availableExerciseStyles" 
+                        :key="style.value"
+                        class="select-option" 
+                        :class="{ 'selected': params.exerciseStyle === style.value }"
+                        @click.stop="selectExerciseStyle(style.value)"
+                      >
+                        <span
+                          class="option-icon"
+                          :class="style.iconClass"
+                        >{{ style.icon }}</span>
+                        <div style="flex: 1; display: flex; flex-direction: column; gap: 2px;">
+                          <span class="option-text">{{ style.label }}</span>
+                          <span class="option-subtext">{{ style.description }}</span>
+                        </div>
+                        <span
+                          v-if="params.exerciseStyle === style.value"
+                          class="option-badge"
+                        >✓</span>
+                      </div>
+                    </div>
+                  </transition>
+                </div>
+              </div>
+            </div>
+
+            <!-- Option Type -->
+            <div class="input-group">
+              <label class="lbl">Тип опциона</label>
+              <div
+                class="custom-select-wrapper"
+                @click="toggleOptionTypeDropdown"
+              >
+                <div
+                  class="custom-select"
+                  :class="{ 'open': optionTypeDropdownOpen }"
+                >
+                  <div class="select-selected">
+                    <span
+                      class="select-icon"
+                      :class="params.optionType === 'call' ? 'icon-call' : 'icon-put'"
+                    >
+                      {{ params.optionType === 'call' ? '↑' : '↓' }}
+                    </span>
+                    <span class="select-text">{{ params.optionType === 'call' ? 'Call' : 'Put' }}</span>
+                    <svg
+                      class="select-arrow"
+                      width="12"
+                      height="12"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                    >
+                      <polyline points="6 9 12 15 18 9" />
+                    </svg>
+                  </div>
+                  <transition name="dropdown">
+                    <div
+                      v-if="optionTypeDropdownOpen"
+                      class="select-options"
+                    >
+                      <div 
+                        class="select-option" 
+                        :class="{ 'selected': params.optionType === 'call' }"
+                        @click.stop="selectOptionType('call')"
+                      >
+                        <span class="option-icon icon-call">↑</span>
+                        <span class="option-text">Call</span>
+                        <span
+                          v-if="params.optionType === 'call'"
+                          class="option-badge"
+                        >✓</span>
+                      </div>
+                      <div 
+                        class="select-option" 
+                        :class="{ 'selected': params.optionType === 'put' }"
+                        @click.stop="selectOptionType('put')"
+                      >
+                        <span class="option-icon icon-put">↓</span>
+                        <span class="option-text">Put</span>
+                        <span
+                          v-if="params.optionType === 'put'"
+                          class="option-badge"
+                        >✓</span>
+                      </div>
+                    </div>
+                  </transition>
+                </div>
+              </div>
+            </div>
+
+            <!-- Model Type -->
+            <div class="input-group">
+              <label class="lbl">Модель</label>
+              <div
+                class="custom-select-wrapper"
+                @click="toggleModelDropdown"
+              >
+                <div
+                  class="custom-select"
+                  :class="{ 'open': modelDropdownOpen }"
+                >
+                  <div class="select-selected">
+                    <span
+                      class="select-icon"
+                      :class="params.model === 'bsm' ? 'icon-bsm' : 'icon-heston'"
+                    >
+                      {{ params.model === 'bsm' ? 'BS' : 'H' }}
+                    </span>
+                    <span class="select-text">{{ params.model === 'bsm' ? 'Black-Scholes' : 'Heston' }}</span>
+                    <svg
+                      class="select-arrow"
+                      width="12"
+                      height="12"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                    >
+                      <polyline points="6 9 12 15 18 9" />
+                    </svg>
+                  </div>
+                  <transition name="dropdown">
+                    <div
+                      v-if="modelDropdownOpen"
+                      class="select-options"
+                    >
+                      <div 
+                        class="select-option" 
+                        :class="{ 'selected': params.model === 'bsm' }"
+                        @click.stop="selectModel('bsm')"
+                      >
+                        <span class="option-icon icon-bsm">BS</span>
+                        <div style="flex: 1; display: flex; flex-direction: column; gap: 2px;">
+                          <span class="option-text">Black-Scholes</span>
+                          <span class="option-subtext">BSM</span>
+                        </div>
+                        <span
+                          v-if="params.model === 'bsm'"
+                          class="option-badge"
+                        >✓</span>
+                      </div>
+                      <div 
+                        class="select-option" 
+                        :class="{ 'selected': params.model === 'heston' }"
+                        @click.stop="selectModel('heston')"
+                      >
+                        <span class="option-icon icon-heston">H</span>
+                        <div style="flex: 1; display: flex; flex-direction: column; gap: 2px;">
+                          <span class="option-text">Heston</span>
+                          <span class="option-subtext">Stochastic Volatility</span>
+                        </div>
+                        <span
+                          v-if="params.model === 'heston'"
+                          class="option-badge"
+                        >✓</span>
+                      </div>
+                      <div 
+                        class="select-option" 
+                        :class="{ 'selected': params.model === 'merton' }"
+                        @click.stop="selectModel('merton')"
+                      >
+                        <span class="option-icon icon-merton">M</span>
+                        <div style="flex: 1; display: flex; flex-direction: column; gap: 2px;">
+                          <span class="option-text">Merton</span>
+                          <span class="option-subtext">Jump Diffusion</span>
+                        </div>
+                        <span
+                          v-if="params.model === 'merton'"
+                          class="option-badge"
+                        >✓</span>
+                      </div>
+                      <div 
+                        class="select-option" 
+                        :class="{ 'selected': params.model === 'bates' }"
+                        @click.stop="selectModel('bates')"
+                      >
+                        <span class="option-icon icon-bates">B</span>
+                        <div style="flex: 1; display: flex; flex-direction: column; gap: 2px;">
+                          <span class="option-text">Bates</span>
+                          <span class="option-subtext">Heston + Jumps</span>
+                        </div>
+                        <span
+                          v-if="params.model === 'bates'"
+                          class="option-badge"
+                        >✓</span>
+                      </div>
+                      <div 
+                        class="select-option" 
+                        :class="{ 'selected': params.model === 'sabr' }"
+                        @click.stop="selectModel('sabr')"
+                      >
+                        <span class="option-icon icon-sabr">S</span>
+                        <div style="flex: 1; display: flex; flex-direction: column; gap: 2px;">
+                          <span class="option-text">SABR</span>
+                          <span class="option-subtext">Stochastic Alpha Beta Rho</span>
+                        </div>
+                        <span
+                          v-if="params.model === 'sabr'"
+                          class="option-badge"
+                        >✓</span>
+                      </div>
+                      <div 
+                        class="select-option" 
+                        :class="{ 'selected': params.model === 'vg' }"
+                        @click.stop="selectModel('vg')"
+                      >
+                        <span class="option-icon icon-vg">VG</span>
+                        <div style="flex: 1; display: flex; flex-direction: column; gap: 2px;">
+                          <span class="option-text">Variance Gamma</span>
+                          <span class="option-subtext">VG Process</span>
+                        </div>
+                        <span
+                          v-if="params.model === 'vg'"
+                          class="option-badge"
+                        >✓</span>
+                      </div>
+                    </div>
+                  </transition>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </aside>
+
+      <!-- RIGHT PANEL: Analysis -->
+      <main class="main-panel">
+        <!-- Price & Greeks Stats -->
+        <transition name="fade">
+          <div
+            v-if="results.price !== null"
+            class="glass-card chart-card"
+          >
+            <div class="chart-header">
+              <h3>Цена и греки</h3>
+            </div>
+            <div class="stats-list">
+              <div class="stat-item price-highlight">
+                <div class="stat-head">
+                  <span class="stat-icon" /> 
+                  <span class="s-name">Цена опциона</span>
+                </div>
+                <span
+                  class="val mono"
+                  style="font-size: 16px; color: #3b82f6;"
+                >{{ results.price.toFixed(4) }}</span>
+              </div>
+
+              <div class="divider" />
+
+              <div class="stat-item">
+                <div class="stat-head">
+                  <span class="greek-symbol">Δ</span> 
+                  <span class="s-name">Дельта</span>
+                </div>
+                <span class="val mono">{{ results.delta?.toFixed(4) }}</span>
+              </div>
+              <div class="stat-item">
+                <div class="stat-head">
+                  <span class="greek-symbol">Γ</span> 
+                  <span class="s-name">Гамма</span>
+                </div>
+                <span class="val mono">{{ results.gamma?.toFixed(6) }}</span>
+              </div>
+              <div class="stat-item">
+                <div class="stat-head">
+                  <span class="greek-symbol">ν</span> 
+                  <span class="s-name">Вега</span>
+                </div>
+                <span class="val mono">{{ results.vega?.toFixed(4) }}</span>
+              </div>
+              <div class="stat-item">
+                <div class="stat-head">
+                  <span class="greek-symbol">Θ</span> 
+                  <span class="s-name">Тета</span>
+                </div>
+                <span
+                  class="val mono"
+                  :class="(results.theta || 0) < 0 ? 'text-red' : 'text-green'"
+                >{{ results.theta?.toFixed(4) || '0.0000' }}</span>
+              </div>
+              <div class="stat-item">
+                <div class="stat-head">
+                  <span class="greek-symbol">ρ</span> 
+                  <span class="s-name">Ро</span>
+                </div>
+                <span class="val mono">{{ results.rho?.toFixed(4) }}</span>
+              </div>
+            </div>
+          </div>
+        </transition>
+            
+        <!-- Price Decomposition -->
+        <div class="glass-card chart-card">
+          <div class="chart-header">
+            <h3>Декомпозиция стоимости</h3>
+          </div>
+
+          <div
+            v-if="results.price !== null"
+            class="decomposition-grid"
+          >
+            <div class="decomp-item">
+              <div class="decomp-label">
+                Внутренняя стоимость
+              </div>
+              <div class="decomp-value">
+                {{ results.intrinsicValue?.toFixed(4) || '0.0000' }}
+              </div>
+              <div class="decomp-percent">
+                {{ results.price ? ((results.intrinsicValue || 0) / results.price * 100).toFixed(1) : '0.0' }}%
+              </div>
+            </div>
+            <div class="decomp-item">
+              <div class="decomp-label">
+                Временная стоимость
+              </div>
+              <div class="decomp-value">
+                {{ results.timeValue?.toFixed(4) || '0.0000' }}
+              </div>
+              <div class="decomp-percent">
+                {{ results.price ? ((results.timeValue || 0) / results.price * 100).toFixed(1) : '0.0' }}%
+              </div>
+            </div>
+            <div class="decomp-item">
+              <div class="decomp-label">
+                Moneyness
+              </div>
+              <div class="decomp-value">
+                {{ (params.S / params.K).toFixed(4) }}
+              </div>
+              <div
+                class="decomp-percent"
+                :class="params.S/params.K > 1 ? 'text-green' : params.S/params.K < 1 ? 'text-red' : ''"
+              >
+                {{ params.S > params.K ? 'ITM' : params.S < params.K ? 'OTM' : 'ATM' }}
+              </div>
+            </div>
+          </div>
+
+          <div
+            v-else
+            class="empty-state"
+          >
+            <span>Рассчитайте стоимость для анализа</span>
+          </div>
+        </div>
+
+        <!-- Greeks Sensitivity -->
+        <div class="glass-card chart-card mt-4">
+          <div class="chart-header">
+            <h3>Матрица чувствительности (S × σ)</h3>
+          </div>
+                
+          <div
+            v-if="sensitivityMatrix.length"
+            class="sensitivity-table"
+          >
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>S \ σ</th>
+                  <th>σ - 5%</th>
+                  <th>σ - 2.5%</th>
+                  <th>σ базовое</th>
+                  <th>σ + 2.5%</th>
+                  <th>σ + 5%</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr
+                  v-for="(row, i) in sensitivityMatrix"
+                  :key="i"
+                >
+                  <td class="row-header">
+                    {{ [-20, -10, 0, 10, 20][i] }}%
+                  </td>
+                  <td
+                    v-for="(val, j) in row"
+                    :key="j"
+                    :class="{ positive: results.price !== null && val > results.price, negative: results.price !== null && val < results.price }"
+                  >
+                    {{ val.toFixed(3) }}
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div
+            v-else
+            class="empty-state"
+          >
+            <span>Матрица будет заполнена после расчёта</span>
+          </div>
+        </div>
+
+        <!-- Payoff Diagram -->
+        <div class="glass-card chart-card mt-4">
+          <div class="chart-header">
+            <h3>Payoff диаграмма</h3>
+          </div>
+                
+          <div class="chart-container">
+            <svg
+              v-if="payoffData.length"
+              viewBox="0 0 800 300"
+              preserveAspectRatio="none"
+              class="payoff-svg"
+            >
+              <!-- Grid -->
+              <line
+                x1="0"
+                y1="150"
+                x2="800"
+                y2="150"
+                stroke="rgba(255,255,255,0.1)"
+                stroke-dasharray="2"
+              />
+              <line
+                v-for="x in [0, 200, 400, 600, 800]"
+                :key="x"
+                :x1="x"
+                y1="140"
+                :x2="x"
+                y2="160"
+                stroke="rgba(255,255,255,0.2)"
+              />
+                        
+              <!-- Strike line -->
+              <line
+                :x1="strikeX"
+                y1="0"
+                :x2="strikeX"
+                y2="300"
+                stroke="rgba(148, 163, 184, 0.3)"
+                stroke-dasharray="4"
+              />
+                        
+              <!-- Payoff line -->
+              <polyline
+                :points="payoffPath"
+                fill="none"
+                stroke="#3b82f6"
+                stroke-width="3"
+                stroke-linejoin="round"
+              />
+                        
+              <!-- Current price marker -->
+              <circle
+                :cx="currentPriceX"
+                :cy="currentPriceY"
+                r="5"
+                fill="#ef4444"
+              />
+            </svg>
+            <div
+              v-else
+              class="empty-state"
+            >
+              <span>График будет построен после расчёта</span>
+            </div>
+          </div>
+        </div>
+      </main>
     </div>
 
     <!-- Help Modal -->
     <transition name="modal-fade">
-      <div v-if="showHelpModal" class="modal-overlay" @click="showHelpModal = false">
-        <div class="help-modal-container" @click.stop>
+      <div
+        v-if="showHelpModal"
+        class="modal-overlay"
+        @click="showHelpModal = false"
+      >
+        <div
+          class="help-modal-container"
+          @click.stop
+        >
           <div class="help-modal-header">
             <h2>Справка: Модели ценообразования опционов</h2>
-            <button class="modal-close" @click="showHelpModal = false">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <line x1="18" y1="6" x2="6" y2="18"></line>
-                <line x1="6" y1="6" x2="18" y2="18"></line>
+            <button
+              class="modal-close"
+              @click="showHelpModal = false"
+            >
+              <svg
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <line
+                  x1="18"
+                  y1="6"
+                  x2="6"
+                  y2="18"
+                />
+                <line
+                  x1="6"
+                  y1="6"
+                  x2="18"
+                  y2="18"
+                />
               </svg>
             </button>
           </div>
@@ -587,7 +900,9 @@
           <div class="help-modal-body custom-scroll">
             <!-- Model Compatibility Table -->
             <div class="help-section">
-              <h3 class="help-section-title">Совместимость моделей с типами опционов</h3>
+              <h3 class="help-section-title">
+                Совместимость моделей с типами опционов
+              </h3>
               <div class="compatibility-table-wrapper">
                 <table class="compatibility-table">
                   <thead>
@@ -605,70 +920,178 @@
                   </thead>
                   <tbody>
                     <tr>
-                      <td class="model-name"><strong>Black-Scholes</strong></td>
-                      <td class="compatible">✓ Отлично</td>
-                      <td class="limited">⚠ Только приближенно</td>
-                      <td class="limited">⚠ Только приближенно</td>
-                      <td class="not-compatible">✗ Не подходит</td>
-                      <td class="not-compatible">✗ Не подходит</td>
-                      <td class="compatible">✓ Да</td>
-                      <td class="not-compatible">✗ Не подходит</td>
-                      <td class="not-compatible">✗ Не подходит</td>
+                      <td class="model-name">
+                        <strong>Black-Scholes</strong>
+                      </td>
+                      <td class="compatible">
+                        ✓ Отлично
+                      </td>
+                      <td class="limited">
+                        ⚠ Только приближенно
+                      </td>
+                      <td class="limited">
+                        ⚠ Только приближенно
+                      </td>
+                      <td class="not-compatible">
+                        ✗ Не подходит
+                      </td>
+                      <td class="not-compatible">
+                        ✗ Не подходит
+                      </td>
+                      <td class="compatible">
+                        ✓ Да
+                      </td>
+                      <td class="not-compatible">
+                        ✗ Не подходит
+                      </td>
+                      <td class="not-compatible">
+                        ✗ Не подходит
+                      </td>
                     </tr>
                     <tr>
-                      <td class="model-name"><strong>Heston</strong></td>
-                      <td class="compatible">✓ Отлично</td>
-                      <td class="limited">⚠ Численные методы</td>
-                      <td class="limited">⚠ Численные методы</td>
-                      <td class="limited">⚠ Частично</td>
-                      <td class="limited">⚠ Частично</td>
-                      <td class="compatible">✓ Да</td>
-                      <td class="limited">⚠ Частично</td>
-                      <td class="limited">⚠ Частично</td>
+                      <td class="model-name">
+                        <strong>Heston</strong>
+                      </td>
+                      <td class="compatible">
+                        ✓ Отлично
+                      </td>
+                      <td class="limited">
+                        ⚠ Численные методы
+                      </td>
+                      <td class="limited">
+                        ⚠ Численные методы
+                      </td>
+                      <td class="limited">
+                        ⚠ Частично
+                      </td>
+                      <td class="limited">
+                        ⚠ Частично
+                      </td>
+                      <td class="compatible">
+                        ✓ Да
+                      </td>
+                      <td class="limited">
+                        ⚠ Частично
+                      </td>
+                      <td class="limited">
+                        ⚠ Частично
+                      </td>
                     </tr>
                     <tr>
-                      <td class="model-name"><strong>Merton</strong></td>
-                      <td class="compatible">✓ Отлично</td>
-                      <td class="limited">⚠ Численные методы</td>
-                      <td class="limited">⚠ Численные методы</td>
-                      <td class="limited">⚠ Частично</td>
-                      <td class="not-compatible">✗ Не подходит</td>
-                      <td class="compatible">✓ Да</td>
-                      <td class="not-compatible">✗ Не подходит</td>
-                      <td class="not-compatible">✗ Не подходит</td>
+                      <td class="model-name">
+                        <strong>Merton</strong>
+                      </td>
+                      <td class="compatible">
+                        ✓ Отлично
+                      </td>
+                      <td class="limited">
+                        ⚠ Численные методы
+                      </td>
+                      <td class="limited">
+                        ⚠ Численные методы
+                      </td>
+                      <td class="limited">
+                        ⚠ Частично
+                      </td>
+                      <td class="not-compatible">
+                        ✗ Не подходит
+                      </td>
+                      <td class="compatible">
+                        ✓ Да
+                      </td>
+                      <td class="not-compatible">
+                        ✗ Не подходит
+                      </td>
+                      <td class="not-compatible">
+                        ✗ Не подходит
+                      </td>
                     </tr>
                     <tr>
-                      <td class="model-name"><strong>Bates</strong></td>
-                      <td class="compatible">✓ Отлично</td>
-                      <td class="limited">⚠ Численные методы</td>
-                      <td class="limited">⚠ Численные методы</td>
-                      <td class="limited">⚠ Частично</td>
-                      <td class="limited">⚠ Частично</td>
-                      <td class="compatible">✓ Да</td>
-                      <td class="limited">⚠ Частично</td>
-                      <td class="limited">⚠ Частично</td>
+                      <td class="model-name">
+                        <strong>Bates</strong>
+                      </td>
+                      <td class="compatible">
+                        ✓ Отлично
+                      </td>
+                      <td class="limited">
+                        ⚠ Численные методы
+                      </td>
+                      <td class="limited">
+                        ⚠ Численные методы
+                      </td>
+                      <td class="limited">
+                        ⚠ Частично
+                      </td>
+                      <td class="limited">
+                        ⚠ Частично
+                      </td>
+                      <td class="compatible">
+                        ✓ Да
+                      </td>
+                      <td class="limited">
+                        ⚠ Частично
+                      </td>
+                      <td class="limited">
+                        ⚠ Частично
+                      </td>
                     </tr>
                     <tr>
-                      <td class="model-name"><strong>SABR</strong></td>
-                      <td class="compatible">✓ Отлично</td>
-                      <td class="limited">⚠ Численные методы</td>
-                      <td class="limited">⚠ Численные методы</td>
-                      <td class="not-compatible">✗ Не подходит</td>
-                      <td class="not-compatible">✗ Не подходит</td>
-                      <td class="compatible">✓ Да</td>
-                      <td class="not-compatible">✗ Не подходит</td>
-                      <td class="not-compatible">✗ Не подходит</td>
+                      <td class="model-name">
+                        <strong>SABR</strong>
+                      </td>
+                      <td class="compatible">
+                        ✓ Отлично
+                      </td>
+                      <td class="limited">
+                        ⚠ Численные методы
+                      </td>
+                      <td class="limited">
+                        ⚠ Численные методы
+                      </td>
+                      <td class="not-compatible">
+                        ✗ Не подходит
+                      </td>
+                      <td class="not-compatible">
+                        ✗ Не подходит
+                      </td>
+                      <td class="compatible">
+                        ✓ Да
+                      </td>
+                      <td class="not-compatible">
+                        ✗ Не подходит
+                      </td>
+                      <td class="not-compatible">
+                        ✗ Не подходит
+                      </td>
                     </tr>
                     <tr>
-                      <td class="model-name"><strong>Variance Gamma</strong></td>
-                      <td class="compatible">✓ Отлично</td>
-                      <td class="limited">⚠ Численные методы</td>
-                      <td class="limited">⚠ Численные методы</td>
-                      <td class="limited">⚠ Частично</td>
-                      <td class="limited">⚠ Частично</td>
-                      <td class="compatible">✓ Да</td>
-                      <td class="limited">⚠ Частично</td>
-                      <td class="limited">⚠ Частично</td>
+                      <td class="model-name">
+                        <strong>Variance Gamma</strong>
+                      </td>
+                      <td class="compatible">
+                        ✓ Отлично
+                      </td>
+                      <td class="limited">
+                        ⚠ Численные методы
+                      </td>
+                      <td class="limited">
+                        ⚠ Численные методы
+                      </td>
+                      <td class="limited">
+                        ⚠ Частично
+                      </td>
+                      <td class="limited">
+                        ⚠ Частично
+                      </td>
+                      <td class="compatible">
+                        ✓ Да
+                      </td>
+                      <td class="limited">
+                        ⚠ Частично
+                      </td>
+                      <td class="limited">
+                        ⚠ Частично
+                      </td>
                     </tr>
                   </tbody>
                 </table>
@@ -677,7 +1100,9 @@
 
             <!-- Model Descriptions -->
             <div class="help-section">
-              <h3 class="help-section-title">Описание моделей</h3>
+              <h3 class="help-section-title">
+                Описание моделей
+              </h3>
               
               <div class="model-description-card">
                 <div class="model-description-header">
@@ -778,7 +1203,9 @@
 
             <!-- Exercise Style Guide -->
             <div class="help-section">
-              <h3 class="help-section-title">Рекомендации по стилям исполнения</h3>
+              <h3 class="help-section-title">
+                Рекомендации по стилям исполнения
+              </h3>
               
               <div class="exercise-style-guide">
                 <div class="guide-item">
@@ -825,7 +1252,9 @@
 
             <!-- Quick Reference -->
             <div class="help-section">
-              <h3 class="help-section-title">Быстрая справка</h3>
+              <h3 class="help-section-title">
+                Быстрая справка
+              </h3>
               <div class="quick-reference-grid">
                 <div class="quick-ref-item">
                   <strong>Простой европейский опцион на акцию</strong>

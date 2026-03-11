@@ -6,37 +6,63 @@
           <GlobeIcon class="w-6 h-6" />
         </div>
         <div>
-          <h2 class="section-title font-anton">ИНДЕКСЫ</h2>
-          <p class="section-subtitle font-mono">МИРОВЫЕ РЫНКИ, MOEX И СОСТАВ</p>
+          <h2 class="section-title font-anton">
+            ИНДЕКСЫ
+          </h2>
+          <p class="section-subtitle font-mono">
+            МИРОВЫЕ РЫНКИ, MOEX И СОСТАВ
+          </p>
         </div>
       </div>
       <div class="tab-group">
-        <button v-for="tab in tabs" :key="tab.id" @click="section = tab.id" :class="['tab-btn', { active: section === tab.id }]">
+        <button
+          v-for="tab in tabs"
+          :key="tab.id"
+          :class="['tab-btn', { active: section === tab.id }]"
+          @click="section = tab.id"
+        >
           {{ tab.label }}
         </button>
       </div>
     </div>
 
-    <div v-if="loading" class="flex items-center gap-2 text-gray-400 text-xs p-4">
-      <div class="w-3 h-3 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+    <div
+      v-if="loading"
+      class="flex items-center gap-2 text-gray-400 text-xs p-4"
+    >
+      <div class="w-3 h-3 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
       Загрузка индексов...
     </div>
 
-    <div v-if="loadError" class="p-4 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400 text-sm font-mono mx-4">
+    <div
+      v-if="loadError"
+      class="p-4 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400 text-sm font-mono mx-4"
+    >
       {{ loadError }}
     </div>
 
     <div class="flex-1 flex flex-col gap-4">
       <!-- ═══ MOEX Indices ═══ -->
-      <div v-if="section === 'WINDEX'" class="space-y-6">
+      <div
+        v-if="section === 'WINDEX'"
+        class="space-y-6"
+      >
         <div class="flex justify-between items-center">
-          <h3 class="text-lg font-bold text-white">Индексы MOEX</h3>
-          <button @click="loadData" class="px-3 py-1.5 bg-white/10 hover:bg-white/20 text-xs font-bold text-white rounded-lg transition-colors">
+          <h3 class="text-lg font-bold text-white">
+            Индексы MOEX
+          </h3>
+          <button
+            class="px-3 py-1.5 bg-white/10 hover:bg-white/20 text-xs font-bold text-white rounded-lg transition-colors"
+            @click="loadData"
+          >
             Обновить
           </button>
         </div>
 
-        <div v-if="moexIndices.length > 0" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div
+          v-if="moexIndices.length > 0"
+          class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
+        >
           <div
             v-for="idx in moexIndices"
             :key="idx.ticker"
@@ -48,8 +74,13 @@
                 <span class="text-xs text-gray-500 ml-2">{{ idx.name }}</span>
               </div>
             </div>
-            <div class="text-2xl font-bold text-white mt-2">{{ idx.last != null ? idx.last.toFixed(2) : '—' }}</div>
-            <div v-if="idx.change_pct != null" :class="['text-xs font-bold mt-1', idx.change_pct >= 0 ? 'text-emerald-400' : 'text-rose-400']">
+            <div class="text-2xl font-bold text-white mt-2">
+              {{ idx.last != null ? idx.last.toFixed(2) : '—' }}
+            </div>
+            <div
+              v-if="idx.change_pct != null"
+              :class="['text-xs font-bold mt-1', idx.change_pct >= 0 ? 'text-emerald-400' : 'text-rose-400']"
+            >
               {{ idx.change_pct >= 0 ? '+' : '' }}{{ idx.change_pct.toFixed(2) }}%
             </div>
           </div>
@@ -57,41 +88,77 @@
       </div>
 
       <!-- ═══ International via yfinance ═══ -->
-      <div v-else-if="section === 'IMAP'" class="space-y-6">
+      <div
+        v-else-if="section === 'IMAP'"
+        class="space-y-6"
+      >
         <div class="flex justify-between items-center">
-          <h3 class="text-lg font-bold text-white">Международные индексы (yfinance)</h3>
+          <h3 class="text-lg font-bold text-white">
+            Международные индексы (yfinance)
+          </h3>
         </div>
 
-        <div v-for="region in regions" :key="region.name" class="bg-black/20 rounded-2xl border border-white/5 overflow-hidden">
+        <div
+          v-for="region in regions"
+          :key="region.name"
+          class="bg-black/20 rounded-2xl border border-white/5 overflow-hidden"
+        >
           <div class="p-4 bg-white/5 border-b border-white/5">
-            <h3 class="font-bold text-white">{{ region.name }}</h3>
+            <h3 class="font-bold text-white">
+              {{ region.name }}
+            </h3>
           </div>
           <table class="w-full text-left">
             <thead>
               <tr class="text-xs text-gray-500 uppercase">
-                <th class="p-4">Индекс</th>
-                <th class="p-4">Тикер</th>
-                <th class="p-4 text-right">Последняя</th>
-                <th class="p-4 text-right">Изменение</th>
-                <th class="p-4 text-right">Объём</th>
+                <th class="p-4">
+                  Индекс
+                </th>
+                <th class="p-4">
+                  Тикер
+                </th>
+                <th class="p-4 text-right">
+                  Последняя
+                </th>
+                <th class="p-4 text-right">
+                  Изменение
+                </th>
+                <th class="p-4 text-right">
+                  Объём
+                </th>
               </tr>
             </thead>
             <tbody class="text-sm font-mono text-gray-300">
-              <tr v-for="idx in region.indices" :key="idx.ticker" class="border-t border-white/5 hover:bg-white/5 cursor-pointer">
-                <td class="p-4 font-bold text-white">{{ idx.name }}</td>
-                <td class="p-4 text-gray-400">{{ idx.ticker }}</td>
-                <td class="p-4 text-right">{{ idx.price != null ? idx.price.toFixed(2) : '—' }}</td>
+              <tr
+                v-for="idx in region.indices"
+                :key="idx.ticker"
+                class="border-t border-white/5 hover:bg-white/5 cursor-pointer"
+              >
+                <td class="p-4 font-bold text-white">
+                  {{ idx.name }}
+                </td>
+                <td class="p-4 text-gray-400">
+                  {{ idx.ticker }}
+                </td>
+                <td class="p-4 text-right">
+                  {{ idx.price != null ? idx.price.toFixed(2) : '—' }}
+                </td>
                 <td :class="['p-4 text-right font-bold', (idx.changePercent || 0) >= 0 ? 'text-emerald-400' : 'text-rose-400']">
                   {{ idx.changePercent != null ? ((idx.changePercent >= 0 ? '+' : '') + idx.changePercent.toFixed(2) + '%') : '—' }}
                 </td>
-                <td class="p-4 text-right text-gray-500 text-xs">{{ idx.volume != null ? formatVolume(idx.volume) : '—' }}</td>
+                <td class="p-4 text-right text-gray-500 text-xs">
+                  {{ idx.volume != null ? formatVolume(idx.volume) : '—' }}
+                </td>
               </tr>
             </tbody>
           </table>
         </div>
       </div>
 
-      <div v-else class="flex items-center justify-center h-64 text-gray-500 font-mono text-sm">
+      <div
+        v-else
+        class="flex items-center justify-center h-64 text-gray-500 font-mono text-sm"
+      >
         Выберите раздел
       </div>
     </div>

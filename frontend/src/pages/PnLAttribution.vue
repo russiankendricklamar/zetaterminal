@@ -1,39 +1,69 @@
 <!-- src/pages/PnLAttribution.vue -->
 <template>
   <div class="pnl-attribution-page">
-    
     <!-- Header Section -->
     <div class="page-header">
       <div class="header-left">
-        <h1 class="page-title">Разложение P&L</h1>
-        <p class="page-subtitle">Разложение прибыли по источникам и факторам риска</p>
+        <h1 class="page-title">
+          Разложение P&L
+        </h1>
+        <p class="page-subtitle">
+          Разложение прибыли по источникам и факторам риска
+        </p>
       </div>
       
       <div class="header-right">
         <!-- Time Period Selector -->
         <div class="control-group">
           <label class="control-label">Период:</label>
-          <select v-model="selectedPeriod" class="period-select" @change="updateAttribution">
-            <option value="day">Сегодня</option>
-            <option value="week">Неделя</option>
-            <option value="month">Месяц</option>
-            <option value="ytd">YTD</option>
-            <option value="year">Год</option>
+          <select
+            v-model="selectedPeriod"
+            class="period-select"
+            @change="updateAttribution"
+          >
+            <option value="day">
+              Сегодня
+            </option>
+            <option value="week">
+              Неделя
+            </option>
+            <option value="month">
+              Месяц
+            </option>
+            <option value="ytd">
+              YTD
+            </option>
+            <option value="year">
+              Год
+            </option>
           </select>
         </div>
 
         <!-- Attribution Method -->
         <div class="control-group">
           <label class="control-label">Метод:</label>
-          <select v-model="selectedMethod" class="method-select" @change="updateAttribution">
-            <option value="greeks">Разложение по грекам</option>
-            <option value="riskfactors">Факторы риска</option>
-            <option value="positions">По позициям</option>
+          <select
+            v-model="selectedMethod"
+            class="method-select"
+            @change="updateAttribution"
+          >
+            <option value="greeks">
+              Разложение по грекам
+            </option>
+            <option value="riskfactors">
+              Факторы риска
+            </option>
+            <option value="positions">
+              По позициям
+            </option>
           </select>
         </div>
 
         <!-- Export Button -->
-        <button @click="exportData" class="btn-secondary">
+        <button
+          class="btn-secondary"
+          @click="exportData"
+        >
           Экспортировать
         </button>
       </div>
@@ -42,8 +72,13 @@
     <!-- Total P&L Summary -->
     <div class="pnl-summary">
       <div class="summary-card total">
-        <div class="summary-label">Общий P&L</div>
-        <div class="summary-value" :class="totalPnL >= 0 ? 'positive' : 'negative'">
+        <div class="summary-label">
+          Общий P&L
+        </div>
+        <div
+          class="summary-value"
+          :class="totalPnL >= 0 ? 'positive' : 'negative'"
+        >
           {{ formatCurrency(totalPnL) }}
         </div>
         <div class="summary-change">
@@ -53,7 +88,9 @@
       </div>
 
       <div class="summary-card">
-        <div class="summary-label">Рыночный P&L</div>
+        <div class="summary-label">
+          Рыночный P&L
+        </div>
         <div class="summary-value accent">
           {{ formatCurrency(pnlComponents.market) }}
         </div>
@@ -63,8 +100,13 @@
       </div>
 
       <div class="summary-card">
-        <div class="summary-label">Theta (убыль времени)</div>
-        <div class="summary-value" :class="pnlComponents.theta >= 0 ? 'positive' : 'negative'">
+        <div class="summary-label">
+          Theta (убыль времени)
+        </div>
+        <div
+          class="summary-value"
+          :class="pnlComponents.theta >= 0 ? 'positive' : 'negative'"
+        >
           {{ formatCurrency(pnlComponents.theta) }}
         </div>
         <div class="summary-change">
@@ -73,8 +115,13 @@
       </div>
 
       <div class="summary-card">
-        <div class="summary-label">Gamma P&L</div>
-        <div class="summary-value" :class="pnlComponents.gamma >= 0 ? 'positive' : 'negative'">
+        <div class="summary-label">
+          Gamma P&L
+        </div>
+        <div
+          class="summary-value"
+          :class="pnlComponents.gamma >= 0 ? 'positive' : 'negative'"
+        >
           {{ formatCurrency(pnlComponents.gamma) }}
         </div>
         <div class="summary-change">
@@ -83,8 +130,13 @@
       </div>
 
       <div class="summary-card">
-        <div class="summary-label">Vega P&L</div>
-        <div class="summary-value" :class="pnlComponents.vega >= 0 ? 'positive' : 'negative'">
+        <div class="summary-label">
+          Vega P&L
+        </div>
+        <div
+          class="summary-value"
+          :class="pnlComponents.vega >= 0 ? 'positive' : 'negative'"
+        >
           {{ formatCurrency(pnlComponents.vega) }}
         </div>
         <div class="summary-change">
@@ -102,7 +154,7 @@
           <span class="chart-subtitle">Доля каждого компонента</span>
         </div>
         <div class="chart-container">
-          <canvas ref="compositionChartRef"></canvas>
+          <canvas ref="compositionChartRef" />
         </div>
       </div>
 
@@ -113,7 +165,7 @@
           <span class="chart-subtitle">Разложение по дням</span>
         </div>
         <div class="chart-container">
-          <canvas ref="dailyAttributionRef"></canvas>
+          <canvas ref="dailyAttributionRef" />
         </div>
       </div>
     </div>
@@ -128,32 +180,64 @@
         <table class="attribution-table">
           <thead>
             <tr>
-              <th class="col-component">Компонент</th>
-              <th class="col-amount">Сумма (М RUB)</th>
-              <th class="col-percent">% от общего</th>
-              <th class="col-description">Описание</th>
-              <th class="col-bucket">Категория</th>
+              <th class="col-component">
+                Компонент
+              </th>
+              <th class="col-amount">
+                Сумма (М RUB)
+              </th>
+              <th class="col-percent">
+                % от общего
+              </th>
+              <th class="col-description">
+                Описание
+              </th>
+              <th class="col-bucket">
+                Категория
+              </th>
             </tr>
           </thead>
           <tbody>
-            <tr v-for="item in attributionDetails" :key="item.id" :class="item.type">
-              <td class="col-component">{{ item.component }}</td>
-              <td class="col-amount" :class="item.amount >= 0 ? 'positive' : 'negative'">
+            <tr
+              v-for="item in attributionDetails"
+              :key="item.id"
+              :class="item.type"
+            >
+              <td class="col-component">
+                {{ item.component }}
+              </td>
+              <td
+                class="col-amount"
+                :class="item.amount >= 0 ? 'positive' : 'negative'"
+              >
                 {{ item.amount >= 0 ? '+' : '' }}{{ formatCompactCurrency(item.amount) }}
               </td>
-              <td class="col-percent mono">{{ (item.percentage).toFixed(1) }}%</td>
-              <td class="col-description">{{ item.description }}</td>
-              <td class="col-bucket">{{ item.category }}</td>
+              <td class="col-percent mono">
+                {{ (item.percentage).toFixed(1) }}%
+              </td>
+              <td class="col-description">
+                {{ item.description }}
+              </td>
+              <td class="col-bucket">
+                {{ item.category }}
+              </td>
             </tr>
           </tbody>
           <tfoot>
             <tr class="total-row">
-              <td class="col-component"><strong>TOTAL</strong></td>
-              <td class="col-amount" :class="totalPnL >= 0 ? 'positive' : 'negative'">
+              <td class="col-component">
+                <strong>TOTAL</strong>
+              </td>
+              <td
+                class="col-amount"
+                :class="totalPnL >= 0 ? 'positive' : 'negative'"
+              >
                 <strong>{{ totalPnL >= 0 ? '+' : '' }}{{ formatCompactCurrency(totalPnL) }}</strong>
               </td>
-              <td class="col-percent mono"><strong>100.0%</strong></td>
-              <td colspan="2"></td>
+              <td class="col-percent mono">
+                <strong>100.0%</strong>
+              </td>
+              <td colspan="2" />
             </tr>
           </tfoot>
         </table>
@@ -171,19 +255,28 @@
         <div class="greek-breakdown">
           <div class="breakdown-item">
             <span class="label">Движения ставок</span>
-            <span class="value" :class="greeksPnL.delta.rates >= 0 ? 'positive' : 'negative'">
+            <span
+              class="value"
+              :class="greeksPnL.delta.rates >= 0 ? 'positive' : 'negative'"
+            >
               {{ greeksPnL.delta.rates >= 0 ? '+' : '' }}{{ formatCompactCurrency(greeksPnL.delta.rates) }}
             </span>
           </div>
           <div class="breakdown-item">
             <span class="label">Сдвиг кривой</span>
-            <span class="value" :class="greeksPnL.delta.curve >= 0 ? 'positive' : 'negative'">
+            <span
+              class="value"
+              :class="greeksPnL.delta.curve >= 0 ? 'positive' : 'negative'"
+            >
               {{ greeksPnL.delta.curve >= 0 ? '+' : '' }}{{ formatCompactCurrency(greeksPnL.delta.curve) }}
             </span>
           </div>
           <div class="breakdown-item">
             <span class="label">Скручивание кривой</span>
-            <span class="value" :class="greeksPnL.delta.twist >= 0 ? 'positive' : 'negative'">
+            <span
+              class="value"
+              :class="greeksPnL.delta.twist >= 0 ? 'positive' : 'negative'"
+            >
               {{ greeksPnL.delta.twist >= 0 ? '+' : '' }}{{ formatCompactCurrency(greeksPnL.delta.twist) }}
             </span>
           </div>
@@ -206,19 +299,28 @@
         <div class="greek-breakdown">
           <div class="breakdown-item">
             <span class="label">Gamma цены</span>
-            <span class="value" :class="greeksPnL.gamma.price >= 0 ? 'positive' : 'negative'">
+            <span
+              class="value"
+              :class="greeksPnL.gamma.price >= 0 ? 'positive' : 'negative'"
+            >
               {{ greeksPnL.gamma.price >= 0 ? '+' : '' }}{{ formatCompactCurrency(greeksPnL.gamma.price) }}
             </span>
           </div>
           <div class="breakdown-item">
             <span class="label">Gamma волатильности</span>
-            <span class="value" :class="greeksPnL.gamma.vol >= 0 ? 'positive' : 'negative'">
+            <span
+              class="value"
+              :class="greeksPnL.gamma.vol >= 0 ? 'positive' : 'negative'"
+            >
               {{ greeksPnL.gamma.vol >= 0 ? '+' : '' }}{{ formatCompactCurrency(greeksPnL.gamma.vol) }}
             </span>
           </div>
           <div class="breakdown-item">
             <span class="label">Перекрёстная gamma</span>
-            <span class="value" :class="greeksPnL.gamma.cross >= 0 ? 'positive' : 'negative'">
+            <span
+              class="value"
+              :class="greeksPnL.gamma.cross >= 0 ? 'positive' : 'negative'"
+            >
               {{ greeksPnL.gamma.cross >= 0 ? '+' : '' }}{{ formatCompactCurrency(greeksPnL.gamma.cross) }}
             </span>
           </div>
@@ -241,19 +343,28 @@
         <div class="greek-breakdown">
           <div class="breakdown-item">
             <span class="label">Vega (движения vol)</span>
-            <span class="value" :class="greeksPnL.vega >= 0 ? 'positive' : 'negative'">
+            <span
+              class="value"
+              :class="greeksPnL.vega >= 0 ? 'positive' : 'negative'"
+            >
               {{ greeksPnL.vega >= 0 ? '+' : '' }}{{ formatCompactCurrency(greeksPnL.vega) }}
             </span>
           </div>
           <div class="breakdown-item">
             <span class="label">Rho (ставка/кредит)</span>
-            <span class="value" :class="greeksPnL.rho >= 0 ? 'positive' : 'negative'">
+            <span
+              class="value"
+              :class="greeksPnL.rho >= 0 ? 'positive' : 'negative'"
+            >
               {{ greeksPnL.rho >= 0 ? '+' : '' }}{{ formatCompactCurrency(greeksPnL.rho) }}
             </span>
           </div>
           <div class="breakdown-item">
             <span class="label">Other/FX</span>
-            <span class="value" :class="greeksPnL.other >= 0 ? 'positive' : 'negative'">
+            <span
+              class="value"
+              :class="greeksPnL.other >= 0 ? 'positive' : 'negative'"
+            >
               {{ greeksPnL.other >= 0 ? '+' : '' }}{{ formatCompactCurrency(greeksPnL.other) }}
             </span>
           </div>
@@ -271,11 +382,11 @@
     <!-- P&L Waterfall Chart -->
     <div class="card full-width">
       <div class="chart-header">
-          <h3>Водопад P&L</h3>
+        <h3>Водопад P&L</h3>
         <span class="chart-subtitle">Траектория накопления P&L с начала периода</span>
       </div>
       <div class="chart-container tall">
-        <canvas ref="waterfallChartRef"></canvas>
+        <canvas ref="waterfallChartRef" />
       </div>
     </div>
 
@@ -298,25 +409,43 @@
             </tr>
           </thead>
           <tbody>
-            <tr v-for="factor in riskFactorAttribution" :key="factor.id">
-              <td class="factor-name">{{ factor.name }}</td>
-              <td class="move" :class="factor.move >= 0 ? 'positive' : 'negative'">
+            <tr
+              v-for="factor in riskFactorAttribution"
+              :key="factor.id"
+            >
+              <td class="factor-name">
+                {{ factor.name }}
+              </td>
+              <td
+                class="move"
+                :class="factor.move >= 0 ? 'positive' : 'negative'"
+              >
                 {{ factor.move >= 0 ? '+' : '' }}{{ factor.move.toFixed(2) }}
               </td>
-              <td class="exposure mono">{{ factor.exposure.toFixed(1) }}</td>
-              <td class="pnl" :class="factor.impliedPnL >= 0 ? 'positive' : 'negative'">
+              <td class="exposure mono">
+                {{ factor.exposure.toFixed(1) }}
+              </td>
+              <td
+                class="pnl"
+                :class="factor.impliedPnL >= 0 ? 'positive' : 'negative'"
+              >
                 {{ factor.impliedPnL >= 0 ? '+' : '' }}{{ formatCompactCurrency(factor.impliedPnL) }}
               </td>
-              <td class="pnl" :class="factor.actualPnL >= 0 ? 'positive' : 'negative'">
+              <td
+                class="pnl"
+                :class="factor.actualPnL >= 0 ? 'positive' : 'negative'"
+              >
                 {{ factor.actualPnL >= 0 ? '+' : '' }}{{ formatCompactCurrency(factor.actualPnL) }}
               </td>
-              <td class="explained mono">{{ factor.explained.toFixed(1) }}%</td>
+              <td class="explained mono">
+                {{ factor.explained.toFixed(1) }}%
+              </td>
             </tr>
           </tbody>
           <tfoot>
             <tr class="total-row">
               <td><strong>TOTAL</strong></td>
-              <td colspan="5"></td>
+              <td colspan="5" />
             </tr>
           </tfoot>
         </table>
@@ -334,7 +463,10 @@
         <div class="unexplained-metrics">
           <div class="metric-item">
             <span class="label">Всего необъяснённого</span>
-            <span class="value" :class="unexplainedPnL >= 0 ? 'positive' : 'negative'">
+            <span
+              class="value"
+              :class="unexplainedPnL >= 0 ? 'positive' : 'negative'"
+            >
               {{ unexplainedPnL >= 0 ? '+' : '' }}{{ formatCompactCurrency(unexplainedPnL) }}
             </span>
           </div>
@@ -361,13 +493,22 @@
           <span class="card-subtitle">5 позиций с максимальным вкладом</span>
         </div>
         <div class="top-positions">
-          <div v-for="(pos, idx) in topPositions" :key="idx" class="position-item">
-            <div class="position-rank">{{ idx + 1 }}</div>
+          <div
+            v-for="(pos, idx) in topPositions"
+            :key="idx"
+            class="position-item"
+          >
+            <div class="position-rank">
+              {{ idx + 1 }}
+            </div>
             <div class="position-info">
               <span class="position-name">{{ pos.name }}</span>
               <span class="position-detail">{{ pos.asset }}</span>
             </div>
-            <div class="position-pnl" :class="pos.pnl >= 0 ? 'positive' : 'negative'">
+            <div
+              class="position-pnl"
+              :class="pos.pnl >= 0 ? 'positive' : 'negative'"
+            >
               {{ pos.pnl >= 0 ? '+' : '' }}{{ formatCompactCurrency(pos.pnl) }}
             </div>
           </div>
@@ -381,7 +522,6 @@
       <span>• Обновление: В реальном времени</span>
       <span>• Базовая валюта: RUB</span>
     </div>
-
   </div>
 </template>
 

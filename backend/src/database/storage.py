@@ -2,7 +2,6 @@
 Local file storage utilities.
 """
 import os
-from typing import Optional
 from datetime import datetime
 
 
@@ -18,7 +17,7 @@ class StorageService:
         file_path: str,
         file_data: bytes,
         file_type: str = "general",
-        description: Optional[str] = None,
+        description: str | None = None,
     ) -> dict:
         full_path = os.path.join(self.base_dir, file_path)
         # Path traversal protection: ensure resolved path is within base_dir
@@ -33,7 +32,7 @@ class StorageService:
         return {"path": file_path, "size": len(data), "type": file_type}
 
     @staticmethod
-    def generate_file_path(file_type: str, file_name: str, subfolder: Optional[str] = None) -> str:
+    def generate_file_path(file_type: str, file_name: str, subfolder: str | None = None) -> str:
         now = datetime.now()
         year = now.strftime("%Y")
         month = now.strftime("%m")

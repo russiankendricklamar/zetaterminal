@@ -1,20 +1,21 @@
 <template>
   <div class="page-container custom-scrollbar">
-
     <div class="section-header flex-col gap-4">
       <div class="flex justify-between items-center w-full">
         <div>
           <h2 class="section-title font-anton">
             {{ category === 'All' ? 'АКЦИИ' : category.toUpperCase() }}
           </h2>
-          <p class="section-subtitle font-mono">ЦЕНЫ И АНАЛИТИКА В РЕАЛЬНОМ ВРЕМЕНИ</p>
+          <p class="section-subtitle font-mono">
+            ЦЕНЫ И АНАЛИТИКА В РЕАЛЬНОМ ВРЕМЕНИ
+          </p>
         </div>
         <div class="tab-group">
           <button
             v-for="(filter, i) in filters"
             :key="filter"
-            @click="activeFilter = filter"
             :class="['tab-btn', { active: activeFilter === filter }]"
+            @click="activeFilter = filter"
           >
             {{ filter }}
           </button>
@@ -24,40 +25,43 @@
       <!-- Фильтры по регионам и странам -->
       <div class="flex flex-wrap items-center gap-3">
         <!-- Регион Dropdown -->
-        <div class="relative" data-dropdown-region>
+        <div
+          class="relative"
+          data-dropdown-region
+        >
           <span class="text-xs font-bold text-gray-500 uppercase mb-2 block">Регион</span>
           <div class="relative">
             <button
-              @click="isRegionOpen = !isRegionOpen"
               class="px-4 py-2.5 bg-black/20 border border-white/10 rounded-xl text-sm text-white hover:border-indigo-500/50 transition-all flex items-center justify-between gap-3 min-w-[200px]"
+              @click="isRegionOpen = !isRegionOpen"
             >
               <span>{{ selectedRegion === 'All' ? 'Все регионы' : getRegionName(selectedRegion) }}</span>
               <ChevronDownIcon :class="`w-4 h-4 transition-transform ${isRegionOpen ? 'rotate-180' : ''}`" />
             </button>
             <div
               v-if="isRegionOpen"
-              @click.stop
               class="absolute top-full left-0 mt-2 w-full bg-black/90 backdrop-blur-xl border border-white/10 rounded-xl shadow-2xl z-50 max-h-64 overflow-y-auto custom-scrollbar"
+              @click.stop
             >
               <button
-                @click="selectRegion('All')"
                 :class="`w-full px-4 py-3 text-left text-sm transition-colors ${
                   selectedRegion === 'All' 
                     ? 'bg-indigo-500/20 text-indigo-300' 
                     : 'text-gray-300 hover:bg-white/5 hover:text-white'
                 }`"
+                @click="selectRegion('All')"
               >
                 Все регионы
               </button>
               <button
                 v-for="region in availableRegions"
                 :key="region"
-                @click="selectRegion(region)"
                 :class="`w-full px-4 py-3 text-left text-sm transition-colors ${
                   selectedRegion === region 
                     ? 'bg-indigo-500/20 text-indigo-300' 
                     : 'text-gray-300 hover:bg-white/5 hover:text-white'
                 }`"
+                @click="selectRegion(region)"
               >
                 {{ getRegionName(region) }}
               </button>
@@ -66,44 +70,47 @@
         </div>
         
         <!-- Страна Dropdown -->
-        <div class="relative" data-dropdown-country>
+        <div
+          class="relative"
+          data-dropdown-country
+        >
           <span class="text-xs font-bold text-gray-500 uppercase mb-2 block">Страна</span>
           <div class="relative">
             <button
-              @click="selectedRegion !== 'All' && (isCountryOpen = !isCountryOpen)"
               :class="`px-4 py-2.5 bg-black/20 border border-white/10 rounded-xl text-sm transition-all flex items-center justify-between gap-3 min-w-[200px] ${
                 selectedRegion === 'All' 
                   ? 'opacity-50 cursor-not-allowed text-gray-500' 
                   : 'text-white hover:border-indigo-500/50 cursor-pointer'
               }`"
+              @click="selectedRegion !== 'All' && (isCountryOpen = !isCountryOpen)"
             >
               <span>{{ selectedCountry === 'All' ? 'Все страны' : getCountryName(selectedCountry) }}</span>
               <ChevronDownIcon :class="`w-4 h-4 transition-transform ${isCountryOpen && selectedRegion !== 'All' ? 'rotate-180' : ''}`" />
             </button>
             <div
               v-if="isCountryOpen && selectedRegion !== 'All' && availableCountries.length > 0"
-              @click.stop
               class="absolute top-full left-0 mt-2 w-full bg-black/90 backdrop-blur-xl border border-white/10 rounded-xl shadow-2xl z-50 max-h-64 overflow-y-auto custom-scrollbar"
+              @click.stop
             >
               <button
-                @click="selectCountry('All')"
                 :class="`w-full px-4 py-3 text-left text-sm transition-colors ${
                   selectedCountry === 'All' 
                     ? 'bg-indigo-500/20 text-indigo-300' 
                     : 'text-gray-300 hover:bg-white/5 hover:text-white'
                 }`"
+                @click="selectCountry('All')"
               >
                 Все страны
               </button>
               <button
                 v-for="country in availableCountries"
                 :key="country"
-                @click="selectCountry(country)"
                 :class="`w-full px-4 py-3 text-left text-sm transition-colors ${
                   selectedCountry === country 
                     ? 'bg-indigo-500/20 text-indigo-300' 
                     : 'text-gray-300 hover:bg-white/5 hover:text-white'
                 }`"
+                @click="selectCountry(country)"
               >
                 {{ getCountryName(country) }}
               </button>
@@ -112,40 +119,43 @@
         </div>
         
         <!-- Сектор Dropdown -->
-        <div class="relative" data-dropdown-sector>
+        <div
+          class="relative"
+          data-dropdown-sector
+        >
           <span class="text-xs font-bold text-gray-500 uppercase mb-2 block">Сектор</span>
           <div class="relative">
             <button
-              @click="isSectorOpen = !isSectorOpen"
               class="px-4 py-2.5 bg-black/20 border border-white/10 rounded-xl text-sm text-white hover:border-indigo-500/50 transition-all flex items-center justify-between gap-3 min-w-[200px]"
+              @click="isSectorOpen = !isSectorOpen"
             >
               <span>{{ selectedSector === 'All' ? 'Все сектора' : getSectorName(selectedSector) }}</span>
               <ChevronDownIcon :class="`w-4 h-4 transition-transform ${isSectorOpen ? 'rotate-180' : ''}`" />
             </button>
             <div
               v-if="isSectorOpen"
-              @click.stop
               class="absolute top-full left-0 mt-2 w-full bg-black/90 backdrop-blur-xl border border-white/10 rounded-xl shadow-2xl z-50 max-h-64 overflow-y-auto custom-scrollbar"
+              @click.stop
             >
               <button
-                @click="selectSector('All')"
                 :class="`w-full px-4 py-3 text-left text-sm transition-colors ${
                   selectedSector === 'All' 
                     ? 'bg-indigo-500/20 text-indigo-300' 
                     : 'text-gray-300 hover:bg-white/5 hover:text-white'
                 }`"
+                @click="selectSector('All')"
               >
                 Все сектора
               </button>
               <button
                 v-for="sector in availableSectors"
                 :key="sector"
-                @click="selectSector(sector)"
                 :class="`w-full px-4 py-3 text-left text-sm transition-colors ${
                   selectedSector === sector 
                     ? 'bg-indigo-500/20 text-indigo-300' 
                     : 'text-gray-300 hover:bg-white/5 hover:text-white'
                 }`"
+                @click="selectSector(sector)"
               >
                 {{ getSectorName(sector) }}
               </button>
@@ -156,8 +166,8 @@
         <div class="flex items-end">
           <button 
             v-if="selectedRegion !== 'All' || selectedCountry !== 'All' || selectedSector !== 'All'"
-            @click="clearFilters"
             class="px-4 py-2.5 text-xs font-bold text-gray-400 hover:text-white hover:bg-white/5 rounded-xl border border-white/5 hover:border-white/20 transition-all"
+            @click="clearFilters"
           >
             Сбросить
           </button>
@@ -166,36 +176,56 @@
     </div>
 
     <!-- Индикатор загрузки -->
-    <div v-if="loading" class="flex items-center justify-center py-8 text-gray-400 flex-shrink-0">
+    <div
+      v-if="loading"
+      class="flex items-center justify-center py-8 text-gray-400 flex-shrink-0"
+    >
       <div class="flex items-center gap-2">
-        <div class="w-4 h-4 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
+        <div class="w-4 h-4 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" />
         <span class="text-xs font-bold">Загрузка реальных данных...</span>
       </div>
     </div>
 
-    <div :class="{ 'opacity-50': loading }" class="bg-black/20 rounded-2xl border border-white/5 overflow-y-auto custom-scrollbar flex-1 min-h-0 relative">
+    <div
+      :class="{ 'opacity-50': loading }"
+      class="bg-black/20 rounded-2xl border border-white/5 overflow-y-auto custom-scrollbar flex-1 min-h-0 relative"
+    >
       <table class="w-full text-left border-collapse">
         <thead class="sticky top-0 z-20">
           <tr class="bg-black/95 backdrop-blur-md border-b border-white/10">
-            <th class="font-bold py-3.5 px-6 text-xs text-gray-400 uppercase tracking-wider" style="border-radius: 0.75rem 0 0 0;">Инструмент</th>
-            <th class="font-bold py-3.5 px-6 text-xs text-gray-400 uppercase tracking-wider text-right">Цена</th>
-            <th class="font-bold py-3.5 px-6 text-xs text-gray-400 uppercase tracking-wider text-right">Изменение 24ч</th>
-            <th class="font-bold py-3.5 px-6 text-xs text-gray-400 uppercase tracking-wider text-right hidden md:table-cell" style="border-radius: 0 0.75rem 0 0;">Детали</th>
+            <th
+              class="font-bold py-3.5 px-6 text-xs text-gray-400 uppercase tracking-wider"
+              style="border-radius: 0.75rem 0 0 0;"
+            >
+              Инструмент
+            </th>
+            <th class="font-bold py-3.5 px-6 text-xs text-gray-400 uppercase tracking-wider text-right">
+              Цена
+            </th>
+            <th class="font-bold py-3.5 px-6 text-xs text-gray-400 uppercase tracking-wider text-right">
+              Изменение 24ч
+            </th>
+            <th
+              class="font-bold py-3.5 px-6 text-xs text-gray-400 uppercase tracking-wider text-right hidden md:table-cell"
+              style="border-radius: 0 0.75rem 0 0;"
+            >
+              Детали
+            </th>
           </tr>
         </thead>
         <tbody>
           <tr 
             v-for="asset in filteredAssets" 
             :key="asset.symbol"
-            @click="$emit('assetClick', asset)"
             class="border-b border-white/5 hover:bg-white/5 transition-all duration-150 group cursor-pointer"
+            @click="$emit('assetClick', asset)"
           >
             <td class="py-4 px-6">
               <div class="flex items-center gap-3">
                 <button 
                   class="opacity-0 group-hover:opacity-100 text-gray-500 hover:text-yellow-400 transition-all duration-150 flex-shrink-0"
-                  @click.stop
                   title="Добавить в избранное"
+                  @click.stop
                 >
                   <StarIcon class="w-4 h-4" />
                 </button>
@@ -204,16 +234,21 @@
                     v-if="!logoErrors.has(asset.symbol) && getLogoUrl(asset.symbol)"
                     :src="getLogoUrl(asset.symbol)" 
                     :alt="asset.symbol"
-                    @error="handleLogoError"
                     class="w-full h-full object-cover"
                     loading="lazy"
-                  />
-                  <span v-else class="text-white text-xs font-bold">
+                    @error="handleLogoError"
+                  >
+                  <span
+                    v-else
+                    class="text-white text-xs font-bold"
+                  >
                     {{ asset.symbol.substring(0, 2) }}
                   </span>
                 </div>
                 <div class="min-w-0 flex-1">
-                  <div class="text-white font-bold text-sm mb-0.5 truncate">{{ asset.symbol }}</div>
+                  <div class="text-white font-bold text-sm mb-0.5 truncate">
+                    {{ asset.symbol }}
+                  </div>
                   <div class="text-xs text-gray-400 flex items-center gap-2 truncate">
                     <span class="truncate">{{ asset.name }}</span>
                     <span class="px-2 py-0.5 rounded-md bg-white/5 text-[10px] font-medium uppercase text-gray-400 flex-shrink-0">{{ asset.category }}</span>
@@ -222,22 +257,35 @@
               </div>
             </td>
             <td class="py-4 px-6 text-right">
-              <div class="font-mono text-white text-sm font-semibold">{{ asset.price }}</div>
+              <div class="font-mono text-white text-sm font-semibold">
+                {{ asset.price }}
+              </div>
             </td>
             <td class="py-4 px-6 text-right">
-              <div :class="`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold ${
-                asset.change.startsWith('+') 
-                  ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/20' 
-                  : 'bg-rose-500/15 text-rose-400 border border-rose-500/20'
-              }`">
-                <component :is="asset.change.startsWith('+') ? 'TrendingUpIcon' : 'TrendingDownIcon'" class="w-3.5 h-3.5 flex-shrink-0" />
+              <div
+                :class="`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold ${
+                  asset.change.startsWith('+') 
+                    ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/20' 
+                    : 'bg-rose-500/15 text-rose-400 border border-rose-500/20'
+                }`"
+              >
+                <component
+                  :is="asset.change.startsWith('+') ? 'TrendingUpIcon' : 'TrendingDownIcon'"
+                  class="w-3.5 h-3.5 flex-shrink-0"
+                />
                 <span class="font-mono">{{ asset.change }}</span>
               </div>
             </td>
             <td class="py-4 px-6 text-right hidden md:table-cell">
               <div class="text-xs text-gray-400 font-mono">
-                <span v-if="asset.cap" class="text-gray-300">{{ asset.cap }}</span>
-                <span v-else class="text-gray-600">-</span>
+                <span
+                  v-if="asset.cap"
+                  class="text-gray-300"
+                >{{ asset.cap }}</span>
+                <span
+                  v-else
+                  class="text-gray-600"
+                >-</span>
               </div>
             </td>
           </tr>

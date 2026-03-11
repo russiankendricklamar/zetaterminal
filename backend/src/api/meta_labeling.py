@@ -2,11 +2,11 @@
 API endpoints для Meta-Labeling (Signal Quality Control).
 """
 import logging
+from datetime import datetime
+from typing import Any
 
 from fastapi import APIRouter, HTTPException
-from typing import Dict, Any, List, Optional
 from pydantic import BaseModel, Field
-from datetime import datetime
 
 from src.services.meta_labeling_service import compute_meta_labeling
 
@@ -16,7 +16,7 @@ router = APIRouter()
 
 
 class MetaLabelingRequest(BaseModel):
-    prices: List[float] = Field(
+    prices: list[float] = Field(
         ..., description="Ценовой ряд (T,) — закрытия или mid-цены"
     )
     pt_multiplier: float = Field(1.5, gt=0, description="Profit-take: pt × daily_vol")
@@ -41,7 +41,7 @@ class MetaLabelingRequest(BaseModel):
 
 
 class MetaLabelingResponse(BaseModel):
-    result: Dict[str, Any]
+    result: dict[str, Any]
     timestamp: datetime = Field(default_factory=datetime.now)
 
 
@@ -73,10 +73,10 @@ async def analyze(request: MetaLabelingRequest):
         return MetaLabelingResponse(result=result)
     except ValueError as e:
         logger.error("Meta-labeling validation error: %s", e, exc_info=True)
-        raise HTTPException(status_code=400, detail="Invalid input parameters")
+        raise HTTPException(status_code=400, detail="Invalid input parameters") from e
     except Exception as e:
         logger.error("Meta-labeling computation failed: %s", e, exc_info=True)
-        raise HTTPException(status_code=500, detail="Internal server error")
+        raise HTTPException(status_code=500, detail="Internal server error") from e
 
 
 @router.get("/health")

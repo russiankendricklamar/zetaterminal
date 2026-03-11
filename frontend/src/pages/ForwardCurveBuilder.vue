@@ -1,39 +1,69 @@
 <!-- src/pages/ForwardCurveBuilder.vue -->
 <template>
   <div class="forward-curve-page">
-    
     <!-- Header Section -->
     <div class="page-header">
       <div class="header-left">
-        <h1 class="page-title">Построение форвардной кривой</h1>
-        <p class="page-subtitle">Построение форвардной кривой и анализ структуры сроков</p>
+        <h1 class="page-title">
+          Построение форвардной кривой
+        </h1>
+        <p class="page-subtitle">
+          Построение форвардной кривой и анализ структуры сроков
+        </p>
       </div>
       
       <div class="header-right">
         <!-- Instrument Type -->
         <div class="control-group">
           <label class="control-label">Инструмент:</label>
-          <select v-model="selectedInstrument" class="instrument-select" @change="updateCurve">
-            <option value="bonds">Кривая по форварду на облигацию</option>
-            <option value="fx">Валютная форвардная кривая</option>
-            <option value="rates">Кривая форварда на процентную ставку</option>
-            <option value="commodities">Форвардная кривая на товар</option>
-            <option value="equity">Кривая форварда на акцию</option>
+          <select
+            v-model="selectedInstrument"
+            class="instrument-select"
+            @change="updateCurve"
+          >
+            <option value="bonds">
+              Кривая по форварду на облигацию
+            </option>
+            <option value="fx">
+              Валютная форвардная кривая
+            </option>
+            <option value="rates">
+              Кривая форварда на процентную ставку
+            </option>
+            <option value="commodities">
+              Форвардная кривая на товар
+            </option>
+            <option value="equity">
+              Кривая форварда на акцию
+            </option>
           </select>
         </div>
 
         <!-- Curve Type -->
         <div class="control-group">
           <label class="control-label">Тип кривой:</label>
-          <select v-model="selectedCurveType" class="curve-type-select" @change="updateCurve">
-            <option value="spot">Спот-кривая</option>
-            <option value="forward">Форвардная кривая</option>
-            <option value="implicit">Неявная форвардная кривая</option>
+          <select
+            v-model="selectedCurveType"
+            class="curve-type-select"
+            @change="updateCurve"
+          >
+            <option value="spot">
+              Спот-кривая
+            </option>
+            <option value="forward">
+              Форвардная кривая
+            </option>
+            <option value="implicit">
+              Неявная форвардная кривая
+            </option>
           </select>
         </div>
 
         <!-- Export Button -->
-        <button @click="exportCurve" class="btn-secondary">
+        <button
+          class="btn-secondary"
+          @click="exportCurve"
+        >
           Экспортировать
         </button>
       </div>
@@ -50,30 +80,67 @@
           <table class="market-data-table">
             <thead>
               <tr>
-                <th class="col-tenor">Tenor</th>
-                <th class="col-price">Спот / Цена</th>
-                <th class="col-yield">Доходность (%)</th>
-                <th class="col-forward">Форвардная ставка</th>
+                <th class="col-tenor">
+                  Tenor
+                </th>
+                <th class="col-price">
+                  Спот / Цена
+                </th>
+                <th class="col-yield">
+                  Доходность (%)
+                </th>
+                <th class="col-forward">
+                  Форвардная ставка
+                </th>
               </tr>
             </thead>
             <tbody>
-              <tr v-for="(point, idx) in marketDataPoints" :key="idx">
-                <td class="col-tenor">{{ point.tenor }}</td>
+              <tr
+                v-for="(point, idx) in marketDataPoints"
+                :key="idx"
+              >
+                <td class="col-tenor">
+                  {{ point.tenor }}
+                </td>
                 <td class="col-price">
-                  <input v-model.number="point.price" type="number" class="input-small" step="0.01" @change="updateCurve" />
+                  <input
+                    v-model.number="point.price"
+                    type="number"
+                    class="input-small"
+                    step="0.01"
+                    @change="updateCurve"
+                  >
                 </td>
                 <td class="col-yield">
-                  <input v-model.number="point.yield" type="number" class="input-small" step="0.01" @change="updateCurve" />
+                  <input
+                    v-model.number="point.yield"
+                    type="number"
+                    class="input-small"
+                    step="0.01"
+                    @change="updateCurve"
+                  >
                 </td>
-                <td class="col-forward mono">{{ point.forwardRate.toFixed(3) }}%</td>
+                <td class="col-forward mono">
+                  {{ point.forwardRate.toFixed(3) }}%
+                </td>
                 <td class="col-action">
-                  <button @click="removeDataPoint(idx)" class="btn-remove">×</button>
+                  <button
+                    class="btn-remove"
+                    @click="removeDataPoint(idx)"
+                  >
+                    ×
+                  </button>
                 </td>
               </tr>
             </tbody>
           </table>
         </div>
-        <button @click="addDataPoint" class="btn-add-point">+ Добавить точку</button>
+        <button
+          class="btn-add-point"
+          @click="addDataPoint"
+        >
+          + Добавить точку
+        </button>
       </div>
     </div>
 
@@ -86,7 +153,7 @@
           <span class="chart-subtitle">Структура сроков</span>
         </div>
         <div class="chart-container">
-          <canvas ref="forwardCurveRef"></canvas>
+          <canvas ref="forwardCurveRef" />
         </div>
       </div>
 
@@ -94,10 +161,9 @@
       <div class="card">
         <div class="chart-header">
           <h3>Форвардные ставки vs спот</h3>
-
         </div>
         <div class="chart-container">
-          <canvas ref="spreadChartRef"></canvas>
+          <canvas ref="spreadChartRef" />
         </div>
       </div>
     </div>
@@ -110,7 +176,10 @@
           <h3>Наклон кривой</h3>
           <span class="metric-unit">Наклон кривой</span>
         </div>
-        <div class="metric-value" :class="curveMetrics.slope >= 0 ? 'positive' : 'negative'">
+        <div
+          class="metric-value"
+          :class="curveMetrics.slope >= 0 ? 'positive' : 'negative'"
+        >
           {{ curveMetrics.slope >= 0 ? '+' : '' }}{{ curveMetrics.slope.toFixed(3) }}%
         </div>
         <div class="metric-detail">
@@ -169,13 +238,30 @@
             </tr>
           </thead>
           <tbody>
-            <tr v-for="(rate, idx) in forwardRatesTable" :key="idx" :class="rate.outlier ? 'outlier' : ''">
-              <td class="period-name">{{ rate.period }}</td>
-              <td class="rate-value mono">{{ rate.spotRate.toFixed(3) }}%</td>
-              <td class="rate-value mono">{{ rate.zcYield.toFixed(3) }}%</td>
-              <td class="rate-value cyan mono">{{ rate.forwardRate.toFixed(3) }}%</td>
-              <td class="rate-value blue mono">{{ rate.impliedRate.toFixed(3) }}%</td>
-              <td class="rate-value" :class="rate.spread >= 0 ? 'positive' : 'negative'">
+            <tr
+              v-for="(rate, idx) in forwardRatesTable"
+              :key="idx"
+              :class="rate.outlier ? 'outlier' : ''"
+            >
+              <td class="period-name">
+                {{ rate.period }}
+              </td>
+              <td class="rate-value mono">
+                {{ rate.spotRate.toFixed(3) }}%
+              </td>
+              <td class="rate-value mono">
+                {{ rate.zcYield.toFixed(3) }}%
+              </td>
+              <td class="rate-value cyan mono">
+                {{ rate.forwardRate.toFixed(3) }}%
+              </td>
+              <td class="rate-value blue mono">
+                {{ rate.impliedRate.toFixed(3) }}%
+              </td>
+              <td
+                class="rate-value"
+                :class="rate.spread >= 0 ? 'positive' : 'negative'"
+              >
                 {{ rate.spread >= 0 ? '+' : '' }}{{ rate.spread.toFixed(1) }}bp
               </td>
             </tr>
@@ -192,16 +278,23 @@
           <h3>Методы интерполяции</h3>
         </div>
         <div class="interpolation-options">
-          <div v-for="method in interpolationMethods" :key="method.id" class="option-item">
+          <div
+            v-for="method in interpolationMethods"
+            :key="method.id"
+            class="option-item"
+          >
             <input 
-              type="radio" 
-              :id="'method-' + method.id"
+              :id="'method-' + method.id" 
               v-model="selectedInterpolation"
+              type="radio"
               :value="method.id"
-              @change="updateCurve"
               class="radio-input"
-            />
-            <label :for="'method-' + method.id" class="option-label">
+              @change="updateCurve"
+            >
+            <label
+              :for="'method-' + method.id"
+              class="option-label"
+            >
               <span class="method-name">{{ method.name }}</span>
               <span class="method-desc">{{ method.description }}</span>
             </label>
@@ -217,19 +310,43 @@
         <div class="parameters-list">
           <div class="param-item">
             <span class="label">Базовая ставка</span>
-            <input v-model.number="curveParams.baseRate" type="number" class="param-input" step="0.01" @change="updateCurve" />
+            <input
+              v-model.number="curveParams.baseRate"
+              type="number"
+              class="param-input"
+              step="0.01"
+              @change="updateCurve"
+            >
           </div>
           <div class="param-item">
             <span class="label">Долгосрочная ставка</span>
-            <input v-model.number="curveParams.longTermRate" type="number" class="param-input" step="0.01" @change="updateCurve" />
+            <input
+              v-model.number="curveParams.longTermRate"
+              type="number"
+              class="param-input"
+              step="0.01"
+              @change="updateCurve"
+            >
           </div>
           <div class="param-item">
             <span class="label">Волатильность</span>
-            <input v-model.number="curveParams.volatility" type="number" class="param-input" step="0.1" @change="updateCurve" />
+            <input
+              v-model.number="curveParams.volatility"
+              type="number"
+              class="param-input"
+              step="0.1"
+              @change="updateCurve"
+            >
           </div>
           <div class="param-item">
             <span class="label">Скорость возврата к среднему</span>
-            <input v-model.number="curveParams.meanReversionSpeed" type="number" class="param-input" step="0.01" @change="updateCurve" />
+            <input
+              v-model.number="curveParams.meanReversionSpeed"
+              type="number"
+              class="param-input"
+              step="0.01"
+              @change="updateCurve"
+            >
           </div>
         </div>
       </div>
@@ -247,21 +364,30 @@
           <div class="pca-component">
             <span class="component-label">Level (PC1)</span>
             <div class="contribution-bar">
-              <div class="bar" style="width: 78%;"></div>
+              <div
+                class="bar"
+                style="width: 78%;"
+              />
             </div>
             <span class="contribution-value">78%</span>
           </div>
           <div class="pca-component">
             <span class="component-label">Slope (PC2)</span>
             <div class="contribution-bar">
-              <div class="bar" style="width: 18%;"></div>
+              <div
+                class="bar"
+                style="width: 18%;"
+              />
             </div>
             <span class="contribution-value">18%</span>
           </div>
           <div class="pca-component">
             <span class="component-label">Curve (PC3)</span>
             <div class="contribution-bar">
-              <div class="bar" style="width: 4%;"></div>
+              <div
+                class="bar"
+                style="width: 4%;"
+              />
             </div>
             <span class="contribution-value">4%</span>
           </div>
@@ -289,7 +415,10 @@
           </div>
           <div class="butterfly-item">
             <span class="label">Кривизна</span>
-            <span class="value" :class="butterflyMetrics.convexity >= 0 ? 'positive' : 'negative'">
+            <span
+              class="value"
+              :class="butterflyMetrics.convexity >= 0 ? 'positive' : 'negative'"
+            >
               {{ butterflyMetrics.convexity >= 0 ? '+' : '' }}{{ butterflyMetrics.convexity.toFixed(1) }}bp
             </span>
           </div>
@@ -308,7 +437,10 @@
           <span class="stat-label">R² (Goodness of Fit)</span>
           <span class="stat-value">{{ (fittingQuality.rSquared * 100).toFixed(2) }}%</span>
           <div class="quality-bar">
-            <div class="quality-fill" :style="{ width: fittingQuality.rSquared * 100 + '%' }"></div>
+            <div
+              class="quality-fill"
+              :style="{ width: fittingQuality.rSquared * 100 + '%' }"
+            />
           </div>
         </div>
         <div class="stat-item">
@@ -333,7 +465,7 @@
         <span class="chart-subtitle">Кривые форварда при различных сценариях</span>
       </div>
       <div class="chart-container tall">
-        <canvas ref="scenarioCurvesRef"></canvas>
+        <canvas ref="scenarioCurvesRef" />
       </div>
     </div>
 
@@ -356,14 +488,31 @@
             </tr>
           </thead>
           <tbody>
-            <tr v-for="(stat, idx) in detailedStatistics" :key="idx">
-              <td class="tenor">{{ stat.tenor }}</td>
-              <td class="rate mono">{{ stat.spotRate.toFixed(4) }}</td>
-              <td class="rate mono">{{ stat.forwardRate.toFixed(4) }}</td>
-              <td class="rate mono">{{ stat.yieldCurve.toFixed(4) }}</td>
-              <td class="rate mono">{{ stat.discountFactor.toFixed(6) }}</td>
-              <td class="rate mono">{{ stat.duration.toFixed(4) }}</td>
-              <td class="rate mono">{{ stat.convexity.toFixed(6) }}</td>
+            <tr
+              v-for="(stat, idx) in detailedStatistics"
+              :key="idx"
+            >
+              <td class="tenor">
+                {{ stat.tenor }}
+              </td>
+              <td class="rate mono">
+                {{ stat.spotRate.toFixed(4) }}
+              </td>
+              <td class="rate mono">
+                {{ stat.forwardRate.toFixed(4) }}
+              </td>
+              <td class="rate mono">
+                {{ stat.yieldCurve.toFixed(4) }}
+              </td>
+              <td class="rate mono">
+                {{ stat.discountFactor.toFixed(6) }}
+              </td>
+              <td class="rate mono">
+                {{ stat.duration.toFixed(4) }}
+              </td>
+              <td class="rate mono">
+                {{ stat.convexity.toFixed(6) }}
+              </td>
             </tr>
           </tbody>
         </table>
@@ -376,7 +525,6 @@
       <span>• Данные: Рыночные данные в реальном времени</span>
       <span>• Обновление: Каждую минуту</span>
     </div>
-
   </div>
 </template>
 

@@ -2,66 +2,70 @@
 FastAPI приложение для Zeta Terminal Backend.
 """
 import logging
-from contextlib import asynccontextmanager
+import os
+import secrets
+from contextlib import asynccontextmanager, suppress
 
-from fastapi import FastAPI, Depends, Request
+from fastapi import Depends, FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
-import os
-import secrets
 
 logger = logging.getLogger(__name__)
 
+# Импортируем все роутеры
+from datetime import UTC
+
+from src.api import (
+    admin,
+    adversarial_stress,
+    alpha_stacking,
+    auth,
+    backtest,
+    black_litterman,
+    bond,
+    calendar_utils,
+    ccmv,
+    compute,
+    convex_portfolio,
+    crypto_data,
+    dadata,
+    database,
+    eigenportfolio,
+    etf,
+    factor_analysis,
+    forward,
+    gemini,
+    har,
+    hjb,
+    macro_data,
+    market_data,
+    market_feeds,
+    meta_labeling,
+    moexalgo,
+    multivariate_hmm,
+    news_ai,
+    pbo,
+    portfolio,
+    realized_kernels,
+    repo,
+    rudata,
+    security_tools,
+    sharpe_stats,
+    spectral_regime,
+    stress,
+    swap,
+    zcyc,
+)
+from src.api import secrets as secrets_api
+from src.database.client import init_db
+from src.middleware.admin import require_admin
+from src.middleware.auth import require_api_key
+from src.middleware.rate_limit import limiter
 from src.utils.http_client import close_session
 from src.utils.jwt_utils import validate_jwt_secret
-from src.middleware.auth import require_api_key
-from src.middleware.admin import require_admin
-from src.middleware.rate_limit import limiter
-from src.database.client import init_db
 
-# Импортируем все роутеры
-from src.api import backtest
-from src.api import bond
-from src.api import ccmv
-from src.api import compute
-from src.api import database
-from src.api import forward
-from src.api import hjb
-from src.api import market_data
-from src.api import multivariate_hmm
-from src.api import portfolio
-from src.api import rudata
-from src.api import spectral_regime
-from src.api import stress
-from src.api import swap
-from src.api import zcyc
-from src.api import market_feeds
-from src.api import macro_data
-from src.api import crypto_data
-from src.api import news_ai
-from src.api import calendar_utils
-from src.api import security_tools
-from src.api import sharpe_stats
-from src.api import realized_kernels
-from src.api import har
-from src.api import factor_analysis
-from src.api import eigenportfolio
-from src.api import pbo
-from src.api import alpha_stacking
-from src.api import meta_labeling
-from src.api import convex_portfolio
-from src.api import black_litterman
-from src.api import adversarial_stress
-from src.api import moexalgo
-from src.api import dadata
-from src.api import etf
-from src.api import gemini
-from src.api import secrets as secrets_api
-from src.api import auth
-from src.api import repo
-from src.api import admin
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -89,8 +93,9 @@ async def lifespan(app: FastAPI):
 
 async def _migrate_user_profile_columns() -> None:
     """Add profile columns to users table if they don't exist."""
+    from sqlalchemy import text
+
     from src.database.client import engine
-    from sqlalchemy import text, inspect as sa_inspect
 
     columns = [
         ("phone", "VARCHAR"),
@@ -120,10 +125,8 @@ async def _migrate_user_profile_columns() -> None:
             for stmt in _user_col_stmts:
                 await conn.execute(text(stmt))
             for stmt in _uid_stmts:
-                try:
+                with suppress(Exception):
                     await conn.execute(text(stmt))
-                except Exception:
-                    pass
         logger.info("User profile columns migration complete")
     except Exception as e:
         logger.warning("Could not migrate user profile columns: %s", e)
@@ -131,10 +134,11 @@ async def _migrate_user_profile_columns() -> None:
 
 async def _seed_admin() -> None:
     """Create default admin user if no admin exists. Requires ADMIN_PASSWORD env var."""
-    from sqlalchemy import select
-    from src.database.sa_models import User
-    from src.database.client import async_session_factory
     from passlib.context import CryptContext
+    from sqlalchemy import select
+
+    from src.database.client import async_session_factory
+    from src.database.sa_models import User
 
     pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
@@ -172,17 +176,19 @@ async def _seed_admin() -> None:
 
 async def _cleanup_expired_tokens() -> None:
     """Delete expired or revoked refresh tokens on startup."""
-    from datetime import datetime, timezone
+    from datetime import datetime
+
     from sqlalchemy import delete
-    from src.database.sa_models import RefreshToken
+
     from src.database.client import async_session_factory
+    from src.database.sa_models import RefreshToken
 
     try:
         async with async_session_factory() as session:
             result = await session.execute(
                 delete(RefreshToken).where(
-                    (RefreshToken.revoked == True)
-                    | (RefreshToken.expires_at < datetime.now(timezone.utc))
+                    (RefreshToken.revoked)
+                    | (RefreshToken.expires_at < datetime.now(UTC))
                 )
             )
             await session.commit()
@@ -237,11 +243,13 @@ async def add_security_headers(request: Request, call_next):
 
 # Request tracking middleware (after CORS so preflight is not tracked)
 from src.middleware.request_tracker import RequestTrackerMiddleware
+
 app.add_middleware(RequestTrackerMiddleware)
 
 # IP ban middleware (added after RequestTracker — middleware executes in reverse order,
 # so IpBan runs before RequestTracker, blocking banned IPs early)
 from src.middleware.ip_ban import IpBanMiddleware
+
 app.add_middleware(IpBanMiddleware)
 
 # Подключаем все роутеры (с обязательной аутентификацией)

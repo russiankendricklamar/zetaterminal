@@ -32,13 +32,10 @@ async def analyze_repo(file: UploadFile = File(...)):
         content = await file.read()
         if len(content) > 10 * 1024 * 1024:
             raise HTTPException(status_code=413, detail="File too large (max 10 MB)")
-        if ext == "csv":
-            df = pd.read_csv(io.BytesIO(content))
-        else:
-            df = pd.read_excel(io.BytesIO(content))
+        df = pd.read_csv(io.BytesIO(content)) if ext == "csv" else pd.read_excel(io.BytesIO(content))
     except Exception as e:
         logger.error("Failed to parse uploaded file: %s", e)
-        raise HTTPException(status_code=400, detail="Failed to parse file")
+        raise HTTPException(status_code=400, detail="Failed to parse file") from e
 
     if df.empty:
         raise HTTPException(status_code=400, detail="Uploaded file is empty")
@@ -47,7 +44,7 @@ async def analyze_repo(file: UploadFile = File(...)):
         result = run_full_pipeline(df)
     except Exception as e:
         logger.error("REPO pipeline failed: %s", e, exc_info=True)
-        raise HTTPException(status_code=500, detail="Internal server error")
+        raise HTTPException(status_code=500, detail="Internal server error") from e
 
     return result
 

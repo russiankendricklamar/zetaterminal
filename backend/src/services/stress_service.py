@@ -2,9 +2,10 @@
 Сервис для стресс-тестирования портфеля.
 Основан на StressTestSimulator из notebook.
 """
-import numpy as np
-from typing import Dict, List, Optional, Tuple
 import warnings
+
+import numpy as np
+
 from src.services.hjb_service import HJBStrategy, simulate_monte_carlo
 
 warnings.filterwarnings('ignore', category=DeprecationWarning)
@@ -20,7 +21,7 @@ class StressTestSimulator:
     - Различные временные горизонты
     - Детальную аналитику риск-метрик
     """
-    
+
     def __init__(
         self,
         mu: np.ndarray,
@@ -28,7 +29,7 @@ class StressTestSimulator:
         initial_capital: float,
         risk_free_rate: float,
         gamma: float,
-        asset_names: Optional[List[str]] = None
+        asset_names: list[str] | None = None
     ):
         """
         Инициализация симулятора.
@@ -49,7 +50,7 @@ class StressTestSimulator:
         self.n_assets = len(self.mu_base)
         self.asset_names = asset_names if asset_names is not None else \
                           [f"Asset_{i+1}" for i in range(self.n_assets)]
-        
+
         # Создаем базовую стратегию
         self.strategy = HJBStrategy(
             mu=self.mu_base,
@@ -58,7 +59,7 @@ class StressTestSimulator:
             gamma=self.gamma,
             asset_names=self.asset_names
         )
-        
+
         # Базовое Cholesky разложение
         try:
             self.sigma_base = np.linalg.cholesky(self.cov_matrix_base)
@@ -67,21 +68,21 @@ class StressTestSimulator:
             self.sigma_base = np.linalg.cholesky(
                 self.cov_matrix_base + np.eye(self.n_assets) * 1e-6
             )
-    
+
     @property
     def risk_free_rate(self):
         """Alias для совместимости."""
         return self.rf
-    
+
     def simulate_scenario(
         self,
         scenario_name: str,
         mu: np.ndarray,
         sigma: np.ndarray,
         n_paths: int = 1000,
-        t_grid: Optional[np.ndarray] = None,
-        seed: Optional[int] = None
-    ) -> Dict:
+        t_grid: np.ndarray | None = None,
+        seed: int | None = None
+    ) -> dict:
         """
         Симулирует портфель для заданного сценария.
         
@@ -99,19 +100,19 @@ class StressTestSimulator:
         # Валидация входных параметров
         mu = np.asarray(mu).flatten()
         sigma = np.asarray(sigma)
-        
+
         if len(mu) != self.n_assets:
             raise ValueError(
                 f"Размерность μ не совпадает: {len(mu)} элементов, "
                 f"ожидается {self.n_assets}"
             )
-        
+
         if sigma.shape[0] != self.n_assets or sigma.shape[1] != self.n_assets:
             raise ValueError(
                 f"Размерность σ не совпадает: {sigma.shape}, "
                 f"ожидается ({self.n_assets}, {self.n_assets})"
             )
-        
+
         # Обновляем стратегию для нового сценария
         scenario_strategy = HJBStrategy(
             mu=mu,
@@ -120,10 +121,10 @@ class StressTestSimulator:
             gamma=self.gamma,
             asset_names=self.asset_names
         )
-        
+
         # Получаем оптимальные веса
         optimal_weights = scenario_strategy.get_optimal_weights()
-        
+
         # Определяем временную сетку
         if t_grid is None:
             horizon_years = 1.0
@@ -133,7 +134,7 @@ class StressTestSimulator:
             t_grid = np.asarray(t_grid)
             horizon_years = t_grid[-1] - t_grid[0]
             n_steps = len(t_grid) - 1
-        
+
         # Монте-Карло симуляция
         monte_carlo_result = simulate_monte_carlo(
             mu=mu,
@@ -145,10 +146,10 @@ class StressTestSimulator:
             n_steps=n_steps,
             random_seed=seed
         )
-        
+
         # Статистика портфеля
         portfolio_stats = scenario_strategy.get_portfolio_stats()
-        
+
         # Вычисляем дополнительные метрики
         # Извлекаем финальные капиталы из траекторий
         paths = monte_carlo_result.get('paths', [])
@@ -156,27 +157,27 @@ class StressTestSimulator:
             final_capitals = np.array([path[-1] if len(path) > 0 else self.X_0 for path in paths])
         else:
             final_capitals = np.array([self.X_0])
-        
+
         # VaR и CVaR в абсолютных значениях
         var_95 = float(np.quantile(final_capitals, 0.05)) if len(final_capitals) > 0 else 0.0
         var_99 = float(np.quantile(final_capitals, 0.01)) if len(final_capitals) > 0 else 0.0
-        
+
         cvar_95 = float(np.mean(final_capitals[final_capitals <= var_95])) if len(final_capitals[final_capitals <= var_95]) > 0 else var_95
         cvar_99 = float(np.mean(final_capitals[final_capitals <= var_99])) if len(final_capitals[final_capitals <= var_99]) > 0 else var_99
-        
+
         # Потери (относительно начального капитала)
         loss_var_95 = self.X_0 - var_95
         loss_var_99 = self.X_0 - var_99
         loss_cvar_95 = self.X_0 - cvar_95
         loss_cvar_99 = self.X_0 - cvar_99
-        
+
         # Вероятности потерь
         losses = self.X_0 - final_capitals
         prob_loss_10 = float(np.mean(losses > 0.1 * self.X_0)) if len(losses) > 0 else 0.0
         prob_loss_50 = float(np.mean(losses > 0.5 * self.X_0)) if len(losses) > 0 else 0.0
-        
+
         stats = monte_carlo_result.get('stats', {})
-        
+
         return {
             'scenario_name': scenario_name,
             'metrics': {
@@ -208,16 +209,16 @@ class StressTestSimulator:
 
 
 def run_stress_test(
-    mu: List[float],
-    cov_matrix: List[List[float]],
+    mu: list[float],
+    cov_matrix: list[list[float]],
     initial_capital: float,
     risk_free_rate: float,
     gamma: float,
-    scenarios: List[Dict],
-    asset_names: Optional[List[str]] = None,
+    scenarios: list[dict],
+    asset_names: list[str] | None = None,
     n_paths: int = 1000,
-    seed: Optional[int] = None
-) -> Dict:
+    seed: int | None = None
+) -> dict:
     """
     Запускает стресс-тестирование для списка сценариев.
     
@@ -244,14 +245,14 @@ def run_stress_test(
         gamma=gamma,
         asset_names=asset_names
     )
-    
+
     # Выполняем симуляции для каждого сценария
     results = {}
-    
+
     for scenario in scenarios:
         scenario_name = scenario['name']
         scenario_type = scenario.get('type', 'return_shock')
-        
+
         # Применяем шок в зависимости от типа сценария
         if scenario_type == 'return_shock':
             # Шок доходности
@@ -291,7 +292,7 @@ def run_stress_test(
             # По умолчанию - базовый сценарий
             mu_shock = simulator.mu_base
             sigma_shock = simulator.sigma_base
-        
+
         # Симулируем сценарий
         scenario_result = simulator.simulate_scenario(
             scenario_name=scenario_name,
@@ -300,9 +301,9 @@ def run_stress_test(
             n_paths=n_paths,
             seed=seed if seed is not None else scenario.get('seed', None)
         )
-        
+
         results[scenario.get('key', scenario_name.lower().replace(' ', '_'))] = scenario_result
-    
+
     return {
         'results': results,
         'baseline': {

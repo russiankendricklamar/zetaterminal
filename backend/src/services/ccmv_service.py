@@ -2,12 +2,12 @@
 Сервис для CCMV (Cardinality-Constrained Mean-Variance) оптимизации портфеля.
 Основан на методе кластеризации с ограничением кардинальности.
 """
-import numpy as np
-from typing import Dict, List, Optional, Tuple
-from scipy.optimize import brentq
-from math import floor
-import cvxpy as cp
 import warnings
+from math import floor
+
+import cvxpy as cp
+import numpy as np
+from scipy.optimize import brentq
 
 warnings.filterwarnings('ignore', category=DeprecationWarning)
 
@@ -28,45 +28,45 @@ def hierarchical_clustering(R: np.ndarray) -> np.ndarray:
     """
     # 1. Вычисляем корреляционную матрицу
     tau = np.corrcoef(R, rowvar=False)
-    
+
     # 2. Строим матрицу расстояний
     D = 1 - tau
-    
+
     # 3. Инициализируем кластеры
     C = [[i] for i in np.arange(R.shape[1])]
-    
+
     def d(Ci, Cj):
         """Вычисляет расстояние между двумя кластерами."""
         cent_i = 1 / len(Ci) * np.sum(D[Ci, :], axis=0)
         cent_j = 1 / len(Cj) * np.sum(D[Cj, :], axis=0)
         dist = (len(Ci) * len(Cj)) / (len(Ci) + len(Cj)) * np.linalg.norm(cent_i - cent_j) ** 2
         return dist
-    
+
     # 4. Повторяем до тех пор, пока не останется один кластер
     merge_distances = []
     merge_log = []
-    
+
     while len(C) > 1:
         min_distance = float('inf')
         best_pair = (0, 0)
-        
+
         for i in range(len(C)):
             for j in range(i + 1, len(C)):
                 distance = d(C[i], C[j])
                 if distance < min_distance:
                     min_distance = distance
                     best_pair = (i, j)
-        
+
         # Объединяем лучшую пару кластеров
         i, j = best_pair
         new_cluster = C[i] + C[j]
         merge_log.append((C[i], C[j], new_cluster, min_distance))
-        
+
         del C[max(i, j)]  # Удаляем больший индекс сначала
         del C[min(i, j)]
         C.append(new_cluster)
         merge_distances.append(min_distance)
-    
+
     # 5. Определяем оптимальное количество кластеров
     if len(merge_distances) > 1:
         gap = []
@@ -76,10 +76,10 @@ def hierarchical_clustering(R: np.ndarray) -> np.ndarray:
         threshold = merge_distances[largest_gap]
     else:
         threshold = merge_distances[0] if merge_distances else 0
-    
+
     # 6. Назначаем кластеры на основе порога
     clusters = [{i} for i in range(R.shape[1])]
-    
+
     for log in merge_log:
         if log[3] <= threshold:
             Ci, Cj = log[0], log[1]
@@ -87,22 +87,22 @@ def hierarchical_clustering(R: np.ndarray) -> np.ndarray:
             for cluster in clusters:
                 if any(i in cluster for i in Ci) or any(i in cluster for i in Cj):
                     to_merge.append(cluster)
-            
+
             if len(to_merge) == 2:
                 clusters.remove(to_merge[0])
                 clusters.remove(to_merge[1])
                 clusters.append(set(to_merge[0]).union(set(to_merge[1])))
-    
+
     # Преобразуем в метки
     labels = np.empty(R.shape[1], dtype=int)
     for cluster_id, asset_set in enumerate(clusters):
         for asset in asset_set:
             labels[asset] = cluster_id
-    
+
     return labels
 
 
-def hierarchical_clustering_to_clusters(R: np.ndarray) -> List[List[int]]:
+def hierarchical_clustering_to_clusters(R: np.ndarray) -> list[list[int]]:
     """
     Выполняет иерархическую кластеризацию и возвращает список кластеров.
     
@@ -117,22 +117,22 @@ def hierarchical_clustering_to_clusters(R: np.ndarray) -> List[List[int]]:
         Список кластеров, где каждый кластер - список индексов активов
     """
     labels = hierarchical_clustering(R)
-    
+
     # Преобразуем метки в список кластеров
     num_clusters = len(np.unique(labels))
     clusters = [[] for _ in range(num_clusters)]
-    
+
     for asset_idx, cluster_id in enumerate(labels):
         clusters[cluster_id].append(asset_idx)
-    
+
     # Фильтруем пустые кластеры
     clusters = [c for c in clusters if len(c) > 0]
-    
+
     return clusters
 
 
-def allocate_cardinality(clusters: List[List[int]], mu: np.ndarray, Sigma: np.ndarray, 
-                         Delta: int, gamma: float) -> List[int]:
+def allocate_cardinality(clusters: list[list[int]], mu: np.ndarray, Sigma: np.ndarray,
+                         Delta: int, gamma: float) -> list[int]:
     """
     Распределяет количество активов (Delta_k) по каждому кластеру.
     
@@ -157,50 +157,50 @@ def allocate_cardinality(clusters: List[List[int]], mu: np.ndarray, Sigma: np.nd
     # Шаг 1: Вычисляем доходности и дисперсии на уровне кластера
     cluster_returns = []
     cluster_variances = []
-    
+
     for cluster in clusters:
         cluster_assets = np.array(cluster)
         cluster_mu = mu[cluster_assets]
         cluster_Sigma = Sigma[np.ix_(cluster_assets, cluster_assets)]
-        
+
         expected_return = np.mean(cluster_mu)
         variance = np.mean(np.diag(cluster_Sigma))
-        
+
         cluster_returns.append(expected_return)
         cluster_variances.append(variance)
-    
+
     # Шаг 2: Определяем функцию оценки
     def score_function(lambda_, mu_k, sigma2_k, gamma):
         scores = []
-        for mu_i, sigma2_i in zip(mu_k, sigma2_k):
+        for mu_i, sigma2_i in zip(mu_k, sigma2_k, strict=False):
             if sigma2_i > 1e-10:
                 raw = (gamma * mu_i - lambda_) / (2 * sigma2_i)
                 scores.append(max(0, raw))
             else:
                 scores.append(0.0)
         return scores
-    
+
     def root_objective(lambda_, mu_k, sigma2_k, gamma):
         scores = score_function(lambda_, mu_k, sigma2_k, gamma)
         return sum(scores) - 1
-    
+
     # Шаг 3: Решаем для lambda*
     try:
         lambda_star = brentq(root_objective, -1000, 1000, args=(cluster_returns, cluster_variances, gamma))
     except ValueError:
         # Если не удается найти корень, используем равномерное распределение
         lambda_star = 0
-    
+
     # Шаг 4: Финальные оценки и распределение
     scores = score_function(lambda_star, cluster_returns, cluster_variances, gamma)
-    
+
     # Нормализуем scores
     total_score = sum(scores)
     if total_score > 1e-10:
         scores = [s / total_score for s in scores]
-    
+
     Delta_k = [max(1, floor(Delta * s)) for s in scores]
-    
+
     # Убеждаемся, что сумма равна Delta
     total_delta = sum(Delta_k)
     if total_delta != Delta:
@@ -212,7 +212,7 @@ def allocate_cardinality(clusters: List[List[int]], mu: np.ndarray, Sigma: np.nd
                 Delta_k[idx] += 1
             else:
                 Delta_k[idx] = max(1, Delta_k[idx] - 1)
-    
+
     return Delta_k
 
 
@@ -242,14 +242,14 @@ def solve_intracluster_miqp(mu_cluster: np.ndarray, Sigma_cluster: np.ndarray,
         Оптимальные веса для активов в кластере
     """
     n = len(mu_cluster)  # количество активов в кластере
-    
+
     # Шаг 1: Определяем переменные
     w = cp.Variable(n)
     z = cp.Variable(n, boolean=True)
-    
+
     # Шаг 2: Определяем целевую функцию
     objective = cp.Minimize(cp.quad_form(w, Sigma_cluster) - gamma * mu_cluster @ w)
-    
+
     # Шаг 3: Определяем ограничения
     constraints = [
         cp.sum(w) == alpha_k,
@@ -257,10 +257,10 @@ def solve_intracluster_miqp(mu_cluster: np.ndarray, Sigma_cluster: np.ndarray,
         w <= bar_w * z,
         cp.sum(z) <= delta_k
     ]
-    
+
     # Шаг 4: Решаем задачу
     problem = cp.Problem(objective, constraints)
-    
+
     # Выбираем решатель
     solver = None
     if 'GUROBI' in cp.installed_solvers():
@@ -280,7 +280,7 @@ def solve_intracluster_miqp(mu_cluster: np.ndarray, Sigma_cluster: np.ndarray,
         ]
         problem_simple = cp.Problem(objective_simple, constraints_simple)
         problem_simple.solve()
-        
+
         # Выбираем топ delta_k активов
         if w_simple.value is not None:
             weights = w_simple.value
@@ -294,9 +294,9 @@ def solve_intracluster_miqp(mu_cluster: np.ndarray, Sigma_cluster: np.ndarray,
                 result = result / total * alpha_k
             return result
         return np.ones(n) / n * alpha_k
-    
+
     problem.solve(solver=solver)
-    
+
     # Шаг 5: Возвращаем решение
     if w.value is not None:
         return w.value
@@ -311,8 +311,8 @@ def solve_intracluster_miqp(mu_cluster: np.ndarray, Sigma_cluster: np.ndarray,
 
 
 def delta_ccmv(R: np.ndarray, mu: np.ndarray, Sigma: np.ndarray, Delta: int,
-               bar_w: float, gamma: float, asset_names: Optional[List[str]] = None,
-               risk_free_rate: float = 0.0) -> Dict:
+               bar_w: float, gamma: float, asset_names: list[str] | None = None,
+               risk_free_rate: float = 0.0) -> dict:
     """
     Решает CCMV задачу с предварительным назначением количества активов в каждом кластере.
     
@@ -357,23 +357,23 @@ def delta_ccmv(R: np.ndarray, mu: np.ndarray, Sigma: np.ndarray, Delta: int,
 
     # Шаг 2: Предварительное распределение Delta
     Delta_k = allocate_cardinality(clusters, mu, Sigma, Delta, gamma)
-    
+
     # Шаг 3: Оптимизация
     alpha_k = [1.0 / len(clusters) for _ in clusters]
     w = np.zeros(R.shape[1])
-    
+
     cluster_info = []
     for i, cluster in enumerate(clusters):
         mu_cluster = mu[cluster]
         Sigma_cluster = Sigma[np.ix_(cluster, cluster)]
         delta_k = Delta_k[i]
         alpha_k_val = alpha_k[i]
-        
+
         w_cluster = solve_intracluster_miqp(mu_cluster, Sigma_cluster, delta_k, alpha_k_val, bar_w, gamma)
-        
+
         for j, asset_idx in enumerate(cluster):
             w[asset_idx] = w_cluster[j]
-        
+
         # Информация о кластере
         cluster_info.append({
             'assets': [asset_names[idx] if asset_names else f'Asset_{idx}' for idx in cluster],
@@ -382,7 +382,7 @@ def delta_ccmv(R: np.ndarray, mu: np.ndarray, Sigma: np.ndarray, Delta: int,
             'alpha_k': alpha_k_val,
             'weights': w_cluster.tolist() if isinstance(w_cluster, np.ndarray) else w_cluster
         })
-    
+
     # Вычисляем статистику портфеля
     portfolio_return = np.dot(w, mu)
     portfolio_variance = np.dot(w, np.dot(Sigma, w))
@@ -409,9 +409,9 @@ def delta_ccmv(R: np.ndarray, mu: np.ndarray, Sigma: np.ndarray, Delta: int,
 
 
 def alpha_ccmv(R: np.ndarray, mu: np.ndarray, Sigma: np.ndarray, Delta: int,
-               bar_w: float, gamma: float, asset_names: Optional[List[str]] = None,
-               alpha_k: Optional[List[float]] = None,
-               risk_free_rate: float = 0.0) -> Dict:
+               bar_w: float, gamma: float, asset_names: list[str] | None = None,
+               alpha_k: list[float] | None = None,
+               risk_free_rate: float = 0.0) -> dict:
     """
     Решает CCMV задачу с предварительным назначением распределения весов по кластерам.
     
@@ -450,7 +450,7 @@ def alpha_ccmv(R: np.ndarray, mu: np.ndarray, Sigma: np.ndarray, Delta: int,
     # Шаг 2: Распределяем Delta по кластерам (пропорционально alpha_k)
     if alpha_k is None:
         alpha_k = [1.0 / len(clusters) for _ in clusters]
-    
+
     # Вычисляем Delta_k пропорционально alpha_k
     Delta_k = []
     remaining_delta = Delta
@@ -461,22 +461,22 @@ def alpha_ccmv(R: np.ndarray, mu: np.ndarray, Sigma: np.ndarray, Delta: int,
             delta_k = max(1, floor(Delta * alpha_val))
             remaining_delta -= delta_k
         Delta_k.append(min(delta_k, len(clusters[i])))
-    
+
     # Шаг 3: Оптимизация
     w = np.zeros(R.shape[1])
-    
+
     cluster_info = []
     for i, cluster in enumerate(clusters):
         mu_cluster = mu[cluster]
         Sigma_cluster = Sigma[np.ix_(cluster, cluster)]
         delta_k = Delta_k[i]
         alpha_k_val = alpha_k[i]
-        
+
         w_cluster = solve_intracluster_miqp(mu_cluster, Sigma_cluster, delta_k, alpha_k_val, bar_w, gamma)
-        
+
         for j, asset_idx in enumerate(cluster):
             w[asset_idx] = w_cluster[j]
-        
+
         # Информация о кластере
         cluster_info.append({
             'assets': [asset_names[idx] if asset_names else f'Asset_{idx}' for idx in cluster],
@@ -485,7 +485,7 @@ def alpha_ccmv(R: np.ndarray, mu: np.ndarray, Sigma: np.ndarray, Delta: int,
             'alpha_k': alpha_k_val,
             'weights': w_cluster.tolist() if isinstance(w_cluster, np.ndarray) else w_cluster
         })
-    
+
     # Вычисляем статистику портфеля
     portfolio_return = np.dot(w, mu)
     portfolio_variance = np.dot(w, np.dot(Sigma, w))
@@ -513,8 +513,8 @@ def alpha_ccmv(R: np.ndarray, mu: np.ndarray, Sigma: np.ndarray, Delta: int,
 
 def optimize_ccmv(R: np.ndarray, mu: np.ndarray, Sigma: np.ndarray, Delta: int,
                   bar_w: float, gamma: float, method: str = 'delta',
-                  asset_names: Optional[List[str]] = None,
-                  risk_free_rate: float = 0.0) -> Dict:
+                  asset_names: list[str] | None = None,
+                  risk_free_rate: float = 0.0) -> dict:
     """
     Полная CCMV оптимизация с выбором метода.
     

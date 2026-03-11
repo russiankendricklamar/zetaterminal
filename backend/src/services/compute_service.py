@@ -1,15 +1,16 @@
 """
 Сервис для выполнения вычислительных задач.
 """
+from typing import Any
+
 import numpy as np
-from typing import Dict, Any, List, Optional
 
 
 class ComputeService:
     """Сервис для вычислительных операций."""
-    
+
     @staticmethod
-    def calculate_statistics(data: List[float]) -> Dict[str, Any]:
+    def calculate_statistics(data: list[float]) -> dict[str, Any]:
         """
         Вычисляет статистику для массива данных.
         
@@ -20,7 +21,7 @@ class ComputeService:
             Словарь со статистическими показателями
         """
         arr = np.array(data)
-        
+
         return {
             "mean": float(np.mean(arr)),
             "std": float(np.std(arr)),
@@ -29,15 +30,15 @@ class ComputeService:
             "median": float(np.median(arr)),
             "count": len(data)
         }
-    
+
     @staticmethod
     def calculate_garch(
-        returns: List[float],
+        returns: list[float],
         omega: float = 0.000025,
         alpha: float = 0.082,
         beta: float = 0.893,
-        initial_variance: Optional[float] = None
-    ) -> Dict[str, Any]:
+        initial_variance: float | None = None
+    ) -> dict[str, Any]:
         """
         Вычисляет GARCH(1,1) модель волатильности.
 
@@ -115,7 +116,7 @@ class ComputeService:
         # Долгосрочная волатильность (гарантированно корректна т.к. is_stationary = True)
         long_term_variance = omega / (1.0 - persistence)
         long_term_volatility = np.sqrt(long_term_variance)
-        
+
         return {
             "variances": variances.tolist(),
             "volatilities": volatilities.tolist(),
@@ -129,10 +130,10 @@ class ComputeService:
             "mean_variance": float(np.mean(variances)),
             "mean_volatility": float(np.mean(volatilities))
         }
-    
+
     @staticmethod
-    def matrix_operations(matrix_a: List[List[float]], 
-                         matrix_b: List[List[float]]) -> Dict[str, Any]:
+    def matrix_operations(matrix_a: list[list[float]],
+                         matrix_b: list[list[float]]) -> dict[str, Any]:
         """
         Выполняет операции с матрицами.
         
@@ -145,10 +146,10 @@ class ComputeService:
         """
         a = np.array(matrix_a)
         b = np.array(matrix_b)
-        
+
         result = {
             "addition": (a + b).tolist() if a.shape == b.shape else None,
             "multiplication": (a @ b).tolist() if a.shape[1] == b.shape[0] else None,
         }
-        
+
         return result

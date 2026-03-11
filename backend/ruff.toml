@@ -1,0 +1,43 @@
+# Ruff config for zetaterminal backend
+target-version = "py311"
+line-length = 120
+src = ["src"]
+
+[lint]
+select = [
+  "E",     # pycodestyle errors
+  "W",     # pycodestyle warnings
+  "F",     # pyflakes
+  "I",     # isort (import sorting)
+  "N",     # pep8-naming
+  "UP",    # pyupgrade
+  "B",     # flake8-bugbear
+  "S",     # flake8-bandit (security)
+  "T20",   # flake8-print (no print statements)
+  "SIM",   # flake8-simplify
+  "RUF",   # ruff-specific rules
+  "ASYNC", # flake8-async
+]
+ignore = [
+  "S101",   # allow assert in tests
+  "B008",   # allow Depends() in function args (FastAPI pattern)
+  "E501",   # line length handled by formatter
+  "RUF001", # allow Cyrillic in strings (Russian-language project)
+  "RUF002", # allow Cyrillic in docstrings
+  "RUF003", # allow Cyrillic in comments
+  "N806",   # allow uppercase variables in functions (financial math: S, K, T, N)
+  "N803",   # allow uppercase function arguments (same reason)
+  "N815",   # allow mixedCase in class scope (matches API naming)
+  "W293",   # whitespace in blank lines (cosmetic, handled by formatter)
+]
+
+[lint.per-file-ignores]
+"src/main.py" = ["E402"]  # imports after app setup
+"src/services/*" = ["S311"]  # allow random in non-crypto context (Monte Carlo)
+
+[lint.isort]
+known-first-party = ["src"]
+
+[format]
+quote-style = "double"
+indent-style = "space"

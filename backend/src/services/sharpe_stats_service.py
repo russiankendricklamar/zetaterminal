@@ -9,18 +9,18 @@
 - Deflated Sharpe Ratio с поправкой на число испытаний
 - PSR-кривую как функцию SR*
 """
+
 import numpy as np
 import scipy.stats
-from typing import Dict, List, Optional
 
 
 def compute_sharpe_stats(
-    returns: List[float],
+    returns: list[float],
     risk_free_rate: float = 0.0,
     periods_per_year: int = 252,
     benchmark_sr: float = 0.0,
     n_trials: int = 1,
-) -> Dict:
+) -> dict:
     """
     Полный статистический анализ коэффициента Шарпа.
 

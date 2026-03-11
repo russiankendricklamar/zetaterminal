@@ -6,57 +6,119 @@
           <FilterIcon class="w-6 h-6" />
         </div>
         <div>
-          <h2 class="section-title font-anton">СКРИНИНГ РЫНКА</h2>
-          <p class="section-subtitle font-mono">MOEX И ЗАРУБЕЖНЫЕ АКЦИИ — ПОИСК И ФИЛЬТРАЦИЯ</p>
+          <h2 class="section-title font-anton">
+            СКРИНИНГ РЫНКА
+          </h2>
+          <p class="section-subtitle font-mono">
+            MOEX И ЗАРУБЕЖНЫЕ АКЦИИ — ПОИСК И ФИЛЬТРАЦИЯ
+          </p>
         </div>
       </div>
       <div class="tab-group">
-        <button v-for="tab in tabs" :key="tab.id" @click="section = tab.id" :class="['tab-btn', { active: section === tab.id }]">
+        <button
+          v-for="tab in tabs"
+          :key="tab.id"
+          :class="['tab-btn', { active: section === tab.id }]"
+          @click="section = tab.id"
+        >
           {{ tab.label }}
         </button>
       </div>
     </div>
 
-    <div v-if="loading" class="flex items-center gap-2 text-gray-400 text-xs p-4">
-      <div class="w-3 h-3 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+    <div
+      v-if="loading"
+      class="flex items-center gap-2 text-gray-400 text-xs p-4"
+    >
+      <div class="w-3 h-3 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
       Загрузка...
     </div>
 
     <div class="flex-1 flex flex-col gap-6">
       <!-- ═══ MOEX Stocks ═══ -->
-      <div v-if="section === 'EQS'" class="flex flex-col h-full gap-6">
+      <div
+        v-if="section === 'EQS'"
+        class="flex flex-col h-full gap-6"
+      >
         <div class="flex justify-between items-center">
-          <h3 class="text-lg font-bold text-white">Акции MOEX (TQBR)</h3>
-          <button @click="loadMoexStocks" class="px-3 py-1.5 bg-white/10 hover:bg-white/20 text-xs font-bold text-white rounded-lg transition-colors">
+          <h3 class="text-lg font-bold text-white">
+            Акции MOEX (TQBR)
+          </h3>
+          <button
+            class="px-3 py-1.5 bg-white/10 hover:bg-white/20 text-xs font-bold text-white rounded-lg transition-colors"
+            @click="loadMoexStocks"
+          >
             Обновить
           </button>
         </div>
 
-        <div v-if="moexStocks.length > 0" class="flex-1 overflow-auto rounded-2xl border border-white/5 bg-black/20">
+        <div
+          v-if="moexStocks.length > 0"
+          class="flex-1 overflow-auto rounded-2xl border border-white/5 bg-black/20"
+        >
           <table class="w-full text-left border-collapse">
             <thead>
               <tr class="text-xs text-gray-400 uppercase bg-white/5 sticky top-0 backdrop-blur-md z-10">
-                <th class="p-4 font-bold cursor-pointer" @click="sortBy('ticker')">Тикер</th>
-                <th class="p-4 font-bold">Название</th>
-                <th class="p-4 font-bold text-right cursor-pointer" @click="sortBy('last')">Цена</th>
-                <th class="p-4 font-bold text-right cursor-pointer" @click="sortBy('change_pct')">Изменение</th>
-                <th class="p-4 font-bold text-right cursor-pointer" @click="sortBy('volume')">Объём</th>
+                <th
+                  class="p-4 font-bold cursor-pointer"
+                  @click="sortBy('ticker')"
+                >
+                  Тикер
+                </th>
+                <th class="p-4 font-bold">
+                  Название
+                </th>
+                <th
+                  class="p-4 font-bold text-right cursor-pointer"
+                  @click="sortBy('last')"
+                >
+                  Цена
+                </th>
+                <th
+                  class="p-4 font-bold text-right cursor-pointer"
+                  @click="sortBy('change_pct')"
+                >
+                  Изменение
+                </th>
+                <th
+                  class="p-4 font-bold text-right cursor-pointer"
+                  @click="sortBy('volume')"
+                >
+                  Объём
+                </th>
               </tr>
             </thead>
             <tbody class="text-sm font-mono text-gray-300">
-              <tr v-for="s in sortedMoexStocks" :key="s.ticker" class="border-b border-white/5 hover:bg-white/5 transition-colors cursor-pointer">
+              <tr
+                v-for="s in sortedMoexStocks"
+                :key="s.ticker"
+                class="border-b border-white/5 hover:bg-white/5 transition-colors cursor-pointer"
+              >
                 <td class="p-4">
                   <span class="text-xs font-bold bg-white/10 px-2 py-1 rounded text-white">{{ s.ticker }}</span>
                 </td>
-                <td class="p-4 text-gray-300 text-xs">{{ s.name }}</td>
-                <td class="p-4 text-right font-bold text-white">{{ s.last != null ? s.last.toFixed(2) : '—' }}</td>
+                <td class="p-4 text-gray-300 text-xs">
+                  {{ s.name }}
+                </td>
+                <td class="p-4 text-right font-bold text-white">
+                  {{ s.last != null ? s.last.toFixed(2) : '—' }}
+                </td>
                 <td class="p-4 text-right">
-                  <span v-if="s.change_pct != null" :class="s.change_pct >= 0 ? 'text-emerald-400' : 'text-rose-400'" class="font-mono text-xs">
+                  <span
+                    v-if="s.change_pct != null"
+                    :class="s.change_pct >= 0 ? 'text-emerald-400' : 'text-rose-400'"
+                    class="font-mono text-xs"
+                  >
                     {{ s.change_pct >= 0 ? '+' : '' }}{{ s.change_pct.toFixed(2) }}%
                   </span>
-                  <span v-else class="text-gray-500 text-xs">—</span>
+                  <span
+                    v-else
+                    class="text-gray-500 text-xs"
+                  >—</span>
                 </td>
-                <td class="p-4 text-right text-gray-400 text-xs">{{ s.volume != null ? formatVolume(s.volume) : '—' }}</td>
+                <td class="p-4 text-right text-gray-400 text-xs">
+                  {{ s.volume != null ? formatVolume(s.volume) : '—' }}
+                </td>
               </tr>
             </tbody>
           </table>
@@ -64,8 +126,13 @@
       </div>
 
       <!-- ═══ International Stocks (yfinance) ═══ -->
-      <div v-else-if="section === 'WLT'" class="flex flex-col h-full gap-6">
-        <h3 class="text-lg font-bold text-white">Зарубежные акции (yfinance)</h3>
+      <div
+        v-else-if="section === 'WLT'"
+        class="flex flex-col h-full gap-6"
+      >
+        <h3 class="text-lg font-bold text-white">
+          Зарубежные акции (yfinance)
+        </h3>
         <div class="flex gap-4 items-end">
           <div class="flex-1">
             <input
@@ -74,9 +141,12 @@
               placeholder="Введите тикеры через запятую: AAPL, MSFT, TSLA..."
               class="w-full bg-black/40 border border-white/10 rounded-xl py-3 px-4 text-white font-mono focus:border-blue-500/50 outline-none text-sm"
               @keydown.enter="loadIntlStocks"
-            />
+            >
           </div>
-          <button @click="loadIntlStocks" class="px-6 py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-bold text-sm transition-colors">
+          <button
+            class="px-6 py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-bold text-sm transition-colors"
+            @click="loadIntlStocks"
+          >
             Загрузить
           </button>
         </div>
@@ -85,44 +155,80 @@
           <button
             v-for="preset in presets"
             :key="preset.label"
-            @click="intlSearchQuery = preset.tickers; loadIntlStocks()"
             class="px-3 py-1.5 bg-white/5 hover:bg-white/10 text-xs font-bold text-gray-300 rounded-lg border border-white/5 transition-colors"
+            @click="intlSearchQuery = preset.tickers; loadIntlStocks()"
           >
             {{ preset.label }}
           </button>
         </div>
 
-        <div v-if="intlStocks.length > 0" class="flex-1 overflow-auto rounded-2xl border border-white/5 bg-black/20">
+        <div
+          v-if="intlStocks.length > 0"
+          class="flex-1 overflow-auto rounded-2xl border border-white/5 bg-black/20"
+        >
           <table class="w-full text-left border-collapse">
             <thead>
               <tr class="text-xs text-gray-400 uppercase bg-white/5 sticky top-0 backdrop-blur-md z-10">
-                <th class="p-4 font-bold">Тикер</th>
-                <th class="p-4 font-bold">Компания</th>
-                <th class="p-4 font-bold text-right">Цена</th>
-                <th class="p-4 font-bold text-right">Изменение</th>
-                <th class="p-4 font-bold text-right">P/E</th>
-                <th class="p-4 font-bold text-right">Market Cap</th>
-                <th class="p-4 font-bold text-right">Сектор</th>
+                <th class="p-4 font-bold">
+                  Тикер
+                </th>
+                <th class="p-4 font-bold">
+                  Компания
+                </th>
+                <th class="p-4 font-bold text-right">
+                  Цена
+                </th>
+                <th class="p-4 font-bold text-right">
+                  Изменение
+                </th>
+                <th class="p-4 font-bold text-right">
+                  P/E
+                </th>
+                <th class="p-4 font-bold text-right">
+                  Market Cap
+                </th>
+                <th class="p-4 font-bold text-right">
+                  Сектор
+                </th>
               </tr>
             </thead>
             <tbody class="text-sm font-mono text-gray-300">
-              <tr v-for="s in intlStocks" :key="s.ticker" class="border-b border-white/5 hover:bg-white/5 transition-colors cursor-pointer">
-                <td class="p-4 font-bold text-white">{{ s.ticker }}</td>
-                <td class="p-4 text-xs text-gray-400">{{ s.name }}</td>
-                <td class="p-4 text-right font-bold text-white">${{ s.price.toFixed(2) }}</td>
+              <tr
+                v-for="s in intlStocks"
+                :key="s.ticker"
+                class="border-b border-white/5 hover:bg-white/5 transition-colors cursor-pointer"
+              >
+                <td class="p-4 font-bold text-white">
+                  {{ s.ticker }}
+                </td>
+                <td class="p-4 text-xs text-gray-400">
+                  {{ s.name }}
+                </td>
+                <td class="p-4 text-right font-bold text-white">
+                  ${{ s.price.toFixed(2) }}
+                </td>
                 <td :class="['p-4 text-right font-bold', s.changePercent >= 0 ? 'text-emerald-400' : 'text-rose-400']">
                   {{ s.changePercent >= 0 ? '+' : '' }}{{ s.changePercent.toFixed(2) }}%
                 </td>
-                <td class="p-4 text-right text-gray-400">{{ s.peRatio != null ? s.peRatio.toFixed(1) : '—' }}</td>
-                <td class="p-4 text-right text-gray-400">{{ formatLargeNumber(s.marketCap) }}</td>
-                <td class="p-4 text-right text-xs text-gray-500">{{ s.sector || '—' }}</td>
+                <td class="p-4 text-right text-gray-400">
+                  {{ s.peRatio != null ? s.peRatio.toFixed(1) : '—' }}
+                </td>
+                <td class="p-4 text-right text-gray-400">
+                  {{ formatLargeNumber(s.marketCap) }}
+                </td>
+                <td class="p-4 text-right text-xs text-gray-500">
+                  {{ s.sector || '—' }}
+                </td>
               </tr>
             </tbody>
           </table>
         </div>
       </div>
 
-      <div v-else class="flex items-center justify-center h-64 text-gray-500 font-mono text-sm">
+      <div
+        v-else
+        class="flex items-center justify-center h-64 text-gray-500 font-mono text-sm"
+      >
         Выберите раздел
       </div>
     </div>

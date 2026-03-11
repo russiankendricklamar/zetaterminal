@@ -13,20 +13,47 @@
               <!-- Asset Selection - Vertical Stack -->
               <div class="control-group">
                 <label>Актив 1 (X):</label>
-                <select v-model="selectedAssets[0]" @change="updatePlot">
-                  <option v-for="asset in availableAssets" :key="asset" :value="asset">{{ asset }}</option>
+                <select
+                  v-model="selectedAssets[0]"
+                  @change="updatePlot"
+                >
+                  <option
+                    v-for="asset in availableAssets"
+                    :key="asset"
+                    :value="asset"
+                  >
+                    {{ asset }}
+                  </option>
                 </select>
               </div>
               <div class="control-group">
                 <label>Актив 2 (Y):</label>
-                <select v-model="selectedAssets[1]" @change="updatePlot">
-                  <option v-for="asset in availableAssets" :key="asset" :value="asset">{{ asset }}</option>
+                <select
+                  v-model="selectedAssets[1]"
+                  @change="updatePlot"
+                >
+                  <option
+                    v-for="asset in availableAssets"
+                    :key="asset"
+                    :value="asset"
+                  >
+                    {{ asset }}
+                  </option>
                 </select>
               </div>
               <div class="control-group">
                 <label>Актив 3 (Z):</label>
-                <select v-model="selectedAssets[2]" @change="updatePlot">
-                  <option v-for="asset in availableAssets" :key="asset" :value="asset">{{ asset }}</option>
+                <select
+                  v-model="selectedAssets[2]"
+                  @change="updatePlot"
+                >
+                  <option
+                    v-for="asset in availableAssets"
+                    :key="asset"
+                    :value="asset"
+                  >
+                    {{ asset }}
+                  </option>
                 </select>
               </div>
 
@@ -34,19 +61,33 @@
               <div class="control-group full-width">
                 <label>Период: {{ dateRange[0] }} - {{ dateRange[1] }}</label>
                 <input 
+                  v-model="timeRange" 
                   type="range" 
                   :min="0" 
                   :max="filteredData.length - 1" 
-                  v-model="timeRange" 
-                  @input="updateTimeRange"
                   class="time-slider full-width-slider"
-                />
+                  @input="updateTimeRange"
+                >
               </div>
 
               <!-- Reset Button -->
-              <button class="btn-reset full-width" @click="resetView">
-                <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+              <button
+                class="btn-reset full-width"
+                @click="resetView"
+              >
+                <svg
+                  width="14"
+                  height="14"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                  />
                 </svg>
                 Сброс
               </button>
@@ -97,14 +138,21 @@
           <!-- Regime Filters - In One Row -->
           <div class="controls-row regime-row">
             <label class="regime-filter-label">Режимы:</label>
-            <label class="regime-checkbox" v-for="regime in regimes" :key="regime.id">
+            <label
+              v-for="regime in regimes"
+              :key="regime.id"
+              class="regime-checkbox"
+            >
               <input 
+                v-model="visibleRegimes" 
                 type="checkbox" 
-                :value="regime.id" 
-                v-model="visibleRegimes"
+                :value="regime.id"
                 @change="updatePlot"
+              >
+              <span
+                class="regime-dot"
+                :style="{ backgroundColor: regime.color }"
               />
-              <span class="regime-dot" :style="{ backgroundColor: regime.color }"></span>
               {{ regime.name }}
             </label>
           </div>
@@ -117,66 +165,107 @@
                 @click="showAdvancedDropdown = !showAdvancedDropdown"
               >
                 <span>Дополнительные настройки</span>
-                <svg width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" :d="showAdvancedDropdown ? 'M5 15l7-7 7 7' : 'M19 9l-7 7-7-7'"></path>
+                <svg
+                  width="12"
+                  height="12"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    :d="showAdvancedDropdown ? 'M5 15l7-7 7 7' : 'M19 9l-7 7-7-7'"
+                  />
                 </svg>
               </button>
-              <div v-show="showAdvancedDropdown" class="dropdown-content">
+              <div
+                v-show="showAdvancedDropdown"
+                class="dropdown-content"
+              >
                 <label class="checkbox-item">
-                  <input type="checkbox" v-model="showTrajectory" @change="updatePlot" />
+                  <input
+                    v-model="showTrajectory"
+                    type="checkbox"
+                    @change="updatePlot"
+                  >
                   <span>Траектория</span>
                 </label>
                 <label class="checkbox-item">
-                  <input type="checkbox" v-model="showRegressions" @change="updatePlot" />
+                  <input
+                    v-model="showRegressions"
+                    type="checkbox"
+                    @change="updatePlot"
+                  >
                   <span>Регрессии</span>
                 </label>
                 <label class="checkbox-item">
-                  <input type="checkbox" v-model="showOutliers" @change="updatePlot" />
+                  <input
+                    v-model="showOutliers"
+                    type="checkbox"
+                    @change="updatePlot"
+                  >
                   <span>Outliers</span>
                 </label>
                 <label class="checkbox-item">
-                  <input type="checkbox" v-model="showEllipsoids" @change="updatePlot" />
+                  <input
+                    v-model="showEllipsoids"
+                    type="checkbox"
+                    @change="updatePlot"
+                  >
                   <span>Эллипсоиды</span>
                 </label>
                 <label class="checkbox-item">
-                  <input type="checkbox" v-model="showClusters" @change="updatePlot" />
+                  <input
+                    v-model="showClusters"
+                    type="checkbox"
+                    @change="updatePlot"
+                  >
                   <span>Кластеры</span>
                 </label>
                 <label class="checkbox-item">
-                  <input type="checkbox" v-model="showCentroids" @change="updatePlot" />
+                  <input
+                    v-model="showCentroids"
+                    type="checkbox"
+                    @change="updatePlot"
+                  >
                   <span>Центроиды</span>
                 </label>
               </div>
             </div>
           </div>
 
-      <!-- Playback Controls -->
-      <div class="controls-row playback-controls" v-if="showTrajectory">
-        <button 
-          :class="['btn-playback', { active: isPlaying }]"
-          @click="togglePlayback"
-        >
-          {{ isPlaying ? '⏸' : '▶' }}
-        </button>
-        <input 
-          type="range" 
-          :min="0" 
-          :max="100" 
-          v-model="playbackProgress"
-          @input="updatePlaybackPosition"
-          class="playback-slider"
-        />
-        <input 
-          type="range" 
-          :min="1" 
-          :max="10" 
-          v-model="playbackSpeed"
-          class="speed-slider"
-          title="Speed"
-        />
-        <span class="speed-label">{{ playbackSpeed }}x</span>
+          <!-- Playback Controls -->
+          <div
+            v-if="showTrajectory"
+            class="controls-row playback-controls"
+          >
+            <button 
+              :class="['btn-playback', { active: isPlaying }]"
+              @click="togglePlayback"
+            >
+              {{ isPlaying ? '⏸' : '▶' }}
+            </button>
+            <input 
+              v-model="playbackProgress" 
+              type="range" 
+              :min="0" 
+              :max="100"
+              class="playback-slider"
+              @input="updatePlaybackPosition"
+            >
+            <input 
+              v-model="playbackSpeed" 
+              type="range" 
+              :min="1" 
+              :max="10"
+              class="speed-slider"
+              title="Speed"
+            >
+            <span class="speed-label">{{ playbackSpeed }}x</span>
+          </div>
         </div>
-      </div>
 
         <!-- Statistics Panel -->
         <div class="stats-panel">
@@ -201,7 +290,11 @@
           <div class="stats-section">
             <h4>Статистика</h4>
             <div class="stats-grid-compact">
-              <div class="stat-item-compact" v-for="(stat, idx) in axisStats" :key="idx">
+              <div
+                v-for="(stat, idx) in axisStats"
+                :key="idx"
+                class="stat-item-compact"
+              >
                 <span class="stat-label-large">{{ selectedAssets[idx] }}</span>
                 <div class="stat-details-large">
                   <span>μ: {{ stat.mean.toFixed(2) }}%</span>
@@ -216,13 +309,19 @@
       <!-- Right: Plot Container -->
       <div class="plot-column">
         <!-- Loading Indicator -->
-        <div v-if="isLoading" class="loading-overlay">
-      <div class="spinner-large"></div>
-      <p>Загрузка данных...</p>
-    </div>
+        <div
+          v-if="isLoading"
+          class="loading-overlay"
+        >
+          <div class="spinner-large" />
+          <p>Загрузка данных...</p>
+        </div>
 
         <!-- Plot Container -->
-        <div ref="plotContainer" class="plot-container"></div>
+        <div
+          ref="plotContainer"
+          class="plot-container"
+        />
       </div>
     </div>
   </div>

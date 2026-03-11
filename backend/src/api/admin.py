@@ -2,11 +2,12 @@
 Admin API router: users management, health checks, request tracking, system info.
 """
 import asyncio
+import ipaddress
+import logging
 import platform
 import sys
 import time
-import logging
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import aiohttp
 from fastapi import APIRouter, Depends, HTTPException, Query
@@ -14,17 +15,15 @@ from pydantic import BaseModel, field_validator
 from sqlalchemy import select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
-import ipaddress
-
-from src.database.client import get_session, engine
-from src.database.sa_models import User, IpBan, RefreshToken
+from src.database.client import engine, get_session
+from src.database.sa_models import IpBan, RefreshToken, User
 from src.middleware.admin import require_admin
 from src.middleware.ip_ban import add_banned_ip, remove_banned_ip
 from src.middleware.request_tracker import (
-    get_recent_requests,
-    get_recent_errors,
-    get_active_requests,
     cancel_request,
+    get_active_requests,
+    get_recent_errors,
+    get_recent_requests,
     get_uptime_seconds,
 )
 
@@ -82,7 +81,7 @@ class IpBanRequest(BaseModel):
         try:
             ipaddress.ip_address(v.strip())
         except ValueError:
-            raise ValueError("Invalid IP address format")
+            raise ValueError("Invalid IP address format") from None
         return v.strip()
 
 
@@ -133,7 +132,7 @@ async def update_user_status(
         raise HTTPException(status_code=404, detail="User not found")
     user.status = body.status
     if body.status == "active" and not user.activated_at:
-        user.activated_at = datetime.now(timezone.utc)
+        user.activated_at = datetime.now(UTC)
     await session.commit()
     # Immediately evict cached status so require_auth picks up the change
     from src.middleware.auth import invalidate_user_status_cache
@@ -174,7 +173,7 @@ async def kick_user(user_id: int, admin: User = Depends(require_admin), session:
     # Revoke all active refresh tokens for this user
     await session.execute(
         update(RefreshToken)
-        .where(RefreshToken.user_id == user_id, RefreshToken.revoked == False)
+        .where(RefreshToken.user_id == user_id, not RefreshToken.revoked)
         .values(revoked=True)
     )
     await session.commit()
@@ -195,7 +194,7 @@ async def ban_user(user_id: int, admin: User = Depends(require_admin), session: 
     # Revoke all active refresh tokens
     await session.execute(
         update(RefreshToken)
-        .where(RefreshToken.user_id == user_id, RefreshToken.revoked == False)
+        .where(RefreshToken.user_id == user_id, not RefreshToken.revoked)
         .values(revoked=True)
     )
     await session.commit()
@@ -268,7 +267,7 @@ async def get_user_ip_info(user_id: int, session: AsyncSession = Depends(get_ses
     # For simplicity, we return the user info and let the frontend handle the IP lookup
     recent = get_recent_requests(limit=500)
     user_ip = None
-    for req in recent:
+    for _req in recent:
         # We can't directly match user to IP from request tracker alone
         # Return the most recent unique IPs as candidates
         pass

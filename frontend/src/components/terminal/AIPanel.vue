@@ -9,34 +9,50 @@
         <span class="ai-title font-oswald">ИИ АНАЛИТИК</span>
       </div>
       <div class="ai-status font-mono">
-        <span class="status-dot"></span>
+        <span class="status-dot" />
         <span>LIVE</span>
       </div>
     </div>
 
     <div class="ai-content custom-scrollbar">
       <!-- Idle State -->
-      <div v-if="!analysis && !loading" class="ai-idle">
+      <div
+        v-if="!analysis && !loading"
+        class="ai-idle"
+      >
         <div class="idle-icon">
           <SparklesIcon class="w-6 h-6" />
         </div>
         <div class="idle-text">
-          <h3 class="font-oswald">ОЖИДАНИЕ КОМАНДЫ</h3>
-          <p class="font-mono">Анализ рыночных данных для определения трендов и ключевых уровней.</p>
+          <h3 class="font-oswald">
+            ОЖИДАНИЕ КОМАНДЫ
+          </h3>
+          <p class="font-mono">
+            Анализ рыночных данных для определения трендов и ключевых уровней.
+          </p>
         </div>
-        <button @click="handleAnalyze" class="ai-btn font-oswald">
+        <button
+          class="ai-btn font-oswald"
+          @click="handleAnalyze"
+        >
           <ZapIcon class="w-3.5 h-3.5" /> ЗАПУСТИТЬ АНАЛИЗ
         </button>
       </div>
 
       <!-- Loading State -->
-      <div v-if="loading" class="ai-loading">
-        <div class="loading-spinner"></div>
+      <div
+        v-if="loading"
+        class="ai-loading"
+      >
+        <div class="loading-spinner" />
         <span class="font-mono">ОБРАБОТКА РЫНОЧНЫХ ДАННЫХ...</span>
       </div>
 
       <!-- Results -->
-      <div v-if="analysis" class="ai-results">
+      <div
+        v-if="analysis"
+        class="ai-results"
+      >
         <!-- Trend Card -->
         <div class="trend-card">
           <span class="trend-label font-mono">СИГНАЛ</span>
@@ -60,7 +76,7 @@
               <div
                 :class="['confidence-fill', { 'high': analysis.confidence > 70 }]"
                 :style="{ width: `${analysis.confidence}%` }"
-              ></div>
+              />
             </div>
           </div>
         </div>
@@ -68,10 +84,12 @@
         <!-- Reasoning -->
         <div class="reasoning-card">
           <div class="reasoning-header">
-            <div class="reasoning-indicator"></div>
+            <div class="reasoning-indicator" />
             <span class="font-mono">АНАЛИЗ</span>
           </div>
-          <p class="reasoning-text font-mono">{{ analysis.reasoning }}</p>
+          <p class="reasoning-text font-mono">
+            {{ analysis.reasoning }}
+          </p>
         </div>
 
         <!-- Levels -->
@@ -86,7 +104,10 @@
           </div>
         </div>
 
-        <button @click="handleAnalyze" class="refresh-btn font-mono">
+        <button
+          class="refresh-btn font-mono"
+          @click="handleAnalyze"
+        >
           <RefreshCwIcon class="w-3 h-3" /> ОБНОВИТЬ АНАЛИЗ
         </button>
       </div>

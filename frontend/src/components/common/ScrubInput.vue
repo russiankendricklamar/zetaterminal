@@ -6,13 +6,19 @@
     @mousedown="startDrag"
   >
     <!-- Label (Prefix) -->
-    <span v-if="prefix" class="scrub-prefix">{{ prefix }}</span>
+    <span
+      v-if="prefix"
+      class="scrub-prefix"
+    >{{ prefix }}</span>
     
     <!-- Value Display -->
     <span class="scrub-value">{{ formattedValue }}</span>
     
     <!-- Suffix -->
-    <span v-if="suffix" class="scrub-suffix">{{ suffix }}</span>
+    <span
+      v-if="suffix"
+      class="scrub-suffix"
+    >{{ suffix }}</span>
 
     <!-- Hidden Input for manual edit (Optional - double click to edit) -->
     <!-- Пока сделаем только drag -->

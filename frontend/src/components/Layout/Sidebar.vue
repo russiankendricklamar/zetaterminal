@@ -1,22 +1,29 @@
 <!-- src/components/layout/Sidebar.vue - Brutalist Design with Animations -->
 <template>
-  <div v-bind="$attrs" class="sidebar-wrapper">
+  <div
+    v-bind="$attrs"
+    class="sidebar-wrapper"
+  >
     <!-- Narrow Tab Bar (Left Strip) -->
     <div
       class="sidebar-tab"
-      @click="toggleSidebar"
       :class="{ hidden: isSidebarOpen }"
       title="Open Menu"
+      @click="toggleSidebar"
     >
       <div class="burger-icon">
-        <span></span>
-        <span></span>
-        <span></span>
+        <span />
+        <span />
+        <span />
       </div>
     </div>
 
     <!-- Backdrop Overlay -->
-    <div v-if="isSidebarOpen" class="sidebar-backdrop" @click="closeSidebar" />
+    <div
+      v-if="isSidebarOpen"
+      class="sidebar-backdrop"
+      @click="closeSidebar"
+    />
 
     <!-- Sliding Sidebar Panel -->
     <aside
@@ -35,12 +42,16 @@
             <span class="font-anton">STOCHASTIC &mdash; QUANT &mdash; RISK &mdash; SIGMA &mdash;&nbsp;</span>
           </div>
         </div>
-        <button class="close-btn" @click="closeSidebar">&times;</button>
+        <button
+          class="close-btn"
+          @click="closeSidebar"
+        >
+          &times;
+        </button>
       </div>
 
       <!-- Tools Navigation -->
       <nav class="sidebar-tools custom-scrollbar">
-
         <!-- HOME -->
         <router-link
           to="/"
@@ -50,8 +61,12 @@
         >
           <span class="nav-index font-mono">01</span>
           <div class="nav-info">
-            <div class="nav-title font-oswald">ГЛАВНАЯ</div>
-            <div class="nav-subtitle font-mono">Обзор инструментов</div>
+            <div class="nav-title font-oswald">
+              ГЛАВНАЯ
+            </div>
+            <div class="nav-subtitle font-mono">
+              Обзор инструментов
+            </div>
           </div>
           <span class="nav-arrow font-mono">&rarr;</span>
         </router-link>
@@ -65,8 +80,12 @@
         >
           <span class="nav-index font-mono">02</span>
           <div class="nav-info">
-            <div class="nav-title font-oswald">ДОКУМЕНТАЦИЯ</div>
-            <div class="nav-subtitle font-mono">Как работать с приложением</div>
+            <div class="nav-title font-oswald">
+              ДОКУМЕНТАЦИЯ
+            </div>
+            <div class="nav-subtitle font-mono">
+              Как работать с приложением
+            </div>
           </div>
           <span class="nav-arrow font-mono">&rarr;</span>
         </router-link>
@@ -79,16 +98,22 @@
           @mouseenter="prefetchRoute('/terminal')"
           @click.native="handleNavClick"
         >
-          <div class="zeta-icon font-anton">&zeta;</div>
+          <div class="zeta-icon font-anton">
+            &zeta;
+          </div>
           <div class="nav-info">
-            <div class="nav-title font-oswald">ДЗЕТА-ТЕРМИНАЛ</div>
-            <div class="nav-subtitle font-mono">Потоковые данные в реальном времени</div>
+            <div class="nav-title font-oswald">
+              ДЗЕТА-ТЕРМИНАЛ
+            </div>
+            <div class="nav-subtitle font-mono">
+              Потоковые данные в реальном времени
+            </div>
           </div>
           <span class="nav-arrow font-mono">&rarr;</span>
         </router-link>
 
         <!-- Divider -->
-        <div class="sidebar-divider"></div>
+        <div class="sidebar-divider" />
 
         <!-- Tool Groups -->
         <div
@@ -99,8 +124,8 @@
         >
           <button
             class="tool-header"
-            @click="toggleTool(key, $event)"
             :class="{ expanded: expandedTools[key] }"
+            @click="toggleTool(key, $event)"
           >
             <span class="tool-index font-mono">{{ String(groupIndex + 3).padStart(2, '0') }}</span>
             <div class="tool-info">
@@ -108,7 +133,14 @@
               <span class="tool-subtitle font-mono">{{ group.subtitle }}</span>
             </div>
             <div class="chevron">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
                 <polyline points="6 9 12 15 18 9" />
               </svg>
             </div>
@@ -119,8 +151,16 @@
             :class="{ expanded: expandedTools[key] }"
           >
             <div class="tool-content">
-              <template v-for="(item, itemIndex) in group.items" :key="item.path || item.label">
-                <div v-if="item.section" class="section-label font-mono">{{ item.label }}</div>
+              <template
+                v-for="(item, itemIndex) in group.items"
+                :key="item.path || item.label"
+              >
+                <div
+                  v-if="item.section"
+                  class="section-label font-mono"
+                >
+                  {{ item.label }}
+                </div>
                 <router-link
                   v-else
                   :to="item.path"
@@ -130,10 +170,16 @@
                   @mouseenter="prefetchRoute(item.path)"
                   @click.native="!item.soon && handleNavClick($event)"
                 >
-                  <span class="item-dot"></span>
+                  <span class="item-dot" />
                   <span class="nav-label font-mono">{{ item.label }}</span>
-                  <span v-if="item.soon" class="nav-soon font-mono">SOON</span>
-                  <span v-else class="item-arrow font-mono">&rarr;</span>
+                  <span
+                    v-if="item.soon"
+                    class="nav-soon font-mono"
+                  >SOON</span>
+                  <span
+                    v-else
+                    class="item-arrow font-mono"
+                  >&rarr;</span>
                 </router-link>
               </template>
             </div>
@@ -141,7 +187,7 @@
         </div>
       </nav>
 
-      <div class="sidebar-divider"></div>
+      <div class="sidebar-divider" />
 
       <!-- Settings Link -->
       <router-link
@@ -163,7 +209,7 @@
         <div class="status-row">
           <span class="lbl font-mono">API</span>
           <span class="val online font-mono">
-            <span class="pulse-dot"></span>
+            <span class="pulse-dot" />
             ONLINE
           </span>
         </div>
@@ -171,7 +217,9 @@
           <span class="lbl font-mono">TIME</span>
           <span class="val font-mono">{{ marketTime }}</span>
         </div>
-        <div class="version-tag font-mono">v2.0 BRUTALIST</div>
+        <div class="version-tag font-mono">
+          v2.0 BRUTALIST
+        </div>
       </div>
     </aside>
   </div>

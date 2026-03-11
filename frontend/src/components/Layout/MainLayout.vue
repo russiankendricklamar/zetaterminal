@@ -2,7 +2,7 @@
 <template>
   <div class="app-root">
     <!-- Noise Overlay -->
-    <div class="bg-noise"></div>
+    <div class="bg-noise" />
 
     <div class="app-container">
       <!-- Navigation (Sidebar) -->
@@ -10,7 +10,6 @@
 
       <!-- Main Content Window -->
       <div class="main-window">
-
         <!-- Dynamic Island Container -->
         <div class="island-position">
           <TaskWidget />
@@ -19,7 +18,6 @@
         <!-- Header -->
         <header class="window-header">
           <div class="header-content">
-
             <!-- Top Row: Breadcrumbs & System Status -->
             <div class="header-top">
               <nav class="breadcrumbs font-mono">
@@ -30,10 +28,10 @@
 
               <div class="system-status">
                 <div class="status-pill">
-                  <span class="status-dot online"></span>
+                  <span class="status-dot online" />
                   <span class="status-label font-mono">API LIVE</span>
                 </div>
-                <div class="divider-v"></div>
+                <div class="divider-v" />
                 <div class="status-text font-mono">
                   {{ latency }}ms
                 </div>
@@ -42,78 +40,146 @@
 
             <!-- Bottom Row: Search & Actions -->
             <div class="header-bottom">
-
               <!-- Search Input -->
               <div class="search-wrapper">
-                <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <circle cx="11" cy="11" r="8"/>
-                  <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                <svg
+                  class="search-icon"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                >
+                  <circle
+                    cx="11"
+                    cy="11"
+                    r="8"
+                  />
+                  <line
+                    x1="21"
+                    y1="21"
+                    x2="16.65"
+                    y2="16.65"
+                  />
                 </svg>
                 <input
+                  v-model="searchQuery"
                   type="text"
                   placeholder="Поиск по тикеру, ISIN..."
                   class="search-input font-mono"
-                  v-model="searchQuery"
                 >
-                <div class="hk-badge font-mono">⌘K</div>
+                <div class="hk-badge font-mono">
+                  ⌘K
+                </div>
               </div>
 
               <!-- Actions Group -->
               <div class="actions-group">
                 <button
                   class="icon-btn"
-                  @click="toggleNotifications"
                   :class="{ active: showNotifications }"
                   aria-label="Notifications"
+                  @click="toggleNotifications"
                 >
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
-                    <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+                  <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                  >
+                    <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+                    <path d="M13.73 21a2 2 0 0 1-3.46 0" />
                   </svg>
-                  <span v-if="unreadCount" class="notification-badge">{{ unreadCount }}</span>
+                  <span
+                    v-if="unreadCount"
+                    class="notification-badge"
+                  >{{ unreadCount }}</span>
                 </button>
 
                 <div class="user-avatar-wrapper">
-                  <div class="user-avatar font-oswald" @click.stop="toggleUserMenu">
+                  <div
+                    class="user-avatar font-oswald"
+                    @click.stop="toggleUserMenu"
+                  >
                     <span>{{ userInitials }}</span>
                   </div>
                   <transition name="slide">
-                    <div v-if="showUserMenu" class="user-menu" @click.stop>
-                      <button class="user-menu-item font-mono" @click="goToProfile">ПРОФИЛЬ</button>
-                      <button v-if="isAdminUser" class="user-menu-item font-mono" @click="goToAdmin">ADMIN PANEL</button>
-                      <div class="user-menu-divider"></div>
-                      <button class="user-menu-item user-menu-logout font-mono" @click="handleLogout">ВЫХОД &rarr;</button>
+                    <div
+                      v-if="showUserMenu"
+                      class="user-menu"
+                      @click.stop
+                    >
+                      <button
+                        class="user-menu-item font-mono"
+                        @click="goToProfile"
+                      >
+                        ПРОФИЛЬ
+                      </button>
+                      <button
+                        v-if="isAdminUser"
+                        class="user-menu-item font-mono"
+                        @click="goToAdmin"
+                      >
+                        ADMIN PANEL
+                      </button>
+                      <div class="user-menu-divider" />
+                      <button
+                        class="user-menu-item user-menu-logout font-mono"
+                        @click="handleLogout"
+                      >
+                        ВЫХОД &rarr;
+                      </button>
                     </div>
                   </transition>
                 </div>
               </div>
             </div>
-
           </div>
 
           <!-- Notifications Panel -->
           <transition name="slide">
-            <div v-if="showNotifications" class="notifications-panel">
+            <div
+              v-if="showNotifications"
+              class="notifications-panel"
+            >
               <div class="panel-header">
-                <h3 class="font-oswald">УВЕДОМЛЕНИЯ</h3>
-                <button @click="unreadCount = 0" class="clear-btn font-mono">ОЧИСТИТЬ</button>
+                <h3 class="font-oswald">
+                  УВЕДОМЛЕНИЯ
+                </h3>
+                <button
+                  class="clear-btn font-mono"
+                  @click="unreadCount = 0"
+                >
+                  ОЧИСТИТЬ
+                </button>
               </div>
               <div class="notifications-list">
                 <div class="notif-item">
-                  <div class="notif-indicator warning"></div>
+                  <div class="notif-indicator warning" />
                   <div class="notif-content">
-                    <div class="notif-title font-oswald">HIGH VOLATILITY</div>
-                    <div class="notif-desc font-mono">VIX spike > 25.0 detected</div>
+                    <div class="notif-title font-oswald">
+                      HIGH VOLATILITY
+                    </div>
+                    <div class="notif-desc font-mono">
+                      VIX spike > 25.0 detected
+                    </div>
                   </div>
-                  <div class="notif-time font-mono">2m</div>
+                  <div class="notif-time font-mono">
+                    2m
+                  </div>
                 </div>
                 <div class="notif-item">
-                  <div class="notif-indicator success"></div>
+                  <div class="notif-indicator success" />
                   <div class="notif-content">
-                    <div class="notif-title font-oswald">REBALANCED</div>
-                    <div class="notif-desc font-mono">Target weights achieved</div>
+                    <div class="notif-title font-oswald">
+                      REBALANCED
+                    </div>
+                    <div class="notif-desc font-mono">
+                      Target weights achieved
+                    </div>
                   </div>
-                  <div class="notif-time font-mono">1h</div>
+                  <div class="notif-time font-mono">
+                    1h
+                  </div>
                 </div>
               </div>
             </div>
@@ -123,12 +189,14 @@
         <!-- Content Area -->
         <main class="window-content custom-scrollbar">
           <RouterView v-slot="{ Component }">
-            <transition name="fade" mode="out-in">
+            <transition
+              name="fade"
+              mode="out-in"
+            >
               <component :is="Component" />
             </transition>
           </RouterView>
         </main>
-
       </div>
     </div>
   </div>

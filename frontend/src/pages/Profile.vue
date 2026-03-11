@@ -4,14 +4,19 @@
       <!-- Header -->
       <header class="h-12 bg-[var(--bg-secondary)] border border-[var(--border-dark)] flex items-center justify-between px-4 flex-shrink-0">
         <div class="flex items-center gap-4">
-          <router-link to="/terminal" class="flex items-center gap-2 text-white cursor-pointer flex-shrink-0">
+          <router-link
+            to="/terminal"
+            class="flex items-center gap-2 text-white cursor-pointer flex-shrink-0"
+          >
             <div class="w-8 h-8 bg-[var(--accent-red)] flex items-center justify-center">
               <span class="text-white font-bold text-sm">&zeta;</span>
             </div>
             <span class="font-anton tracking-tight text-sm hidden lg:block">ДЗЕТА-ТЕРМИНАЛ</span>
           </router-link>
-          <div class="h-4 w-[1px] bg-[var(--border-dark)]"></div>
-          <h1 class="text-sm font-bold text-white font-oswald uppercase tracking-wider">Профиль</h1>
+          <div class="h-4 w-[1px] bg-[var(--border-dark)]" />
+          <h1 class="text-sm font-bold text-white font-oswald uppercase tracking-wider">
+            Профиль
+          </h1>
         </div>
         <div class="flex items-center gap-3">
           <router-link
@@ -21,7 +26,10 @@
           >
             Admin Panel →
           </router-link>
-          <button @click="$router.back()" class="px-4 py-2 text-xs text-[var(--text-muted)] hover:text-white transition-colors border border-[var(--border-dark)] hover:border-[var(--accent-red)] font-mono uppercase">
+          <button
+            class="px-4 py-2 text-xs text-[var(--text-muted)] hover:text-white transition-colors border border-[var(--border-dark)] hover:border-[var(--accent-red)] font-mono uppercase"
+            @click="$router.back()"
+          >
             Назад
           </button>
         </div>
@@ -30,42 +38,74 @@
       <!-- Content -->
       <div class="flex-1 bg-[var(--bg-secondary)] border border-[var(--border-dark)] overflow-hidden flex flex-col overflow-y-auto custom-scrollbar">
         <!-- Loading -->
-        <div v-if="loading" class="flex-1 flex items-center justify-center">
+        <div
+          v-if="loading"
+          class="flex-1 flex items-center justify-center"
+        >
           <span class="text-[var(--text-muted)] font-mono text-sm">Загрузка профиля...</span>
         </div>
 
         <!-- Error -->
-        <div v-else-if="loadError" class="flex-1 flex items-center justify-center">
+        <div
+          v-else-if="loadError"
+          class="flex-1 flex items-center justify-center"
+        >
           <div class="text-center space-y-4">
-            <p class="text-[var(--accent-red)] font-mono text-sm">{{ loadError }}</p>
-            <button @click="loadProfile" class="px-4 py-2 text-xs text-white bg-[var(--accent-red)] hover:bg-red-700 transition-colors font-oswald uppercase">
+            <p class="text-[var(--accent-red)] font-mono text-sm">
+              {{ loadError }}
+            </p>
+            <button
+              class="px-4 py-2 text-xs text-white bg-[var(--accent-red)] hover:bg-red-700 transition-colors font-oswald uppercase"
+              @click="loadProfile"
+            >
               Повторить
             </button>
           </div>
         </div>
 
         <!-- Profile form -->
-        <div v-else class="p-8 max-w-4xl mx-auto w-full space-y-8">
+        <div
+          v-else
+          class="p-8 max-w-4xl mx-auto w-full space-y-8"
+        >
           <!-- Profile Header -->
           <div class="flex flex-col md:flex-row items-center md:items-start gap-6 pb-8 border-b border-[var(--border-dark)]">
             <div class="relative group">
               <div class="w-32 h-32 bg-[var(--bg-tertiary)] border-2 border-[var(--border-dark)] flex items-center justify-center text-[var(--accent-red)] font-bold text-2xl font-anton relative overflow-hidden">
                 <span v-if="!avatarPreview">{{ initials }}</span>
-                <img v-else :src="avatarPreview" alt="Avatar" class="w-full h-full object-cover" />
+                <img
+                  v-else
+                  :src="avatarPreview"
+                  alt="Avatar"
+                  class="w-full h-full object-cover"
+                >
               </div>
-              <button @click="triggerAvatarUpload" class="absolute bottom-0 right-0 w-10 h-10 bg-[var(--accent-red)] hover:bg-red-700 flex items-center justify-center transition-colors border border-[var(--border-dark)]">
+              <button
+                class="absolute bottom-0 right-0 w-10 h-10 bg-[var(--accent-red)] hover:bg-red-700 flex items-center justify-center transition-colors border border-[var(--border-dark)]"
+                @click="triggerAvatarUpload"
+              >
                 <CameraIcon class="w-5 h-5 text-white" />
               </button>
-              <input ref="avatarInput" type="file" accept="image/*" @change="handleAvatarChange" class="hidden" />
+              <input
+                ref="avatarInput"
+                type="file"
+                accept="image/*"
+                class="hidden"
+                @change="handleAvatarChange"
+              >
             </div>
             <div class="flex-1 text-center md:text-left">
-              <h2 class="text-2xl font-anton text-white mb-2 uppercase tracking-wider">{{ form.display_name || form.username }}</h2>
+              <h2 class="text-2xl font-anton text-white mb-2 uppercase tracking-wider">
+                {{ form.display_name || form.username }}
+              </h2>
               <div class="flex flex-wrap items-center justify-center md:justify-start gap-2 mb-4">
                 <span class="text-xs text-[var(--accent-red)] font-mono bg-[var(--accent-red)]/10 px-2 py-1 border border-[var(--accent-red)]/30">{{ form.role === 'admin' ? 'Admin' : 'User' }}</span>
                 <span class="text-xs text-[var(--text-muted)]">&bull;</span>
                 <span class="text-xs text-[var(--text-muted)] font-mono">{{ form.domain_handle }}</span>
               </div>
-              <p class="text-sm text-[var(--text-secondary)]">{{ form.bio || 'Добавьте описание профиля' }}</p>
+              <p class="text-sm text-[var(--text-secondary)]">
+                {{ form.bio || 'Добавьте описание профиля' }}
+              </p>
             </div>
           </div>
 
@@ -73,7 +113,9 @@
           <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             <!-- Basic Information -->
             <div class="space-y-4">
-              <h3 class="text-lg font-oswald text-white mb-4 uppercase tracking-wider border-l-2 border-[var(--accent-red)] pl-3">Основная информация</h3>
+              <h3 class="text-lg font-oswald text-white mb-4 uppercase tracking-wider border-l-2 border-[var(--accent-red)] pl-3">
+                Основная информация
+              </h3>
 
               <div>
                 <label class="block text-xs font-bold text-[var(--text-muted)] uppercase mb-2 font-mono">Имя</label>
@@ -82,7 +124,7 @@
                   type="text"
                   class="w-full bg-[var(--bg-tertiary)] border border-[var(--border-dark)] py-2.5 px-4 text-sm text-white focus:border-[var(--accent-red)] outline-none transition-colors font-mono"
                   placeholder="Введите имя"
-                />
+                >
               </div>
 
               <div>
@@ -92,7 +134,7 @@
                   type="email"
                   class="w-full bg-[var(--bg-tertiary)] border border-[var(--border-dark)] py-2.5 px-4 text-sm text-white focus:border-[var(--accent-red)] outline-none transition-colors font-mono"
                   placeholder="email@example.com"
-                />
+                >
               </div>
 
               <div>
@@ -102,13 +144,15 @@
                   type="tel"
                   class="w-full bg-[var(--bg-tertiary)] border border-[var(--border-dark)] py-2.5 px-4 text-sm text-white focus:border-[var(--accent-red)] outline-none transition-colors font-mono"
                   placeholder="+7 (999) 123-45-67"
-                />
+                >
               </div>
             </div>
 
             <!-- Additional Information -->
             <div class="space-y-4">
-              <h3 class="text-lg font-oswald text-white mb-4 uppercase tracking-wider border-l-2 border-[var(--accent-red)] pl-3">Дополнительно</h3>
+              <h3 class="text-lg font-oswald text-white mb-4 uppercase tracking-wider border-l-2 border-[var(--accent-red)] pl-3">
+                Дополнительно
+              </h3>
 
               <div>
                 <label class="block text-xs font-bold text-[var(--text-muted)] uppercase mb-2 font-mono">Описание</label>
@@ -117,7 +161,7 @@
                   rows="3"
                   class="w-full bg-[var(--bg-tertiary)] border border-[var(--border-dark)] py-2.5 px-4 text-sm text-white focus:border-[var(--accent-red)] outline-none transition-colors resize-none font-mono"
                   placeholder="Краткое описание о себе..."
-                ></textarea>
+                />
               </div>
 
               <div>
@@ -126,10 +170,18 @@
                   v-model="prefs.timezone"
                   class="w-full bg-[var(--bg-tertiary)] border border-[var(--border-dark)] py-2.5 px-4 text-sm text-white focus:border-[var(--accent-red)] outline-none transition-colors font-mono"
                 >
-                  <option value="UTC+03:00">UTC+03:00 (Москва)</option>
-                  <option value="UTC+00:00">UTC+00:00 (Лондон)</option>
-                  <option value="UTC-05:00">UTC-05:00 (Восточное время)</option>
-                  <option value="UTC+08:00">UTC+08:00 (Пекин)</option>
+                  <option value="UTC+03:00">
+                    UTC+03:00 (Москва)
+                  </option>
+                  <option value="UTC+00:00">
+                    UTC+00:00 (Лондон)
+                  </option>
+                  <option value="UTC-05:00">
+                    UTC-05:00 (Восточное время)
+                  </option>
+                  <option value="UTC+08:00">
+                    UTC+08:00 (Пекин)
+                  </option>
                 </select>
               </div>
 
@@ -139,8 +191,12 @@
                   v-model="prefs.language"
                   class="w-full bg-[var(--bg-tertiary)] border border-[var(--border-dark)] py-2.5 px-4 text-sm text-white focus:border-[var(--accent-red)] outline-none transition-colors font-mono"
                 >
-                  <option value="ru">Русский</option>
-                  <option value="en">English</option>
+                  <option value="ru">
+                    Русский
+                  </option>
+                  <option value="en">
+                    English
+                  </option>
                 </select>
               </div>
             </div>
@@ -148,7 +204,9 @@
 
           <!-- Preferences -->
           <div class="pt-6 border-t border-[var(--border-dark)]">
-            <h3 class="text-lg font-oswald text-white mb-4 uppercase tracking-wider border-l-2 border-[var(--accent-red)] pl-3">Предпочтения</h3>
+            <h3 class="text-lg font-oswald text-white mb-4 uppercase tracking-wider border-l-2 border-[var(--accent-red)] pl-3">
+              Предпочтения
+            </h3>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <label class="block text-xs font-bold text-[var(--text-muted)] uppercase mb-2 font-mono">Валюта по умолчанию</label>
@@ -156,9 +214,15 @@
                   v-model="prefs.currency"
                   class="w-full bg-[var(--bg-tertiary)] border border-[var(--border-dark)] py-2.5 px-4 text-sm text-white focus:border-[var(--accent-red)] outline-none transition-colors font-mono"
                 >
-                  <option value="RUB">RUB - Российский рубль</option>
-                  <option value="USD">USD - Доллар США</option>
-                  <option value="EUR">EUR - Евро</option>
+                  <option value="RUB">
+                    RUB - Российский рубль
+                  </option>
+                  <option value="USD">
+                    USD - Доллар США
+                  </option>
+                  <option value="EUR">
+                    EUR - Евро
+                  </option>
                 </select>
               </div>
 
@@ -166,15 +230,27 @@
                 <label class="block text-xs font-bold text-[var(--text-muted)] uppercase mb-2 font-mono">Уведомления</label>
                 <div class="space-y-2">
                   <label class="flex items-center gap-3 text-sm text-[var(--text-secondary)] cursor-pointer group">
-                    <input type="checkbox" v-model="prefs.notifications.email" class="w-4 h-4 border border-[var(--border-dark)] bg-[var(--bg-tertiary)] accent-[var(--accent-red)]" />
+                    <input
+                      v-model="prefs.notifications.email"
+                      type="checkbox"
+                      class="w-4 h-4 border border-[var(--border-dark)] bg-[var(--bg-tertiary)] accent-[var(--accent-red)]"
+                    >
                     <span class="group-hover:text-white transition-colors">Email уведомления</span>
                   </label>
                   <label class="flex items-center gap-3 text-sm text-[var(--text-secondary)] cursor-pointer group">
-                    <input type="checkbox" v-model="prefs.notifications.push" class="w-4 h-4 border border-[var(--border-dark)] bg-[var(--bg-tertiary)] accent-[var(--accent-red)]" />
+                    <input
+                      v-model="prefs.notifications.push"
+                      type="checkbox"
+                      class="w-4 h-4 border border-[var(--border-dark)] bg-[var(--bg-tertiary)] accent-[var(--accent-red)]"
+                    >
                     <span class="group-hover:text-white transition-colors">Push уведомления</span>
                   </label>
                   <label class="flex items-center gap-3 text-sm text-[var(--text-secondary)] cursor-pointer group">
-                    <input type="checkbox" v-model="prefs.notifications.sms" class="w-4 h-4 border border-[var(--border-dark)] bg-[var(--bg-tertiary)] accent-[var(--accent-red)]" />
+                    <input
+                      v-model="prefs.notifications.sms"
+                      type="checkbox"
+                      class="w-4 h-4 border border-[var(--border-dark)] bg-[var(--bg-tertiary)] accent-[var(--accent-red)]"
+                    >
                     <span class="group-hover:text-white transition-colors">SMS уведомления</span>
                   </label>
                 </div>
@@ -183,22 +259,28 @@
           </div>
 
           <!-- Status message -->
-          <div v-if="saveMessage" class="text-center">
-            <span :class="saveError ? 'text-[var(--accent-red)]' : 'text-green-500'" class="font-mono text-sm">{{ saveMessage }}</span>
+          <div
+            v-if="saveMessage"
+            class="text-center"
+          >
+            <span
+              :class="saveError ? 'text-[var(--accent-red)]' : 'text-green-500'"
+              class="font-mono text-sm"
+            >{{ saveMessage }}</span>
           </div>
 
           <!-- Save Button -->
           <div class="flex justify-end gap-4 pt-6 border-t border-[var(--border-dark)]">
             <button
-              @click="$router.back()"
               class="px-6 py-2.5 bg-[var(--bg-tertiary)] hover:bg-[var(--border-dark)] text-[var(--text-secondary)] hover:text-white text-sm font-bold transition-colors border border-[var(--border-dark)] font-oswald uppercase tracking-wider"
+              @click="$router.back()"
             >
               Отмена
             </button>
             <button
-              @click="saveProfile"
               :disabled="saving"
               class="px-6 py-2.5 bg-[var(--accent-red)] hover:bg-red-700 text-white text-sm font-bold transition-colors border border-[var(--accent-red)] flex items-center gap-2 font-oswald uppercase tracking-wider disabled:opacity-50"
+              @click="saveProfile"
             >
               <SaveIcon class="w-4 h-4" />
               {{ saving ? 'Сохранение...' : 'Сохранить' }}

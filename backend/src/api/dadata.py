@@ -9,9 +9,9 @@ import logging
 from fastapi import APIRouter, HTTPException, Query
 
 from src.services.dadata_service import (
+    dadata_find_bank,
     dadata_find_company,
     dadata_suggest_company,
-    dadata_find_bank,
 )
 
 logger = logging.getLogger(__name__)
@@ -34,7 +34,7 @@ async def find_company(inn: str):
         return await dadata_find_company(inn)
     except Exception as e:
         logger.error("DaData operation failed: %s", e, exc_info=True)
-        raise HTTPException(status_code=500, detail="Internal server error")
+        raise HTTPException(status_code=500, detail="Internal server error") from e
 
 
 @router.get("/suggest/company")
@@ -47,7 +47,7 @@ async def suggest_company(
         return await dadata_suggest_company(q, count)
     except Exception as e:
         logger.error("DaData operation failed: %s", e, exc_info=True)
-        raise HTTPException(status_code=500, detail="Internal server error")
+        raise HTTPException(status_code=500, detail="Internal server error") from e
 
 
 @router.get("/suggest/bank")
@@ -61,7 +61,7 @@ async def find_bank(
         return await dadata_find_bank(bik)
     except Exception as e:
         logger.error("DaData operation failed: %s", e, exc_info=True)
-        raise HTTPException(status_code=500, detail="Internal server error")
+        raise HTTPException(status_code=500, detail="Internal server error") from e
 
 
 @router.get("/health")

@@ -12,10 +12,10 @@ Usage:
         data = await resp.json()
 """
 
-import aiohttp
-from typing import Optional
 
-_session: Optional[aiohttp.ClientSession] = None
+import aiohttp
+
+_session: aiohttp.ClientSession | None = None
 
 
 async def get_session() -> aiohttp.ClientSession:

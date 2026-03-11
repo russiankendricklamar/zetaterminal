@@ -1,31 +1,34 @@
 <template>
   <div class="page-container custom-scroll">
-    
     <!-- Header -->
     <div class="section-header">
       <div class="header-left">
-        <h1 class="section-title">Результаты бэктеста</h1>
-        <p class="section-subtitle">Историческая симуляция стратегии (Long/Short)</p>
+        <h1 class="section-title">
+          Результаты бэктеста
+        </h1>
+        <p class="section-subtitle">
+          Историческая симуляция стратегии (Long/Short)
+        </p>
       </div>
       
       <div class="header-right">
         <!-- Selected Bank -->
         <div class="glass-pill control-pill">
-           <span class="lbl-mini">Банк:</span>
-           <span class="text-white font-bold">{{ selectedBank.name }}</span>
+          <span class="lbl-mini">Банк:</span>
+          <span class="text-white font-bold">{{ selectedBank.name }}</span>
         </div>
         
         <!-- Glass Segmented Control -->
         <div class="glass-segmented-control">
-        <button
-          v-for="period in periods"
-          :key="period"
-          @click="selectedPeriod = period"
-          class="seg-btn"
-          :class="{ active: selectedPeriod === period }"
-        >
-          {{ period }}
-        </button>
+          <button
+            v-for="period in periods"
+            :key="period"
+            class="seg-btn"
+            :class="{ active: selectedPeriod === period }"
+            @click="selectedPeriod = period"
+          >
+            {{ period }}
+          </button>
         </div>
       </div>
     </div>
@@ -33,37 +36,51 @@
     <!-- KPI Cards (4-column) -->
     <div class="kpi-cards-grid">
       <div class="glass-card kpi-card">
-        <div class="kpi-label">Общая доходность</div>
+        <div class="kpi-label">
+          Общая доходность
+        </div>
         <div class="kpi-value text-gradient-green">
           {{ backtestResults?.metrics ? (backtestResults.metrics.total_return * 100).toFixed(1) + '%' : '+24.5%' }}
         </div>
         <div class="kpi-change text-green">
-           <span class="icon-up">↑</span> vs SPY: +6.2%
+          <span class="icon-up">↑</span> vs SPY: +6.2%
         </div>
       </div>
 
       <div class="glass-card kpi-card">
-        <div class="kpi-label">CAGR (Годовая)</div>
+        <div class="kpi-label">
+          CAGR (Годовая)
+        </div>
         <div class="kpi-value text-white">
           {{ backtestResults?.metrics ? (backtestResults.metrics.cagr * 100).toFixed(1) + '%' : '18.2%' }}
         </div>
-        <div class="kpi-change text-muted">Безрисковая ставка: 5.0%</div>
+        <div class="kpi-change text-muted">
+          Безрисковая ставка: 5.0%
+        </div>
       </div>
 
       <div class="glass-card kpi-card">
-        <div class="kpi-label">Коэф. Шарпа</div>
+        <div class="kpi-label">
+          Коэф. Шарпа
+        </div>
         <div class="kpi-value text-gradient-blue">
           {{ backtestResults?.metrics ? backtestResults.metrics.sharpe_ratio.toFixed(2) : '1.58' }}
         </div>
-        <div class="kpi-change text-blue">Топ 15%</div>
+        <div class="kpi-change text-blue">
+          Топ 15%
+        </div>
       </div>
 
       <div class="glass-card kpi-card">
-        <div class="kpi-label">Макс. Просадка</div>
+        <div class="kpi-label">
+          Макс. Просадка
+        </div>
         <div class="kpi-value text-red">
           {{ backtestResults?.metrics ? (backtestResults.metrics.max_drawdown * 100).toFixed(1) + '%' : '-14.2%' }}
         </div>
-        <div class="kpi-change text-red">Высокий риск</div>
+        <div class="kpi-change text-red">
+          Высокий риск
+        </div>
       </div>
     </div>
 
@@ -71,74 +88,159 @@
     <div class="glass-card chart-panel">
       <div class="panel-header">
         <div class="ph-left">
-            <h3>Кривая капитала</h3>
-            <span class="badge-live">Накопительный</span>
+          <h3>Кривая капитала</h3>
+          <span class="badge-live">Накопительный</span>
         </div>
         <div class="chart-legend">
-          <div class="legend-item"><span class="dot strategy"></span>Портфель</div>
-          <div class="legend-item"><span class="dot benchmark"></span>S&P 500</div>
+          <div class="legend-item">
+            <span class="dot strategy" />Портфель
+          </div>
+          <div class="legend-item">
+            <span class="dot benchmark" />S&P 500
+          </div>
         </div>
       </div>
       <div class="chart-container">
-         <svg viewBox="0 0 1000 250" preserveAspectRatio="none" class="main-svg">
-              <!-- Gradients -->
-              <defs>
-                <linearGradient id="grad-green" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stop-color="rgba(74, 222, 128, 0.3)"/>
-                  <stop offset="100%" stop-color="rgba(74, 222, 128, 0)"/>
-                </linearGradient>
-              </defs>
+        <svg
+          viewBox="0 0 1000 250"
+          preserveAspectRatio="none"
+          class="main-svg"
+        >
+          <!-- Gradients -->
+          <defs>
+            <linearGradient
+              id="grad-green"
+              x1="0"
+              y1="0"
+              x2="0"
+              y2="1"
+            >
+              <stop
+                offset="0%"
+                stop-color="rgba(74, 222, 128, 0.3)"
+              />
+              <stop
+                offset="100%"
+                stop-color="rgba(74, 222, 128, 0)"
+              />
+            </linearGradient>
+          </defs>
 
-              <!-- Grid -->
-              <line x1="0" y1="50" x2="1000" y2="50" stroke="rgba(255,255,255,0.05)" />
-              <line x1="0" y1="125" x2="1000" y2="125" stroke="rgba(255,255,255,0.05)" />
-              <line x1="0" y1="200" x2="1000" y2="200" stroke="rgba(255,255,255,0.05)" />
+          <!-- Grid -->
+          <line
+            x1="0"
+            y1="50"
+            x2="1000"
+            y2="50"
+            stroke="rgba(255,255,255,0.05)"
+          />
+          <line
+            x1="0"
+            y1="125"
+            x2="1000"
+            y2="125"
+            stroke="rgba(255,255,255,0.05)"
+          />
+          <line
+            x1="0"
+            y1="200"
+            x2="1000"
+            y2="200"
+            stroke="rgba(255,255,255,0.05)"
+          />
 
-              <!-- Benchmark (Dashed) -->
-              <path :d="generateBenchmarkPath()" fill="none" stroke="rgba(255,255,255,0.2)" stroke-width="2" stroke-dasharray="6,4"/>
+          <!-- Benchmark (Dashed) -->
+          <path
+            :d="generateBenchmarkPath()"
+            fill="none"
+            stroke="rgba(255,255,255,0.2)"
+            stroke-width="2"
+            stroke-dasharray="6,4"
+          />
               
-              <!-- Strategy Area -->
-              <path :d="generateStrategyAreaPath()" fill="url(#grad-green)" stroke="none"/>
-              <!-- Strategy Line -->
-              <path :d="generateStrategyPath()" fill="none" stroke="#4ade80" stroke-width="3" stroke-linecap="round"/>
+          <!-- Strategy Area -->
+          <path
+            :d="generateStrategyAreaPath()"
+            fill="url(#grad-green)"
+            stroke="none"
+          />
+          <!-- Strategy Line -->
+          <path
+            :d="generateStrategyPath()"
+            fill="none"
+            stroke="#4ade80"
+            stroke-width="3"
+            stroke-linecap="round"
+          />
               
-              <!-- Max Drawdown Marker -->
-              <circle v-if="maxDrawdownMarker" :cx="maxDrawdownMarker.x" :cy="maxDrawdownMarker.y" r="4" fill="#1e293b" stroke="#f87171" stroke-width="2" />
-         </svg>
+          <!-- Max Drawdown Marker -->
+          <circle
+            v-if="maxDrawdownMarker"
+            :cx="maxDrawdownMarker.x"
+            :cy="maxDrawdownMarker.y"
+            r="4"
+            fill="#1e293b"
+            stroke="#f87171"
+            stroke-width="2"
+          />
+        </svg>
       </div>
     </div>
 
     <!-- Split View: Heatmap & Stats -->
     <div class="dashboard-grid">
-      
       <!-- Left: Monthly Heatmap -->
       <div class="col-left">
         <div class="glass-card panel-full">
           <div class="panel-header">
-             <h3>Месячная доходность</h3>
+            <h3>Месячная доходность</h3>
           </div>
           <div class="table-wrapper custom-scroll">
             <table class="heatmap-table">
               <thead>
                 <tr>
-                  <th class="col-month"></th>
-                  <th v-for="year in computedYears" :key="year" class="col-year">{{ year }}</th>
+                  <th class="col-month" />
+                  <th
+                    v-for="year in computedYears"
+                    :key="year"
+                    class="col-year"
+                  >
+                    {{ year }}
+                  </th>
                 </tr>
               </thead>
               <tbody>
-                <tr v-for="(month, idx) in months" :key="month">
-                  <td class="col-month">{{ month }}</td>
-                  <td v-for="year in computedYears" :key="`${month}-${year}`" class="col-val">
-                    <div class="val-pill" :class="getReturnClass(computedMonthlyReturns[idx]?.[year] || '0.0')">
+                <tr
+                  v-for="(month, idx) in months"
+                  :key="month"
+                >
+                  <td class="col-month">
+                    {{ month }}
+                  </td>
+                  <td
+                    v-for="year in computedYears"
+                    :key="`${month}-${year}`"
+                    class="col-val"
+                  >
+                    <div
+                      class="val-pill"
+                      :class="getReturnClass(computedMonthlyReturns[idx]?.[year] || '0.0')"
+                    >
                       {{ computedMonthlyReturns[idx]?.[year] || '0.0' }}%
                     </div>
                   </td>
                 </tr>
                 <!-- Total Row -->
                 <tr class="row-total">
-                    <td class="col-month">YTD</td>
-                    <td class="col-val"><span class="text-green font-bold">+24.1%</span></td>
-                    <td class="col-val"><span class="text-green font-bold">+18.5%</span></td>
+                  <td class="col-month">
+                    YTD
+                  </td>
+                  <td class="col-val">
+                    <span class="text-green font-bold">+24.1%</span>
+                  </td>
+                  <td class="col-val">
+                    <span class="text-green font-bold">+18.5%</span>
+                  </td>
                 </tr>
               </tbody>
             </table>
@@ -148,37 +250,36 @@
 
       <!-- Right: Stats & Drawdowns -->
       <div class="col-right">
-        
         <!-- Detailed Stats -->
         <div class="glass-card panel-full">
           <div class="panel-header">
             <h3>Статистика сделок</h3>
           </div>
           <div class="stats-grid-mini">
-             <div class="stat-box">
-                <span class="lbl">Всего сделок</span>
-                <span class="val">{{ backtestResults?.metrics?.total_trades || 243 }}</span>
-             </div>
-             <div class="stat-box">
-                <span class="lbl">Win Rate</span>
-                <span class="val text-green">{{ backtestResults?.metrics ? (backtestResults.metrics.win_rate * 100).toFixed(1) + '%' : '64.2%' }}</span>
-             </div>
-             <div class="stat-box">
-                <span class="lbl">Profit Factor</span>
-                <span class="val text-green">{{ backtestResults?.metrics ? backtestResults.metrics.profit_factor.toFixed(2) : '2.34' }}</span>
-             </div>
-             <div class="stat-box">
-                <span class="lbl">Средняя прибыль</span>
-                <span class="val text-green">{{ backtestResults?.metrics ? '+' + backtestResults.metrics.avg_profit.toFixed(0) : '+₽245' }}</span>
-             </div>
-             <div class="stat-box">
-                <span class="lbl">Средний убыток</span>
-                <span class="val text-red">{{ backtestResults?.metrics ? '-' + backtestResults.metrics.avg_loss.toFixed(0) : '-₽145' }}</span>
-             </div>
-             <div class="stat-box">
-                <span class="lbl">Время удержания</span>
-                <span class="val">{{ backtestResults?.metrics ? backtestResults.metrics.hold_time.toFixed(1) + 'd' : '8.4d' }}</span>
-             </div>
+            <div class="stat-box">
+              <span class="lbl">Всего сделок</span>
+              <span class="val">{{ backtestResults?.metrics?.total_trades || 243 }}</span>
+            </div>
+            <div class="stat-box">
+              <span class="lbl">Win Rate</span>
+              <span class="val text-green">{{ backtestResults?.metrics ? (backtestResults.metrics.win_rate * 100).toFixed(1) + '%' : '64.2%' }}</span>
+            </div>
+            <div class="stat-box">
+              <span class="lbl">Profit Factor</span>
+              <span class="val text-green">{{ backtestResults?.metrics ? backtestResults.metrics.profit_factor.toFixed(2) : '2.34' }}</span>
+            </div>
+            <div class="stat-box">
+              <span class="lbl">Средняя прибыль</span>
+              <span class="val text-green">{{ backtestResults?.metrics ? '+' + backtestResults.metrics.avg_profit.toFixed(0) : '+₽245' }}</span>
+            </div>
+            <div class="stat-box">
+              <span class="lbl">Средний убыток</span>
+              <span class="val text-red">{{ backtestResults?.metrics ? '-' + backtestResults.metrics.avg_loss.toFixed(0) : '-₽145' }}</span>
+            </div>
+            <div class="stat-box">
+              <span class="lbl">Время удержания</span>
+              <span class="val">{{ backtestResults?.metrics ? backtestResults.metrics.hold_time.toFixed(1) + 'd' : '8.4d' }}</span>
+            </div>
           </div>
         </div>
 
@@ -188,24 +289,29 @@
             <h3>Топ 3 просадки</h3>
           </div>
           <div class="drawdown-list">
-             <div v-for="(dd, idx) in (backtestResults?.metrics?.drawdowns || drawdowns)" :key="idx" class="dd-item">
-                <div class="dd-info">
-                   <span class="dd-period">{{ dd.period }}</span>
-                   <span class="dd-rec">Восстановление: {{ dd.recovery }}</span>
+            <div
+              v-for="(dd, idx) in (backtestResults?.metrics?.drawdowns || drawdowns)"
+              :key="idx"
+              class="dd-item"
+            >
+              <div class="dd-info">
+                <span class="dd-period">{{ dd.period }}</span>
+                <span class="dd-rec">Восстановление: {{ dd.recovery }}</span>
+              </div>
+              <div class="dd-right">
+                <span class="dd-val text-red">{{ dd.amount.toFixed(1) }}%</span>
+                <div class="dd-bar-bg">
+                  <div
+                    class="dd-bar-fill"
+                    :style="{ width: Math.abs(dd.amount) * 3 + 'px' }"
+                  />
                 </div>
-                <div class="dd-right">
-                    <span class="dd-val text-red">{{ dd.amount.toFixed(1) }}%</span>
-                    <div class="dd-bar-bg">
-                        <div class="dd-bar-fill" :style="{ width: Math.abs(dd.amount) * 3 + 'px' }"></div>
-                    </div>
-                </div>
-             </div>
+              </div>
+            </div>
           </div>
         </div>
-
       </div>
     </div>
-
   </div>
 </template>
 

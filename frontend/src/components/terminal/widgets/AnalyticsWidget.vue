@@ -14,17 +14,29 @@
     <div class="p-4 space-y-4">
       <div class="grid grid-cols-2 gap-3">
         <div class="p-3 rounded-xl bg-white/5 border border-white/5 text-center">
-          <div class="text-xs text-gray-400 uppercase mb-1">Настроение</div>
-          <div class="text-xl font-bold text-emerald-400">Бычье</div>
+          <div class="text-xs text-gray-400 uppercase mb-1">
+            Настроение
+          </div>
+          <div class="text-xl font-bold text-emerald-400">
+            Бычье
+          </div>
         </div>
         <div class="p-3 rounded-xl bg-white/5 border border-white/5 text-center">
-          <div class="text-xs text-gray-400 uppercase mb-1">Уверенность</div>
-          <div class="text-xl font-bold text-white">87%</div>
+          <div class="text-xs text-gray-400 uppercase mb-1">
+            Уверенность
+          </div>
+          <div class="text-xl font-bold text-white">
+            87%
+          </div>
         </div>
       </div>
       <div class="p-3 rounded-xl bg-white/5 border border-white/5">
-        <div class="text-xs text-gray-400 uppercase mb-2">Волатильность</div>
-        <div class="text-lg font-bold text-white">Высокая</div>
+        <div class="text-xs text-gray-400 uppercase mb-2">
+          Волатильность
+        </div>
+        <div class="text-lg font-bold text-white">
+          Высокая
+        </div>
       </div>
     </div>
   </BaseWidget>

@@ -10,14 +10,15 @@ Endpoints:
 - GET /multivariate-hmm/export - Экспорт результатов в DataFrame
 """
 
-from fastapi import APIRouter, HTTPException, Query, Body, Request, Depends
-from pydantic import BaseModel, Field
-from typing import List, Optional, Dict, Any
-import numpy as np
 import logging
+from typing import Any
 
-from src.middleware.rate_limit import limiter
+import numpy as np
+from fastapi import APIRouter, Body, Depends, HTTPException, Query, Request
+from pydantic import BaseModel, Field
+
 from src.middleware.auth import require_auth
+from src.middleware.rate_limit import limiter
 from src.utils.jwt_utils import TokenPayload
 
 logger = logging.getLogger(__name__)
@@ -27,10 +28,10 @@ router = APIRouter()
 
 class FitRequest(BaseModel):
     """Запрос на обучение модели."""
-    data: Optional[List[List[float]]] = Field(None, description="(T, K) массив доходностей. Если None, загружаются данные портфеля")
-    asset_names: Optional[List[str]] = Field(None, description="Названия активов")
-    bank_reg_number: Optional[str] = Field(None, description="Регистрационный номер банка для загрузки портфеля")
-    n_regimes: Optional[int] = Field(None, ge=2, le=5, description="Число режимов (2-5). Если None, определяется автоматически")
+    data: list[list[float]] | None = Field(None, description="(T, K) массив доходностей. Если None, загружаются данные портфеля")
+    asset_names: list[str] | None = Field(None, description="Названия активов")
+    bank_reg_number: str | None = Field(None, description="Регистрационный номер банка для загрузки портфеля")
+    n_regimes: int | None = Field(None, ge=2, le=5, description="Число режимов (2-5). Если None, определяется автоматически")
     auto_optimize: bool = Field(True, description="Автоматически определить оптимальное количество режимов")
     criterion: str = Field('aicc', description="Критерий для выбора количества режимов: 'aic', 'bic', или 'aicc'")
     max_iterations: int = Field(50, ge=10, le=200, description="Максимальное число итераций")
@@ -45,33 +46,33 @@ class FitResponse(BaseModel):
     n_regimes: int
     n_assets: int
     n_samples: int
-    asset_names: List[str]
-    log_likelihood_history: List[float]
+    asset_names: list[str]
+    log_likelihood_history: list[float]
     iterations: int
     message: str
 
 
 class PredictRequest(BaseModel):
     """Запрос на предсказание состояний."""
-    data: Optional[List[List[float]]] = Field(None, description="(T, K) массив данных. Если None, используется обученный ряд")
+    data: list[list[float]] | None = Field(None, description="(T, K) массив данных. Если None, используется обученный ряд")
 
 
 class PredictResponse(BaseModel):
     """Ответ с предсказанными состояниями."""
-    states: List[int]
-    probabilities: List[List[float]]
-    time_indices: List[int]
+    states: list[int]
+    probabilities: list[list[float]]
+    time_indices: list[int]
 
 
 class RegimeStatisticsResponse(BaseModel):
     """Ответ со статистикой режимов."""
-    statistics: List[Dict[str, Any]]
+    statistics: list[dict[str, Any]]
 
 
 class RegimeAtTimeResponse(BaseModel):
     """Ответ с информацией о режиме в момент времени."""
     time_index: int
-    regime_probabilities: List[float]
+    regime_probabilities: list[float]
     most_likely_regime: int
     confidence: float
     entropy: float
@@ -84,18 +85,19 @@ class SimulateRequest(BaseModel):
 
 class SimulateResponse(BaseModel):
     """Ответ с симулированными траекториями."""
-    trajectories: List[List[float]]
+    trajectories: list[list[float]]
     n_steps: int
     n_assets: int
 
 
 # Глобальное хранилище обученных моделей (в production лучше использовать Redis или БД)
 from collections import OrderedDict
+
 _MAX_TRAINED_MODELS = 20
 _trained_models: OrderedDict[str, Any] = OrderedDict()
 
 
-def _get_model_key(asset_names: List[str], n_regimes: int, user_id: int = 0) -> str:
+def _get_model_key(asset_names: list[str], n_regimes: int, user_id: int = 0) -> str:
     """Генерировать ключ для хранения модели (scoped по user_id)."""
     assets_str = "_".join(sorted(asset_names))
     return f"u{user_id}_{assets_str}_{n_regimes}"
@@ -135,11 +137,12 @@ async def fit_model(http_request: Request, request: FitRequest = Body(...), user
         Информация об обученной модели
     """
     try:
-        from src.services.multivariate_hmm_service import MultivariateHMMRegimeAnalyzer
-        from src.services.yfinance_service import get_stock_history
-        import yfinance as yf
         from datetime import datetime, timedelta
-        
+
+        import yfinance as yf
+
+        from src.services.multivariate_hmm_service import MultivariateHMMRegimeAnalyzer
+
         # Если данные не предоставлены, загружаем портфель банка
         if request.data is None:
             if not request.bank_reg_number:
@@ -147,7 +150,7 @@ async def fit_model(http_request: Request, request: FitRequest = Body(...), user
                     status_code=400,
                     detail="Необходимо указать bank_reg_number или предоставить data"
                 )
-            
+
             # Получаем портфель банка (используем ту же логику, что и в frontend)
             portfolio_key = int(request.bank_reg_number) % 5
             portfolio_templates = {
@@ -157,31 +160,31 @@ async def fit_model(http_request: Request, request: FitRequest = Body(...), user
                 3: ['SBER.ME', 'RTKM.ME', 'AFKS.ME', 'FIVE.ME', 'PHOR.ME', 'HYDR.ME', 'IRAO.ME', 'FEES.ME', 'SNGS.ME', 'SNGSP.ME'],
                 4: ['LKOH.ME', 'GMKN.ME', 'YNDX.ME', 'ROSN.ME', 'NVTK.ME', 'TATN.ME', 'ALRS.ME', 'MGNT.ME', 'MOEX.ME', 'POLY.ME']
             }
-            
+
             tickers = portfolio_templates.get(portfolio_key, portfolio_templates[0])
             asset_names = request.asset_names or tickers
-            
+
             # Загружаем исторические данные для всех активов
             end_date = datetime.now()
             start_date = end_date - timedelta(days=request.period_days)
-            
+
             all_data = []
             valid_tickers = []
             valid_asset_names = []
-            
-            for ticker, asset_name in zip(tickers, asset_names):
+
+            for ticker, asset_name in zip(tickers, asset_names, strict=False):
                 try:
                     stock = yf.Ticker(ticker)
                     hist = stock.history(start=start_date, end=end_date, interval='1d')
-                    
+
                     if hist.empty or len(hist) < 30:
                         logger.warning(f"Недостаточно данных для {ticker}, пропускаем")
                         continue
-                    
+
                     # Вычисляем доходности
                     prices = hist['Close'].values
                     returns = np.diff(prices) / prices[:-1]
-                    
+
                     if len(returns) > 0:
                         all_data.append(returns)
                         valid_tickers.append(ticker)
@@ -189,59 +192,59 @@ async def fit_model(http_request: Request, request: FitRequest = Body(...), user
                 except Exception as e:
                     logger.warning(f"Ошибка загрузки данных для {ticker}: {e}")
                     continue
-            
+
             if len(all_data) == 0:
                 raise HTTPException(
                     status_code=400,
                     detail="Не удалось загрузить данные ни для одного актива"
                 )
-            
+
             # Выравниваем длины временных рядов (берем минимальную длину)
             min_length = min(len(d) for d in all_data)
             all_data = [d[:min_length] for d in all_data]
-            
+
             # Преобразуем в (T, K) массив
             y = np.array(all_data).T
             asset_names = valid_asset_names
-            
+
         else:
             # Используем предоставленные данные
             y = np.array(request.data, dtype=np.float64)
-            
+
             if y.ndim != 2:
                 raise HTTPException(
                     status_code=400,
                     detail=f"Данные должны быть 2D массивом (T, K), получен shape: {y.shape}"
                 )
-            
+
             T, K = y.shape
-            
+
             if T <= K:
                 raise HTTPException(
                     status_code=400,
                     detail=f"Число наблюдений ({T}) должно быть больше числа активов ({K})"
                 )
-            
+
             # Определяем названия активов
             asset_names = request.asset_names or [f"Asset_{i+1}" for i in range(K)]
-            
+
             if len(asset_names) != K:
                 raise HTTPException(
                     status_code=400,
                     detail=f"asset_names должен содержать {K} элементов, получено {len(asset_names)}"
                 )
-        
+
         T, K = y.shape
-        
+
         # Создаем модель
         model = MultivariateHMMRegimeAnalyzer(
             n_regimes=request.n_regimes or 2,  # Временное значение, будет переопределено при auto_optimize
             random_state=request.random_state
         )
-        
+
         # Автоматическое определение количества режимов или использование заданного
         if request.auto_optimize and request.n_regimes is None:
-            optimal_n_regimes, best_criterion_value = model.find_optimal_n_regimes(
+            optimal_n_regimes, _best_criterion_value = model.find_optimal_n_regimes(
                 y=y,
                 asset_names=asset_names,
                 min_regimes=2,
@@ -260,13 +263,13 @@ async def fit_model(http_request: Request, request: FitRequest = Body(...), user
                 max_iterations=request.max_iterations,
                 tol=request.tol
             )
-        
+
         # Сохраняем модель (с LRU-eviction, scoped по user)
         model_key = _get_model_key(asset_names, n_regimes_used, user.sub)
         _trained_models[model_key] = model
         if len(_trained_models) > _MAX_TRAINED_MODELS:
             _trained_models.popitem(last=False)
-        
+
         return FitResponse(
             success=True,
             n_regimes=n_regimes_used,
@@ -277,12 +280,12 @@ async def fit_model(http_request: Request, request: FitRequest = Body(...), user
             iterations=len(model.log_likelihood_history),
             message=f"Модель успешно обучена на {T} наблюдениях для {K} активов с {n_regimes_used} режимами"
         )
-        
+
     except HTTPException:
         raise
     except Exception as e:
         logger.error("HMM operation failed: %s", e, exc_info=True)
-        raise HTTPException(status_code=500, detail="Internal server error")
+        raise HTTPException(status_code=500, detail="Internal server error") from e
 
 
 @router.post("/predict", response_model=PredictResponse)
@@ -297,10 +300,9 @@ async def predict_states(request: PredictRequest = Body(...), user: TokenPayload
         Предсказанные состояния и вероятности
     """
     try:
-        from src.services.multivariate_hmm_service import MultivariateHMMRegimeAnalyzer
-        
+
         model = _get_user_model(user.sub)
-        
+
         if request.data is not None:
             y = np.array(request.data, dtype=np.float64)
             states = model.predict_states(y=y)
@@ -313,18 +315,18 @@ async def predict_states(request: PredictRequest = Body(...), user: TokenPayload
         else:
             states = model.predict_states()
             probabilities = model.gamma.tolist()
-        
+
         return PredictResponse(
             states=states.tolist(),
             probabilities=probabilities,
             time_indices=list(range(len(states)))
         )
-        
+
     except HTTPException:
         raise
     except Exception as e:
         logger.error("HMM operation failed: %s", e, exc_info=True)
-        raise HTTPException(status_code=500, detail="Internal server error")
+        raise HTTPException(status_code=500, detail="Internal server error") from e
 
 
 @router.get("/statistics", response_model=RegimeStatisticsResponse)
@@ -338,14 +340,14 @@ async def get_regime_statistics(user: TokenPayload = Depends(require_auth)):
     try:
         model = _get_user_model(user.sub)
         statistics = model.get_regime_statistics()
-        
+
         return RegimeStatisticsResponse(statistics=statistics)
-        
+
     except HTTPException:
         raise
     except Exception as e:
         logger.error("HMM operation failed: %s", e, exc_info=True)
-        raise HTTPException(status_code=500, detail="Internal server error")
+        raise HTTPException(status_code=500, detail="Internal server error") from e
 
 
 @router.get("/regime-at-time", response_model=RegimeAtTimeResponse)
@@ -365,14 +367,14 @@ async def get_regime_at_time(
     try:
         model = _get_user_model(user.sub)
         regime_info = model.get_regime_at_time(t)
-        
+
         return RegimeAtTimeResponse(**regime_info)
-        
+
     except HTTPException:
         raise
     except Exception as e:
         logger.error("HMM operation failed: %s", e, exc_info=True)
-        raise HTTPException(status_code=500, detail="Internal server error")
+        raise HTTPException(status_code=500, detail="Internal server error") from e
 
 
 @router.post("/simulate", response_model=SimulateResponse)
@@ -389,18 +391,18 @@ async def simulate_trajectories(request: SimulateRequest = Body(...), user: Toke
     try:
         model = _get_user_model(user.sub)
         trajectories = model.simulate(n_steps=request.n_steps)
-        
+
         return SimulateResponse(
             trajectories=trajectories.tolist(),
             n_steps=request.n_steps,
             n_assets=model.n_assets
         )
-        
+
     except HTTPException:
         raise
     except Exception as e:
         logger.error("HMM operation failed: %s", e, exc_info=True)
-        raise HTTPException(status_code=500, detail="Internal server error")
+        raise HTTPException(status_code=500, detail="Internal server error") from e
 
 
 @router.get("/export")
@@ -414,18 +416,18 @@ async def export_to_dataframe(user: TokenPayload = Depends(require_auth)):
     try:
         model = _get_user_model(user.sub)
         df = model.export_to_dataframe()
-        
+
         return {
             "success": True,
             "data": df.to_dict(orient="records"),
             "columns": df.columns.tolist()
         }
-        
+
     except HTTPException:
         raise
     except Exception as e:
         logger.error("HMM operation failed: %s", e, exc_info=True)
-        raise HTTPException(status_code=500, detail="Internal server error")
+        raise HTTPException(status_code=500, detail="Internal server error") from e
 
 
 @router.get("/transition-matrix")
@@ -438,18 +440,18 @@ async def get_transition_matrix(user: TokenPayload = Depends(require_auth)):
     """
     try:
         model = _get_user_model(user.sub)
-        
+
         return {
             "success": True,
             "transition_matrix": model.transition_matrix.tolist(),
             "n_regimes": model.n_regimes
         }
-        
+
     except HTTPException:
         raise
     except Exception as e:
         logger.error("HMM operation failed: %s", e, exc_info=True)
-        raise HTTPException(status_code=500, detail="Internal server error")
+        raise HTTPException(status_code=500, detail="Internal server error") from e
 
 
 @router.get("/chart-data")
@@ -462,18 +464,18 @@ async def get_chart_data(user: TokenPayload = Depends(require_auth)):
     """
     try:
         model = _get_user_model(user.sub)
-        
+
         # Получаем предсказанные состояния
         states = model.predict_states()
-        
+
         # Восстанавливаем исходные данные (для визуализации цены)
         y_original = model.y_normalized * model.y_std + model.y_mean
-        
+
         # Вычисляем волатильность (скользящее окно 20 дней)
         T = len(y_original)
         volatility = np.zeros(T)
         window = min(20, T)
-        
+
         for t in range(T):
             start = max(0, t - window + 1)
             window_data = y_original[start:t+1]
@@ -482,17 +484,14 @@ async def get_chart_data(user: TokenPayload = Depends(require_auth)):
                 volatility[t] = np.std(window_data, axis=0).mean() * np.sqrt(252)  # Годовая волатильность
             else:
                 volatility[t] = 0.0
-        
+
         # Строим цену из доходностей
         # Для многомерного случая берем среднюю доходность по активам
-        if y_original.shape[1] > 1:
-            mean_returns = y_original.mean(axis=1)
-        else:
-            mean_returns = y_original.flatten()
-        
+        mean_returns = y_original.mean(axis=1) if y_original.shape[1] > 1 else y_original.flatten()
+
         # Кумулятивное произведение для построения цены
         prices = np.cumprod(1 + mean_returns) * 100  # Начальная цена 100
-        
+
         # Формируем данные для фронтенда
         chart_data = []
         for t in range(T):
@@ -502,7 +501,7 @@ async def get_chart_data(user: TokenPayload = Depends(require_auth)):
                 "vol": float(volatility[t]),
                 "time_index": t
             })
-        
+
         return {
             "success": True,
             "data": chart_data,
@@ -510,9 +509,9 @@ async def get_chart_data(user: TokenPayload = Depends(require_auth)):
             "n_regimes": model.n_regimes,
             "asset_names": model.asset_names
         }
-        
+
     except HTTPException:
         raise
     except Exception as e:
         logger.error("HMM operation failed: %s", e, exc_info=True)
-        raise HTTPException(status_code=500, detail="Internal server error")
+        raise HTTPException(status_code=500, detail="Internal server error") from e

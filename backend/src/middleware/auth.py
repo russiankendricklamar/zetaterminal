@@ -45,6 +45,7 @@ async def _is_user_active(user_id: int) -> bool:
             return cached[0] == "active"
 
         from sqlalchemy import select
+
         from src.database.client import async_session_factory
         from src.database.sa_models import User
 
@@ -106,7 +107,7 @@ async def require_auth(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid or expired token",
             headers={"WWW-Authenticate": "Bearer"},
-        )
+        ) from None
 
     if payload.type != "access":
         raise HTTPException(

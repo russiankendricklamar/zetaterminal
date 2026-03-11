@@ -3,15 +3,36 @@
   <Teleport to="body">
     <!-- Backdrop -->
     <Transition name="fade">
-      <div v-if="isOpen" class="palette-backdrop" @click="close">
-        
+      <div
+        v-if="isOpen"
+        class="palette-backdrop"
+        @click="close"
+      >
         <!-- Modal Container -->
-        <div class="palette-modal" @click.stop>
-          
+        <div
+          class="palette-modal"
+          @click.stop
+        >
           <!-- Search Input -->
           <div class="palette-header">
             <span class="search-icon">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+              <svg
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              ><circle
+                cx="11"
+                cy="11"
+                r="8"
+              /><line
+                x1="21"
+                y1="21"
+                x2="16.65"
+                y2="16.65"
+              /></svg>
             </span>
             <input 
               ref="searchInput"
@@ -23,21 +44,33 @@
               @keydown.up.prevent="navigate('up')"
               @keydown.enter.prevent="execute"
               @keydown.esc="close"
-            />
+            >
             <span class="esc-badge">ESC</span>
           </div>
 
           <!-- Results List -->
-          <div ref="paletteBody" class="palette-body custom-scroll">
-            
+          <div
+            ref="paletteBody"
+            class="palette-body custom-scroll"
+          >
             <!-- No Results -->
-            <div v-if="filteredCommands.length === 0" class="no-results">
+            <div
+              v-if="filteredCommands.length === 0"
+              class="no-results"
+            >
               Команды не найдены.
             </div>
 
             <!-- Groups -->
-            <div v-else v-for="(group, groupName) in groupedCommands" :key="groupName" class="command-group">
-              <div class="group-title">{{ groupName }}</div>
+            <div
+              v-for="(group, groupName) in groupedCommands"
+              v-else
+              :key="groupName"
+              class="command-group"
+            >
+              <div class="group-title">
+                {{ groupName }}
+              </div>
               
               <button
                 v-for="cmd in group"
@@ -51,22 +84,34 @@
                   <span class="cmd-icon">{{ cmd.icon }}</span>
                   <span class="cmd-label">
                     {{ cmd.label }}
-                    <span v-if="cmd.desc" class="cmd-desc">— {{ cmd.desc }}</span>
+                    <span
+                      v-if="cmd.desc"
+                      class="cmd-desc"
+                    >— {{ cmd.desc }}</span>
                   </span>
                 </div>
-                <div v-if="cmd.shortcut" class="cmd-shortcut">{{ cmd.shortcut }}</div>
+                <div
+                  v-if="cmd.shortcut"
+                  class="cmd-shortcut"
+                >
+                  {{ cmd.shortcut }}
+                </div>
               </button>
             </div>
-
           </div>
 
           <!-- Footer -->
           <div class="palette-footer">
-            <div class="footer-item"><span>↵</span> выбрать</div>
-            <div class="footer-item"><span>↑↓</span> навигация</div>
-            <div class="footer-item"><span>⌘K</span> открыть/закрыть</div>
+            <div class="footer-item">
+              <span>↵</span> выбрать
+            </div>
+            <div class="footer-item">
+              <span>↑↓</span> навигация
+            </div>
+            <div class="footer-item">
+              <span>⌘K</span> открыть/закрыть
+            </div>
           </div>
-
         </div>
       </div>
     </Transition>

@@ -6,22 +6,46 @@
           <ShieldAlertIcon class="w-6 h-6" />
         </div>
         <div>
-          <h2 class="section-title font-anton">АНАЛИЗ КРЕДИТНЫХ РИСКОВ</h2>
-          <p class="section-subtitle font-mono">РЕЙТИНГИ, РИСК ДЕФОЛТА И ДОЛГОВАЯ СТРУКТУРА</p>
+          <h2 class="section-title font-anton">
+            АНАЛИЗ КРЕДИТНЫХ РИСКОВ
+          </h2>
+          <p class="section-subtitle font-mono">
+            РЕЙТИНГИ, РИСК ДЕФОЛТА И ДОЛГОВАЯ СТРУКТУРА
+          </p>
         </div>
       </div>
       <div class="tab-group">
-        <button v-for="tab in tabs" :key="tab.id" @click="section = tab.id" :class="['tab-btn', { active: section === tab.id }]">
+        <button
+          v-for="tab in tabs"
+          :key="tab.id"
+          :class="['tab-btn', { active: section === tab.id }]"
+          @click="section = tab.id"
+        >
           {{ tab.label }}
         </button>
       </div>
     </div>
     <div class="flex-1 flex flex-col gap-6">
-      <CreditRatings v-if="section === 'RATC'" :symbol="symbol" />
-      <CDSSpreads v-else-if="section === 'GCDS'" :symbol="symbol" />
-      <ProbDefault v-else-if="section === 'SRSK'" :symbol="symbol" />
-      <DebtDist v-else-if="section === 'DDIS'" :symbol="symbol" />
-      <CreditRatings v-else :symbol="symbol" />
+      <CreditRatings
+        v-if="section === 'RATC'"
+        :symbol="symbol"
+      />
+      <CDSSpreads
+        v-else-if="section === 'GCDS'"
+        :symbol="symbol"
+      />
+      <ProbDefault
+        v-else-if="section === 'SRSK'"
+        :symbol="symbol"
+      />
+      <DebtDist
+        v-else-if="section === 'DDIS'"
+        :symbol="symbol"
+      />
+      <CreditRatings
+        v-else
+        :symbol="symbol"
+      />
     </div>
   </div>
 </template>

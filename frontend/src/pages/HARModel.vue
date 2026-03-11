@@ -1,24 +1,43 @@
 <!-- src/pages/HARModel.vue -->
 <template>
   <div class="har-page">
-
     <!-- Header -->
     <div class="page-header">
       <div class="header-left">
-        <h1 class="page-title">HAR Model — Прогнозирование волатильности</h1>
-        <p class="page-subtitle">Heterogeneous AutoRegressive модель: β₀ + β_d·RV_t + β_w·RV̄_{t-5} + β_m·RV̄_{t-22}</p>
+        <h1 class="page-title">
+          HAR Model — Прогнозирование волатильности
+        </h1>
+        <p class="page-subtitle">
+          Heterogeneous AutoRegressive модель: β₀ + β_d·RV_t + β_w·RV̄_{t-5} + β_m·RV̄_{t-22}
+        </p>
       </div>
       <div class="header-right">
         <label class="toggle-label">
-          <input type="checkbox" v-model="logTransform" />
+          <input
+            v-model="logTransform"
+            type="checkbox"
+          >
           log(RV)
         </label>
-        <select v-model="trainRatio" class="control-select">
-          <option :value="0.7">70/30 split</option>
-          <option :value="0.8">80/20 split</option>
-          <option :value="0.9">90/10 split</option>
+        <select
+          v-model="trainRatio"
+          class="control-select"
+        >
+          <option :value="0.7">
+            70/30 split
+          </option>
+          <option :value="0.8">
+            80/20 split
+          </option>
+          <option :value="0.9">
+            90/10 split
+          </option>
         </select>
-        <button @click="fitModel" class="btn-primary" :disabled="loading">
+        <button
+          class="btn-primary"
+          :disabled="loading"
+          @click="fitModel"
+        >
           <span v-if="!loading">Оценить</span>
           <span v-else>↺ Считаю...</span>
         </button>
@@ -32,75 +51,154 @@
           <h3>Ряд RV (Realized Variance)</h3>
           <span class="hint">Ежедневные значения через запятую/пробел/перенос строки (> 0)</span>
         </div>
-        <textarea v-model="rvRaw" class="data-textarea" placeholder="0.0001&#10;0.00015&#10;0.00012&#10;..." rows="7" />
+        <textarea
+          v-model="rvRaw"
+          class="data-textarea"
+          placeholder="0.0001&#10;0.00015&#10;0.00012&#10;..."
+          rows="7"
+        />
       </div>
       <div class="panel">
         <div class="panel-header">
           <h3>BV (Bipower Variation) — необязательно</h3>
           <span class="hint">Для HAR-RV-CJ модели с компонентом скачков</span>
         </div>
-        <textarea v-model="bvRaw" class="data-textarea" placeholder="0.00009&#10;0.00013&#10;0.00011&#10;..." rows="7" />
+        <textarea
+          v-model="bvRaw"
+          class="data-textarea"
+          placeholder="0.00009&#10;0.00013&#10;0.00011&#10;..."
+          rows="7"
+        />
       </div>
     </div>
 
     <!-- Model description -->
     <div class="model-desc-row">
-      <div class="formula-card" :class="{ active: !logTransform }">
-        <div class="fc-title">HAR-RV</div>
-        <div class="fc-formula">RV_t = β₀ + β_d·RV_{t-1} + β_w·RV̄_{t-5} + β_m·RV̄_{t-22} + ε_t</div>
+      <div
+        class="formula-card"
+        :class="{ active: !logTransform }"
+      >
+        <div class="fc-title">
+          HAR-RV
+        </div>
+        <div class="fc-formula">
+          RV_t = β₀ + β_d·RV_{t-1} + β_w·RV̄_{t-5} + β_m·RV̄_{t-22} + ε_t
+        </div>
       </div>
-      <div class="formula-card" :class="{ active: logTransform }">
-        <div class="fc-title">Log-HAR</div>
-        <div class="fc-formula">log(RV_t) = β₀ + β_d·log(RV_{t-1}) + β_w·log(RV̄_{t-5}) + β_m·log(RV̄_{t-22})</div>
+      <div
+        class="formula-card"
+        :class="{ active: logTransform }"
+      >
+        <div class="fc-title">
+          Log-HAR
+        </div>
+        <div class="fc-formula">
+          log(RV_t) = β₀ + β_d·log(RV_{t-1}) + β_w·log(RV̄_{t-5}) + β_m·log(RV̄_{t-22})
+        </div>
       </div>
-      <div class="formula-card" :class="{ active: bvParsed.length > 0 }">
-        <div class="fc-title">HAR-RV-CJ</div>
-        <div class="fc-formula">RV_t = β₀ + β_C·C_{t-1} + β_J·J_{t-1} + β_w·C̄_{t-5} + β_m·C̄_{t-22}</div>
+      <div
+        class="formula-card"
+        :class="{ active: bvParsed.length > 0 }"
+      >
+        <div class="fc-title">
+          HAR-RV-CJ
+        </div>
+        <div class="fc-formula">
+          RV_t = β₀ + β_C·C_{t-1} + β_J·J_{t-1} + β_w·C̄_{t-5} + β_m·C̄_{t-22}
+        </div>
       </div>
     </div>
 
-    <div v-if="error" class="error-banner">{{ error }}</div>
+    <div
+      v-if="error"
+      class="error-banner"
+    >
+      {{ error }}
+    </div>
 
     <template v-if="result">
-
       <!-- KPI -->
       <div class="kpi-grid">
         <div class="kpi-card">
-          <div class="kpi-label">R² (train)</div>
-          <div class="kpi-value" :class="result.r2 > 0.7 ? 'val-green' : result.r2 > 0.4 ? 'val-yellow' : 'val-red'">{{ pct(result.r2) }}</div>
-          <div class="kpi-sub">скорр.: {{ pct(result.r2_adj) }}</div>
+          <div class="kpi-label">
+            R² (train)
+          </div>
+          <div
+            class="kpi-value"
+            :class="result.r2 > 0.7 ? 'val-green' : result.r2 > 0.4 ? 'val-yellow' : 'val-red'"
+          >
+            {{ pct(result.r2) }}
+          </div>
+          <div class="kpi-sub">
+            скорр.: {{ pct(result.r2_adj) }}
+          </div>
         </div>
         <div class="kpi-card">
-          <div class="kpi-label">R² (full)</div>
-          <div class="kpi-value">{{ pct(result.r2_full) }}</div>
-          <div class="kpi-sub">вся выборка</div>
+          <div class="kpi-label">
+            R² (full)
+          </div>
+          <div class="kpi-value">
+            {{ pct(result.r2_full) }}
+          </div>
+          <div class="kpi-sub">
+            вся выборка
+          </div>
         </div>
         <div class="kpi-card">
-          <div class="kpi-label">IS RMSE</div>
-          <div class="kpi-value mono">{{ sci(result.is_metrics?.rmse) }}</div>
-          <div class="kpi-sub">QLIKE: {{ fmt4(result.is_metrics?.qlike) }}</div>
+          <div class="kpi-label">
+            IS RMSE
+          </div>
+          <div class="kpi-value mono">
+            {{ sci(result.is_metrics?.rmse) }}
+          </div>
+          <div class="kpi-sub">
+            QLIKE: {{ fmt4(result.is_metrics?.qlike) }}
+          </div>
         </div>
-        <div class="kpi-card" v-if="result.oos_metrics?.rmse != null">
-          <div class="kpi-label">OOS RMSE</div>
-          <div class="kpi-value mono">{{ sci(result.oos_metrics.rmse) }}</div>
-          <div class="kpi-sub">QLIKE: {{ fmt4(result.oos_metrics.qlike) }}</div>
+        <div
+          v-if="result.oos_metrics?.rmse != null"
+          class="kpi-card"
+        >
+          <div class="kpi-label">
+            OOS RMSE
+          </div>
+          <div class="kpi-value mono">
+            {{ sci(result.oos_metrics.rmse) }}
+          </div>
+          <div class="kpi-sub">
+            QLIKE: {{ fmt4(result.oos_metrics.qlike) }}
+          </div>
         </div>
         <div class="kpi-card accent-card">
-          <div class="kpi-label">Прогноз h=1</div>
-          <div class="kpi-value">{{ pct(result.forecasts?.h1?.vol_annual) }}</div>
-          <div class="kpi-sub">годовая vol</div>
+          <div class="kpi-label">
+            Прогноз h=1
+          </div>
+          <div class="kpi-value">
+            {{ pct(result.forecasts?.h1?.vol_annual) }}
+          </div>
+          <div class="kpi-sub">
+            годовая vol
+          </div>
         </div>
         <div class="kpi-card">
-          <div class="kpi-label">Прогноз h=22</div>
-          <div class="kpi-value">{{ pct(result.forecasts?.h22?.vol_annual) }}</div>
-          <div class="kpi-sub">месячный горизонт</div>
+          <div class="kpi-label">
+            Прогноз h=22
+          </div>
+          <div class="kpi-value">
+            {{ pct(result.forecasts?.h22?.vol_annual) }}
+          </div>
+          <div class="kpi-sub">
+            месячный горизонт
+          </div>
         </div>
       </div>
 
       <!-- Coefficients + Forecasts -->
       <div class="results-grid">
         <div class="panel">
-          <div class="panel-header"><h3>Коэффициенты HAR-RV (Newey-West SE)</h3></div>
+          <div class="panel-header">
+            <h3>Коэффициенты HAR-RV (Newey-West SE)</h3>
+          </div>
           <table class="coef-table">
             <thead>
               <tr>
@@ -109,16 +207,33 @@
                 <th>SE</th>
                 <th>t-стат</th>
                 <th>p-value</th>
-                <th></th>
+                <th />
               </tr>
             </thead>
             <tbody>
-              <tr v-for="c in result.coefficients" :key="c.name">
+              <tr
+                v-for="c in result.coefficients"
+                :key="c.name"
+              >
                 <td>{{ c.name }}</td>
-                <td class="mono">{{ fmt4(c.beta) }}</td>
-                <td class="mono">{{ fmt4(c.se) }}</td>
-                <td class="mono" :class="Math.abs(c.t_stat) > 1.96 ? 'pos' : 'muted'">{{ fmt2(c.t_stat) }}</td>
-                <td class="mono" :class="c.p_value < 0.05 ? 'pos' : 'muted'">{{ fmtP(c.p_value) }}</td>
+                <td class="mono">
+                  {{ fmt4(c.beta) }}
+                </td>
+                <td class="mono">
+                  {{ fmt4(c.se) }}
+                </td>
+                <td
+                  class="mono"
+                  :class="Math.abs(c.t_stat) > 1.96 ? 'pos' : 'muted'"
+                >
+                  {{ fmt2(c.t_stat) }}
+                </td>
+                <td
+                  class="mono"
+                  :class="c.p_value < 0.05 ? 'pos' : 'muted'"
+                >
+                  {{ fmtP(c.p_value) }}
+                </td>
                 <td>{{ c.significant ? '***' : '' }}</td>
               </tr>
             </tbody>
@@ -126,55 +241,117 @@
 
           <!-- CJ coefficients if available -->
           <template v-if="result.cj_model">
-            <div class="panel-header" style="margin-top:16px"><h3>HAR-RV-CJ коэффициенты</h3></div>
+            <div
+              class="panel-header"
+              style="margin-top:16px"
+            >
+              <h3>HAR-RV-CJ коэффициенты</h3>
+            </div>
             <table class="coef-table">
               <thead>
                 <tr><th>Параметр</th><th>β</th><th>SE</th><th>t-стат</th><th>p-value</th></tr>
               </thead>
               <tbody>
-                <tr v-for="c in result.cj_model.coefficients" :key="c.name">
+                <tr
+                  v-for="c in result.cj_model.coefficients"
+                  :key="c.name"
+                >
                   <td>{{ c.name }}</td>
-                  <td class="mono">{{ fmt4(c.beta) }}</td>
-                  <td class="mono">{{ fmt4(c.se) }}</td>
-                  <td class="mono" :class="Math.abs(c.t_stat) > 1.96 ? 'pos' : 'muted'">{{ fmt2(c.t_stat) }}</td>
-                  <td class="mono" :class="c.p_value < 0.05 ? 'pos' : 'muted'">{{ fmtP(c.p_value) }}</td>
+                  <td class="mono">
+                    {{ fmt4(c.beta) }}
+                  </td>
+                  <td class="mono">
+                    {{ fmt4(c.se) }}
+                  </td>
+                  <td
+                    class="mono"
+                    :class="Math.abs(c.t_stat) > 1.96 ? 'pos' : 'muted'"
+                  >
+                    {{ fmt2(c.t_stat) }}
+                  </td>
+                  <td
+                    class="mono"
+                    :class="c.p_value < 0.05 ? 'pos' : 'muted'"
+                  >
+                    {{ fmtP(c.p_value) }}
+                  </td>
                 </tr>
               </tbody>
             </table>
-            <div class="r2-row">R² = {{ pct(result.cj_model.r2) }} &nbsp;|&nbsp; R²_adj = {{ pct(result.cj_model.r2_adj) }}</div>
+            <div class="r2-row">
+              R² = {{ pct(result.cj_model.r2) }} &nbsp;|&nbsp; R²_adj = {{ pct(result.cj_model.r2_adj) }}
+            </div>
           </template>
         </div>
 
         <!-- Forecast panel -->
         <div class="panel">
-          <div class="panel-header"><h3>Прогнозы волатильности</h3></div>
+          <div class="panel-header">
+            <h3>Прогнозы волатильности</h3>
+          </div>
           <div class="forecast-cards">
-            <div v-for="(fcast, key) in result.forecasts" :key="key" class="fcast-card">
-              <div class="fcast-h">h = {{ fcast.horizon_days }} {{ fcast.horizon_days === 1 ? 'день' : fcast.horizon_days < 5 ? 'дня' : 'дней' }}</div>
-              <div class="fcast-vol">{{ pct(fcast.vol_annual) }}</div>
-              <div class="fcast-rv">RV = {{ sci(fcast.rv) }}</div>
+            <div
+              v-for="(fcast, key) in result.forecasts"
+              :key="key"
+              class="fcast-card"
+            >
+              <div class="fcast-h">
+                h = {{ fcast.horizon_days }} {{ fcast.horizon_days === 1 ? 'день' : fcast.horizon_days < 5 ? 'дня' : 'дней' }}
+              </div>
+              <div class="fcast-vol">
+                {{ pct(fcast.vol_annual) }}
+              </div>
+              <div class="fcast-rv">
+                RV = {{ sci(fcast.rv) }}
+              </div>
             </div>
           </div>
 
-          <div class="metrics-comparison" v-if="result.oos_metrics?.rmse != null">
-            <div class="panel-header" style="margin-top:16px"><h3>IS vs OOS сравнение</h3></div>
+          <div
+            v-if="result.oos_metrics?.rmse != null"
+            class="metrics-comparison"
+          >
+            <div
+              class="panel-header"
+              style="margin-top:16px"
+            >
+              <h3>IS vs OOS сравнение</h3>
+            </div>
             <table class="stats-table">
               <thead><tr><th>Метрика</th><th>IS (train)</th><th>OOS (test)</th></tr></thead>
               <tbody>
                 <tr>
                   <td>RMSE</td>
-                  <td class="mono">{{ sci(result.is_metrics.rmse) }}</td>
-                  <td class="mono" :class="result.oos_metrics.rmse > result.is_metrics.rmse * 1.5 ? 'neg' : 'pos'">{{ sci(result.oos_metrics.rmse) }}</td>
+                  <td class="mono">
+                    {{ sci(result.is_metrics.rmse) }}
+                  </td>
+                  <td
+                    class="mono"
+                    :class="result.oos_metrics.rmse > result.is_metrics.rmse * 1.5 ? 'neg' : 'pos'"
+                  >
+                    {{ sci(result.oos_metrics.rmse) }}
+                  </td>
                 </tr>
                 <tr>
                   <td>MAE</td>
-                  <td class="mono">{{ sci(result.is_metrics.mae) }}</td>
-                  <td class="mono">{{ sci(result.oos_metrics.mae) }}</td>
+                  <td class="mono">
+                    {{ sci(result.is_metrics.mae) }}
+                  </td>
+                  <td class="mono">
+                    {{ sci(result.oos_metrics.mae) }}
+                  </td>
                 </tr>
                 <tr>
                   <td>QLIKE</td>
-                  <td class="mono">{{ fmt4(result.is_metrics.qlike) }}</td>
-                  <td class="mono" :class="result.oos_metrics.qlike > result.is_metrics.qlike * 1.5 ? 'neg' : 'pos'">{{ fmt4(result.oos_metrics.qlike) }}</td>
+                  <td class="mono">
+                    {{ fmt4(result.is_metrics.qlike) }}
+                  </td>
+                  <td
+                    class="mono"
+                    :class="result.oos_metrics.qlike > result.is_metrics.qlike * 1.5 ? 'neg' : 'pos'"
+                  >
+                    {{ fmt4(result.oos_metrics.qlike) }}
+                  </td>
                 </tr>
               </tbody>
             </table>
@@ -188,9 +365,11 @@
           <h3>Фактическая vs подогнанная волатильность</h3>
           <span class="hint">Серая вертикаль — граница обучающей/тестовой выборки</span>
         </div>
-        <div ref="chartEl" class="chart-container" />
+        <div
+          ref="chartEl"
+          class="chart-container"
+        />
       </div>
-
     </template>
   </div>
 </template>

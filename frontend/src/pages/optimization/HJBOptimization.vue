@@ -12,11 +12,30 @@
         </div>
       </div>
       <div class="hero-actions">
-        <button class="btn-glass primary" @click="handleRunOptimization" :disabled="isComputing">
-          <svg v-if="!isComputing" width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+        <button
+          class="btn-glass primary"
+          :disabled="isComputing"
+          @click="handleRunOptimization"
+        >
+          <svg
+            v-if="!isComputing"
+            width="16"
+            height="16"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+            />
           </svg>
-          <span v-else class="spinner"></span>
+          <span
+            v-else
+            class="spinner"
+          />
           {{ isComputing ? 'Расчёт...' : 'Запустить оптимизацию' }}
         </button>
       </div>
@@ -31,37 +50,73 @@
         <div class="param-group-horizontal">
           <label>Коэффициент неприятия риска (γ)</label>
           <div class="param-input-group">
-            <input type="number" v-model.number="hjbParams.gamma" min="0.1" max="20" step="0.1" />
+            <input
+              v-model.number="hjbParams.gamma"
+              type="number"
+              min="0.1"
+              max="20"
+              step="0.1"
+            >
           </div>
         </div>
         <div class="param-group-horizontal">
           <label>Инвестиционный горизонт (T), лет</label>
           <div class="param-input-group">
-            <input type="number" v-model.number="hjbParams.horizon" min="0.1" max="50" step="0.1" />
+            <input
+              v-model.number="hjbParams.horizon"
+              type="number"
+              min="0.1"
+              max="50"
+              step="0.1"
+            >
           </div>
         </div>
         <div class="param-group-horizontal">
           <label>Безрисковая ставка (r)</label>
           <div class="param-input-group">
-            <input type="number" v-model.number="hjbParams.riskFreeRate" min="0" max="0.2" step="0.001" />
+            <input
+              v-model.number="hjbParams.riskFreeRate"
+              type="number"
+              min="0"
+              max="0.2"
+              step="0.001"
+            >
           </div>
         </div>
         <div class="param-group-horizontal">
           <label>Волатильность рынка (σ)</label>
           <div class="param-input-group">
-            <input type="number" v-model.number="hjbParams.marketVol" min="0.05" max="0.8" step="0.01" />
+            <input
+              v-model.number="hjbParams.marketVol"
+              type="number"
+              min="0.05"
+              max="0.8"
+              step="0.01"
+            >
           </div>
         </div>
         <div class="param-group-horizontal">
           <label>Ожидаемая доходность (μ)</label>
           <div class="param-input-group">
-            <input type="number" v-model.number="hjbParams.expectedReturn" min="0" max="0.5" step="0.01" />
+            <input
+              v-model.number="hjbParams.expectedReturn"
+              type="number"
+              min="0"
+              max="0.5"
+              step="0.01"
+            >
           </div>
         </div>
         <div class="param-group-horizontal">
           <label>Количество траекторий Монте-Карло</label>
           <div class="param-input-group">
-            <input type="number" v-model.number="hjbParams.monteCarloTrajectories" min="100" max="100000" step="100" />
+            <input
+              v-model.number="hjbParams.monteCarloTrajectories"
+              type="number"
+              min="100"
+              max="100000"
+              step="100"
+            >
           </div>
         </div>
       </div>
@@ -82,31 +137,53 @@
                   <thead>
                     <tr>
                       <th>Инструмент</th>
-                      <th class="text-right">Цена</th>
-                      <th class="text-right">День %</th>
-                      <th class="text-right">Позиция</th>
-                      <th class="text-right">Вес</th>
+                      <th class="text-right">
+                        Цена
+                      </th>
+                      <th class="text-right">
+                        День %
+                      </th>
+                      <th class="text-right">
+                        Позиция
+                      </th>
+                      <th class="text-right">
+                        Вес
+                      </th>
                     </tr>
                   </thead>
                   <tbody>
-                    <tr v-for="pos in portfolioPositions" :key="pos.symbol">
+                    <tr
+                      v-for="pos in portfolioPositions"
+                      :key="pos.symbol"
+                    >
                       <td>
                         <div class="asset-cell">
-                          <div class="asset-icon" :style="{ background: pos.color }">{{ pos.symbol[0] }}</div>
+                          <div
+                            class="asset-icon"
+                            :style="{ background: pos.color }"
+                          >
+                            {{ pos.symbol[0] }}
+                          </div>
                           <div class="asset-info">
                             <span class="symbol">{{ pos.symbol }}</span>
                             <span class="name">{{ pos.name }}</span>
                           </div>
                         </div>
                       </td>
-                      <td class="text-right mono">₽{{ pos.price }}</td>
+                      <td class="text-right mono">
+                        ₽{{ pos.price }}
+                      </td>
                       <td class="text-right mono">
                         <span :class="['change-pill', pos.dayChange > 0 ? 'text-green' : 'text-red']">
                           {{ pos.dayChange > 0 ? '+' : '' }}{{ pos.dayChange }}%
                         </span>
                       </td>
-                      <td class="text-right mono opacity-80">₽{{ (pos.notional / 1000).toFixed(1) }}k</td>
-                      <td class="text-right mono font-bold">{{ pos.allocation }}%</td>
+                      <td class="text-right mono opacity-80">
+                        ₽{{ (pos.notional / 1000).toFixed(1) }}k
+                      </td>
+                      <td class="text-right mono font-bold">
+                        {{ pos.allocation }}%
+                      </td>
                     </tr>
                   </tbody>
                 </table>
@@ -123,13 +200,29 @@
             <h3>3D Тепловая карта активов</h3>
           </div>
           <div class="panel-body correlation-3d-body">
-            <div id="correlation-3d-heatmap" class="static-3d-plot" style="width:100%; height:500px; position: relative; min-height: 500px; background: transparent; border-radius: 8px;"></div>
-            <div v-if="hoveredAsset" class="asset-tooltip-3d">
+            <div
+              id="correlation-3d-heatmap"
+              class="static-3d-plot"
+              style="width:100%; height:500px; position: relative; min-height: 500px; background: transparent; border-radius: 8px;"
+            />
+            <div
+              v-if="hoveredAsset"
+              class="asset-tooltip-3d"
+            >
               <div class="tooltip-header">
-                <div class="asset-icon" :style="{ background: hoveredAsset.color }">{{ hoveredAsset.symbol[0] }}</div>
+                <div
+                  class="asset-icon"
+                  :style="{ background: hoveredAsset.color }"
+                >
+                  {{ hoveredAsset.symbol[0] }}
+                </div>
                 <div>
-                  <div class="tooltip-symbol">{{ hoveredAsset.symbol }}</div>
-                  <div class="tooltip-name">{{ hoveredAsset.name }}</div>
+                  <div class="tooltip-symbol">
+                    {{ hoveredAsset.symbol }}
+                  </div>
+                  <div class="tooltip-name">
+                    {{ hoveredAsset.name }}
+                  </div>
                 </div>
               </div>
               <div class="tooltip-details">
@@ -137,11 +230,17 @@
                   <span>Тип:</span>
                   <strong>{{ (hoveredAsset.symbol.includes('SU') || hoveredAsset.symbol.includes('RU000')) ? 'Облигация' : 'Акция' }}</strong>
                 </div>
-                <div class="tooltip-row" v-if="hoveredAsset.volatility !== undefined">
+                <div
+                  v-if="hoveredAsset.volatility !== undefined"
+                  class="tooltip-row"
+                >
                   <span>Волатильность:</span>
                   <strong>{{ hoveredAsset.volatility?.toFixed(1) || 'N/A' }}%</strong>
                 </div>
-                <div class="tooltip-row" v-if="hoveredAsset.avgCorrelation !== undefined">
+                <div
+                  v-if="hoveredAsset.avgCorrelation !== undefined"
+                  class="tooltip-row"
+                >
                   <span>Ср. корреляция:</span>
                   <strong>{{ hoveredAsset.avgCorrelation?.toFixed(2) || 'N/A' }}</strong>
                 </div>
@@ -159,7 +258,10 @@
                     {{ hoveredAsset.dayChange >= 0 ? '+' : '' }}{{ hoveredAsset.dayChange?.toFixed(2) || hoveredAsset.dayChange }}%
                   </strong>
                 </div>
-                <div class="tooltip-row" v-if="hoveredAsset.notional">
+                <div
+                  v-if="hoveredAsset.notional"
+                  class="tooltip-row"
+                >
                   <span>Позиция:</span>
                   <strong>₽{{ (hoveredAsset.notional / 1000).toFixed(1) }}k</strong>
                 </div>
@@ -179,7 +281,10 @@
         <div class="panel-body">
           <div class="garch-container-full">
             <div class="garch-chart-placeholder-full">
-              <canvas ref="garchChartRef" id="garch-chart"></canvas>
+              <canvas
+                id="garch-chart"
+                ref="garchChartRef"
+              />
             </div>
             <div class="garch-params-full">
               <div class="garch-param-row">
@@ -235,7 +340,9 @@
                 </div>
               </div>
               <div class="filtering-criteria">
-                <div class="criteria-title">Критерии фильтрации:</div>
+                <div class="criteria-title">
+                  Критерии фильтрации:
+                </div>
                 <div class="criteria-list">
                   <div class="criteria-item">
                     <span class="criteria-check">✓</span>
@@ -252,9 +359,15 @@
                 </div>
               </div>
               <div class="filtered-assets">
-                <div class="filtered-title">Прошедшие фильтр (топ-10):</div>
+                <div class="filtered-title">
+                  Прошедшие фильтр (топ-10):
+                </div>
                 <div class="filtered-list">
-                  <div v-for="(asset, idx) in garchFilteredAssets.slice(0, 10)" :key="idx" class="filtered-asset">
+                  <div
+                    v-for="(asset, idx) in garchFilteredAssets.slice(0, 10)"
+                    :key="idx"
+                    class="filtered-asset"
+                  >
                     <span class="asset-symbol">{{ asset.symbol }}</span>
                     <span class="asset-garch">{{ asset.garchVol }}%</span>
                   </div>
@@ -278,25 +391,45 @@
                   <thead>
                     <tr>
                       <th>Актив</th>
-                      <th class="text-right">Историческая</th>
-                      <th class="text-right">Дивидендная</th>
-                      <th class="text-right">Итого</th>
+                      <th class="text-right">
+                        Историческая
+                      </th>
+                      <th class="text-right">
+                        Дивидендная
+                      </th>
+                      <th class="text-right">
+                        Итого
+                      </th>
                     </tr>
                   </thead>
                   <tbody>
-                    <tr v-for="(asset, idx) in yieldReportData.slice(0, 10)" :key="idx">
+                    <tr
+                      v-for="(asset, idx) in yieldReportData.slice(0, 10)"
+                      :key="idx"
+                    >
                       <td>
                         <div class="asset-cell">
-                          <div class="asset-icon" :style="{ background: asset.color }">{{ asset.symbol[0] }}</div>
+                          <div
+                            class="asset-icon"
+                            :style="{ background: asset.color }"
+                          >
+                            {{ asset.symbol[0] }}
+                          </div>
                           <div class="asset-info">
                             <span class="symbol">{{ asset.symbol }}</span>
                             <span class="name">{{ asset.name }}</span>
                           </div>
                         </div>
                       </td>
-                      <td class="text-right mono">{{ (asset.historicalYield * 100).toFixed(2) }}%</td>
-                      <td class="text-right mono">{{ (asset.dividendYield * 100).toFixed(2) }}%</td>
-                      <td class="text-right mono font-bold text-green">{{ (asset.totalYield * 100).toFixed(2) }}%</td>
+                      <td class="text-right mono">
+                        {{ (asset.historicalYield * 100).toFixed(2) }}%
+                      </td>
+                      <td class="text-right mono">
+                        {{ (asset.dividendYield * 100).toFixed(2) }}%
+                      </td>
+                      <td class="text-right mono font-bold text-green">
+                        {{ (asset.totalYield * 100).toFixed(2) }}%
+                      </td>
                     </tr>
                   </tbody>
                 </table>
@@ -326,38 +459,136 @@
       <div class="panel-header">
         <div class="trajectories-header-left">
           <h3>Траектории симуляции методом Монте-Карло</h3>
-          <span v-if="isPlayingTrajectories" class="live-badge">● LIVE</span>
+          <span
+            v-if="isPlayingTrajectories"
+            class="live-badge"
+          >● LIVE</span>
         </div>
-        <div class="playback-controls" v-if="trajectoriesData.paths.length">
-          <button class="icon-btn" @click="togglePlayTrajectories" title="Play/Pause">
+        <div
+          v-if="trajectoriesData.paths.length"
+          class="playback-controls"
+        >
+          <button
+            class="icon-btn"
+            title="Play/Pause"
+            @click="togglePlayTrajectories"
+          >
             <span v-if="isPlayingTrajectories">⏸</span>
             <span v-else>▶</span>
           </button>
           <div class="timeline-wrapper">
-            <input type="range" min="0" :max="trajectoriesDays" v-model.number="playbackStepTrajectories" @input="stopPlayTrajectories" class="timeline-slider" />
-            <div class="timeline-track" :style="{ width: (playbackStepTrajectories / trajectoriesDays * 100) + '%' }"></div>
+            <input
+              v-model.number="playbackStepTrajectories"
+              type="range"
+              min="0"
+              :max="trajectoriesDays"
+              class="timeline-slider"
+              @input="stopPlayTrajectories"
+            >
+            <div
+              class="timeline-track"
+              :style="{ width: (playbackStepTrajectories / trajectoriesDays * 100) + '%' }"
+            />
           </div>
           <div class="playback-day-info">
             День: <span class="mono">{{ playbackStepTrajectories }}</span> / <span class="mono">{{ trajectoriesDays }}</span>
           </div>
-          <button class="icon-btn" @click="resetPlaybackTrajectories" title="Reset">↺</button>
+          <button
+            class="icon-btn"
+            title="Reset"
+            @click="resetPlaybackTrajectories"
+          >
+            ↺
+          </button>
         </div>
       </div>
       <div class="panel-body">
-        <div class="trajectories-chart-container" ref="trajectoriesChartContainer">
-          <svg v-if="trajectoriesData.paths.length > 0" viewBox="0 0 1000 400" preserveAspectRatio="none" class="trajectories-svg">
-            <line x1="0" y1="350" x2="1000" y2="350" stroke="rgba(255,255,255,0.05)" />
-            <line x1="0" y1="200" x2="1000" y2="200" stroke="rgba(255,255,255,0.05)" />
-            <line x1="0" y1="50" x2="1000" y2="50" stroke="rgba(255,255,255,0.05)" />
-            <line x1="0" :y1="scaleY(initialPrice)" x2="1000" :y2="scaleY(initialPrice)" stroke="rgba(255,255,255,0.2)" stroke-dasharray="4" />
-            <path v-for="(path, i) in trajectoriesData.displayPaths" :key="`trajectory-path-${i}`" :d="generatePathD(path, playbackStepTrajectories)" fill="none" stroke="rgba(59, 130, 246, 0.2)" stroke-width="1" />
-            <path :d="generateAreaD(trajectoriesData.q05, trajectoriesData.q95, playbackStepTrajectories)" fill="rgba(59, 130, 246, 0.1)" stroke="none" />
-            <path :d="generatePathD(trajectoriesData.medianPath, playbackStepTrajectories)" fill="none" stroke="#3b82f6" stroke-width="2.5" />
-            <path :d="generatePathD(trajectoriesData.q05, playbackStepTrajectories)" fill="none" stroke="#f87171" stroke-width="1.5" stroke-dasharray="4" />
-            <path :d="generatePathD(trajectoriesData.q95, playbackStepTrajectories)" fill="none" stroke="#34d399" stroke-width="1.5" stroke-dasharray="4" />
-            <line v-if="playbackStepTrajectories > 0" :x1="scaleX(playbackStepTrajectories)" y1="0" :x2="scaleX(playbackStepTrajectories)" y2="400" stroke="rgba(255,255,255,0.4)" stroke-dasharray="2" />
+        <div
+          ref="trajectoriesChartContainer"
+          class="trajectories-chart-container"
+        >
+          <svg
+            v-if="trajectoriesData.paths.length > 0"
+            viewBox="0 0 1000 400"
+            preserveAspectRatio="none"
+            class="trajectories-svg"
+          >
+            <line
+              x1="0"
+              y1="350"
+              x2="1000"
+              y2="350"
+              stroke="rgba(255,255,255,0.05)"
+            />
+            <line
+              x1="0"
+              y1="200"
+              x2="1000"
+              y2="200"
+              stroke="rgba(255,255,255,0.05)"
+            />
+            <line
+              x1="0"
+              y1="50"
+              x2="1000"
+              y2="50"
+              stroke="rgba(255,255,255,0.05)"
+            />
+            <line
+              x1="0"
+              :y1="scaleY(initialPrice)"
+              x2="1000"
+              :y2="scaleY(initialPrice)"
+              stroke="rgba(255,255,255,0.2)"
+              stroke-dasharray="4"
+            />
+            <path
+              v-for="(path, i) in trajectoriesData.displayPaths"
+              :key="`trajectory-path-${i}`"
+              :d="generatePathD(path, playbackStepTrajectories)"
+              fill="none"
+              stroke="rgba(59, 130, 246, 0.2)"
+              stroke-width="1"
+            />
+            <path
+              :d="generateAreaD(trajectoriesData.q05, trajectoriesData.q95, playbackStepTrajectories)"
+              fill="rgba(59, 130, 246, 0.1)"
+              stroke="none"
+            />
+            <path
+              :d="generatePathD(trajectoriesData.medianPath, playbackStepTrajectories)"
+              fill="none"
+              stroke="#3b82f6"
+              stroke-width="2.5"
+            />
+            <path
+              :d="generatePathD(trajectoriesData.q05, playbackStepTrajectories)"
+              fill="none"
+              stroke="#f87171"
+              stroke-width="1.5"
+              stroke-dasharray="4"
+            />
+            <path
+              :d="generatePathD(trajectoriesData.q95, playbackStepTrajectories)"
+              fill="none"
+              stroke="#34d399"
+              stroke-width="1.5"
+              stroke-dasharray="4"
+            />
+            <line
+              v-if="playbackStepTrajectories > 0"
+              :x1="scaleX(playbackStepTrajectories)"
+              y1="0"
+              :x2="scaleX(playbackStepTrajectories)"
+              y2="400"
+              stroke="rgba(255,255,255,0.4)"
+              stroke-dasharray="2"
+            />
           </svg>
-          <div v-else class="trajectories-empty-state">
+          <div
+            v-else
+            class="trajectories-empty-state"
+          >
             <span>Генерация траекторий на основе параметров HJB модели</span>
           </div>
         </div>
@@ -369,69 +600,122 @@
       <div class="panel-header">
         <div class="trajectories-3d-header-left">
           <h3>3D визуализация траекторий</h3>
-          <span v-if="isPlaying3D" class="live-badge">● LIVE</span>
+          <span
+            v-if="isPlaying3D"
+            class="live-badge"
+          >● LIVE</span>
         </div>
-        <div class="playback-controls" v-if="simulationResult3D && simulationResult3D.paths.length">
-          <button class="icon-btn" @click="togglePlay3D" title="Play/Pause">
+        <div
+          v-if="simulationResult3D && simulationResult3D.paths.length"
+          class="playback-controls"
+        >
+          <button
+            class="icon-btn"
+            title="Play/Pause"
+            @click="togglePlay3D"
+          >
             <span v-if="isPlaying3D">⏸</span>
             <span v-else>▶</span>
           </button>
           <div class="timeline-wrapper">
-            <input type="range" min="0" :max="maxStep3D" v-model.number="playbackStep3D" @input="stopPlay3D" class="timeline-slider" />
-            <div class="timeline-track" :style="{ width: (maxStep3D > 0 ? (playbackStep3D / maxStep3D * 100) : 0) + '%' }"></div>
+            <input
+              v-model.number="playbackStep3D"
+              type="range"
+              min="0"
+              :max="maxStep3D"
+              class="timeline-slider"
+              @input="stopPlay3D"
+            >
+            <div
+              class="timeline-track"
+              :style="{ width: (maxStep3D > 0 ? (playbackStep3D / maxStep3D * 100) : 0) + '%' }"
+            />
           </div>
           <div class="playback-day-info">
             Шаг: <span class="mono">{{ playbackStep3D }}</span> / <span class="mono">{{ maxStep3D }}</span>
           </div>
-          <button class="icon-btn" @click="resetPlayback3D" title="Reset">↺</button>
+          <button
+            class="icon-btn"
+            title="Reset"
+            @click="resetPlayback3D"
+          >
+            ↺
+          </button>
         </div>
       </div>
       <div class="panel-body">
         <div class="trajectories-3d-container">
-          <canvas ref="trajectories3DCanvas" class="trajectories-3d-canvas"></canvas>
+          <canvas
+            ref="trajectories3DCanvas"
+            class="trajectories-3d-canvas"
+          />
         </div>
       </div>
     </div>
 
     <!-- Simulation Metrics Summary -->
-    <div class="glass-panel metrics-summary-panel" v-if="simulationResult3D && simulationResult3D.paths.length">
+    <div
+      v-if="simulationResult3D && simulationResult3D.paths.length"
+      class="glass-panel metrics-summary-panel"
+    >
       <div class="panel-header">
         <h3>Итоги симуляций</h3>
       </div>
       <div class="panel-body">
         <div class="metrics-grid">
           <div class="metric-card">
-            <div class="metric-label">Средняя доходность портфеля</div>
-            <div class="metric-value" :class="averageReturn >= 0 ? 'text-green' : 'text-red'">
+            <div class="metric-label">
+              Средняя доходность портфеля
+            </div>
+            <div
+              class="metric-value"
+              :class="averageReturn >= 0 ? 'text-green' : 'text-red'"
+            >
               {{ formatPercent(averageReturn) }}
             </div>
           </div>
           <div class="metric-card">
-            <div class="metric-label">Медианная доходность портфеля</div>
-            <div class="metric-value" :class="medianReturn >= 0 ? 'text-green' : 'text-red'">
+            <div class="metric-label">
+              Медианная доходность портфеля
+            </div>
+            <div
+              class="metric-value"
+              :class="medianReturn >= 0 ? 'text-green' : 'text-red'"
+            >
               {{ formatPercent(medianReturn) }}
             </div>
           </div>
           <div class="metric-card">
-            <div class="metric-label">Sharpe Ratio</div>
-            <div class="metric-value" :class="sharpeRatio >= 0 ? 'text-green' : 'text-red'">
+            <div class="metric-label">
+              Sharpe Ratio
+            </div>
+            <div
+              class="metric-value"
+              :class="sharpeRatio >= 0 ? 'text-green' : 'text-red'"
+            >
               {{ sharpeRatio.toFixed(2) }}
             </div>
           </div>
           <div class="metric-card">
-            <div class="metric-label">VaR (95%)</div>
+            <div class="metric-label">
+              VaR (95%)
+            </div>
             <div class="metric-value text-red">
               {{ formatPercent(var95) }}
             </div>
           </div>
           <div class="metric-card">
-            <div class="metric-label">CVaR (95%)</div>
+            <div class="metric-label">
+              CVaR (95%)
+            </div>
             <div class="metric-value text-red">
               {{ formatPercent(cvar95) }}
             </div>
           </div>
           <div class="metric-card">
-            <div class="metric-label">Средний MDD</div>
+            <div class="metric-label">
+              Средний MDD
+            </div>
             <div class="metric-value text-red">
               {{ formatPercent(averageMDD) }}
             </div>

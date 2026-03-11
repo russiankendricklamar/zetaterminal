@@ -1,26 +1,53 @@
 <!-- src/pages/RealizedKernels.vue -->
 <template>
   <div class="rk-page">
-
     <!-- Header -->
     <div class="page-header">
       <div class="header-left">
-        <h1 class="page-title">Realized Kernels — Измерение волатильности</h1>
-        <p class="page-subtitle">Оценщики RV, BV, TSRV, MSRV, RK с поправкой на рыночный микроструктурный шум</p>
+        <h1 class="page-title">
+          Realized Kernels — Измерение волатильности
+        </h1>
+        <p class="page-subtitle">
+          Оценщики RV, BV, TSRV, MSRV, RK с поправкой на рыночный микроструктурный шум
+        </p>
       </div>
       <div class="header-right">
-        <select v-model="kernel" class="control-select">
-          <option value="parzen">Parzen kernel</option>
-          <option value="tukey-hanning">Tukey-Hanning kernel</option>
-          <option value="bartlett">Bartlett kernel</option>
+        <select
+          v-model="kernel"
+          class="control-select"
+        >
+          <option value="parzen">
+            Parzen kernel
+          </option>
+          <option value="tukey-hanning">
+            Tukey-Hanning kernel
+          </option>
+          <option value="bartlett">
+            Bartlett kernel
+          </option>
         </select>
-        <select v-model="periodsPerDay" class="control-select">
-          <option :value="390">Минуты (390/день)</option>
-          <option :value="78">5-мин (78/день)</option>
-          <option :value="26">15-мин (26/день)</option>
-          <option :value="1">Дневные</option>
+        <select
+          v-model="periodsPerDay"
+          class="control-select"
+        >
+          <option :value="390">
+            Минуты (390/день)
+          </option>
+          <option :value="78">
+            5-мин (78/день)
+          </option>
+          <option :value="26">
+            15-мин (26/день)
+          </option>
+          <option :value="1">
+            Дневные
+          </option>
         </select>
-        <button @click="estimate" class="btn-primary" :disabled="loading">
+        <button
+          class="btn-primary"
+          :disabled="loading"
+          @click="estimate"
+        >
           <span v-if="!loading">Рассчитать</span>
           <span v-else>↺ Считаю...</span>
         </button>
@@ -42,16 +69,30 @@
         />
         <div class="input-row">
           <label>Bandwidth H (RK):</label>
-          <input v-model.number="bandwidth" type="number" min="1" placeholder="авто (n^3/5)" class="param-input" />
+          <input
+            v-model.number="bandwidth"
+            type="number"
+            min="1"
+            placeholder="авто (n^3/5)"
+            class="param-input"
+          >
         </div>
         <div class="input-row">
           <label>Масштабы K (TSRV):</label>
-          <input v-model.number="tsrvScales" type="number" min="2" max="50" class="param-input" />
+          <input
+            v-model.number="tsrvScales"
+            type="number"
+            min="2"
+            max="50"
+            class="param-input"
+          >
         </div>
       </div>
 
       <div class="panel">
-        <div class="panel-header"><h3>О методах</h3></div>
+        <div class="panel-header">
+          <h3>О методах</h3>
+        </div>
         <div class="methods-desc">
           <div class="method-item">
             <span class="method-tag rv">RV</span>
@@ -74,55 +115,104 @@
             <span>γ₀ + 2Σ k(h/H)·γₕ — ядерный оценщик (BN et al. 2008)</span>
           </div>
           <div class="formula-box">
-            <div class="formula">RK = γ₀ + 2 Σ<sub>h=1</sub><sup>H</sup> k(h/(H+1)) · γₕ</div>
-            <div class="formula small">γₕ = Σᵢ rᵢ · rᵢ₊ₕ &nbsp;|&nbsp; H ≈ n<sup>3/5</sup></div>
+            <div class="formula">
+              RK = γ₀ + 2 Σ<sub>h=1</sub><sup>H</sup> k(h/(H+1)) · γₕ
+            </div>
+            <div class="formula small">
+              γₕ = Σᵢ rᵢ · rᵢ₊ₕ &nbsp;|&nbsp; H ≈ n<sup>3/5</sup>
+            </div>
           </div>
         </div>
       </div>
     </div>
 
-    <div v-if="error" class="error-banner">{{ error }}</div>
+    <div
+      v-if="error"
+      class="error-banner"
+    >
+      {{ error }}
+    </div>
 
     <template v-if="result">
-
       <!-- KPI cards -->
       <div class="kpi-grid">
         <div class="kpi-card">
-          <div class="kpi-label kpi-tag rv-tag">RV Vol</div>
-          <div class="kpi-value">{{ pct(result.rv_vol) }}</div>
-          <div class="kpi-sub">Наивный (смещён)</div>
+          <div class="kpi-label kpi-tag rv-tag">
+            RV Vol
+          </div>
+          <div class="kpi-value">
+            {{ pct(result.rv_vol) }}
+          </div>
+          <div class="kpi-sub">
+            Наивный (смещён)
+          </div>
         </div>
         <div class="kpi-card">
-          <div class="kpi-label kpi-tag bv-tag">BV Vol</div>
-          <div class="kpi-value">{{ pct(result.bv_vol) }}</div>
-          <div class="kpi-sub">Jump-robust</div>
+          <div class="kpi-label kpi-tag bv-tag">
+            BV Vol
+          </div>
+          <div class="kpi-value">
+            {{ pct(result.bv_vol) }}
+          </div>
+          <div class="kpi-sub">
+            Jump-robust
+          </div>
         </div>
         <div class="kpi-card">
-          <div class="kpi-label kpi-tag tsrv-tag">TSRV Vol</div>
-          <div class="kpi-value">{{ pct(result.tsrv_vol) }}</div>
-          <div class="kpi-sub">K={{ result.tsrv_scales ?? tsrvScales }}</div>
+          <div class="kpi-label kpi-tag tsrv-tag">
+            TSRV Vol
+          </div>
+          <div class="kpi-value">
+            {{ pct(result.tsrv_vol) }}
+          </div>
+          <div class="kpi-sub">
+            K={{ result.tsrv_scales ?? tsrvScales }}
+          </div>
         </div>
         <div class="kpi-card">
-          <div class="kpi-label kpi-tag msrv-tag">MSRV Vol</div>
-          <div class="kpi-value">{{ pct(result.msrv_vol) }}</div>
-          <div class="kpi-sub">Multi-scale</div>
+          <div class="kpi-label kpi-tag msrv-tag">
+            MSRV Vol
+          </div>
+          <div class="kpi-value">
+            {{ pct(result.msrv_vol) }}
+          </div>
+          <div class="kpi-sub">
+            Multi-scale
+          </div>
         </div>
         <div class="kpi-card accent-card">
-          <div class="kpi-label kpi-tag rk-tag">RK Vol</div>
-          <div class="kpi-value">{{ pct(result.rk_vol) }}</div>
-          <div class="kpi-sub">{{ result.kernel }} H={{ result.bandwidth_used }}</div>
+          <div class="kpi-label kpi-tag rk-tag">
+            RK Vol
+          </div>
+          <div class="kpi-value">
+            {{ pct(result.rk_vol) }}
+          </div>
+          <div class="kpi-sub">
+            {{ result.kernel }} H={{ result.bandwidth_used }}
+          </div>
         </div>
-        <div class="kpi-card" :class="result.jump_test.has_jumps ? 'kpi-red' : 'kpi-green'">
-          <div class="kpi-label">Скачки</div>
-          <div class="kpi-value">{{ result.jump_test.has_jumps ? 'Есть' : 'Нет' }}</div>
-          <div class="kpi-sub">p = {{ fmtP(result.jump_test.p_value) }}</div>
+        <div
+          class="kpi-card"
+          :class="result.jump_test.has_jumps ? 'kpi-red' : 'kpi-green'"
+        >
+          <div class="kpi-label">
+            Скачки
+          </div>
+          <div class="kpi-value">
+            {{ result.jump_test.has_jumps ? 'Есть' : 'Нет' }}
+          </div>
+          <div class="kpi-sub">
+            p = {{ fmtP(result.jump_test.p_value) }}
+          </div>
         </div>
       </div>
 
       <!-- Estimator comparison + Jump test details -->
       <div class="results-grid">
         <div class="panel">
-          <div class="panel-header"><h3>Сравнение оценщиков</h3></div>
+          <div class="panel-header">
+            <h3>Сравнение оценщиков</h3>
+          </div>
           <table class="stats-table">
             <thead>
               <tr>
@@ -135,53 +225,133 @@
             <tbody>
               <tr>
                 <td><span class="method-tag rv">RV</span></td>
-                <td class="mono">{{ sci(result.rv_raw) }}</td>
-                <td class="mono">{{ pct(result.rv_vol) }}</td>
-                <td class="mono" :class="biasClass(result.rv_vol, result.rk_vol)">{{ biasPct(result.rv_vol, result.rk_vol) }}</td>
+                <td class="mono">
+                  {{ sci(result.rv_raw) }}
+                </td>
+                <td class="mono">
+                  {{ pct(result.rv_vol) }}
+                </td>
+                <td
+                  class="mono"
+                  :class="biasClass(result.rv_vol, result.rk_vol)"
+                >
+                  {{ biasPct(result.rv_vol, result.rk_vol) }}
+                </td>
               </tr>
               <tr>
                 <td><span class="method-tag bv">BV</span></td>
-                <td class="mono">{{ sci(result.bv_raw) }}</td>
-                <td class="mono">{{ pct(result.bv_vol) }}</td>
-                <td class="mono" :class="biasClass(result.bv_vol, result.rk_vol)">{{ biasPct(result.bv_vol, result.rk_vol) }}</td>
+                <td class="mono">
+                  {{ sci(result.bv_raw) }}
+                </td>
+                <td class="mono">
+                  {{ pct(result.bv_vol) }}
+                </td>
+                <td
+                  class="mono"
+                  :class="biasClass(result.bv_vol, result.rk_vol)"
+                >
+                  {{ biasPct(result.bv_vol, result.rk_vol) }}
+                </td>
               </tr>
               <tr>
                 <td><span class="method-tag tsrv">TSRV</span></td>
-                <td class="mono">{{ sci(result.tsrv_raw) }}</td>
-                <td class="mono">{{ pct(result.tsrv_vol) }}</td>
-                <td class="mono" :class="biasClass(result.tsrv_vol, result.rk_vol)">{{ biasPct(result.tsrv_vol, result.rk_vol) }}</td>
+                <td class="mono">
+                  {{ sci(result.tsrv_raw) }}
+                </td>
+                <td class="mono">
+                  {{ pct(result.tsrv_vol) }}
+                </td>
+                <td
+                  class="mono"
+                  :class="biasClass(result.tsrv_vol, result.rk_vol)"
+                >
+                  {{ biasPct(result.tsrv_vol, result.rk_vol) }}
+                </td>
               </tr>
               <tr>
                 <td><span class="method-tag msrv">MSRV</span></td>
-                <td class="mono">{{ sci(result.msrv_raw) }}</td>
-                <td class="mono">{{ pct(result.msrv_vol) }}</td>
-                <td class="mono" :class="biasClass(result.msrv_vol, result.rk_vol)">{{ biasPct(result.msrv_vol, result.rk_vol) }}</td>
+                <td class="mono">
+                  {{ sci(result.msrv_raw) }}
+                </td>
+                <td class="mono">
+                  {{ pct(result.msrv_vol) }}
+                </td>
+                <td
+                  class="mono"
+                  :class="biasClass(result.msrv_vol, result.rk_vol)"
+                >
+                  {{ biasPct(result.msrv_vol, result.rk_vol) }}
+                </td>
               </tr>
               <tr class="highlight-row">
                 <td><span class="method-tag rk">RK</span></td>
-                <td class="mono">{{ sci(result.rk_raw) }}</td>
-                <td class="mono accent">{{ pct(result.rk_vol) }}</td>
-                <td class="mono">—</td>
+                <td class="mono">
+                  {{ sci(result.rk_raw) }}
+                </td>
+                <td class="mono accent">
+                  {{ pct(result.rk_vol) }}
+                </td>
+                <td class="mono">
+                  —
+                </td>
               </tr>
             </tbody>
           </table>
 
-          <div class="panel-header" style="margin-top:16px"><h3>Тест на скачки (BN-Shephard)</h3></div>
+          <div
+            class="panel-header"
+            style="margin-top:16px"
+          >
+            <h3>Тест на скачки (BN-Shephard)</h3>
+          </div>
           <table class="stats-table">
             <tbody>
-              <tr><td>Компонент скачков</td><td class="mono">{{ sci(result.jump_test.jump_component) }}</td></tr>
-              <tr><td>Непрерывный компонент (BV)</td><td class="mono">{{ sci(result.jump_test.continuous_component) }}</td></tr>
-              <tr><td>Доля скачков (J/RV)</td><td class="mono" :class="result.jump_test.ratio > 0.1 ? 'neg' : 'pos'">{{ pct(result.jump_test.ratio) }}</td></tr>
-              <tr><td>z-статистика</td><td class="mono">{{ fmt2(result.jump_test.z_stat) }}</td></tr>
-              <tr><td>p-value</td><td class="mono" :class="result.jump_test.has_jumps ? 'neg' : 'pos'">{{ fmtP(result.jump_test.p_value) }}</td></tr>
-              <tr><td>Вывод</td><td :class="result.jump_test.has_jumps ? 'neg' : 'pos'">{{ result.jump_test.has_jumps ? 'Значимые скачки обнаружены' : 'Скачков не обнаружено' }}</td></tr>
+              <tr>
+                <td>Компонент скачков</td><td class="mono">
+                  {{ sci(result.jump_test.jump_component) }}
+                </td>
+              </tr>
+              <tr>
+                <td>Непрерывный компонент (BV)</td><td class="mono">
+                  {{ sci(result.jump_test.continuous_component) }}
+                </td>
+              </tr>
+              <tr>
+                <td>Доля скачков (J/RV)</td><td
+                  class="mono"
+                  :class="result.jump_test.ratio > 0.1 ? 'neg' : 'pos'"
+                >
+                  {{ pct(result.jump_test.ratio) }}
+                </td>
+              </tr>
+              <tr>
+                <td>z-статистика</td><td class="mono">
+                  {{ fmt2(result.jump_test.z_stat) }}
+                </td>
+              </tr>
+              <tr>
+                <td>p-value</td><td
+                  class="mono"
+                  :class="result.jump_test.has_jumps ? 'neg' : 'pos'"
+                >
+                  {{ fmtP(result.jump_test.p_value) }}
+                </td>
+              </tr>
+              <tr>
+                <td>Вывод</td><td :class="result.jump_test.has_jumps ? 'neg' : 'pos'">
+                  {{ result.jump_test.has_jumps ? 'Значимые скачки обнаружены' : 'Скачков не обнаружено' }}
+                </td>
+              </tr>
             </tbody>
           </table>
 
           <div class="noise-info">
             <span class="noise-label">Дисперсия шума ω²:</span>
             <span class="mono">{{ sci(result.noise_variance) }}</span>
-            <span class="noise-label" style="margin-left:16px">Оптимальный шаг дискретизации Δ*:</span>
+            <span
+              class="noise-label"
+              style="margin-left:16px"
+            >Оптимальный шаг дискретизации Δ*:</span>
             <span class="mono accent">{{ result.optimal_sampling_step }}</span>
           </div>
         </div>
@@ -192,10 +362,12 @@
             <h3>Сигнатурный график</h3>
             <span class="hint">RV(Δ) vs шаг дискретизации — рост при малых Δ свидетельствует о микроструктурном шуме</span>
           </div>
-          <div ref="sigChartEl" class="chart-container" />
+          <div
+            ref="sigChartEl"
+            class="chart-container"
+          />
         </div>
       </div>
-
     </template>
   </div>
 </template>

@@ -10,14 +10,12 @@
 - Реконструкция Σ с K < N главными компонентами
 - Декомпозиция риска портфеля на вклады PC
 """
-import numpy as np
-import scipy.stats
-from typing import Dict, List, Optional, Tuple
 
+import numpy as np
 
 # ── Marchenko-Pastur распределение ────────────────────────────────────────────
 
-def _marchenko_pastur_bounds(sigma2: float, q: float) -> Tuple[float, float]:
+def _marchenko_pastur_bounds(sigma2: float, q: float) -> tuple[float, float]:
     """
     Границы Маршенко-Пастура для собственных значений матрицы шума.
     q = N/T (отношение числа переменных к числу наблюдений).
@@ -44,7 +42,7 @@ def _marchenko_pastur_pdf(x: np.ndarray, sigma2: float, q: float) -> np.ndarray:
 
 # ── Ledoit-Wolf shrinkage ─────────────────────────────────────────────────────
 
-def _ledoit_wolf_shrinkage(X: np.ndarray) -> Tuple[np.ndarray, float]:
+def _ledoit_wolf_shrinkage(X: np.ndarray) -> tuple[np.ndarray, float]:
     """
     Ledoit-Wolf аналитический shrinkage для ковариационной матрицы.
     Σ_LW = (1 − α) · S + α · μ · I
@@ -79,12 +77,12 @@ def _ledoit_wolf_shrinkage(X: np.ndarray) -> Tuple[np.ndarray, float]:
 # ── Главная функция ───────────────────────────────────────────────────────────
 
 def compute_eigenportfolios(
-    returns: List[List[float]],
-    asset_names: Optional[List[str]] = None,
+    returns: list[list[float]],
+    asset_names: list[str] | None = None,
     use_shrinkage: bool = True,
-    n_components: Optional[int] = None,
-    portfolio_weights: Optional[List[float]] = None,
-) -> Dict:
+    n_components: int | None = None,
+    portfolio_weights: list[float] | None = None,
+) -> dict:
     """
     PCA декомпозиция ковариационной матрицы доходностей.
 

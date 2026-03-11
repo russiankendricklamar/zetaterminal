@@ -1,11 +1,17 @@
 <template>
   <div class="home-root">
     <!-- Noise Overlay -->
-    <div class="bg-noise"></div>
+    <div class="bg-noise" />
 
     <!-- Loading Screen -->
-    <div v-if="showLoader" ref="loaderRef" class="loader">
-      <h1 class="loader-text">LOADING...</h1>
+    <div
+      v-if="showLoader"
+      ref="loaderRef"
+      class="loader"
+    >
+      <h1 class="loader-text">
+        LOADING...
+      </h1>
     </div>
 
     <!-- Navigation -->
@@ -14,37 +20,77 @@
         <span class="nav-brand font-mono">&#9670; Quantitative / Dashboard</span>
       </div>
       <div class="nav-links">
-        <a href="#tools" class="nav-link font-oswald" @click.prevent="scrollTo('tools')">Инструменты</a>
-        <a href="#terminal" class="nav-link font-oswald" @click.prevent="scrollTo('terminal')">Терминал</a>
+        <a
+          href="#tools"
+          class="nav-link font-oswald"
+          @click.prevent="scrollTo('tools')"
+        >Инструменты</a>
+        <a
+          href="#terminal"
+          class="nav-link font-oswald"
+          @click.prevent="scrollTo('terminal')"
+        >Терминал</a>
       </div>
     </nav>
 
     <!-- Main Content -->
     <main class="main-content">
-
       <!-- ══════ HERO ══════ -->
-      <section ref="heroRef" class="hero">
-        <div class="hero-grid-overlay"></div>
-        <div ref="heroContentRef" class="hero-content">
-          <h2 ref="heroSubtitleRef" class="hero-subtitle font-mono">Quantitative Dashboard</h2>
+      <section
+        ref="heroRef"
+        class="hero"
+      >
+        <div class="hero-grid-overlay" />
+        <div
+          ref="heroContentRef"
+          class="hero-content"
+        >
+          <h2
+            ref="heroSubtitleRef"
+            class="hero-subtitle font-mono"
+          >
+            Quantitative Dashboard
+          </h2>
           <div class="hero-titles">
-            <h1 ref="heroTitle1Ref" class="hero-title hero-title-top font-anton">ZETA</h1>
-            <h1 ref="heroTitle2Ref" class="hero-title hero-title-bottom font-anton">TERMINAL</h1>
+            <h1
+              ref="heroTitle1Ref"
+              class="hero-title hero-title-top font-anton"
+            >
+              ZETA
+            </h1>
+            <h1
+              ref="heroTitle2Ref"
+              class="hero-title hero-title-bottom font-anton"
+            >
+              TERMINAL
+            </h1>
           </div>
         </div>
-        <div ref="heroBottomRef" class="hero-bottom font-oswald">
+        <div
+          ref="heroBottomRef"
+          class="hero-bottom font-oswald"
+        >
           <span>&#9670; Finance</span>
-          <button class="hero-login-btn font-oswald" @click="navigateTo('/auth')">ВОЙТИ &rarr;</button>
+          <button
+            class="hero-login-btn font-oswald"
+            @click="navigateTo('/auth')"
+          >
+            ВОЙТИ &rarr;
+          </button>
           <span class="hide-mobile">Quantitative Analytics</span>
         </div>
-        <div class="hero-line hero-line-left"></div>
-        <div class="hero-line hero-line-right"></div>
+        <div class="hero-line hero-line-left" />
+        <div class="hero-line hero-line-right" />
       </section>
 
       <!-- ══════ MARQUEE RED ══════ -->
       <div class="marquee-strip marquee-red">
         <div class="marquee-track">
-          <span v-for="n in 5" :key="'r'+n" class="font-anton">STOCHASTIC ANALYSIS &mdash; QUANTITATIVE ANALYTICS &mdash; DERIVATIVES &mdash; BONDS &mdash; SWAPS &mdash; FORWARDS &mdash; OPTIONS &mdash; MARKET REGIMES &mdash; P&L CALCULATIONS &mdash; RISK-MANAGEMENT &mdash;&nbsp;</span>
+          <span
+            v-for="n in 5"
+            :key="'r'+n"
+            class="font-anton"
+          >STOCHASTIC ANALYSIS &mdash; QUANTITATIVE ANALYTICS &mdash; DERIVATIVES &mdash; BONDS &mdash; SWAPS &mdash; FORWARDS &mdash; OPTIONS &mdash; MARKET REGIMES &mdash; P&L CALCULATIONS &mdash; RISK-MANAGEMENT &mdash;&nbsp;</span>
         </div>
       </div>
 
@@ -53,8 +99,10 @@
         <div class="about-grid">
           <div class="about-left">
             <div class="about-sticky">
-              <h2 class="about-title font-anton">QUANTITATIVE<br/>RISK<br/>MANAGEMENT</h2>
-              <div class="about-divider"></div>
+              <h2 class="about-title font-anton">
+                QUANTITATIVE<br>RISK<br>MANAGEMENT
+              </h2>
+              <div class="about-divider" />
               <div class="about-meta font-mono">
                 <p>ИНСТРУМЕНТОВ: 27</p>
                 <p>МОДЕЛЕЙ: 8+</p>
@@ -62,21 +110,44 @@
             </div>
           </div>
           <div class="about-right">
-            <div ref="aboutBlock1" class="about-block">
-              <p class="about-intro font-oswald">Платформа стохастического моделирования для количественного анализа финансовых рынков, ценообразования деривативов и управления рисками.</p>
-              <p class="about-body font-mono">Дзета Терминал объединяет классические модели ценообразования с современными вычислительными методами. Модели Блэка-Шоулза-Мертона и Хестона, Случайные процессы Леви, 2D и 3D симуляции Монте-Карло, тепловые карты активов — все инструменты доступны в едином интерфейсе.</p>
+            <div
+              ref="aboutBlock1"
+              class="about-block"
+            >
+              <p class="about-intro font-oswald">
+                Платформа стохастического моделирования для количественного анализа финансовых рынков, ценообразования деривативов и управления рисками.
+              </p>
+              <p class="about-body font-mono">
+                Дзета Терминал объединяет классические модели ценообразования с современными вычислительными методами. Модели Блэка-Шоулза-Мертона и Хестона, Случайные процессы Леви, 2D и 3D симуляции Монте-Карло, тепловые карты активов — все инструменты доступны в едином интерфейсе.
+              </p>
             </div>
-            <div ref="aboutBlock2" class="about-block about-quote">
-              <p class="about-quote-text font-anton">КОЛИЧЕСТВЕННАЯ АНАЛИТИКА И СТОХАСТИЧЕСКОЕ МОДЕЛИРОВАНИЕ НА УРОВНЕ ИНСТИТУЦИОНАЛЬНЫХ ПЛАТФОРМ</p>
+            <div
+              ref="aboutBlock2"
+              class="about-block about-quote"
+            >
+              <p class="about-quote-text font-anton">
+                КОЛИЧЕСТВЕННАЯ АНАЛИТИКА И СТОХАСТИЧЕСКОЕ МОДЕЛИРОВАНИЕ НА УРОВНЕ ИНСТИТУЦИОНАЛЬНЫХ ПЛАТФОРМ
+              </p>
             </div>
-            <div ref="aboutBlock3" class="about-block about-cols">
+            <div
+              ref="aboutBlock3"
+              class="about-block about-cols"
+            >
               <div>
-                <h3 class="about-col-title font-oswald">Ценообразование</h3>
-                <p class="about-col-body font-mono">Модели Black-Scholes-Merton и Heston, SABR, FFT-методы, Поверхность волатильности. Полный стек для опционов, свопов, форвардов и структурных продуктов.</p>
+                <h3 class="about-col-title font-oswald">
+                  Ценообразование
+                </h3>
+                <p class="about-col-body font-mono">
+                  Модели Black-Scholes-Merton и Heston, SABR, FFT-методы, Поверхность волатильности. Полный стек для опционов, свопов, форвардов и структурных продуктов.
+                </p>
               </div>
               <div>
-                <h3 class="about-col-title font-oswald">Риск-менеджмент</h3>
-                <p class="about-col-body font-mono">VaR, Expected Shortfall, стресс-тестирование, бэктестинг, греки, режимы рынка через Скрытые Марковские цепи и Комплексный анализ. Портфельная оптимизация по модели Хэмилтона-Якоби-Беллмана и CCMV оптимизация</p>
+                <h3 class="about-col-title font-oswald">
+                  Риск-менеджмент
+                </h3>
+                <p class="about-col-body font-mono">
+                  VaR, Expected Shortfall, стресс-тестирование, бэктестинг, греки, режимы рынка через Скрытые Марковские цепи и Комплексный анализ. Портфельная оптимизация по модели Хэмилтона-Якоби-Беллмана и CCMV оптимизация
+                </p>
               </div>
             </div>
           </div>
@@ -86,19 +157,28 @@
       <!-- ══════ MARQUEE DARK ══════ -->
       <div class="marquee-strip marquee-dark">
         <div class="marquee-track marquee-reverse">
-          <span v-for="n in 5" :key="'d'+n" class="font-anton">BLACK-SCHOLES-MERTON MODEL &mdash; HESTON MODEL &mdash; MONTE CARLO SIMULATION &mdash; FAST FOURIER TRANSFORM &mdash; DCF &mdash; ZCYC &mdash; L&Eacute;VY RANDOM PROCESSES &mdash;&nbsp;</span>
+          <span
+            v-for="n in 5"
+            :key="'d'+n"
+            class="font-anton"
+          >BLACK-SCHOLES-MERTON MODEL &mdash; HESTON MODEL &mdash; MONTE CARLO SIMULATION &mdash; FAST FOURIER TRANSFORM &mdash; DCF &mdash; ZCYC &mdash; L&Eacute;VY RANDOM PROCESSES &mdash;&nbsp;</span>
         </div>
       </div>
 
       <!-- ══════ TOOLS (TrackList) ══════ -->
-      <section id="tools" class="tools">
+      <section
+        id="tools"
+        class="tools"
+      >
         <div class="tools-bg-text font-anton">
-          QQQQQQQ<br/>UUUUUUU<br/>AAAAAAA<br/>NNNNNNN<br/>TTTTTTT
+          QQQQQQQ<br>UUUUUUU<br>AAAAAAA<br>NNNNNNN<br>TTTTTTT
         </div>
         <div class="tools-inner">
           <div class="tools-header">
-            <h2 class="tools-title font-anton">Инструменты</h2>
-            <div class="tools-underline"></div>
+            <h2 class="tools-title font-anton">
+              Инструменты
+            </h2>
+            <div class="tools-underline" />
           </div>
           <div class="tools-list">
             <div
@@ -115,7 +195,10 @@
                 </button>
                 <div class="tool-info">
                   <span class="tool-name font-oswald">{{ tool.name }}</span>
-                  <span v-if="tool.desc" class="tool-desc font-mono">{{ tool.desc }}</span>
+                  <span
+                    v-if="tool.desc"
+                    class="tool-desc font-mono"
+                  >{{ tool.desc }}</span>
                 </div>
               </div>
               <span class="tool-arrow font-mono">&rarr;</span>
@@ -125,14 +208,28 @@
       </section>
 
       <!-- ══════ TERMINAL ══════ -->
-      <section id="terminal" class="terminal-section">
-        <div class="terminal-card" @click="navigateTo('/terminal')">
-          <div class="terminal-zeta font-anton">&zeta;</div>
-          <div class="terminal-info">
-            <div class="terminal-title font-oswald">Терминал</div>
-            <div class="terminal-sub font-mono">Данные с бирж &middot; Акции &middot; Крипто &middot; Фьючерсы &middot; Опционы</div>
+      <section
+        id="terminal"
+        class="terminal-section"
+      >
+        <div
+          class="terminal-card"
+          @click="navigateTo('/terminal')"
+        >
+          <div class="terminal-zeta font-anton">
+            &zeta;
           </div>
-          <div class="terminal-cta font-oswald">Открыть &rarr;</div>
+          <div class="terminal-info">
+            <div class="terminal-title font-oswald">
+              Терминал
+            </div>
+            <div class="terminal-sub font-mono">
+              Данные с бирж &middot; Акции &middot; Крипто &middot; Фьючерсы &middot; Опционы
+            </div>
+          </div>
+          <div class="terminal-cta font-oswald">
+            Открыть &rarr;
+          </div>
         </div>
       </section>
 
@@ -140,15 +237,27 @@
       <footer class="footer">
         <div class="footer-inner">
           <div class="footer-main">
-            <h2 class="footer-title font-anton">ZETA-TERMINAL</h2>
-            <p class="footer-subtitle font-oswald">Quantitative Analytics Platform</p>
+            <h2 class="footer-title font-anton">
+              ZETA-TERMINAL
+            </h2>
+            <p class="footer-subtitle font-oswald">
+              Quantitative Analytics Platform
+            </p>
           </div>
           <div class="footer-credits">
             <div class="footer-col">
-              <h4 class="footer-col-head">Platform</h4>
-              <p class="font-mono">Vue 3 / TypeScript</p>
-              <p class="font-mono">GSAP / ECharts</p>
-              <p class="font-mono">Three.js</p>
+              <h4 class="footer-col-head">
+                Platform
+              </h4>
+              <p class="font-mono">
+                Vue 3 / TypeScript
+              </p>
+              <p class="font-mono">
+                GSAP / ECharts
+              </p>
+              <p class="font-mono">
+                Three.js
+              </p>
             </div>
           </div>
         </div>

@@ -1,40 +1,73 @@
 <!-- src/pages/BasisAnalysis.vue -->
 <template>
   <div class="basis-analysis-page">
-    
     <!-- Header Section -->
     <div class="page-header">
       <div class="header-left">
-        <h1 class="page-title">Анализ базиса</h1>
-        <p class="page-subtitle">Анализ спот-форвард базиса и стоимости переноса позиций</p>
+        <h1 class="page-title">
+          Анализ базиса
+        </h1>
+        <p class="page-subtitle">
+          Анализ спот-форвард базиса и стоимости переноса позиций
+        </p>
       </div>
       
       <div class="header-right">
         <!-- Instrument -->
         <div class="control-group">
           <label class="control-label">Инструмент:</label>
-          <select v-model="selectedInstrument" class="instrument-select" @change="updateAnalysis">
-            <option value="bonds">Базис облигаций</option>
-            <option value="fx">Валютный базис</option>
-            <option value="equity">Базис акций</option>
-            <option value="commodities">Базис товаров</option>
+          <select
+            v-model="selectedInstrument"
+            class="instrument-select"
+            @change="updateAnalysis"
+          >
+            <option value="bonds">
+              Базис облигаций
+            </option>
+            <option value="fx">
+              Валютный базис
+            </option>
+            <option value="equity">
+              Базис акций
+            </option>
+            <option value="commodities">
+              Базис товаров
+            </option>
           </select>
         </div>
 
         <!-- Time Period -->
         <div class="control-group">
           <label class="control-label">Период:</label>
-          <select v-model="selectedPeriod" class="period-select" @change="updateAnalysis">
-            <option value="1m">1 месяц</option>
-            <option value="3m">3 месяца</option>
-            <option value="6m">6 месяцев</option>
-            <option value="1y">1 год</option>
-            <option value="2y">2 года</option>
+          <select
+            v-model="selectedPeriod"
+            class="period-select"
+            @change="updateAnalysis"
+          >
+            <option value="1m">
+              1 месяц
+            </option>
+            <option value="3m">
+              3 месяца
+            </option>
+            <option value="6m">
+              6 месяцев
+            </option>
+            <option value="1y">
+              1 год
+            </option>
+            <option value="2y">
+              2 года
+            </option>
           </select>
         </div>
 
         <!-- Update Button -->
-        <button @click="updateAnalysis" class="btn-primary" :disabled="calculating">
+        <button
+          class="btn-primary"
+          :disabled="calculating"
+          @click="updateAnalysis"
+        >
           <span v-if="!calculating">Обновить</span>
           <span v-else>↺ Считаю...</span>
         </button>
@@ -54,7 +87,10 @@
         </div>
         <div class="metric-detail">
           <span class="label">Изменение (1Д)</span>
-          <span class="value" :class="basisData.spotChange >= 0 ? 'positive' : 'negative'">
+          <span
+            class="value"
+            :class="basisData.spotChange >= 0 ? 'positive' : 'negative'"
+          >
             {{ basisData.spotChange >= 0 ? '+' : '' }}{{ basisData.spotChange.toFixed(3) }}%
           </span>
         </div>
@@ -96,7 +132,10 @@
           <h3>Годовая стоимость переноса</h3>
           <span class="metric-unit">Годовая стоимость</span>
         </div>
-        <div class="metric-value" :class="basisData.annualizedCarry >= 0 ? 'positive' : 'negative'">
+        <div
+          class="metric-value"
+          :class="basisData.annualizedCarry >= 0 ? 'positive' : 'negative'"
+        >
           {{ basisData.annualizedCarry >= 0 ? '+' : '' }}{{ basisData.annualizedCarry.toFixed(2) }}%
         </div>
         <div class="metric-detail">
@@ -149,7 +188,7 @@
           <span class="chart-subtitle">F_fair vs F_market</span>
         </div>
         <div class="chart-container">
-          <canvas ref="basisChartRef"></canvas>
+          <canvas ref="basisChartRef" />
         </div>
       </div>
     </div>
@@ -161,7 +200,7 @@
         <span class="chart-subtitle">Как базис меняется по срокам</span>
       </div>
       <div class="chart-container tall">
-        <canvas ref="termStructureRef"></canvas>
+        <canvas ref="termStructureRef" />
       </div>
     </div>
 
@@ -187,18 +226,42 @@
             </tr>
           </thead>
           <tbody>
-            <tr v-for="tenor in basisByTenor" :key="tenor.tenor" :class="tenor.opportunity !== 'Neutral' ? tenor.opportunity.toLowerCase() : ''">
-              <td class="tenor-name">{{ tenor.tenor }}</td>
-              <td class="price mono">{{ formatCurrency(tenor.spotPrice) }}</td>
-              <td class="price mono">{{ formatCurrency(tenor.forwardPrice) }}</td>
-              <td class="basis mono">{{ tenor.basis.toFixed(4) }}</td>
-              <td class="basis-pct mono">{{ tenor.basisPct.toFixed(3) }}%</td>
-              <td class="fair mono">{{ tenor.fairBasis.toFixed(4) }}</td>
-              <td class="variance mono" :class="Math.abs(tenor.variance) > 0.01 ? 'outlier' : ''">
+            <tr
+              v-for="tenor in basisByTenor"
+              :key="tenor.tenor"
+              :class="tenor.opportunity !== 'Neutral' ? tenor.opportunity.toLowerCase() : ''"
+            >
+              <td class="tenor-name">
+                {{ tenor.tenor }}
+              </td>
+              <td class="price mono">
+                {{ formatCurrency(tenor.spotPrice) }}
+              </td>
+              <td class="price mono">
+                {{ formatCurrency(tenor.forwardPrice) }}
+              </td>
+              <td class="basis mono">
+                {{ tenor.basis.toFixed(4) }}
+              </td>
+              <td class="basis-pct mono">
+                {{ tenor.basisPct.toFixed(3) }}%
+              </td>
+              <td class="fair mono">
+                {{ tenor.fairBasis.toFixed(4) }}
+              </td>
+              <td
+                class="variance mono"
+                :class="Math.abs(tenor.variance) > 0.01 ? 'outlier' : ''"
+              >
                 {{ tenor.variance >= 0 ? '+' : '' }}{{ tenor.variance.toFixed(4) }}
               </td>
-              <td class="carry mono">{{ tenor.carryAnn.toFixed(2) }}%</td>
-              <td class="opportunity" :class="tenor.opportunity.toLowerCase()">
+              <td class="carry mono">
+                {{ tenor.carryAnn.toFixed(2) }}%
+              </td>
+              <td
+                class="opportunity"
+                :class="tenor.opportunity.toLowerCase()"
+              >
                 {{ tenor.opportunity }}
               </td>
             </tr>
@@ -232,7 +295,10 @@
           </div>
           <div class="roll-item">
             <span class="label">Roll Yield (год.)</span>
-            <span class="value" :class="basisData.rollYieldAnnual >= 0 ? 'positive' : 'negative'">
+            <span
+              class="value"
+              :class="basisData.rollYieldAnnual >= 0 ? 'positive' : 'negative'"
+            >
               {{ basisData.rollYieldAnnual >= 0 ? '+' : '' }}{{ basisData.rollYieldAnnual.toFixed(2) }}%
             </span>
           </div>
@@ -287,7 +353,7 @@
           <span class="chart-subtitle">Разница в базисе между контрактами</span>
         </div>
         <div class="chart-container">
-          <canvas ref="spreadChartRef"></canvas>
+          <canvas ref="spreadChartRef" />
         </div>
       </div>
 
@@ -331,7 +397,7 @@
         <span class="chart-subtitle">Изменение базиса и carry за последний год</span>
       </div>
       <div class="chart-container tall">
-        <canvas ref="historicalBasisRef"></canvas>
+        <canvas ref="historicalBasisRef" />
       </div>
     </div>
 
@@ -343,9 +409,16 @@
           <h3>Ключевые драйверы базиса</h3>
         </div>
         <div class="drivers-list">
-          <div v-for="driver in basisDrivers" :key="driver.name" class="driver-item">
+          <div
+            v-for="driver in basisDrivers"
+            :key="driver.name"
+            class="driver-item"
+          >
             <span class="driver-name">{{ driver.name }}</span>
-            <div class="driver-impact" :class="driver.impact.toLowerCase()">
+            <div
+              class="driver-impact"
+              :class="driver.impact.toLowerCase()"
+            >
               {{ driver.impact }}
             </div>
             <span class="driver-value">{{ driver.value }}</span>
@@ -406,16 +479,36 @@
             </tr>
           </thead>
           <tbody>
-            <tr v-for="opp in arbitrageOpportunities" :key="opp.tenor" :class="opp.strategy.toLowerCase()">
-              <td class="tenor">{{ opp.tenor }}</td>
-              <td class="price mono">{{ formatCurrency(opp.spotPrice) }}</td>
-              <td class="price mono">{{ formatCurrency(opp.forwardPrice) }}</td>
-              <td class="basis mono">{{ opp.fairBasis.toFixed(4) }}</td>
-              <td class="basis mono">{{ opp.marketBasis.toFixed(4) }}</td>
-              <td class="mispricing mono" :class="Math.abs(opp.mispricing) > 0.001 ? 'significant' : ''">
+            <tr
+              v-for="opp in arbitrageOpportunities"
+              :key="opp.tenor"
+              :class="opp.strategy.toLowerCase()"
+            >
+              <td class="tenor">
+                {{ opp.tenor }}
+              </td>
+              <td class="price mono">
+                {{ formatCurrency(opp.spotPrice) }}
+              </td>
+              <td class="price mono">
+                {{ formatCurrency(opp.forwardPrice) }}
+              </td>
+              <td class="basis mono">
+                {{ opp.fairBasis.toFixed(4) }}
+              </td>
+              <td class="basis mono">
+                {{ opp.marketBasis.toFixed(4) }}
+              </td>
+              <td
+                class="mispricing mono"
+                :class="Math.abs(opp.mispricing) > 0.001 ? 'significant' : ''"
+              >
                 {{ opp.mispricing >= 0 ? '+' : '' }}{{ opp.mispricing.toFixed(4) }}
               </td>
-              <td class="strategy" :class="opp.strategy.toLowerCase()">
+              <td
+                class="strategy"
+                :class="opp.strategy.toLowerCase()"
+              >
                 {{ opp.strategy }}
               </td>
               <td class="profit mono positive">
@@ -458,7 +551,10 @@
           </div>
           <div class="risk-metric">
             <span>1M Roll Impact:</span>
-            <span class="value" :class="basisData.rollYield >= 0 ? 'positive' : 'negative'">
+            <span
+              class="value"
+              :class="basisData.rollYield >= 0 ? 'positive' : 'negative'"
+            >
               {{ basisData.rollYield >= 0 ? '+' : '' }}{{ formatCompactCurrency(basisData.rollYield * basisData.contractSize / 100) }}
             </span>
           </div>
@@ -486,7 +582,6 @@
       <span>• Частота: Ежедневно</span>
       <span>• Обновление: Конец дня</span>
     </div>
-
   </div>
 </template>
 

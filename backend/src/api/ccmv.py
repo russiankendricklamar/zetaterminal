@@ -2,15 +2,16 @@
 API endpoints для CCMV оптимизации портфеля.
 """
 import logging
-
-from fastapi import APIRouter, HTTPException, Request
-from typing import List, Optional, Dict, Any
-from pydantic import BaseModel, Field
-from src.services.ccmv_service import optimize_ccmv
-from src.utils.financial_validation import FinancialBaseModel, MAX_ASSETS
-from src.middleware.rate_limit import limiter
 from datetime import datetime
+from typing import Any
+
 import numpy as np
+from fastapi import APIRouter, HTTPException, Request
+from pydantic import BaseModel, Field
+
+from src.middleware.rate_limit import limiter
+from src.services.ccmv_service import optimize_ccmv
+from src.utils.financial_validation import MAX_ASSETS, FinancialBaseModel
 
 logger = logging.getLogger(__name__)
 
@@ -19,16 +20,16 @@ router = APIRouter()
 
 class CCMVRequest(FinancialBaseModel):
     """Запрос на CCMV оптимизацию."""
-    R: List[List[float]] = Field(..., max_length=MAX_ASSETS * 100, description="Матрица доходностей (time_steps x num_assets)")
-    mu: List[float] = Field(..., max_length=MAX_ASSETS, description="Ожидаемые доходности активов")
-    cov_matrix: List[List[float]] = Field(..., max_length=MAX_ASSETS, description="Ковариационная матрица")
+    R: list[list[float]] = Field(..., max_length=MAX_ASSETS * 100, description="Матрица доходностей (time_steps x num_assets)")
+    mu: list[float] = Field(..., max_length=MAX_ASSETS, description="Ожидаемые доходности активов")
+    cov_matrix: list[list[float]] = Field(..., max_length=MAX_ASSETS, description="Ковариационная матрица")
     Delta: int = Field(..., gt=0, le=MAX_ASSETS, description="Максимальное количество активов в портфеле")
     bar_w: float = Field(..., gt=0, le=1, description="Максимальный вес на актив")
     gamma: float = Field(..., gt=0, le=100, description="Коэффициент неприятия риска (γ > 0)")
     method: str = Field(default='delta', description="Метод оптимизации: 'delta' или 'alpha'")
-    asset_names: Optional[List[str]] = Field(None, max_length=MAX_ASSETS, description="Названия активов")
+    asset_names: list[str] | None = Field(None, max_length=MAX_ASSETS, description="Названия активов")
     risk_free_rate: float = Field(default=0.0, ge=-1, le=1, description="Безрисковая ставка (для Sharpe ratio)")
-    
+
     class Config:
         schema_extra = {
             "example": {
@@ -50,9 +51,9 @@ class CCMVRequest(FinancialBaseModel):
 
 class CCMVResponse(BaseModel):
     """Ответ с результатами CCMV оптимизации."""
-    optimal_weights: List[float]
-    clusters: List[Dict[str, Any]]
-    portfolio_stats: Dict[str, float]
+    optimal_weights: list[float]
+    clusters: list[dict[str, Any]]
+    portfolio_stats: dict[str, float]
     method: str
     Delta: int
     gamma: float
@@ -77,25 +78,25 @@ async def optimize_ccmv_portfolio(http_request: Request, request: CCMVRequest):
         R = np.array(request.R)
         mu = np.array(request.mu)
         Sigma = np.array(request.cov_matrix)
-        
+
         if len(mu) == 0:
             raise ValueError("Вектор доходностей не может быть пустым")
-        
+
         if R.shape[1] != len(mu):
             raise ValueError(
                 f"Размерность матрицы доходностей R {R.shape} "
                 f"не соответствует количеству активов {len(mu)}"
             )
-        
+
         if Sigma.shape != (len(mu), len(mu)):
             raise ValueError(
                 f"Размерность ковариационной матрицы {Sigma.shape} "
                 f"не соответствует количеству активов {len(mu)}"
             )
-        
+
         if request.method not in ['delta', 'alpha']:
             raise ValueError(f"Метод должен быть 'delta' или 'alpha', получено: {request.method}")
-        
+
         # Выполняем оптимизацию
         result = optimize_ccmv(
             R=R,
@@ -108,7 +109,7 @@ async def optimize_ccmv_portfolio(http_request: Request, request: CCMVRequest):
             asset_names=request.asset_names,
             risk_free_rate=request.risk_free_rate
         )
-        
+
         return CCMVResponse(
             optimal_weights=result['optimal_weights'],
             clusters=result['clusters'],
@@ -118,13 +119,13 @@ async def optimize_ccmv_portfolio(http_request: Request, request: CCMVRequest):
             gamma=result['gamma'],
             bar_w=result['bar_w']
         )
-        
+
     except ValueError as e:
         logger.error("CCMV optimization validation error: %s", e, exc_info=True)
-        raise HTTPException(status_code=400, detail="Invalid input parameters")
+        raise HTTPException(status_code=400, detail="Invalid input parameters") from e
     except Exception as e:
         logger.error("CCMV optimization failed: %s", e, exc_info=True)
-        raise HTTPException(status_code=500, detail="Internal server error")
+        raise HTTPException(status_code=500, detail="Internal server error") from e
 
 
 @router.get("/health")

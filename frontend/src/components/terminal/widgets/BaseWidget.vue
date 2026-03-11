@@ -6,23 +6,35 @@
     <!-- Widget Header -->
     <div class="widget-header">
       <div class="widget-title-area">
-        <div class="widget-icon" :class="iconBg">
-          <component :is="icon" class="w-3.5 h-3.5" :class="iconColor" />
+        <div
+          class="widget-icon"
+          :class="iconBg"
+        >
+          <component
+            :is="icon"
+            class="w-3.5 h-3.5"
+            :class="iconColor"
+          />
         </div>
-        <h3 class="widget-title font-oswald">{{ title }}</h3>
+        <h3 class="widget-title font-oswald">
+          {{ title }}
+        </h3>
       </div>
-      <div v-if="showControls" class="widget-controls">
+      <div
+        v-if="showControls"
+        class="widget-controls"
+      >
         <button
-          @click.stop="$emit('settings')"
           class="widget-btn"
           title="Настройки"
+          @click.stop="$emit('settings')"
         >
           <SettingsIcon class="w-3.5 h-3.5" />
         </button>
         <button
-          @click.stop="$emit('remove')"
           class="widget-btn widget-btn-danger"
           title="Удалить виджет"
+          @click.stop="$emit('remove')"
         >
           <XIcon class="w-3.5 h-3.5" />
         </button>
@@ -35,23 +47,26 @@
     </div>
 
     <!-- Resize Handles -->
-    <div v-if="resizable" class="resize-handles">
+    <div
+      v-if="resizable"
+      class="resize-handles"
+    >
       <div
         class="resize-handle resize-handle-right"
-        @mousedown.stop="(e) => startResize(e, 'width')"
         title="Изменить ширину"
-      ></div>
+        @mousedown.stop="(e) => startResize(e, 'width')"
+      />
       <div
         class="resize-handle resize-handle-bottom"
-        @mousedown.stop="(e) => startResize(e, 'height')"
         title="Изменить высоту"
-      ></div>
+        @mousedown.stop="(e) => startResize(e, 'height')"
+      />
       <div
         class="resize-handle resize-handle-corner"
-        @mousedown.stop="(e) => startResize(e, 'both')"
         title="Изменить размер"
+        @mousedown.stop="(e) => startResize(e, 'both')"
       >
-        <div class="resize-corner-indicator"></div>
+        <div class="resize-corner-indicator" />
       </div>
     </div>
   </div>

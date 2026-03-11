@@ -14,11 +14,11 @@ Usage:
 """
 
 import time
-from typing import Any, Optional, Dict, Tuple
+from typing import Any
 
 MAX_CACHE_SIZE = 2000
 
-_cache: Dict[str, Tuple[Any, float]] = {}
+_cache: dict[str, tuple[Any, float]] = {}
 
 
 def _evict_expired() -> None:
@@ -29,7 +29,7 @@ def _evict_expired() -> None:
         del _cache[k]
 
 
-def cache_get(key: str) -> Optional[Any]:
+def cache_get(key: str) -> Any | None:
     """Get a value from cache if it exists and hasn't expired."""
     if key in _cache:
         value, expires_at = _cache[key]

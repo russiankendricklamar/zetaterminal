@@ -3,9 +3,9 @@ SQLAlchemy ORM models for Zeta Terminal.
 
 Works with both Neon (PostgreSQL) and SQLite (desktop).
 """
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
-from sqlalchemy import Column, Integer, String, Float, DateTime, JSON, Text, Boolean, UniqueConstraint
+from sqlalchemy import JSON, Boolean, Column, DateTime, Float, Integer, String, Text, UniqueConstraint
 from sqlalchemy.orm import DeclarativeBase
 
 
@@ -28,8 +28,8 @@ class BondValuation(Base):
     duration = Column(Float, nullable=False)
     modified_duration = Column(Float, nullable=True)
     convexity = Column(Float, nullable=True)
-    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
-    updated_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(UTC))
+    updated_at = Column(DateTime(timezone=True), default=lambda: datetime.now(UTC), onupdate=lambda: datetime.now(UTC))
 
 
 class Portfolio(Base):
@@ -41,8 +41,8 @@ class Portfolio(Base):
     description = Column(Text, nullable=True)
     positions = Column(JSON, nullable=False)
     total_value = Column(Float, nullable=False)
-    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
-    updated_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(UTC))
+    updated_at = Column(DateTime(timezone=True), default=lambda: datetime.now(UTC), onupdate=lambda: datetime.now(UTC))
 
 
 class CalculationHistory(Base):
@@ -54,7 +54,7 @@ class CalculationHistory(Base):
     input_data = Column(JSON, nullable=False)
     result_data = Column(JSON, nullable=False)
     execution_time_ms = Column(Float, nullable=True)
-    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(UTC))
 
 
 class MarketDataDaily(Base):
@@ -68,7 +68,7 @@ class MarketDataDaily(Base):
     volume = Column(Integer, nullable=True)
     change_percent = Column(Float, nullable=True)
     metadata_ = Column("metadata", JSON, default=dict)
-    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(UTC))
 
     __table_args__ = (
         UniqueConstraint("ticker", "data_type", "date", name="uq_market_data_ticker_type_date"),
@@ -83,8 +83,8 @@ class ApiKey(Base):
     service = Column(String, nullable=False, unique=True, index=True)
     key_value = Column(String, nullable=False)
     description = Column(Text, nullable=True)
-    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
-    updated_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(UTC))
+    updated_at = Column(DateTime(timezone=True), default=lambda: datetime.now(UTC), onupdate=lambda: datetime.now(UTC))
 
 
 class User(Base):
@@ -104,7 +104,7 @@ class User(Base):
     invite_code = Column(String, unique=True, nullable=False)
     failed_login_count = Column(Integer, default=0, nullable=False)
     locked_until = Column(DateTime(timezone=True), nullable=True)
-    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(UTC))
     activated_at = Column(DateTime(timezone=True), nullable=True)
 
 
@@ -121,8 +121,8 @@ class FileRecord(Base):
     description = Column(Text, nullable=True)
     metadata_ = Column("metadata", JSON, default=dict)
     created_by = Column(String, nullable=True)
-    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
-    updated_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(UTC))
+    updated_at = Column(DateTime(timezone=True), default=lambda: datetime.now(UTC), onupdate=lambda: datetime.now(UTC))
 
 
 class IpBan(Base):
@@ -132,7 +132,7 @@ class IpBan(Base):
     ip_address = Column(String, unique=True, nullable=False, index=True)
     reason = Column(Text, nullable=True)
     banned_by = Column(String, nullable=True)
-    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(UTC))
 
 
 class RefreshToken(Base):
@@ -144,4 +144,4 @@ class RefreshToken(Base):
     token_hash = Column(String, unique=True, nullable=False)
     expires_at = Column(DateTime(timezone=True), nullable=False)
     revoked = Column(Boolean, default=False, nullable=False)
-    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(UTC))

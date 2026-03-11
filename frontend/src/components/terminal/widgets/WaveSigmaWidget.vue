@@ -26,7 +26,10 @@
         </div>
 
         <!-- 3D Container -->
-        <div ref="canvasRef" class="w-full h-full"></div>
+        <div
+          ref="canvasRef"
+          class="w-full h-full"
+        />
       </div>
 
       <!-- Control Panel (1/3) -->
@@ -34,15 +37,21 @@
         <!-- Header -->
         <div class="p-2 border-b border-white/10 bg-black/50 flex justify-between items-center">
           <div>
-            <div class="text-[8px] text-gray-500 font-mono uppercase tracking-widest">Output</div>
+            <div class="text-[8px] text-gray-500 font-mono uppercase tracking-widest">
+              Output
+            </div>
             <div class="flex items-center gap-1">
-              <div class="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></div>
+              <div class="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
               <span class="text-[10px] font-bold text-white">LIVE</span>
             </div>
           </div>
           <div class="text-right">
-            <div class="text-[8px] text-gray-500 font-mono uppercase tracking-widest">Backtest</div>
-            <div class="font-mono text-xs text-cyan-400">{{ formatElapsed }}</div>
+            <div class="text-[8px] text-gray-500 font-mono uppercase tracking-widest">
+              Backtest
+            </div>
+            <div class="font-mono text-xs text-cyan-400">
+              {{ formatElapsed }}
+            </div>
           </div>
         </div>
 
@@ -51,26 +60,38 @@
           <!-- Position Chart -->
           <div class="flex-1 bg-black/40 backdrop-blur-md border border-white/10 rounded-lg p-2 min-h-0">
             <div class="flex justify-between items-center mb-1">
-              <h3 class="text-[8px] font-mono font-bold text-orange-400 uppercase tracking-widest">Position</h3>
+              <h3 class="text-[8px] font-mono font-bold text-orange-400 uppercase tracking-widest">
+                Position
+              </h3>
               <span class="text-[8px] text-gray-500 font-mono">-1 : 1</span>
             </div>
-            <div ref="positionChartRef" class="w-full h-[calc(100%-16px)]"></div>
+            <div
+              ref="positionChartRef"
+              class="w-full h-[calc(100%-16px)]"
+            />
           </div>
 
           <!-- Equity Chart -->
           <div class="flex-1 bg-black/40 backdrop-blur-md border border-white/10 rounded-lg p-2 min-h-0">
             <div class="flex justify-between items-center mb-1">
-              <h3 class="text-[8px] font-mono font-bold text-cyan-400 uppercase tracking-widest">Equity</h3>
+              <h3 class="text-[8px] font-mono font-bold text-cyan-400 uppercase tracking-widest">
+                Equity
+              </h3>
               <span class="text-[8px] text-gray-500 font-mono">Rolling</span>
             </div>
-            <div ref="equityChartRef" class="w-full h-[calc(100%-16px)]"></div>
+            <div
+              ref="equityChartRef"
+              class="w-full h-[calc(100%-16px)]"
+            />
           </div>
         </div>
 
         <!-- Stats Footer -->
         <div class="p-2 border-t border-white/10 bg-[#080808]">
           <div class="flex justify-between items-center mb-2">
-            <div class="text-[8px] text-gray-500 font-mono uppercase tracking-widest">Equity</div>
+            <div class="text-[8px] text-gray-500 font-mono uppercase tracking-widest">
+              Equity
+            </div>
             <div :class="`font-mono text-sm ${equity > 1000 ? 'text-green-400' : 'text-red-400'}`">
               ${{ equity.toFixed(2) }}
             </div>

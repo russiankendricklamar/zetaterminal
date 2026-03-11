@@ -23,12 +23,18 @@
             {{ asset.symbol.substring(0, 2) }}
           </div>
           <div>
-            <div class="text-sm font-bold text-white">{{ asset.symbol }}</div>
-            <div class="text-xs text-gray-500">{{ asset.name }}</div>
+            <div class="text-sm font-bold text-white">
+              {{ asset.symbol }}
+            </div>
+            <div class="text-xs text-gray-500">
+              {{ asset.name }}
+            </div>
           </div>
         </div>
         <div class="text-right">
-          <div class="text-sm font-mono text-white">{{ asset.price }}</div>
+          <div class="text-sm font-mono text-white">
+            {{ asset.price }}
+          </div>
           <div :class="`text-xs font-bold ${asset.change.startsWith('+') ? 'text-emerald-400' : 'text-rose-400'}`">
             {{ asset.change }}
           </div>

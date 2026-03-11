@@ -3,18 +3,31 @@
     <div class="section-header flex-col md:flex-row gap-4">
       <div class="flex items-center gap-4">
         <div class="icon-box">
-          <component :is="section === 'FLDS' ? DatabaseIcon : HelpCircleIcon" class="w-6 h-6" />
+          <component
+            :is="section === 'FLDS' ? DatabaseIcon : HelpCircleIcon"
+            class="w-6 h-6"
+          />
         </div>
         <div>
-          <h2 class="section-title font-anton">{{ section === 'FLDS' ? 'СПРАВОЧНЫЕ ДАННЫЕ' : 'ПОМОЩЬ И ПОДДЕРЖКА' }}</h2>
-          <p class="section-subtitle font-mono">{{ section === 'FLDS' ? 'КАТАЛОГ ПОЛЕЙ ДАННЫХ ТЕРМИНАЛА' : 'ДОКУМЕНТАЦИЯ, FAQ И ПОДДЕРЖКА' }}</p>
+          <h2 class="section-title font-anton">
+            {{ section === 'FLDS' ? 'СПРАВОЧНЫЕ ДАННЫЕ' : 'ПОМОЩЬ И ПОДДЕРЖКА' }}
+          </h2>
+          <p class="section-subtitle font-mono">
+            {{ section === 'FLDS' ? 'КАТАЛОГ ПОЛЕЙ ДАННЫХ ТЕРМИНАЛА' : 'ДОКУМЕНТАЦИЯ, FAQ И ПОДДЕРЖКА' }}
+          </p>
         </div>
       </div>
       <div class="tab-group">
-        <button @click="section = 'FLDS'" :class="['tab-btn', { active: section === 'FLDS' }]">
+        <button
+          :class="['tab-btn', { active: section === 'FLDS' }]"
+          @click="section = 'FLDS'"
+        >
           СПРАВОЧНЫЕ ДАННЫЕ
         </button>
-        <button @click="section = 'HL'" :class="['tab-btn', { active: section === 'HL' }]">
+        <button
+          :class="['tab-btn', { active: section === 'HL' }]"
+          @click="section = 'HL'"
+        >
           ПОМОЩЬ
         </button>
       </div>

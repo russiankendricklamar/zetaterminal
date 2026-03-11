@@ -12,10 +12,10 @@ Endpoints:
 """
 
 import logging
+from typing import Any
 
 from fastapi import APIRouter, HTTPException, Query
 from pydantic import BaseModel, Field
-from typing import List, Optional, Dict, Any
 
 logger = logging.getLogger(__name__)
 
@@ -35,11 +35,11 @@ class RuDataQuery(BaseModel):
     login: str = Field(..., min_length=1, max_length=200, description="Логин RuData")
     password: str = Field(..., min_length=1, max_length=200, description="Пароль RuData")
     path_method: str = Field(..., min_length=1, max_length=200, description="Путь метода API (например, 'Bond/List')")
-    body: Dict[str, Any] = Field(default_factory=dict, description="Тело запроса")
+    body: dict[str, Any] = Field(default_factory=dict, description="Тело запроса")
     post: bool = Field(default=True, description="Использовать POST метод")
-    search_array: Optional[List[str]] = Field(None, max_length=1000, description="Массив поиска")
+    search_array: list[str] | None = Field(None, max_length=1000, description="Массив поиска")
     search_param: str = Field(default="filter", max_length=100, description="Параметр для массива поиска")
-    search_field: Optional[str] = Field(None, max_length=200, description="Поле фильтрации")
+    search_field: str | None = Field(None, max_length=200, description="Поле фильтрации")
 
 
 class BondCalculateRequest(BaseModel):
@@ -47,8 +47,8 @@ class BondCalculateRequest(BaseModel):
     login: str = Field(..., min_length=1, max_length=200)
     password: str = Field(..., min_length=1, max_length=200)
     isin: str = Field(..., min_length=1, max_length=50)
-    calc_date: Optional[str] = Field(None, max_length=20)
-    price: Optional[float] = None
+    calc_date: str | None = Field(None, max_length=20)
+    price: float | None = None
 
 
 class BondSearchRequest(BaseModel):
@@ -56,32 +56,32 @@ class BondSearchRequest(BaseModel):
     login: str = Field(..., min_length=1, max_length=200)
     password: str = Field(..., min_length=1, max_length=200)
     filter: str = Field(..., min_length=1, max_length=2000, description="Строка фильтрации")
-    fields: Optional[List[str]] = Field(None, max_length=100, description="Список полей для выборки")
+    fields: list[str] | None = Field(None, max_length=100, description="Список полей для выборки")
 
 
 class ConnectionTestResponse(BaseModel):
     """Ответ на проверку подключения."""
     success: bool
     message: str
-    login: Optional[str] = None
+    login: str | None = None
 
 
 class RuDataResponse(BaseModel):
     """Стандартный ответ RuData."""
     success: bool
-    data: List[Dict[str, Any]] = []
+    data: list[dict[str, Any]] = []
     count: int = 0
-    columns: Optional[List[str]] = None
-    error: Optional[str] = None
-    message: Optional[str] = None
+    columns: list[str] | None = None
+    error: str | None = None
+    message: str | None = None
 
 
 class SessionResponse(BaseModel):
     """Ответ с session_id после кеширования credentials."""
     success: bool
     message: str
-    session_id: Optional[str] = None
-    login: Optional[str] = None
+    session_id: str | None = None
+    login: str | None = None
 
 
 class SessionRequest(BaseModel):
@@ -97,7 +97,7 @@ async def create_session(credentials: RuDataCredentials):
     Возвращает session_id для последующих запросов без передачи логина/пароля.
     """
     try:
-        from src.services.rudata_service import test_rudata_connection, cache_credentials
+        from src.services.rudata_service import cache_credentials, test_rudata_connection
 
         result = await test_rudata_connection(
             login=credentials.login,
@@ -121,7 +121,7 @@ async def create_session(credentials: RuDataCredentials):
 
     except Exception as e:
         logger.error("RuData operation failed: %s", e, exc_info=True)
-        raise HTTPException(status_code=500, detail="Internal server error")
+        raise HTTPException(status_code=500, detail="Internal server error") from e
 
 
 @router.post("/session/clear")
@@ -152,7 +152,7 @@ async def test_connection(credentials: RuDataCredentials):
 
     except Exception as e:
         logger.error("RuData operation failed: %s", e, exc_info=True)
-        raise HTTPException(status_code=500, detail="Internal server error")
+        raise HTTPException(status_code=500, detail="Internal server error") from e
 
 
 @router.post("/query", response_model=RuDataResponse)
@@ -180,7 +180,7 @@ async def execute_query(query: RuDataQuery):
 
     except Exception as e:
         logger.error("RuData query failed: %s", e, exc_info=True)
-        raise HTTPException(status_code=500, detail="Internal server error")
+        raise HTTPException(status_code=500, detail="Internal server error") from e
 
 
 @router.post("/bond/info", response_model=RuDataResponse)
@@ -198,7 +198,7 @@ async def get_bond_info(credentials: RuDataCredentials, isin: str = Query(..., d
 
     except Exception as e:
         logger.error("RuData bond info failed: %s", e, exc_info=True)
-        raise HTTPException(status_code=500, detail="Internal server error")
+        raise HTTPException(status_code=500, detail="Internal server error") from e
 
 
 @router.post("/bond/cashflows", response_model=RuDataResponse)
@@ -216,7 +216,7 @@ async def get_bond_cashflows(credentials: RuDataCredentials, isin: str = Query(.
 
     except Exception as e:
         logger.error("RuData cashflows failed: %s", e, exc_info=True)
-        raise HTTPException(status_code=500, detail="Internal server error")
+        raise HTTPException(status_code=500, detail="Internal server error") from e
 
 
 @router.post("/bond/calculate", response_model=RuDataResponse)
@@ -238,7 +238,7 @@ async def calculate_bond(request: BondCalculateRequest):
 
     except Exception as e:
         logger.error("RuData bond calculation failed: %s", e, exc_info=True)
-        raise HTTPException(status_code=500, detail="Internal server error")
+        raise HTTPException(status_code=500, detail="Internal server error") from e
 
 
 @router.post("/bonds/search", response_model=RuDataResponse)
@@ -264,13 +264,13 @@ async def search_bonds(request: BondSearchRequest):
 
     except Exception as e:
         logger.error("RuData bond search failed: %s", e, exc_info=True)
-        raise HTTPException(status_code=500, detail="Internal server error")
+        raise HTTPException(status_code=500, detail="Internal server error") from e
 
 
 @router.post("/zcyc", response_model=RuDataResponse)
 async def get_zcyc(
     credentials: RuDataCredentials,
-    date: Optional[str] = Query(None, description="Дата в формате YYYY-MM-DD")
+    date: str | None = Query(None, description="Дата в формате YYYY-MM-DD")
 ):
     """
     Получить кривую бескупонной доходности (ZCYC) из RuData.
@@ -285,14 +285,14 @@ async def get_zcyc(
 
     except Exception as e:
         logger.error("RuData ZCYC failed: %s", e, exc_info=True)
-        raise HTTPException(status_code=500, detail="Internal server error")
+        raise HTTPException(status_code=500, detail="Internal server error") from e
 
 
 @router.post("/fintool/reference", response_model=RuDataResponse)
 async def get_fintool_reference(
     credentials: RuDataCredentials,
     id: str = Query(..., description="ID финансового инструмента (ISIN, FintoolID)"),
-    fields: Optional[List[str]] = Query(None, description="Список полей для выборки")
+    fields: list[str] | None = Query(None, description="Список полей для выборки")
 ):
     """
     Получить справочные данные финансового инструмента.
@@ -300,7 +300,7 @@ async def get_fintool_reference(
     try:
         from src.services.rudata_service import fetch_rudata
 
-        body: Dict[str, Any] = {'id': id}
+        body: dict[str, Any] = {'id': id}
         if fields:
             body['fields'] = fields
 
@@ -315,13 +315,13 @@ async def get_fintool_reference(
 
     except Exception as e:
         logger.error("RuData reference data failed: %s", e, exc_info=True)
-        raise HTTPException(status_code=500, detail="Internal server error")
+        raise HTTPException(status_code=500, detail="Internal server error") from e
 
 
 @router.post("/indicator/list", response_model=RuDataResponse)
 async def get_indicator_list(
     credentials: RuDataCredentials,
-    filter: Optional[str] = Query(None, description="Строка фильтрации")
+    filter: str | None = Query(None, description="Строка фильтрации")
 ):
     """
     Получить список индикаторов.
@@ -329,7 +329,7 @@ async def get_indicator_list(
     try:
         from src.services.rudata_service import fetch_rudata
 
-        body: Dict[str, Any] = {}
+        body: dict[str, Any] = {}
         if filter:
             body['filter'] = filter
 
@@ -344,4 +344,4 @@ async def get_indicator_list(
 
     except Exception as e:
         logger.error("RuData indicator list failed: %s", e, exc_info=True)
-        raise HTTPException(status_code=500, detail="Internal server error")
+        raise HTTPException(status_code=500, detail="Internal server error") from e

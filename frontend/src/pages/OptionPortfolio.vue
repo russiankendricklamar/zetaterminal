@@ -1,253 +1,390 @@
 <!-- src/pages/PortfolioOptions.vue -->
 <template>
   <div class="page-container custom-scroll">
-    
     <!-- Header -->
     <div class="section-header">
       <div class="header-left">
-        <h1 class="section-title">Портфель опционов</h1>
-        <p class="section-subtitle">Агрегированный риск-анализ, греки портфеля, сценарное моделирование</p>
+        <h1 class="section-title">
+          Портфель опционов
+        </h1>
+        <p class="section-subtitle">
+          Агрегированный риск-анализ, греки портфеля, сценарное моделирование
+        </p>
       </div>
       
       <div class="header-actions">
-         <div class="glass-pill status-pill">
-            <span class="dot bg-blue"></span>
-            <span class="status-label">Позиций: <b class="text-white">{{ positions.length }}</b></span>
-         </div>
+        <div class="glass-pill status-pill">
+          <span class="dot bg-blue" />
+          <span class="status-label">Позиций: <b class="text-white">{{ positions.length }}</b></span>
+        </div>
       </div>
     </div>
 
     <div class="dashboard-grid">
-        
-        <!-- LEFT PANEL: Positions -->
-        <aside class="left-panel">
-            
-            <!-- Portfolio Value Card -->
-            <div class="glass-card panel">
-                <div class="panel-header"><h3>Портфель</h3></div>
+      <!-- LEFT PANEL: Positions -->
+      <aside class="left-panel">
+        <!-- Portfolio Value Card -->
+        <div class="glass-card panel">
+          <div class="panel-header">
+            <h3>Портфель</h3>
+          </div>
                 
-                <div class="portfolio-summary">
-                    <div class="summary-item">
-                        <span class="summary-label">Общая стоимость</span>
-                        <span class="summary-value">{{ portfolioValue.toFixed(2) }}</span>
-                    </div>
-                    <div class="summary-item">
-                        <span class="summary-label">Позиций</span>
-                        <span class="summary-value">{{ positions.length }}</span>
-                    </div>
-                    <div class="summary-item">
-                        <span class="summary-label">Дельта портфеля</span>
-                        <span class="summary-value">{{ portfolioGreeks.delta.toFixed(2) }}</span>
-                    </div>
-                </div>
-
-                <button class="btn-primary mt-4" @click="addPosition">+ Добавить позицию</button>
+          <div class="portfolio-summary">
+            <div class="summary-item">
+              <span class="summary-label">Общая стоимость</span>
+              <span class="summary-value">{{ portfolioValue.toFixed(2) }}</span>
             </div>
+            <div class="summary-item">
+              <span class="summary-label">Позиций</span>
+              <span class="summary-value">{{ positions.length }}</span>
+            </div>
+            <div class="summary-item">
+              <span class="summary-label">Дельта портфеля</span>
+              <span class="summary-value">{{ portfolioGreeks.delta.toFixed(2) }}</span>
+            </div>
+          </div>
 
-            <!-- Positions List -->
-            <div class="glass-card panel">
-                <div class="panel-header"><h3>Позиции</h3></div>
+          <button
+            class="btn-primary mt-4"
+            @click="addPosition"
+          >
+            + Добавить позицию
+          </button>
+        </div>
+
+        <!-- Positions List -->
+        <div class="glass-card panel">
+          <div class="panel-header">
+            <h3>Позиции</h3>
+          </div>
                 
-                <div class="positions-list">
-                    <div v-for="(pos, i) in positions" :key="i" class="position-item">
-                        <div class="pos-header">
-                            <span class="pos-ticker">{{ pos.ticker }}</span>
-                            <span class="pos-type" :class="pos.type">{{ pos.type.toUpperCase() }}</span>
-                        </div>
-                        <div class="pos-details">
-                            <div class="pos-row">
-                                <span>K:</span>
-                                <span>{{ pos.strike }}</span>
-                            </div>
-                            <div class="pos-row">
-                                <span>Кол-во:</span>
-                                <input v-model.number="pos.quantity" type="number" min="0" @change="calculatePortfolio" class="pos-input" />
-                            </div>
-                            <div class="pos-row">
-                                <span>Цена:</span>
-                                <span>{{ pos.price.toFixed(2) }}</span>
-                            </div>
-                            <div class="pos-row">
-                                <span>Сумма:</span>
-                                <span class="pos-sum">{{ (pos.price * pos.quantity).toFixed(2) }}</span>
-                            </div>
-                        </div>
-                        <button class="btn-delete-small" @click="removePosition(i)">✕</button>
-                    </div>
+          <div class="positions-list">
+            <div
+              v-for="(pos, i) in positions"
+              :key="i"
+              class="position-item"
+            >
+              <div class="pos-header">
+                <span class="pos-ticker">{{ pos.ticker }}</span>
+                <span
+                  class="pos-type"
+                  :class="pos.type"
+                >{{ pos.type.toUpperCase() }}</span>
+              </div>
+              <div class="pos-details">
+                <div class="pos-row">
+                  <span>K:</span>
+                  <span>{{ pos.strike }}</span>
                 </div>
+                <div class="pos-row">
+                  <span>Кол-во:</span>
+                  <input
+                    v-model.number="pos.quantity"
+                    type="number"
+                    min="0"
+                    class="pos-input"
+                    @change="calculatePortfolio"
+                  >
+                </div>
+                <div class="pos-row">
+                  <span>Цена:</span>
+                  <span>{{ pos.price.toFixed(2) }}</span>
+                </div>
+                <div class="pos-row">
+                  <span>Сумма:</span>
+                  <span class="pos-sum">{{ (pos.price * pos.quantity).toFixed(2) }}</span>
+                </div>
+              </div>
+              <button
+                class="btn-delete-small"
+                @click="removePosition(i)"
+              >
+                ✕
+              </button>
+            </div>
+          </div>
+        </div>
+      </aside>
+
+      <!-- RIGHT PANEL: Analysis -->
+      <main class="main-panel">
+        <!-- Portfolio Greeks -->
+        <div class="glass-card chart-card">
+          <div class="chart-header">
+            <h3>Агрегированные греки</h3>
+          </div>
+
+          <div class="greeks-grid">
+            <div class="greek-card">
+              <div class="greek-icon">
+                Δ
+              </div>
+              <div class="greek-title">
+                Дельта
+              </div>
+              <div class="greek-value">
+                {{ portfolioGreeks.delta.toFixed(2) }}
+              </div>
+              <div class="greek-info">
+                Позиция в базовом активе
+              </div>
             </div>
 
-        </aside>
-
-        <!-- RIGHT PANEL: Analysis -->
-        <main class="main-panel">
-            
-            <!-- Portfolio Greeks -->
-            <div class="glass-card chart-card">
-                <div class="chart-header">
-                    <h3>Агрегированные греки</h3>
-                </div>
-
-                <div class="greeks-grid">
-                    <div class="greek-card">
-                        <div class="greek-icon">Δ</div>
-                        <div class="greek-title">Дельта</div>
-                        <div class="greek-value">{{ portfolioGreeks.delta.toFixed(2) }}</div>
-                        <div class="greek-info">Позиция в базовом активе</div>
-                    </div>
-
-                    <div class="greek-card">
-                        <div class="greek-icon">Γ</div>
-                        <div class="greek-title">Гамма</div>
-                        <div class="greek-value">{{ portfolioGreeks.gamma.toFixed(6) }}</div>
-                        <div class="greek-info">Кривизна портфеля</div>
-                    </div>
-
-                    <div class="greek-card">
-                        <div class="greek-icon">ν</div>
-                        <div class="greek-title">Вега</div>
-                        <div class="greek-value">{{ portfolioGreeks.vega.toFixed(2) }}</div>
-                        <div class="greek-info">Чувствительность к vol</div>
-                    </div>
-
-                    <div class="greek-card">
-                        <div class="greek-icon">Θ</div>
-                        <div class="greek-title">Тета</div>
-                        <div class="greek-value" :class="portfolioGreeks.theta < 0 ? 'text-red' : 'text-green'">{{ portfolioGreeks.theta.toFixed(2) }}</div>
-                        <div class="greek-info">Дневная убыль времени</div>
-                    </div>
-
-                    <div class="greek-card">
-                        <div class="greek-icon">ρ</div>
-                        <div class="greek-title">Ро</div>
-                        <div class="greek-value">{{ portfolioGreeks.rho.toFixed(2) }}</div>
-                        <div class="greek-info">Чувствительность к ставкам</div>
-                    </div>
-
-                    <div class="greek-card">
-                        <div class="greek-icon"></div>
-                        <div class="greek-title">Риск</div>
-                        <div class="greek-value">{{ Math.abs(maxLoss).toFixed(2) }}</div>
-                        <div class="greek-info">Максимальный убыток</div>
-                    </div>
-                </div>
+            <div class="greek-card">
+              <div class="greek-icon">
+                Γ
+              </div>
+              <div class="greek-title">
+                Гамма
+              </div>
+              <div class="greek-value">
+                {{ portfolioGreeks.gamma.toFixed(6) }}
+              </div>
+              <div class="greek-info">
+                Кривизна портфеля
+              </div>
             </div>
 
-            <!-- Scenario Analysis -->
-            <div class="glass-card chart-card mt-4">
-                <div class="chart-header">
-                    <h3>Сценарный анализ P&L</h3>
-                </div>
-
-                <div class="scenarios-grid">
-                    <div class="scenario-card">
-                        <div class="scenario-label">Спот +5%</div>
-                        <div class="scenario-value" :class="getScenarioPL(5) > 0 ? 'text-green' : 'text-red'">
-                            {{ getScenarioPL(5).toFixed(2) }}
-                        </div>
-                    </div>
-
-                    <div class="scenario-card">
-                        <div class="scenario-label">Спот +2.5%</div>
-                        <div class="scenario-value" :class="getScenarioPL(2.5) > 0 ? 'text-green' : 'text-red'">
-                            {{ getScenarioPL(2.5).toFixed(2) }}
-                        </div>
-                    </div>
-
-                    <div class="scenario-card">
-                        <div class="scenario-label">Спот без изм.</div>
-                        <div class="scenario-value" :class="getScenarioPL(0) > 0 ? 'text-green' : 'text-red'">
-                            {{ getScenarioPL(0).toFixed(2) }}
-                        </div>
-                    </div>
-
-                    <div class="scenario-card">
-                        <div class="scenario-label">Спот -2.5%</div>
-                        <div class="scenario-value" :class="getScenarioPL(-2.5) > 0 ? 'text-green' : 'text-red'">
-                            {{ getScenarioPL(-2.5).toFixed(2) }}
-                        </div>
-                    </div>
-
-                    <div class="scenario-card">
-                        <div class="scenario-label">Спот -5%</div>
-                        <div class="scenario-value" :class="getScenarioPL(-5) > 0 ? 'text-green' : 'text-red'">
-                            {{ getScenarioPL(-5).toFixed(2) }}
-                        </div>
-                    </div>
-
-                    <div class="scenario-card">
-                        <div class="scenario-label">Vol +10%</div>
-                        <div class="scenario-value" :class="getScenarioPL(0, 10) > 0 ? 'text-green' : 'text-red'">
-                            {{ getScenarioPL(0, 10).toFixed(2) }}
-                        </div>
-                    </div>
-                </div>
+            <div class="greek-card">
+              <div class="greek-icon">
+                ν
+              </div>
+              <div class="greek-title">
+                Вега
+              </div>
+              <div class="greek-value">
+                {{ portfolioGreeks.vega.toFixed(2) }}
+              </div>
+              <div class="greek-info">
+                Чувствительность к vol
+              </div>
             </div>
 
-            <!-- P&L Matrix -->
-            <div class="glass-card chart-card mt-4">
-                <div class="chart-header">
-                    <h3>Матрица P&L (Спот vs Волатильность)</h3>
-                </div>
-
-                <div class="table-wrapper">
-                    <table class="data-table">
-                        <thead>
-                            <tr>
-                                <th>Спот / Vol</th>
-                                <th>Vol -2%</th>
-                                <th>Vol -1%</th>
-                                <th>Vol базовое</th>
-                                <th>Vol +1%</th>
-                                <th>Vol +2%</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr v-for="(row, i) in plMatrix" :key="i">
-                                <td class="row-header">{{ [-5, -2.5, 0, 2.5, 5][i] }}%</td>
-                                <td v-for="(val, j) in row" :key="j" :class="{ positive: val > 0, negative: val < 0 }">
-                                    {{ val.toFixed(2) }}
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
+            <div class="greek-card">
+              <div class="greek-icon">
+                Θ
+              </div>
+              <div class="greek-title">
+                Тета
+              </div>
+              <div
+                class="greek-value"
+                :class="portfolioGreeks.theta < 0 ? 'text-red' : 'text-green'"
+              >
+                {{ portfolioGreeks.theta.toFixed(2) }}
+              </div>
+              <div class="greek-info">
+                Дневная убыль времени
+              </div>
             </div>
 
-            <!-- Risk Metrics -->
-            <div class="glass-card chart-card mt-4">
-                <div class="chart-header">
-                    <h3>Риск-метрики</h3>
-                </div>
-
-                <div class="metrics-grid">
-                    <div class="metric-item">
-                        <div class="metric-label">Макс. прибыль</div>
-                        <div class="metric-value text-green">{{ maxGain.toFixed(2) }}</div>
-                        <div class="metric-info">Максимальный выигрыш</div>
-                    </div>
-
-                    <div class="metric-item">
-                        <div class="metric-label">Макс. убыток</div>
-                        <div class="metric-value text-red">{{ maxLoss.toFixed(2) }}</div>
-                        <div class="metric-info">Максимальный убыток</div>
-                    </div>
-
-                    <div class="metric-item">
-                        <div class="metric-label">Точка безубыточности</div>
-                        <div class="metric-value">{{ breakeven.toFixed(2) }}</div>
-                        <div class="metric-info">Точка безубыточности</div>
-                    </div>
-
-                    <div class="metric-item">
-                        <div class="metric-label">Риск/Доходность</div>
-                        <div class="metric-value">{{ (Math.abs(maxLoss) / Math.abs(maxGain) || 0).toFixed(2) }}</div>
-                        <div class="metric-info">Соотношение риска</div>
-                    </div>
-                </div>
+            <div class="greek-card">
+              <div class="greek-icon">
+                ρ
+              </div>
+              <div class="greek-title">
+                Ро
+              </div>
+              <div class="greek-value">
+                {{ portfolioGreeks.rho.toFixed(2) }}
+              </div>
+              <div class="greek-info">
+                Чувствительность к ставкам
+              </div>
             </div>
 
-        </main>
+            <div class="greek-card">
+              <div class="greek-icon" />
+              <div class="greek-title">
+                Риск
+              </div>
+              <div class="greek-value">
+                {{ Math.abs(maxLoss).toFixed(2) }}
+              </div>
+              <div class="greek-info">
+                Максимальный убыток
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Scenario Analysis -->
+        <div class="glass-card chart-card mt-4">
+          <div class="chart-header">
+            <h3>Сценарный анализ P&L</h3>
+          </div>
+
+          <div class="scenarios-grid">
+            <div class="scenario-card">
+              <div class="scenario-label">
+                Спот +5%
+              </div>
+              <div
+                class="scenario-value"
+                :class="getScenarioPL(5) > 0 ? 'text-green' : 'text-red'"
+              >
+                {{ getScenarioPL(5).toFixed(2) }}
+              </div>
+            </div>
+
+            <div class="scenario-card">
+              <div class="scenario-label">
+                Спот +2.5%
+              </div>
+              <div
+                class="scenario-value"
+                :class="getScenarioPL(2.5) > 0 ? 'text-green' : 'text-red'"
+              >
+                {{ getScenarioPL(2.5).toFixed(2) }}
+              </div>
+            </div>
+
+            <div class="scenario-card">
+              <div class="scenario-label">
+                Спот без изм.
+              </div>
+              <div
+                class="scenario-value"
+                :class="getScenarioPL(0) > 0 ? 'text-green' : 'text-red'"
+              >
+                {{ getScenarioPL(0).toFixed(2) }}
+              </div>
+            </div>
+
+            <div class="scenario-card">
+              <div class="scenario-label">
+                Спот -2.5%
+              </div>
+              <div
+                class="scenario-value"
+                :class="getScenarioPL(-2.5) > 0 ? 'text-green' : 'text-red'"
+              >
+                {{ getScenarioPL(-2.5).toFixed(2) }}
+              </div>
+            </div>
+
+            <div class="scenario-card">
+              <div class="scenario-label">
+                Спот -5%
+              </div>
+              <div
+                class="scenario-value"
+                :class="getScenarioPL(-5) > 0 ? 'text-green' : 'text-red'"
+              >
+                {{ getScenarioPL(-5).toFixed(2) }}
+              </div>
+            </div>
+
+            <div class="scenario-card">
+              <div class="scenario-label">
+                Vol +10%
+              </div>
+              <div
+                class="scenario-value"
+                :class="getScenarioPL(0, 10) > 0 ? 'text-green' : 'text-red'"
+              >
+                {{ getScenarioPL(0, 10).toFixed(2) }}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- P&L Matrix -->
+        <div class="glass-card chart-card mt-4">
+          <div class="chart-header">
+            <h3>Матрица P&L (Спот vs Волатильность)</h3>
+          </div>
+
+          <div class="table-wrapper">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Спот / Vol</th>
+                  <th>Vol -2%</th>
+                  <th>Vol -1%</th>
+                  <th>Vol базовое</th>
+                  <th>Vol +1%</th>
+                  <th>Vol +2%</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr
+                  v-for="(row, i) in plMatrix"
+                  :key="i"
+                >
+                  <td class="row-header">
+                    {{ [-5, -2.5, 0, 2.5, 5][i] }}%
+                  </td>
+                  <td
+                    v-for="(val, j) in row"
+                    :key="j"
+                    :class="{ positive: val > 0, negative: val < 0 }"
+                  >
+                    {{ val.toFixed(2) }}
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Risk Metrics -->
+        <div class="glass-card chart-card mt-4">
+          <div class="chart-header">
+            <h3>Риск-метрики</h3>
+          </div>
+
+          <div class="metrics-grid">
+            <div class="metric-item">
+              <div class="metric-label">
+                Макс. прибыль
+              </div>
+              <div class="metric-value text-green">
+                {{ maxGain.toFixed(2) }}
+              </div>
+              <div class="metric-info">
+                Максимальный выигрыш
+              </div>
+            </div>
+
+            <div class="metric-item">
+              <div class="metric-label">
+                Макс. убыток
+              </div>
+              <div class="metric-value text-red">
+                {{ maxLoss.toFixed(2) }}
+              </div>
+              <div class="metric-info">
+                Максимальный убыток
+              </div>
+            </div>
+
+            <div class="metric-item">
+              <div class="metric-label">
+                Точка безубыточности
+              </div>
+              <div class="metric-value">
+                {{ breakeven.toFixed(2) }}
+              </div>
+              <div class="metric-info">
+                Точка безубыточности
+              </div>
+            </div>
+
+            <div class="metric-item">
+              <div class="metric-label">
+                Риск/Доходность
+              </div>
+              <div class="metric-value">
+                {{ (Math.abs(maxLoss) / Math.abs(maxGain) || 0).toFixed(2) }}
+              </div>
+              <div class="metric-info">
+                Соотношение риска
+              </div>
+            </div>
+          </div>
+        </div>
+      </main>
     </div>
   </div>
 </template>

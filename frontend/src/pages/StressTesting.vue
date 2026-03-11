@@ -1,43 +1,72 @@
 <template>
   <div class="page-container custom-scroll">
-    
     <!-- Header -->
     <div class="section-header">
       <div class="header-left">
-        <h1 class="section-title">Стресс-тестирование</h1>
-        <p class="section-subtitle">Симуляция экстремальных рыночных шоков</p>
+        <h1 class="section-title">
+          Стресс-тестирование
+        </h1>
+        <p class="section-subtitle">
+          Симуляция экстремальных рыночных шоков
+        </p>
       </div>
       
       <div class="header-right">
         <!-- Selected Bank -->
         <div class="glass-pill control-pill">
-           <span class="lbl-mini">Банк:</span>
-           <span class="text-white font-bold">{{ selectedBank.name }}</span>
+          <span class="lbl-mini">Банк:</span>
+          <span class="text-white font-bold">{{ selectedBank.name }}</span>
         </div>
         
         <!-- Severity Multiplier -->
         <div class="glass-pill control-pill">
-            <span class="lbl-mini">Множитель шока:</span>
-            <div class="scrub-wrapper">
-                <input 
-                    type="range"
-                    v-model.number="shockMultiplier"
-                    :step="0.1"
-                    :min="0.5"
-                    :max="3.0"
-                    class="range-slider"
-                />
-                <span class="scrub-val text-accent">{{ shockMultiplier.toFixed(1) }}x</span>
-            </div>
+          <span class="lbl-mini">Множитель шока:</span>
+          <div class="scrub-wrapper">
+            <input 
+              v-model.number="shockMultiplier"
+              type="range"
+              :step="0.1"
+              :min="0.5"
+              :max="3.0"
+              class="range-slider"
+            >
+            <span class="scrub-val text-accent">{{ shockMultiplier.toFixed(1) }}x</span>
+          </div>
         </div>
 
-        <button @click="runAllStressTests" class="btn-glass primary" :disabled="isRunning">
-          <span v-if="!isRunning" class="flex items-center gap-2">
-             <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-             <span>Запустить все</span>
+        <button
+          class="btn-glass primary"
+          :disabled="isRunning"
+          @click="runAllStressTests"
+        >
+          <span
+            v-if="!isRunning"
+            class="flex items-center gap-2"
+          >
+            <svg
+              width="14"
+              height="14"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            ><path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"
+            /><path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+            /></svg>
+            <span>Запустить все</span>
           </span>
-          <span v-else class="flex items-center gap-2">
-             <span class="spinner-mini"></span> Тестирую...
+          <span
+            v-else
+            class="flex items-center gap-2"
+          >
+            <span class="spinner-mini" /> Тестирую...
           </span>
         </button>
       </div>
@@ -48,42 +77,98 @@
       <div 
         v-for="scenario in scenarios" 
         :key="scenario.id"
-        @click="selectScenario(scenario)"
         class="glass-card scenario-card"
         :class="{ active: selectedScenario?.id === scenario.id }"
+        @click="selectScenario(scenario)"
       >
         <div class="sc-header">
           <span class="sc-name">{{ scenario.name }}</span>
           <div class="sc-header-actions">
-          <span class="badge" :class="scenario.severity">{{ scenario.severity }}</span>
-            <div class="sc-actions" @click.stop>
-              <button @click="editScenario(scenario)" class="btn-icon-sm" title="Редактировать">
-                <svg width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+            <span
+              class="badge"
+              :class="scenario.severity"
+            >{{ scenario.severity }}</span>
+            <div
+              class="sc-actions"
+              @click.stop
+            >
+              <button
+                class="btn-icon-sm"
+                title="Редактировать"
+                @click="editScenario(scenario)"
+              >
+                <svg
+                  width="12"
+                  height="12"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                  />
                 </svg>
               </button>
-              <button @click="deleteScenario(scenario.id)" class="btn-icon-sm" title="Удалить" v-if="scenario.custom">
-                <svg width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+              <button
+                v-if="scenario.custom"
+                class="btn-icon-sm"
+                title="Удалить"
+                @click="deleteScenario(scenario.id)"
+              >
+                <svg
+                  width="12"
+                  height="12"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                  />
                 </svg>
               </button>
             </div>
           </div>
         </div>
-        <p class="sc-desc">{{ scenario.description }}</p>
+        <p class="sc-desc">
+          {{ scenario.description }}
+        </p>
         <div class="sc-footer">
-            <span class="sc-impact" :class="getScenarioPnLImpact(scenario) < 0 ? 'text-red' : 'text-green'">
-                {{ formatCurrencyCompact(getScenarioPnLImpact(scenario)) }}
-            </span>
-            <span class="sc-prob">Вероятность: {{ (scenario.probability * 100).toFixed(0) }}%</span>
+          <span
+            class="sc-impact"
+            :class="getScenarioPnLImpact(scenario) < 0 ? 'text-red' : 'text-green'"
+          >
+            {{ formatCurrencyCompact(getScenarioPnLImpact(scenario)) }}
+          </span>
+          <span class="sc-prob">Вероятность: {{ (scenario.probability * 100).toFixed(0) }}%</span>
         </div>
       </div>
       
       <!-- Add New Scenario Card -->
-      <div @click="openScenarioEditor()" class="glass-card scenario-card add-scenario-card">
+      <div
+        class="glass-card scenario-card add-scenario-card"
+        @click="openScenarioEditor()"
+      >
         <div class="add-scenario-content">
-          <svg width="32" height="32" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+          <svg
+            width="32"
+            height="32"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M12 4v16m8-8H4"
+            />
           </svg>
           <span class="add-scenario-text">Создать сценарий</span>
         </div>
@@ -91,103 +176,126 @@
     </div>
 
     <!-- Selected Scenario Detail (Split View) -->
-    <transition name="fade" mode="out-in">
-    <div v-if="selectedScenario" class="dashboard-grid">
-        
+    <transition
+      name="fade"
+      mode="out-in"
+    >
+      <div
+        v-if="selectedScenario"
+        class="dashboard-grid"
+      >
         <!-- Left: Impact Analysis & Stats -->
         <div class="col-left">
-            <div class="glass-card panel">
-                <div class="panel-header">
-                    <h3>Влияние сценария: <span class="text-white">{{ selectedScenario.name }}</span></h3>
-                </div>
-                
-                <!-- 4 Key Metrics -->
-                <div class="impact-metrics-grid">
-                    <div class="metric-box">
-                        <span class="lbl">Влияние на P&L</span>
-                        <span class="val text-red">{{ formatCurrency(getScenarioPnLImpact(selectedScenario)) }}</span>
-                    </div>
-                    <div class="metric-box">
-                        <span class="lbl">Изменение VaR</span>
-                        <span class="val" :class="getScenarioVaRChange(selectedScenario) < 0 ? 'text-red' : 'text-green'">
-                            {{ getScenarioVaRChange(selectedScenario).toFixed(1) }}%
-                        </span>
-                    </div>
-                    <div class="metric-box">
-                        <span class="lbl">Длительность</span>
-                        <span class="val text-white">{{ selectedScenario.duration }}</span>
-                    </div>
-                     <div class="metric-box">
-                        <span class="lbl">Вероятность</span>
-                        <span class="val text-orange">{{ (selectedScenario.probability * 100).toFixed(1) }}%</span>
-                    </div>
-                </div>
-
-                <div class="divider"></div>
-
-                <!-- Asset Impact Bars -->
-                <div class="panel-header">
-                    <h3>Влияние на классы активов</h3>
-                </div>
-                <div class="impact-bars-list">
-                    <div v-for="(baseImpact, asset) in selectedScenario.assetImpact" :key="asset" class="bar-row">
-                        <span class="bar-label">{{ asset }}</span>
-                        <div class="bar-track">
-                             <div class="bar-fill" 
-                                  :class="baseImpact < 0 ? 'bg-red' : 'bg-green'"
-                                  :style="{ width: Math.min(100, Math.abs(baseImpact * shockMultiplier * 1.5)) + '%' }">
-                             </div>
-                        </div>
-                        <span class="bar-val" :class="baseImpact < 0 ? 'text-red' : 'text-green'">
-                            {{ baseImpact > 0 ? '+' : '' }}{{ (baseImpact * shockMultiplier).toFixed(1) }}%
-                        </span>
-                    </div>
-                </div>
-
-                <div class="divider"></div>
-
-                <!-- Stats Mini Panel -->
-                <div class="panel-header">
-                    <h3>Статистика риска</h3>
-                </div>
-                <div class="stats-grid-row">
-                     <div class="stat-box">
-                         <span class="lbl-sm">Средний убыток</span>
-                         <span class="val-sm text-red">{{ formatCurrencyCompact(avgLoss * shockMultiplier) }}</span>
-                     </div>
-                     <div class="stat-box">
-                         <span class="lbl-sm">Max Drawdown</span>
-                         <span class="val-sm text-red">{{ formatCurrencyCompact(maxLoss * shockMultiplier) }}</span>
-                     </div>
-                     <div class="stat-box">
-                         <span class="lbl-sm">Expected Shortfall</span>
-                         <span class="val-sm text-orange">{{ formatCurrencyCompact(expectedLoss * shockMultiplier) }}</span>
-                     </div>
-                </div>
+          <div class="glass-card panel">
+            <div class="panel-header">
+              <h3>Влияние сценария: <span class="text-white">{{ selectedScenario.name }}</span></h3>
             </div>
+                
+            <!-- 4 Key Metrics -->
+            <div class="impact-metrics-grid">
+              <div class="metric-box">
+                <span class="lbl">Влияние на P&L</span>
+                <span class="val text-red">{{ formatCurrency(getScenarioPnLImpact(selectedScenario)) }}</span>
+              </div>
+              <div class="metric-box">
+                <span class="lbl">Изменение VaR</span>
+                <span
+                  class="val"
+                  :class="getScenarioVaRChange(selectedScenario) < 0 ? 'text-red' : 'text-green'"
+                >
+                  {{ getScenarioVaRChange(selectedScenario).toFixed(1) }}%
+                </span>
+              </div>
+              <div class="metric-box">
+                <span class="lbl">Длительность</span>
+                <span class="val text-white">{{ selectedScenario.duration }}</span>
+              </div>
+              <div class="metric-box">
+                <span class="lbl">Вероятность</span>
+                <span class="val text-orange">{{ (selectedScenario.probability * 100).toFixed(1) }}%</span>
+              </div>
+            </div>
+
+            <div class="divider" />
+
+            <!-- Asset Impact Bars -->
+            <div class="panel-header">
+              <h3>Влияние на классы активов</h3>
+            </div>
+            <div class="impact-bars-list">
+              <div
+                v-for="(baseImpact, asset) in selectedScenario.assetImpact"
+                :key="asset"
+                class="bar-row"
+              >
+                <span class="bar-label">{{ asset }}</span>
+                <div class="bar-track">
+                  <div
+                    class="bar-fill" 
+                    :class="baseImpact < 0 ? 'bg-red' : 'bg-green'"
+                    :style="{ width: Math.min(100, Math.abs(baseImpact * shockMultiplier * 1.5)) + '%' }"
+                  />
+                </div>
+                <span
+                  class="bar-val"
+                  :class="baseImpact < 0 ? 'text-red' : 'text-green'"
+                >
+                  {{ baseImpact > 0 ? '+' : '' }}{{ (baseImpact * shockMultiplier).toFixed(1) }}%
+                </span>
+              </div>
+            </div>
+
+            <div class="divider" />
+
+            <!-- Stats Mini Panel -->
+            <div class="panel-header">
+              <h3>Статистика риска</h3>
+            </div>
+            <div class="stats-grid-row">
+              <div class="stat-box">
+                <span class="lbl-sm">Средний убыток</span>
+                <span class="val-sm text-red">{{ formatCurrencyCompact(avgLoss * shockMultiplier) }}</span>
+              </div>
+              <div class="stat-box">
+                <span class="lbl-sm">Max Drawdown</span>
+                <span class="val-sm text-red">{{ formatCurrencyCompact(maxLoss * shockMultiplier) }}</span>
+              </div>
+              <div class="stat-box">
+                <span class="lbl-sm">Expected Shortfall</span>
+                <span class="val-sm text-orange">{{ formatCurrencyCompact(expectedLoss * shockMultiplier) }}</span>
+              </div>
+            </div>
+          </div>
         </div>
 
         <!-- Right: Market Conditions -->
         <aside class="col-right">
-            <div class="glass-card panel sticky-panel">
-                <div class="panel-header">
-                    <h3>Рыночные условия</h3>
-                </div>
-                <div class="market-changes-list">
-                    <div v-for="(change, key) in selectedScenario.marketChanges" :key="key" class="market-row">
-                        <span class="m-key">{{ formatLabel(key) }}</span>
-                        <span class="m-val" :class="change.includes('-') ? 'text-red' : 'text-green'">{{ change }}</span>
-                    </div>
-                </div>
-                <div class="divider"></div>
-                <div class="info-block">
-                    <p class="text-xs text-muted">
-                        Метрики пересчитаны с учетом коэффициента шока: <b class="text-white">{{ shockMultiplier.toFixed(1) }}x</b>.
-                    </p>
-                </div>
+          <div class="glass-card panel sticky-panel">
+            <div class="panel-header">
+              <h3>Рыночные условия</h3>
             </div>
+            <div class="market-changes-list">
+              <div
+                v-for="(change, key) in selectedScenario.marketChanges"
+                :key="key"
+                class="market-row"
+              >
+                <span class="m-key">{{ formatLabel(key) }}</span>
+                <span
+                  class="m-val"
+                  :class="change.includes('-') ? 'text-red' : 'text-green'"
+                >{{ change }}</span>
+              </div>
+            </div>
+            <div class="divider" />
+            <div class="info-block">
+              <p class="text-xs text-muted">
+                Метрики пересчитаны с учетом коэффициента шока: <b class="text-white">{{ shockMultiplier.toFixed(1) }}x</b>.
+              </p>
+            </div>
+          </div>
         </aside>
-    </div>
+      </div>
     </transition>
 
     <!-- Comparison Table -->
@@ -199,7 +307,9 @@
         <table class="glass-table">
           <thead>
             <tr>
-              <th class="col-left pl-4">Сценарий</th>
+              <th class="col-left pl-4">
+                Сценарий
+              </th>
               <th>Влияние на P&L</th>
               <th>Изменение VaR</th>
               <th>Длительность</th>
@@ -207,10 +317,13 @@
             </tr>
           </thead>
           <tbody>
-            <tr v-for="scenario in scenarios" :key="scenario.id" 
-                class="hover-row"
-                :class="{ 'row-active': selectedScenario?.id === scenario.id }"
-                @click="selectScenario(scenario)">
+            <tr
+              v-for="scenario in scenarios"
+              :key="scenario.id" 
+              class="hover-row"
+              :class="{ 'row-active': selectedScenario?.id === scenario.id }"
+              @click="selectScenario(scenario)"
+            >
               <td class="col-left pl-4">
                 <span class="sc-name-sm">{{ scenario.name }}</span>
               </td>
@@ -220,8 +333,12 @@
               <td :class="getScenarioVaRChange(scenario) < 0 ? 'text-red' : 'text-green'">
                 {{ getScenarioVaRChange(scenario).toFixed(1) }}%
               </td>
-              <td class="text-muted">{{ scenario.duration }}</td>
-              <td class="text-orange">{{ (scenario.probability * 100).toFixed(1) }}%</td>
+              <td class="text-muted">
+                {{ scenario.duration }}
+              </td>
+              <td class="text-orange">
+                {{ (scenario.probability * 100).toFixed(1) }}%
+              </td>
             </tr>
           </tbody>
         </table>
@@ -230,40 +347,72 @@
 
     <!-- Footer Notes -->
     <div class="footer-notes">
-        <span class="note-item">Данные основаны на исторических корреляциях</span>
-        <span class="note-item">•</span>
-        <span class="note-item">Рекомендуется ежеквартальный пересмотр</span>
+      <span class="note-item">Данные основаны на исторических корреляциях</span>
+      <span class="note-item">•</span>
+      <span class="note-item">Рекомендуется ежеквартальный пересмотр</span>
     </div>
 
     <!-- Scenario Editor Modal -->
     <transition name="modal-fade">
-      <div v-if="isEditorOpen" class="modal-overlay" @click="closeEditor">
-        <div class="modal-container scenario-editor-modal" @click.stop>
+      <div
+        v-if="isEditorOpen"
+        class="modal-overlay"
+        @click="closeEditor"
+      >
+        <div
+          class="modal-container scenario-editor-modal"
+          @click.stop
+        >
           <div class="modal-header">
             <h2>{{ editingScenario ? 'Редактировать сценарий' : 'Создать сценарий' }}</h2>
-            <button class="modal-close" @click="closeEditor">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <line x1="18" y1="6" x2="6" y2="18"></line>
-                <line x1="6" y1="6" x2="18" y2="18"></line>
+            <button
+              class="modal-close"
+              @click="closeEditor"
+            >
+              <svg
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <line
+                  x1="18"
+                  y1="6"
+                  x2="6"
+                  y2="18"
+                />
+                <line
+                  x1="6"
+                  y1="6"
+                  x2="18"
+                  y2="18"
+                />
               </svg>
             </button>
           </div>
           
           <div class="modal-body">
-            <form @submit.prevent="saveScenario" class="scenario-form">
+            <form
+              class="scenario-form"
+              @submit.prevent="saveScenario"
+            >
               <!-- Basic Info -->
               <div class="form-section">
-                <h3 class="section-title">Основная информация</h3>
+                <h3 class="section-title">
+                  Основная информация
+                </h3>
                 <div class="form-grid">
                   <div class="form-group">
                     <label>Название сценария</label>
                     <input 
-                      type="text" 
                       v-model="formData.name" 
+                      type="text" 
                       class="glass-input"
                       placeholder="Например: Кризис ликвидности"
                       required
-                    />
+                    >
                   </div>
                   <div class="form-group">
                     <label>Описание</label>
@@ -272,36 +421,47 @@
                       class="glass-input"
                       rows="2"
                       placeholder="Краткое описание сценария"
-                    ></textarea>
+                    />
                   </div>
                   <div class="form-group">
                     <label>Длительность</label>
                     <input 
-                      type="text" 
                       v-model="formData.duration" 
+                      type="text" 
                       class="glass-input"
                       placeholder="Например: 1–3 дня"
-                    />
+                    >
                   </div>
                   <div class="form-group">
                     <label>Вероятность (%)</label>
                     <input 
-                      type="number" 
                       v-model.number="formData.probability" 
+                      type="number" 
                       class="glass-input"
                       min="0"
                       max="100"
                       step="0.1"
                       required
-                    />
+                    >
                   </div>
                   <div class="form-group">
                     <label>Уровень серьезности</label>
-                    <select v-model="formData.severity" class="glass-input">
-                      <option value="critical">Критический</option>
-                      <option value="high">Высокий</option>
-                      <option value="medium">Средний</option>
-                      <option value="low">Низкий</option>
+                    <select
+                      v-model="formData.severity"
+                      class="glass-input"
+                    >
+                      <option value="critical">
+                        Критический
+                      </option>
+                      <option value="high">
+                        Высокий
+                      </option>
+                      <option value="medium">
+                        Средний
+                      </option>
+                      <option value="low">
+                        Низкий
+                      </option>
                     </select>
                   </div>
                 </div>
@@ -309,60 +469,81 @@
 
               <!-- Shock Type -->
               <div class="form-section">
-                <h3 class="section-title">Тип шока</h3>
+                <h3 class="section-title">
+                  Тип шока
+                </h3>
                 <div class="form-group">
                   <label>Тип стресс-теста</label>
-                  <select v-model="formData.type" class="glass-input" @change="onShockTypeChange">
-                    <option value="return_shock">Шок доходности</option>
-                    <option value="volatility_shock">Шок волатильности</option>
-                    <option value="correlation_shock">Шок корреляции</option>
+                  <select
+                    v-model="formData.type"
+                    class="glass-input"
+                    @change="onShockTypeChange"
+                  >
+                    <option value="return_shock">
+                      Шок доходности
+                    </option>
+                    <option value="volatility_shock">
+                      Шок волатильности
+                    </option>
+                    <option value="correlation_shock">
+                      Шок корреляции
+                    </option>
                   </select>
                 </div>
                 
-                <div class="form-grid" v-if="formData.type === 'return_shock'">
+                <div
+                  v-if="formData.type === 'return_shock'"
+                  class="form-grid"
+                >
                   <div class="form-group">
                     <label>Множитель доходности</label>
                     <input 
-                      type="number" 
                       v-model.number="formData.return_multiplier" 
+                      type="number" 
                       class="glass-input"
                       min="0"
                       max="2"
                       step="0.1"
                       placeholder="0.5"
-                    />
+                    >
                     <span class="form-hint">Множитель для ожидаемой доходности (0.5 = снижение на 50%)</span>
                   </div>
                 </div>
                 
-                <div class="form-grid" v-if="formData.type === 'volatility_shock'">
+                <div
+                  v-if="formData.type === 'volatility_shock'"
+                  class="form-grid"
+                >
                   <div class="form-group">
                     <label>Множитель волатильности</label>
                     <input 
-                      type="number" 
                       v-model.number="formData.volatility_multiplier" 
+                      type="number" 
                       class="glass-input"
                       min="0.5"
                       max="5"
                       step="0.1"
                       placeholder="1.5"
-                    />
+                    >
                     <span class="form-hint">Множитель для волатильности (1.5 = увеличение на 50%)</span>
                   </div>
                 </div>
                 
-                <div class="form-grid" v-if="formData.type === 'correlation_shock'">
+                <div
+                  v-if="formData.type === 'correlation_shock'"
+                  class="form-grid"
+                >
                   <div class="form-group">
                     <label>Множитель корреляции</label>
                     <input 
-                      type="number" 
                       v-model.number="formData.correlation_multiplier" 
+                      type="number" 
                       class="glass-input"
                       min="0.5"
                       max="2"
                       step="0.1"
                       placeholder="1.3"
-                    />
+                    >
                     <span class="form-hint">Множитель для корреляций (1.3 = увеличение на 30%)</span>
                   </div>
                 </div>
@@ -370,7 +551,9 @@
 
               <!-- Market Changes -->
               <div class="form-section">
-                <h3 class="section-title">Рыночные изменения</h3>
+                <h3 class="section-title">
+                  Рыночные изменения
+                </h3>
                 <div class="market-changes-editor">
                   <div 
                     v-for="(value, key, index) in formData.marketChanges" 
@@ -378,36 +561,58 @@
                     class="market-change-row"
                   >
                     <input 
-                      type="text" 
                       v-model="marketChangeKeys[index]" 
+                      type="text" 
                       class="glass-input"
                       placeholder="Параметр (например: VIX)"
                       @input="updateMarketChange(key, marketChangeKeys[index], value)"
-                    />
+                    >
                     <input 
-                      type="text" 
                       v-model="marketChangeValues[index]" 
+                      type="text" 
                       class="glass-input"
                       placeholder="Изменение (например: +20 pts)"
                       @input="updateMarketChange(key, marketChangeKeys[index], marketChangeValues[index])"
-                    />
+                    >
                     <button 
                       type="button" 
-                      @click="removeMarketChange(key)"
                       class="btn-icon-sm btn-danger"
+                      @click="removeMarketChange(key)"
                     >
-                      <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                      <svg
+                        width="14"
+                        height="14"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          d="M6 18L18 6M6 6l12 12"
+                        />
                       </svg>
                     </button>
                   </div>
                   <button 
                     type="button" 
-                    @click="addMarketChange"
                     class="btn-glass outline btn-add"
+                    @click="addMarketChange"
                   >
-                    <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                    <svg
+                      width="14"
+                      height="14"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M12 4v16m8-8H4"
+                      />
                     </svg>
                     Добавить параметр
                   </button>
@@ -416,7 +621,9 @@
 
               <!-- Asset Impact -->
               <div class="form-section">
-                <h3 class="section-title">Влияние на классы активов (%)</h3>
+                <h3 class="section-title">
+                  Влияние на классы активов (%)
+                </h3>
                 <div class="asset-impact-editor">
                   <div 
                     v-for="(value, asset, index) in formData.assetImpact" 
@@ -424,37 +631,59 @@
                     class="asset-impact-row"
                   >
                     <input 
-                      type="text" 
                       v-model="assetImpactKeys[index]" 
+                      type="text" 
                       class="glass-input"
                       placeholder="Класс актива (например: Акции)"
                       @input="updateAssetImpact(asset, assetImpactKeys[index], value)"
-                    />
+                    >
                     <input 
-                      type="number" 
                       v-model.number="assetImpactValues[index]" 
+                      type="number" 
                       class="glass-input"
                       placeholder="Влияние (%)"
                       step="0.1"
                       @input="updateAssetImpact(asset, assetImpactKeys[index], assetImpactValues[index])"
-                    />
+                    >
                     <button 
                       type="button" 
-                      @click="removeAssetImpact(asset)"
                       class="btn-icon-sm btn-danger"
+                      @click="removeAssetImpact(asset)"
                     >
-                      <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                      <svg
+                        width="14"
+                        height="14"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          d="M6 18L18 6M6 6l12 12"
+                        />
                       </svg>
                     </button>
                   </div>
                   <button 
                     type="button" 
-                    @click="addAssetImpact"
                     class="btn-glass outline btn-add"
+                    @click="addAssetImpact"
                   >
-                    <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                    <svg
+                      width="14"
+                      height="14"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M12 4v16m8-8H4"
+                      />
                     </svg>
                     Добавить класс актива
                   </button>
@@ -463,15 +692,25 @@
 
               <!-- Form Actions -->
               <div class="form-actions">
-                <button type="button" @click="closeEditor" class="btn-glass outline">Отмена</button>
-                <button type="submit" class="btn-glass primary">Сохранить сценарий</button>
+                <button
+                  type="button"
+                  class="btn-glass outline"
+                  @click="closeEditor"
+                >
+                  Отмена
+                </button>
+                <button
+                  type="submit"
+                  class="btn-glass primary"
+                >
+                  Сохранить сценарий
+                </button>
               </div>
             </form>
           </div>
         </div>
       </div>
     </transition>
-
   </div>
 </template>
 

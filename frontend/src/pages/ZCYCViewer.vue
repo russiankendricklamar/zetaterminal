@@ -1,11 +1,14 @@
 <template>
   <div class="page-container">
-    
     <!-- Hero / Header -->
     <div class="section-header">
       <div class="header-left">
-        <h1 class="section-title">КБД</h1>
-        <p class="section-subtitle">Кривая бескупонных доходностей от MOEX ISS API</p>
+        <h1 class="section-title">
+          КБД
+        </h1>
+        <p class="section-subtitle">
+          Кривая бескупонных доходностей от MOEX ISS API
+        </p>
       </div>
       <div class="header-actions">
         <!-- Date Picker -->
@@ -17,17 +20,36 @@
             class="date-input"
             :max="today"
             :min="minDate"
-            @change="onDateChange"
             :disabled="loading"
-          />
+            @change="onDateChange"
+          >
         </div>
 
         <!-- Refresh Button -->
-        <button class="btn-glass primary" @click="loadZCYC" :disabled="loading">
-          <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24" v-if="!loading">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+        <button
+          class="btn-glass primary"
+          :disabled="loading"
+          @click="loadZCYC"
+        >
+          <svg
+            v-if="!loading"
+            width="14"
+            height="14"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+            />
           </svg>
-          <span v-else class="spinner-mini"></span>
+          <span
+            v-else
+            class="spinner-mini"
+          />
           <span>{{ loading ? 'Загрузка...' : 'Загрузить' }}</span>
         </button>
       </div>
@@ -36,29 +58,45 @@
     <!-- Quick ZCYC Summary (KPIs) -->
     <div class="kpi-cards-grid">
       <div class="glass-card kpi-card">
-        <div class="kpi-label">Дата КБД</div>
-        <div class="kpi-value">{{ formatDate(results.date) }}</div>
+        <div class="kpi-label">
+          Дата КБД
+        </div>
+        <div class="kpi-value">
+          {{ formatDate(results.date) }}
+        </div>
         <div class="kpi-sub">
           <span class="text-muted">Последнее обновление</span>
         </div>
       </div>
       <div class="glass-card kpi-card">
-        <div class="kpi-label">Точек на кривой</div>
-        <div class="kpi-value text-gradient-blue">{{ results.count }}</div>
+        <div class="kpi-label">
+          Точек на кривой
+        </div>
+        <div class="kpi-value text-gradient-blue">
+          {{ results.count }}
+        </div>
         <div class="kpi-sub">
           <span class="text-muted">Точек данных</span>
         </div>
       </div>
       <div class="glass-card kpi-card">
-        <div class="kpi-label">Минимальная ставка</div>
-        <div class="kpi-value">{{ formatNumber(results.min_rate, 3) }}%</div>
+        <div class="kpi-label">
+          Минимальная ставка
+        </div>
+        <div class="kpi-value">
+          {{ formatNumber(results.min_rate, 3) }}%
+        </div>
         <div class="kpi-sub">
           <span class="text-muted">Мин. ставка</span>
         </div>
       </div>
       <div class="glass-card kpi-card">
-        <div class="kpi-label">Максимальная ставка</div>
-        <div class="kpi-value text-gradient-green">{{ formatNumber(results.max_rate, 3) }}%</div>
+        <div class="kpi-label">
+          Максимальная ставка
+        </div>
+        <div class="kpi-value text-gradient-green">
+          {{ formatNumber(results.max_rate, 3) }}%
+        </div>
         <div class="kpi-sub">
           <span class="text-muted">Макс. ставка</span>
         </div>
@@ -67,10 +105,8 @@
 
     <!-- Main Grid -->
     <div class="dashboard-grid">
-      
       <!-- Left Column -->
       <div class="col-left">
-        
         <!-- Period Search & Interpolation -->
         <div class="glass-card panel">
           <div class="panel-header">
@@ -87,10 +123,13 @@
                 @input="filterPeriods"
                 @change="searchPeriodByInput"
                 @keydown.enter="searchPeriodByInput"
-              />
+              >
               <span class="search-unit">лет</span>
             </div>
-            <div v-if="showSuggestions && filteredPeriods.length > 0" class="period-suggestions">
+            <div
+              v-if="showSuggestions && filteredPeriods.length > 0"
+              class="period-suggestions"
+            >
               <div
                 v-for="(period, idx) in filteredPeriods.slice(0, 5)"
                 :key="idx"
@@ -110,10 +149,15 @@
         </div>
 
         <!-- Interpolated Result Card -->
-        <div v-if="selectedPeriod" class="glass-card panel highlight-panel">
+        <div
+          v-if="selectedPeriod"
+          class="glass-card panel highlight-panel"
+        >
           <div class="panel-header">
             <h3>Результат интерполяции</h3>
-            <div class="badge-glass">{{ getTermType(selectedPeriod.term) }}</div>
+            <div class="badge-glass">
+              {{ getTermType(selectedPeriod.term) }}
+            </div>
           </div>
           <div class="result-metrics">
             <div class="metric-item">
@@ -136,11 +180,14 @@
           <div class="panel-header">
             <h3>Кривая доходности</h3>
             <div class="legend">
-              <span class="dot-legend bg-blue"></span> Ставка КБД
+              <span class="dot-legend bg-blue" /> Ставка КБД
             </div>
           </div>
           <div class="chart-container">
-            <canvas ref="chartCanvas" class="chart-canvas"></canvas>
+            <canvas
+              ref="chartCanvas"
+              class="chart-canvas"
+            />
           </div>
         </div>
 
@@ -148,40 +195,63 @@
         <div class="glass-card panel">
           <div class="panel-header">
             <h3>Таблица данных</h3>
-            <div class="badge-glass">{{ results.data.length }} точек</div>
+            <div class="badge-glass">
+              {{ results.data.length }} точек
+            </div>
           </div>
           <div class="table-wrapper">
             <table class="glass-table">
               <thead>
                 <tr>
-                  <th class="col-index">#</th>
-                  <th class="col-term">Срок (годы)</th>
-                  <th class="col-rate">Ставка (%)</th>
-                  <th class="col-class">Класс</th>
+                  <th class="col-index">
+                    #
+                  </th>
+                  <th class="col-term">
+                    Срок (годы)
+                  </th>
+                  <th class="col-rate">
+                    Ставка (%)
+                  </th>
+                  <th class="col-class">
+                    Класс
+                  </th>
                 </tr>
               </thead>
               <tbody>
-                <tr v-for="(point, idx) in results.data" :key="idx" :class="getRowClass(point.term)">
-                  <td class="col-index">{{ idx + 1 }}</td>
-                  <td class="col-term mono">{{ formatNumber(point.term, 4) }}</td>
-                  <td class="col-rate mono text-gradient-blue">{{ formatNumber(point.value, 4) }}</td>
+                <tr
+                  v-for="(point, idx) in results.data"
+                  :key="idx"
+                  :class="getRowClass(point.term)"
+                >
+                  <td class="col-index">
+                    {{ idx + 1 }}
+                  </td>
+                  <td class="col-term mono">
+                    {{ formatNumber(point.term, 4) }}
+                  </td>
+                  <td class="col-rate mono text-gradient-blue">
+                    {{ formatNumber(point.value, 4) }}
+                  </td>
                   <td class="col-class">
                     <span class="badge-type">{{ getTermType(point.term) }}</span>
                   </td>
                 </tr>
                 <tr v-if="results.data.length === 0">
-                  <td colspan="4" class="empty-state">Нет данных для отображения</td>
+                  <td
+                    colspan="4"
+                    class="empty-state"
+                  >
+                    Нет данных для отображения
+                  </td>
                 </tr>
               </tbody>
             </table>
           </div>
         </div>
-
       </div>
 
       <!-- Right Column -->
       <div class="col-right">
-        
         <!-- Statistics -->
         <div class="glass-card panel">
           <div class="panel-header">
@@ -202,7 +272,10 @@
             </div>
             <div class="kv-row">
               <span class="k">Наклон (5л - 0.5л)</span>
-              <span class="v mono" :class="getSlope() > 0 ? 'text-green' : 'text-red'">{{ formatNumber(getSlope(), 3) }}%</span>
+              <span
+                class="v mono"
+                :class="getSlope() > 0 ? 'text-green' : 'text-red'"
+              >{{ formatNumber(getSlope(), 3) }}%</span>
             </div>
           </div>
         </div>
@@ -270,10 +343,8 @@
             </p>
           </div>
         </div>
-
       </div>
     </div>
-
   </div>
 </template>
 

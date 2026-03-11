@@ -2,12 +2,13 @@
 API endpoints для оценки свопов (IRS, CDS, Basis Swaps, FX Swaps).
 """
 import logging
+from typing import Any
 
 from fastapi import APIRouter, HTTPException
-from typing import Optional, Dict, Any, List
 from pydantic import Field
-from src.services.swap_service import calculate_swap_valuation, calculate_fx_swap_valuation
-from src.utils.financial_validation import FinancialBaseModel, MAX_NOTIONAL, MAX_TENOR_YEARS, MAX_RATE_PCT
+
+from src.services.swap_service import calculate_fx_swap_valuation, calculate_swap_valuation
+from src.utils.financial_validation import MAX_NOTIONAL, MAX_RATE_PCT, MAX_TENOR_YEARS, FinancialBaseModel
 
 logger = logging.getLogger(__name__)
 
@@ -23,11 +24,11 @@ class SwapValuationRequest(FinancialBaseModel):
     spread: float = Field(0.0, ge=-10000, le=10000, description="Спред (bp)")
     couponsPerYear: int = Field(2, gt=0, le=12, description="Купонов в год")
     discountRate: float = Field(..., ge=-100, le=MAX_RATE_PCT, description="Дисконт кривая (базовая ставка, %)")
-    volatility: Optional[float] = Field(None, ge=0, le=500, description="Волатильность (%)")
+    volatility: float | None = Field(None, ge=0, le=500, description="Волатильность (%)")
     swapType: str = Field("irs", description="Тип свопа: irs, cds, basis, xccy")
 
 
-@router.post("/valuate", response_model=Dict[str, Any])
+@router.post("/valuate", response_model=dict[str, Any])
 async def valuate_swap(request: SwapValuationRequest):
     """
     Выполняет оценку свопа.
@@ -47,13 +48,13 @@ async def valuate_swap(request: SwapValuationRequest):
         return result
     except ValueError as e:
         logger.error("Swap valuation validation error: %s", e, exc_info=True)
-        raise HTTPException(status_code=400, detail="Invalid input parameters")
+        raise HTTPException(status_code=400, detail="Invalid input parameters") from e
     except RuntimeError as e:
         logger.error("Swap valuation runtime error: %s", e, exc_info=True)
-        raise HTTPException(status_code=400, detail="Calculation error")
+        raise HTTPException(status_code=400, detail="Calculation error") from e
     except Exception as e:
         logger.error("Swap valuation failed: %s", e, exc_info=True)
-        raise HTTPException(status_code=500, detail="Internal server error")
+        raise HTTPException(status_code=500, detail="Internal server error") from e
 
 
 class FxSwapLeg(FinancialBaseModel):
@@ -77,7 +78,7 @@ class FxSwapValuationRequest(FinancialBaseModel):
     rateExternal: float = Field(..., ge=-99.0, le=200.0, description="Ставка внешней валюты (%)")
 
 
-@router.post("/valuate-fx", response_model=Dict[str, Any])
+@router.post("/valuate-fx", response_model=dict[str, Any])
 async def valuate_fx_swap(request: FxSwapValuationRequest):
     """Выполняет оценку FX-свопа."""
     try:
@@ -102,10 +103,10 @@ async def valuate_fx_swap(request: FxSwapValuationRequest):
         return result
     except ValueError as e:
         logger.error("FX swap valuation validation error: %s", e, exc_info=True)
-        raise HTTPException(status_code=400, detail="Invalid input parameters")
+        raise HTTPException(status_code=400, detail="Invalid input parameters") from e
     except Exception as e:
         logger.error("FX swap valuation failed: %s", e, exc_info=True)
-        raise HTTPException(status_code=500, detail="Internal server error")
+        raise HTTPException(status_code=500, detail="Internal server error") from e
 
 
 @router.get("/health")

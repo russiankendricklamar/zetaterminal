@@ -6,22 +6,43 @@
           <BookOpenIcon class="w-6 h-6" />
         </div>
         <div>
-          <h2 class="section-title font-anton">ИССЛЕДОВАНИЯ</h2>
-          <p class="section-subtitle font-mono">INSTITUTIONAL GRADE ANALYSIS & INSIGHTS</p>
+          <h2 class="section-title font-anton">
+            ИССЛЕДОВАНИЯ
+          </h2>
+          <p class="section-subtitle font-mono">
+            INSTITUTIONAL GRADE ANALYSIS & INSIGHTS
+          </p>
         </div>
       </div>
       <div class="tab-group">
-        <button v-for="tab in tabs" :key="tab.id" @click="section = tab.id" :class="['tab-btn', { active: section === tab.id }]">
+        <button
+          v-for="tab in tabs"
+          :key="tab.id"
+          :class="['tab-btn', { active: section === tab.id }]"
+          @click="section = tab.id"
+        >
           {{ tab.label }}
         </button>
       </div>
     </div>
     <div class="flex-1 flex flex-col gap-6">
-      <ResearchHub v-if="section === 'RES'" :symbol="symbol" />
-      <CompanyPrimer v-else-if="section === 'BICO'" :symbol="symbol" />
+      <ResearchHub
+        v-if="section === 'RES'"
+        :symbol="symbol"
+      />
+      <CompanyPrimer
+        v-else-if="section === 'BICO'"
+        :symbol="symbol"
+      />
       <IndustryPrimer v-else-if="section === 'BIP'" />
-      <Transcripts v-else-if="section === 'ECT'" :symbol="symbol" />
-      <ResearchHub v-else :symbol="symbol" />
+      <Transcripts
+        v-else-if="section === 'ECT'"
+        :symbol="symbol"
+      />
+      <ResearchHub
+        v-else
+        :symbol="symbol"
+      />
     </div>
   </div>
 </template>

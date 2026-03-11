@@ -3,8 +3,12 @@
     <!-- Header -->
     <div class="dashboard-header">
       <div>
-        <h2 class="dashboard-title font-oswald">ГЛАВНАЯ ПАНЕЛЬ</h2>
-        <p class="dashboard-subtitle font-mono">Настраиваемая рабочая область</p>
+        <h2 class="dashboard-title font-oswald">
+          ГЛАВНАЯ ПАНЕЛЬ
+        </h2>
+        <p class="dashboard-subtitle font-mono">
+          Настраиваемая рабочая область
+        </p>
       </div>
     </div>
 
@@ -38,11 +42,20 @@
           />
         </div>
       </div>
-      <div v-else class="dashboard-empty">
+      <div
+        v-else
+        class="dashboard-empty"
+      >
         <div class="empty-content">
-          <p class="empty-title font-oswald">НЕТ ВИДЖЕТОВ</p>
-          <p class="empty-subtitle font-mono">Загрузка виджетов...</p>
-          <p class="empty-count font-mono">Количество виджетов: {{ widgets.length }}</p>
+          <p class="empty-title font-oswald">
+            НЕТ ВИДЖЕТОВ
+          </p>
+          <p class="empty-subtitle font-mono">
+            Загрузка виджетов...
+          </p>
+          <p class="empty-count font-mono">
+            Количество виджетов: {{ widgets.length }}
+          </p>
         </div>
       </div>
     </div>

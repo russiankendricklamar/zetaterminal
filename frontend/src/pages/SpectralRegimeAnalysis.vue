@@ -1,22 +1,34 @@
 <!-- src/pages/SpectralRegimeAnalysis.vue -->
 <template>
   <div class="page-container custom-scroll">
-    
     <!-- Header -->
     <div class="section-header">
       <div class="header-left">
-        <h1 class="section-title">Комплексный анализ скрытых рыночных режимов</h1>
-        <p class="section-subtitle">Спектральная декомпозиция через мероморфное расширение</p>
+        <h1 class="section-title">
+          Комплексный анализ скрытых рыночных режимов
+        </h1>
+        <p class="section-subtitle">
+          Спектральная декомпозиция через мероморфное расширение
+        </p>
       </div>
       
       <div class="header-actions">
-        <div class="glass-pill status-pill" v-if="analysisResult">
-          <span class="dot" :style="{ background: currentRegimeColor }"></span>
+        <div
+          v-if="analysisResult"
+          class="glass-pill status-pill"
+        >
+          <span
+            class="dot"
+            :style="{ background: currentRegimeColor }"
+          />
           <span class="status-label">
             Режим: <b class="text-white">{{ currentRegimeType }}</b>
           </span>
         </div>
-        <div class="glass-pill" v-if="analysisResult">
+        <div
+          v-if="analysisResult"
+          class="glass-pill"
+        >
           <span :class="analysisResult.summary.stability.is_stable ? 'text-green' : 'text-red'">
             {{ analysisResult.summary.stability.is_stable ? 'Стабильный' : 'Нестабильный' }}
           </span>
@@ -26,33 +38,55 @@
 
     <!-- Main Grid -->
     <div class="dashboard-grid">
-      
       <!-- LEFT PANEL: Controls -->
       <aside class="left-panel">
-        
         <!-- Asset Selection -->
         <div class="glass-card panel">
-          <div class="panel-header"><h3>Выбор актива</h3></div>
+          <div class="panel-header">
+            <h3>Выбор актива</h3>
+          </div>
           
           <div class="controls-form">
             <!-- Category Select -->
             <div class="input-group">
               <label class="lbl">Категория</label>
-              <select v-model="selectedCategory" class="glass-select full-width">
-                <option value="stocks">Акции (US)</option>
-                <option value="crypto">Криптовалюты</option>
-                <option value="commodities">Сырьё</option>
-                <option value="bonds">Облигации</option>
-                <option value="forex">Валюты</option>
-                <option value="russia">Россия</option>
+              <select
+                v-model="selectedCategory"
+                class="glass-select full-width"
+              >
+                <option value="stocks">
+                  Акции (US)
+                </option>
+                <option value="crypto">
+                  Криптовалюты
+                </option>
+                <option value="commodities">
+                  Сырьё
+                </option>
+                <option value="bonds">
+                  Облигации
+                </option>
+                <option value="forex">
+                  Валюты
+                </option>
+                <option value="russia">
+                  Россия
+                </option>
               </select>
             </div>
             
             <!-- Asset Select -->
             <div class="input-group mt-2">
               <label class="lbl">Актив</label>
-              <select v-model="selectedTicker" class="glass-select full-width">
-                <option v-for="asset in availableAssets" :key="asset.ticker" :value="asset.ticker">
+              <select
+                v-model="selectedTicker"
+                class="glass-select full-width"
+              >
+                <option
+                  v-for="asset in availableAssets"
+                  :key="asset.ticker"
+                  :value="asset.ticker"
+                >
                   {{ asset.name }} ({{ asset.ticker }})
                 </option>
               </select>
@@ -61,12 +95,25 @@
             <!-- Period -->
             <div class="input-group mt-2">
               <label class="lbl">Период (дни)</label>
-              <select v-model="periodDays" class="glass-select full-width">
-                <option :value="126">6 месяцев (126)</option>
-                <option :value="252">1 год (252)</option>
-                <option :value="504">2 года (504)</option>
-                <option :value="756">3 года (756)</option>
-                <option :value="1260">5 лет (1260)</option>
+              <select
+                v-model="periodDays"
+                class="glass-select full-width"
+              >
+                <option :value="126">
+                  6 месяцев (126)
+                </option>
+                <option :value="252">
+                  1 год (252)
+                </option>
+                <option :value="504">
+                  2 года (504)
+                </option>
+                <option :value="756">
+                  3 года (756)
+                </option>
+                <option :value="1260">
+                  5 лет (1260)
+                </option>
               </select>
             </div>
           </div>
@@ -74,59 +121,78 @@
 
         <!-- Analysis Parameters -->
         <div class="glass-card panel">
-          <div class="panel-header"><h3>Параметры анализа</h3></div>
+          <div class="panel-header">
+            <h3>Параметры анализа</h3>
+          </div>
           
           <div class="controls-form">
             <!-- Auto Optimize Checkbox -->
             <div class="input-group">
               <label class="checkbox-label">
-                <input type="checkbox" v-model="autoOptimize" class="checkbox-input" />
+                <input
+                  v-model="autoOptimize"
+                  type="checkbox"
+                  class="checkbox-input"
+                >
                 <span class="checkbox-text">Автоматическая оптимизация параметров</span>
               </label>
               <span class="hint">Автоматически определяет оптимальные значения</span>
             </div>
             
             <!-- N Poles -->
-            <div class="input-group" :class="{ 'opacity-50': autoOptimize }">
+            <div
+              class="input-group"
+              :class="{ 'opacity-50': autoOptimize }"
+            >
               <label class="lbl">Количество полюсов (M)</label>
               <div class="range-row">
                 <input 
-                  type="range" 
                   v-model.number="nPoles" 
+                  type="range" 
                   min="3" 
                   max="12" 
                   step="1" 
                   class="range-slider" 
                   :disabled="autoOptimize"
-                />
+                >
                 <span class="range-value">{{ autoOptimize ? 'auto' : nPoles }}</span>
               </div>
               <span class="hint">Рекомендуется 5-8</span>
             </div>
             
             <!-- Window Size -->
-            <div class="input-group mt-3" :class="{ 'opacity-50': autoOptimize }">
+            <div
+              class="input-group mt-3"
+              :class="{ 'opacity-50': autoOptimize }"
+            >
               <label class="lbl">Размер окна (W)</label>
               <div class="range-row">
                 <input 
-                  type="range" 
                   v-model.number="windowSize" 
+                  type="range" 
                   min="10" 
                   max="50" 
                   step="5" 
                   class="range-slider" 
                   :disabled="autoOptimize"
-                />
+                >
                 <span class="range-value">{{ autoOptimize ? 'auto' : windowSize + ' дн.' }}</span>
               </div>
               <span class="hint">Для динамического анализа</span>
             </div>
             
             <!-- Run Button -->
-            <button @click="runAnalysis" :disabled="isLoading" class="btn-primary-gradient mt-6">
+            <button
+              :disabled="isLoading"
+              class="btn-primary-gradient mt-6"
+              @click="runAnalysis"
+            >
               <span v-if="!isLoading">Запустить анализ</span>
-              <span v-else class="flex items-center gap-2">
-                <span class="spinner-mini"></span> {{ loadingStatus }}
+              <span
+                v-else
+                class="flex items-center gap-2"
+              >
+                <span class="spinner-mini" /> {{ loadingStatus }}
               </span>
             </button>
           </div>
@@ -134,8 +200,13 @@
 
         <!-- Current Metrics -->
         <transition name="fade">
-          <div class="glass-card panel" v-if="analysisResult">
-            <div class="panel-header"><h3>Текущие метрики</h3></div>
+          <div
+            v-if="analysisResult"
+            class="glass-card panel"
+          >
+            <div class="panel-header">
+              <h3>Текущие метрики</h3>
+            </div>
             
             <div class="metrics-grid">
               <div class="metric-item">
@@ -146,12 +217,18 @@
                 <span class="metric-label">Полюсов</span>
                 <span class="metric-value">
                   {{ analysisResult.summary.n_poles }}
-                  <span v-if="analysisResult.summary.optimization?.auto_optimized" class="text-xs text-yellow ml-1">(auto)</span>
+                  <span
+                    v-if="analysisResult.summary.optimization?.auto_optimized"
+                    class="text-xs text-yellow ml-1"
+                  >(auto)</span>
                 </span>
               </div>
               <div class="metric-item">
                 <span class="metric-label">Энтропия</span>
-                <span class="metric-value" :class="entropyClass">
+                <span
+                  class="metric-value"
+                  :class="entropyClass"
+                >
                   {{ entropyValue }}
                 </span>
               </div>
@@ -164,7 +241,10 @@
             </div>
             
             <!-- Optimization Info -->
-            <div v-if="analysisResult.summary.optimization?.auto_optimized" class="optimization-info">
+            <div
+              v-if="analysisResult.summary.optimization?.auto_optimized"
+              class="optimization-info"
+            >
               <div class="opt-item">
                 <span class="opt-label">Окно:</span>
                 <span class="opt-value">{{ analysisResult.summary.optimization.window_size_used }} дн.</span>
@@ -176,7 +256,10 @@
             </div>
             
             <!-- Stability Check -->
-            <div class="stability-badge" :class="analysisResult.summary.stability.is_stable ? 'stable' : 'unstable'">
+            <div
+              class="stability-badge"
+              :class="analysisResult.summary.stability.is_stable ? 'stable' : 'unstable'"
+            >
               <span v-if="analysisResult.summary.stability.is_stable">
                 Все полюсы внутри единичного круга
               </span>
@@ -186,7 +269,10 @@
             </div>
             
             <!-- Minimum Phase -->
-            <div class="stability-badge mt-2" :class="analysisResult.summary.minimum_phase.is_minimum_phase ? 'stable' : 'warning'">
+            <div
+              class="stability-badge mt-2"
+              :class="analysisResult.summary.minimum_phase.is_minimum_phase ? 'stable' : 'warning'"
+            >
               <span v-if="analysisResult.summary.minimum_phase.is_minimum_phase">
                 Минимально-фазовая система
               </span>
@@ -199,8 +285,13 @@
 
         <!-- Regime Stats -->
         <transition name="fade">
-          <div class="glass-card panel" v-if="analysisResult && regimeStats.length">
-            <div class="panel-header"><h3>Параметры режимов</h3></div>
+          <div
+            v-if="analysisResult && regimeStats.length"
+            class="glass-card panel"
+          >
+            <div class="panel-header">
+              <h3>Параметры режимов</h3>
+            </div>
             
             <div class="regime-list">
               <div 
@@ -210,9 +301,15 @@
                 :class="{ active: currentRegimeIndex === idx }"
               >
                 <div class="regime-header">
-                  <span class="regime-dot" :style="{ background: getRegimeColor(idx) }"></span>
+                  <span
+                    class="regime-dot"
+                    :style="{ background: getRegimeColor(idx) }"
+                  />
                   <span class="regime-name">Режим {{ idx }}</span>
-                  <span class="regime-type" :style="{ color: getRegimeTypeColor(regime.type) }">
+                  <span
+                    class="regime-type"
+                    :style="{ color: getRegimeTypeColor(regime.type) }"
+                  >
                     {{ getRegimeTypeName(regime.type) }}
                   </span>
                 </div>
@@ -237,7 +334,7 @@
                       width: getRegimeTimePercent(idx) + '%',
                       background: getRegimeColor(idx)
                     }"
-                  ></div>
+                  />
                   <span class="regime-bar-label">{{ getRegimeTimePercent(idx).toFixed(0) }}% времени</span>
                 </div>
               </div>
@@ -248,29 +345,81 @@
 
       <!-- RIGHT PANEL: Visualizations -->
       <main class="main-panel">
-        
         <!-- Poles Diagram -->
         <div class="glass-card chart-card">
           <div class="chart-header">
             <h3>Диаграмма полюсов в комплексной плоскости</h3>
-            <span class="badge-info" v-if="analysisResult">{{ analysisResult.summary.n_poles }} полюсов</span>
+            <span
+              v-if="analysisResult"
+              class="badge-info"
+            >{{ analysisResult.summary.n_poles }} полюсов</span>
           </div>
           <div class="poles-container">
-            <svg v-if="analysisResult" viewBox="-1.5 -1.5 3 3" preserveAspectRatio="xMidYMid meet" class="poles-svg">
+            <svg
+              v-if="analysisResult"
+              viewBox="-1.5 -1.5 3 3"
+              preserveAspectRatio="xMidYMid meet"
+              class="poles-svg"
+            >
               <!-- Grid -->
-              <line x1="-1.5" y1="0" x2="1.5" y2="0" stroke="rgba(255,255,255,0.1)" stroke-width="0.01" />
-              <line x1="0" y1="-1.5" x2="0" y2="1.5" stroke="rgba(255,255,255,0.1)" stroke-width="0.01" />
+              <line
+                x1="-1.5"
+                y1="0"
+                x2="1.5"
+                y2="0"
+                stroke="rgba(255,255,255,0.1)"
+                stroke-width="0.01"
+              />
+              <line
+                x1="0"
+                y1="-1.5"
+                x2="0"
+                y2="1.5"
+                stroke="rgba(255,255,255,0.1)"
+                stroke-width="0.01"
+              />
               
               <!-- Unit Circle -->
-              <circle cx="0" cy="0" r="1" fill="none" stroke="rgba(255,255,255,0.3)" stroke-width="0.02" stroke-dasharray="0.05 0.03" />
-              <circle cx="0" cy="0" r="0.5" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="0.01" />
+              <circle
+                cx="0"
+                cy="0"
+                r="1"
+                fill="none"
+                stroke="rgba(255,255,255,0.3)"
+                stroke-width="0.02"
+                stroke-dasharray="0.05 0.03"
+              />
+              <circle
+                cx="0"
+                cy="0"
+                r="0.5"
+                fill="none"
+                stroke="rgba(255,255,255,0.1)"
+                stroke-width="0.01"
+              />
               
               <!-- Stability zones -->
-              <circle cx="0" cy="0" r="0.8" fill="rgba(74, 222, 128, 0.05)" stroke="none" />
-              <circle cx="0" cy="0" r="0.95" fill="none" stroke="rgba(251, 191, 36, 0.2)" stroke-width="0.01" />
+              <circle
+                cx="0"
+                cy="0"
+                r="0.8"
+                fill="rgba(74, 222, 128, 0.05)"
+                stroke="none"
+              />
+              <circle
+                cx="0"
+                cy="0"
+                r="0.95"
+                fill="none"
+                stroke="rgba(251, 191, 36, 0.2)"
+                stroke-width="0.01"
+              />
               
               <!-- All Poles -->
-              <g v-for="(pole, i) in allPoles" :key="'pole-' + i">
+              <g
+                v-for="(pole, i) in allPoles"
+                :key="'pole-' + i"
+              >
                 <circle 
                   :cx="pole.real" 
                   :cy="-pole.imag" 
@@ -282,7 +431,10 @@
               </g>
               
               <!-- Regime Poles (larger) -->
-              <g v-for="(pole, i) in regimePoles" :key="'regime-pole-' + i">
+              <g
+                v-for="(pole, i) in regimePoles"
+                :key="'regime-pole-' + i"
+              >
                 <circle 
                   :cx="pole.real" 
                   :cy="-pole.imag" 
@@ -304,37 +456,153 @@
               </g>
               
               <!-- Labels -->
-              <text x="1.35" y="0.05" fill="rgba(255,255,255,0.4)" font-size="0.08">Re</text>
-              <text x="0.05" y="-1.35" fill="rgba(255,255,255,0.4)" font-size="0.08">Im</text>
-              <text x="1.02" y="0.12" fill="rgba(255,255,255,0.3)" font-size="0.06">|z|=1</text>
+              <text
+                x="1.35"
+                y="0.05"
+                fill="rgba(255,255,255,0.4)"
+                font-size="0.08"
+              >Re</text>
+              <text
+                x="0.05"
+                y="-1.35"
+                fill="rgba(255,255,255,0.4)"
+                font-size="0.08"
+              >Im</text>
+              <text
+                x="1.02"
+                y="0.12"
+                fill="rgba(255,255,255,0.3)"
+                font-size="0.06"
+              >|z|=1</text>
             </svg>
             <!-- Placeholder visualization -->
-            <svg v-else viewBox="-1.5 -1.5 3 3" preserveAspectRatio="xMidYMid meet" class="poles-svg placeholder">
+            <svg
+              v-else
+              viewBox="-1.5 -1.5 3 3"
+              preserveAspectRatio="xMidYMid meet"
+              class="poles-svg placeholder"
+            >
               <!-- Grid -->
-              <line x1="-1.5" y1="0" x2="1.5" y2="0" stroke="rgba(255,255,255,0.1)" stroke-width="0.01" />
-              <line x1="0" y1="-1.5" x2="0" y2="1.5" stroke="rgba(255,255,255,0.1)" stroke-width="0.01" />
+              <line
+                x1="-1.5"
+                y1="0"
+                x2="1.5"
+                y2="0"
+                stroke="rgba(255,255,255,0.1)"
+                stroke-width="0.01"
+              />
+              <line
+                x1="0"
+                y1="-1.5"
+                x2="0"
+                y2="1.5"
+                stroke="rgba(255,255,255,0.1)"
+                stroke-width="0.01"
+              />
               
               <!-- Unit Circle -->
-              <circle cx="0" cy="0" r="1" fill="none" stroke="rgba(255,255,255,0.2)" stroke-width="0.02" stroke-dasharray="0.05 0.03" />
-              <circle cx="0" cy="0" r="0.5" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="0.01" />
+              <circle
+                cx="0"
+                cy="0"
+                r="1"
+                fill="none"
+                stroke="rgba(255,255,255,0.2)"
+                stroke-width="0.02"
+                stroke-dasharray="0.05 0.03"
+              />
+              <circle
+                cx="0"
+                cy="0"
+                r="0.5"
+                fill="none"
+                stroke="rgba(255,255,255,0.08)"
+                stroke-width="0.01"
+              />
               
               <!-- Stability zones -->
-              <circle cx="0" cy="0" r="0.8" fill="rgba(74, 222, 128, 0.03)" stroke="none" />
-              <circle cx="0" cy="0" r="0.95" fill="none" stroke="rgba(251, 191, 36, 0.1)" stroke-width="0.01" />
+              <circle
+                cx="0"
+                cy="0"
+                r="0.8"
+                fill="rgba(74, 222, 128, 0.03)"
+                stroke="none"
+              />
+              <circle
+                cx="0"
+                cy="0"
+                r="0.95"
+                fill="none"
+                stroke="rgba(251, 191, 36, 0.1)"
+                stroke-width="0.01"
+              />
               
               <!-- Placeholder poles (example positions) -->
-              <circle cx="0.6" cy="0.3" r="0.04" fill="#4ade80" fill-opacity="0.4" stroke="rgba(255,255,255,0.3)" stroke-width="0.01" />
-              <circle cx="0.7" cy="-0.2" r="0.04" fill="#fbbf24" fill-opacity="0.4" stroke="rgba(255,255,255,0.3)" stroke-width="0.01" />
-              <circle cx="0.85" cy="0.1" r="0.08" fill="#3b82f6" fill-opacity="0.4" stroke="rgba(255,255,255,0.4)" stroke-width="0.015" />
-              <circle cx="0.4" cy="0.5" r="0.04" fill="#f97316" fill-opacity="0.4" stroke="rgba(255,255,255,0.3)" stroke-width="0.01" />
+              <circle
+                cx="0.6"
+                cy="0.3"
+                r="0.04"
+                fill="#4ade80"
+                fill-opacity="0.4"
+                stroke="rgba(255,255,255,0.3)"
+                stroke-width="0.01"
+              />
+              <circle
+                cx="0.7"
+                cy="-0.2"
+                r="0.04"
+                fill="#fbbf24"
+                fill-opacity="0.4"
+                stroke="rgba(255,255,255,0.3)"
+                stroke-width="0.01"
+              />
+              <circle
+                cx="0.85"
+                cy="0.1"
+                r="0.08"
+                fill="#3b82f6"
+                fill-opacity="0.4"
+                stroke="rgba(255,255,255,0.4)"
+                stroke-width="0.015"
+              />
+              <circle
+                cx="0.4"
+                cy="0.5"
+                r="0.04"
+                fill="#f97316"
+                fill-opacity="0.4"
+                stroke="rgba(255,255,255,0.3)"
+                stroke-width="0.01"
+              />
               
               <!-- Labels -->
-              <text x="1.35" y="0.05" fill="rgba(255,255,255,0.2)" font-size="0.08">Re</text>
-              <text x="0.05" y="-1.35" fill="rgba(255,255,255,0.2)" font-size="0.08">Im</text>
-              <text x="1.02" y="0.12" fill="rgba(255,255,255,0.15)" font-size="0.06">|z|=1</text>
+              <text
+                x="1.35"
+                y="0.05"
+                fill="rgba(255,255,255,0.2)"
+                font-size="0.08"
+              >Re</text>
+              <text
+                x="0.05"
+                y="-1.35"
+                fill="rgba(255,255,255,0.2)"
+                font-size="0.08"
+              >Im</text>
+              <text
+                x="1.02"
+                y="0.12"
+                fill="rgba(255,255,255,0.15)"
+                font-size="0.06"
+              >|z|=1</text>
               
               <!-- Placeholder text -->
-              <text x="0" y="0.3" fill="rgba(255,255,255,0.3)" font-size="0.2" text-anchor="middle" font-weight="300">
+              <text
+                x="0"
+                y="0.3"
+                fill="rgba(255,255,255,0.3)"
+                font-size="0.2"
+                text-anchor="middle"
+                font-weight="300"
+              >
                 Запустите анализ
               </text>
             </svg>
@@ -346,29 +614,53 @@
           <div class="chart-header">
             <div class="ch-left">
               <h3>Динамика и режимы</h3>
-              <span class="badge-ticker" v-if="assetMetadata">{{ assetMetadata.ticker }}</span>
+              <span
+                v-if="assetMetadata"
+                class="badge-ticker"
+              >{{ assetMetadata.ticker }}</span>
             </div>
-            <div class="playback-controls" v-if="analysisResult">
-              <button class="icon-btn" @click="togglePlayback" :title="isPlaying ? 'Пауза' : 'Воспроизвести'">
+            <div
+              v-if="analysisResult"
+              class="playback-controls"
+            >
+              <button
+                class="icon-btn"
+                :title="isPlaying ? 'Пауза' : 'Воспроизвести'"
+                @click="togglePlayback"
+              >
                 <span v-if="isPlaying">⏸</span>
                 <span v-else>▶</span>
               </button>
               <div class="timeline-wrapper">
                 <input 
+                  v-model.number="playbackIndex" 
                   type="range" 
                   :min="0" 
                   :max="maxPlaybackIndex" 
-                  v-model.number="playbackIndex" 
-                  @input="stopPlayback"
                   class="timeline-slider"
+                  @input="stopPlayback"
+                >
+                <div
+                  class="timeline-track"
+                  :style="{ width: playbackProgress + '%' }"
                 />
-                <div class="timeline-track" :style="{ width: playbackProgress + '%' }"></div>
               </div>
-              <button class="icon-btn" @click="resetPlayback" title="Сброс">↺</button>
+              <button
+                class="icon-btn"
+                title="Сброс"
+                @click="resetPlayback"
+              >
+                ↺
+              </button>
             </div>
           </div>
           <div class="chart-container">
-            <svg v-if="analysisResult && dynamicsData" viewBox="0 0 800 300" preserveAspectRatio="none" class="dynamics-svg">
+            <svg
+              v-if="analysisResult && dynamicsData"
+              viewBox="0 0 800 300"
+              preserveAspectRatio="none"
+              class="dynamics-svg"
+            >
               <!-- Background regime bars -->
               <rect 
                 v-for="(regime, i) in visibleRegimes" 
@@ -382,10 +674,24 @@
               />
               
               <!-- Grid -->
-              <line v-for="y in [75, 150, 225]" :key="'grid-' + y" x1="0" :y1="y" x2="800" :y2="y" stroke="rgba(255,255,255,0.05)" />
+              <line
+                v-for="y in [75, 150, 225]"
+                :key="'grid-' + y"
+                x1="0"
+                :y1="y"
+                x2="800"
+                :y2="y"
+                stroke="rgba(255,255,255,0.05)"
+              />
               
               <!-- Price line -->
-              <path :d="pricePath" fill="none" stroke="white" stroke-width="1.5" stroke-linejoin="round" />
+              <path
+                :d="pricePath"
+                fill="none"
+                stroke="white"
+                stroke-width="1.5"
+                stroke-linejoin="round"
+              />
               
               <!-- Cursor -->
               <line 
@@ -399,16 +705,59 @@
               />
             </svg>
             <!-- Placeholder visualization -->
-            <svg v-else viewBox="0 0 800 300" preserveAspectRatio="none" class="dynamics-svg placeholder">
+            <svg
+              v-else
+              viewBox="0 0 800 300"
+              preserveAspectRatio="none"
+              class="dynamics-svg placeholder"
+            >
               <!-- Grid -->
-              <line v-for="y in [75, 150, 225]" :key="'grid-' + y" x1="0" :y1="y" x2="800" :y2="y" stroke="rgba(255,255,255,0.05)" />
+              <line
+                v-for="y in [75, 150, 225]"
+                :key="'grid-' + y"
+                x1="0"
+                :y1="y"
+                x2="800"
+                :y2="y"
+                stroke="rgba(255,255,255,0.05)"
+              />
               
               <!-- Placeholder regime bars -->
-              <rect x="0" y="0" width="160" height="300" fill="rgba(59, 130, 246, 0.08)" />
-              <rect x="160" y="0" width="160" height="300" fill="rgba(74, 222, 128, 0.08)" />
-              <rect x="320" y="0" width="160" height="300" fill="rgba(59, 130, 246, 0.08)" />
-              <rect x="480" y="0" width="160" height="300" fill="rgba(251, 191, 36, 0.08)" />
-              <rect x="640" y="0" width="160" height="300" fill="rgba(59, 130, 246, 0.08)" />
+              <rect
+                x="0"
+                y="0"
+                width="160"
+                height="300"
+                fill="rgba(59, 130, 246, 0.08)"
+              />
+              <rect
+                x="160"
+                y="0"
+                width="160"
+                height="300"
+                fill="rgba(74, 222, 128, 0.08)"
+              />
+              <rect
+                x="320"
+                y="0"
+                width="160"
+                height="300"
+                fill="rgba(59, 130, 246, 0.08)"
+              />
+              <rect
+                x="480"
+                y="0"
+                width="160"
+                height="300"
+                fill="rgba(251, 191, 36, 0.08)"
+              />
+              <rect
+                x="640"
+                y="0"
+                width="160"
+                height="300"
+                fill="rgba(59, 130, 246, 0.08)"
+              />
               
               <!-- Placeholder price line (sinusoidal) -->
               <path 
@@ -422,7 +771,15 @@
               
               <!-- Loading indicator -->
               <g v-if="isLoading">
-                <circle cx="400" cy="150" r="20" fill="none" stroke="rgba(59, 130, 246, 0.5)" stroke-width="2" stroke-dasharray="10 5">
+                <circle
+                  cx="400"
+                  cy="150"
+                  r="20"
+                  fill="none"
+                  stroke="rgba(59, 130, 246, 0.5)"
+                  stroke-width="2"
+                  stroke-dasharray="10 5"
+                >
                   <animateTransform
                     attributeName="transform"
                     type="rotate"
@@ -432,9 +789,23 @@
                     repeatCount="indefinite"
                   />
                 </circle>
-                <text x="400" y="200" fill="rgba(255,255,255,0.4)" font-size="12" text-anchor="middle">Загрузка...</text>
+                <text
+                  x="400"
+                  y="200"
+                  fill="rgba(255,255,255,0.4)"
+                  font-size="12"
+                  text-anchor="middle"
+                >Загрузка...</text>
               </g>
-              <text v-else x="400" y="150" fill="rgba(255,255,255,0.3)" font-size="14" text-anchor="middle" font-weight="300">
+              <text
+                v-else
+                x="400"
+                y="150"
+                fill="rgba(255,255,255,0.3)"
+                font-size="14"
+                text-anchor="middle"
+                font-weight="300"
+              >
                 Нажмите «Запустить анализ»
               </text>
             </svg>
@@ -447,9 +818,17 @@
             <h3>Энергии режимов (нормализованные)</h3>
           </div>
           <div class="chart-container-sm">
-            <svg v-if="analysisResult && dynamicsData" viewBox="0 0 800 160" preserveAspectRatio="none" class="energy-svg">
+            <svg
+              v-if="analysisResult && dynamicsData"
+              viewBox="0 0 800 160"
+              preserveAspectRatio="none"
+              class="energy-svg"
+            >
               <!-- Stacked area for each regime -->
-              <g v-for="k in Array.from({length: analysisResult.summary.n_regimes}, (_, i) => i).reverse()" :key="'energy-' + k">
+              <g
+                v-for="k in Array.from({length: analysisResult.summary.n_regimes}, (_, i) => i).reverse()"
+                :key="'energy-' + k"
+              >
                 <path 
                   :d="getEnergyPath(k)" 
                   :fill="getRegimeColor(k)" 
@@ -459,9 +838,21 @@
               </g>
             </svg>
             <!-- Placeholder visualization -->
-            <svg v-else viewBox="0 0 800 120" preserveAspectRatio="none" class="entropy-svg placeholder">
+            <svg
+              v-else
+              viewBox="0 0 800 120"
+              preserveAspectRatio="none"
+              class="entropy-svg placeholder"
+            >
               <!-- Grid -->
-              <line x1="0" y1="60" x2="800" y2="60" stroke="rgba(255,255,255,0.1)" stroke-dasharray="4" />
+              <line
+                x1="0"
+                y1="60"
+                x2="800"
+                y2="60"
+                stroke="rgba(255,255,255,0.1)"
+                stroke-dasharray="4"
+              />
               
               <!-- Placeholder entropy curve -->
               <path 
@@ -476,7 +867,14 @@
                 stroke="none"
               />
               
-              <text x="400" y="70" fill="rgba(255,255,255,0.2)" font-size="11" text-anchor="middle" font-weight="300">
+              <text
+                x="400"
+                y="70"
+                fill="rgba(255,255,255,0.2)"
+                font-size="11"
+                text-anchor="middle"
+                font-weight="300"
+              >
                 Энтропия режимности
               </text>
             </svg>
@@ -487,14 +885,27 @@
         <div class="glass-card chart-card mt-4">
           <div class="chart-header">
             <h3>Энтропия режимности</h3>
-            <span class="badge-info" v-if="analysisResult">
+            <span
+              v-if="analysisResult"
+              class="badge-info"
+            >
               Средняя: {{ analysisResult.summary.entropy_stats.mean?.toFixed(3) || 'N/A' }}
             </span>
           </div>
           <div class="chart-container-sm">
-            <svg v-if="analysisResult && dynamicsData" viewBox="0 0 800 120" preserveAspectRatio="none" class="entropy-svg">
+            <svg
+              v-if="analysisResult && dynamicsData"
+              viewBox="0 0 800 120"
+              preserveAspectRatio="none"
+              class="entropy-svg"
+            >
               <!-- Entropy area -->
-              <path :d="entropyPath" fill="rgba(139, 92, 246, 0.3)" stroke="#8b5cf6" stroke-width="1.5" />
+              <path
+                :d="entropyPath"
+                fill="rgba(139, 92, 246, 0.3)"
+                stroke="#8b5cf6"
+                stroke-width="1.5"
+              />
               
               <!-- Max entropy line -->
               <line 
@@ -515,9 +926,21 @@
               </text>
             </svg>
             <!-- Placeholder visualization -->
-            <svg v-else viewBox="0 0 800 120" preserveAspectRatio="none" class="entropy-svg placeholder">
+            <svg
+              v-else
+              viewBox="0 0 800 120"
+              preserveAspectRatio="none"
+              class="entropy-svg placeholder"
+            >
               <!-- Grid -->
-              <line x1="0" y1="60" x2="800" y2="60" stroke="rgba(255,255,255,0.1)" stroke-dasharray="4" />
+              <line
+                x1="0"
+                y1="60"
+                x2="800"
+                y2="60"
+                stroke="rgba(255,255,255,0.1)"
+                stroke-dasharray="4"
+              />
               
               <!-- Placeholder entropy curve -->
               <path 
@@ -532,7 +955,14 @@
                 stroke="none"
               />
               
-              <text x="400" y="70" fill="rgba(255,255,255,0.2)" font-size="11" text-anchor="middle" font-weight="300">
+              <text
+                x="400"
+                y="70"
+                fill="rgba(255,255,255,0.2)"
+                font-size="11"
+                text-anchor="middle"
+                font-weight="300"
+              >
                 Энтропия режимности
               </text>
             </svg>
@@ -545,22 +975,68 @@
             <h3>Амплитудный спектр |H(e^iw)|</h3>
           </div>
           <div class="chart-container-sm">
-            <svg v-if="analysisResult && spectrumData" viewBox="0 0 800 140" preserveAspectRatio="none" class="spectrum-svg">
+            <svg
+              v-if="analysisResult && spectrumData"
+              viewBox="0 0 800 140"
+              preserveAspectRatio="none"
+              class="spectrum-svg"
+            >
               <!-- Spectrum line -->
-              <path :d="spectrumPath" fill="none" stroke="#60a5fa" stroke-width="1.5" />
+              <path
+                :d="spectrumPath"
+                fill="none"
+                stroke="#60a5fa"
+                stroke-width="1.5"
+              />
               
               <!-- Grid -->
-              <line v-for="y in [35, 70, 105]" :key="'spec-grid-' + y" x1="0" :y1="y" x2="800" :y2="y" stroke="rgba(255,255,255,0.05)" />
+              <line
+                v-for="y in [35, 70, 105]"
+                :key="'spec-grid-' + y"
+                x1="0"
+                :y1="y"
+                x2="800"
+                :y2="y"
+                stroke="rgba(255,255,255,0.05)"
+              />
               
               <!-- Frequency labels -->
-              <text x="5" y="135" fill="rgba(255,255,255,0.3)" font-size="9">0</text>
-              <text x="395" y="135" fill="rgba(255,255,255,0.3)" font-size="9">π/2</text>
-              <text x="790" y="135" fill="rgba(255,255,255,0.3)" font-size="9">π</text>
+              <text
+                x="5"
+                y="135"
+                fill="rgba(255,255,255,0.3)"
+                font-size="9"
+              >0</text>
+              <text
+                x="395"
+                y="135"
+                fill="rgba(255,255,255,0.3)"
+                font-size="9"
+              >π/2</text>
+              <text
+                x="790"
+                y="135"
+                fill="rgba(255,255,255,0.3)"
+                font-size="9"
+              >π</text>
             </svg>
             <!-- Placeholder visualization -->
-            <svg v-else viewBox="0 0 800 140" preserveAspectRatio="none" class="spectrum-svg placeholder">
+            <svg
+              v-else
+              viewBox="0 0 800 140"
+              preserveAspectRatio="none"
+              class="spectrum-svg placeholder"
+            >
               <!-- Grid -->
-              <line v-for="y in [35, 70, 105]" :key="'spec-grid-' + y" x1="0" :y1="y" x2="800" :y2="y" stroke="rgba(255,255,255,0.05)" />
+              <line
+                v-for="y in [35, 70, 105]"
+                :key="'spec-grid-' + y"
+                x1="0"
+                :y1="y"
+                x2="800"
+                :y2="y"
+                stroke="rgba(255,255,255,0.05)"
+              />
               
               <!-- Placeholder spectrum curve -->
               <path 
@@ -572,25 +1048,54 @@
               />
               
               <!-- Frequency labels -->
-              <text x="5" y="135" fill="rgba(255,255,255,0.2)" font-size="9">0</text>
-              <text x="395" y="135" fill="rgba(255,255,255,0.2)" font-size="9">π/2</text>
-              <text x="790" y="135" fill="rgba(255,255,255,0.2)" font-size="9">π</text>
+              <text
+                x="5"
+                y="135"
+                fill="rgba(255,255,255,0.2)"
+                font-size="9"
+              >0</text>
+              <text
+                x="395"
+                y="135"
+                fill="rgba(255,255,255,0.2)"
+                font-size="9"
+              >π/2</text>
+              <text
+                x="790"
+                y="135"
+                fill="rgba(255,255,255,0.2)"
+                font-size="9"
+              >π</text>
               
-              <text x="400" y="80" fill="rgba(255,255,255,0.2)" font-size="11" text-anchor="middle" font-weight="300">
+              <text
+                x="400"
+                y="80"
+                fill="rgba(255,255,255,0.2)"
+                font-size="11"
+                text-anchor="middle"
+                font-weight="300"
+              >
                 Амплитудный спектр
               </text>
             </svg>
           </div>
         </div>
-
       </main>
     </div>
 
     <!-- Error Message -->
     <transition name="fade">
-      <div v-if="errorMessage" class="error-toast">
+      <div
+        v-if="errorMessage"
+        class="error-toast"
+      >
         {{ errorMessage }}
-        <button @click="errorMessage = ''" class="close-btn">×</button>
+        <button
+          class="close-btn"
+          @click="errorMessage = ''"
+        >
+          ×
+        </button>
       </div>
     </transition>
   </div>
@@ -772,8 +1277,8 @@ const getEnergyPath = (regimeIdx: number) => {
   const n = energies.length
   
   // Calculate cumulative sums
-  let points: string[] = []
-  let bottomPoints: string[] = []
+  const points: string[] = []
+  const bottomPoints: string[] = []
   
   for (let i = 0; i < n; i++) {
     const x = scaleX(i)

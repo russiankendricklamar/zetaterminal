@@ -12,16 +12,29 @@
     @resize="handleResize"
   >
     <div class="p-4 flex flex-col items-center justify-center h-full">
-      <component :is="iconComponent" :class="`w-16 h-16 ${iconColor} opacity-50 mb-4`" />
-      <h4 class="text-lg font-bold text-white mb-2 text-center">{{ title }}</h4>
-      <p class="text-sm text-gray-400 text-center mb-4">{{ description }}</p>
+      <component
+        :is="iconComponent"
+        :class="`w-16 h-16 ${iconColor} opacity-50 mb-4`"
+      />
+      <h4 class="text-lg font-bold text-white mb-2 text-center">
+        {{ title }}
+      </h4>
+      <p class="text-sm text-gray-400 text-center mb-4">
+        {{ description }}
+      </p>
       <div class="px-3 py-1 rounded-lg bg-white/5 border border-white/10">
         <span class="text-xs font-mono text-gray-400">Код: {{ code }}</span>
       </div>
-      <div v-if="selectedAsset" class="mt-4 px-3 py-1 rounded-lg bg-emerald-500/10 border border-emerald-500/20">
+      <div
+        v-if="selectedAsset"
+        class="mt-4 px-3 py-1 rounded-lg bg-emerald-500/10 border border-emerald-500/20"
+      >
         <span class="text-xs text-emerald-400">Актив: {{ selectedAsset }}</span>
       </div>
-      <div v-else class="mt-4 text-xs text-gray-500 text-center">
+      <div
+        v-else
+        class="mt-4 text-xs text-gray-500 text-center"
+      >
         Выберите актив для анализа
       </div>
     </div>

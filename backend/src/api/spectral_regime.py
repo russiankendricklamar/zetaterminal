@@ -8,12 +8,12 @@ Endpoints:
 """
 
 import logging
+from datetime import datetime, timedelta
+from typing import Any
 
+import numpy as np
 from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel, Field
-from typing import List, Optional, Dict, Any
-import numpy as np
-from datetime import datetime, timedelta
 
 from src.middleware.rate_limit import limiter
 
@@ -24,13 +24,13 @@ router = APIRouter()
 
 class SpectralAnalysisRequest(BaseModel):
     """Запрос на анализ спектральных режимов."""
-    returns: List[float] = Field(..., max_length=5000, description="Временной ряд доходностей")
-    n_poles: Optional[int] = Field(default=None, ge=2, le=15, description="Количество полюсов (2-15). Если None, определяется автоматически")
-    window_size: Optional[int] = Field(default=None, ge=5, le=100, description="Размер скользящего окна (5-100). Если None, определяется автоматически")
-    max_lag: Optional[int] = Field(default=None, description="Максимальный лаг ACF (по умолчанию T/4)")
+    returns: list[float] = Field(..., max_length=5000, description="Временной ряд доходностей")
+    n_poles: int | None = Field(default=None, ge=2, le=15, description="Количество полюсов (2-15). Если None, определяется автоматически")
+    window_size: int | None = Field(default=None, ge=5, le=100, description="Размер скользящего окна (5-100). Если None, определяется автоматически")
+    max_lag: int | None = Field(default=None, description="Максимальный лаг ACF (по умолчанию T/4)")
     auto_optimize: bool = Field(default=False, description="Автоматически определить оптимальные n_poles и window_size")
     criterion: str = Field(default='bic', description="Критерий для выбора количества полюсов: 'aic', 'bic', или 'aicc'")
-    
+
     class Config:
         json_schema_extra = {
             "example": {
@@ -53,9 +53,9 @@ class AssetDataRequest(BaseModel):
 class SpectralAnalysisResponse(BaseModel):
     """Ответ анализа спектральных режимов."""
     success: bool
-    summary: Dict[str, Any]
-    visualization: Dict[str, Any]
-    
+    summary: dict[str, Any]
+    visualization: dict[str, Any]
+
     class Config:
         json_schema_extra = {
             "example": {
@@ -145,35 +145,35 @@ async def fetch_asset_data(request: AssetDataRequest):
     """
     try:
         import yfinance as yf
-        
+
         ticker = request.ticker
         period_days = request.period_days
-        
+
         # Загрузка данных через yfinance
         end_date = datetime.now()
         start_date = end_date - timedelta(days=period_days + 30)  # +30 для запаса
-        
+
         data = yf.download(
             ticker,
             start=start_date.strftime('%Y-%m-%d'),
             end=end_date.strftime('%Y-%m-%d'),
             progress=False
         )
-        
+
         if data.empty:
             raise HTTPException(
                 status_code=404,
                 detail=f"Не удалось загрузить данные для тикера {ticker}"
             )
-        
+
         # Расчёт логарифмических доходностей
         prices = data['Close'].values.flatten()
         returns = np.diff(np.log(prices))
-        
+
         # Ограничение по количеству
         if len(returns) > period_days:
             returns = returns[-period_days:]
-        
+
         # Метаданные
         metadata = {
             "ticker": ticker,
@@ -186,22 +186,22 @@ async def fetch_asset_data(request: AssetDataRequest):
             "max_return": float(np.max(returns)),
             "last_price": float(prices[-1]) if len(prices) > 0 else None
         }
-        
+
         return {
             "success": True,
             "returns": returns.tolist(),
             "prices": prices.tolist(),
             "metadata": metadata
         }
-        
+
     except ImportError:
         raise HTTPException(
             status_code=500,
             detail="yfinance не установлен. Установите: pip install yfinance"
-        )
+        ) from None
     except Exception as e:
         logger.error("Spectral regime data loading failed: %s", e, exc_info=True)
-        raise HTTPException(status_code=500, detail="Internal server error")
+        raise HTTPException(status_code=500, detail="Internal server error") from e
 
 
 @router.post("/analyze", response_model=SpectralAnalysisResponse)
@@ -226,21 +226,21 @@ async def analyze_spectral_regimes(http_request: Request, request: SpectralAnaly
     """
     try:
         from src.services.spectral_regime_service import run_spectral_regime_analysis
-        
+
         returns = request.returns
-        
+
         if len(returns) < 50:
             raise HTTPException(
                 status_code=400,
                 detail="Минимальная длина временного ряда - 50 наблюдений"
             )
-        
+
         if len(returns) > 5000:
             raise HTTPException(
                 status_code=400,
                 detail="Максимальная длина временного ряда - 5000 наблюдений"
             )
-        
+
         # Проверка на NaN и Inf
         returns_arr = np.array(returns)
         if np.any(~np.isfinite(returns_arr)):
@@ -248,7 +248,7 @@ async def analyze_spectral_regimes(http_request: Request, request: SpectralAnaly
                 status_code=400,
                 detail="Временной ряд содержит NaN или Inf значения"
             )
-        
+
         # Запуск анализа
         result = run_spectral_regime_analysis(
             returns=returns,
@@ -258,26 +258,26 @@ async def analyze_spectral_regimes(http_request: Request, request: SpectralAnaly
             auto_optimize=request.auto_optimize or (request.n_poles is None or request.window_size is None),
             criterion=request.criterion
         )
-        
+
         return SpectralAnalysisResponse(
             success=True,
             summary=result['summary'],
             visualization=result['visualization']
         )
-        
+
     except HTTPException:
         raise
     except Exception as e:
         logger.error("Spectral regime analysis failed: %s", e, exc_info=True)
-        raise HTTPException(status_code=500, detail="Internal server error")
+        raise HTTPException(status_code=500, detail="Internal server error") from e
 
 
 @router.post("/analyze-asset")
 async def analyze_asset_regimes(
     ticker: str,
     period_days: int = 252,
-    n_poles: Optional[int] = None,
-    window_size: Optional[int] = None,
+    n_poles: int | None = None,
+    window_size: int | None = None,
     auto_optimize: bool = True,
     criterion: str = 'bic'
 ):
@@ -297,12 +297,12 @@ async def analyze_asset_regimes(
         # Загрузка данных
         data_request = AssetDataRequest(ticker=ticker, period_days=period_days)
         data_response = await fetch_asset_data(data_request)
-        
+
         if not data_response.get('success'):
             raise HTTPException(status_code=500, detail="Ошибка загрузки данных")
-        
+
         returns = data_response['returns']
-        
+
         # Анализ
         analysis_request = SpectralAnalysisRequest(
             returns=returns,
@@ -312,7 +312,7 @@ async def analyze_asset_regimes(
             criterion=criterion
         )
         analysis_response = await analyze_spectral_regimes(analysis_request)
-        
+
         return {
             "success": True,
             "asset_metadata": data_response['metadata'],
@@ -323,9 +323,9 @@ async def analyze_asset_regimes(
                 "visualization": analysis_response.visualization
             }
         }
-        
+
     except HTTPException:
         raise
     except Exception as e:
         logger.error("Spectral regime asset analysis failed: %s", e, exc_info=True)
-        raise HTTPException(status_code=500, detail="Internal server error")
+        raise HTTPException(status_code=500, detail="Internal server error") from e

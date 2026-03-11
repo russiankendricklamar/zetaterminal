@@ -1,77 +1,94 @@
 <template>
   <div class="page-container custom-scroll">
-    
     <!-- Header -->
     <div class="section-header">
       <div class="header-left">
-        <h1 class="section-title">Оценка облигаций</h1>
-        <p class="section-subtitle">Моделирование денежных потоков на данных MOEX ISS API</p>
+        <h1 class="section-title">
+          Оценка облигаций
+        </h1>
+        <p class="section-subtitle">
+          Моделирование денежных потоков на данных MOEX ISS API
+        </p>
       </div>
       <div class="header-actions">
         <div class="control-group">
           <label class="control-label">Реестр:</label>
           <input 
-            type="file" 
+            id="bond-excel-upload" 
             ref="fileInputRef"
-            @change="handleFileUpload" 
+            type="file" 
             accept=".xlsx,.xls,.xlsm"
             style="display: none"
-            id="bond-excel-upload"
-          />
+            @change="handleFileUpload"
+          >
           <button 
-            @click="() => { if (fileInputRef) fileInputRef.click() }" 
-            class="btn-glass secondary"
+            class="btn-glass secondary" 
             title="Загрузить реестр облигаций из Excel"
+            @click="() => { if (fileInputRef) fileInputRef.click() }"
           >
             📂 Загрузить Excel
           </button>
         </div>
         <button 
-          @click="exportRegistryToExcel" 
-          class="btn-glass secondary"
+          class="btn-glass secondary" 
           :disabled="registryBonds.length === 0"
           title="Выгрузить реестр в Excel"
+          @click="exportRegistryToExcel"
         >
           📥 Выгрузить Excel
         </button>
-        <button class="btn-glass primary" @click="calculateBond" :disabled="loading">
-            <span v-if="!loading">Рассчитать</span>
-            <span v-else class="flex-center"><span class="spinner-mini"></span> Загрузка...</span>
+        <button
+          class="btn-glass primary"
+          :disabled="loading"
+          @click="calculateBond"
+        >
+          <span v-if="!loading">Рассчитать</span>
+          <span
+            v-else
+            class="flex-center"
+          ><span class="spinner-mini" /> Загрузка...</span>
         </button>
       </div>
     </div>
 
     <!-- Registry Table (if loaded) -->
-    <div v-if="registryBonds.length > 0" class="glass-card panel" style="margin-bottom: 24px;">
-      <div class="panel-header" style="display: flex; justify-content: space-between; align-items: center;">
+    <div
+      v-if="registryBonds.length > 0"
+      class="glass-card panel"
+      style="margin-bottom: 24px;"
+    >
+      <div
+        class="panel-header"
+        style="display: flex; justify-content: space-between; align-items: center;"
+      >
         <div>
           <h3>Реестр облигаций</h3>
           <span class="card-subtitle">Загружено облигаций: {{ registryBonds.length }}</span>
         </div>
         <div style="display: flex; gap: 8px;">
           <button 
-            @click="saveRegistryToParquetHandler" 
-            class="btn-glass secondary"
+            class="btn-glass secondary" 
             :disabled="registryBonds.length === 0 || savingParquet"
             style="font-size: 11px; padding: 6px 12px;"
             title="Сохранить реестр (parquet)"
+            @click="saveRegistryToParquetHandler"
           >
             <span v-if="!savingParquet">💾 Сохранить в БД</span>
             <span v-else>↺ Сохранение...</span>
           </button>
           <button 
-            @click="calculateAllBonds" 
-            class="btn-glass secondary"
+            class="btn-glass secondary" 
             :disabled="calculatingAll"
             style="font-size: 11px; padding: 6px 12px;"
+            @click="calculateAllBonds"
           >
             <span v-if="!calculatingAll">Рассчитать все</span>
             <span v-else>↺ Считаю...</span>
           </button>
           <button 
-            @click="clearRegistry" 
-            class="btn-glass secondary"
+            class="btn-glass secondary" 
             style="font-size: 11px; padding: 6px 12px; background: rgba(239, 68, 68, 0.2); border-color: rgba(239, 68, 68, 0.3);"
+            @click="clearRegistry"
           >
             ✕ Очистить
           </button>
@@ -88,8 +105,12 @@
               <th>Y индекса (%)</th>
               <th>Рыночная доходность (%)</th>
               <th>Активность рынка</th>
-              <th v-if="bondResults.length > 0">Dirty Price (Сценарий 1)</th>
-              <th v-if="bondResults.length > 0">Dirty Price (Сценарий 2)</th>
+              <th v-if="bondResults.length > 0">
+                Dirty Price (Сценарий 1)
+              </th>
+              <th v-if="bondResults.length > 0">
+                Dirty Price (Сценарий 2)
+              </th>
               <th>Действие</th>
             </tr>
           </thead>
@@ -101,27 +122,46 @@
               @click="selectBond(idx)"
             >
               <td>{{ idx + 1 }}</td>
-              <td class="mono">{{ bond.secid || '-' }}</td>
-              <td class="mono">{{ bond.valuationDate || '-' }}</td>
-              <td class="mono">{{ bond.discountYield1 ? formatNumber(bond.discountYield1, 2) : '-' }}%</td>
-              <td class="mono">{{ bond.discountYield2 ? formatNumber(bond.discountYield2, 2) : '-' }}%</td>
-              <td class="mono">{{ bond.marketYield ? formatNumber(bond.marketYield, 2) : '-' }}%</td>
+              <td class="mono">
+                {{ bond.secid || '-' }}
+              </td>
+              <td class="mono">
+                {{ bond.valuationDate || '-' }}
+              </td>
+              <td class="mono">
+                {{ bond.discountYield1 ? formatNumber(bond.discountYield1, 2) : '-' }}%
+              </td>
+              <td class="mono">
+                {{ bond.discountYield2 ? formatNumber(bond.discountYield2, 2) : '-' }}%
+              </td>
+              <td class="mono">
+                {{ bond.marketYield ? formatNumber(bond.marketYield, 2) : '-' }}%
+              </td>
               <td>
-                <span class="market-activity-badge" :class="bond.marketActivity || 'unknown'">
+                <span
+                  class="market-activity-badge"
+                  :class="bond.marketActivity || 'unknown'"
+                >
                   {{ getMarketActivityLabel(bond.marketActivity) }}
                 </span>
               </td>
-              <td v-if="bondResults.length > 0 && bondResults[idx]" class="mono text-blue">
+              <td
+                v-if="bondResults.length > 0 && bondResults[idx]"
+                class="mono text-blue"
+              >
                 {{ bondResults[idx]?.scenario1?.dirtyPrice ? formatNumber(bondResults[idx].scenario1.dirtyPrice, 2) : '-' }} ₽
               </td>
-              <td v-if="bondResults.length > 0 && bondResults[idx]" class="mono text-green">
+              <td
+                v-if="bondResults.length > 0 && bondResults[idx]"
+                class="mono text-green"
+              >
                 {{ bondResults[idx]?.scenario2?.dirtyPrice ? formatNumber(bondResults[idx].scenario2.dirtyPrice, 2) : '-' }} ₽
               </td>
               <td>
                 <button 
-                  @click.stop="loadBondToForm(idx)" 
-                  class="btn-small"
+                  class="btn-small" 
                   title="Загрузить в форму"
+                  @click.stop="loadBondToForm(idx)"
                 >
                   Загрузить
                 </button>
@@ -133,483 +173,812 @@
     </div>
 
     <div class="dashboard-grid">
-        
-        <!-- LEFT COLUMN: Inputs & Dual Scenario Results -->
-        <div class="left-panel">
-            
-            <!-- Basic Parameters -->
-            <div class="glass-card panel">
-                <div class="panel-header"><h3>Параметры оценки</h3></div>
-                <div class="controls-form">
-                    <div class="form-group">
-                        <label class="lbl">ISIN Облигации</label>
-                        <input v-model="params.secid" type="text" class="glass-input" placeholder="RU000..." />
-                    </div>
-
-                    <div class="form-group">
-                        <label class="lbl">Дата оценки</label>
-                        <input v-model="params.valuationDate" type="date" class="glass-input" />
-                    </div>
-
-                    <div class="form-group">
-                        <label class="lbl">Базис расчета дней</label>
-                        <select v-model="params.dayCountConvention" class="glass-input day-count-select">
-                            <option value="">Actual/365F (по умолчанию)</option>
-                            <option value="Actual/365F">Actual/365F (Fixed 365)</option>
-                            <option value="Actual/360">Actual/360 (French)</option>
-                            <option value="Actual/Actual (ISDA)">Actual/Actual (ISDA)</option>
-                            <option value="30/360 (US)">30/360 (US Municipal Bond Basis)</option>
-                            <option value="30E/360 (ISDA)">30E/360 (ISDA) / 30/360 German</option>
-                            <option value="30E/360">30E/360 (Eurobond Basis)</option>
-                            <option value="Actual/Actual (ISMA)">Actual/Actual (ISMA) / Actual/Actual (ICMA)</option>
-                        </select>
-                    </div>
-
-                    <div class="form-group">
-                        <label class="lbl">
-                            <input type="checkbox" v-model="params.useMarketYield" @change="onUseMarketYieldChange" />
-                            Использовать доходность из MOEX API
-                        </label>
-                        <span class="form-hint">Если включено, доходности будут загружены из MOEX на дату оценки</span>
-                    </div>
-
-                    <div class="form-group" v-if="params.useMarketYield">
-                        <label class="lbl">Рыночная доходность (%)</label>
-                        <input 
-                            v-model.number="params.marketYield" 
-                            type="number" 
-                            step="0.1" 
-                            class="glass-input" 
-                            placeholder="15.5"
-                        />
-                        <span class="form-hint">
-                            Введите вручную или загрузите из MOEX API
-                        </span>
-                    </div>
-                </div>
+      <!-- LEFT COLUMN: Inputs & Dual Scenario Results -->
+      <div class="left-panel">
+        <!-- Basic Parameters -->
+        <div class="glass-card panel">
+          <div class="panel-header">
+            <h3>Параметры оценки</h3>
+          </div>
+          <div class="controls-form">
+            <div class="form-group">
+              <label class="lbl">ISIN Облигации</label>
+              <input
+                v-model="params.secid"
+                type="text"
+                class="glass-input"
+                placeholder="RU000..."
+              >
             </div>
 
-            <!-- SCENARIO 1: Доходность Аналога (Input Block) -->
-            <div class="glass-card panel input-scenario scenario-1-input" v-if="!params.useMarketYield">
-                <div class="panel-header">
-                    <h3>Сценарий 1: Y аналога</h3>
-                </div>
-                <div class="scenario-input-group">
-                    <label class="lbl">Ставка дисконтирования (%)</label>
-                    <input v-model.number="params.discountYield1" type="number" step="0.1" class="glass-input scenario-input" placeholder="14.0" />
-                </div>
+            <div class="form-group">
+              <label class="lbl">Дата оценки</label>
+              <input
+                v-model="params.valuationDate"
+                type="date"
+                class="glass-input"
+              >
             </div>
 
-            <!-- SCENARIO 2: Доходность индекса (Input Block) -->
-            <div class="glass-card panel input-scenario scenario-2-input" v-if="!params.useMarketYield">
-                <div class="panel-header">
-                    <h3>Сценарий 2: Y индекса</h3>
-                </div>
-                <div class="scenario-input-group">
-                    <label class="lbl">Ставка дисконтирования (%)</label>
-                    <input v-model.number="params.discountYield2" type="number" step="0.1" class="glass-input scenario-input" placeholder="16.0" />
-                </div>
+            <div class="form-group">
+              <label class="lbl">Базис расчета дней</label>
+              <select
+                v-model="params.dayCountConvention"
+                class="glass-input day-count-select"
+              >
+                <option value="">
+                  Actual/365F (по умолчанию)
+                </option>
+                <option value="Actual/365F">
+                  Actual/365F (Fixed 365)
+                </option>
+                <option value="Actual/360">
+                  Actual/360 (French)
+                </option>
+                <option value="Actual/Actual (ISDA)">
+                  Actual/Actual (ISDA)
+                </option>
+                <option value="30/360 (US)">
+                  30/360 (US Municipal Bond Basis)
+                </option>
+                <option value="30E/360 (ISDA)">
+                  30E/360 (ISDA) / 30/360 German
+                </option>
+                <option value="30E/360">
+                  30E/360 (Eurobond Basis)
+                </option>
+                <option value="Actual/Actual (ISMA)">
+                  Actual/Actual (ISMA) / Actual/Actual (ICMA)
+                </option>
+              </select>
             </div>
 
-            <!-- Market Yield Info (when using MOEX API) -->
-            <div class="glass-card panel input-scenario scenario-1-input" v-if="params.useMarketYield">
-                <div class="panel-header">
-                    <h3>Доходность из MOEX API</h3>
-                </div>
-                <div class="scenario-input-group">
-                    <label class="lbl">Рыночная доходность на дату оценки (%)</label>
-                    <input 
-                        v-model.number="params.marketYield" 
-                        type="number" 
-                        step="0.1" 
-                        class="glass-input scenario-input" 
-                        placeholder="Введите или загрузите из MOEX"
-                    />
-                    <button 
-                        @click="fetchMarketYield" 
-                        class="btn-glass secondary"
-                        :disabled="loadingMarketYield || !params.secid || !params.valuationDate"
-                        style="margin-top: 8px; width: 100%;"
+            <div class="form-group">
+              <label class="lbl">
+                <input
+                  v-model="params.useMarketYield"
+                  type="checkbox"
+                  @change="onUseMarketYieldChange"
+                >
+                Использовать доходность из MOEX API
+              </label>
+              <span class="form-hint">Если включено, доходности будут загружены из MOEX на дату оценки</span>
+            </div>
+
+            <div
+              v-if="params.useMarketYield"
+              class="form-group"
+            >
+              <label class="lbl">Рыночная доходность (%)</label>
+              <input 
+                v-model.number="params.marketYield" 
+                type="number" 
+                step="0.1" 
+                class="glass-input" 
+                placeholder="15.5"
+              >
+              <span class="form-hint">
+                Введите вручную или загрузите из MOEX API
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <!-- SCENARIO 1: Доходность Аналога (Input Block) -->
+        <div
+          v-if="!params.useMarketYield"
+          class="glass-card panel input-scenario scenario-1-input"
+        >
+          <div class="panel-header">
+            <h3>Сценарий 1: Y аналога</h3>
+          </div>
+          <div class="scenario-input-group">
+            <label class="lbl">Ставка дисконтирования (%)</label>
+            <input
+              v-model.number="params.discountYield1"
+              type="number"
+              step="0.1"
+              class="glass-input scenario-input"
+              placeholder="14.0"
+            >
+          </div>
+        </div>
+
+        <!-- SCENARIO 2: Доходность индекса (Input Block) -->
+        <div
+          v-if="!params.useMarketYield"
+          class="glass-card panel input-scenario scenario-2-input"
+        >
+          <div class="panel-header">
+            <h3>Сценарий 2: Y индекса</h3>
+          </div>
+          <div class="scenario-input-group">
+            <label class="lbl">Ставка дисконтирования (%)</label>
+            <input
+              v-model.number="params.discountYield2"
+              type="number"
+              step="0.1"
+              class="glass-input scenario-input"
+              placeholder="16.0"
+            >
+          </div>
+        </div>
+
+        <!-- Market Yield Info (when using MOEX API) -->
+        <div
+          v-if="params.useMarketYield"
+          class="glass-card panel input-scenario scenario-1-input"
+        >
+          <div class="panel-header">
+            <h3>Доходность из MOEX API</h3>
+          </div>
+          <div class="scenario-input-group">
+            <label class="lbl">Рыночная доходность на дату оценки (%)</label>
+            <input 
+              v-model.number="params.marketYield" 
+              type="number" 
+              step="0.1" 
+              class="glass-input scenario-input" 
+              placeholder="Введите или загрузите из MOEX"
+            >
+            <button 
+              class="btn-glass secondary" 
+              :disabled="loadingMarketYield || !params.secid || !params.valuationDate"
+              style="margin-top: 8px; width: 100%;"
+              @click="fetchMarketYield"
+            >
+              <span v-if="!loadingMarketYield">🔄 Загрузить из MOEX</span>
+              <span v-else>↺ Загрузка...</span>
+            </button>
+            <span
+              class="form-hint"
+              style="margin-top: 8px;"
+            >
+              Доходность будет использована для оценки вместо двух сценариев
+            </span>
+          </div>
+        </div>
+
+        <!-- Error Alert -->
+        <transition name="fade">
+          <div
+            v-if="error"
+            class="error-banner"
+          >
+            <span class="icon">⚠</span> {{ error }}
+          </div>
+        </transition>
+
+        <!-- Bond Info -->
+        <transition name="fade">
+          <div
+            v-if="results"
+            class="glass-card panel info-panel"
+          >
+            <div class="panel-header">
+              <h3>Паспорт бумаги</h3>
+            </div>
+            <div class="info-list">
+              <div class="info-row">
+                <span>SECID</span> <strong>{{ results.secid }}</strong>
+              </div>
+              <div class="info-row">
+                <span>Номинал</span> <strong>{{ formatNumber(results.faceValue, 0) }} ₽</strong>
+              </div>
+              <div class="info-row">
+                <span>Купон</span> <strong>{{ results.couponPercent }}%</strong>
+              </div>
+              <div class="info-row">
+                <span>Погашение</span> <strong>{{ formatDate(results.maturityDate) }}</strong>
+              </div>
+              <div class="info-row">
+                <span>Частота</span> <strong>{{ results.paymentsPerYear }} / год</strong>
+              </div>
+            </div>
+          </div>
+        </transition>
+      </div>
+
+      <!-- RIGHT COLUMN: Tables & Scenarios -->
+      <div class="main-panel">
+        <!-- Scenario Comparison -->
+        <transition name="fade">
+          <div
+            v-if="results"
+            class="glass-card panel comparison-panel h-auto"
+          >
+            <div class="panel-header">
+              <h3>Сравнение сценариев</h3>
+            </div>
+            <div class="comparison-table-wrapper">
+              <table class="comparison-table">
+                <thead>
+                  <tr>
+                    <th>Метрика</th>
+                    <th class="scenario-col">
+                      <span class="scenario-label">Сценарий 1</span>
+                      <span class="scenario-rate">{{ formatNumber(params.discountYield1, 1) }}%</span>
+                    </th>
+                    <th class="scenario-col">
+                      <span class="scenario-label">Сценарий 2</span>
+                      <span class="scenario-rate variant-2">{{ formatNumber(params.discountYield2, 1) }}%</span>
+                    </th>
+                    <th class="diff-col">
+                      <span class="scenario-label">Разница</span>
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><strong>Dirty Price</strong></td>
+                    <td class="mono text-gradient-blue">
+                      {{ formatNumber(results.scenario1.dirtyPrice, 2) }} ₽
+                    </td>
+                    <td class="mono text-gradient-green">
+                      {{ formatNumber(results.scenario2.dirtyPrice, 2) }} ₽
+                    </td>
+                    <td
+                      class="mono"
+                      :class="results.scenario1.dirtyPrice > results.scenario2.dirtyPrice ? 'text-green' : 'text-red'"
                     >
-                        <span v-if="!loadingMarketYield">🔄 Загрузить из MOEX</span>
-                        <span v-else>↺ Загрузка...</span>
-                    </button>
-                    <span class="form-hint" style="margin-top: 8px;">
-                        Доходность будет использована для оценки вместо двух сценариев
-                    </span>
-                </div>
+                      {{ formatNumber(results.scenario1.dirtyPrice - results.scenario2.dirtyPrice, 2) }} ₽
+                    </td>
+                  </tr>
+                  <tr>
+                    <td><strong>Clean Price</strong></td>
+                    <td class="mono">
+                      {{ formatNumber(results.scenario1.cleanPrice, 2) }} ₽
+                    </td>
+                    <td class="mono">
+                      {{ formatNumber(results.scenario2.cleanPrice, 2) }} ₽
+                    </td>
+                    <td
+                      class="mono"
+                      :class="results.scenario1.cleanPrice > results.scenario2.cleanPrice ? 'text-green' : 'text-red'"
+                    >
+                      {{ formatNumber(results.scenario1.cleanPrice - results.scenario2.cleanPrice, 2) }} ₽
+                    </td>
+                  </tr>
+                  <tr>
+                    <td><strong>% от номинала</strong></td>
+                    <td class="mono">
+                      {{ formatNumber(results.scenario1.pricePercent, 2) }}%
+                    </td>
+                    <td class="mono">
+                      {{ formatNumber(results.scenario2.pricePercent, 2) }}%
+                    </td>
+                    <td
+                      class="mono"
+                      :class="results.scenario1.pricePercent > results.scenario2.pricePercent ? 'text-green' : 'text-red'"
+                    >
+                      {{ formatNumber(results.scenario1.pricePercent - results.scenario2.pricePercent, 2) }}%
+                    </td>
+                  </tr>
+                  <tr>
+                    <td><strong>Дюрация Маколея</strong></td>
+                    <td class="mono">
+                      {{ formatNumber(results.scenario1.duration, 4) }} лет
+                    </td>
+                    <td class="mono">
+                      {{ formatNumber(results.scenario2.duration, 4) }} лет
+                    </td>
+                    <td
+                      class="mono"
+                      :class="results.scenario1.duration > results.scenario2.duration ? 'text-green' : 'text-red'"
+                    >
+                      {{ formatNumber(results.scenario1.duration - results.scenario2.duration, 4) }} лет
+                    </td>
+                  </tr>
+                  <tr v-if="results.scenario1.modifiedDuration !== undefined">
+                    <td><strong>Модифицированная дюрация</strong></td>
+                    <td class="mono">
+                      {{ formatNumber(results.scenario1.modifiedDuration, 4) }} лет
+                    </td>
+                    <td class="mono">
+                      {{ formatNumber(results.scenario2.modifiedDuration || 0, 4) }} лет
+                    </td>
+                    <td
+                      class="mono"
+                      :class="(results.scenario1.modifiedDuration || 0) > (results.scenario2.modifiedDuration || 0) ? 'text-green' : 'text-red'"
+                    >
+                      {{ formatNumber((results.scenario1.modifiedDuration || 0) - (results.scenario2.modifiedDuration || 0), 4) }} лет
+                    </td>
+                  </tr>
+                  <tr v-if="results.scenario1.currentYield !== undefined">
+                    <td><strong>Текущая доходность (CY)</strong></td>
+                    <td class="mono">
+                      {{ formatNumber(results.scenario1.currentYield, 2) }}%
+                    </td>
+                    <td class="mono">
+                      {{ formatNumber(results.scenario2.currentYield || 0, 2) }}%
+                    </td>
+                    <td
+                      class="mono"
+                      :class="(results.scenario1.currentYield || 0) > (results.scenario2.currentYield || 0) ? 'text-green' : 'text-red'"
+                    >
+                      {{ formatNumber((results.scenario1.currentYield || 0) - (results.scenario2.currentYield || 0), 2) }}%
+                    </td>
+                  </tr>
+                  <tr v-if="results.scenario1.adjustedCurrentYield !== undefined">
+                    <td><strong>Скорректированная CY (ACY)</strong></td>
+                    <td class="mono">
+                      {{ formatNumber(results.scenario1.adjustedCurrentYield, 2) }}%
+                    </td>
+                    <td class="mono">
+                      {{ formatNumber(results.scenario2.adjustedCurrentYield || 0, 2) }}%
+                    </td>
+                    <td
+                      class="mono"
+                      :class="(results.scenario1.adjustedCurrentYield || 0) > (results.scenario2.adjustedCurrentYield || 0) ? 'text-green' : 'text-red'"
+                    >
+                      {{ formatNumber((results.scenario1.adjustedCurrentYield || 0) - (results.scenario2.adjustedCurrentYield || 0), 2) }}%
+                    </td>
+                  </tr>
+                  <tr v-if="results.scenario1.simpleYield !== undefined">
+                    <td><strong>Простая доходность (SY)</strong></td>
+                    <td class="mono">
+                      {{ formatNumber(results.scenario1.simpleYield, 2) }}%
+                    </td>
+                    <td class="mono">
+                      {{ formatNumber(results.scenario2.simpleYield || 0, 2) }}%
+                    </td>
+                    <td
+                      class="mono"
+                      :class="(results.scenario1.simpleYield || 0) > (results.scenario2.simpleYield || 0) ? 'text-green' : 'text-red'"
+                    >
+                      {{ formatNumber((results.scenario1.simpleYield || 0) - (results.scenario2.simpleYield || 0), 2) }}%
+                    </td>
+                  </tr>
+                  <tr v-if="results.scenario1.ytmPercent !== undefined">
+                    <td><strong>YTM (доходность к погашению)</strong></td>
+                    <td class="mono">
+                      {{ formatNumber(results.scenario1.ytmPercent, 2) }}%
+                    </td>
+                    <td class="mono">
+                      {{ formatNumber(results.scenario2.ytmPercent || 0, 2) }}%
+                    </td>
+                    <td
+                      class="mono"
+                      :class="(results.scenario1.ytmPercent || 0) > (results.scenario2.ytmPercent || 0) ? 'text-green' : 'text-red'"
+                    >
+                      {{ formatNumber((results.scenario1.ytmPercent || 0) - (results.scenario2.ytmPercent || 0), 2) }}%
+                    </td>
+                  </tr>
+                  <tr v-if="results.scenario1.nominalYield !== undefined">
+                    <td><strong>Номинальная доходность (NY)</strong></td>
+                    <td class="mono">
+                      {{ formatNumber(results.scenario1.nominalYield, 2) }}%
+                    </td>
+                    <td class="mono">
+                      {{ formatNumber(results.scenario2.nominalYield || 0, 2) }}%
+                    </td>
+                    <td
+                      class="mono"
+                      :class="(results.scenario1.nominalYield || 0) > (results.scenario2.nominalYield || 0) ? 'text-green' : 'text-red'"
+                    >
+                      {{ formatNumber((results.scenario1.nominalYield || 0) - (results.scenario2.nominalYield || 0), 2) }}%
+                    </td>
+                  </tr>
+                  <tr v-if="results.scenario1.convexity !== undefined">
+                    <td><strong>Выпуклость (Convexity)</strong></td>
+                    <td class="mono">
+                      {{ formatNumber(results.scenario1.convexity, 2) }}
+                    </td>
+                    <td class="mono">
+                      {{ formatNumber(results.scenario2.convexity || 0, 2) }}
+                    </td>
+                    <td
+                      class="mono"
+                      :class="(results.scenario1.convexity || 0) > (results.scenario2.convexity || 0) ? 'text-green' : 'text-red'"
+                    >
+                      {{ formatNumber((results.scenario1.convexity || 0) - (results.scenario2.convexity || 0), 2) }}
+                    </td>
+                  </tr>
+                  <tr v-if="results.scenario1.pvbp !== undefined">
+                    <td><strong>PVBP/DV01 (% от номинала)</strong></td>
+                    <td class="mono">
+                      {{ formatNumber(results.scenario1.pvbp, 4) }}%
+                    </td>
+                    <td class="mono">
+                      {{ formatNumber(results.scenario2.pvbp || 0, 4) }}%
+                    </td>
+                    <td
+                      class="mono"
+                      :class="(results.scenario1.pvbp || 0) > (results.scenario2.pvbp || 0) ? 'text-green' : 'text-red'"
+                    >
+                      {{ formatNumber((results.scenario1.pvbp || 0) - (results.scenario2.pvbp || 0), 4) }}%
+                    </td>
+                  </tr>
+                  <tr v-if="results.scenario1.pvbpAbsolute !== undefined">
+                    <td><strong>PVBP/DV01 (абсолютное)</strong></td>
+                    <td class="mono">
+                      {{ formatNumber(results.scenario1.pvbpAbsolute, 2) }} ₽
+                    </td>
+                    <td class="mono">
+                      {{ formatNumber(results.scenario2.pvbpAbsolute || 0, 2) }} ₽
+                    </td>
+                    <td
+                      class="mono"
+                      :class="(results.scenario1.pvbpAbsolute || 0) > (results.scenario2.pvbpAbsolute || 0) ? 'text-green' : 'text-red'"
+                    >
+                      {{ formatNumber((results.scenario1.pvbpAbsolute || 0) - (results.scenario2.pvbpAbsolute || 0), 2) }} ₽
+                    </td>
+                  </tr>
+                  <tr v-if="results.scenario1.discountMargin !== null && results.scenario1.discountMargin !== undefined">
+                    <td><strong>Discount Margin (DM)</strong></td>
+                    <td class="mono">
+                      {{ formatNumber(results.scenario1.discountMargin, 2) }} bp
+                    </td>
+                    <td class="mono">
+                      {{ formatNumber(results.scenario2.discountMargin || 0, 2) }} bp
+                    </td>
+                    <td
+                      class="mono"
+                      :class="(results.scenario1.discountMargin || 0) > (results.scenario2.discountMargin || 0) ? 'text-green' : 'text-red'"
+                    >
+                      {{ formatNumber((results.scenario1.discountMargin || 0) - (results.scenario2.discountMargin || 0), 2) }} bp
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
             </div>
+          </div>
+        </transition>
 
-            <!-- Error Alert -->
-            <transition name="fade">
-                <div v-if="error" class="error-banner">
-                    <span class="icon">⚠</span> {{ error }}
-                </div>
-            </transition>
-
-            <!-- Bond Info -->
-            <transition name="fade">
-            <div v-if="results" class="glass-card panel info-panel">
-                <div class="panel-header"><h3>Паспорт бумаги</h3></div>
-                <div class="info-list">
-                    <div class="info-row"><span>SECID</span> <strong>{{ results.secid }}</strong></div>
-                    <div class="info-row"><span>Номинал</span> <strong>{{ formatNumber(results.faceValue, 0) }} ₽</strong></div>
-                    <div class="info-row"><span>Купон</span> <strong>{{ results.couponPercent }}%</strong></div>
-                    <div class="info-row"><span>Погашение</span> <strong>{{ formatDate(results.maturityDate) }}</strong></div>
-                    <div class="info-row"><span>Частота</span> <strong>{{ results.paymentsPerYear }} / год</strong></div>
-                </div>
+        <!-- Sensitivity Scenarios (Scenario 1) -->
+        <transition name="fade">
+          <div
+            v-if="results && results.scenario1.sensitivityScenarios && results.scenario1.sensitivityScenarios.length > 0"
+            class="glass-card panel h-auto"
+          >
+            <div class="panel-header">
+              <h3>Анализ чувствительности цены (Сценарий 1)</h3>
+              <div class="glass-pill">
+                {{ results.scenario1.sensitivityScenarios.length }} сценариев
+              </div>
             </div>
-            </transition>
+                
+            <div class="table-wrapper custom-scroll">
+              <table class="glass-table">
+                <thead>
+                  <tr>
+                    <th>Δ Доходность (bp)</th>
+                    <th class="text-right">
+                      Δ Доходность (%)
+                    </th>
+                    <th class="text-right">
+                      Δ Цена (%)
+                    </th>
+                    <th class="text-right">
+                      Δ Цена (₽)
+                    </th>
+                    <th class="text-right">
+                      Новая цена (₽)
+                    </th>
+                    <th class="text-right">
+                      Новая YTM (%)
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr
+                    v-for="(scenario, idx) in results.scenario1.sensitivityScenarios"
+                    :key="idx"
+                  >
+                    <td
+                      class="mono"
+                      :class="scenario.yieldChangeBps > 0 ? 'text-red' : scenario.yieldChangeBps < 0 ? 'text-green' : ''"
+                    >
+                      {{ scenario.yieldChangeBps > 0 ? '+' : '' }}{{ scenario.yieldChangeBps }} bp
+                    </td>
+                    <td
+                      class="text-right mono"
+                      :class="scenario.yieldChangePercent > 0 ? 'text-red' : scenario.yieldChangePercent < 0 ? 'text-green' : ''"
+                    >
+                      {{ scenario.yieldChangePercent > 0 ? '+' : '' }}{{ formatNumber(scenario.yieldChangePercent, 2) }}%
+                    </td>
+                    <td
+                      class="text-right mono"
+                      :class="scenario.priceChangePercent > 0 ? 'text-green' : scenario.priceChangePercent < 0 ? 'text-red' : ''"
+                    >
+                      {{ scenario.priceChangePercent > 0 ? '+' : '' }}{{ formatNumber(scenario.priceChangePercent, 2) }}%
+                    </td>
+                    <td
+                      class="text-right mono"
+                      :class="scenario.priceChangeAbsolute > 0 ? 'text-green' : scenario.priceChangeAbsolute < 0 ? 'text-red' : ''"
+                    >
+                      {{ scenario.priceChangeAbsolute > 0 ? '+' : '' }}{{ formatNumber(scenario.priceChangeAbsolute, 2) }} ₽
+                    </td>
+                    <td class="text-right mono font-bold">
+                      {{ formatNumber(scenario.newDirtyPrice, 2) }} ₽
+                    </td>
+                    <td class="text-right mono">
+                      {{ formatNumber(scenario.newYtmPercent, 2) }}%
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </transition>
 
+        <!-- Sensitivity Scenarios (Scenario 2) -->
+        <transition name="fade">
+          <div
+            v-if="results && results.scenario2.sensitivityScenarios && results.scenario2.sensitivityScenarios.length > 0"
+            class="glass-card panel h-auto"
+          >
+            <div class="panel-header">
+              <h3>Анализ чувствительности цены (Сценарий 2)</h3>
+              <div class="glass-pill">
+                {{ results.scenario2.sensitivityScenarios.length }} сценариев
+              </div>
+            </div>
+                
+            <div class="table-wrapper custom-scroll">
+              <table class="glass-table">
+                <thead>
+                  <tr>
+                    <th>Δ Доходность (bp)</th>
+                    <th class="text-right">
+                      Δ Доходность (%)
+                    </th>
+                    <th class="text-right">
+                      Δ Цена (%)
+                    </th>
+                    <th class="text-right">
+                      Δ Цена (₽)
+                    </th>
+                    <th class="text-right">
+                      Новая цена (₽)
+                    </th>
+                    <th class="text-right">
+                      Новая YTM (%)
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr
+                    v-for="(scenario, idx) in results.scenario2.sensitivityScenarios"
+                    :key="idx"
+                  >
+                    <td
+                      class="mono"
+                      :class="scenario.yieldChangeBps > 0 ? 'text-red' : scenario.yieldChangeBps < 0 ? 'text-green' : ''"
+                    >
+                      {{ scenario.yieldChangeBps > 0 ? '+' : '' }}{{ scenario.yieldChangeBps }} bp
+                    </td>
+                    <td
+                      class="text-right mono"
+                      :class="scenario.yieldChangePercent > 0 ? 'text-red' : scenario.yieldChangePercent < 0 ? 'text-green' : ''"
+                    >
+                      {{ scenario.yieldChangePercent > 0 ? '+' : '' }}{{ formatNumber(scenario.yieldChangePercent, 2) }}%
+                    </td>
+                    <td
+                      class="text-right mono"
+                      :class="scenario.priceChangePercent > 0 ? 'text-green' : scenario.priceChangePercent < 0 ? 'text-red' : ''"
+                    >
+                      {{ scenario.priceChangePercent > 0 ? '+' : '' }}{{ formatNumber(scenario.priceChangePercent, 2) }}%
+                    </td>
+                    <td
+                      class="text-right mono"
+                      :class="scenario.priceChangeAbsolute > 0 ? 'text-green' : scenario.priceChangeAbsolute < 0 ? 'text-red' : ''"
+                    >
+                      {{ scenario.priceChangeAbsolute > 0 ? '+' : '' }}{{ formatNumber(scenario.priceChangeAbsolute, 2) }} ₽
+                    </td>
+                    <td class="text-right mono font-bold">
+                      {{ formatNumber(scenario.newDirtyPrice, 2) }} ₽
+                    </td>
+                    <td class="text-right mono">
+                      {{ formatNumber(scenario.newYtmPercent, 2) }}%
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </transition>
+
+        <!-- Cash Flows (Scenario 1) -->
+        <transition name="fade">
+          <div
+            v-if="results && results.cashFlows1"
+            class="glass-card panel h-auto"
+          >
+            <div class="panel-header">
+              <h3>Денежные потоки (Сценарий 1)</h3>
+              <div class="glass-pill">
+                {{ results.cashFlows1.length }} платежей
+              </div>
+            </div>
+                
+            <div class="table-wrapper custom-scroll">
+              <table class="glass-table">
+                <thead>
+                  <tr>
+                    <th>Дата</th>
+                    <th class="text-right">
+                      T (лет)
+                    </th>
+                    <th class="text-right">
+                      CF (₽)
+                    </th>
+                    <th class="text-right">
+                      DF
+                    </th>
+                    <th class="text-right">
+                      PV (₽)
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr
+                    v-for="(cf, idx) in results.cashFlows1"
+                    :key="idx"
+                  >
+                    <td class="text-muted">
+                      {{ formatDate(cf.date) }}
+                    </td>
+                    <td class="text-right mono text-muted">
+                      {{ formatNumber(cf.t, 3) }}
+                    </td>
+                    <td class="text-right mono">
+                      {{ formatNumber(cf.cf, 2) }}
+                    </td>
+                    <td class="text-right mono text-muted">
+                      {{ formatNumber(cf.df, 4) }}
+                    </td>
+                    <td class="text-right mono font-bold text-blue">
+                      {{ formatNumber(cf.pv, 2) }}
+                    </td>
+                  </tr>
+                </tbody>
+                <tfoot>
+                  <tr>
+                    <td
+                      colspan="4"
+                      class="text-right text-muted"
+                    >
+                      Общая PV (Dirty):
+                    </td>
+                    <td class="text-right mono text-blue font-bold">
+                      {{ formatNumber(results.scenario1.dirtyPrice, 2) }}
+                    </td>
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
+          </div>
+        </transition>
+
+        <!-- Cash Flows (Scenario 2) -->
+        <transition name="fade">
+          <div
+            v-if="results && results.cashFlows2"
+            class="glass-card panel h-auto"
+          >
+            <div class="panel-header">
+              <h3>Денежные потоки (Сценарий 2)</h3>
+              <div class="glass-pill">
+                {{ results.cashFlows2.length }} платежей
+              </div>
+            </div>
+                
+            <div class="table-wrapper custom-scroll">
+              <table class="glass-table">
+                <thead>
+                  <tr>
+                    <th>Дата</th>
+                    <th class="text-right">
+                      T (лет)
+                    </th>
+                    <th class="text-right">
+                      CF (₽)
+                    </th>
+                    <th class="text-right">
+                      DF
+                    </th>
+                    <th class="text-right">
+                      PV (₽)
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr
+                    v-for="(cf, idx) in results.cashFlows2"
+                    :key="idx"
+                  >
+                    <td class="text-muted">
+                      {{ formatDate(cf.date) }}
+                    </td>
+                    <td class="text-right mono text-muted">
+                      {{ formatNumber(cf.t, 3) }}
+                    </td>
+                    <td class="text-right mono">
+                      {{ formatNumber(cf.cf, 2) }}
+                    </td>
+                    <td class="text-right mono text-muted">
+                      {{ formatNumber(cf.df, 4) }}
+                    </td>
+                    <td class="text-right mono font-bold text-green">
+                      {{ formatNumber(cf.pv, 2) }}
+                    </td>
+                  </tr>
+                </tbody>
+                <tfoot>
+                  <tr>
+                    <td
+                      colspan="4"
+                      class="text-right text-muted"
+                    >
+                      Общая PV (Dirty):
+                    </td>
+                    <td class="text-right mono text-green font-bold">
+                      {{ formatNumber(results.scenario2.dirtyPrice, 2) }}
+                    </td>
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
+          </div>
+        </transition>
+
+        <!-- Coupon Schedule (улучшенная вёрстка) -->
+        <transition name="fade">
+          <div
+            v-if="results && results.allCoupons"
+            class="glass-card panel h-auto"
+          >
+            <div class="panel-header">
+              <h3>График купонных выплат</h3>
+              <div class="schedule-stats">
+                <span class="stat-badge paid">{{ results.allCoupons.filter(c => c.isPaid).length }} выплачено</span>
+                <span class="stat-badge future">{{ results.allCoupons.filter(c => !c.isPaid).length }} будущих</span>
+              </div>
+            </div>
+            <div class="schedule-grid">
+              <div
+                v-for="(coupon, idx) in results.allCoupons"
+                :key="idx"
+                class="coupon-card"
+                :class="coupon.isPaid ? 'paid' : 'future'"
+              >
+                <div class="coupon-index">
+                  {{ idx + 1 }}
+                </div>
+                <div class="coupon-content">
+                  <div class="coupon-date">
+                    {{ formatDate(coupon.date) }}
+                  </div>
+                  <div class="coupon-amount">
+                    {{ formatNumber(coupon.value, 2) }} ₽
+                  </div>
+                </div>
+                <div class="coupon-status">
+                  <span
+                    class="status-badge"
+                    :class="coupon.isPaid ? 'paid' : 'future'"
+                  >
+                    {{ coupon.isPaid ? '✓ Выплачен' : '◯ Будущий' }}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </transition>
+
+        <!-- Empty State -->
+        <div
+          v-if="!results && !loading"
+          class="empty-placeholder"
+        >
+          <div class="placeholder-content">
+            <span class="icon-lg">📊</span>
+            <h3>Введите параметры и нажмите «Рассчитать»</h3>
+            <p>Для загрузки данных о купонах используется MOEX API</p>
+          </div>
         </div>
-
-        <!-- RIGHT COLUMN: Tables & Scenarios -->
-        <div class="main-panel">
-            
-            <!-- Scenario Comparison -->
-            <transition name="fade">
-            <div v-if="results" class="glass-card panel comparison-panel h-auto">
-                <div class="panel-header">
-                    <h3>Сравнение сценариев</h3>
-                </div>
-                <div class="comparison-table-wrapper">
-                    <table class="comparison-table">
-                        <thead>
-                            <tr>
-                                <th>Метрика</th>
-                                <th class="scenario-col">
-                                    <span class="scenario-label">Сценарий 1</span>
-                                    <span class="scenario-rate">{{ formatNumber(params.discountYield1, 1) }}%</span>
-                                </th>
-                                <th class="scenario-col">
-                                    <span class="scenario-label">Сценарий 2</span>
-                                    <span class="scenario-rate variant-2">{{ formatNumber(params.discountYield2, 1) }}%</span>
-                                </th>
-                                <th class="diff-col">
-                                    <span class="scenario-label">Разница</span>
-                                </th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td><strong>Dirty Price</strong></td>
-                                <td class="mono text-gradient-blue">{{ formatNumber(results.scenario1.dirtyPrice, 2) }} ₽</td>
-                                <td class="mono text-gradient-green">{{ formatNumber(results.scenario2.dirtyPrice, 2) }} ₽</td>
-                                <td class="mono" :class="results.scenario1.dirtyPrice > results.scenario2.dirtyPrice ? 'text-green' : 'text-red'">
-                                    {{ formatNumber(results.scenario1.dirtyPrice - results.scenario2.dirtyPrice, 2) }} ₽
-                                </td>
-                            </tr>
-                            <tr>
-                                <td><strong>Clean Price</strong></td>
-                                <td class="mono">{{ formatNumber(results.scenario1.cleanPrice, 2) }} ₽</td>
-                                <td class="mono">{{ formatNumber(results.scenario2.cleanPrice, 2) }} ₽</td>
-                                <td class="mono" :class="results.scenario1.cleanPrice > results.scenario2.cleanPrice ? 'text-green' : 'text-red'">
-                                    {{ formatNumber(results.scenario1.cleanPrice - results.scenario2.cleanPrice, 2) }} ₽
-                                </td>
-                            </tr>
-                            <tr>
-                                <td><strong>% от номинала</strong></td>
-                                <td class="mono">{{ formatNumber(results.scenario1.pricePercent, 2) }}%</td>
-                                <td class="mono">{{ formatNumber(results.scenario2.pricePercent, 2) }}%</td>
-                                <td class="mono" :class="results.scenario1.pricePercent > results.scenario2.pricePercent ? 'text-green' : 'text-red'">
-                                    {{ formatNumber(results.scenario1.pricePercent - results.scenario2.pricePercent, 2) }}%
-                                </td>
-                            </tr>
-                            <tr>
-                                <td><strong>Дюрация Маколея</strong></td>
-                                <td class="mono">{{ formatNumber(results.scenario1.duration, 4) }} лет</td>
-                                <td class="mono">{{ formatNumber(results.scenario2.duration, 4) }} лет</td>
-                                <td class="mono" :class="results.scenario1.duration > results.scenario2.duration ? 'text-green' : 'text-red'">
-                                    {{ formatNumber(results.scenario1.duration - results.scenario2.duration, 4) }} лет
-                                </td>
-                            </tr>
-                            <tr v-if="results.scenario1.modifiedDuration !== undefined">
-                                <td><strong>Модифицированная дюрация</strong></td>
-                                <td class="mono">{{ formatNumber(results.scenario1.modifiedDuration, 4) }} лет</td>
-                                <td class="mono">{{ formatNumber(results.scenario2.modifiedDuration || 0, 4) }} лет</td>
-                                <td class="mono" :class="(results.scenario1.modifiedDuration || 0) > (results.scenario2.modifiedDuration || 0) ? 'text-green' : 'text-red'">
-                                    {{ formatNumber((results.scenario1.modifiedDuration || 0) - (results.scenario2.modifiedDuration || 0), 4) }} лет
-                                </td>
-                            </tr>
-                            <tr v-if="results.scenario1.currentYield !== undefined">
-                                <td><strong>Текущая доходность (CY)</strong></td>
-                                <td class="mono">{{ formatNumber(results.scenario1.currentYield, 2) }}%</td>
-                                <td class="mono">{{ formatNumber(results.scenario2.currentYield || 0, 2) }}%</td>
-                                <td class="mono" :class="(results.scenario1.currentYield || 0) > (results.scenario2.currentYield || 0) ? 'text-green' : 'text-red'">
-                                    {{ formatNumber((results.scenario1.currentYield || 0) - (results.scenario2.currentYield || 0), 2) }}%
-                                </td>
-                            </tr>
-                            <tr v-if="results.scenario1.adjustedCurrentYield !== undefined">
-                                <td><strong>Скорректированная CY (ACY)</strong></td>
-                                <td class="mono">{{ formatNumber(results.scenario1.adjustedCurrentYield, 2) }}%</td>
-                                <td class="mono">{{ formatNumber(results.scenario2.adjustedCurrentYield || 0, 2) }}%</td>
-                                <td class="mono" :class="(results.scenario1.adjustedCurrentYield || 0) > (results.scenario2.adjustedCurrentYield || 0) ? 'text-green' : 'text-red'">
-                                    {{ formatNumber((results.scenario1.adjustedCurrentYield || 0) - (results.scenario2.adjustedCurrentYield || 0), 2) }}%
-                                </td>
-                            </tr>
-                            <tr v-if="results.scenario1.simpleYield !== undefined">
-                                <td><strong>Простая доходность (SY)</strong></td>
-                                <td class="mono">{{ formatNumber(results.scenario1.simpleYield, 2) }}%</td>
-                                <td class="mono">{{ formatNumber(results.scenario2.simpleYield || 0, 2) }}%</td>
-                                <td class="mono" :class="(results.scenario1.simpleYield || 0) > (results.scenario2.simpleYield || 0) ? 'text-green' : 'text-red'">
-                                    {{ formatNumber((results.scenario1.simpleYield || 0) - (results.scenario2.simpleYield || 0), 2) }}%
-                                </td>
-                            </tr>
-                            <tr v-if="results.scenario1.ytmPercent !== undefined">
-                                <td><strong>YTM (доходность к погашению)</strong></td>
-                                <td class="mono">{{ formatNumber(results.scenario1.ytmPercent, 2) }}%</td>
-                                <td class="mono">{{ formatNumber(results.scenario2.ytmPercent || 0, 2) }}%</td>
-                                <td class="mono" :class="(results.scenario1.ytmPercent || 0) > (results.scenario2.ytmPercent || 0) ? 'text-green' : 'text-red'">
-                                    {{ formatNumber((results.scenario1.ytmPercent || 0) - (results.scenario2.ytmPercent || 0), 2) }}%
-                                </td>
-                            </tr>
-                            <tr v-if="results.scenario1.nominalYield !== undefined">
-                                <td><strong>Номинальная доходность (NY)</strong></td>
-                                <td class="mono">{{ formatNumber(results.scenario1.nominalYield, 2) }}%</td>
-                                <td class="mono">{{ formatNumber(results.scenario2.nominalYield || 0, 2) }}%</td>
-                                <td class="mono" :class="(results.scenario1.nominalYield || 0) > (results.scenario2.nominalYield || 0) ? 'text-green' : 'text-red'">
-                                    {{ formatNumber((results.scenario1.nominalYield || 0) - (results.scenario2.nominalYield || 0), 2) }}%
-                                </td>
-                            </tr>
-                            <tr v-if="results.scenario1.convexity !== undefined">
-                                <td><strong>Выпуклость (Convexity)</strong></td>
-                                <td class="mono">{{ formatNumber(results.scenario1.convexity, 2) }}</td>
-                                <td class="mono">{{ formatNumber(results.scenario2.convexity || 0, 2) }}</td>
-                                <td class="mono" :class="(results.scenario1.convexity || 0) > (results.scenario2.convexity || 0) ? 'text-green' : 'text-red'">
-                                    {{ formatNumber((results.scenario1.convexity || 0) - (results.scenario2.convexity || 0), 2) }}
-                                </td>
-                            </tr>
-                            <tr v-if="results.scenario1.pvbp !== undefined">
-                                <td><strong>PVBP/DV01 (% от номинала)</strong></td>
-                                <td class="mono">{{ formatNumber(results.scenario1.pvbp, 4) }}%</td>
-                                <td class="mono">{{ formatNumber(results.scenario2.pvbp || 0, 4) }}%</td>
-                                <td class="mono" :class="(results.scenario1.pvbp || 0) > (results.scenario2.pvbp || 0) ? 'text-green' : 'text-red'">
-                                    {{ formatNumber((results.scenario1.pvbp || 0) - (results.scenario2.pvbp || 0), 4) }}%
-                                </td>
-                            </tr>
-                            <tr v-if="results.scenario1.pvbpAbsolute !== undefined">
-                                <td><strong>PVBP/DV01 (абсолютное)</strong></td>
-                                <td class="mono">{{ formatNumber(results.scenario1.pvbpAbsolute, 2) }} ₽</td>
-                                <td class="mono">{{ formatNumber(results.scenario2.pvbpAbsolute || 0, 2) }} ₽</td>
-                                <td class="mono" :class="(results.scenario1.pvbpAbsolute || 0) > (results.scenario2.pvbpAbsolute || 0) ? 'text-green' : 'text-red'">
-                                    {{ formatNumber((results.scenario1.pvbpAbsolute || 0) - (results.scenario2.pvbpAbsolute || 0), 2) }} ₽
-                                </td>
-                            </tr>
-                            <tr v-if="results.scenario1.discountMargin !== null && results.scenario1.discountMargin !== undefined">
-                                <td><strong>Discount Margin (DM)</strong></td>
-                                <td class="mono">{{ formatNumber(results.scenario1.discountMargin, 2) }} bp</td>
-                                <td class="mono">{{ formatNumber(results.scenario2.discountMargin || 0, 2) }} bp</td>
-                                <td class="mono" :class="(results.scenario1.discountMargin || 0) > (results.scenario2.discountMargin || 0) ? 'text-green' : 'text-red'">
-                                    {{ formatNumber((results.scenario1.discountMargin || 0) - (results.scenario2.discountMargin || 0), 2) }} bp
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-            </transition>
-
-            <!-- Sensitivity Scenarios (Scenario 1) -->
-            <transition name="fade">
-            <div v-if="results && results.scenario1.sensitivityScenarios && results.scenario1.sensitivityScenarios.length > 0" class="glass-card panel h-auto">
-                <div class="panel-header">
-                    <h3>Анализ чувствительности цены (Сценарий 1)</h3>
-                    <div class="glass-pill">{{ results.scenario1.sensitivityScenarios.length }} сценариев</div>
-                </div>
-                
-                <div class="table-wrapper custom-scroll">
-                    <table class="glass-table">
-                        <thead>
-                            <tr>
-                                <th>Δ Доходность (bp)</th>
-                                <th class="text-right">Δ Доходность (%)</th>
-                                <th class="text-right">Δ Цена (%)</th>
-                                <th class="text-right">Δ Цена (₽)</th>
-                                <th class="text-right">Новая цена (₽)</th>
-                                <th class="text-right">Новая YTM (%)</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr v-for="(scenario, idx) in results.scenario1.sensitivityScenarios" :key="idx">
-                                <td class="mono" :class="scenario.yieldChangeBps > 0 ? 'text-red' : scenario.yieldChangeBps < 0 ? 'text-green' : ''">
-                                    {{ scenario.yieldChangeBps > 0 ? '+' : '' }}{{ scenario.yieldChangeBps }} bp
-                                </td>
-                                <td class="text-right mono" :class="scenario.yieldChangePercent > 0 ? 'text-red' : scenario.yieldChangePercent < 0 ? 'text-green' : ''">
-                                    {{ scenario.yieldChangePercent > 0 ? '+' : '' }}{{ formatNumber(scenario.yieldChangePercent, 2) }}%
-                                </td>
-                                <td class="text-right mono" :class="scenario.priceChangePercent > 0 ? 'text-green' : scenario.priceChangePercent < 0 ? 'text-red' : ''">
-                                    {{ scenario.priceChangePercent > 0 ? '+' : '' }}{{ formatNumber(scenario.priceChangePercent, 2) }}%
-                                </td>
-                                <td class="text-right mono" :class="scenario.priceChangeAbsolute > 0 ? 'text-green' : scenario.priceChangeAbsolute < 0 ? 'text-red' : ''">
-                                    {{ scenario.priceChangeAbsolute > 0 ? '+' : '' }}{{ formatNumber(scenario.priceChangeAbsolute, 2) }} ₽
-                                </td>
-                                <td class="text-right mono font-bold">{{ formatNumber(scenario.newDirtyPrice, 2) }} ₽</td>
-                                <td class="text-right mono">{{ formatNumber(scenario.newYtmPercent, 2) }}%</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-            </transition>
-
-            <!-- Sensitivity Scenarios (Scenario 2) -->
-            <transition name="fade">
-            <div v-if="results && results.scenario2.sensitivityScenarios && results.scenario2.sensitivityScenarios.length > 0" class="glass-card panel h-auto">
-                <div class="panel-header">
-                    <h3>Анализ чувствительности цены (Сценарий 2)</h3>
-                    <div class="glass-pill">{{ results.scenario2.sensitivityScenarios.length }} сценариев</div>
-                </div>
-                
-                <div class="table-wrapper custom-scroll">
-                    <table class="glass-table">
-                        <thead>
-                            <tr>
-                                <th>Δ Доходность (bp)</th>
-                                <th class="text-right">Δ Доходность (%)</th>
-                                <th class="text-right">Δ Цена (%)</th>
-                                <th class="text-right">Δ Цена (₽)</th>
-                                <th class="text-right">Новая цена (₽)</th>
-                                <th class="text-right">Новая YTM (%)</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr v-for="(scenario, idx) in results.scenario2.sensitivityScenarios" :key="idx">
-                                <td class="mono" :class="scenario.yieldChangeBps > 0 ? 'text-red' : scenario.yieldChangeBps < 0 ? 'text-green' : ''">
-                                    {{ scenario.yieldChangeBps > 0 ? '+' : '' }}{{ scenario.yieldChangeBps }} bp
-                                </td>
-                                <td class="text-right mono" :class="scenario.yieldChangePercent > 0 ? 'text-red' : scenario.yieldChangePercent < 0 ? 'text-green' : ''">
-                                    {{ scenario.yieldChangePercent > 0 ? '+' : '' }}{{ formatNumber(scenario.yieldChangePercent, 2) }}%
-                                </td>
-                                <td class="text-right mono" :class="scenario.priceChangePercent > 0 ? 'text-green' : scenario.priceChangePercent < 0 ? 'text-red' : ''">
-                                    {{ scenario.priceChangePercent > 0 ? '+' : '' }}{{ formatNumber(scenario.priceChangePercent, 2) }}%
-                                </td>
-                                <td class="text-right mono" :class="scenario.priceChangeAbsolute > 0 ? 'text-green' : scenario.priceChangeAbsolute < 0 ? 'text-red' : ''">
-                                    {{ scenario.priceChangeAbsolute > 0 ? '+' : '' }}{{ formatNumber(scenario.priceChangeAbsolute, 2) }} ₽
-                                </td>
-                                <td class="text-right mono font-bold">{{ formatNumber(scenario.newDirtyPrice, 2) }} ₽</td>
-                                <td class="text-right mono">{{ formatNumber(scenario.newYtmPercent, 2) }}%</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-            </transition>
-
-            <!-- Cash Flows (Scenario 1) -->
-            <transition name="fade">
-            <div v-if="results && results.cashFlows1" class="glass-card panel h-auto">
-                <div class="panel-header">
-                    <h3>Денежные потоки (Сценарий 1)</h3>
-                    <div class="glass-pill">{{ results.cashFlows1.length }} платежей</div>
-                </div>
-                
-                <div class="table-wrapper custom-scroll">
-                    <table class="glass-table">
-                        <thead>
-                            <tr>
-                                <th>Дата</th>
-                                <th class="text-right">T (лет)</th>
-                                <th class="text-right">CF (₽)</th>
-                                <th class="text-right">DF</th>
-                                <th class="text-right">PV (₽)</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr v-for="(cf, idx) in results.cashFlows1" :key="idx">
-                                <td class="text-muted">{{ formatDate(cf.date) }}</td>
-                                <td class="text-right mono text-muted">{{ formatNumber(cf.t, 3) }}</td>
-                                <td class="text-right mono">{{ formatNumber(cf.cf, 2) }}</td>
-                                <td class="text-right mono text-muted">{{ formatNumber(cf.df, 4) }}</td>
-                                <td class="text-right mono font-bold text-blue">{{ formatNumber(cf.pv, 2) }}</td>
-                            </tr>
-                        </tbody>
-                        <tfoot>
-                            <tr>
-                                <td colspan="4" class="text-right text-muted">Общая PV (Dirty):</td>
-                                <td class="text-right mono text-blue font-bold">{{ formatNumber(results.scenario1.dirtyPrice, 2) }}</td>
-                            </tr>
-                        </tfoot>
-                    </table>
-                </div>
-            </div>
-            </transition>
-
-            <!-- Cash Flows (Scenario 2) -->
-            <transition name="fade">
-            <div v-if="results && results.cashFlows2" class="glass-card panel h-auto">
-                <div class="panel-header">
-                    <h3>Денежные потоки (Сценарий 2)</h3>
-                    <div class="glass-pill">{{ results.cashFlows2.length }} платежей</div>
-                </div>
-                
-                <div class="table-wrapper custom-scroll">
-                    <table class="glass-table">
-                        <thead>
-                            <tr>
-                                <th>Дата</th>
-                                <th class="text-right">T (лет)</th>
-                                <th class="text-right">CF (₽)</th>
-                                <th class="text-right">DF</th>
-                                <th class="text-right">PV (₽)</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr v-for="(cf, idx) in results.cashFlows2" :key="idx">
-                                <td class="text-muted">{{ formatDate(cf.date) }}</td>
-                                <td class="text-right mono text-muted">{{ formatNumber(cf.t, 3) }}</td>
-                                <td class="text-right mono">{{ formatNumber(cf.cf, 2) }}</td>
-                                <td class="text-right mono text-muted">{{ formatNumber(cf.df, 4) }}</td>
-                                <td class="text-right mono font-bold text-green">{{ formatNumber(cf.pv, 2) }}</td>
-                            </tr>
-                        </tbody>
-                        <tfoot>
-                            <tr>
-                                <td colspan="4" class="text-right text-muted">Общая PV (Dirty):</td>
-                                <td class="text-right mono text-green font-bold">{{ formatNumber(results.scenario2.dirtyPrice, 2) }}</td>
-                            </tr>
-                        </tfoot>
-                    </table>
-                </div>
-            </div>
-            </transition>
-
-            <!-- Coupon Schedule (улучшенная вёрстка) -->
-            <transition name="fade">
-            <div v-if="results && results.allCoupons" class="glass-card panel h-auto">
-                <div class="panel-header">
-                    <h3>График купонных выплат</h3>
-                    <div class="schedule-stats">
-                        <span class="stat-badge paid">{{ results.allCoupons.filter(c => c.isPaid).length }} выплачено</span>
-                        <span class="stat-badge future">{{ results.allCoupons.filter(c => !c.isPaid).length }} будущих</span>
-                    </div>
-                </div>
-                <div class="schedule-grid">
-                    <div v-for="(coupon, idx) in results.allCoupons" :key="idx" class="coupon-card" :class="coupon.isPaid ? 'paid' : 'future'">
-                        <div class="coupon-index">{{ idx + 1 }}</div>
-                        <div class="coupon-content">
-                            <div class="coupon-date">{{ formatDate(coupon.date) }}</div>
-                            <div class="coupon-amount">{{ formatNumber(coupon.value, 2) }} ₽</div>
-                        </div>
-                        <div class="coupon-status">
-                            <span class="status-badge" :class="coupon.isPaid ? 'paid' : 'future'">
-                                {{ coupon.isPaid ? '✓ Выплачен' : '◯ Будущий' }}
-                            </span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            </transition>
-
-            <!-- Empty State -->
-            <div v-if="!results && !loading" class="empty-placeholder">
-                <div class="placeholder-content">
-                    <span class="icon-lg">📊</span>
-                    <h3>Введите параметры и нажмите «Рассчитать»</h3>
-                    <p>Для загрузки данных о купонах используется MOEX API</p>
-                </div>
-            </div>
-
-        </div>
+      </div>
     </div>
   </div>
 </template>

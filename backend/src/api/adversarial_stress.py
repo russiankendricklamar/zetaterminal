@@ -2,12 +2,13 @@
 API endpoints для Adversarial Stress Testing.
 """
 import logging
+from typing import Any
 
 from fastapi import APIRouter, HTTPException, Request
-from typing import List, Optional, Dict, Any
 from pydantic import BaseModel, Field
-from src.services.adversarial_stress_service import run_adversarial_stress
+
 from src.middleware.rate_limit import limiter
+from src.services.adversarial_stress_service import run_adversarial_stress
 
 logger = logging.getLogger(__name__)
 
@@ -16,20 +17,20 @@ router = APIRouter()
 
 class AdversarialStressRequest(BaseModel):
     """Запрос на adversarial stress test."""
-    cov_matrix: List[List[float]] = Field(..., description="Ковариационная матрица (N x N)")
-    mu: List[float] = Field(..., description="Ожидаемые доходности активов (N)")
-    weights: List[float] = Field(..., description="Веса портфеля (N)")
+    cov_matrix: list[list[float]] = Field(..., description="Ковариационная матрица (N x N)")
+    mu: list[float] = Field(..., description="Ожидаемые доходности активов (N)")
+    weights: list[float] = Field(..., description="Веса портфеля (N)")
     kappa: float = Field(default=1.0, gt=0, le=5.0, description="Радиус неопределённости для μ")
     epsilon: float = Field(default=0.1, gt=0, le=1.0, description="Радиус Фробениуса для Σ")
     n_paths: int = Field(default=2000, ge=100, le=10000, description="Число MC траекторий")
     risk_free_rate: float = Field(default=0.0, description="Безрисковая ставка")
     initial_capital: float = Field(default=1_000_000, gt=0, description="Начальный капитал")
     gamma: float = Field(default=3.0, gt=0, description="Коэффициент риск-аверсии")
-    asset_names: Optional[List[str]] = Field(None, description="Названия активов")
-    seed: Optional[int] = Field(default=42, description="Seed для воспроизводимости")
+    asset_names: list[str] | None = Field(None, description="Названия активов")
+    seed: int | None = Field(default=42, description="Seed для воспроизводимости")
 
 
-@router.post("/generate", response_model=Dict[str, Any])
+@router.post("/generate", response_model=dict[str, Any])
 @limiter.limit("10/minute")
 async def generate_adversarial_stress(http_request: Request, request: AdversarialStressRequest):
     """
@@ -70,10 +71,10 @@ async def generate_adversarial_stress(http_request: Request, request: Adversaria
 
     except ValueError as e:
         logger.error("Adversarial stress validation error: %s", e, exc_info=True)
-        raise HTTPException(status_code=400, detail="Invalid input parameters")
+        raise HTTPException(status_code=400, detail="Invalid input parameters") from e
     except Exception as e:
         logger.error("Adversarial stress test failed: %s", e, exc_info=True)
-        raise HTTPException(status_code=500, detail="Internal server error")
+        raise HTTPException(status_code=500, detail="Internal server error") from e
 
 
 @router.get("/health")

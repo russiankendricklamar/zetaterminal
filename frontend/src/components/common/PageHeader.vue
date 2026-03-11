@@ -3,14 +3,24 @@
   <div class="page-header">
     <div class="header-content">
       <div class="header-left">
-        <h1 class="header-title font-anton">{{ title }}</h1>
-        <p v-if="subtitle" class="header-subtitle font-mono">{{ subtitle }}</p>
+        <h1 class="header-title font-anton">
+          {{ title }}
+        </h1>
+        <p
+          v-if="subtitle"
+          class="header-subtitle font-mono"
+        >
+          {{ subtitle }}
+        </p>
       </div>
-      <div class="header-actions" v-if="$slots.actions">
-        <slot name="actions"></slot>
+      <div
+        v-if="$slots.actions"
+        class="header-actions"
+      >
+        <slot name="actions" />
       </div>
     </div>
-    <div class="header-divider"></div>
+    <div class="header-divider" />
   </div>
 </template>
 

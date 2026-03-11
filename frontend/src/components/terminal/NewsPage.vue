@@ -4,11 +4,18 @@
     <div class="section-header flex-col md:flex-row gap-4">
       <div class="flex items-center gap-4">
         <div class="icon-box icon-indigo">
-          <component :is="currentTabData.icon" class="w-5 h-5" />
+          <component
+            :is="currentTabData.icon"
+            class="w-5 h-5"
+          />
         </div>
         <div>
-          <h2 class="section-title font-anton">НОВОСТИ</h2>
-          <p class="section-subtitle font-mono">{{ currentTabData.description }}</p>
+          <h2 class="section-title font-anton">
+            НОВОСТИ
+          </h2>
+          <p class="section-subtitle font-mono">
+            {{ currentTabData.description }}
+          </p>
         </div>
       </div>
 
@@ -16,8 +23,8 @@
         <button
           v-for="tab in tabs"
           :key="tab.id"
-          @click="currentTab = tab.id"
           :class="['tab-btn', { active: currentTab === tab.id }]"
+          @click="currentTab = tab.id"
         >
           {{ tab.label }}
         </button>
@@ -27,27 +34,41 @@
     <!-- Content Area -->
     <div class="flex-1 flex flex-col gap-4">
       <!-- Real-time News -->
-      <div v-if="currentTab === 'TOP'" class="flex flex-col gap-4">
+      <div
+        v-if="currentTab === 'TOP'"
+        class="flex flex-col gap-4"
+      >
         <div class="flex items-center justify-between">
-          <h3 class="font-oswald text-sm text-text-tertiary uppercase tracking-wider">ГЛАВНЫЕ НОВОСТИ</h3>
+          <h3 class="font-oswald text-sm text-text-tertiary uppercase tracking-wider">
+            ГЛАВНЫЕ НОВОСТИ
+          </h3>
           <div class="flex items-center gap-3">
-            <button @click="loadHeadlines" class="btn-ghost text-xs font-mono flex items-center gap-1">
+            <button
+              class="btn-ghost text-xs font-mono flex items-center gap-1"
+              @click="loadHeadlines"
+            >
               <RefreshIcon class="w-3 h-3" /> ОБНОВИТЬ
             </button>
             <div class="badge badge-red">
-              <span class="status-dot"></span> ОНЛАЙН
+              <span class="status-dot" /> ОНЛАЙН
             </div>
           </div>
         </div>
 
         <!-- Loading -->
-        <div v-if="headlinesLoading" class="flex items-center gap-2 text-gray-400 text-xs">
-          <div class="w-3 h-3 border-2 border-orange-500 border-t-transparent rounded-full animate-spin"></div>
+        <div
+          v-if="headlinesLoading"
+          class="flex items-center gap-2 text-gray-400 text-xs"
+        >
+          <div class="w-3 h-3 border-2 border-orange-500 border-t-transparent rounded-full animate-spin" />
           Загрузка новостей...
         </div>
 
         <!-- Error -->
-        <div v-if="headlinesError" class="p-4 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400 text-sm font-mono">
+        <div
+          v-if="headlinesError"
+          class="p-4 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400 text-sm font-mono"
+        >
           {{ headlinesError }}
         </div>
 
@@ -61,46 +82,84 @@
             <span class="news-source flex items-center gap-1">
               <ClockIcon class="w-2.5 h-2.5" /> {{ formatTime(item.publishedAt) }}
             </span>
-            <span v-if="item.category && item.category.length" class="news-badge">
+            <span
+              v-if="item.category && item.category.length"
+              class="news-badge"
+            >
               {{ item.category[0].toUpperCase() }}
             </span>
           </div>
           <h3 class="news-title">
-            <a :href="item.url" target="_blank" rel="noopener" class="hover:text-[var(--accent-red)] transition-colors">
+            <a
+              :href="item.url"
+              target="_blank"
+              rel="noopener"
+              class="hover:text-[var(--accent-red)] transition-colors"
+            >
               {{ item.title }}
             </a>
           </h3>
-          <p v-if="item.description" class="text-xs text-[var(--text-muted)] mt-1 line-clamp-2">{{ item.description }}</p>
+          <p
+            v-if="item.description"
+            class="text-xs text-[var(--text-muted)] mt-1 line-clamp-2"
+          >
+            {{ item.description }}
+          </p>
           <div class="flex items-center gap-4 mt-3">
-            <a :href="item.url" target="_blank" rel="noopener" class="btn-ghost text-xs font-mono">ЧИТАТЬ ПОЛНОСТЬЮ</a>
-            <button @click="doSummarize(idx)" class="btn-ghost text-xs font-mono" :disabled="item._summarizing">
+            <a
+              :href="item.url"
+              target="_blank"
+              rel="noopener"
+              class="btn-ghost text-xs font-mono"
+            >ЧИТАТЬ ПОЛНОСТЬЮ</a>
+            <button
+              class="btn-ghost text-xs font-mono"
+              :disabled="item._summarizing"
+              @click="doSummarize(idx)"
+            >
               {{ item._summarizing ? 'ГЕНЕРАЦИЯ...' : 'РЕЗЮМИРОВАТЬ' }}
             </button>
-            <button @click="doSentiment(idx)" class="btn-ghost text-xs font-mono" :disabled="item._sentimentLoading">
+            <button
+              class="btn-ghost text-xs font-mono"
+              :disabled="item._sentimentLoading"
+              @click="doSentiment(idx)"
+            >
               {{ item._sentimentLoading ? 'АНАЛИЗ...' : 'НАСТРОЕНИЕ' }}
             </button>
           </div>
           <!-- Sentiment Result -->
-          <div v-if="item._sentiment" class="mt-2 flex items-center gap-2">
+          <div
+            v-if="item._sentiment"
+            class="mt-2 flex items-center gap-2"
+          >
             <span :class="['px-2 py-0.5 rounded text-[10px] font-bold uppercase', sentimentClass(item._sentiment.scores)]">
               {{ sentimentLabel(item._sentiment.scores) }}
             </span>
             <span class="text-[10px] text-gray-500 font-mono">{{ sentimentConfidence(item._sentiment.scores) }}</span>
           </div>
           <!-- Summary Result -->
-          <div v-if="item._summary" class="mt-2 p-3 rounded-lg bg-white/5 border border-white/5 text-xs text-gray-300 font-mono">
+          <div
+            v-if="item._summary"
+            class="mt-2 p-3 rounded-lg bg-white/5 border border-white/5 text-xs text-gray-300 font-mono"
+          >
             {{ item._summary }}
           </div>
         </div>
 
         <!-- Empty -->
-        <div v-if="!headlinesLoading && headlines.length === 0 && !headlinesError" class="flex items-center justify-center h-64 text-gray-500 font-mono text-sm">
+        <div
+          v-if="!headlinesLoading && headlines.length === 0 && !headlinesError"
+          class="flex items-center justify-center h-64 text-gray-500 font-mono text-sm"
+        >
           Нет доступных новостей
         </div>
       </div>
 
       <!-- Company News -->
-      <div v-else-if="currentTab === 'CN'" class="flex flex-col gap-6">
+      <div
+        v-else-if="currentTab === 'CN'"
+        class="flex flex-col gap-6"
+      >
         <div class="search-box max-w-md">
           <SearchIcon class="search-icon" />
           <input
@@ -108,7 +167,7 @@
             type="text"
             placeholder="ВВЕДИТЕ ТИКЕР ИЛИ НАЗВАНИЕ (НАПРИМЕР, NVDA, TESLA)"
             @keydown.enter="searchCompanyNews"
-          />
+          >
         </div>
 
         <!-- Quick tickers -->
@@ -116,47 +175,78 @@
           <button
             v-for="t in quickTickers"
             :key="t"
-            @click="companyQuery = t; searchCompanyNews()"
             :class="['px-3 py-1.5 rounded-lg text-xs font-bold transition-all border', companyQuery === t ? 'bg-white/10 text-white border-white/20' : 'text-gray-500 border-white/5 hover:text-white hover:border-white/20']"
+            @click="companyQuery = t; searchCompanyNews()"
           >
             {{ t }}
           </button>
         </div>
 
         <!-- Loading -->
-        <div v-if="companyLoading" class="flex items-center gap-2 text-gray-400 text-xs">
-          <div class="w-3 h-3 border-2 border-orange-500 border-t-transparent rounded-full animate-spin"></div>
+        <div
+          v-if="companyLoading"
+          class="flex items-center gap-2 text-gray-400 text-xs"
+        >
+          <div class="w-3 h-3 border-2 border-orange-500 border-t-transparent rounded-full animate-spin" />
           Поиск новостей по {{ companyQuery }}...
         </div>
 
         <!-- Company Results -->
-        <div v-if="companyResults.length > 0" class="timeline">
-          <div v-for="(item, idx) in companyResults" :key="idx" class="timeline-item">
+        <div
+          v-if="companyResults.length > 0"
+          class="timeline"
+        >
+          <div
+            v-for="(item, idx) in companyResults"
+            :key="idx"
+            class="timeline-item"
+          >
             <div class="timeline-marker">
-              <div :class="['timeline-dot', idx < 2 ? 'active' : '']"></div>
-              <div v-if="idx < companyResults.length - 1" class="timeline-line"></div>
+              <div :class="['timeline-dot', idx < 2 ? 'active' : '']" />
+              <div
+                v-if="idx < companyResults.length - 1"
+                class="timeline-line"
+              />
             </div>
             <div class="timeline-content">
               <span class="timeline-date">{{ formatTime(item.publishedAt) }} — {{ item.source }}</span>
               <h4 class="timeline-title">
-                <a :href="item.url" target="_blank" rel="noopener" class="hover:text-[var(--accent-red)] transition-colors">
+                <a
+                  :href="item.url"
+                  target="_blank"
+                  rel="noopener"
+                  class="hover:text-[var(--accent-red)] transition-colors"
+                >
                   {{ item.title }}
                 </a>
               </h4>
-              <p v-if="item.description" class="timeline-desc">{{ item.description }}</p>
+              <p
+                v-if="item.description"
+                class="timeline-desc"
+              >
+                {{ item.description }}
+              </p>
             </div>
           </div>
         </div>
 
-        <div v-if="!companyLoading && companyResults.length === 0 && companySearched" class="flex items-center justify-center h-32 text-gray-500 font-mono text-sm">
+        <div
+          v-if="!companyLoading && companyResults.length === 0 && companySearched"
+          class="flex items-center justify-center h-32 text-gray-500 font-mono text-sm"
+        >
           Нет новостей по запросу "{{ companyQuery }}"
         </div>
       </div>
 
       <!-- News Search -->
-      <div v-else-if="currentTab === 'NSRC'" class="flex flex-col gap-6">
+      <div
+        v-else-if="currentTab === 'NSRC'"
+        class="flex flex-col gap-6"
+      >
         <div class="data-panel text-center">
-          <h3 class="font-anton text-2xl mb-6">ГЛУБОКИЙ ПОИСК ПО РЫНКУ</h3>
+          <h3 class="font-anton text-2xl mb-6">
+            ГЛУБОКИЙ ПОИСК ПО РЫНКУ
+          </h3>
           <div class="search-box max-w-2xl mx-auto relative">
             <SearchIcon class="search-icon" />
             <input
@@ -164,8 +254,11 @@
               type="text"
               placeholder="ПОИСК ПО КОМПАНИИ, ИНВЕСТОРУ, СЕКТОРУ..."
               @keydown.enter="doSearch"
-            />
-            <button @click="doSearch" class="btn btn-primary absolute right-2 top-1/2 -translate-y-1/2 h-10">
+            >
+            <button
+              class="btn btn-primary absolute right-2 top-1/2 -translate-y-1/2 h-10"
+              @click="doSearch"
+            >
               <ArrowRightIcon class="w-4 h-4" />
             </button>
           </div>
@@ -173,8 +266,8 @@
             <span
               v-for="tag in searchTags"
               :key="tag"
-              @click="searchQuery = tag; doSearch()"
               class="badge cursor-pointer hover:border-[var(--accent-red)] hover:color-[var(--accent-red)]"
+              @click="searchQuery = tag; doSearch()"
             >
               {{ tag }}
             </span>
@@ -182,13 +275,19 @@
         </div>
 
         <!-- Loading -->
-        <div v-if="searchLoading" class="flex items-center gap-2 text-gray-400 text-xs">
-          <div class="w-3 h-3 border-2 border-orange-500 border-t-transparent rounded-full animate-spin"></div>
+        <div
+          v-if="searchLoading"
+          class="flex items-center gap-2 text-gray-400 text-xs"
+        >
+          <div class="w-3 h-3 border-2 border-orange-500 border-t-transparent rounded-full animate-spin" />
           Поиск "{{ searchQuery }}"...
         </div>
 
         <!-- Search Results -->
-        <div v-if="searchResults.length > 0" class="flex flex-col gap-3">
+        <div
+          v-if="searchResults.length > 0"
+          class="flex flex-col gap-3"
+        >
           <h3 class="font-oswald text-sm text-gray-400 uppercase tracking-wider">
             РЕЗУЛЬТАТЫ: {{ searchResults.length }}
           </h3>
@@ -199,22 +298,43 @@
           >
             <div class="flex items-center justify-between mb-2">
               <span class="text-xs text-gray-500 font-mono">{{ item.source }} — {{ formatTime(item.publishedAt) }}</span>
-              <a :href="item.url" target="_blank" rel="noopener" class="text-xs text-gray-500 hover:text-white font-mono">ОТКРЫТЬ</a>
+              <a
+                :href="item.url"
+                target="_blank"
+                rel="noopener"
+                class="text-xs text-gray-500 hover:text-white font-mono"
+              >ОТКРЫТЬ</a>
             </div>
-            <h4 class="text-sm text-white font-medium">{{ item.title }}</h4>
-            <p v-if="item.description" class="text-xs text-gray-400 mt-1 line-clamp-2">{{ item.description }}</p>
+            <h4 class="text-sm text-white font-medium">
+              {{ item.title }}
+            </h4>
+            <p
+              v-if="item.description"
+              class="text-xs text-gray-400 mt-1 line-clamp-2"
+            >
+              {{ item.description }}
+            </p>
           </div>
         </div>
       </div>
 
       <!-- News Alerts -->
-      <div v-else-if="currentTab === 'SALT'" class="flex flex-col gap-6">
+      <div
+        v-else-if="currentTab === 'SALT'"
+        class="flex flex-col gap-6"
+      >
         <div class="flex items-center justify-between">
           <div>
-            <h3 class="font-anton text-xl">УМНЫЕ УВЕДОМЛЕНИЯ</h3>
-            <p class="section-subtitle font-mono mt-1">УПРАВЛЯЙТЕ EMAIL-УВЕДОМЛЕНИЯМИ И ТРИГГЕРАМИ</p>
+            <h3 class="font-anton text-xl">
+              УМНЫЕ УВЕДОМЛЕНИЯ
+            </h3>
+            <p class="section-subtitle font-mono mt-1">
+              УПРАВЛЯЙТЕ EMAIL-УВЕДОМЛЕНИЯМИ И ТРИГГЕРАМИ
+            </p>
           </div>
-          <button class="btn btn-primary">+ СОЗДАТЬ УВЕДОМЛЕНИЕ</button>
+          <button class="btn btn-primary">
+            + СОЗДАТЬ УВЕДОМЛЕНИЕ
+          </button>
         </div>
 
         <div class="flex flex-col gap-3">
@@ -228,28 +348,39 @@
                 <BellIcon class="w-4 h-4" />
               </div>
               <div>
-                <h4 :class="['font-oswald text-sm', alert.active ? 'text-[var(--text-primary)]' : 'text-[var(--text-muted)]']">{{ alert.name }}</h4>
-                <p class="font-mono text-xs text-[var(--text-muted)]">{{ alert.condition }}</p>
+                <h4 :class="['font-oswald text-sm', alert.active ? 'text-[var(--text-primary)]' : 'text-[var(--text-muted)]']">
+                  {{ alert.name }}
+                </h4>
+                <p class="font-mono text-xs text-[var(--text-muted)]">
+                  {{ alert.condition }}
+                </p>
               </div>
             </div>
             <div class="flex items-center gap-4">
               <span class="font-mono text-xs text-[var(--text-muted)]">{{ alert.active ? 'МГНОВЕННЫЙ EMAIL' : 'ПРИОСТАНОВЛЕНО' }}</span>
-              <div :class="['toggle-switch', { active: alert.active }]"></div>
+              <div :class="['toggle-switch', { active: alert.active }]" />
             </div>
           </div>
         </div>
       </div>
 
       <!-- Summaries -->
-      <div v-else-if="currentTab === 'FIRS'" class="grid-2">
+      <div
+        v-else-if="currentTab === 'FIRS'"
+        class="grid-2"
+      >
         <div class="data-panel flex flex-col">
           <div class="data-panel-header">
             <div class="icon-box-sm icon-indigo">
               <BotIcon class="w-4 h-4" />
             </div>
-            <h3 class="data-panel-title">ФАКТЫ ПО ЗАПРОСУ</h3>
+            <h3 class="data-panel-title">
+              ФАКТЫ ПО ЗАПРОСУ
+            </h3>
           </div>
-          <p class="section-subtitle font-mono mb-6">ВЫБЕРИТЕ ТРЕНДОВУЮ ТЕМУ ДЛЯ МГНОВЕННОЙ ГЕНЕРАЦИИ AI-РЕЗЮМЕ</p>
+          <p class="section-subtitle font-mono mb-6">
+            ВЫБЕРИТЕ ТРЕНДОВУЮ ТЕМУ ДЛЯ МГНОВЕННОЙ ГЕНЕРАЦИИ AI-РЕЗЮМЕ
+          </p>
 
           <div class="flex-1 flex flex-col gap-3 overflow-y-auto custom-scrollbar">
             <div
@@ -258,24 +389,41 @@
               class="brutalist-card cursor-pointer group"
               @click="generateTopicSummary(i)"
             >
-              <h4 class="font-oswald text-sm group-hover:text-[var(--accent-red)] mb-2">{{ topic.title }}</h4>
+              <h4 class="font-oswald text-sm group-hover:text-[var(--accent-red)] mb-2">
+                {{ topic.title }}
+              </h4>
               <div class="flex items-center justify-between">
                 <span class="font-mono text-[10px] text-[var(--text-muted)]">
                   {{ topic.loading ? 'ГЕНЕРАЦИЯ...' : 'ВКЛЮЧАЕТ 12 ИСТОЧНИКОВ' }}
                 </span>
-                <button class="font-mono text-[10px] text-[var(--accent-red)] opacity-0 group-hover:opacity-100">СГЕНЕРИРОВАТЬ</button>
+                <button class="font-mono text-[10px] text-[var(--accent-red)] opacity-0 group-hover:opacity-100">
+                  СГЕНЕРИРОВАТЬ
+                </button>
               </div>
-              <p v-if="topic.summary" class="mt-2 text-xs text-gray-300 font-mono leading-relaxed">{{ topic.summary }}</p>
+              <p
+                v-if="topic.summary"
+                class="mt-2 text-xs text-gray-300 font-mono leading-relaxed"
+              >
+                {{ topic.summary }}
+              </p>
             </div>
           </div>
         </div>
 
-        <div class="data-panel relative overflow-hidden" style="border-color: rgba(220, 38, 38, 0.3)">
+        <div
+          class="data-panel relative overflow-hidden"
+          style="border-color: rgba(220, 38, 38, 0.3)"
+        >
           <div class="absolute top-0 right-0 p-8 opacity-10">
             <FileTextIcon class="w-32 h-32" />
           </div>
-          <h3 class="font-anton text-lg mb-6">ПОСЛЕДНЕЕ СГЕНЕРИРОВАННОЕ РЕЗЮМЕ</h3>
-          <div v-if="lastSummary" class="flex flex-col gap-4">
+          <h3 class="font-anton text-lg mb-6">
+            ПОСЛЕДНЕЕ СГЕНЕРИРОВАННОЕ РЕЗЮМЕ
+          </h3>
+          <div
+            v-if="lastSummary"
+            class="flex flex-col gap-4"
+          >
             <div class="flex items-center gap-2 font-mono text-xs text-[var(--accent-red)]">
               <span>ТЕМА:</span>
               <span class="badge badge-red">{{ lastSummary.topic }}</span>
@@ -284,23 +432,39 @@
               {{ lastSummary.text }}
             </p>
             <div class="pt-4 mt-4 border-t border-[var(--border-dark)] flex gap-3">
-              <button class="btn btn-outline flex-1">ПОДЕЛИТЬСЯ</button>
-              <button class="btn btn-primary flex-1">ПОЛНЫЙ ОТЧЁТ</button>
+              <button class="btn btn-outline flex-1">
+                ПОДЕЛИТЬСЯ
+              </button>
+              <button class="btn btn-primary flex-1">
+                ПОЛНЫЙ ОТЧЁТ
+              </button>
             </div>
           </div>
-          <div v-else class="text-sm text-gray-500 font-mono">
+          <div
+            v-else
+            class="text-sm text-gray-500 font-mono"
+          >
             Выберите тему для генерации резюме
           </div>
         </div>
       </div>
 
       <!-- Briefs -->
-      <div v-else-if="currentTab === 'BRIE'" class="flex flex-col gap-6">
+      <div
+        v-else-if="currentTab === 'BRIE'"
+        class="flex flex-col gap-6"
+      >
         <div class="flex items-center justify-between">
-          <h3 class="font-anton text-xl">РЫНОЧНЫЕ ОБЗОРЫ</h3>
+          <h3 class="font-anton text-xl">
+            РЫНОЧНЫЕ ОБЗОРЫ
+          </h3>
           <div class="tab-group">
-            <button class="tab-btn">ЕЖЕДНЕВНО</button>
-            <button class="tab-btn active">ЕЖЕНЕДЕЛЬНО</button>
+            <button class="tab-btn">
+              ЕЖЕДНЕВНО
+            </button>
+            <button class="tab-btn active">
+              ЕЖЕНЕДЕЛЬНО
+            </button>
           </div>
         </div>
 
@@ -315,7 +479,9 @@
                 <BookOpenIcon class="w-5 h-5" />
               </div>
               <div>
-                <h4 class="font-oswald text-base mb-1">{{ brief.title }}</h4>
+                <h4 class="font-oswald text-base mb-1">
+                  {{ brief.title }}
+                </h4>
                 <div class="flex items-center gap-3 font-mono text-xs text-[var(--text-muted)]">
                   <span>{{ brief.date }}</span>
                   <span>•</span>

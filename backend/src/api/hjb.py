@@ -2,17 +2,21 @@
 API endpoints для HJB оптимизации портфеля.
 """
 import logging
+from datetime import datetime
+from typing import Any
 
 from fastapi import APIRouter, HTTPException, Request
-from typing import List, Optional, Dict, Any
 from pydantic import BaseModel, Field
+
+from src.middleware.rate_limit import limiter
 from src.services.hjb_service import optimize_hjb
 from src.utils.financial_validation import (
-    FinancialBaseModel, MAX_ASSETS, MAX_MONTE_CARLO_PATHS,
-    MAX_MONTE_CARLO_STEPS, MAX_CAPITAL,
+    MAX_ASSETS,
+    MAX_CAPITAL,
+    MAX_MONTE_CARLO_PATHS,
+    MAX_MONTE_CARLO_STEPS,
+    FinancialBaseModel,
 )
-from src.middleware.rate_limit import limiter
-from datetime import datetime
 
 logger = logging.getLogger(__name__)
 
@@ -25,17 +29,17 @@ class MonteCarloParams(FinancialBaseModel):
     horizon_years: float = Field(1.0, gt=0, le=100)
     n_paths: int = Field(5000, ge=1, le=MAX_MONTE_CARLO_PATHS)
     n_steps: int = Field(252, ge=1, le=MAX_MONTE_CARLO_STEPS)
-    random_seed: Optional[int] = Field(42)
+    random_seed: int | None = Field(42)
 
 
 class HJBRequest(FinancialBaseModel):
     """Запрос на HJB оптимизацию."""
-    mu: List[float] = Field(..., max_length=MAX_ASSETS, description="Ожидаемые доходности активов")
-    cov_matrix: List[List[float]] = Field(..., max_length=MAX_ASSETS, description="Ковариационная матрица")
+    mu: list[float] = Field(..., max_length=MAX_ASSETS, description="Ожидаемые доходности активов")
+    cov_matrix: list[list[float]] = Field(..., max_length=MAX_ASSETS, description="Ковариационная матрица")
     risk_free_rate: float = Field(..., ge=-1, le=1, description="Безрисковая ставка (в долях)")
     gamma: float = Field(..., gt=0, le=100, description="Коэффициент риск-аверсии (γ > 0)")
-    asset_names: Optional[List[str]] = Field(None, max_length=MAX_ASSETS, description="Названия активов")
-    monte_carlo: Optional[MonteCarloParams] = Field(None, description="Параметры Монте-Карло симуляции")
+    asset_names: list[str] | None = Field(None, max_length=MAX_ASSETS, description="Названия активов")
+    monte_carlo: MonteCarloParams | None = Field(None, description="Параметры Монте-Карло симуляции")
 
     class Config:
         schema_extra = {
@@ -62,8 +66,8 @@ class HJBRequest(FinancialBaseModel):
 
 class HJBResponse(BaseModel):
     """Ответ с результатами HJB оптимизации."""
-    portfolio_stats: Dict[str, Any]
-    monte_carlo: Optional[Dict[str, Any]] = None
+    portfolio_stats: dict[str, Any]
+    monte_carlo: dict[str, Any] | None = None
     timestamp: datetime = Field(default_factory=datetime.now)
 
 
@@ -83,20 +87,20 @@ async def optimize_hjb_portfolio(http_request: Request, request: HJBRequest):
         # Валидация входных данных
         mu = request.mu
         cov_matrix = request.cov_matrix
-        
+
         if len(mu) == 0:
             raise ValueError("Вектор доходностей не может быть пустым")
-        
+
         if len(cov_matrix) != len(mu):
             raise ValueError(
                 f"Размерность ковариационной матрицы {len(cov_matrix)} "
                 f"не соответствует количеству активов {len(mu)}"
             )
-        
+
         for row in cov_matrix:
             if len(row) != len(mu):
                 raise ValueError("Ковариационная матрица должна быть квадратной")
-        
+
         # Выполняем оптимизацию
         mc_params = request.monte_carlo.model_dump() if request.monte_carlo else None
         result = optimize_hjb(
@@ -107,18 +111,18 @@ async def optimize_hjb_portfolio(http_request: Request, request: HJBRequest):
             asset_names=request.asset_names,
             monte_carlo_params=mc_params
         )
-        
+
         return HJBResponse(
             portfolio_stats=result['portfolio_stats'],
             monte_carlo=result.get('monte_carlo')
         )
-        
+
     except ValueError as e:
         logger.error("HJB optimization validation error: %s", e, exc_info=True)
-        raise HTTPException(status_code=400, detail="Invalid input parameters")
+        raise HTTPException(status_code=400, detail="Invalid input parameters") from e
     except Exception as e:
         logger.error("HJB optimization failed: %s", e, exc_info=True)
-        raise HTTPException(status_code=500, detail="Internal server error")
+        raise HTTPException(status_code=500, detail="Internal server error") from e
 
 
 @router.get("/health")

@@ -8,11 +8,11 @@ Distributionally Robust подход к стресс-тестированию:
 - EVT tail analysis (Generalized Pareto Distribution)
 - Scenario plausibility scoring (Mahalanobis distance)
 """
+
 import numpy as np
 import scipy.stats
-from typing import Dict, List, Optional
-from src.services.hjb_service import simulate_monte_carlo
 
+from src.services.hjb_service import simulate_monte_carlo
 
 # ── Worst-Case Mean Return ────────────────────────────────────────────────────
 
@@ -55,7 +55,7 @@ def worst_case_covariance(
     Σ* = Σ + ε · ww' / ‖w‖²
     (rank-1 perturbation that maximizes portfolio variance)
     """
-    n = len(weights)
+    len(weights)
     w_norm_sq = weights @ weights
     if w_norm_sq < 1e-15:
         return cov_matrix.copy()
@@ -81,7 +81,7 @@ def worst_case_covariance(
 def fit_gpd_tail(
     losses: np.ndarray,
     threshold_quantile: float = 0.90,
-) -> Dict:
+) -> dict:
     """
     Fit Generalized Pareto Distribution to the tail of losses.
 
@@ -95,20 +95,20 @@ def fit_gpd_tail(
             "xi": 0.0,
             "beta": float(np.std(losses)),
             "threshold": threshold,
-            "n_exceedances": int(len(exceedances)),
+            "n_exceedances": len(exceedances),
             "var_999": float(np.quantile(losses, 0.999)) if len(losses) > 1000 else float(np.max(losses)),
             "var_9999": float(np.max(losses)),
             "fit_success": False,
         }
 
     try:
-        xi, loc, beta = scipy.stats.genpareto.fit(exceedances, floc=0)
+        xi, _loc, beta = scipy.stats.genpareto.fit(exceedances, floc=0)
     except Exception:
         return {
             "xi": 0.0,
             "beta": float(np.std(exceedances)),
             "threshold": threshold,
-            "n_exceedances": int(len(exceedances)),
+            "n_exceedances": len(exceedances),
             "var_999": float(np.quantile(losses, 0.999)) if len(losses) > 1000 else float(np.max(losses)),
             "var_9999": float(np.max(losses)),
             "fit_success": False,
@@ -141,7 +141,7 @@ def plausibility_score(
     mu_adv: np.ndarray,
     cov_base: np.ndarray,
     cov_adv: np.ndarray,
-) -> Dict:
+) -> dict:
     """
     Measures how far adversarial parameters deviate from base.
 
@@ -177,18 +177,18 @@ def plausibility_score(
 # ── Main Entry Point ──────────────────────────────────────────────────────────
 
 def run_adversarial_stress(
-    cov_matrix: List[List[float]],
-    mu: List[float],
-    weights: List[float],
+    cov_matrix: list[list[float]],
+    mu: list[float],
+    weights: list[float],
     kappa: float = 1.0,
     epsilon: float = 0.1,
     n_paths: int = 2000,
     risk_free_rate: float = 0.0,
     initial_capital: float = 1_000_000,
     gamma: float = 3.0,
-    asset_names: Optional[List[str]] = None,
-    seed: Optional[int] = 42,
-) -> Dict:
+    asset_names: list[str] | None = None,
+    seed: int | None = 42,
+) -> dict:
     """
     Full adversarial stress test pipeline.
 

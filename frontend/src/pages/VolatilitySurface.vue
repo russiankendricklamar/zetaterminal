@@ -1,12 +1,15 @@
 <!-- src/pages/VolatilitySurface.vue -->
 <template>
   <div class="volatility-surface-page">
-    
     <!-- Header Section -->
     <div class="page-header">
       <div class="header-left">
-        <h1 class="page-title">Поверхность волатильности</h1>
-        <p class="page-subtitle">3D поверхность волатильности: Moneyness × Срок × IV</p>
+        <h1 class="page-title">
+          Поверхность волатильности
+        </h1>
+        <p class="page-subtitle">
+          3D поверхность волатильности: Moneyness × Срок × IV
+        </p>
       </div>
       
       <div class="header-right">
@@ -18,24 +21,24 @@
             type="date" 
             class="date-input"
             @change="regenerateSurface"
-          />
+          >
         </div>
 
         <!-- Excel Upload -->
         <div class="control-group">
           <label class="control-label">Реестр:</label>
           <input 
-            type="file" 
+            id="excel-upload" 
             ref="fileInputRef"
-            @change="handleFileUpload" 
+            type="file" 
             accept=".xlsx,.xls"
             style="display: none"
-            id="excel-upload"
-          />
+            @change="handleFileUpload"
+          >
           <button 
-            @click="() => { if (fileInputRef) fileInputRef.click() }" 
-            class="btn-secondary"
+            class="btn-secondary" 
             title="Загрузить реестр из Excel"
+            @click="() => { if (fileInputRef) fileInputRef.click() }"
           >
             Загрузить Excel
           </button>
@@ -43,40 +46,78 @@
 
         <!-- Show Grid -->
         <div class="control-group checkbox">
-          <input type="checkbox" v-model="showGrid" @change="updateSurface" id="grid-check" />
+          <input
+            id="grid-check"
+            v-model="showGrid"
+            type="checkbox"
+            @change="updateSurface"
+          >
           <label for="grid-check">Сетка</label>
         </div>
 
         <!-- Show Wireframe -->
         <div class="control-group checkbox">
-          <input type="checkbox" v-model="showWireframe" @change="updateSurface" id="wire-check" />
+          <input
+            id="wire-check"
+            v-model="showWireframe"
+            type="checkbox"
+            @change="updateSurface"
+          >
           <label for="wire-check">Каркас</label>
         </div>
 
         <!-- Animation Toggle -->
-        <button @click="toggleAnimation" class="btn-primary">
+        <button
+          class="btn-primary"
+          @click="toggleAnimation"
+        >
           {{ animating ? '⏸ Стоп' : '▶ Вращение' }}
         </button>
 
         <!-- Reset View -->
-        <button @click="resetCamera" class="btn-secondary">↺ Сброс</button>
+        <button
+          class="btn-secondary"
+          @click="resetCamera"
+        >
+          ↺ Сброс
+        </button>
         
         <!-- Model Selection -->
         <div class="control-group">
           <label class="control-label">Модель:</label>
-          <div class="custom-select-wrapper" @click="toggleModelDropdown">
-            <div class="custom-select" :class="{ 'open': modelDropdownOpen }">
+          <div
+            class="custom-select-wrapper"
+            @click="toggleModelDropdown"
+          >
+            <div
+              class="custom-select"
+              :class="{ 'open': modelDropdownOpen }"
+            >
               <div class="select-selected">
-                <span class="select-icon" :class="getModelIconClass(selectedModel)">
+                <span
+                  class="select-icon"
+                  :class="getModelIconClass(selectedModel)"
+                >
                   {{ getModelIcon(selectedModel) }}
                 </span>
                 <span class="select-text">{{ getModelName(selectedModel) }}</span>
-                <svg class="select-arrow" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <svg
+                  class="select-arrow"
+                  width="12"
+                  height="12"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                >
                   <polyline points="6 9 12 15 18 9" />
                 </svg>
               </div>
               <transition name="dropdown">
-                <div class="select-options" v-if="modelDropdownOpen">
+                <div
+                  v-if="modelDropdownOpen"
+                  class="select-options"
+                >
                   <div 
                     v-for="model in availableModels" 
                     :key="model.value"
@@ -84,12 +125,18 @@
                     :class="{ 'selected': selectedModel === model.value }"
                     @click.stop="selectModel(model.value)"
                   >
-                    <span class="option-icon" :class="model.iconClass">{{ model.icon }}</span>
+                    <span
+                      class="option-icon"
+                      :class="model.iconClass"
+                    >{{ model.icon }}</span>
                     <div style="flex: 1; display: flex; flex-direction: column; gap: 2px;">
                       <span class="option-text">{{ model.label }}</span>
                       <span class="option-subtext">{{ model.description }}</span>
                     </div>
-                    <span class="option-badge" v-if="selectedModel === model.value">✓</span>
+                    <span
+                      v-if="selectedModel === model.value"
+                      class="option-badge"
+                    >✓</span>
                   </div>
                 </div>
               </transition>
@@ -100,52 +147,63 @@
     </div>
 
     <!-- Error Message -->
-    <div v-if="error" class="card full-width" style="margin-bottom: 24px; background: rgba(239, 68, 68, 0.1); border-color: rgba(239, 68, 68, 0.3);">
+    <div
+      v-if="error"
+      class="card full-width"
+      style="margin-bottom: 24px; background: rgba(239, 68, 68, 0.1); border-color: rgba(239, 68, 68, 0.3);"
+    >
       <div style="padding: 12px; color: rgba(239, 68, 68, 0.9); font-size: 13px;">
         {{ error }}
       </div>
     </div>
 
     <!-- Registry Table (if loaded) -->
-    <div v-if="registryContracts.length > 0" class="card full-width" style="margin-bottom: 24px;">
-      <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
+    <div
+      v-if="registryContracts.length > 0"
+      class="card full-width"
+      style="margin-bottom: 24px;"
+    >
+      <div
+        class="card-header"
+        style="display: flex; justify-content: space-between; align-items: center;"
+      >
         <div>
           <h3>Реестр контрактов</h3>
           <span class="card-subtitle">Загружено контрактов: {{ registryContracts.length }}</span>
         </div>
         <div style="display: flex; gap: 8px;">
           <button 
-            @click="calculateAllContracts" 
-            class="btn-secondary"
+            class="btn-secondary" 
             :disabled="calculatingAll"
             style="font-size: 11px; padding: 6px 12px;"
+            @click="calculateAllContracts"
           >
             <span v-if="!calculatingAll">Рассчитать все</span>
             <span v-else>↺ Считаю...</span>
           </button>
           <button 
-            @click="exportRegistryToExcel" 
-            class="btn-secondary"
+            class="btn-secondary" 
             :disabled="registryContracts.length === 0"
             style="font-size: 11px; padding: 6px 12px;"
             title="Выгрузить реестр в Excel"
+            @click="exportRegistryToExcel"
           >
             📥 Выгрузить Excel
           </button>
           <button 
-            @click="saveRegistryToParquetHandler" 
-            class="btn-secondary"
+            class="btn-secondary" 
             :disabled="registryContracts.length === 0 || savingParquet"
             style="font-size: 11px; padding: 6px 12px;"
             title="Сохранить реестр в Parquet"
+            @click="saveRegistryToParquetHandler"
           >
             <span v-if="!savingParquet">💾 Сохранить в DB</span>
             <span v-else>↺ Сохранение...</span>
           </button>
           <button 
-            @click="clearRegistry" 
-            class="btn-secondary"
+            class="btn-secondary" 
             style="font-size: 11px; padding: 6px 12px; background: rgba(239, 68, 68, 0.2); border-color: rgba(239, 68, 68, 0.3);"
+            @click="clearRegistry"
           >
             ✕ Очистить
           </button>
@@ -172,14 +230,20 @@
             >
               <td>{{ idx + 1 }}</td>
               <td>{{ contract.instrument || 'N/A' }}</td>
-              <td class="mono">{{ contract.strike ? contract.strike.toFixed(2) : '-' }}</td>
-              <td class="mono">{{ contract.tenor || '-' }}</td>
-              <td class="mono accent">{{ contract.iv ? (contract.iv * 100).toFixed(2) + '%' : '-' }}</td>
+              <td class="mono">
+                {{ contract.strike ? contract.strike.toFixed(2) : '-' }}
+              </td>
+              <td class="mono">
+                {{ contract.tenor || '-' }}
+              </td>
+              <td class="mono accent">
+                {{ contract.iv ? (contract.iv * 100).toFixed(2) + '%' : '-' }}
+              </td>
               <td>
                 <button 
-                  @click.stop="loadContractToForm(idx)" 
-                  class="btn-small"
+                  class="btn-small" 
                   title="Загрузить в форму"
+                  @click.stop="loadContractToForm(idx)"
                 >
                   Загрузить
                 </button>
@@ -192,7 +256,10 @@
 
     <!-- 3D Canvas -->
     <div class="three-d-container">
-      <canvas ref="threeCanvas" class="three-canvas"></canvas>
+      <canvas
+        ref="threeCanvas"
+        class="three-canvas"
+      />
       <div class="controls-overlay">
         <div class="controls-hint">
           <p>Перетащите для вращения | Прокрутка для масштаба | ПКМ для перемещения</p>
@@ -208,7 +275,9 @@
           <h3>ATM Volatility</h3>
           <span class="stat-unit">Волатильность ATM</span>
         </div>
-        <div class="stat-value accent">{{ (atmVol * 100).toFixed(2) }}%</div>
+        <div class="stat-value accent">
+          {{ (atmVol * 100).toFixed(2) }}%
+        </div>
         <div class="stat-detail">
           <span class="label">3M</span>
           <span class="value">{{ (atmVol3M * 100).toFixed(2) }}%</span>
@@ -220,7 +289,10 @@
           <h3>Skew (25 Delta)</h3>
           <span class="stat-unit">Асимметрия улыбки</span>
         </div>
-        <div class="stat-value" :class="skew25 >= 0 ? 'positive' : 'negative'">
+        <div
+          class="stat-value"
+          :class="skew25 >= 0 ? 'positive' : 'negative'"
+        >
           {{ skew25 >= 0 ? '+' : '' }}{{ (skew25 * 100).toFixed(2) }}%
         </div>
         <div class="stat-detail">
@@ -248,7 +320,9 @@
           <h3>Vol of Vol</h3>
           <span class="stat-unit">Волатильность волатильности</span>
         </div>
-        <div class="stat-value green">{{ (volOfVol * 100).toFixed(2) }}%</div>
+        <div class="stat-value green">
+          {{ (volOfVol * 100).toFixed(2) }}%
+        </div>
         <div class="stat-detail">
           <span class="label">Реализованная</span>
           <span class="value">{{ (realizedVolOfVol * 100).toFixed(2) }}%</span>
@@ -266,13 +340,25 @@
         <table class="surface-matrix-table">
           <thead>
             <tr>
-              <th class="header-label">Strike / Срок</th>
-              <th v-for="tenor in tenors" :key="tenor">{{ tenor }}</th>
+              <th class="header-label">
+                Strike / Срок
+              </th>
+              <th
+                v-for="tenor in tenors"
+                :key="tenor"
+              >
+                {{ tenor }}
+              </th>
             </tr>
           </thead>
           <tbody>
-            <tr v-for="strike in strikes" :key="strike">
-              <td class="strike-label">{{ ((strike - 1) * 100).toFixed(0) }}%</td>
+            <tr
+              v-for="strike in strikes"
+              :key="strike"
+            >
+              <td class="strike-label">
+                {{ ((strike - 1) * 100).toFixed(0) }}%
+              </td>
               <td 
                 v-for="tenor in tenors" 
                 :key="tenor"
@@ -296,7 +382,7 @@
           <span class="chart-subtitle">Кривая улыбки для разных сроков</span>
         </div>
         <div class="chart-container">
-          <canvas ref="smileChartRef"></canvas>
+          <canvas ref="smileChartRef" />
         </div>
       </div>
 
@@ -307,7 +393,7 @@
           <span class="chart-subtitle">Временная структура для разных страйков</span>
         </div>
         <div class="chart-container">
-          <canvas ref="termChartRef"></canvas>
+          <canvas ref="termChartRef" />
         </div>
       </div>
     </div>
@@ -319,7 +405,7 @@
         <span class="chart-subtitle">Тепловая карта волатильности</span>
       </div>
       <div class="chart-container tall">
-        <canvas ref="heatmapChartRef"></canvas>
+        <canvas ref="heatmapChartRef" />
       </div>
     </div>
 
@@ -332,7 +418,7 @@
           <span class="chart-subtitle">Чувствительность к волатильности</span>
         </div>
         <div class="chart-container">
-          <canvas ref="vegaChartRef"></canvas>
+          <canvas ref="vegaChartRef" />
         </div>
       </div>
 
@@ -343,7 +429,7 @@
           <span class="chart-subtitle">Кривизна поверхности</span>
         </div>
         <div class="chart-container">
-          <canvas ref="convexityChartRef"></canvas>
+          <canvas ref="convexityChartRef" />
         </div>
       </div>
     </div>
@@ -396,7 +482,6 @@
       <span>• Частота: Обновления в реальном времени</span>
       <span>• Последняя синхронизация: 15с назад</span>
     </div>
-
   </div>
 </template>
 
@@ -535,7 +620,7 @@ const heatmapChartRef = ref<HTMLCanvasElement | null>(null)
 const vegaChartRef = ref<HTMLCanvasElement | null>(null)
 const convexityChartRef = ref<HTMLCanvasElement | null>(null)
 
-let charts: { [key: string]: Chart | null } = {}
+const charts: { [key: string]: Chart | null } = {}
 
 /* --- VOLATILITY SURFACE FUNCTION --- */
 const generateVolatilitySurface = (instrumentType: string, model: string = 'sabr'): number[][] => {
@@ -547,14 +632,14 @@ const generateVolatilitySurface = (instrumentType: string, model: string = 'sabr
   let rho = -0.3
   let nu = 0.4
   let v0 = 0.04  // Heston initial variance
-  let kappa = 3  // Heston mean reversion
-  let theta = 0.04  // Heston long-term variance
-  let lambda = 0.1  // Jump intensity (Merton/Bates)
-  let mu_j = -0.05  // Jump mean
-  let sigma_j = 0.15  // Jump volatility
-  let vg_theta = -0.1  // VG drift
-  let vg_sigma = 0.2  // VG volatility
-  let vg_nu = 0.3  // VG shape parameter
+  const kappa = 3  // Heston mean reversion
+  const theta = 0.04  // Heston long-term variance
+  const lambda = 0.1  // Jump intensity (Merton/Bates)
+  const mu_j = -0.05  // Jump mean
+  const sigma_j = 0.15  // Jump volatility
+  const vg_theta = -0.1  // VG drift
+  const vg_sigma = 0.2  // VG volatility
+  const vg_nu = 0.3  // VG shape parameter
 
   // Adjust parameters based on instrument type
   if (instrumentType === 'eur') {
@@ -1046,7 +1131,7 @@ const setupControls = () => {
   let isRotating = false
   let isPanning = false
   let previousMousePosition = { x: 0, y: 0 }
-  let rotation = { x: 0, y: 0 }
+  const rotation = { x: 0, y: 0 }
   const target = new Vector3(0, 0, 0)
   const minDistance = 5
   const maxDistance = 50

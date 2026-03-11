@@ -14,49 +14,90 @@
       <div class="form-grid">
         <div class="form-group">
           <label>Число подмножеств (S)</label>
-          <input v-model.number="params.n_splits" type="number" min="4" max="64" step="2" />
+          <input
+            v-model.number="params.n_splits"
+            type="number"
+            min="4"
+            max="64"
+            step="2"
+          >
           <span class="hint">Чётное, ≥ 4. C(S, S/2) комбинаций для CSCV.</span>
         </div>
         <div class="form-group">
           <label>Периодов в году</label>
-          <input v-model.number="params.annualize" type="number" min="1" />
+          <input
+            v-model.number="params.annualize"
+            type="number"
+            min="1"
+          >
           <span class="hint">252 для дневных, 52 для недельных данных.</span>
         </div>
         <div class="form-group">
           <label>SR бенчмарк (годовой)</label>
-          <input v-model.number="params.sr_benchmark" type="number" step="0.1" />
+          <input
+            v-model.number="params.sr_benchmark"
+            type="number"
+            step="0.1"
+          >
           <span class="hint">Пороговый SR для PSR. Обычно 0.</span>
         </div>
       </div>
 
       <div class="matrix-input">
         <label>Матрица доходностей (T × N)</label>
-        <p class="hint">Каждая строка — период, столбцы — стратегии. CSV-формат, разделитель ",".</p>
+        <p class="hint">
+          Каждая строка — период, столбцы — стратегии. CSV-формат, разделитель ",".
+        </p>
         <textarea
           v-model="returnsText"
           rows="10"
           placeholder="0.001,0.002,-0.001&#10;-0.001,0.000,0.002&#10;0.002,0.001,0.000"
         />
-        <div class="matrix-info" v-if="parsedShape">
+        <div
+          v-if="parsedShape"
+          class="matrix-info"
+        >
           Матрица: {{ parsedShape.T }} × {{ parsedShape.N }} (T × N стратегий)
         </div>
-        <div class="matrix-error" v-if="parseError">{{ parseError }}</div>
+        <div
+          v-if="parseError"
+          class="matrix-error"
+        >
+          {{ parseError }}
+        </div>
       </div>
 
       <div class="actions">
-        <button class="btn-primary" @click="compute" :disabled="loading || !!parseError">
+        <button
+          class="btn-primary"
+          :disabled="loading || !!parseError"
+          @click="compute"
+        >
           {{ loading ? 'Вычисление...' : 'Запустить анализ' }}
         </button>
-        <button class="btn-secondary" @click="loadDemo">Демо-данные</button>
+        <button
+          class="btn-secondary"
+          @click="loadDemo"
+        >
+          Демо-данные
+        </button>
       </div>
 
-      <div class="error-msg" v-if="error">{{ error }}</div>
+      <div
+        v-if="error"
+        class="error-msg"
+      >
+        {{ error }}
+      </div>
     </div>
 
     <!-- Results -->
     <template v-if="result">
       <!-- Verdict Banner -->
-      <div class="verdict-banner" :class="result.verdict_level">
+      <div
+        class="verdict-banner"
+        :class="result.verdict_level"
+      >
         <div class="verdict-icon">
           {{ result.verdict_level === 'danger' ? '⚠️' : result.verdict_level === 'warning' ? '⚡' : '✅' }}
         </div>
@@ -68,38 +109,81 @@
 
       <!-- KPI Cards -->
       <div class="kpi-grid">
-        <div class="kpi-card" :class="getPBOClass(result.pbo)">
-          <div class="kpi-label">PBO</div>
-          <div class="kpi-value">{{ (result.pbo * 100).toFixed(1) }}%</div>
-          <div class="kpi-sub">вероятность переобучения</div>
+        <div
+          class="kpi-card"
+          :class="getPBOClass(result.pbo)"
+        >
+          <div class="kpi-label">
+            PBO
+          </div>
+          <div class="kpi-value">
+            {{ (result.pbo * 100).toFixed(1) }}%
+          </div>
+          <div class="kpi-sub">
+            вероятность переобучения
+          </div>
         </div>
-        <div class="kpi-card" :class="getDSRClass(result.dsr)">
-          <div class="kpi-label">DSR</div>
-          <div class="kpi-value">{{ (result.dsr * 100).toFixed(1) }}%</div>
-          <div class="kpi-sub">Deflated Sharpe Ratio</div>
+        <div
+          class="kpi-card"
+          :class="getDSRClass(result.dsr)"
+        >
+          <div class="kpi-label">
+            DSR
+          </div>
+          <div class="kpi-value">
+            {{ (result.dsr * 100).toFixed(1) }}%
+          </div>
+          <div class="kpi-sub">
+            Deflated Sharpe Ratio
+          </div>
         </div>
         <div class="kpi-card">
-          <div class="kpi-label">SR̂ (лучший)</div>
-          <div class="kpi-value">{{ result.sr_hat_annual.toFixed(2) }}</div>
-          <div class="kpi-sub">годовой, аннуализированный</div>
+          <div class="kpi-label">
+            SR̂ (лучший)
+          </div>
+          <div class="kpi-value">
+            {{ result.sr_hat_annual.toFixed(2) }}
+          </div>
+          <div class="kpi-sub">
+            годовой, аннуализированный
+          </div>
         </div>
         <div class="kpi-card">
-          <div class="kpi-label">SR* (порог)</div>
-          <div class="kpi-value">{{ result.sr_star_annual.toFixed(2) }}</div>
-          <div class="kpi-sub">E[max SR] с поправкой</div>
+          <div class="kpi-label">
+            SR* (порог)
+          </div>
+          <div class="kpi-value">
+            {{ result.sr_star_annual.toFixed(2) }}
+          </div>
+          <div class="kpi-sub">
+            E[max SR] с поправкой
+          </div>
         </div>
-        <div class="kpi-card" :class="result.btl_sufficient ? 'ok' : 'danger'">
-          <div class="kpi-label">MinBTL</div>
-          <div class="kpi-value">{{ result.min_btl.toLocaleString() }}</div>
+        <div
+          class="kpi-card"
+          :class="result.btl_sufficient ? 'ok' : 'danger'"
+        >
+          <div class="kpi-label">
+            MinBTL
+          </div>
+          <div class="kpi-value">
+            {{ result.min_btl.toLocaleString() }}
+          </div>
           <div class="kpi-sub">
             мин. длина бэктеста (текущий: {{ result.current_t }})
             {{ result.btl_sufficient ? '✅' : '❌' }}
           </div>
         </div>
         <div class="kpi-card">
-          <div class="kpi-label">Стратегий</div>
-          <div class="kpi-value">{{ result.n_strategies }}</div>
-          <div class="kpi-sub">лучшая: #{{ result.best_strategy }}</div>
+          <div class="kpi-label">
+            Стратегий
+          </div>
+          <div class="kpi-value">
+            {{ result.n_strategies }}
+          </div>
+          <div class="kpi-sub">
+            лучшая: #{{ result.best_strategy }}
+          </div>
         </div>
       </div>
 
@@ -107,11 +191,17 @@
       <div class="charts-row">
         <div class="card chart-card">
           <h3>IS vs OOS Scatter</h3>
-          <div ref="scatterChart" class="chart" />
+          <div
+            ref="scatterChart"
+            class="chart"
+          />
         </div>
         <div class="card chart-card">
           <h3>Логит-распределение OOS ранга</h3>
-          <div ref="logitChart" class="chart" />
+          <div
+            ref="logitChart"
+            class="chart"
+          />
         </div>
       </div>
 
@@ -137,13 +227,18 @@
             >
               <td>
                 {{ s.strategy }}
-                <span v-if="s.strategy === result.best_strategy" class="best-tag">★ лучшая</span>
+                <span
+                  v-if="s.strategy === result.best_strategy"
+                  class="best-tag"
+                >★ лучшая</span>
               </td>
               <td>{{ s.sr_freq.toFixed(4) }}</td>
               <td>{{ s.sr_annual.toFixed(3) }}</td>
               <td>{{ s.skewness.toFixed(3) }}</td>
               <td>{{ s.excess_kurtosis.toFixed(3) }}</td>
-              <td :class="getPSRClass(s.psr)">{{ (s.psr * 100).toFixed(1) }}%</td>
+              <td :class="getPSRClass(s.psr)">
+                {{ (s.psr * 100).toFixed(1) }}%
+              </td>
             </tr>
           </tbody>
         </table>

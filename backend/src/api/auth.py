@@ -3,29 +3,28 @@ Authentication router: register, activate, login (JWT), refresh, logout, users, 
 """
 import logging
 import re
-import string
 import secrets
-from datetime import datetime, timedelta, timezone
+import string
+from datetime import UTC, datetime, timedelta
 
-from fastapi import APIRouter, HTTPException, Depends, Request, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
+from passlib.context import CryptContext
 from pydantic import BaseModel, EmailStr, field_validator
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from passlib.context import CryptContext
-
 from src.database.client import get_session
-from src.database.sa_models import User, RefreshToken
-from src.middleware.auth import require_auth
+from src.database.sa_models import RefreshToken, User
 from src.middleware.admin import require_admin
+from src.middleware.auth import require_auth
 from src.middleware.rate_limit import limiter
 from src.utils.jwt_utils import (
+    REFRESH_TOKEN_EXPIRE_DAYS,
     TokenPayload,
     create_access_token,
     create_refresh_token,
     decode_token,
     hash_token,
-    REFRESH_TOKEN_EXPIRE_DAYS,
 )
 
 logger = logging.getLogger(__name__)
@@ -176,7 +175,7 @@ async def register(request: Request, body: RegisterRequest, session: AsyncSessio
         raise
     except Exception as exc:
         logger.error("Register failed: %s", exc, exc_info=True)
-        raise HTTPException(status_code=500, detail="Registration failed")
+        raise HTTPException(status_code=500, detail="Registration failed") from exc
 
 
 @router.post("/activate", response_model=ActivateResponse)
@@ -203,7 +202,7 @@ async def activate(request: Request, body: ActivateRequest, session: AsyncSessio
         )
 
     user.status = "active"
-    user.activated_at = datetime.now(timezone.utc)
+    user.activated_at = datetime.now(UTC)
     user.invite_code = f"USED-{user.id}"
     await session.commit()
 
@@ -223,7 +222,7 @@ async def login(request: Request, body: LoginRequest, session: AsyncSession = De
     user = result.scalar_one_or_none()
 
     # Account lockout check
-    if user and user.locked_until and user.locked_until > datetime.now(timezone.utc):
+    if user and user.locked_until and user.locked_until > datetime.now(UTC):
         raise HTTPException(
             status_code=status.HTTP_429_TOO_MANY_REQUESTS,
             detail="Account temporarily locked. Try again later.",
@@ -234,7 +233,7 @@ async def login(request: Request, body: LoginRequest, session: AsyncSession = De
         if user:
             user.failed_login_count = (user.failed_login_count or 0) + 1
             if user.failed_login_count >= 5:
-                user.locked_until = datetime.now(timezone.utc) + timedelta(minutes=15)
+                user.locked_until = datetime.now(UTC) + timedelta(minutes=15)
             await session.commit()
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -262,7 +261,7 @@ async def login(request: Request, body: LoginRequest, session: AsyncSession = De
     rt = RefreshToken(
         user_id=user.id,
         token_hash=hash_token(refresh_token),
-        expires_at=datetime.now(timezone.utc) + timedelta(days=REFRESH_TOKEN_EXPIRE_DAYS),
+        expires_at=datetime.now(UTC) + timedelta(days=REFRESH_TOKEN_EXPIRE_DAYS),
     )
     session.add(rt)
     await session.commit()
@@ -287,7 +286,7 @@ async def refresh(request: Request, body: RefreshRequest, session: AsyncSession 
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid or expired refresh token",
-        )
+        ) from None
 
     if payload.type != "refresh":
         raise HTTPException(
@@ -300,8 +299,8 @@ async def refresh(request: Request, body: RefreshRequest, session: AsyncSession 
     result = await session.execute(
         select(RefreshToken).where(
             RefreshToken.token_hash == token_hash,
-            RefreshToken.revoked == False,
-            RefreshToken.expires_at > datetime.now(timezone.utc),
+            not RefreshToken.revoked,
+            RefreshToken.expires_at > datetime.now(UTC),
         ).with_for_update()
     )
     stored_token = result.scalar_one_or_none()
@@ -311,7 +310,7 @@ async def refresh(request: Request, body: RefreshRequest, session: AsyncSession 
         from sqlalchemy import update
         await session.execute(
             update(RefreshToken)
-            .where(RefreshToken.user_id == payload.sub, RefreshToken.revoked == False)
+            .where(RefreshToken.user_id == payload.sub, not RefreshToken.revoked)
             .values(revoked=True)
         )
         await session.commit()
@@ -340,7 +339,7 @@ async def refresh(request: Request, body: RefreshRequest, session: AsyncSession 
     new_rt = RefreshToken(
         user_id=user.id,
         token_hash=hash_token(new_refresh_token),
-        expires_at=datetime.now(timezone.utc) + timedelta(days=REFRESH_TOKEN_EXPIRE_DAYS),
+        expires_at=datetime.now(UTC) + timedelta(days=REFRESH_TOKEN_EXPIRE_DAYS),
     )
     session.add(new_rt)
     await session.commit()

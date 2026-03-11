@@ -6,7 +6,7 @@ Provides access token (30 min) and refresh token (30 day) creation/validation.
 import hashlib
 import logging
 import os
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 import jwt
 from pydantic import BaseModel
@@ -44,7 +44,7 @@ def validate_jwt_secret() -> None:
 
 
 def create_access_token(user_id: int, username: str, role: str) -> str:
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     payload = {
         "sub": user_id,
         "username": username,
@@ -57,7 +57,7 @@ def create_access_token(user_id: int, username: str, role: str) -> str:
 
 
 def create_refresh_token(user_id: int, username: str, role: str) -> str:
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     payload = {
         "sub": user_id,
         "username": username,

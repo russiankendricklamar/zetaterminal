@@ -2,15 +2,10 @@
 Сервис для оценки свопов (IRS, CDS, Basis Swaps, FX Swaps).
 Основан на логике из _SWAP для переноса на внутренний_.ipynb
 """
-import numpy as np
-from typing import Dict, List, Optional
 from datetime import datetime, timedelta
 
 from src.services.forward_service import (
-    CURRENCY_PRIORITY,
-    CURRENCY_CURVES,
     currency_pair,
-    tenor_for_days,
 )
 
 
@@ -22,9 +17,9 @@ def calculate_swap_valuation(
     spread: float,
     coupons_per_year: int,
     discount_rate: float,
-    volatility: Optional[float] = None,
+    volatility: float | None = None,
     swap_type: str = "irs"
-) -> Dict:
+) -> dict:
     """
     Рассчитывает справедливую стоимость свопа.
     
@@ -46,51 +41,51 @@ def calculate_swap_valuation(
     fixed_rate_decimal = fixed_rate / 100.0
     floating_rate_decimal = (floating_rate + spread / 100) / 100.0
     discount_rate_decimal = discount_rate / 100.0
-    
+
     # Параметры расчетов
     period_rate = discount_rate_decimal / coupons_per_year
     periods = int(tenor * coupons_per_year)
-    
+
     # Расчет PV фиксированной ноги
     coupon_amount = notional * fixed_rate_decimal / coupons_per_year
     pv_fixed = 0.0
-    
+
     for i in range(1, periods + 1):
         discount_factor = 1.0 / (1.0 + period_rate) ** i
         pv_fixed += coupon_amount * discount_factor
-    
+
     # Добавляем номинал в конце
     final_discount = 1.0 / (1.0 + period_rate) ** periods
     pv_fixed += notional * final_discount
-    
+
     # Расчет PV плавающей ноги
     # Упрощенная модель: предполагаем, что плавающая ставка равна текущей forward rate
     floating_coupon = notional * floating_rate_decimal / coupons_per_year
     pv_floating = 0.0
-    
+
     for i in range(1, periods + 1):
         discount_factor = 1.0 / (1.0 + period_rate) ** i
         pv_floating += floating_coupon * discount_factor
-    
+
     # Добавляем номинал в конце
     pv_floating += notional * final_discount
-    
+
     # Стоимость свопа (для получателя фиксированной ноги)
     swap_value = pv_fixed - pv_floating
-    
+
     # Расчет денежных потоков
     cashflows = []
     base_date = datetime.now()
-    
+
     for i in range(1, periods + 1):
         payment_date = base_date + timedelta(days=int(365 / coupons_per_year * i))
         discount_factor = 1.0 / (1.0 + period_rate) ** i
-        
+
         fixed_leg = coupon_amount
         floating_leg = floating_coupon
         net = fixed_leg - floating_leg
         pv = net * discount_factor
-        
+
         cashflows.append({
             "period": i,
             "date": payment_date.strftime("%Y-%m-%d"),
@@ -99,7 +94,7 @@ def calculate_swap_valuation(
             "net": float(net),
             "pv": float(pv)
         })
-    
+
     # Расчет метрик риска
     # Duration (Modified Duration)
     duration = 0.0
@@ -107,10 +102,10 @@ def calculate_swap_valuation(
         discount_factor = 1.0 / (1.0 + period_rate) ** i
         weight = (coupon_amount * discount_factor) / pv_fixed
         duration += (i / coupons_per_year) * weight
-    
+
     # DV01 (Dollar Value of 01) - изменение стоимости при изменении ставки на 1bp
     dv01 = duration * pv_fixed * 0.0001
-    
+
     # Spread DV01: чувствительность плавающей ноги к изменению спреда на 1bp
     # Пересчитываем PV плавающей ноги при спреде + 1bp
     spread_bump = 0.01  # 1 basis point в процентных пунктах
@@ -122,7 +117,7 @@ def calculate_swap_valuation(
         pv_floating_bumped += floating_coupon_bumped * discount_factor
     pv_floating_bumped += notional * final_discount
     spread_dv01 = abs(pv_floating_bumped - pv_floating)
-    
+
     # Convexity
     convexity = 0.0
     for i in range(1, periods + 1):
@@ -130,37 +125,37 @@ def calculate_swap_valuation(
         weight = (coupon_amount * discount_factor) / pv_fixed
         time_squared = (i / coupons_per_year) ** 2
         convexity += time_squared * weight
-    
+
     # Анализ сценариев
     scenarios = []
     rate_shifts = [-2.0, -1.0, 0.0, 1.0, 2.0]  # в процентных пунктах (п.п.)
-    
+
     for shift in rate_shifts:
         shifted_fixed = fixed_rate + shift
         shifted_floating = floating_rate + shift
-        
+
         # Пересчитываем PV для сценария
         shifted_fixed_decimal = shifted_fixed / 100.0
         shifted_floating_decimal = (shifted_floating + spread / 100) / 100.0
-        
+
         scenario_pv_fixed = 0.0
         scenario_coupon = notional * shifted_fixed_decimal / coupons_per_year
         for i in range(1, periods + 1):
             discount_factor = 1.0 / (1.0 + period_rate) ** i
             scenario_pv_fixed += scenario_coupon * discount_factor
         scenario_pv_fixed += notional * final_discount
-        
+
         scenario_pv_floating = 0.0
         scenario_floating_coupon = notional * shifted_floating_decimal / coupons_per_year
         for i in range(1, periods + 1):
             discount_factor = 1.0 / (1.0 + period_rate) ** i
             scenario_pv_floating += scenario_floating_coupon * discount_factor
         scenario_pv_floating += notional * final_discount
-        
+
         scenario_swap_value = scenario_pv_fixed - scenario_pv_floating
         base_swap_value = swap_value
         pnl = scenario_swap_value - base_swap_value
-        
+
         scenarios.append({
             "name": f"{'+' if shift >= 0 else ''}{shift:.0f}%" if shift != 0 else "Base Case",
             "fixedRate": float(shifted_fixed),
@@ -171,7 +166,7 @@ def calculate_swap_valuation(
             "pnl": float(pnl),
             "isBase": shift == 0.0
         })
-    
+
     return {
         "pvFixedLeg": float(pv_fixed),
         "pvFloatingLeg": float(pv_floating),
@@ -226,7 +221,7 @@ def calculate_fx_swap_valuation(
     spot_max: float,
     rate_internal: float,
     rate_external: float,
-) -> Dict:
+) -> dict:
     """
     Оценка FX-свопа (две ноги: near + far).
 

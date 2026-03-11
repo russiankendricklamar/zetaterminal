@@ -1,15 +1,22 @@
 <!-- src/pages/FactorAnalysis.vue -->
 <template>
   <div class="fa-page">
-
     <!-- Header -->
     <div class="page-header">
       <div class="header-left">
-        <h1 class="page-title">TS vs CS Factor Analysis</h1>
-        <p class="page-subtitle">Fama-MacBeth двухшаговый метод: нагрузки β (TS) → риск-премии λ (CS)</p>
+        <h1 class="page-title">
+          TS vs CS Factor Analysis
+        </h1>
+        <p class="page-subtitle">
+          Fama-MacBeth двухшаговый метод: нагрузки β (TS) → риск-премии λ (CS)
+        </p>
       </div>
       <div class="header-right">
-        <button @click="analyze" class="btn-primary" :disabled="loading">
+        <button
+          class="btn-primary"
+          :disabled="loading"
+          @click="analyze"
+        >
           <span v-if="!loading">Анализировать</span>
           <span v-else>↺ Считаю...</span>
         </button>
@@ -23,10 +30,17 @@
           <h3>Матрица доходностей (T × N)</h3>
           <span class="hint">Строки — периоды, столбцы — активы. Разделители: пробел/tab/точка с запятой. Первая строка — опционально имена активов.</span>
         </div>
-        <textarea v-model="returnsRaw" class="data-textarea" rows="8"
-          placeholder="AAPL  MSFT  GOOG&#10;0.01  0.02  0.015&#10;-0.01 0.00  0.005&#10;0.02  0.01  0.018" />
+        <textarea
+          v-model="returnsRaw"
+          class="data-textarea"
+          rows="8"
+          placeholder="AAPL  MSFT  GOOG&#10;0.01  0.02  0.015&#10;-0.01 0.00  0.005&#10;0.02  0.01  0.018"
+        />
         <div class="has-header-row">
-          <label><input type="checkbox" v-model="returnsHasHeader" /> Первая строка — имена активов</label>
+          <label><input
+            v-model="returnsHasHeader"
+            type="checkbox"
+          > Первая строка — имена активов</label>
         </div>
       </div>
       <div class="panel">
@@ -34,10 +48,17 @@
           <h3>Матрица факторов (T × K)</h3>
           <span class="hint">Те же T строк, столбцы — факторы (MKT, HML, SMB и др.).</span>
         </div>
-        <textarea v-model="factorsRaw" class="data-textarea" rows="8"
-          placeholder="MKT   HML&#10;0.005 0.002&#10;-0.003 0.001&#10;0.008 -0.001" />
+        <textarea
+          v-model="factorsRaw"
+          class="data-textarea"
+          rows="8"
+          placeholder="MKT   HML&#10;0.005 0.002&#10;-0.003 0.001&#10;0.008 -0.001"
+        />
         <div class="has-header-row">
-          <label><input type="checkbox" v-model="factorsHasHeader" /> Первая строка — имена факторов</label>
+          <label><input
+            v-model="factorsHasHeader"
+            type="checkbox"
+          > Первая строка — имена факторов</label>
         </div>
       </div>
     </div>
@@ -45,65 +66,132 @@
     <!-- Method explanation -->
     <div class="method-row">
       <div class="method-card ts-card">
-        <div class="mc-step">Шаг 1 — Time-Series</div>
-        <div class="mc-formula">R_{i,t} = αᵢ + Σ βᵢₖ·Fₖ,ₜ + εᵢ,ₜ</div>
-        <div class="mc-desc">Оценка факторных нагрузок β для каждого актива. Даёт attribution риска.</div>
+        <div class="mc-step">
+          Шаг 1 — Time-Series
+        </div>
+        <div class="mc-formula">
+          R_{i,t} = αᵢ + Σ βᵢₖ·Fₖ,ₜ + εᵢ,ₜ
+        </div>
+        <div class="mc-desc">
+          Оценка факторных нагрузок β для каждого актива. Даёт attribution риска.
+        </div>
       </div>
-      <div class="method-arrow">→</div>
+      <div class="method-arrow">
+        →
+      </div>
       <div class="method-card cs-card">
-        <div class="mc-step">Шаг 2 — Cross-Sectional</div>
-        <div class="mc-formula">R̄ᵢ = λ₀ + Σ λₖ·βᵢₖ + αᵢ</div>
-        <div class="mc-desc">Оценка факторных премий λ — цена единицы β-риска в CS.</div>
+        <div class="mc-step">
+          Шаг 2 — Cross-Sectional
+        </div>
+        <div class="mc-formula">
+          R̄ᵢ = λ₀ + Σ λₖ·βᵢₖ + αᵢ
+        </div>
+        <div class="mc-desc">
+          Оценка факторных премий λ — цена единицы β-риска в CS.
+        </div>
       </div>
-      <div class="method-arrow">+</div>
+      <div class="method-arrow">
+        +
+      </div>
       <div class="method-card grs-card">
-        <div class="mc-step">GRS тест</div>
-        <div class="mc-formula">F = [(T-N-K)/N] · (1+SR_F²)⁻¹ · α'Σ⁻¹α</div>
-        <div class="mc-desc">H₀: все αᵢ = 0 — модель объясняет все доходности.</div>
+        <div class="mc-step">
+          GRS тест
+        </div>
+        <div class="mc-formula">
+          F = [(T-N-K)/N] · (1+SR_F²)⁻¹ · α'Σ⁻¹α
+        </div>
+        <div class="mc-desc">
+          H₀: все αᵢ = 0 — модель объясняет все доходности.
+        </div>
       </div>
     </div>
 
-    <div v-if="error" class="error-banner">{{ error }}</div>
+    <div
+      v-if="error"
+      class="error-banner"
+    >
+      {{ error }}
+    </div>
 
     <template v-if="result">
-
       <!-- KPI row -->
       <div class="kpi-grid">
         <div class="kpi-card">
-          <div class="kpi-label">Активов N</div>
-          <div class="kpi-value">{{ result.n_assets }}</div>
-          <div class="kpi-sub">{{ result.n_periods }} периодов</div>
+          <div class="kpi-label">
+            Активов N
+          </div>
+          <div class="kpi-value">
+            {{ result.n_assets }}
+          </div>
+          <div class="kpi-sub">
+            {{ result.n_periods }} периодов
+          </div>
         </div>
         <div class="kpi-card">
-          <div class="kpi-label">Факторов K</div>
-          <div class="kpi-value">{{ result.n_factors }}</div>
-          <div class="kpi-sub">{{ result.factor_names?.join(', ') }}</div>
+          <div class="kpi-label">
+            Факторов K
+          </div>
+          <div class="kpi-value">
+            {{ result.n_factors }}
+          </div>
+          <div class="kpi-sub">
+            {{ result.factor_names?.join(', ') }}
+          </div>
         </div>
         <div class="kpi-card">
-          <div class="kpi-label">R² TS (avg)</div>
-          <div class="kpi-value" :class="result.ts.mean_r2 > 0.5 ? 'val-green' : 'val-yellow'">{{ pct(result.ts.mean_r2) }}</div>
-          <div class="kpi-sub">средний по активам</div>
+          <div class="kpi-label">
+            R² TS (avg)
+          </div>
+          <div
+            class="kpi-value"
+            :class="result.ts.mean_r2 > 0.5 ? 'val-green' : 'val-yellow'"
+          >
+            {{ pct(result.ts.mean_r2) }}
+          </div>
+          <div class="kpi-sub">
+            средний по активам
+          </div>
         </div>
         <div class="kpi-card">
-          <div class="kpi-label">R² CS</div>
-          <div class="kpi-value">{{ pct(result.cs.r2_cs) }}</div>
-          <div class="kpi-sub">cross-sectional</div>
+          <div class="kpi-label">
+            R² CS
+          </div>
+          <div class="kpi-value">
+            {{ pct(result.cs.r2_cs) }}
+          </div>
+          <div class="kpi-sub">
+            cross-sectional
+          </div>
         </div>
-        <div class="kpi-card" :class="result.ts.grs.rejects_H0 ? 'kpi-red' : 'kpi-green'">
-          <div class="kpi-label">GRS тест</div>
-          <div class="kpi-value">{{ result.ts.grs.rejects_H0 ? 'Отклоняет' : 'Не откл.' }}</div>
-          <div class="kpi-sub">p = {{ fmtP(result.ts.grs.p_value) }}</div>
+        <div
+          class="kpi-card"
+          :class="result.ts.grs.rejects_H0 ? 'kpi-red' : 'kpi-green'"
+        >
+          <div class="kpi-label">
+            GRS тест
+          </div>
+          <div class="kpi-value">
+            {{ result.ts.grs.rejects_H0 ? 'Отклоняет' : 'Не откл.' }}
+          </div>
+          <div class="kpi-sub">
+            p = {{ fmtP(result.ts.grs.p_value) }}
+          </div>
         </div>
         <div class="kpi-card">
-          <div class="kpi-label">Shanken c</div>
-          <div class="kpi-value mono">{{ fmt2(result.cs.shanken_c) }}</div>
-          <div class="kpi-sub">коррекция SE</div>
+          <div class="kpi-label">
+            Shanken c
+          </div>
+          <div class="kpi-value mono">
+            {{ fmt2(result.cs.shanken_c) }}
+          </div>
+          <div class="kpi-sub">
+            коррекция SE
+          </div>
         </div>
       </div>
 
       <!-- TS results + CS results -->
       <div class="results-grid">
-
         <!-- TS: бета-матрица + alpha -->
         <div class="panel">
           <div class="panel-header">
@@ -115,23 +203,42 @@
               <tr>
                 <th>Актив</th>
                 <th>α</th>
-                <th v-for="f in result.factor_names" :key="f">β<sub>{{ f }}</sub></th>
+                <th
+                  v-for="f in result.factor_names"
+                  :key="f"
+                >
+                  β<sub>{{ f }}</sub>
+                </th>
                 <th>R²</th>
                 <th>Sys%</th>
               </tr>
             </thead>
             <tbody>
-              <tr v-for="a in result.ts.assets" :key="a.asset">
+              <tr
+                v-for="a in result.ts.assets"
+                :key="a.asset"
+              >
                 <td>{{ a.asset }}</td>
-                <td class="mono" :class="Math.abs(a.t_alpha) > 1.96 ? (a.alpha > 0 ? 'pos' : 'neg') : ''">
+                <td
+                  class="mono"
+                  :class="Math.abs(a.t_alpha) > 1.96 ? (a.alpha > 0 ? 'pos' : 'neg') : ''"
+                >
                   {{ fmt4(a.alpha) }}{{ Math.abs(a.t_alpha) > 2.58 ? '**' : Math.abs(a.t_alpha) > 1.96 ? '*' : '' }}
                 </td>
-                <td v-for="(b, k) in a.betas" :key="k" class="mono"
-                    :class="Math.abs(a.t_betas[k]) > 1.96 ? 'accent' : ''">
+                <td
+                  v-for="(b, k) in a.betas"
+                  :key="k"
+                  class="mono"
+                  :class="Math.abs(a.t_betas[k]) > 1.96 ? 'accent' : ''"
+                >
                   {{ fmt3(b) }}{{ Math.abs(a.t_betas[k]) > 2.58 ? '**' : Math.abs(a.t_betas[k]) > 1.96 ? '*' : '' }}
                 </td>
-                <td class="mono">{{ pct(a.r2) }}</td>
-                <td class="mono">{{ pct(result.ts.systematic_share[result.ts.assets.indexOf(a)]) }}</td>
+                <td class="mono">
+                  {{ pct(a.r2) }}
+                </td>
+                <td class="mono">
+                  {{ pct(result.ts.systematic_share[result.ts.assets.indexOf(a)]) }}
+                </td>
               </tr>
             </tbody>
           </table>
@@ -140,9 +247,18 @@
           <div class="grs-box">
             <span class="grs-label">GRS F({{ result.ts.grs.df1 }}, {{ result.ts.grs.df2 }})</span>
             <span class="mono">= {{ fmt2(result.ts.grs.stat) }}</span>
-            <span class="grs-label" style="margin-left:12px">p-value</span>
-            <span class="mono" :class="result.ts.grs.rejects_H0 ? 'neg' : 'pos'">= {{ fmtP(result.ts.grs.p_value) }}</span>
-            <span class="grs-verdict" :class="result.ts.grs.rejects_H0 ? 'neg' : 'pos'">
+            <span
+              class="grs-label"
+              style="margin-left:12px"
+            >p-value</span>
+            <span
+              class="mono"
+              :class="result.ts.grs.rejects_H0 ? 'neg' : 'pos'"
+            >= {{ fmtP(result.ts.grs.p_value) }}</span>
+            <span
+              class="grs-verdict"
+              :class="result.ts.grs.rejects_H0 ? 'neg' : 'pos'"
+            >
               {{ result.ts.grs.rejects_H0 ? '→ H₀ отклоняется: значимые альфа' : '→ H₀ не отклоняется: модель адекватна' }}
             </span>
           </div>
@@ -165,34 +281,79 @@
               </tr>
             </thead>
             <tbody>
-              <tr v-for="rp in result.cs.risk_premia" :key="rp.name">
+              <tr
+                v-for="rp in result.cs.risk_premia"
+                :key="rp.name"
+              >
                 <td>{{ rp.name }}</td>
-                <td class="mono accent">{{ fmt4(rp.lambda_mean) }}</td>
-                <td class="mono muted">{{ fmt4(rp.se_fm) }}</td>
-                <td class="mono">{{ fmt4(rp.se_shanken) }}</td>
-                <td class="mono" :class="Math.abs(rp.t_stat) > 1.96 ? 'pos' : 'muted'">{{ fmt2(rp.t_stat) }}</td>
-                <td class="mono" :class="rp.p_value < 0.05 ? 'pos' : 'muted'">{{ fmtP(rp.p_value) }}</td>
+                <td class="mono accent">
+                  {{ fmt4(rp.lambda_mean) }}
+                </td>
+                <td class="mono muted">
+                  {{ fmt4(rp.se_fm) }}
+                </td>
+                <td class="mono">
+                  {{ fmt4(rp.se_shanken) }}
+                </td>
+                <td
+                  class="mono"
+                  :class="Math.abs(rp.t_stat) > 1.96 ? 'pos' : 'muted'"
+                >
+                  {{ fmt2(rp.t_stat) }}
+                </td>
+                <td
+                  class="mono"
+                  :class="rp.p_value < 0.05 ? 'pos' : 'muted'"
+                >
+                  {{ fmtP(rp.p_value) }}
+                </td>
               </tr>
             </tbody>
           </table>
 
           <!-- Pricing errors chart -->
-          <div class="panel-header" style="margin-top:16px">
+          <div
+            class="panel-header"
+            style="margin-top:16px"
+          >
             <h3>Ценовые ошибки per asset</h3>
             <span class="hint">αᵢ = E[Rᵢ] − λ'βᵢ</span>
           </div>
-          <div ref="peChartEl" class="chart-sm" />
+          <div
+            ref="peChartEl"
+            class="chart-sm"
+          />
 
           <!-- Factor stats -->
-          <div class="panel-header" style="margin-top:16px"><h3>Статистика факторов</h3></div>
+          <div
+            class="panel-header"
+            style="margin-top:16px"
+          >
+            <h3>Статистика факторов</h3>
+          </div>
           <table class="stats-table">
             <thead><tr><th>Фактор</th><th>E[F]</th><th>Vol</th><th>Sharpe</th></tr></thead>
             <tbody>
-              <tr v-for="fs in result.factor_stats" :key="fs.name">
+              <tr
+                v-for="fs in result.factor_stats"
+                :key="fs.name"
+              >
                 <td>{{ fs.name }}</td>
-                <td class="mono" :class="fs.mean > 0 ? 'pos' : 'neg'">{{ fmt4(fs.mean) }}</td>
-                <td class="mono">{{ fmt4(fs.vol) }}</td>
-                <td class="mono" :class="fs.sharpe > 0 ? 'pos' : 'neg'">{{ fmt2(fs.sharpe) }}</td>
+                <td
+                  class="mono"
+                  :class="fs.mean > 0 ? 'pos' : 'neg'"
+                >
+                  {{ fmt4(fs.mean) }}
+                </td>
+                <td class="mono">
+                  {{ fmt4(fs.vol) }}
+                </td>
+                <td
+                  class="mono"
+                  :class="fs.sharpe > 0 ? 'pos' : 'neg'"
+                >
+                  {{ fmt2(fs.sharpe) }}
+                </td>
               </tr>
             </tbody>
           </table>
@@ -204,9 +365,11 @@
         <div class="panel-header">
           <h3>Тепловая карта β (активы × факторы)</h3>
         </div>
-        <div ref="heatmapEl" class="chart-container" />
+        <div
+          ref="heatmapEl"
+          class="chart-container"
+        />
       </div>
-
     </template>
   </div>
 </template>

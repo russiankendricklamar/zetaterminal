@@ -1,39 +1,70 @@
 <!-- src/pages/HedgingAssistant.vue -->
 <template>
   <div class="hedging-assistant-page">
-    
     <!-- Header Section -->
     <div class="page-header">
       <div class="header-left">
-        <h1 class="page-title">Помощник по хеджированию</h1>
-        <p class="page-subtitle">Репликация и хеджирование портфеля инструментами</p>
+        <h1 class="page-title">
+          Помощник по хеджированию
+        </h1>
+        <p class="page-subtitle">
+          Репликация и хеджирование портфеля инструментами
+        </p>
       </div>
       
       <div class="header-right">
         <!-- Position Type -->
         <div class="control-group">
           <label class="control-label">Позиция:</label>
-          <select v-model="selectedPosition" class="position-select" @change="updateHedge">
-            <option value="long-bond">Long позиция в облигациях</option>
-            <option value="long-stock">Long позиция в акциях</option>
-            <option value="long-swap">Long Interest Rate Swap</option>
-            <option value="long-credit">Long кредитная экспозиция</option>
+          <select
+            v-model="selectedPosition"
+            class="position-select"
+            @change="updateHedge"
+          >
+            <option value="long-bond">
+              Long позиция в облигациях
+            </option>
+            <option value="long-stock">
+              Long позиция в акциях
+            </option>
+            <option value="long-swap">
+              Long Interest Rate Swap
+            </option>
+            <option value="long-credit">
+              Long кредитная экспозиция
+            </option>
           </select>
         </div>
 
         <!-- Hedging Strategy -->
         <div class="control-group">
           <label class="control-label">Стратегия:</label>
-          <select v-model="selectedStrategy" class="strategy-select" @change="updateHedge">
-            <option value="delta">Delta хедж</option>
-            <option value="duration">Совпадение Duration</option>
-            <option value="regression">Регрессионный хедж</option>
-            <option value="optimal">Оптимальная репликация</option>
+          <select
+            v-model="selectedStrategy"
+            class="strategy-select"
+            @change="updateHedge"
+          >
+            <option value="delta">
+              Delta хедж
+            </option>
+            <option value="duration">
+              Совпадение Duration
+            </option>
+            <option value="regression">
+              Регрессионный хедж
+            </option>
+            <option value="optimal">
+              Оптимальная репликация
+            </option>
           </select>
         </div>
 
         <!-- Calculate Button -->
-        <button @click="calculateHedge" class="btn-primary" :disabled="calculating">
+        <button
+          class="btn-primary"
+          :disabled="calculating"
+          @click="calculateHedge"
+        >
           <span v-if="!calculating">Пересчитать хедж</span>
           <span v-else>↺ Считаю...</span>
         </button>
@@ -73,13 +104,19 @@
         <div class="overview-metrics">
           <div class="metric">
             <span class="label">DV01</span>
-            <span class="value" :class="positionInfo.dv01 >= 0 ? 'positive' : 'negative'">
+            <span
+              class="value"
+              :class="positionInfo.dv01 >= 0 ? 'positive' : 'negative'"
+            >
               {{ formatCompactCurrency(positionInfo.dv01) }}
             </span>
           </div>
           <div class="metric">
             <span class="label">Vega (Vol)</span>
-            <span class="value" :class="positionInfo.vega >= 0 ? 'positive' : 'negative'">
+            <span
+              class="value"
+              :class="positionInfo.vega >= 0 ? 'positive' : 'negative'"
+            >
               {{ formatCompactCurrency(positionInfo.vega) }}
             </span>
           </div>
@@ -169,31 +206,67 @@
         <table class="hedge-table">
           <thead>
             <tr>
-              <th class="col-instrument">Инструмент</th>
-              <th class="col-quantity">Количество</th>
-              <th class="col-size">Размер (М)</th>
-              <th class="col-dv01">DV01 вклад</th>
-              <th class="col-vega">Vega вклад</th>
-              <th class="col-cost">Стоимость (bp)</th>
-              <th class="col-action">Действие</th>
+              <th class="col-instrument">
+                Инструмент
+              </th>
+              <th class="col-quantity">
+                Количество
+              </th>
+              <th class="col-size">
+                Размер (М)
+              </th>
+              <th class="col-dv01">
+                DV01 вклад
+              </th>
+              <th class="col-vega">
+                Vega вклад
+              </th>
+              <th class="col-cost">
+                Стоимость (bp)
+              </th>
+              <th class="col-action">
+                Действие
+              </th>
             </tr>
           </thead>
           <tbody>
-            <tr v-for="hedge in hedgePortfolio" :key="hedge.id" :class="hedge.direction.toLowerCase()">
+            <tr
+              v-for="hedge in hedgePortfolio"
+              :key="hedge.id"
+              :class="hedge.direction.toLowerCase()"
+            >
               <td class="col-instrument">
-                <span class="instrument-badge" :class="hedge.type">{{ hedge.instrument }}</span>
+                <span
+                  class="instrument-badge"
+                  :class="hedge.type"
+                >{{ hedge.instrument }}</span>
               </td>
-              <td class="col-quantity mono">{{ hedge.quantity.toFixed(2) }}</td>
-              <td class="col-size accent">{{ formatCompactCurrency(hedge.size) }}</td>
-              <td class="col-dv01" :class="hedge.dv01Contribution >= 0 ? 'positive' : 'negative'">
+              <td class="col-quantity mono">
+                {{ hedge.quantity.toFixed(2) }}
+              </td>
+              <td class="col-size accent">
+                {{ formatCompactCurrency(hedge.size) }}
+              </td>
+              <td
+                class="col-dv01"
+                :class="hedge.dv01Contribution >= 0 ? 'positive' : 'negative'"
+              >
                 {{ hedge.dv01Contribution >= 0 ? '+' : '' }}{{ formatCompactCurrency(hedge.dv01Contribution) }}
               </td>
-              <td class="col-vega" :class="hedge.vegaContribution >= 0 ? 'positive' : 'negative'">
+              <td
+                class="col-vega"
+                :class="hedge.vegaContribution >= 0 ? 'positive' : 'negative'"
+              >
                 {{ hedge.vegaContribution >= 0 ? '+' : '' }}{{ formatCompactCurrency(hedge.vegaContribution) }}
               </td>
-              <td class="col-cost mono">{{ hedge.cost }}</td>
+              <td class="col-cost mono">
+                {{ hedge.cost }}
+              </td>
               <td class="col-action">
-                <button @click="executeHedge(hedge.id)" class="btn-action">
+                <button
+                  class="btn-action"
+                  @click="executeHedge(hedge.id)"
+                >
                   {{ hedge.executed ? '✓' : '↓' }}
                 </button>
               </td>
@@ -201,12 +274,22 @@
           </tbody>
           <tfoot>
             <tr class="total-row">
-              <td colspan="2"><strong>ИТОГО ХЕДЖ</strong></td>
-              <td class="accent"><strong>{{ formatCompactCurrency(totalHedgeSize) }}</strong></td>
-              <td class="positive"><strong>{{ formatCompactCurrency(totalDv01) }}</strong></td>
-              <td class="blue"><strong>{{ formatCompactCurrency(totalVega) }}</strong></td>
-              <td class="mono"><strong>{{ totalCost.toFixed(1) }}bp</strong></td>
-              <td></td>
+              <td colspan="2">
+                <strong>ИТОГО ХЕДЖ</strong>
+              </td>
+              <td class="accent">
+                <strong>{{ formatCompactCurrency(totalHedgeSize) }}</strong>
+              </td>
+              <td class="positive">
+                <strong>{{ formatCompactCurrency(totalDv01) }}</strong>
+              </td>
+              <td class="blue">
+                <strong>{{ formatCompactCurrency(totalVega) }}</strong>
+              </td>
+              <td class="mono">
+                <strong>{{ totalCost.toFixed(1) }}bp</strong>
+              </td>
+              <td />
             </tr>
           </tfoot>
         </table>
@@ -232,28 +315,60 @@
             </thead>
             <tbody>
               <tr>
-                <td class="metric-name">DV01 (М/bp)</td>
-                <td class="value accent">{{ formatCompactCurrency(positionInfo.dv01) }}</td>
-                <td class="value cyan">{{ formatCompactCurrency(positionInfo.dv01 - totalDv01) }}</td>
-                <td class="value green">{{ ((totalDv01 / positionInfo.dv01) * 100).toFixed(1) }}%</td>
+                <td class="metric-name">
+                  DV01 (М/bp)
+                </td>
+                <td class="value accent">
+                  {{ formatCompactCurrency(positionInfo.dv01) }}
+                </td>
+                <td class="value cyan">
+                  {{ formatCompactCurrency(positionInfo.dv01 - totalDv01) }}
+                </td>
+                <td class="value green">
+                  {{ ((totalDv01 / positionInfo.dv01) * 100).toFixed(1) }}%
+                </td>
               </tr>
               <tr>
-                <td class="metric-name">Vega (М/1%)</td>
-                <td class="value accent">{{ formatCompactCurrency(positionInfo.vega) }}</td>
-                <td class="value cyan">{{ formatCompactCurrency(positionInfo.vega - totalVega) }}</td>
-                <td class="value green">{{ ((totalVega / positionInfo.vega) * 100).toFixed(1) }}%</td>
+                <td class="metric-name">
+                  Vega (М/1%)
+                </td>
+                <td class="value accent">
+                  {{ formatCompactCurrency(positionInfo.vega) }}
+                </td>
+                <td class="value cyan">
+                  {{ formatCompactCurrency(positionInfo.vega - totalVega) }}
+                </td>
+                <td class="value green">
+                  {{ ((totalVega / positionInfo.vega) * 100).toFixed(1) }}%
+                </td>
               </tr>
               <tr>
-                <td class="metric-name">Max Loss (1σ)</td>
-                <td class="value negative">{{ formatCompactCurrency(positionInfo.maxLoss) }}</td>
-                <td class="value cyan">{{ formatCompactCurrency(positionInfo.maxLoss * 0.15) }}</td>
-                <td class="value green">{{ 85 }}%</td>
+                <td class="metric-name">
+                  Max Loss (1σ)
+                </td>
+                <td class="value negative">
+                  {{ formatCompactCurrency(positionInfo.maxLoss) }}
+                </td>
+                <td class="value cyan">
+                  {{ formatCompactCurrency(positionInfo.maxLoss * 0.15) }}
+                </td>
+                <td class="value green">
+                  {{ 85 }}%
+                </td>
               </tr>
               <tr>
-                <td class="metric-name">Correlation</td>
-                <td class="value">-</td>
-                <td class="value blue mono">{{ (hedgeCorrelation * 100).toFixed(1) }}%</td>
-                <td class="value green">{{ (hedgeCorrelation * 100).toFixed(1) }}%</td>
+                <td class="metric-name">
+                  Correlation
+                </td>
+                <td class="value">
+                  -
+                </td>
+                <td class="value blue mono">
+                  {{ (hedgeCorrelation * 100).toFixed(1) }}%
+                </td>
+                <td class="value green">
+                  {{ (hedgeCorrelation * 100).toFixed(1) }}%
+                </td>
               </tr>
             </tbody>
           </table>
@@ -269,24 +384,42 @@
           <div class="reduction-item">
             <span class="risk-type">Направленный риск</span>
             <div class="bar-container">
-              <div class="bar-before" style="width: 100%; height: 8px; background: rgba(248, 113, 113, 0.4);"></div>
-              <div class="bar-after" style="width: 5%; height: 8px; background: rgba(74, 222, 128, 0.6); position: relative; top: -8px;"></div>
+              <div
+                class="bar-before"
+                style="width: 100%; height: 8px; background: rgba(248, 113, 113, 0.4);"
+              />
+              <div
+                class="bar-after"
+                style="width: 5%; height: 8px; background: rgba(74, 222, 128, 0.6); position: relative; top: -8px;"
+              />
             </div>
             <span class="reduction-text">95% снижено</span>
           </div>
           <div class="reduction-item">
             <span class="risk-type">Риск Duration</span>
             <div class="bar-container">
-              <div class="bar-before" style="width: 100%; height: 8px; background: rgba(248, 113, 113, 0.4);"></div>
-              <div class="bar-after" style="width: 8%; height: 8px; background: rgba(74, 222, 128, 0.6); position: relative; top: -8px;"></div>
+              <div
+                class="bar-before"
+                style="width: 100%; height: 8px; background: rgba(248, 113, 113, 0.4);"
+              />
+              <div
+                class="bar-after"
+                style="width: 8%; height: 8px; background: rgba(74, 222, 128, 0.6); position: relative; top: -8px;"
+              />
             </div>
             <span class="reduction-text">92% снижено</span>
           </div>
           <div class="reduction-item">
             <span class="risk-type">Риск Vol</span>
             <div class="bar-container">
-              <div class="bar-before" style="width: 100%; height: 8px; background: rgba(248, 113, 113, 0.4);"></div>
-              <div class="bar-after" style="width: 15%; height: 8px; background: rgba(74, 222, 128, 0.6); position: relative; top: -8px;"></div>
+              <div
+                class="bar-before"
+                style="width: 100%; height: 8px; background: rgba(248, 113, 113, 0.4);"
+              />
+              <div
+                class="bar-after"
+                style="width: 15%; height: 8px; background: rgba(74, 222, 128, 0.6); position: relative; top: -8px;"
+              />
             </div>
             <span class="reduction-text">85% снижено</span>
           </div>
@@ -303,13 +436,17 @@
           <span class="chart-subtitle">Разложение по инструментам</span>
         </div>
         <div class="cost-breakdown">
-          <div v-for="hedge in hedgePortfolio" :key="hedge.id" class="cost-item">
+          <div
+            v-for="hedge in hedgePortfolio"
+            :key="hedge.id"
+            class="cost-item"
+          >
             <span class="instrument-name">{{ hedge.instrument }}</span>
             <div class="cost-bar-container">
               <div 
                 class="cost-bar"
                 :style="{ width: Math.min(100, Math.max(2, (Math.abs(hedge.cost) / Math.max(totalCost, 1)) * 100)) + '%' }"
-              ></div>
+              />
             </div>
             <span class="cost-value mono">{{ hedge.cost.toFixed(1) }}bp</span>
           </div>
@@ -319,7 +456,7 @@
               <div 
                 class="cost-bar total-bar"
                 :style="{ width: '100%' }"
-              ></div>
+              />
             </div>
             <span class="cost-value total-value mono"><strong>{{ totalCost.toFixed(1) }}bp</strong></span>
           </div>
@@ -376,21 +513,41 @@
             </tr>
           </thead>
           <tbody>
-            <tr v-for="scenario in scenarioAnalysis" :key="scenario.id" :class="scenario.id === 3 ? 'base' : ''">
-              <td class="scenario-name">{{ scenario.name }}</td>
-              <td class="market-move" :class="scenario.move >= 0 ? 'positive' : 'negative'">
+            <tr
+              v-for="scenario in scenarioAnalysis"
+              :key="scenario.id"
+              :class="scenario.id === 3 ? 'base' : ''"
+            >
+              <td class="scenario-name">
+                {{ scenario.name }}
+              </td>
+              <td
+                class="market-move"
+                :class="scenario.move >= 0 ? 'positive' : 'negative'"
+              >
                 {{ scenario.move >= 0 ? '+' : '' }}{{ scenario.move.toFixed(0) }}bp
               </td>
-              <td class="pnl" :class="scenario.originalPnL >= 0 ? 'positive' : 'negative'">
+              <td
+                class="pnl"
+                :class="scenario.originalPnL >= 0 ? 'positive' : 'negative'"
+              >
                 {{ scenario.originalPnL >= 0 ? '+' : '' }}{{ formatCompactCurrency(scenario.originalPnL) }}
               </td>
-              <td class="pnl" :class="scenario.hedgePnL >= 0 ? 'positive' : 'negative'">
+              <td
+                class="pnl"
+                :class="scenario.hedgePnL >= 0 ? 'positive' : 'negative'"
+              >
                 {{ scenario.hedgePnL >= 0 ? '+' : '' }}{{ formatCompactCurrency(scenario.hedgePnL) }}
               </td>
-              <td class="pnl" :class="scenario.netPnL >= 0 ? 'positive' : 'negative'">
+              <td
+                class="pnl"
+                :class="scenario.netPnL >= 0 ? 'positive' : 'negative'"
+              >
                 {{ scenario.netPnL >= 0 ? '+' : '' }}{{ formatCompactCurrency(scenario.netPnL) }}
               </td>
-              <td class="effectiveness mono">{{ (scenario.effectiveness * 100).toFixed(1) }}%</td>
+              <td class="effectiveness mono">
+                {{ (scenario.effectiveness * 100).toFixed(1) }}%
+              </td>
             </tr>
           </tbody>
         </table>
@@ -404,11 +561,21 @@
         <span class="card-subtitle">Ордера и исполнение</span>
       </div>
       <div class="execution-status">
-        <div v-for="hedge in hedgePortfolio" :key="hedge.id" class="execution-item">
+        <div
+          v-for="hedge in hedgePortfolio"
+          :key="hedge.id"
+          class="execution-item"
+        >
           <div class="execution-header">
-            <span class="instrument-badge" :class="hedge.type">{{ hedge.instrument }}</span>
+            <span
+              class="instrument-badge"
+              :class="hedge.type"
+            >{{ hedge.instrument }}</span>
             <span class="quantity">{{ hedge.quantity.toFixed(2) }} контрактов</span>
-            <span class="status" :class="hedge.executed ? 'executed' : 'pending'">
+            <span
+              class="status"
+              :class="hedge.executed ? 'executed' : 'pending'"
+            >
               {{ hedge.executed ? '✓ Исполнено' : 'Ожидание' }}
             </span>
           </div>
@@ -428,7 +595,6 @@
       <span>• Обновление: В реальном времени</span>
       <span>• Запас прочности: 10% (buffer)</span>
     </div>
-
   </div>
 </template>
 

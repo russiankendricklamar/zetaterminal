@@ -5,13 +5,13 @@
       <div 
         :key="newsIndex" 
         class="progress-bar h-full bg-gradient-to-l from-blue-500 via-blue-400 to-cyan-400 shadow-[0_0_15px_rgba(59,130,246,0.8)]"
-      ></div>
+      />
     </div>
 
     <!-- Header -->
     <div class="flex items-center justify-between mb-4 flex-shrink-0">
       <span class="text-xs uppercase font-bold text-gray-400 tracking-wider flex items-center gap-2">
-        <div class="w-2 h-2 rounded-full bg-blue-500 animate-pulse shadow-[0_0_10px_rgba(59,130,246,0.5)]"></div> 
+        <div class="w-2 h-2 rounded-full bg-blue-500 animate-pulse shadow-[0_0_10px_rgba(59,130,246,0.5)]" /> 
         ЛЕНТА НОВОСТЕЙ
       </span>
       <span class="text-[10px] text-emerald-400 font-mono flex items-center gap-1 bg-emerald-500/10 px-2 py-1 rounded-full border border-emerald-500/20">
@@ -22,7 +22,10 @@
     <!-- Sentiment & Time -->
     <div class="flex justify-between items-start animate-fade-in mb-3">
       <span :class="`px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wide border flex items-center gap-1.5 ${getSentimentColor(currentNews.sentiment)}`">
-        <component :is="getSentimentIcon(currentNews.sentiment)" class="w-3.5 h-3.5" />
+        <component
+          :is="getSentimentIcon(currentNews.sentiment)"
+          class="w-3.5 h-3.5"
+        />
         {{ currentNews.sentiment }}
       </span>
       <span class="text-[10px] text-gray-500 font-mono flex items-center gap-1">

@@ -372,7 +372,7 @@ export function generateMockMarketData(days: number = 500): MarketPoint[] {
   const startDate = new Date('2023-01-01')
   
   let currentState = 0
-  let observations: number[][] = []
+  const observations: number[][] = []
   
   // Генерация последовательности наблюдений
   for (let i = 0; i < days; i++) {

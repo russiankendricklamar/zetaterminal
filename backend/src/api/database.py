@@ -4,32 +4,29 @@ API endpoints for database operations.
 import logging
 import os
 import re
-from io import BytesIO
-from typing import List, Optional
 from datetime import datetime
 
-from fastapi import APIRouter, HTTPException, Depends, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, field_validator
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
 
 from src.database.client import get_session
-from src.middleware.auth import require_auth
-from src.utils.jwt_utils import TokenPayload
-from src.database.repositories import (
-    BondValuationRepository,
-    PortfolioRepository,
-    CalculationHistoryRepository,
-    MarketDataRepository,
-    FileRepository,
-)
 from src.database.models import (
     BondValuationRecord,
-    PortfolioRecord,
     CalculationHistory,
-    MarketDataDaily,
     FileRecord,
+    MarketDataDaily,
+    PortfolioRecord,
 )
+from src.database.repositories import (
+    BondValuationRepository,
+    CalculationHistoryRepository,
+    FileRepository,
+    MarketDataRepository,
+    PortfolioRepository,
+)
+from src.middleware.auth import require_auth
+from src.utils.jwt_utils import TokenPayload
 
 logger = logging.getLogger(__name__)
 
@@ -75,9 +72,9 @@ async def get_bond_valuation(
 
 @router.get("/bond-valuations", response_model=dict)
 async def get_bond_valuations(
-    secid: Optional[str] = None,
-    start_date: Optional[str] = None,
-    end_date: Optional[str] = None,
+    secid: str | None = None,
+    start_date: str | None = None,
+    end_date: str | None = None,
     limit: int = Query(100, ge=1, le=1000),
     user: TokenPayload = Depends(require_auth),
     session: AsyncSession = Depends(get_session),
@@ -184,7 +181,7 @@ async def create_calculation_history(
 
 @router.get("/calculation-history", response_model=dict)
 async def get_calculation_history(
-    calculation_type: Optional[str] = None,
+    calculation_type: str | None = None,
     limit: int = Query(50, ge=1, le=1000),
     user: TokenPayload = Depends(require_auth),
     session: AsyncSession = Depends(get_session),
@@ -198,10 +195,10 @@ async def get_calculation_history(
 # Market Data endpoints
 @router.get("/market-data", response_model=dict)
 async def get_market_data(
-    ticker: Optional[str] = None,
-    data_type: Optional[str] = None,
-    start_date: Optional[str] = None,
-    end_date: Optional[str] = None,
+    ticker: str | None = None,
+    data_type: str | None = None,
+    start_date: str | None = None,
+    end_date: str | None = None,
     limit: int = Query(100, ge=1, le=1000),
     user: TokenPayload = Depends(require_auth),
     session: AsyncSession = Depends(get_session),
@@ -228,7 +225,7 @@ async def create_market_data(
 # File endpoints
 @router.get("/files", response_model=dict)
 async def get_files(
-    file_type: Optional[str] = None,
+    file_type: str | None = None,
     limit: int = Query(100, ge=1, le=1000),
     user: TokenPayload = Depends(require_auth),
     session: AsyncSession = Depends(get_session),
@@ -258,12 +255,12 @@ async def get_file(
 # Registry export endpoints
 class RegistryParquetRequest(BaseModel):
     registry_type: str
-    data: List[dict]
-    file_name: Optional[str] = None
+    data: list[dict]
+    file_name: str | None = None
 
     @field_validator("data")
     @classmethod
-    def validate_data_size(cls, v: List[dict]) -> List[dict]:
+    def validate_data_size(cls, v: list[dict]) -> list[dict]:
         if len(v) > 10000:
             raise ValueError("Maximum 10000 records per export")
         return v
@@ -327,11 +324,11 @@ async def export_registry_parquet(
 
 @router.post("/export/market-data/parquet", response_model=dict)
 async def export_market_data_parquet(
-    ticker: Optional[str] = None,
-    data_type: Optional[str] = None,
-    start_date: Optional[str] = None,
-    end_date: Optional[str] = None,
-    file_name: Optional[str] = None,
+    ticker: str | None = None,
+    data_type: str | None = None,
+    start_date: str | None = None,
+    end_date: str | None = None,
+    file_name: str | None = None,
     user: TokenPayload = Depends(require_auth),
     session: AsyncSession = Depends(get_session),
 ):

@@ -1,18 +1,40 @@
 <template>
   <div class="page-container">
-    
     <!-- Hero / Header -->
     <div class="section-header">
       <div class="header-left">
-        <h1 class="section-title">Отчет по оценке облигаций</h1>
-        <p class="section-subtitle">Формирование аналитического отчёта</p>
+        <h1 class="section-title">
+          Отчет по оценке облигаций
+        </h1>
+        <p class="section-subtitle">
+          Формирование аналитического отчёта
+        </p>
       </div>
       <div class="header-actions">
-        <button class="btn-glass primary" @click="generateReport" :disabled="loading || !results">
-          <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24" v-if="!loading">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m4-3H8m7-7H5a2 2 0 00-2 2v12a2 2 0 002 2h14a2 2 0 002-2V7a2 2 0 00-2-2z"></path>
+        <button
+          class="btn-glass primary"
+          :disabled="loading || !results"
+          @click="generateReport"
+        >
+          <svg
+            v-if="!loading"
+            width="14"
+            height="14"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M12 10v6m4-3H8m7-7H5a2 2 0 00-2 2v12a2 2 0 002 2h14a2 2 0 002-2V7a2 2 0 00-2-2z"
+            />
           </svg>
-          <span v-else class="spinner-mini"></span>
+          <span
+            v-else
+            class="spinner-mini"
+          />
           <span>{{ loading ? 'Генерация...' : 'Скачать PDF' }}</span>
         </button>
       </div>
@@ -34,7 +56,7 @@
               class="glass-input"
               placeholder="RU000A10AU99"
               @change="onBondChange"
-            />
+            >
           </div>
 
           <div class="form-group">
@@ -44,7 +66,7 @@
               type="date"
               class="glass-input"
               @change="onBondChange"
-            />
+            >
           </div>
 
           <div class="form-group">
@@ -56,30 +78,53 @@
               class="glass-input"
               placeholder="14.0"
               @change="onBondChange"
-            />
+            >
           </div>
 
           <div class="form-group">
             <label class="lbl">База расчета</label>
-            <select v-model.number="params.dayCount" class="glass-input" @change="onBondChange">
-              <option :value="365">ACT/365</option>
-              <option :value="360">30/360</option>
+            <select
+              v-model.number="params.dayCount"
+              class="glass-input"
+              @change="onBondChange"
+            >
+              <option :value="365">
+                ACT/365
+              </option>
+              <option :value="360">
+                30/360
+              </option>
             </select>
           </div>
         </div>
         
-        <button class="btn-glass primary wide" @click="calculateBond" :disabled="loading">
+        <button
+          class="btn-glass primary wide"
+          :disabled="loading"
+          @click="calculateBond"
+        >
           <span v-if="!loading">Загрузить оценку</span>
-          <span v-else class="flex-center"><span class="spinner-mini"></span> Загрузка...</span>
+          <span
+            v-else
+            class="flex-center"
+          ><span class="spinner-mini" /> Загрузка...</span>
         </button>
       </div>
     </div>
 
     <!-- Error Alert -->
     <transition name="fade">
-      <div v-if="error" class="alert-glass alert-danger">
-        <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24">
-          <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
+      <div
+        v-if="error"
+        class="alert-glass alert-danger"
+      >
+        <svg
+          width="16"
+          height="16"
+          fill="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z" />
         </svg>
         <span>{{ error }}</span>
       </div>
@@ -87,295 +132,491 @@
 
     <!-- Step 2: Report Configuration -->
     <transition name="fade">
-    <div v-if="results" class="glass-card panel step-panel">
-      <div class="panel-header">
-        <h3>Шаг 2: Конфигурация отчёта</h3>
-        <span class="step-badge variant-2">2</span>
-      </div>
-
-      <div class="report-config">
-        <!-- Содержание -->
-        <div class="config-section">
-          <h4 class="section-label">Содержание отчета</h4>
-          <div class="checkbox-grid">
-            <label class="checkbox-item">
-              <input v-model="report.includeExec" type="checkbox" />
-              <span>Резюме</span>
-            </label>
-            <label class="checkbox-item">
-              <input v-model="report.includeBondInfo" type="checkbox" />
-              <span>Параметры облигации</span>
-            </label>
-            <label class="checkbox-item">
-              <input v-model="report.includeValuation" type="checkbox" />
-              <span>Результаты оценки</span>
-            </label>
-            <label class="checkbox-item">
-              <input v-model="report.includeCashFlows" type="checkbox" />
-              <span>Таблица денежных потоков</span>
-            </label>
-            <label class="checkbox-item">
-              <input v-model="report.includeCoupons" type="checkbox" />
-              <span>График купонов</span>
-            </label>
-            <label class="checkbox-item">
-              <input v-model="report.includeMetadata" type="checkbox" />
-              <span>Метаданные модели</span>
-            </label>
-          </div>
+      <div
+        v-if="results"
+        class="glass-card panel step-panel"
+      >
+        <div class="panel-header">
+          <h3>Шаг 2: Конфигурация отчёта</h3>
+          <span class="step-badge variant-2">2</span>
         </div>
 
-        <!-- Параметры -->
-        <div class="config-section">
-          <h4 class="section-label">Параметры отчета</h4>
-          <div class="form-row-2">
-            <div class="form-group">
-              <label class="lbl">Автор отчета</label>
-              <input v-model="report.author" type="text" class="glass-input" placeholder="Имя аналитика" />
-            </div>
-            <div class="form-group">
-              <label class="lbl">Компания</label>
-              <input v-model="report.company" type="text" class="glass-input" placeholder="Компания/Фонд" />
+        <div class="report-config">
+          <!-- Содержание -->
+          <div class="config-section">
+            <h4 class="section-label">
+              Содержание отчета
+            </h4>
+            <div class="checkbox-grid">
+              <label class="checkbox-item">
+                <input
+                  v-model="report.includeExec"
+                  type="checkbox"
+                >
+                <span>Резюме</span>
+              </label>
+              <label class="checkbox-item">
+                <input
+                  v-model="report.includeBondInfo"
+                  type="checkbox"
+                >
+                <span>Параметры облигации</span>
+              </label>
+              <label class="checkbox-item">
+                <input
+                  v-model="report.includeValuation"
+                  type="checkbox"
+                >
+                <span>Результаты оценки</span>
+              </label>
+              <label class="checkbox-item">
+                <input
+                  v-model="report.includeCashFlows"
+                  type="checkbox"
+                >
+                <span>Таблица денежных потоков</span>
+              </label>
+              <label class="checkbox-item">
+                <input
+                  v-model="report.includeCoupons"
+                  type="checkbox"
+                >
+                <span>График купонов</span>
+              </label>
+              <label class="checkbox-item">
+                <input
+                  v-model="report.includeMetadata"
+                  type="checkbox"
+                >
+                <span>Метаданные модели</span>
+              </label>
             </div>
           </div>
 
-          <div class="form-group">
-            <label class="lbl">Дополнительные примечания</label>
-            <textarea 
-              v-model="report.notes"
-              class="glass-input textarea"
-              rows="4"
-              placeholder="Комментарии, допущения, ограничения модели..."
-            />
+          <!-- Параметры -->
+          <div class="config-section">
+            <h4 class="section-label">
+              Параметры отчета
+            </h4>
+            <div class="form-row-2">
+              <div class="form-group">
+                <label class="lbl">Автор отчета</label>
+                <input
+                  v-model="report.author"
+                  type="text"
+                  class="glass-input"
+                  placeholder="Имя аналитика"
+                >
+              </div>
+              <div class="form-group">
+                <label class="lbl">Компания</label>
+                <input
+                  v-model="report.company"
+                  type="text"
+                  class="glass-input"
+                  placeholder="Компания/Фонд"
+                >
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="lbl">Дополнительные примечания</label>
+              <textarea 
+                v-model="report.notes"
+                class="glass-input textarea"
+                rows="4"
+                placeholder="Комментарии, допущения, ограничения модели..."
+              />
+            </div>
           </div>
         </div>
       </div>
-    </div>
     </transition>
 
     <!-- Step 3: Report Preview -->
     <transition name="fade">
-    <div v-if="results" class="glass-card panel step-panel preview-panel">
-      <div class="panel-header">
-        <h3>Шаг 3: Предпросмотр отчета</h3>
-        <span class="step-badge variant-3">3</span>
+      <div
+        v-if="results"
+        class="glass-card panel step-panel preview-panel"
+      >
+        <div class="panel-header">
+          <h3>Шаг 3: Предпросмотр отчета</h3>
+          <span class="step-badge variant-3">3</span>
+        </div>
+
+        <div class="report-preview">
+          <!-- Executive Summary -->
+          <div
+            v-if="report.includeExec"
+            class="report-section"
+          >
+            <h2 class="report-title">
+              Резюме
+            </h2>
+            <div class="summary-box">
+              <div class="summary-row">
+                <span class="label">Облигация</span>
+                <span class="value mono">{{ results.secid }}</span>
+              </div>
+              <div class="summary-row">
+                <span class="label">Справедливая стоимость</span>
+                <span class="value text-gradient-blue">{{ formatNumber(results.dirtyPrice, 4) }} ₽</span>
+              </div>
+              <div class="summary-row">
+                <span class="label">Чистая цена</span>
+                <span class="value">{{ formatNumber(results.cleanPrice, 4) }} ₽</span>
+              </div>
+              <div class="summary-row">
+                <span class="label">% от номинала</span>
+                <span class="value">{{ formatNumber(results.pricePercent, 2) }}%</span>
+              </div>
+              <div class="summary-row">
+                <span class="label">Дюрация (Modified)</span>
+                <span class="value text-orange">{{ formatNumber(results.duration, 4) }} лет</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Bond Info -->
+          <div
+            v-if="report.includeBondInfo"
+            class="report-section"
+          >
+            <h2 class="report-title">
+              Параметры облигации
+            </h2>
+            <div class="report-table-wrapper">
+              <table class="report-table">
+                <tbody>
+                  <tr>
+                    <td class="label">
+                      SECID/ISIN
+                    </td>
+                    <td class="value mono">
+                      {{ results.secid }}
+                    </td>
+                  </tr>
+                  <tr>
+                    <td class="label">
+                      Номинал
+                    </td>
+                    <td class="value mono">
+                      {{ formatNumber(results.faceValue) }} ₽
+                    </td>
+                  </tr>
+                  <tr>
+                    <td class="label">
+                      Купон
+                    </td>
+                    <td class="value mono">
+                      {{ formatNumber(results.couponPercent, 3) }}% годовых
+                    </td>
+                  </tr>
+                  <tr>
+                    <td class="label">
+                      Дата выпуска
+                    </td>
+                    <td class="value">
+                      {{ formatDate(results.issueDate) }}
+                    </td>
+                  </tr>
+                  <tr>
+                    <td class="label">
+                      Дата погашения
+                    </td>
+                    <td class="value">
+                      {{ formatDate(results.maturityDate) }}
+                    </td>
+                  </tr>
+                  <tr>
+                    <td class="label">
+                      Периодичность выплат
+                    </td>
+                    <td class="value">
+                      {{ results.paymentsPerYear }} раз(а) в год
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Valuation Results -->
+          <div
+            v-if="report.includeValuation"
+            class="report-section"
+          >
+            <h2 class="report-title">
+              Результаты оценки
+            </h2>
+            <div class="report-table-wrapper">
+              <table class="report-table">
+                <tbody>
+                  <tr>
+                    <td class="label">
+                      Dirty Price
+                    </td>
+                    <td class="value mono text-gradient-blue">
+                      {{ formatNumber(results.dirtyPrice, 4) }} ₽
+                    </td>
+                  </tr>
+                  <tr>
+                    <td class="label">
+                      НКД
+                    </td>
+                    <td class="value mono">
+                      {{ formatNumber(results.accruedInterest, 4) }} ₽
+                    </td>
+                  </tr>
+                  <tr>
+                    <td class="label">
+                      Clean Price
+                    </td>
+                    <td class="value mono">
+                      {{ formatNumber(results.cleanPrice, 4) }} ₽
+                    </td>
+                  </tr>
+                  <tr>
+                    <td class="label">
+                      Цена в % от номинала
+                    </td>
+                    <td class="value mono">
+                      {{ formatNumber(results.pricePercent, 3) }}%
+                    </td>
+                  </tr>
+                  <tr>
+                    <td class="label">
+                      Дюрация (Modified)
+                    </td>
+                    <td class="value mono text-orange">
+                      {{ formatNumber(results.duration, 4) }} лет
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Cash Flows -->
+          <div
+            v-if="report.includeCashFlows && results.cashFlows"
+            class="report-section"
+          >
+            <h2 class="report-title">
+              Денежные потоки
+            </h2>
+            <p class="report-desc">
+              Таблица дисконтированных денежных потоков
+            </p>
+            <div class="table-scroll">
+              <table class="report-table cf-table">
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th>Дата</th>
+                    <th class="text-right">
+                      T (лет)
+                    </th>
+                    <th class="text-right">
+                      CF (₽)
+                    </th>
+                    <th class="text-right">
+                      DF
+                    </th>
+                    <th class="text-right">
+                      PV (₽)
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr
+                    v-for="(cf, idx) in results.cashFlows"
+                    :key="idx"
+                  >
+                    <td>{{ idx + 1 }}</td>
+                    <td>{{ formatDate(cf.date) }}</td>
+                    <td class="text-right mono">
+                      {{ formatNumber(cf.t, 4) }}
+                    </td>
+                    <td class="text-right mono">
+                      {{ formatNumber(cf.cf, 2) }}
+                    </td>
+                    <td class="text-right mono">
+                      {{ formatNumber(cf.df, 6) }}
+                    </td>
+                    <td class="text-right mono">
+                      {{ formatNumber(cf.pv, 4) }}
+                    </td>
+                  </tr>
+                </tbody>
+                <tfoot>
+                  <tr>
+                    <td
+                      colspan="5"
+                      class="text-right"
+                    >
+                      <strong>Итого</strong>
+                    </td>
+                    <td class="text-right mono">
+                      <strong>{{ formatNumber(results.dirtyPrice, 4) }}</strong>
+                    </td>
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
+          </div>
+
+          <!-- Coupons Schedule -->
+          <div
+            v-if="report.includeCoupons && results.allCoupons"
+            class="report-section"
+          >
+            <h2 class="report-title">
+              График купонных выплат
+            </h2>
+            <p class="report-desc">
+              Полное расписание выплат купонов и номинала
+            </p>
+            <div class="table-scroll">
+              <table class="report-table coupon-table">
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th>Дата купона</th>
+                    <th class="text-right">
+                      Сумма (₽)
+                    </th>
+                    <th>Статус</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr
+                    v-for="(coupon, idx) in results.allCoupons"
+                    :key="idx"
+                  >
+                    <td>{{ idx + 1 }}</td>
+                    <td>{{ formatDate(coupon.date) }}</td>
+                    <td class="text-right mono">
+                      {{ formatNumber(coupon.value, 2) }}
+                    </td>
+                    <td>
+                      <span
+                        class="status-badge"
+                        :class="coupon.isPaid ? 'paid' : 'future'"
+                      >
+                        {{ coupon.isPaid ? '✓ Выплачен' : '◯ Будущий' }}
+                      </span>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Metadata -->
+          <div
+            v-if="report.includeMetadata"
+            class="report-section"
+          >
+            <h2 class="report-title">
+              Метаданные модели
+            </h2>
+            <div class="report-table-wrapper">
+              <table class="report-table">
+                <tbody>
+                  <tr>
+                    <td class="label">
+                      Дата оценки
+                    </td>
+                    <td class="value">
+                      {{ formatDate(params.valuationDate) }}
+                    </td>
+                  </tr>
+                  <tr>
+                    <td class="label">
+                      Дисконтная ставка (YTM)
+                    </td>
+                    <td class="value mono">
+                      {{ formatNumber(params.discountYield, 3) }}%
+                    </td>
+                  </tr>
+                  <tr>
+                    <td class="label">
+                      База расчета дней
+                    </td>
+                    <td class="value mono">
+                      {{ params.dayCount }} дней
+                    </td>
+                  </tr>
+                  <tr>
+                    <td class="label">
+                      Кол-во денежных потоков
+                    </td>
+                    <td class="value">
+                      {{ results.cashFlows.length }}
+                    </td>
+                  </tr>
+                  <tr v-if="report.notes">
+                    <td class="label">
+                      Примечания
+                    </td>
+                    <td class="value">
+                      {{ report.notes }}
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Footer -->
+          <div class="report-footer">
+            <div
+              v-if="report.author"
+              class="footer-item"
+            >
+              <strong>Автор:</strong> {{ report.author }}
+            </div>
+            <div
+              v-if="report.company"
+              class="footer-item"
+            >
+              <strong>Компания:</strong> {{ report.company }}
+            </div>
+            <div class="footer-item">
+              <small>Отчет сформирован: {{ new Date().toLocaleString('ru-RU') }}</small>
+            </div>
+          </div>
+        </div>
       </div>
-
-      <div class="report-preview">
-        
-        <!-- Executive Summary -->
-        <div v-if="report.includeExec" class="report-section">
-          <h2 class="report-title">Резюме</h2>
-          <div class="summary-box">
-            <div class="summary-row">
-              <span class="label">Облигация</span>
-              <span class="value mono">{{ results.secid }}</span>
-            </div>
-            <div class="summary-row">
-              <span class="label">Справедливая стоимость</span>
-              <span class="value text-gradient-blue">{{ formatNumber(results.dirtyPrice, 4) }} ₽</span>
-            </div>
-            <div class="summary-row">
-              <span class="label">Чистая цена</span>
-              <span class="value">{{ formatNumber(results.cleanPrice, 4) }} ₽</span>
-            </div>
-            <div class="summary-row">
-              <span class="label">% от номинала</span>
-              <span class="value">{{ formatNumber(results.pricePercent, 2) }}%</span>
-            </div>
-            <div class="summary-row">
-              <span class="label">Дюрация (Modified)</span>
-              <span class="value text-orange">{{ formatNumber(results.duration, 4) }} лет</span>
-            </div>
-          </div>
-        </div>
-
-        <!-- Bond Info -->
-        <div v-if="report.includeBondInfo" class="report-section">
-          <h2 class="report-title">Параметры облигации</h2>
-          <div class="report-table-wrapper">
-            <table class="report-table">
-              <tbody>
-                <tr>
-                  <td class="label">SECID/ISIN</td>
-                  <td class="value mono">{{ results.secid }}</td>
-                </tr>
-                <tr>
-                  <td class="label">Номинал</td>
-                  <td class="value mono">{{ formatNumber(results.faceValue) }} ₽</td>
-                </tr>
-                <tr>
-                  <td class="label">Купон</td>
-                  <td class="value mono">{{ formatNumber(results.couponPercent, 3) }}% годовых</td>
-                </tr>
-                <tr>
-                  <td class="label">Дата выпуска</td>
-                  <td class="value">{{ formatDate(results.issueDate) }}</td>
-                </tr>
-                <tr>
-                  <td class="label">Дата погашения</td>
-                  <td class="value">{{ formatDate(results.maturityDate) }}</td>
-                </tr>
-                <tr>
-                  <td class="label">Периодичность выплат</td>
-                  <td class="value">{{ results.paymentsPerYear }} раз(а) в год</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        <!-- Valuation Results -->
-        <div v-if="report.includeValuation" class="report-section">
-          <h2 class="report-title">Результаты оценки</h2>
-          <div class="report-table-wrapper">
-            <table class="report-table">
-              <tbody>
-                <tr>
-                  <td class="label">Dirty Price</td>
-                  <td class="value mono text-gradient-blue">{{ formatNumber(results.dirtyPrice, 4) }} ₽</td>
-                </tr>
-                <tr>
-                  <td class="label">НКД</td>
-                  <td class="value mono">{{ formatNumber(results.accruedInterest, 4) }} ₽</td>
-                </tr>
-                <tr>
-                  <td class="label">Clean Price</td>
-                  <td class="value mono">{{ formatNumber(results.cleanPrice, 4) }} ₽</td>
-                </tr>
-                <tr>
-                  <td class="label">Цена в % от номинала</td>
-                  <td class="value mono">{{ formatNumber(results.pricePercent, 3) }}%</td>
-                </tr>
-                <tr>
-                  <td class="label">Дюрация (Modified)</td>
-                  <td class="value mono text-orange">{{ formatNumber(results.duration, 4) }} лет</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        <!-- Cash Flows -->
-        <div v-if="report.includeCashFlows && results.cashFlows" class="report-section">
-          <h2 class="report-title">Денежные потоки</h2>
-          <p class="report-desc">Таблица дисконтированных денежных потоков</p>
-          <div class="table-scroll">
-            <table class="report-table cf-table">
-              <thead>
-                <tr>
-                  <th>#</th>
-                  <th>Дата</th>
-                  <th class="text-right">T (лет)</th>
-                  <th class="text-right">CF (₽)</th>
-                  <th class="text-right">DF</th>
-                  <th class="text-right">PV (₽)</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr v-for="(cf, idx) in results.cashFlows" :key="idx">
-                  <td>{{ idx + 1 }}</td>
-                  <td>{{ formatDate(cf.date) }}</td>
-                  <td class="text-right mono">{{ formatNumber(cf.t, 4) }}</td>
-                  <td class="text-right mono">{{ formatNumber(cf.cf, 2) }}</td>
-                  <td class="text-right mono">{{ formatNumber(cf.df, 6) }}</td>
-                  <td class="text-right mono">{{ formatNumber(cf.pv, 4) }}</td>
-                </tr>
-              </tbody>
-              <tfoot>
-                <tr>
-                  <td colspan="5" class="text-right"><strong>Итого</strong></td>
-                  <td class="text-right mono"><strong>{{ formatNumber(results.dirtyPrice, 4) }}</strong></td>
-                </tr>
-              </tfoot>
-            </table>
-          </div>
-        </div>
-
-        <!-- Coupons Schedule -->
-        <div v-if="report.includeCoupons && results.allCoupons" class="report-section">
-          <h2 class="report-title">График купонных выплат</h2>
-          <p class="report-desc">Полное расписание выплат купонов и номинала</p>
-          <div class="table-scroll">
-            <table class="report-table coupon-table">
-              <thead>
-                <tr>
-                  <th>#</th>
-                  <th>Дата купона</th>
-                  <th class="text-right">Сумма (₽)</th>
-                  <th>Статус</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr v-for="(coupon, idx) in results.allCoupons" :key="idx">
-                  <td>{{ idx + 1 }}</td>
-                  <td>{{ formatDate(coupon.date) }}</td>
-                  <td class="text-right mono">{{ formatNumber(coupon.value, 2) }}</td>
-                  <td>
-                    <span class="status-badge" :class="coupon.isPaid ? 'paid' : 'future'">
-                      {{ coupon.isPaid ? '✓ Выплачен' : '◯ Будущий' }}
-                    </span>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        <!-- Metadata -->
-        <div v-if="report.includeMetadata" class="report-section">
-          <h2 class="report-title">Метаданные модели</h2>
-          <div class="report-table-wrapper">
-            <table class="report-table">
-              <tbody>
-                <tr>
-                  <td class="label">Дата оценки</td>
-                  <td class="value">{{ formatDate(params.valuationDate) }}</td>
-                </tr>
-                <tr>
-                  <td class="label">Дисконтная ставка (YTM)</td>
-                  <td class="value mono">{{ formatNumber(params.discountYield, 3) }}%</td>
-                </tr>
-                <tr>
-                  <td class="label">База расчета дней</td>
-                  <td class="value mono">{{ params.dayCount }} дней</td>
-                </tr>
-                <tr>
-                  <td class="label">Кол-во денежных потоков</td>
-                  <td class="value">{{ results.cashFlows.length }}</td>
-                </tr>
-                <tr v-if="report.notes">
-                  <td class="label">Примечания</td>
-                  <td class="value">{{ report.notes }}</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        <!-- Footer -->
-        <div class="report-footer">
-          <div v-if="report.author" class="footer-item"><strong>Автор:</strong> {{ report.author }}</div>
-          <div v-if="report.company" class="footer-item"><strong>Компания:</strong> {{ report.company }}</div>
-          <div class="footer-item"><small>Отчет сформирован: {{ new Date().toLocaleString('ru-RU') }}</small></div>
-        </div>
-      </div>
-    </div>
     </transition>
 
     <!-- Action Bar -->
     <transition name="fade">
-    <div v-if="results" class="action-bar">
-      <button class="btn-glass primary" @click="generateReport" :disabled="loading">
-        Скачать PDF
-      </button>
-      <button class="btn-glass secondary" @click="printReport">
-        Печать
-      </button>
-      <button class="btn-glass secondary" @click="copyToClipboard">
-        Копировать
-      </button>
-    </div>
+      <div
+        v-if="results"
+        class="action-bar"
+      >
+        <button
+          class="btn-glass primary"
+          :disabled="loading"
+          @click="generateReport"
+        >
+          Скачать PDF
+        </button>
+        <button
+          class="btn-glass secondary"
+          @click="printReport"
+        >
+          Печать
+        </button>
+        <button
+          class="btn-glass secondary"
+          @click="copyToClipboard"
+        >
+          Копировать
+        </button>
+      </div>
     </transition>
   </div>
 </template>

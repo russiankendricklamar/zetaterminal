@@ -6,7 +6,6 @@ Exposes helpers for the admin API to query.
 """
 import asyncio
 import time
-import traceback
 import uuid
 from collections import deque
 from dataclasses import dataclass, field

@@ -8,11 +8,20 @@
         </div>
         <div>
           <div class="flex items-center gap-3 mb-1">
-            <h2 class="text-2xl font-bold text-white tracking-tight">{{ localSymbol }}</h2>
+            <h2 class="text-2xl font-bold text-white tracking-tight">
+              {{ localSymbol }}
+            </h2>
           </div>
           <div class="flex items-center gap-4 text-xs text-gray-400">
-            <span v-if="currentPrice != null" class="font-mono text-white">${{ currentPrice.toFixed(2) }}</span>
-            <span v-if="currentChange != null" :class="currentChange >= 0 ? 'text-emerald-400' : 'text-rose-400'" class="font-bold">
+            <span
+              v-if="currentPrice != null"
+              class="font-mono text-white"
+            >${{ currentPrice.toFixed(2) }}</span>
+            <span
+              v-if="currentChange != null"
+              :class="currentChange >= 0 ? 'text-emerald-400' : 'text-rose-400'"
+              class="font-bold"
+            >
               {{ currentChange >= 0 ? '+' : '' }}{{ currentChange.toFixed(2) }}%
             </span>
             <span class="px-1.5 py-0.5 rounded bg-white/5 text-[10px] uppercase">Анализ цен</span>
@@ -28,8 +37,11 @@
             placeholder="Тикер..."
             class="w-32 bg-black/40 border border-white/10 rounded-lg py-1.5 px-3 text-white font-mono text-sm focus:border-emerald-500/50 outline-none"
             @keydown.enter="changeSymbol"
-          />
-          <button @click="changeSymbol" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-bold transition-colors">
+          >
+          <button
+            class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-bold transition-colors"
+            @click="changeSymbol"
+          >
             Загрузить
           </button>
         </div>
@@ -37,8 +49,8 @@
           <button
             v-for="tab in tabs"
             :key="tab.id"
-            @click="section = tab.id"
             :class="`px-3 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap ${section === tab.id ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' : 'text-gray-500 hover:text-white hover:bg-white/5'}`"
+            @click="section = tab.id"
           >
             {{ tab.label }}
           </button>
@@ -51,60 +63,104 @@
       <button
         v-for="t in quickTickers"
         :key="t"
-        @click="tickerInput = t; changeSymbol()"
         class="px-3 py-1 bg-white/5 hover:bg-white/10 text-xs font-bold text-gray-300 rounded-lg border border-white/5 transition-colors"
+        @click="tickerInput = t; changeSymbol()"
       >
         {{ t }}
       </button>
     </div>
 
-    <div v-if="loading" class="flex items-center gap-2 text-gray-400 text-xs px-6 pt-4">
-      <div class="w-3 h-3 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin"></div>
+    <div
+      v-if="loading"
+      class="flex items-center gap-2 text-gray-400 text-xs px-6 pt-4"
+    >
+      <div class="w-3 h-3 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" />
       Загрузка данных для {{ localSymbol }}...
     </div>
 
-    <div v-if="loadError" class="mx-6 mt-4 p-4 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400 text-sm font-mono">
+    <div
+      v-if="loadError"
+      class="mx-6 mt-4 p-4 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400 text-sm font-mono"
+    >
       {{ loadError }}
     </div>
 
     <!-- Content -->
     <div class="flex-1 overflow-y-auto custom-scrollbar p-6 bg-gradient-to-b from-black/10 to-transparent">
       <!-- Historical Price Table -->
-      <div v-if="section === 'HP'" class="space-y-4">
+      <div
+        v-if="section === 'HP'"
+        class="space-y-4"
+      >
         <div class="flex justify-between items-center">
-          <h3 class="text-lg font-bold text-white">Исторические данные (OHLCV)</h3>
+          <h3 class="text-lg font-bold text-white">
+            Исторические данные (OHLCV)
+          </h3>
           <div class="flex gap-2">
             <button
               v-for="p in periodOptions"
               :key="p.value"
-              @click="selectedPeriod = p.value; loadHistoricalData()"
               :class="`px-3 py-1 rounded-lg text-xs font-bold border transition-all ${selectedPeriod === p.value ? 'bg-emerald-500/20 border-emerald-500/50 text-emerald-300' : 'border-white/10 text-gray-500 hover:text-white'}`"
+              @click="selectedPeriod = p.value; loadHistoricalData()"
             >
               {{ p.label }}
             </button>
           </div>
         </div>
-        <div v-if="historyData.length > 0" class="overflow-x-auto rounded-xl border border-white/5">
+        <div
+          v-if="historyData.length > 0"
+          class="overflow-x-auto rounded-xl border border-white/5"
+        >
           <table class="w-full text-left border-collapse">
             <thead>
               <tr class="bg-white/5 text-xs text-gray-400 uppercase">
-                <th class="p-4 font-bold">Дата</th>
-                <th class="p-4 font-bold text-right">Открытие</th>
-                <th class="p-4 font-bold text-right">Максимум</th>
-                <th class="p-4 font-bold text-right">Минимум</th>
-                <th class="p-4 font-bold text-right">Закрытие</th>
-                <th class="p-4 font-bold text-right">Объём</th>
-                <th class="p-4 font-bold text-right">Изменение %</th>
+                <th class="p-4 font-bold">
+                  Дата
+                </th>
+                <th class="p-4 font-bold text-right">
+                  Открытие
+                </th>
+                <th class="p-4 font-bold text-right">
+                  Максимум
+                </th>
+                <th class="p-4 font-bold text-right">
+                  Минимум
+                </th>
+                <th class="p-4 font-bold text-right">
+                  Закрытие
+                </th>
+                <th class="p-4 font-bold text-right">
+                  Объём
+                </th>
+                <th class="p-4 font-bold text-right">
+                  Изменение %
+                </th>
               </tr>
             </thead>
             <tbody class="text-sm font-mono text-gray-300">
-              <tr v-for="(row, i) in historyData" :key="i" class="border-t border-white/5 hover:bg-white/5 transition-colors">
-                <td class="p-4">{{ row.date }}</td>
-                <td class="p-4 text-right">{{ row.open.toFixed(2) }}</td>
-                <td class="p-4 text-right text-emerald-400/80">{{ row.high.toFixed(2) }}</td>
-                <td class="p-4 text-right text-rose-400/80">{{ row.low.toFixed(2) }}</td>
-                <td class="p-4 text-right font-bold text-white">{{ row.close.toFixed(2) }}</td>
-                <td class="p-4 text-right text-gray-500">{{ formatVolume(row.volume) }}</td>
+              <tr
+                v-for="(row, i) in historyData"
+                :key="i"
+                class="border-t border-white/5 hover:bg-white/5 transition-colors"
+              >
+                <td class="p-4">
+                  {{ row.date }}
+                </td>
+                <td class="p-4 text-right">
+                  {{ row.open.toFixed(2) }}
+                </td>
+                <td class="p-4 text-right text-emerald-400/80">
+                  {{ row.high.toFixed(2) }}
+                </td>
+                <td class="p-4 text-right text-rose-400/80">
+                  {{ row.low.toFixed(2) }}
+                </td>
+                <td class="p-4 text-right font-bold text-white">
+                  {{ row.close.toFixed(2) }}
+                </td>
+                <td class="p-4 text-right text-gray-500">
+                  {{ formatVolume(row.volume) }}
+                </td>
                 <td :class="`p-4 text-right font-bold ${row.changePct >= 0 ? 'text-emerald-400' : 'text-rose-400'}`">
                   {{ row.changePct >= 0 ? '+' : '' }}{{ row.changePct.toFixed(2) }}%
                 </td>
@@ -112,86 +168,153 @@
             </tbody>
           </table>
         </div>
-        <div v-else-if="!loading" class="flex items-center justify-center h-64 text-gray-500 font-mono text-sm">
+        <div
+          v-else-if="!loading"
+          class="flex items-center justify-center h-64 text-gray-500 font-mono text-sm"
+        >
           Нет данных
         </div>
       </div>
 
       <!-- Price Chart -->
-      <div v-else-if="section === 'GP'" class="h-full flex flex-col">
+      <div
+        v-else-if="section === 'GP'"
+        class="h-full flex flex-col"
+      >
         <div class="flex justify-between items-center mb-4">
-          <h3 class="text-lg font-bold text-white">Технический график цены</h3>
+          <h3 class="text-lg font-bold text-white">
+            Технический график цены
+          </h3>
           <div class="flex gap-2">
             <button
-              @click="showMA = !showMA"
               :class="`px-3 py-1 rounded-lg text-xs font-bold border transition-all ${showMA ? 'bg-indigo-500/20 border-indigo-500/50 text-indigo-300' : 'border-white/10 text-gray-500'}`"
+              @click="showMA = !showMA"
             >
               MA (20)
             </button>
             <button
-              @click="showBB = !showBB"
               :class="`px-3 py-1 rounded-lg text-xs font-bold border transition-all ${showBB ? 'bg-indigo-500/20 border-indigo-500/50 text-indigo-300' : 'border-white/10 text-gray-500'}`"
+              @click="showBB = !showBB"
             >
               Полосы Боллинджера
             </button>
           </div>
         </div>
         <div class="flex-1 bg-black/20 rounded-xl border border-white/5 p-4 min-h-[400px]">
-          <v-chart v-if="historyData.length > 0" class="w-full h-full" :option="priceChartOption" autoresize />
-          <div v-else class="w-full h-full flex items-center justify-center text-gray-500 text-sm">Нет данных для графика</div>
+          <v-chart
+            v-if="historyData.length > 0"
+            class="w-full h-full"
+            :option="priceChartOption"
+            autoresize
+          />
+          <div
+            v-else
+            class="w-full h-full flex items-center justify-center text-gray-500 text-sm"
+          >
+            Нет данных для графика
+          </div>
         </div>
       </div>
 
       <!-- Intraday Chart -->
-      <div v-else-if="section === 'GIP'" class="h-full flex flex-col">
+      <div
+        v-else-if="section === 'GIP'"
+        class="h-full flex flex-col"
+      >
         <div class="flex justify-between items-center mb-4">
-          <h3 class="text-lg font-bold text-white">Внутридневной график</h3>
+          <h3 class="text-lg font-bold text-white">
+            Внутридневной график
+          </h3>
           <div class="flex gap-2">
             <button
               v-for="interval in intradayIntervals"
               :key="interval.value"
-              @click="selectedIntradayInterval = interval.value; loadIntradayData()"
               :class="`px-3 py-1 rounded-lg text-xs font-bold border transition-all ${
                 selectedIntradayInterval === interval.value
                   ? 'bg-emerald-500/20 border-emerald-500/50 text-emerald-300'
                   : 'border-white/10 text-gray-500 hover:text-white hover:bg-white/5'
               }`"
+              @click="selectedIntradayInterval = interval.value; loadIntradayData()"
             >
               {{ interval.label }}
             </button>
           </div>
         </div>
         <div class="flex-1 bg-black/20 rounded-xl border border-white/5 p-4 min-h-[400px]">
-          <v-chart v-if="intradayData.length > 0" class="w-full h-full" :option="intradayChartOption" autoresize />
-          <div v-else class="w-full h-full flex items-center justify-center text-gray-500 text-sm">Нет данных</div>
+          <v-chart
+            v-if="intradayData.length > 0"
+            class="w-full h-full"
+            :option="intradayChartOption"
+            autoresize
+          />
+          <div
+            v-else
+            class="w-full h-full flex items-center justify-center text-gray-500 text-sm"
+          >
+            Нет данных
+          </div>
         </div>
-        <div v-if="intradayData.length > 0" class="mt-4 grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div
+          v-if="intradayData.length > 0"
+          class="mt-4 grid grid-cols-2 md:grid-cols-4 gap-4"
+        >
           <div class="bg-black/20 rounded-xl border border-white/5 p-4 text-center">
-            <div class="text-xs text-gray-400 mb-1">Открытие</div>
-            <div class="text-lg font-bold text-white font-mono">{{ intradayStats.open }}</div>
+            <div class="text-xs text-gray-400 mb-1">
+              Открытие
+            </div>
+            <div class="text-lg font-bold text-white font-mono">
+              {{ intradayStats.open }}
+            </div>
           </div>
           <div class="bg-black/20 rounded-xl border border-white/5 p-4 text-center">
-            <div class="text-xs text-gray-400 mb-1">Максимум</div>
-            <div class="text-lg font-bold text-emerald-400 font-mono">{{ intradayStats.high }}</div>
+            <div class="text-xs text-gray-400 mb-1">
+              Максимум
+            </div>
+            <div class="text-lg font-bold text-emerald-400 font-mono">
+              {{ intradayStats.high }}
+            </div>
           </div>
           <div class="bg-black/20 rounded-xl border border-white/5 p-4 text-center">
-            <div class="text-xs text-gray-400 mb-1">Минимум</div>
-            <div class="text-lg font-bold text-rose-400 font-mono">{{ intradayStats.low }}</div>
+            <div class="text-xs text-gray-400 mb-1">
+              Минимум
+            </div>
+            <div class="text-lg font-bold text-rose-400 font-mono">
+              {{ intradayStats.low }}
+            </div>
           </div>
           <div class="bg-black/20 rounded-xl border border-white/5 p-4 text-center">
-            <div class="text-xs text-gray-400 mb-1">Последняя</div>
-            <div class="text-lg font-bold text-white font-mono">{{ intradayStats.current }}</div>
+            <div class="text-xs text-gray-400 mb-1">
+              Последняя
+            </div>
+            <div class="text-lg font-bold text-white font-mono">
+              {{ intradayStats.current }}
+            </div>
           </div>
         </div>
       </div>
 
       <!-- Beta Analysis -->
-      <div v-else-if="section === 'BETA'" class="h-full grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div
+        v-else-if="section === 'BETA'"
+        class="h-full grid grid-cols-1 lg:grid-cols-3 gap-6"
+      >
         <div class="lg:col-span-2 bg-black/20 rounded-xl border border-white/5 p-6 flex flex-col min-h-[400px]">
-          <h3 class="text-lg font-bold text-white mb-4">Регрессионный анализ (vs SPX)</h3>
+          <h3 class="text-lg font-bold text-white mb-4">
+            Регрессионный анализ (vs SPX)
+          </h3>
           <div class="flex-1">
-            <v-chart v-if="scatterPoints.length > 0" class="w-full h-full" :option="scatterChartOption" autoresize />
-            <div v-else class="w-full h-full flex items-center justify-center text-gray-500 text-sm">Загрузите данные</div>
+            <v-chart
+              v-if="scatterPoints.length > 0"
+              class="w-full h-full"
+              :option="scatterChartOption"
+              autoresize
+            />
+            <div
+              v-else
+              class="w-full h-full flex items-center justify-center text-gray-500 text-sm"
+            >
+              Загрузите данные
+            </div>
           </div>
         </div>
         <div class="space-y-4">
@@ -214,45 +337,88 @@
       </div>
 
       <!-- Technical Analysis Hub -->
-      <div v-else-if="section === 'TECH'" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div
+        v-else-if="section === 'TECH'"
+        class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+      >
         <div class="p-6 rounded-2xl bg-white/5 border border-white/5 col-span-1 lg:col-span-2">
-          <h3 class="text-sm font-bold text-white uppercase mb-6">Осцилляторы</h3>
+          <h3 class="text-sm font-bold text-white uppercase mb-6">
+            Осцилляторы
+          </h3>
           <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div v-for="osc in computedOscillators" :key="osc.name" class="bg-black/20 p-4 rounded-xl text-center border border-white/5">
-              <div class="text-xs text-gray-500 mb-1">{{ osc.name }}</div>
-              <div :class="`text-xl font-bold ${osc.color}`">{{ osc.value }}</div>
-              <div :class="`text-[10px] mt-1 ${osc.color}`">{{ osc.signal }}</div>
+            <div
+              v-for="osc in computedOscillators"
+              :key="osc.name"
+              class="bg-black/20 p-4 rounded-xl text-center border border-white/5"
+            >
+              <div class="text-xs text-gray-500 mb-1">
+                {{ osc.name }}
+              </div>
+              <div :class="`text-xl font-bold ${osc.color}`">
+                {{ osc.value }}
+              </div>
+              <div :class="`text-[10px] mt-1 ${osc.color}`">
+                {{ osc.signal }}
+              </div>
             </div>
           </div>
         </div>
 
         <div class="p-6 rounded-2xl bg-gradient-to-br from-indigo-900/30 to-black border border-white/5 flex flex-col items-center justify-center text-center">
-          <h3 class="text-sm font-bold text-white uppercase mb-4">Общий сигнал</h3>
+          <h3 class="text-sm font-bold text-white uppercase mb-4">
+            Общий сигнал
+          </h3>
           <div class="relative w-32 h-32 flex items-center justify-center mb-4">
-            <div :class="`absolute inset-0 rounded-full border-4 border-white/5 ${overallSignal.borderClass} transform rotate-45`"></div>
-            <div :class="`text-2xl font-bold ${overallSignal.color}`">{{ overallSignal.label }}</div>
+            <div :class="`absolute inset-0 rounded-full border-4 border-white/5 ${overallSignal.borderClass} transform rotate-45`" />
+            <div :class="`text-2xl font-bold ${overallSignal.color}`">
+              {{ overallSignal.label }}
+            </div>
           </div>
-          <p class="text-xs text-gray-400 px-4">На основе осцилляторов и скользящих средних</p>
+          <p class="text-xs text-gray-400 px-4">
+            На основе осцилляторов и скользящих средних
+          </p>
         </div>
 
         <div class="p-6 rounded-2xl bg-white/5 border border-white/5 col-span-1 lg:col-span-3">
-          <h3 class="text-sm font-bold text-white uppercase mb-4">Скользящие средние</h3>
+          <h3 class="text-sm font-bold text-white uppercase mb-4">
+            Скользящие средние
+          </h3>
           <div class="overflow-x-auto">
             <table class="w-full text-left">
               <thead>
                 <tr class="text-xs text-gray-500 uppercase border-b border-white/10">
-                  <th class="py-2">Период</th>
-                  <th class="py-2">Простая MA</th>
-                  <th class="py-2">Экспоненциальная MA</th>
-                  <th class="py-2 text-right">Действие</th>
+                  <th class="py-2">
+                    Период
+                  </th>
+                  <th class="py-2">
+                    Простая MA
+                  </th>
+                  <th class="py-2">
+                    Экспоненциальная MA
+                  </th>
+                  <th class="py-2 text-right">
+                    Действие
+                  </th>
                 </tr>
               </thead>
               <tbody class="text-sm font-mono">
-                <tr v-for="ma in computedMAs" :key="ma.period" class="border-b border-white/5">
-                  <td class="py-3 font-bold text-white">{{ ma.period }}</td>
-                  <td class="py-3 text-gray-300">{{ ma.sma }}</td>
-                  <td class="py-3 text-gray-300">{{ ma.ema }}</td>
-                  <td :class="`py-3 text-right font-bold ${ma.action === 'ПОКУПКА' ? 'text-emerald-400' : 'text-rose-400'}`">{{ ma.action }}</td>
+                <tr
+                  v-for="ma in computedMAs"
+                  :key="ma.period"
+                  class="border-b border-white/5"
+                >
+                  <td class="py-3 font-bold text-white">
+                    {{ ma.period }}
+                  </td>
+                  <td class="py-3 text-gray-300">
+                    {{ ma.sma }}
+                  </td>
+                  <td class="py-3 text-gray-300">
+                    {{ ma.ema }}
+                  </td>
+                  <td :class="`py-3 text-right font-bold ${ma.action === 'ПОКУПКА' ? 'text-emerald-400' : 'text-rose-400'}`">
+                    {{ ma.action }}
+                  </td>
                 </tr>
               </tbody>
             </table>
@@ -260,10 +426,17 @@
         </div>
       </div>
 
-      <div v-else class="flex items-center justify-center h-full">
+      <div
+        v-else
+        class="flex items-center justify-center h-full"
+      >
         <div class="text-center">
-          <h3 class="text-xl font-bold text-white mb-2">{{ tabs.find(t => t.id === section)?.label || section }}</h3>
-          <p class="text-gray-400">Содержимое появится в ближайшее время</p>
+          <h3 class="text-xl font-bold text-white mb-2">
+            {{ tabs.find(t => t.id === section)?.label || section }}
+          </h3>
+          <p class="text-gray-400">
+            Содержимое появится в ближайшее время
+          </p>
         </div>
       </div>
     </div>

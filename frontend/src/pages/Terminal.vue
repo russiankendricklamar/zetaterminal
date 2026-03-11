@@ -1,14 +1,14 @@
 <template>
   <div class="terminal-root">
     <!-- Noise Overlay -->
-    <div class="bg-noise"></div>
+    <div class="bg-noise" />
 
     <!-- Command Palette -->
     <CommandPalette 
-      :isOpen="isSearchOpen" 
-      @close="isSearchOpen = false" 
+      :is-open="isSearchOpen" 
+      :items="searchItems" 
+      @close="isSearchOpen = false"
       @select="handleCommandSelect"
-      :items="searchItems"
     />
 
     <!-- Main Content -->
@@ -18,23 +18,26 @@
         <div
           v-for="window in windows"
           :key="window.id"
-          @click="setActiveWindow(window.id)"
           :class="['tab-item', { 'tab-active': activeWindowId === window.id }]"
+          @click="setActiveWindow(window.id)"
         >
-          <component :is="getWindowIcon(window.view)" class="w-3.5 h-3.5" />
+          <component
+            :is="getWindowIcon(window.view)"
+            class="w-3.5 h-3.5"
+          />
           <span class="tab-label font-mono">{{ getWindowTitle(window.view) }}</span>
           <button
             v-if="windows.length > 1"
-            @click.stop="closeWindow(window.id)"
             class="tab-close"
+            @click.stop="closeWindow(window.id)"
           >
             <XIcon class="w-3 h-3" />
           </button>
         </div>
         <button
-          @click="() => openNewWindow()"
           class="tab-new"
           title="Открыть новое окно"
+          @click="() => openNewWindow()"
         >
           <PlusIcon class="w-3.5 h-3.5" />
           <span class="font-mono">Новое окно</span>
@@ -44,7 +47,10 @@
       <!-- Header -->
       <header class="terminal-header">
         <div class="header-left">
-          <div class="logo-area" @click="view = 'Main'">
+          <div
+            class="logo-area"
+            @click="view = 'Main'"
+          >
             <div class="logo-icon">
               <span class="font-oswald">ζ</span>
             </div>
@@ -54,16 +60,23 @@
           <!-- Navigation Dropdown -->
           <div class="nav-dropdown-wrapper">
             <button
-              @click="isNavOpen = !isNavOpen"
               :class="['nav-dropdown-trigger', { 'is-open': isNavOpen }]"
+              @click="isNavOpen = !isNavOpen"
             >
               <LayoutTemplateIcon class="w-3.5 h-3.5 text-[#DC2626]" />
               <span class="font-mono">{{ navItems.find(i => i.id === view)?.label || view }}</span>
               <ChevronDownIcon :class="['w-3 h-3 transition-transform', { 'rotate-180': isNavOpen }]" />
             </button>
 
-            <div v-if="isNavOpen" class="nav-overlay" @click="isNavOpen = false"></div>
-            <div v-if="isNavOpen" class="nav-dropdown">
+            <div
+              v-if="isNavOpen"
+              class="nav-overlay"
+              @click="isNavOpen = false"
+            />
+            <div
+              v-if="isNavOpen"
+              class="nav-dropdown"
+            >
               <div class="nav-dropdown-header font-mono">
                 <span>НАВИГАЦИЯ</span>
                 <span>КОД</span>
@@ -72,10 +85,13 @@
                 <button
                   v-for="item in navItems"
                   :key="item.id"
-                  @click="setView(item.id)"
                   :class="['nav-item', { 'nav-item-active': view === item.id }]"
+                  @click="setView(item.id)"
                 >
-                  <component :is="iconMap[item.icon] || ActivityIcon" class="w-4 h-4" />
+                  <component
+                    :is="iconMap[item.icon] || ActivityIcon"
+                    class="w-4 h-4"
+                  />
                   <span class="nav-item-label font-oswald">{{ item.label }}</span>
                   <span class="nav-item-code font-mono">{{ item.code }}</span>
                 </button>
@@ -86,68 +102,82 @@
         
         <div class="header-right">
           <div
-            @click="isSearchOpen = true"
             class="search-trigger hidden xl:flex"
+            @click="isSearchOpen = true"
           >
             <SearchIcon class="w-3.5 h-3.5" />
             <span class="font-mono">Поиск</span>
-            <div class="search-hotkey font-mono">⌘K</div>
+            <div class="search-hotkey font-mono">
+              ⌘K
+            </div>
           </div>
 
-          <div class="header-divider hidden md:block"></div>
+          <div class="header-divider hidden md:block" />
 
           <button
-            @click="isAiOpen = !isAiOpen"
             :class="['ai-btn hidden md:flex', { 'ai-btn-active': isAiOpen }]"
+            @click="isAiOpen = !isAiOpen"
           >
             <span class="font-oswald">SPARK AI</span>
-            <span v-if="isAiOpen" class="ai-indicator"></span>
+            <span
+              v-if="isAiOpen"
+              class="ai-indicator"
+            />
           </button>
 
           <!-- Profile Dropdown -->
           <div class="profile-wrapper">
             <button
-              @click="isProfileOpen = !isProfileOpen"
               class="profile-avatar font-oswald"
+              @click="isProfileOpen = !isProfileOpen"
             >
               AT
             </button>
 
-            <div v-if="isProfileOpen" class="profile-dropdown">
+            <div
+              v-if="isProfileOpen"
+              class="profile-dropdown"
+            >
               <!-- User Header -->
               <div class="profile-header">
-                <div class="profile-avatar-lg font-oswald">AT</div>
+                <div class="profile-avatar-lg font-oswald">
+                  AT
+                </div>
                 <div class="profile-info">
-                  <div class="profile-name font-oswald">АЛЕКСЕЙ ТРЕЙДЕР</div>
-                  <div class="profile-badge font-mono">PRO АККАУНТ</div>
+                  <div class="profile-name font-oswald">
+                    АЛЕКСЕЙ ТРЕЙДЕР
+                  </div>
+                  <div class="profile-badge font-mono">
+                    PRO АККАУНТ
+                  </div>
                 </div>
               </div>
 
               <div class="profile-menu">
                 <button
-                  @click="$router.push('/profile'); isProfileOpen = false"
                   class="profile-menu-item"
+                  @click="$router.push('/profile'); isProfileOpen = false"
                 >
                   <UserIcon class="w-4 h-4" />
                   <span class="font-oswald">Профиль</span>
                 </button>
                 <button
-                  @click="setView('Settings'); isProfileOpen = false"
                   class="profile-menu-item"
+                  @click="setView('Settings'); isProfileOpen = false"
                 >
                   <SettingsIcon class="w-4 h-4" />
                   <span class="font-oswald">Настройки</span>
                 </button>
                 <button
-                  @click="resourcesSection = 'HL'; setView('Resources'); isProfileOpen = false"
                   class="profile-menu-item"
+                  @click="resourcesSection = 'HL'; setView('Resources'); isProfileOpen = false"
                 >
                   <HelpCircleIcon class="w-4 h-4" />
                   <span class="font-oswald">Помощь</span>
                 </button>
                 <button
-                  @click="resourcesSection = 'FLDS'; setView('Resources'); isProfileOpen = false"
                   class="profile-menu-item"
+                  @click="resourcesSection = 'FLDS'; setView('Resources'); isProfileOpen = false"
                 >
                   <DatabaseIcon class="w-4 h-4" />
                   <span class="font-oswald">Справочник данных</span>
@@ -156,8 +186,8 @@
 
               <div class="profile-footer">
                 <button
-                  @click="$router.push('/'); isProfileOpen = false"
                   class="profile-logout"
+                  @click="$router.push('/'); isProfileOpen = false"
                 >
                   <LogOutIcon class="w-4 h-4" />
                   <span class="font-oswald">Выйти</span>
@@ -172,15 +202,15 @@
       <div class="flex-1 overflow-y-auto min-h-0 custom-scrollbar">
         <div
           v-for="window in windows"
-          :key="window.id"
           v-show="activeWindowId === window.id"
+          :key="window.id"
           class="w-full min-h-full"
         >
           <DashboardPage 
             v-if="window.view === 'Main'"
-            :orderBook="orderBook"
-            :currentPrice="currentPrice"
-            :chartData="data"
+            :order-book="orderBook"
+            :current-price="currentPrice"
+            :chart-data="data"
             :symbol="activeSymbol"
           />
 
@@ -189,99 +219,99 @@
             v-else-if="window.view === 'Markets'" 
             :category="marketCategory"
             @navigate="(v) => { const w = windows.find(win => win.id === window.id); if (w) { w.view = v; w.title = getWindowTitle(v); } setView(v); }"
-            @assetClick="handleAssetClick"
+            @asset-click="handleAssetClick"
           />
 
           <!-- Crypto Page -->
           <CryptoPage 
             v-else-if="window.view === 'Crypto'" 
             @navigate="(v) => { const w = windows.find(win => win.id === window.id); if (w) { w.view = v; w.title = getWindowTitle(v); } setView(v); }"
-            @assetClick="handleAssetClick"
+            @asset-click="handleAssetClick"
           />
 
           <!-- News Page -->
           <NewsPage 
             v-else-if="window.view === 'News'" 
-            :activeSection="newsSection"
+            :active-section="newsSection"
           />
 
           <!-- Analytics Page -->
           <AnalyticsPage 
             v-else-if="window.view === 'Analytics'" 
-            :activeSection="analyticsSection"
+            :active-section="analyticsSection"
           />
 
           <!-- Screening Page -->
           <ScreeningPage 
             v-else-if="window.view === 'Screening'" 
             :symbol="activeSymbol"
-            :activeSection="screeningSection"
+            :active-section="screeningSection"
           />
 
           <!-- Fundamental Analysis Page -->
           <FundamentalAnalysisPage 
             v-else-if="window.view === 'Fundamental'" 
             :symbol="activeSymbol"
-            :activeSection="fundamentalSection"
+            :active-section="fundamentalSection"
           />
 
           <!-- Price Analysis Page -->
           <PriceAnalysisPage 
             v-else-if="window.view === 'PriceAnalysis'" 
             :symbol="activeSymbol"
-            :activeSection="priceAnalysisSection"
+            :active-section="priceAnalysisSection"
           />
 
           <!-- FX Page -->
           <FXPage 
             v-else-if="window.view === 'FX'" 
             :symbol="activeSymbol"
-            :activeSection="fxSection"
+            :active-section="fxSection"
           />
 
           <!-- Settings Page -->
           <SettingsPage 
             v-else-if="window.view === 'Settings'" 
-            :activeSection="settingsSection"
+            :active-section="settingsSection"
           />
 
           <!-- Bond Market Page -->
           <BondMarketPage 
             v-else-if="window.view === 'Bonds'" 
-            :activeSection="bondsSection"
+            :active-section="bondsSection"
           />
 
           <!-- Central Banks Page -->
           <CentralBanksPage 
             v-else-if="window.view === 'CentralBanks'" 
-            :activeSection="centralBanksSection"
+            :active-section="centralBanksSection"
           />
 
           <!-- Commodities Page -->
           <CommoditiesPage 
             v-else-if="window.view === 'Commodities'" 
             :symbol="activeSymbol"
-            :activeSection="commoditiesSection"
+            :active-section="commoditiesSection"
           />
 
           <!-- Credit Risk Page -->
           <CreditRiskPage 
             v-else-if="window.view === 'CreditRisk'" 
             :symbol="activeSymbol"
-            :activeSection="creditRiskSection"
+            :active-section="creditRiskSection"
           />
 
           <!-- Earn Page -->
           <EarnPage 
             v-else-if="window.view === 'Earn'" 
-            :activeSection="earnSection"
+            :active-section="earnSection"
           />
 
           <!-- Event Driven Page -->
           <EventDrivenPage 
             v-else-if="window.view === 'EventDriven'" 
             :symbol="activeSymbol"
-            :activeSection="eventDrivenSection"
+            :active-section="eventDrivenSection"
           />
 
           <!-- Finance Page -->
@@ -293,46 +323,46 @@
           <!-- Fixed Income Page -->
           <FixedIncomePage 
             v-else-if="window.view === 'FixedIncome'" 
-            :activeSection="fixedIncomeSection"
+            :active-section="fixedIncomeSection"
           />
 
           <!-- Futures Page -->
           <FuturesPage 
             v-else-if="window.view === 'Futures'" 
             :symbol="activeSymbol"
-            :activeSection="futuresSection"
+            :active-section="futuresSection"
           />
 
           <!-- Indices Page -->
           <IndicesPage 
             v-else-if="window.view === 'Indices'" 
-            :activeSection="indicesSection"
+            :active-section="indicesSection"
           />
 
           <!-- Macroeconomics Page -->
           <MacroeconomicsPage 
             v-else-if="window.view === 'Macro'" 
-            :activeSection="macroSection"
+            :active-section="macroSection"
           />
 
           <!-- Options Page -->
           <OptionsPage 
             v-else-if="window.view === 'Options'" 
             :symbol="activeSymbol"
-            :activeSection="optionsSection"
+            :active-section="optionsSection"
           />
 
           <!-- Research Page -->
           <ResearchPage 
             v-else-if="window.view === 'Research'" 
             :symbol="activeSymbol"
-            :activeSection="researchSection"
+            :active-section="researchSection"
           />
 
           <!-- Resources Page -->
           <ResourcesPage 
             v-else-if="window.view === 'Resources'" 
-            :activeSection="resourcesSection"
+            :active-section="resourcesSection"
           />
 
           <!-- ETF Page -->
@@ -344,7 +374,7 @@
           <SwapsPage
             v-else-if="window.view === 'Swaps'" 
             :symbol="activeSymbol"
-            :activeSection="swapsSection"
+            :active-section="swapsSection"
           />
         </div>
       </div>

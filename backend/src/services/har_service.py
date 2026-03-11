@@ -10,14 +10,13 @@
 - h-шаговые прогнозы: h = 1, 5, 22
 - Оценка качества: RMSE, MAE, QLIKE
 """
+
 import numpy as np
 import scipy.stats
-from typing import Dict, List, Optional, Tuple
-
 
 # ── Построение регрессоров HAR ────────────────────────────────────────────────
 
-def _build_har_features(rv: np.ndarray) -> Tuple[np.ndarray, int]:
+def _build_har_features(rv: np.ndarray) -> tuple[np.ndarray, int]:
     """
     Строит матрицу регрессоров [1, RV_{t-1}, RV̄_{t-5}, RV̄_{t-22}].
     Первые 22 наблюдения теряются для формирования лагов.
@@ -39,7 +38,7 @@ def _build_har_features(rv: np.ndarray) -> Tuple[np.ndarray, int]:
     return X, start
 
 
-def _build_har_cj_features(rv: np.ndarray, bv: np.ndarray) -> Tuple[np.ndarray, int]:
+def _build_har_cj_features(rv: np.ndarray, bv: np.ndarray) -> tuple[np.ndarray, int]:
     """
     Строит регрессоры HAR-RV-CJ:
     [1, C_{t-1}, J_{t-1}, C̄_{t-5}, C̄_{t-22}]
@@ -64,7 +63,7 @@ def _build_har_cj_features(rv: np.ndarray, bv: np.ndarray) -> Tuple[np.ndarray, 
 
 # ── OLS с Newey-West HAC SE ───────────────────────────────────────────────────
 
-def _ols_newey_west(X: np.ndarray, y: np.ndarray, lags: int = 5) -> Dict:
+def _ols_newey_west(X: np.ndarray, y: np.ndarray, lags: int = 5) -> dict:
     """
     OLS оценка с HAC стандартными ошибками (Newey-West 1987).
 
@@ -118,7 +117,7 @@ def _ols_newey_west(X: np.ndarray, y: np.ndarray, lags: int = 5) -> Dict:
 
 # ── Метрики прогноза ──────────────────────────────────────────────────────────
 
-def _forecast_metrics(actual: np.ndarray, predicted: np.ndarray) -> Dict:
+def _forecast_metrics(actual: np.ndarray, predicted: np.ndarray) -> dict:
     """RMSE, MAE, QLIKE (стандартная функция потерь для волатильности)."""
     err = actual - predicted
     rmse = float(np.sqrt(np.mean(err ** 2)))
@@ -153,12 +152,12 @@ def _multi_step_forecast(rv: np.ndarray, beta: np.ndarray, h: int = 1) -> float:
 # ── Главная функция ───────────────────────────────────────────────────────────
 
 def fit_har_model(
-    rv: List[float],
-    bv: Optional[List[float]] = None,
+    rv: list[float],
+    bv: list[float] | None = None,
     log_transform: bool = False,
-    forecast_horizons: List[int] = None,
+    forecast_horizons: list[int] | None = None,
     train_ratio: float = 0.8,
-) -> Dict:
+) -> dict:
     """
     Оценивает HAR-RV, HAR-RV-CJ (если передан BV) и Log-HAR модели.
 
@@ -215,7 +214,7 @@ def fit_har_model(
     if len(rv_test) > 0:
         X_test, _ = _build_har_features(rv_arr)
         n_train_X = len(rv_train) - 22
-        n_all_X = len(rv_arr) - 22
+        len(rv_arr) - 22
         X_test_part = X_test[n_train_X:]
         y_test = rv_arr[22 + n_train_X:]
 
@@ -258,10 +257,7 @@ def fit_har_model(
         bv_train = bv_arr[:split]
         X_cj, start_cj = _build_har_cj_features(rv_train, bv_train)
         y_cj = rv_train[start_cj:]
-        if log_transform:
-            ols_cj = _ols_newey_west(X_cj, np.log(y_cj))
-        else:
-            ols_cj = _ols_newey_west(X_cj, y_cj)
+        ols_cj = _ols_newey_west(X_cj, np.log(y_cj)) if log_transform else _ols_newey_west(X_cj, y_cj)
 
         cj_coef_names = ["β₀", "β_C (continuous)", "β_J (jump)", "β_w (weekly C)", "β_m (monthly C)"]
         cj_result = {

@@ -1,10 +1,16 @@
 <template>
-  <div class="kb-root" ref="rootRef">
+  <div
+    ref="rootRef"
+    class="kb-root"
+  >
     <!-- Three.js Canvas -->
-    <canvas ref="canvasRef" class="kb-canvas"></canvas>
+    <canvas
+      ref="canvasRef"
+      class="kb-canvas"
+    />
 
     <!-- Noise Overlay -->
-    <div class="bg-noise"></div>
+    <div class="bg-noise" />
 
     <!-- Cursor Glow -->
     <div
@@ -15,7 +21,7 @@
         opacity: isMouseInside ? 1 : 0,
         background: hoveredCluster ? `radial-gradient(circle, ${hoveredCluster.color}30 0%, transparent 70%)` : undefined
       }"
-    ></div>
+    />
 
     <!-- Cluster Labels (HTML overlay) -->
     <div
@@ -32,14 +38,20 @@
       }"
       @click="selectCluster(cluster.id)"
     >
-      <div class="label-dot" :style="{ background: cluster.color }"></div>
+      <div
+        class="label-dot"
+        :style="{ background: cluster.color }"
+      />
       <span class="label-text font-oswald">{{ cluster.name }}</span>
       <span class="label-count font-mono">{{ cluster.count }}</span>
     </div>
 
     <!-- Header -->
     <header class="kb-header">
-      <div class="kb-logo" @click="$router.push('/')">
+      <div
+        class="kb-logo"
+        @click="$router.push('/')"
+      >
         <span class="logo-symbol font-anton">ζ</span>
         <span class="logo-text font-oswald">STOCHASTIC</span>
       </div>
@@ -50,23 +62,41 @@
       </div>
 
       <div class="header-actions">
-        <button class="search-trigger" @click="showSearch = true">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <circle cx="11" cy="11" r="8"></circle>
-            <path d="m21 21-4.35-4.35"></path>
+        <button
+          class="search-trigger"
+          @click="showSearch = true"
+        >
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+          >
+            <circle
+              cx="11"
+              cy="11"
+              r="8"
+            />
+            <path d="m21 21-4.35-4.35" />
           </svg>
           <span class="font-mono">⌘K</span>
         </button>
-        <router-link to="/terminal" class="terminal-btn font-oswald">
+        <router-link
+          to="/terminal"
+          class="terminal-btn font-oswald"
+        >
           ТЕРМИНАЛ →
         </router-link>
       </div>
     </header>
 
     <!-- Hero (only when no category selected) -->
-    <section v-if="!activeCategory" class="kb-hero">
+    <section
+      v-if="!activeCategory"
+      class="kb-hero"
+    >
       <div class="hero-badge font-mono">
-        <span class="badge-dot"></span>
+        <span class="badge-dot" />
         INTERACTIVE GALAXY
       </div>
 
@@ -87,22 +117,54 @@
     <!-- Category Panel (slides from right when active) -->
     <Teleport to="body">
       <Transition name="panel">
-        <div v-if="activeCategory" class="category-panel" @click.self="closePanel">
+        <div
+          v-if="activeCategory"
+          class="category-panel"
+          @click.self="closePanel"
+        >
           <div class="panel-content custom-scrollbar">
-            <button class="panel-close" @click="closePanel">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <line x1="18" y1="6" x2="6" y2="18"></line>
-                <line x1="6" y1="6" x2="18" y2="18"></line>
+            <button
+              class="panel-close"
+              @click="closePanel"
+            >
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <line
+                  x1="18"
+                  y1="6"
+                  x2="6"
+                  y2="18"
+                />
+                <line
+                  x1="6"
+                  y1="6"
+                  x2="18"
+                  y2="18"
+                />
               </svg>
             </button>
 
-            <div class="panel-header" :style="{ '--accent': activeCategoryData?.color }">
-              <div class="panel-icon" :style="{ background: activeCategoryData?.color }">
+            <div
+              class="panel-header"
+              :style="{ '--accent': activeCategoryData?.color }"
+            >
+              <div
+                class="panel-icon"
+                :style="{ background: activeCategoryData?.color }"
+              >
                 <component :is="activeCategoryData?.icon" />
               </div>
               <div class="panel-meta">
-                <h2 class="panel-title font-anton">{{ activeCategoryData?.name }}</h2>
-                <p class="panel-desc font-mono">{{ activeCategoryData?.longDescription }}</p>
+                <h2 class="panel-title font-anton">
+                  {{ activeCategoryData?.name }}
+                </h2>
+                <p class="panel-desc font-mono">
+                  {{ activeCategoryData?.longDescription }}
+                </p>
               </div>
             </div>
 
@@ -114,13 +176,24 @@
                 @click="openItem(item)"
               >
                 <div class="item-header">
-                  <span class="item-code font-mono" :style="{ color: activeCategoryData?.color }">{{ item.code }}</span>
+                  <span
+                    class="item-code font-mono"
+                    :style="{ color: activeCategoryData?.color }"
+                  >{{ item.code }}</span>
                   <span class="item-title font-oswald">{{ item.title }}</span>
                 </div>
-                <p class="item-desc font-mono">{{ item.description?.slice(0, 100) }}...</p>
+                <p class="item-desc font-mono">
+                  {{ item.description?.slice(0, 100) }}...
+                </p>
                 <div class="item-tags">
-                  <span v-if="item.formula" class="item-tag formula font-mono">Формула</span>
-                  <span v-if="item.path" class="item-tag path font-mono">Страница</span>
+                  <span
+                    v-if="item.formula"
+                    class="item-tag formula font-mono"
+                  >Формула</span>
+                  <span
+                    v-if="item.path"
+                    class="item-tag path font-mono"
+                  >Страница</span>
                 </div>
               </div>
             </div>
@@ -132,12 +205,26 @@
     <!-- Search Modal -->
     <Teleport to="body">
       <Transition name="modal">
-        <div v-if="showSearch" class="search-overlay" @click.self="showSearch = false">
+        <div
+          v-if="showSearch"
+          class="search-overlay"
+          @click.self="showSearch = false"
+        >
           <div class="search-modal">
             <div class="search-box">
-              <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <circle cx="11" cy="11" r="8"></circle>
-                <path d="m21 21-4.35-4.35"></path>
+              <svg
+                class="search-icon"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <circle
+                  cx="11"
+                  cy="11"
+                  r="8"
+                />
+                <path d="m21 21-4.35-4.35" />
               </svg>
               <input
                 ref="searchInputRef"
@@ -146,17 +233,23 @@
                 placeholder="Поиск по базе знаний..."
                 class="search-input font-mono"
                 @keydown.escape="showSearch = false"
-              />
+              >
             </div>
 
-            <div v-if="filteredItems.length" class="search-results custom-scrollbar">
+            <div
+              v-if="filteredItems.length"
+              class="search-results custom-scrollbar"
+            >
               <div
                 v-for="item in filteredItems.slice(0, 10)"
                 :key="item.id"
                 class="search-result"
                 @click="openItem(item); showSearch = false"
               >
-                <div class="result-icon" :style="{ background: getCategoryColor(item.category) }">
+                <div
+                  class="result-icon"
+                  :style="{ background: getCategoryColor(item.category) }"
+                >
                   {{ item.code.slice(0, 2) }}
                 </div>
                 <div class="result-info">
@@ -166,7 +259,10 @@
               </div>
             </div>
 
-            <div v-else-if="searchQuery" class="search-empty font-mono">
+            <div
+              v-else-if="searchQuery"
+              class="search-empty font-mono"
+            >
               Ничего не найдено
             </div>
           </div>
@@ -177,56 +273,130 @@
     <!-- Detail Modal -->
     <Teleport to="body">
       <Transition name="modal">
-        <div v-if="selectedItem" class="modal-overlay" @click.self="selectedItem = null">
+        <div
+          v-if="selectedItem"
+          class="modal-overlay"
+          @click.self="selectedItem = null"
+        >
           <div class="modal-content custom-scrollbar">
-            <button class="modal-close" @click="selectedItem = null">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <line x1="18" y1="6" x2="6" y2="18"></line>
-                <line x1="6" y1="6" x2="18" y2="18"></line>
+            <button
+              class="modal-close"
+              @click="selectedItem = null"
+            >
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <line
+                  x1="18"
+                  y1="6"
+                  x2="6"
+                  y2="18"
+                />
+                <line
+                  x1="6"
+                  y1="6"
+                  x2="18"
+                  y2="18"
+                />
               </svg>
             </button>
 
             <div class="modal-header">
-              <span class="modal-badge font-mono" :style="{ background: getCategoryColor(selectedItem.category) }">
+              <span
+                class="modal-badge font-mono"
+                :style="{ background: getCategoryColor(selectedItem.category) }"
+              >
                 {{ getCategoryName(selectedItem.category) }}
               </span>
-              <h2 class="modal-title font-anton">{{ selectedItem.title }}</h2>
-              <p class="modal-code font-mono">{{ selectedItem.code }}</p>
+              <h2 class="modal-title font-anton">
+                {{ selectedItem.title }}
+              </h2>
+              <p class="modal-code font-mono">
+                {{ selectedItem.code }}
+              </p>
             </div>
 
             <div class="modal-body">
-              <div class="modal-section" v-if="selectedItem.description">
-                <h4 class="section-title font-oswald">Описание</h4>
-                <p class="section-text font-mono">{{ selectedItem.description }}</p>
+              <div
+                v-if="selectedItem.description"
+                class="modal-section"
+              >
+                <h4 class="section-title font-oswald">
+                  Описание
+                </h4>
+                <p class="section-text font-mono">
+                  {{ selectedItem.description }}
+                </p>
               </div>
 
-              <div class="modal-section" v-if="selectedItem.formula">
-                <h4 class="section-title font-oswald">Формула</h4>
+              <div
+                v-if="selectedItem.formula"
+                class="modal-section"
+              >
+                <h4 class="section-title font-oswald">
+                  Формула
+                </h4>
                 <code class="formula-code font-mono">{{ selectedItem.formula }}</code>
               </div>
 
-              <div class="modal-section formula-explanation" v-if="selectedItem.formulaExplanation">
-                <h4 class="section-title font-oswald">Объяснение</h4>
+              <div
+                v-if="selectedItem.formulaExplanation"
+                class="modal-section formula-explanation"
+              >
+                <h4 class="section-title font-oswald">
+                  Объяснение
+                </h4>
                 <pre class="explanation-text font-mono">{{ selectedItem.formulaExplanation }}</pre>
               </div>
 
-              <div class="modal-section" v-if="selectedItem.features?.length">
-                <h4 class="section-title font-oswald">Функции</h4>
+              <div
+                v-if="selectedItem.features?.length"
+                class="modal-section"
+              >
+                <h4 class="section-title font-oswald">
+                  Функции
+                </h4>
                 <ul class="feature-list">
-                  <li v-for="(f, i) in selectedItem.features" :key="i" class="font-mono">{{ f }}</li>
+                  <li
+                    v-for="(f, i) in selectedItem.features"
+                    :key="i"
+                    class="font-mono"
+                  >
+                    {{ f }}
+                  </li>
                 </ul>
               </div>
 
-              <div class="modal-section" v-if="selectedItem.howToUse?.length">
-                <h4 class="section-title font-oswald">Как использовать</h4>
+              <div
+                v-if="selectedItem.howToUse?.length"
+                class="modal-section"
+              >
+                <h4 class="section-title font-oswald">
+                  Как использовать
+                </h4>
                 <ol class="howto-list">
-                  <li v-for="(step, i) in selectedItem.howToUse" :key="i" class="font-mono">{{ step }}</li>
+                  <li
+                    v-for="(step, i) in selectedItem.howToUse"
+                    :key="i"
+                    class="font-mono"
+                  >
+                    {{ step }}
+                  </li>
                 </ol>
               </div>
             </div>
 
-            <div class="modal-footer" v-if="selectedItem.path">
-              <router-link :to="selectedItem.path" class="modal-btn primary font-oswald">
+            <div
+              v-if="selectedItem.path"
+              class="modal-footer"
+            >
+              <router-link
+                :to="selectedItem.path"
+                class="modal-btn primary font-oswald"
+              >
                 Открыть страницу →
               </router-link>
             </div>
@@ -236,7 +406,10 @@
     </Teleport>
 
     <!-- Category Navigation Bar -->
-    <nav class="kb-nav-bar" v-if="!activeCategory">
+    <nav
+      v-if="!activeCategory"
+      class="kb-nav-bar"
+    >
       <button
         v-for="cat in categories"
         :key="cat.id"
@@ -244,16 +417,26 @@
         :style="{ '--accent': cat.color }"
         @click="selectCluster(cat.id)"
       >
-        <span class="nav-dot" :style="{ background: cat.color }"></span>
+        <span
+          class="nav-dot"
+          :style="{ background: cat.color }"
+        />
         <span class="nav-name font-oswald">{{ cat.name }}</span>
         <span class="nav-count font-mono">{{ getCategoryItems(cat.id).length }}</span>
       </button>
     </nav>
 
     <!-- Stats Footer -->
-    <footer class="kb-footer" v-if="!activeCategory">
+    <footer
+      v-if="!activeCategory"
+      class="kb-footer"
+    >
       <div class="footer-stats">
-        <div class="stat-item" v-for="stat in stats" :key="stat.label">
+        <div
+          v-for="stat in stats"
+          :key="stat.label"
+          class="stat-item"
+        >
           <span class="stat-value font-anton">{{ stat.value }}</span>
           <span class="stat-label font-mono">{{ stat.label }}</span>
         </div>
@@ -429,9 +612,9 @@ let scene: Scene
 let camera: PerspectiveCamera
 let renderer: WebGLRenderer
 let animationId: number
-let mouseWorld = new Vector3()
-let raycaster = new Raycaster()
-let mouse = new Vector2()
+const mouseWorld = new Vector3()
+const raycaster = new Raycaster()
+const mouse = new Vector2()
 
 interface ClusterData {
   id: string

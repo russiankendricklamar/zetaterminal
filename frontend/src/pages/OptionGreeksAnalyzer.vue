@@ -1,213 +1,304 @@
 <!-- src/pages/OptionGreeksAnalyzer.vue -->
 <template>
   <div class="page-container custom-scroll">
-    
     <!-- Header -->
     <div class="section-header">
       <div class="header-left">
-        <h1 class="section-title">Анализ чувствительности (Greeks)</h1>
-        <p class="section-subtitle">Дельта, гамма, вега, тета, ро — риск-ориентированный анализ</p>
+        <h1 class="section-title">
+          Анализ чувствительности (Greeks)
+        </h1>
+        <p class="section-subtitle">
+          Дельта, гамма, вега, тета, ро — риск-ориентированный анализ
+        </p>
       </div>
       
       <div class="header-actions">
-         <div class="glass-pill status-pill">
-            <span class="dot" :class="getGreekStatusColor"></span>
-            <span class="status-label">Тип: <b class="text-white">{{ params.type.toUpperCase() }}</b></span>
-         </div>
+        <div class="glass-pill status-pill">
+          <span
+            class="dot"
+            :class="getGreekStatusColor"
+          />
+          <span class="status-label">Тип: <b class="text-white">{{ params.type.toUpperCase() }}</b></span>
+        </div>
       </div>
     </div>
 
     <div class="dashboard-grid">
-        
-        <!-- LEFT PANEL: Controls -->
-        <aside class="left-panel">
-            
-            <!-- Parameters Card -->
-            <div class="glass-card panel">
-                <div class="panel-header"><h3>Параметры опциона</h3></div>
+      <!-- LEFT PANEL: Controls -->
+      <aside class="left-panel">
+        <!-- Parameters Card -->
+        <div class="glass-card panel">
+          <div class="panel-header">
+            <h3>Параметры опциона</h3>
+          </div>
                 
-                <div class="controls-form">
-                    <!-- Spot Price -->
-                    <div class="input-group">
-                        <label class="lbl">S (Spot)</label>
-                        <input v-model.number="params.S" type="number" step="0.01" class="glass-input" @change="calculateGreeks" />
-                    </div>
+          <div class="controls-form">
+            <!-- Spot Price -->
+            <div class="input-group">
+              <label class="lbl">S (Spot)</label>
+              <input
+                v-model.number="params.S"
+                type="number"
+                step="0.01"
+                class="glass-input"
+                @change="calculateGreeks"
+              >
+            </div>
                     
-                    <!-- Strike -->
-                    <div class="input-group">
-                        <label class="lbl">K (Strike)</label>
-                        <input v-model.number="params.K" type="number" step="0.01" class="glass-input" @change="calculateGreeks" />
-                    </div>
-
-                    <!-- Rate -->
-                    <div class="input-group">
-                        <label class="lbl">r (Rate), %</label>
-                        <input v-model.number="params.r" type="number" step="0.01" class="glass-input" @change="calculateGreeks" />
-                    </div>
-
-                    <!-- Volatility -->
-                    <div class="input-group">
-                        <label class="lbl">σ (Vol), %</label>
-                        <input v-model.number="params.sigma" type="number" step="0.01" class="glass-input" @change="calculateGreeks" />
-                    </div>
-
-                    <!-- Time to Maturity -->
-                    <div class="input-group">
-                        <label class="lbl">T (Time), лет</label>
-                        <input v-model.number="params.T" type="number" step="0.01" min="0.001" class="glass-input" @change="calculateGreeks" />
-                    </div>
-
-                    <!-- Option Type -->
-                    <div class="input-group">
-                        <label class="lbl">Тип опциона</label>
-                        <div class="radio-group">
-                            <label class="radio-label">
-                                <input v-model="params.type" type="radio" value="call" @change="calculateGreeks" />
-                                <span>Call</span>
-                            </label>
-                            <label class="radio-label">
-                                <input v-model="params.type" type="radio" value="put" @change="calculateGreeks" />
-                                <span>Put</span>
-                            </label>
-                        </div>
-                    </div>
-                </div>
+            <!-- Strike -->
+            <div class="input-group">
+              <label class="lbl">K (Strike)</label>
+              <input
+                v-model.number="params.K"
+                type="number"
+                step="0.01"
+                class="glass-input"
+                @change="calculateGreeks"
+              >
             </div>
 
-            <!-- Greeks Stats -->
-            <transition name="fade">
-            <div class="glass-card panel" v-if="greeks.delta !== null">
-                 <div class="panel-header"><h3>Риск-метрики</h3></div>
-                 <div class="stats-list">
-                     <div class="stat-item">
-                         <div class="stat-head">
-                             <span class="greek-symbol">Δ</span> 
-                             <span class="s-name">Дельта</span>
-                         </div>
-                         <span class="val mono">{{ greeks.delta.toFixed(4) }}</span>
-                     </div>
-                     <div class="stat-item">
-                         <div class="stat-head">
-                             <span class="greek-symbol">Γ</span> 
-                             <span class="s-name">Гамма</span>
-                         </div>
-                         <span class="val mono">{{ greeks.gamma.toFixed(6) }}</span>
-                     </div>
-                     <div class="stat-item">
-                         <div class="stat-head">
-                             <span class="greek-symbol">ν</span> 
-                             <span class="s-name">Вега</span>
-                         </div>
-                         <span class="val mono">{{ greeks.vega.toFixed(4) }}</span>
-                     </div>
-                     <div class="stat-item">
-                         <div class="stat-head">
-                             <span class="greek-symbol">Θ</span> 
-                             <span class="s-name">Тета</span>
-                         </div>
-                         <span class="val mono" :class="greeks.theta < 0 ? 'text-red' : 'text-green'">{{ greeks.theta.toFixed(4) }}</span>
-                     </div>
-                     <div class="stat-item">
-                         <div class="stat-head">
-                             <span class="greek-symbol">ρ</span> 
-                             <span class="s-name">Ро</span>
-                         </div>
-                         <span class="val mono">{{ greeks.rho.toFixed(4) }}</span>
-                     </div>
-                 </div>
-            </div>
-            </transition>
-
-        </aside>
-
-        <!-- RIGHT PANEL: Analysis -->
-        <main class="main-panel">
-            
-            <!-- P&L Scenario Analysis -->
-            <div class="glass-card chart-card">
-                <div class="chart-header">
-                    <h3>Сценарный анализ P&L</h3>
-                </div>
-
-                <div class="scenario-controls">
-                    <div class="scenario-input">
-                        <label>ΔS (руб.)</label>
-                        <input v-model.number="scenario.deltaS" type="number" step="0.1" class="glass-input-sm" />
-                    </div>
-                    <div class="scenario-input">
-                        <label>Δσ (%)</label>
-                        <input v-model.number="scenario.deltaSigma" type="number" step="0.1" class="glass-input-sm" />
-                    </div>
-                    <div class="scenario-input">
-                        <label>Δt (дн.)</label>
-                        <input v-model.number="scenario.deltaT" type="number" step="1" class="glass-input-sm" />
-                    </div>
-                </div>
-
-                <div class="pl-results" v-if="greeks.delta !== null">
-                    <div class="pl-row">
-                        <span class="pl-label">Δ компонент</span>
-                        <span class="pl-value mono">{{ deltaComponent.toFixed(2) }}</span>
-                    </div>
-                    <div class="pl-row">
-                        <span class="pl-label">Γ компонент</span>
-                        <span class="pl-value mono">{{ gammaComponent.toFixed(2) }}</span>
-                    </div>
-                    <div class="pl-row">
-                        <span class="pl-label">ν компонент</span>
-                        <span class="pl-value mono">{{ vegaComponent.toFixed(2) }}</span>
-                    </div>
-                    <div class="pl-row">
-                        <span class="pl-label">Θ компонент</span>
-                        <span class="pl-value mono">{{ thetaComponent.toFixed(2) }}</span>
-                    </div>
-                    <div class="pl-row divider"></div>
-                    <div class="pl-row total">
-                        <span class="pl-label">Всего (приблиз.)</span>
-                        <span class="pl-value mono" :class="totalPL >= 0 ? 'text-green' : 'text-red'">{{ totalPL.toFixed(2) }}</span>
-                    </div>
-                </div>
-
-                <div v-else class="pl-results empty-state">
-                    <span>Рассчитайте греки для анализа</span>
-                </div>
+            <!-- Rate -->
+            <div class="input-group">
+              <label class="lbl">r (Rate), %</label>
+              <input
+                v-model.number="params.r"
+                type="number"
+                step="0.01"
+                class="glass-input"
+                @change="calculateGreeks"
+              >
             </div>
 
-            <!-- Sensitivity Matrix -->
-            <div class="glass-card chart-card mt-4">
-                <div class="chart-header">
-                    <h3>Матрица чувствительности P&L (ΔS × Δσ)</h3>
+            <!-- Volatility -->
+            <div class="input-group">
+              <label class="lbl">σ (Vol), %</label>
+              <input
+                v-model.number="params.sigma"
+                type="number"
+                step="0.01"
+                class="glass-input"
+                @change="calculateGreeks"
+              >
+            </div>
+
+            <!-- Time to Maturity -->
+            <div class="input-group">
+              <label class="lbl">T (Time), лет</label>
+              <input
+                v-model.number="params.T"
+                type="number"
+                step="0.01"
+                min="0.001"
+                class="glass-input"
+                @change="calculateGreeks"
+              >
+            </div>
+
+            <!-- Option Type -->
+            <div class="input-group">
+              <label class="lbl">Тип опциона</label>
+              <div class="radio-group">
+                <label class="radio-label">
+                  <input
+                    v-model="params.type"
+                    type="radio"
+                    value="call"
+                    @change="calculateGreeks"
+                  >
+                  <span>Call</span>
+                </label>
+                <label class="radio-label">
+                  <input
+                    v-model="params.type"
+                    type="radio"
+                    value="put"
+                    @change="calculateGreeks"
+                  >
+                  <span>Put</span>
+                </label>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Greeks Stats -->
+        <transition name="fade">
+          <div
+            v-if="greeks.delta !== null"
+            class="glass-card panel"
+          >
+            <div class="panel-header">
+              <h3>Риск-метрики</h3>
+            </div>
+            <div class="stats-list">
+              <div class="stat-item">
+                <div class="stat-head">
+                  <span class="greek-symbol">Δ</span> 
+                  <span class="s-name">Дельта</span>
                 </div>
+                <span class="val mono">{{ greeks.delta.toFixed(4) }}</span>
+              </div>
+              <div class="stat-item">
+                <div class="stat-head">
+                  <span class="greek-symbol">Γ</span> 
+                  <span class="s-name">Гамма</span>
+                </div>
+                <span class="val mono">{{ greeks.gamma.toFixed(6) }}</span>
+              </div>
+              <div class="stat-item">
+                <div class="stat-head">
+                  <span class="greek-symbol">ν</span> 
+                  <span class="s-name">Вега</span>
+                </div>
+                <span class="val mono">{{ greeks.vega.toFixed(4) }}</span>
+              </div>
+              <div class="stat-item">
+                <div class="stat-head">
+                  <span class="greek-symbol">Θ</span> 
+                  <span class="s-name">Тета</span>
+                </div>
+                <span
+                  class="val mono"
+                  :class="greeks.theta < 0 ? 'text-red' : 'text-green'"
+                >{{ greeks.theta.toFixed(4) }}</span>
+              </div>
+              <div class="stat-item">
+                <div class="stat-head">
+                  <span class="greek-symbol">ρ</span> 
+                  <span class="s-name">Ро</span>
+                </div>
+                <span class="val mono">{{ greeks.rho.toFixed(4) }}</span>
+              </div>
+            </div>
+          </div>
+        </transition>
+      </aside>
+
+      <!-- RIGHT PANEL: Analysis -->
+      <main class="main-panel">
+        <!-- P&L Scenario Analysis -->
+        <div class="glass-card chart-card">
+          <div class="chart-header">
+            <h3>Сценарный анализ P&L</h3>
+          </div>
+
+          <div class="scenario-controls">
+            <div class="scenario-input">
+              <label>ΔS (руб.)</label>
+              <input
+                v-model.number="scenario.deltaS"
+                type="number"
+                step="0.1"
+                class="glass-input-sm"
+              >
+            </div>
+            <div class="scenario-input">
+              <label>Δσ (%)</label>
+              <input
+                v-model.number="scenario.deltaSigma"
+                type="number"
+                step="0.1"
+                class="glass-input-sm"
+              >
+            </div>
+            <div class="scenario-input">
+              <label>Δt (дн.)</label>
+              <input
+                v-model.number="scenario.deltaT"
+                type="number"
+                step="1"
+                class="glass-input-sm"
+              >
+            </div>
+          </div>
+
+          <div
+            v-if="greeks.delta !== null"
+            class="pl-results"
+          >
+            <div class="pl-row">
+              <span class="pl-label">Δ компонент</span>
+              <span class="pl-value mono">{{ deltaComponent.toFixed(2) }}</span>
+            </div>
+            <div class="pl-row">
+              <span class="pl-label">Γ компонент</span>
+              <span class="pl-value mono">{{ gammaComponent.toFixed(2) }}</span>
+            </div>
+            <div class="pl-row">
+              <span class="pl-label">ν компонент</span>
+              <span class="pl-value mono">{{ vegaComponent.toFixed(2) }}</span>
+            </div>
+            <div class="pl-row">
+              <span class="pl-label">Θ компонент</span>
+              <span class="pl-value mono">{{ thetaComponent.toFixed(2) }}</span>
+            </div>
+            <div class="pl-row divider" />
+            <div class="pl-row total">
+              <span class="pl-label">Всего (приблиз.)</span>
+              <span
+                class="pl-value mono"
+                :class="totalPL >= 0 ? 'text-green' : 'text-red'"
+              >{{ totalPL.toFixed(2) }}</span>
+            </div>
+          </div>
+
+          <div
+            v-else
+            class="pl-results empty-state"
+          >
+            <span>Рассчитайте греки для анализа</span>
+          </div>
+        </div>
+
+        <!-- Sensitivity Matrix -->
+        <div class="glass-card chart-card mt-4">
+          <div class="chart-header">
+            <h3>Матрица чувствительности P&L (ΔS × Δσ)</h3>
+          </div>
                 
-                <div class="sensitivity-table" v-if="sensitivityMatrix.length">
-                    <table class="data-table">
-                        <thead>
-                            <tr>
-                                <th>ΔS (руб.)</th>
-                                <th>σ - 2%</th>
-                                <th>σ - 1%</th>
-                                <th>σ базовое</th>
-                                <th>σ + 1%</th>
-                                <th>σ + 2%</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr v-for="(row, i) in sensitivityMatrix" :key="i">
-                                <td class="row-header">{{ [-10, -5, 0, 5, 10][i] }}</td>
-                                <td v-for="(val, j) in row" :key="j" :class="{ positive: val > 0, negative: val < 0 }">
-                                    {{ val.toFixed(2) }}
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
+          <div
+            v-if="sensitivityMatrix.length"
+            class="sensitivity-table"
+          >
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>ΔS (руб.)</th>
+                  <th>σ - 2%</th>
+                  <th>σ - 1%</th>
+                  <th>σ базовое</th>
+                  <th>σ + 1%</th>
+                  <th>σ + 2%</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr
+                  v-for="(row, i) in sensitivityMatrix"
+                  :key="i"
+                >
+                  <td class="row-header">
+                    {{ [-10, -5, 0, 5, 10][i] }}
+                  </td>
+                  <td
+                    v-for="(val, j) in row"
+                    :key="j"
+                    :class="{ positive: val > 0, negative: val < 0 }"
+                  >
+                    {{ val.toFixed(2) }}
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
 
-                <div v-else class="pl-results empty-state">
-                    <span>Матрица будет заполнена после расчёта</span>
-                </div>
-            </div>
-
-        </main>
+          <div
+            v-else
+            class="pl-results empty-state"
+          >
+            <span>Матрица будет заполнена после расчёта</span>
+          </div>
+        </div>
+      </main>
     </div>
   </div>
 </template>

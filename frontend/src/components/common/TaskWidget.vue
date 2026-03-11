@@ -1,11 +1,14 @@
 <!-- src/components/common/TaskWidget.vue -->
 <template>
   <Transition name="island-pop">
-    <div v-if="activeTask" class="dynamic-island" @click="toggleDetails">
-      
+    <div
+      v-if="activeTask"
+      class="dynamic-island"
+      @click="toggleDetails"
+    >
       <!-- Activity Indicator (Left) -->
       <div class="island-left">
-        <div class="spinner-island"></div>
+        <div class="spinner-island" />
       </div>
 
       <!-- Content (Center) -->
@@ -19,8 +22,10 @@
       </div>
 
       <!-- Background Progress Fill (Subtle) -->
-      <div class="island-progress-bg" :style="{ width: activeTask.progress + '%' }"></div>
-
+      <div
+        class="island-progress-bg"
+        :style="{ width: activeTask.progress + '%' }"
+      />
     </div>
   </Transition>
 </template>

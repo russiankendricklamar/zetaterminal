@@ -1,23 +1,24 @@
 """
 Сервис для расчета метрик портфеля.
 """
+from typing import Any
+
 import numpy as np
-from typing import List, Dict, Any
 from scipy import stats
 from scipy.stats import norm
 
 
 class PortfolioService:
     """Сервис для расчета метрик портфеля."""
-    
+
     @staticmethod
     def calculate_portfolio_metrics(
-        positions: List[Dict[str, Any]],
+        positions: list[dict[str, Any]],
         risk_free_rate: float = 0.042,
         market_return: float = 0.10,
         market_volatility: float = 0.15,
         market_correlation: float = 0.7
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Вычисляет все метрики портфеля на основе позиций.
 
@@ -39,31 +40,31 @@ class PortfolioService:
         """
         if not positions or len(positions) == 0:
             return PortfolioService._get_default_metrics()
-        
+
         # Преобразуем allocation из процентов в доли
         total_allocation = sum(pos.get('allocation', 0) for pos in positions)
         if total_allocation == 0:
             return PortfolioService._get_default_metrics()
-        
+
         # Вычисляем общую стоимость портфеля (NAV)
         total_notional = sum(pos.get('notional', 0) for pos in positions)
         nav = total_notional
-        
+
         # Вычисляем дневные доходности активов
         daily_returns = []
         for pos in positions:
             day_change = pos.get('dayChange', 0) / 100.0  # Преобразуем из процентов
             daily_returns.append(day_change)
-        
+
         # Взвешенная доходность портфеля
         portfolio_daily_return = sum(
             (pos.get('allocation', 0) / 100.0) * (pos.get('dayChange', 0) / 100.0)
             for pos in positions
         )
-        
+
         # Годовая доходность (предполагаем 252 торговых дня)
         annual_return = portfolio_daily_return * 252
-        
+
         # Вычисляем волатильности активов (на основе dayChange)
         # Используем историческую волатильность как приближение
         volatilities = []
@@ -72,56 +73,56 @@ class PortfolioService:
             # Преобразуем дневную волатильность в годовую
             vol = min(day_change * np.sqrt(252), 0.5)  # Ограничиваем максимум 50%
             volatilities.append(vol)
-        
+
         # Волатильность портфеля (упрощенный расчет)
         # Для более точного расчета нужна корреляционная матрица
         portfolio_volatility = np.sqrt(
             sum(
                 (pos.get('allocation', 0) / 100.0) ** 2 * vol ** 2
-                for pos, vol in zip(positions, volatilities)
+                for pos, vol in zip(positions, volatilities, strict=False)
             )
         )
-        
+
         # Если волатильность слишком мала, используем средневзвешенную
         if portfolio_volatility < 0.01:
             portfolio_volatility = sum(
                 (pos.get('allocation', 0) / 100.0) * vol
-                for pos, vol in zip(positions, volatilities)
+                for pos, vol in zip(positions, volatilities, strict=False)
             )
-        
+
         # Total P&L (прибыль/убыток)
         total_pnl = sum(
             pos.get('notional', 0) * (pos.get('dayChange', 0) / 100.0)
             for pos in positions
         )
-        
+
         # VaR 95% (Value at Risk)
         # Используем параметрический метод
         var_95 = PortfolioService._calculate_var(
-            portfolio_volatility, 
-            nav, 
+            portfolio_volatility,
+            nav,
             confidence_level=0.95
         )
         var_95_daily = PortfolioService._calculate_var(
-            portfolio_volatility / np.sqrt(252), 
-            nav, 
+            portfolio_volatility / np.sqrt(252),
+            nav,
             confidence_level=0.95
         )
-        
+
         # Sharpe Ratio
         sharpe_ratio = PortfolioService._calculate_sharpe_ratio(
-            annual_return, 
-            portfolio_volatility, 
+            annual_return,
+            portfolio_volatility,
             risk_free_rate
         )
-        
+
         # Sortino Ratio
         sortino_ratio = PortfolioService._calculate_sortino_ratio(
             annual_return,
             daily_returns,
             risk_free_rate
         )
-        
+
         # Beta: β = (σ_p / σ_m) × ρ(p, m)
         beta = PortfolioService._calculate_beta(
             positions,
@@ -129,24 +130,24 @@ class PortfolioService:
             market_volatility,
             market_correlation
         )
-        
+
         # Alpha
         alpha = annual_return - (risk_free_rate + beta * (market_return - risk_free_rate))
-        
+
         # Skewness (асимметрия)
         skew = PortfolioService._calculate_skewness(daily_returns)
-        
+
         # Max Drawdown (максимальная просадка)
         max_drawdown = PortfolioService._calculate_max_drawdown(daily_returns)
-        
+
         # Diversification (коэффициент диверсификации)
         diversification = PortfolioService._calculate_diversification(positions)
-        
+
         # Средняя корреляция (обратная оценка из портфельной волатильности)
         avg_correlation = PortfolioService._calculate_avg_correlation(
             positions, volatilities, portfolio_volatility
         )
-        
+
         return {
             "total_pnl": float(total_pnl),
             "nav": float(nav),
@@ -167,14 +168,14 @@ class PortfolioService:
             "risk_free_rate": float(risk_free_rate),
             "num_positions": len(positions)
         }
-    
+
     @staticmethod
     def _calculate_var(volatility: float, portfolio_value: float, confidence_level: float = 0.95) -> float:
         """Вычисляет Value at Risk."""
         z_score = norm.ppf(1 - confidence_level)
         var = abs(z_score) * volatility * portfolio_value
         return var
-    
+
     @staticmethod
     def _calculate_sharpe_ratio(return_: float, volatility: float, risk_free_rate: float) -> float:
         """Вычисляет коэффициент Шарпа."""
@@ -182,27 +183,27 @@ class PortfolioService:
             return 0.0
         excess_return = return_ - risk_free_rate
         return excess_return / volatility
-    
+
     @staticmethod
-    def _calculate_sortino_ratio(annual_return: float, daily_returns: List[float], risk_free_rate: float) -> float:
+    def _calculate_sortino_ratio(annual_return: float, daily_returns: list[float], risk_free_rate: float) -> float:
         """Вычисляет коэффициент Сортино."""
         if not daily_returns:
             return 0.0
-        
+
         # Вычисляем downside deviation (только отрицательные доходности)
         downside_returns = [r for r in daily_returns if r < 0]
         if not downside_returns:
             return 0.0
-        
+
         downside_std = np.std(downside_returns) * np.sqrt(252)
         if downside_std == 0:
             return 0.0
-        
+
         excess_return = annual_return - risk_free_rate
         return excess_return / downside_std
-    
+
     @staticmethod
-    def _calculate_beta(positions: List[Dict], volatilities: List[float],
+    def _calculate_beta(positions: list[dict], volatilities: list[float],
                         market_volatility: float, market_correlation: float = 0.7) -> float:
         """
         Вычисляет бета портфеля: β = (σ_p / σ_m) × ρ(p, m).
@@ -215,50 +216,50 @@ class PortfolioService:
 
         weighted_vol = sum(
             (pos.get('allocation', 0) / 100.0) * vol
-            for pos, vol in zip(positions, volatilities)
+            for pos, vol in zip(positions, volatilities, strict=False)
         )
 
         beta = (weighted_vol / market_volatility) * market_correlation
         return float(beta)
-    
+
     @staticmethod
-    def _calculate_skewness(returns: List[float]) -> float:
+    def _calculate_skewness(returns: list[float]) -> float:
         """Вычисляет асимметрию (skewness)."""
         if len(returns) < 3:
             return 0.0
         return float(stats.skew(returns))
-    
+
     @staticmethod
-    def _calculate_max_drawdown(returns: List[float]) -> float:
+    def _calculate_max_drawdown(returns: list[float]) -> float:
         """Вычисляет максимальную просадку."""
         if not returns:
             return 0.0
-        
+
         cumulative = np.cumprod(1 + np.array(returns))
         running_max = np.maximum.accumulate(cumulative)
         drawdown = (cumulative - running_max) / running_max
         max_dd = abs(np.min(drawdown))
-        
+
         return float(max_dd)
-    
+
     @staticmethod
-    def _calculate_diversification(positions: List[Dict]) -> float:
+    def _calculate_diversification(positions: list[dict]) -> float:
         """Вычисляет коэффициент диверсификации."""
         if len(positions) <= 1:
             return 0.0
-        
+
         # Используем индекс Херфиндаля-Хиршмана (HHI)
         allocations = [pos.get('allocation', 0) / 100.0 for pos in positions]
         hhi = sum(alloc ** 2 for alloc in allocations)
-        
+
         # Нормализуем: 1 - HHI (чем ближе к 1, тем лучше диверсификация)
         diversification = 1 - hhi
-        
+
         return float(diversification)
-    
+
     @staticmethod
-    def _calculate_avg_correlation(positions: List[Dict], volatilities: List[float] = None,
-                                   portfolio_volatility: float = None) -> float:
+    def _calculate_avg_correlation(positions: list[dict], volatilities: list[float] | None = None,
+                                   portfolio_volatility: float | None = None) -> float:
         """
         Оценивает среднюю корреляцию между активами.
 
@@ -279,10 +280,10 @@ class PortfolioService:
         weights = [pos.get('allocation', 0) / 100.0 for pos in positions]
 
         # Σ(w_i² σ_i²)
-        sum_w2_s2 = sum(w ** 2 * s ** 2 for w, s in zip(weights, volatilities))
+        sum_w2_s2 = sum(w ** 2 * s ** 2 for w, s in zip(weights, volatilities, strict=False))
 
         # (Σ w_i σ_i)²
-        sum_ws_sq = sum(w * s for w, s in zip(weights, volatilities)) ** 2
+        sum_ws_sq = sum(w * s for w, s in zip(weights, volatilities, strict=False)) ** 2
 
         denominator = sum_ws_sq - sum_w2_s2
         if abs(denominator) < 1e-14:
@@ -293,9 +294,9 @@ class PortfolioService:
 
         # Ограничиваем результат в допустимом диапазоне [-1, 1]
         return float(np.clip(avg_corr, -1.0, 1.0))
-    
+
     @staticmethod
-    def _get_default_metrics() -> Dict[str, Any]:
+    def _get_default_metrics() -> dict[str, Any]:
         """Возвращает метрики по умолчанию."""
         return {
             "total_pnl": 0.0,

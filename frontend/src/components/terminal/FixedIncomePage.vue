@@ -6,87 +6,168 @@
           <ActivityIcon class="w-6 h-6" />
         </div>
         <div>
-          <h2 class="section-title font-anton">АНАЛИЗ ОБЛИГАЦИЙ</h2>
-          <p class="section-subtitle font-mono">ДОХОДНОСТИ, КРИВЫЕ И СТАВКИ</p>
+          <h2 class="section-title font-anton">
+            АНАЛИЗ ОБЛИГАЦИЙ
+          </h2>
+          <p class="section-subtitle font-mono">
+            ДОХОДНОСТИ, КРИВЫЕ И СТАВКИ
+          </p>
         </div>
       </div>
       <div class="tab-group">
-        <button v-for="tab in tabs" :key="tab.id" @click="section = tab.id" :class="['tab-btn', { active: section === tab.id }]">
+        <button
+          v-for="tab in tabs"
+          :key="tab.id"
+          :class="['tab-btn', { active: section === tab.id }]"
+          @click="section = tab.id"
+        >
           {{ tab.label }}
         </button>
       </div>
     </div>
 
-    <div v-if="loading" class="flex items-center gap-2 text-gray-400 text-xs p-4">
-      <div class="w-3 h-3 border-2 border-amber-500 border-t-transparent rounded-full animate-spin"></div>
+    <div
+      v-if="loading"
+      class="flex items-center gap-2 text-gray-400 text-xs p-4"
+    >
+      <div class="w-3 h-3 border-2 border-amber-500 border-t-transparent rounded-full animate-spin" />
       Загрузка данных...
     </div>
 
     <div class="flex-1 flex flex-col gap-6 p-6">
       <!-- ═══ US Treasury Yield Curve ═══ -->
-      <div v-if="section === 'YCRV'" class="space-y-6">
+      <div
+        v-if="section === 'YCRV'"
+        class="space-y-6"
+      >
         <div class="flex justify-between items-center">
-          <h3 class="text-lg font-bold text-white">Кривая доходности US Treasury</h3>
-          <button @click="loadYieldCurve" class="px-3 py-1.5 bg-white/10 hover:bg-white/20 text-xs font-bold text-white rounded-lg transition-colors">
+          <h3 class="text-lg font-bold text-white">
+            Кривая доходности US Treasury
+          </h3>
+          <button
+            class="px-3 py-1.5 bg-white/10 hover:bg-white/20 text-xs font-bold text-white rounded-lg transition-colors"
+            @click="loadYieldCurve"
+          >
             Обновить
           </button>
         </div>
 
-        <div v-if="yieldCurveData.length > 0" class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4">
-          <div v-for="point in yieldCurveData" :key="point.tenor" class="p-4 rounded-xl bg-white/5 border border-white/5 text-center hover:bg-white/10 transition-colors">
-            <div class="text-xs text-gray-500 uppercase font-bold mb-2">{{ point.tenor }}</div>
-            <div class="text-2xl font-bold text-amber-400 font-mono">{{ point.yield != null ? point.yield.toFixed(2) + '%' : '—' }}</div>
-            <div v-if="point.prevYield != null" :class="['text-xs mt-1 font-mono', (point.yield ?? 0) > point.prevYield ? 'text-rose-400' : 'text-emerald-400']">
+        <div
+          v-if="yieldCurveData.length > 0"
+          class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4"
+        >
+          <div
+            v-for="point in yieldCurveData"
+            :key="point.tenor"
+            class="p-4 rounded-xl bg-white/5 border border-white/5 text-center hover:bg-white/10 transition-colors"
+          >
+            <div class="text-xs text-gray-500 uppercase font-bold mb-2">
+              {{ point.tenor }}
+            </div>
+            <div class="text-2xl font-bold text-amber-400 font-mono">
+              {{ point.yield != null ? point.yield.toFixed(2) + '%' : '—' }}
+            </div>
+            <div
+              v-if="point.prevYield != null"
+              :class="['text-xs mt-1 font-mono', (point.yield ?? 0) > point.prevYield ? 'text-rose-400' : 'text-emerald-400']"
+            >
               {{ ((point.yield ?? 0) - point.prevYield) >= 0 ? '+' : '' }}{{ ((point.yield ?? 0) - point.prevYield).toFixed(2) }}bp
             </div>
           </div>
         </div>
 
-        <div v-if="yieldCurveData.length > 0" class="p-6 rounded-2xl bg-white/5 border border-white/5">
-          <h4 class="text-sm font-bold text-gray-400 uppercase mb-4">Спреды</h4>
+        <div
+          v-if="yieldCurveData.length > 0"
+          class="p-6 rounded-2xl bg-white/5 border border-white/5"
+        >
+          <h4 class="text-sm font-bold text-gray-400 uppercase mb-4">
+            Спреды
+          </h4>
           <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
-            <div v-for="spread in computedSpreads" :key="spread.name" class="text-center">
-              <div class="text-xs text-gray-500 mb-1">{{ spread.name }}</div>
-              <div :class="['text-xl font-bold font-mono', spread.value >= 0 ? 'text-white' : 'text-rose-400']">{{ spread.value.toFixed(0) }} bps</div>
+            <div
+              v-for="spread in computedSpreads"
+              :key="spread.name"
+              class="text-center"
+            >
+              <div class="text-xs text-gray-500 mb-1">
+                {{ spread.name }}
+              </div>
+              <div :class="['text-xl font-bold font-mono', spread.value >= 0 ? 'text-white' : 'text-rose-400']">
+                {{ spread.value.toFixed(0) }} bps
+              </div>
             </div>
           </div>
         </div>
       </div>
 
       <!-- ═══ CBR & FRED Rates ═══ -->
-      <div v-else-if="section === 'YAS'" class="space-y-6">
-        <h3 class="text-lg font-bold text-white">Ставки: ЦБР, ФРС, ЕЦБ</h3>
+      <div
+        v-else-if="section === 'YAS'"
+        class="space-y-6"
+      >
+        <h3 class="text-lg font-bold text-white">
+          Ставки: ЦБР, ФРС, ЕЦБ
+        </h3>
 
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div class="p-6 rounded-2xl bg-white/5 border border-white/5 text-center">
-            <h4 class="text-xs text-gray-500 uppercase font-bold mb-2">Ключевая ставка ЦБР</h4>
-            <div class="text-4xl font-bold text-amber-400 font-mono">{{ cbrKeyRate != null ? cbrKeyRate.toFixed(2) + '%' : '—' }}</div>
+            <h4 class="text-xs text-gray-500 uppercase font-bold mb-2">
+              Ключевая ставка ЦБР
+            </h4>
+            <div class="text-4xl font-bold text-amber-400 font-mono">
+              {{ cbrKeyRate != null ? cbrKeyRate.toFixed(2) + '%' : '—' }}
+            </div>
           </div>
           <div class="p-6 rounded-2xl bg-white/5 border border-white/5 text-center">
-            <h4 class="text-xs text-gray-500 uppercase font-bold mb-2">Fed Funds Rate</h4>
-            <div class="text-4xl font-bold text-blue-400 font-mono">{{ fedFundsRate != null ? fedFundsRate.toFixed(2) + '%' : '—' }}</div>
+            <h4 class="text-xs text-gray-500 uppercase font-bold mb-2">
+              Fed Funds Rate
+            </h4>
+            <div class="text-4xl font-bold text-blue-400 font-mono">
+              {{ fedFundsRate != null ? fedFundsRate.toFixed(2) + '%' : '—' }}
+            </div>
           </div>
           <div class="p-6 rounded-2xl bg-white/5 border border-white/5 text-center">
-            <h4 class="text-xs text-gray-500 uppercase font-bold mb-2">ECB Main Rate</h4>
-            <div class="text-4xl font-bold text-indigo-400 font-mono">{{ ecbRate != null ? ecbRate.toFixed(2) + '%' : '—' }}</div>
+            <h4 class="text-xs text-gray-500 uppercase font-bold mb-2">
+              ECB Main Rate
+            </h4>
+            <div class="text-4xl font-bold text-indigo-400 font-mono">
+              {{ ecbRate != null ? ecbRate.toFixed(2) + '%' : '—' }}
+            </div>
           </div>
         </div>
 
-        <div v-if="depositRates.length > 0" class="rounded-2xl border border-white/5 bg-black/20 overflow-hidden">
+        <div
+          v-if="depositRates.length > 0"
+          class="rounded-2xl border border-white/5 bg-black/20 overflow-hidden"
+        >
           <div class="p-4 bg-white/5 border-b border-white/5">
-            <h4 class="font-bold text-white text-sm">Средние ставки по депозитам (ЦБР)</h4>
+            <h4 class="font-bold text-white text-sm">
+              Средние ставки по депозитам (ЦБР)
+            </h4>
           </div>
           <table class="w-full text-left border-collapse">
             <thead>
               <tr class="text-xs text-gray-500 uppercase">
-                <th class="p-4">Дата</th>
-                <th class="p-4 text-right">Overnight (%)</th>
+                <th class="p-4">
+                  Дата
+                </th>
+                <th class="p-4 text-right">
+                  Overnight (%)
+                </th>
               </tr>
             </thead>
             <tbody class="text-sm font-mono text-gray-300">
-              <tr v-for="(r, i) in depositRates" :key="i" class="border-t border-white/5 hover:bg-white/5">
-                <td class="p-4 text-white">{{ r.date }}</td>
-                <td class="p-4 text-right text-amber-400">{{ r.overnight != null ? r.overnight.toFixed(2) + '%' : '—' }}</td>
+              <tr
+                v-for="(r, i) in depositRates"
+                :key="i"
+                class="border-t border-white/5 hover:bg-white/5"
+              >
+                <td class="p-4 text-white">
+                  {{ r.date }}
+                </td>
+                <td class="p-4 text-right text-amber-400">
+                  {{ r.overnight != null ? r.overnight.toFixed(2) + '%' : '—' }}
+                </td>
               </tr>
             </tbody>
           </table>
@@ -94,27 +175,61 @@
       </div>
 
       <!-- ═══ Yield Analysis ═══ -->
-      <div v-else-if="section === 'YA'" class="space-y-6">
-        <h3 class="text-lg font-bold text-white">Историческая динамика доходностей</h3>
-        <div v-if="yieldHistory.length > 0" class="rounded-2xl border border-white/5 bg-black/20 overflow-hidden">
+      <div
+        v-else-if="section === 'YA'"
+        class="space-y-6"
+      >
+        <h3 class="text-lg font-bold text-white">
+          Историческая динамика доходностей
+        </h3>
+        <div
+          v-if="yieldHistory.length > 0"
+          class="rounded-2xl border border-white/5 bg-black/20 overflow-hidden"
+        >
           <table class="w-full text-left border-collapse">
             <thead>
               <tr class="text-xs text-gray-500 uppercase bg-white/5">
-                <th class="p-4">Дата</th>
-                <th class="p-4 text-right">2Y</th>
-                <th class="p-4 text-right">5Y</th>
-                <th class="p-4 text-right">10Y</th>
-                <th class="p-4 text-right">30Y</th>
-                <th class="p-4 text-right">2s10s Spread</th>
+                <th class="p-4">
+                  Дата
+                </th>
+                <th class="p-4 text-right">
+                  2Y
+                </th>
+                <th class="p-4 text-right">
+                  5Y
+                </th>
+                <th class="p-4 text-right">
+                  10Y
+                </th>
+                <th class="p-4 text-right">
+                  30Y
+                </th>
+                <th class="p-4 text-right">
+                  2s10s Spread
+                </th>
               </tr>
             </thead>
             <tbody class="text-sm font-mono text-gray-300">
-              <tr v-for="(row, i) in yieldHistory" :key="i" class="border-t border-white/5 hover:bg-white/5">
-                <td class="p-4 text-white">{{ row.date }}</td>
-                <td class="p-4 text-right">{{ row.y2 != null ? row.y2.toFixed(2) + '%' : '—' }}</td>
-                <td class="p-4 text-right">{{ row.y5 != null ? row.y5.toFixed(2) + '%' : '—' }}</td>
-                <td class="p-4 text-right font-bold text-white">{{ row.y10 != null ? row.y10.toFixed(2) + '%' : '—' }}</td>
-                <td class="p-4 text-right">{{ row.y30 != null ? row.y30.toFixed(2) + '%' : '—' }}</td>
+              <tr
+                v-for="(row, i) in yieldHistory"
+                :key="i"
+                class="border-t border-white/5 hover:bg-white/5"
+              >
+                <td class="p-4 text-white">
+                  {{ row.date }}
+                </td>
+                <td class="p-4 text-right">
+                  {{ row.y2 != null ? row.y2.toFixed(2) + '%' : '—' }}
+                </td>
+                <td class="p-4 text-right">
+                  {{ row.y5 != null ? row.y5.toFixed(2) + '%' : '—' }}
+                </td>
+                <td class="p-4 text-right font-bold text-white">
+                  {{ row.y10 != null ? row.y10.toFixed(2) + '%' : '—' }}
+                </td>
+                <td class="p-4 text-right">
+                  {{ row.y30 != null ? row.y30.toFixed(2) + '%' : '—' }}
+                </td>
                 <td :class="['p-4 text-right font-bold', row.spread >= 0 ? 'text-emerald-400' : 'text-rose-400']">
                   {{ row.spread.toFixed(0) }} bps
                 </td>
@@ -125,79 +240,174 @@
       </div>
 
       <!-- ═══ MOEX ZCYC (КБД) ═══ -->
-      <div v-else-if="section === 'ZCYC'" class="space-y-6">
+      <div
+        v-else-if="section === 'ZCYC'"
+        class="space-y-6"
+      >
         <div class="flex justify-between items-center">
-          <h3 class="text-lg font-bold text-white">КБД MOEX — Кривая бескупонных доходностей</h3>
-          <button @click="loadZcyc" class="px-3 py-1.5 bg-white/10 hover:bg-white/20 text-xs font-bold text-white rounded-lg transition-colors">
+          <h3 class="text-lg font-bold text-white">
+            КБД MOEX — Кривая бескупонных доходностей
+          </h3>
+          <button
+            class="px-3 py-1.5 bg-white/10 hover:bg-white/20 text-xs font-bold text-white rounded-lg transition-colors"
+            @click="loadZcyc"
+          >
             Обновить
           </button>
         </div>
 
-        <div v-if="zcycDate" class="text-xs text-gray-500 font-mono">
+        <div
+          v-if="zcycDate"
+          class="text-xs text-gray-500 font-mono"
+        >
           Дата: {{ zcycDate }} · Точек: {{ zcycPoints.length }} · Среднее: {{ zcycMean != null ? zcycMean.toFixed(2) + '%' : '—' }}
         </div>
 
-        <div v-if="zcycPoints.length > 0" class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
-          <div v-for="pt in zcycKeyPoints" :key="pt.term" class="p-3 rounded-xl bg-white/5 border border-white/5 text-center hover:bg-white/10 transition-colors">
-            <div class="text-xs text-gray-500 font-bold mb-1">{{ pt.label }}</div>
-            <div class="text-xl font-bold text-amber-400 font-mono">{{ pt.value.toFixed(2) }}%</div>
+        <div
+          v-if="zcycPoints.length > 0"
+          class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3"
+        >
+          <div
+            v-for="pt in zcycKeyPoints"
+            :key="pt.term"
+            class="p-3 rounded-xl bg-white/5 border border-white/5 text-center hover:bg-white/10 transition-colors"
+          >
+            <div class="text-xs text-gray-500 font-bold mb-1">
+              {{ pt.label }}
+            </div>
+            <div class="text-xl font-bold text-amber-400 font-mono">
+              {{ pt.value.toFixed(2) }}%
+            </div>
           </div>
         </div>
 
-        <div v-if="zcycPoints.length > 0" class="rounded-2xl border border-white/5 bg-black/20 overflow-hidden">
+        <div
+          v-if="zcycPoints.length > 0"
+          class="rounded-2xl border border-white/5 bg-black/20 overflow-hidden"
+        >
           <div class="p-4 bg-white/5 border-b border-white/5">
-            <h4 class="font-bold text-white text-sm">Полная кривая (срок → доходность)</h4>
+            <h4 class="font-bold text-white text-sm">
+              Полная кривая (срок → доходность)
+            </h4>
           </div>
           <div class="overflow-auto max-h-96">
             <table class="w-full text-left border-collapse">
               <thead>
                 <tr class="text-xs text-gray-500 uppercase sticky top-0 bg-black/80 backdrop-blur-md">
-                  <th class="p-3">Срок (лет)</th>
-                  <th class="p-3 text-right">Доходность (%)</th>
+                  <th class="p-3">
+                    Срок (лет)
+                  </th>
+                  <th class="p-3 text-right">
+                    Доходность (%)
+                  </th>
                 </tr>
               </thead>
               <tbody class="text-sm font-mono text-gray-300">
-                <tr v-for="pt in zcycPoints" :key="pt.term" class="border-t border-white/5 hover:bg-white/5">
-                  <td class="p-3 text-white">{{ pt.term.toFixed(2) }}</td>
-                  <td class="p-3 text-right text-amber-400">{{ pt.value.toFixed(4) }}%</td>
+                <tr
+                  v-for="pt in zcycPoints"
+                  :key="pt.term"
+                  class="border-t border-white/5 hover:bg-white/5"
+                >
+                  <td class="p-3 text-white">
+                    {{ pt.term.toFixed(2) }}
+                  </td>
+                  <td class="p-3 text-right text-amber-400">
+                    {{ pt.value.toFixed(4) }}%
+                  </td>
                 </tr>
               </tbody>
             </table>
           </div>
         </div>
 
-        <div v-else-if="!loading" class="flex items-center justify-center h-32 text-gray-500 font-mono text-sm">
+        <div
+          v-else-if="!loading"
+          class="flex items-center justify-center h-32 text-gray-500 font-mono text-sm"
+        >
           Нет данных КБД
         </div>
       </div>
 
       <!-- ═══ OAS Calculator ═══ -->
-      <div v-else-if="section === 'OAS1'" class="space-y-6">
-        <h3 class="text-lg font-bold text-white">Калькулятор OAS</h3>
+      <div
+        v-else-if="section === 'OAS1'"
+        class="space-y-6"
+      >
+        <h3 class="text-lg font-bold text-white">
+          Калькулятор OAS
+        </h3>
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
           <div class="p-6 rounded-2xl bg-white/5 border border-white/5 space-y-4">
-            <h4 class="text-sm font-bold text-gray-400 uppercase">Параметры облигации</h4>
+            <h4 class="text-sm font-bold text-gray-400 uppercase">
+              Параметры облигации
+            </h4>
             <div class="grid grid-cols-2 gap-4">
-              <div><label class="text-xs text-gray-500 block mb-1">Рыночная цена</label><input type="number" v-model.number="oasPrice" step="0.01" class="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-white font-mono text-sm" /></div>
-              <div><label class="text-xs text-gray-500 block mb-1">Купон (%)</label><input type="number" v-model.number="oasCoupon" step="0.01" class="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-white font-mono text-sm" /></div>
-              <div><label class="text-xs text-gray-500 block mb-1">Номинал</label><input type="number" v-model.number="oasFace" class="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-white font-mono text-sm" /></div>
-              <div><label class="text-xs text-gray-500 block mb-1">Срок (лет)</label><input type="number" v-model.number="oasMaturity" step="0.5" class="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-white font-mono text-sm" /></div>
+              <div>
+                <label class="text-xs text-gray-500 block mb-1">Рыночная цена</label><input
+                  v-model.number="oasPrice"
+                  type="number"
+                  step="0.01"
+                  class="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-white font-mono text-sm"
+                >
+              </div>
+              <div>
+                <label class="text-xs text-gray-500 block mb-1">Купон (%)</label><input
+                  v-model.number="oasCoupon"
+                  type="number"
+                  step="0.01"
+                  class="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-white font-mono text-sm"
+                >
+              </div>
+              <div>
+                <label class="text-xs text-gray-500 block mb-1">Номинал</label><input
+                  v-model.number="oasFace"
+                  type="number"
+                  class="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-white font-mono text-sm"
+                >
+              </div>
+              <div>
+                <label class="text-xs text-gray-500 block mb-1">Срок (лет)</label><input
+                  v-model.number="oasMaturity"
+                  type="number"
+                  step="0.5"
+                  class="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-white font-mono text-sm"
+                >
+              </div>
             </div>
-            <div><label class="text-xs text-gray-500 block mb-1">Benchmark доходность (%)</label><input type="number" v-model.number="oasBenchmark" step="0.01" class="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-white font-mono text-sm" /></div>
+            <div>
+              <label class="text-xs text-gray-500 block mb-1">Benchmark доходность (%)</label><input
+                v-model.number="oasBenchmark"
+                type="number"
+                step="0.01"
+                class="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-white font-mono text-sm"
+              >
+            </div>
           </div>
           <div class="space-y-4">
             <div class="p-6 rounded-2xl bg-gradient-to-br from-amber-900/20 to-black border border-amber-500/30 text-center">
-              <h4 class="text-sm font-bold text-amber-500 uppercase mb-2">OAS (Option-Adjusted Spread)</h4>
-              <div class="text-5xl font-bold text-white font-mono mb-2">{{ computedOas.toFixed(1) }} <span class="text-xl text-gray-500">bps</span></div>
+              <h4 class="text-sm font-bold text-amber-500 uppercase mb-2">
+                OAS (Option-Adjusted Spread)
+              </h4>
+              <div class="text-5xl font-bold text-white font-mono mb-2">
+                {{ computedOas.toFixed(1) }} <span class="text-xl text-gray-500">bps</span>
+              </div>
             </div>
             <div class="grid grid-cols-2 gap-4">
               <div class="p-4 rounded-xl bg-white/5 border border-white/5 text-center">
-                <div class="text-xs text-gray-500 uppercase mb-1">Z-Spread</div>
-                <div class="text-xl font-bold text-white font-mono">{{ computedZSpread.toFixed(1) }} bps</div>
+                <div class="text-xs text-gray-500 uppercase mb-1">
+                  Z-Spread
+                </div>
+                <div class="text-xl font-bold text-white font-mono">
+                  {{ computedZSpread.toFixed(1) }} bps
+                </div>
               </div>
               <div class="p-4 rounded-xl bg-white/5 border border-white/5 text-center">
-                <div class="text-xs text-gray-500 uppercase mb-1">YTM</div>
-                <div class="text-xl font-bold text-amber-400 font-mono">{{ computedYtm.toFixed(2) }}%</div>
+                <div class="text-xs text-gray-500 uppercase mb-1">
+                  YTM
+                </div>
+                <div class="text-xl font-bold text-amber-400 font-mono">
+                  {{ computedYtm.toFixed(2) }}%
+                </div>
               </div>
             </div>
           </div>
@@ -205,27 +415,73 @@
       </div>
 
       <!-- ═══ Bond Pricing ═══ -->
-      <div v-else-if="section === 'BB'" class="space-y-6">
-        <h3 class="text-lg font-bold text-white">Оценка облигаций</h3>
+      <div
+        v-else-if="section === 'BB'"
+        class="space-y-6"
+      >
+        <h3 class="text-lg font-bold text-white">
+          Оценка облигаций
+        </h3>
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
           <div class="p-6 rounded-2xl bg-white/5 border border-white/5 space-y-4">
-            <h4 class="text-sm font-bold text-gray-400 uppercase">Параметры</h4>
+            <h4 class="text-sm font-bold text-gray-400 uppercase">
+              Параметры
+            </h4>
             <div class="space-y-3">
-              <div><label class="text-xs text-gray-500 block mb-1">Купон (%)</label><input type="number" v-model.number="bpCoupon" step="0.01" class="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-white font-mono text-sm" /></div>
-              <div><label class="text-xs text-gray-500 block mb-1">Номинал</label><input type="number" v-model.number="bpFace" class="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-white font-mono text-sm" /></div>
-              <div><label class="text-xs text-gray-500 block mb-1">Срок (лет)</label><input type="number" v-model.number="bpMaturity" step="0.5" class="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-white font-mono text-sm" /></div>
-              <div><label class="text-xs text-gray-500 block mb-1">Требуемая доходность (%)</label><input type="number" v-model.number="bpYield" step="0.01" class="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-white font-mono text-sm" /></div>
-              <div><label class="text-xs text-gray-500 block mb-1">Частота купонов</label>
-                <select v-model.number="bpFreq" class="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-white font-mono text-sm">
-                  <option :value="1">Ежегодно</option>
-                  <option :value="2">Полугодовой</option>
-                  <option :value="4">Квартальный</option>
+              <div>
+                <label class="text-xs text-gray-500 block mb-1">Купон (%)</label><input
+                  v-model.number="bpCoupon"
+                  type="number"
+                  step="0.01"
+                  class="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-white font-mono text-sm"
+                >
+              </div>
+              <div>
+                <label class="text-xs text-gray-500 block mb-1">Номинал</label><input
+                  v-model.number="bpFace"
+                  type="number"
+                  class="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-white font-mono text-sm"
+                >
+              </div>
+              <div>
+                <label class="text-xs text-gray-500 block mb-1">Срок (лет)</label><input
+                  v-model.number="bpMaturity"
+                  type="number"
+                  step="0.5"
+                  class="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-white font-mono text-sm"
+                >
+              </div>
+              <div>
+                <label class="text-xs text-gray-500 block mb-1">Требуемая доходность (%)</label><input
+                  v-model.number="bpYield"
+                  type="number"
+                  step="0.01"
+                  class="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-white font-mono text-sm"
+                >
+              </div>
+              <div>
+                <label class="text-xs text-gray-500 block mb-1">Частота купонов</label>
+                <select
+                  v-model.number="bpFreq"
+                  class="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-white font-mono text-sm"
+                >
+                  <option :value="1">
+                    Ежегодно
+                  </option>
+                  <option :value="2">
+                    Полугодовой
+                  </option>
+                  <option :value="4">
+                    Квартальный
+                  </option>
                 </select>
               </div>
             </div>
           </div>
           <div class="p-6 rounded-2xl bg-black/20 border border-white/5">
-            <h4 class="text-sm font-bold text-gray-400 uppercase mb-4">Результат</h4>
+            <h4 class="text-sm font-bold text-gray-400 uppercase mb-4">
+              Результат
+            </h4>
             <div class="grid grid-cols-2 gap-6">
               <div><span class="text-xs text-gray-500 block mb-1">Clean Price</span><span class="text-2xl font-bold text-white font-mono">{{ bondPricing.cleanPrice.toFixed(2) }}</span></div>
               <div><span class="text-xs text-gray-500 block mb-1">Macaulay Duration</span><span class="text-2xl font-bold text-blue-400 font-mono">{{ bondPricing.macDuration.toFixed(2) }}</span></div>
@@ -234,15 +490,37 @@
             </div>
           </div>
           <div class="p-6 rounded-2xl bg-white/5 border border-white/5">
-            <h4 class="text-sm font-bold text-gray-400 uppercase mb-4">Денежные потоки</h4>
+            <h4 class="text-sm font-bold text-gray-400 uppercase mb-4">
+              Денежные потоки
+            </h4>
             <div class="overflow-auto max-h-64">
               <table class="w-full text-left border-collapse text-sm font-mono">
-                <thead><tr class="text-xs text-gray-500 uppercase"><th class="py-2">Период</th><th class="py-2 text-right">CF</th><th class="py-2 text-right">PV</th></tr></thead>
+                <thead>
+                  <tr class="text-xs text-gray-500 uppercase">
+                    <th class="py-2">
+                      Период
+                    </th><th class="py-2 text-right">
+                      CF
+                    </th><th class="py-2 text-right">
+                      PV
+                    </th>
+                  </tr>
+                </thead>
                 <tbody class="text-gray-300">
-                  <tr v-for="(cf, i) in bondPricing.cashFlows" :key="i" class="border-t border-white/5">
-                    <td class="py-2">{{ cf.period }}</td>
-                    <td class="py-2 text-right">{{ cf.cf.toFixed(2) }}</td>
-                    <td class="py-2 text-right text-amber-400">{{ cf.pv.toFixed(2) }}</td>
+                  <tr
+                    v-for="(cf, i) in bondPricing.cashFlows"
+                    :key="i"
+                    class="border-t border-white/5"
+                  >
+                    <td class="py-2">
+                      {{ cf.period }}
+                    </td>
+                    <td class="py-2 text-right">
+                      {{ cf.cf.toFixed(2) }}
+                    </td>
+                    <td class="py-2 text-right text-amber-400">
+                      {{ cf.pv.toFixed(2) }}
+                    </td>
                   </tr>
                 </tbody>
               </table>
@@ -251,7 +529,10 @@
         </div>
       </div>
 
-      <div v-else class="flex items-center justify-center h-64 text-gray-500 font-mono text-sm">
+      <div
+        v-else
+        class="flex items-center justify-center h-64 text-gray-500 font-mono text-sm"
+      >
         Выберите раздел
       </div>
     </div>

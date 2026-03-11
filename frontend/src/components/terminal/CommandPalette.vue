@@ -1,8 +1,14 @@
 <template>
   <Teleport to="body">
-    <div v-if="isOpen" class="command-overlay">
+    <div
+      v-if="isOpen"
+      class="command-overlay"
+    >
       <!-- Backdrop -->
-      <div class="command-backdrop" @click="onClose"></div>
+      <div
+        class="command-backdrop"
+        @click="onClose"
+      />
 
       <!-- Modal -->
       <div class="command-modal">
@@ -11,41 +17,63 @@
           <SearchIcon class="w-5 h-5 text-[#DC2626]" />
           <input
             ref="inputRef"
-            type="text"
             v-model="query"
-            @input="handleInput"
+            type="text"
             placeholder="ВВЕДИТЕ КОМАНДУ ИЛИ ТИКЕР..."
             class="search-input font-mono"
-          />
+            @input="handleInput"
+          >
           <span class="esc-badge font-mono">ESC</span>
         </div>
 
         <!-- Results List -->
-        <div ref="listRef" class="command-list custom-scrollbar">
-          <div v-if="displayItems.length === 0" class="command-empty font-mono">
+        <div
+          ref="listRef"
+          class="command-list custom-scrollbar"
+        >
+          <div
+            v-if="displayItems.length === 0"
+            class="command-empty font-mono"
+          >
             <p>НИЧЕГО НЕ НАЙДЕНО ПО ЗАПРОСУ "{{ query }}"</p>
           </div>
           <div
             v-for="(item, index) in displayItems"
             :key="item.id"
+            :class="['command-item', { 'command-item-active': index === selectedIndex }]"
             @click="handleSelect(item)"
             @mouseenter="selectedIndex = index"
-            :class="['command-item', { 'command-item-active': index === selectedIndex }]"
           >
             <div class="command-item-left">
               <div :class="['command-icon', { 'command-icon-active': index === selectedIndex }]">
-                <HashIcon v-if="item.type === 'command'" class="w-3.5 h-3.5" />
-                <span v-else class="font-oswald">{{ item.label.substring(0, 2) }}</span>
+                <HashIcon
+                  v-if="item.type === 'command'"
+                  class="w-3.5 h-3.5"
+                />
+                <span
+                  v-else
+                  class="font-oswald"
+                >{{ item.label.substring(0, 2) }}</span>
               </div>
               <div class="command-info">
-                <div class="command-label font-oswald">{{ item.label }}</div>
-                <div class="command-desc font-mono">{{ item.description }}</div>
+                <div class="command-label font-oswald">
+                  {{ item.label }}
+                </div>
+                <div class="command-desc font-mono">
+                  {{ item.description }}
+                </div>
               </div>
             </div>
 
             <div class="command-item-right">
-              <span v-if="item.code" class="command-code font-mono">{{ item.code }}</span>
-              <div v-if="index === selectedIndex" class="command-enter font-mono">
+              <span
+                v-if="item.code"
+                class="command-code font-mono"
+              >{{ item.code }}</span>
+              <div
+                v-if="index === selectedIndex"
+                class="command-enter font-mono"
+              >
                 <CornerDownLeftIcon class="w-2.5 h-2.5" /> ENTER
               </div>
             </div>
@@ -58,7 +86,9 @@
             <span><b>↑↓</b> НАВИГАЦИЯ</span>
             <span><b>↵</b> ВЫБРАТЬ</span>
           </div>
-          <div class="footer-label">КОМАНДНАЯ СТРОКА</div>
+          <div class="footer-label">
+            КОМАНДНАЯ СТРОКА
+          </div>
         </div>
       </div>
     </div>

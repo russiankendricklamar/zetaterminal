@@ -11,10 +11,9 @@ Orthogonal Alpha Stacking (residualization + IC-weighted combination).
 - Стэкинговый сигнал: взвешенная сумма ортогональных сигналов
 - Диверсификация: cross-IC матрица до и после ортогонализации
 """
+
 import numpy as np
 import scipy.stats
-from typing import Dict, List, Optional
-
 
 # ── IC / IR утилиты ───────────────────────────────────────────────────────────
 
@@ -72,7 +71,7 @@ def orthogonalize_signals(signals: np.ndarray, method: str = "sequential") -> np
     где T = число наблюдений (дат×активов), N = число сигналов.
     Возвращает матрицу того же размера.
     """
-    T, N = signals.shape
+    _T, N = signals.shape
     ortho = signals.copy().astype(float)
 
     if method == "sequential":
@@ -103,15 +102,15 @@ def orthogonalize_signals(signals: np.ndarray, method: str = "sequential") -> np
 def _compute_ic_decay(
     panel_signals: np.ndarray,   # T × N_assets × N_signals or T × N_signals (panel pre-stacked)
     panel_fwd: np.ndarray,       # T × N_assets forward returns
-    horizons: List[int],
-    signal_names: List[str],
-) -> Dict:
+    horizons: list[int],
+    signal_names: list[str],
+) -> dict:
     """
     IC на горизонтах 1..H.
     panel_signals: T × N_assets × N_signals
     panel_fwd: T × N_assets
     """
-    T, N_a, N_s = panel_signals.shape
+    T, _N_a, N_s = panel_signals.shape
     decay = {}
     for h in horizons:
         ic_by_signal = []
@@ -147,13 +146,13 @@ def _optimal_weights(ir: np.ndarray, shrinkage: float = 0.3) -> np.ndarray:
 # ── Главная функция ───────────────────────────────────────────────────────────
 
 def compute_alpha_stacking(
-    panel_signals: List[List[List[float]]],   # T × N_assets × N_signals
-    panel_fwd_returns: List[List[float]],     # T × N_assets
-    signal_names: Optional[List[str]] = None,
+    panel_signals: list[list[list[float]]],   # T × N_assets × N_signals
+    panel_fwd_returns: list[list[float]],     # T × N_assets
+    signal_names: list[str] | None = None,
     ortho_method: str = "sequential",
-    ic_horizons: List[int] = None,
+    ic_horizons: list[int] | None = None,
     shrinkage: float = 0.3,
-) -> Dict:
+) -> dict:
     """
     Полный анализ Orthogonal Alpha Stacking.
 
@@ -182,9 +181,7 @@ def compute_alpha_stacking(
     if F_raw.shape != (T, N_a):
         raise ValueError(f"panel_fwd_returns должен быть {T}×{N_a}")
 
-    if signal_names is None:
-        signal_names = [f"Alpha_{k+1}" for k in range(N_s)]
-    elif len(signal_names) != N_s:
+    if signal_names is None or len(signal_names) != N_s:
         signal_names = [f"Alpha_{k+1}" for k in range(N_s)]
 
     # ── 1. IC оригинальных сигналов (горизонт 1) ──────────────────────────────
@@ -269,10 +266,10 @@ def compute_alpha_stacking(
     stack_ir = stack_ic_mean / (stack_ic_std + 1e-15)
 
     # ── 8. IC decay по горизонтам ─────────────────────────────────────────────
-    ic_decay: Dict[str, Dict] = {}
+    ic_decay: dict[str, dict] = {}
     horizons_clipped = [h for h in ic_horizons if h < T]
     for h in horizons_clipped:
-        decay_row: Dict[str, float] = {}
+        decay_row: dict[str, float] = {}
         for k in range(N_s):
             ic_h = []
             for t in range(T - h):

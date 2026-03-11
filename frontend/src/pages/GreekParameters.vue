@@ -1,48 +1,81 @@
 <template>
   <div class="page-container">
-    
     <!-- Hero / Header -->
     <div class="section-header">
       <div class="header-left">
-        <h1 class="section-title">Риск-метрики</h1>
-        <p class="section-subtitle">VaR, Стресс-тесты и Факторный анализ</p>
+        <h1 class="section-title">
+          Риск-метрики
+        </h1>
+        <p class="section-subtitle">
+          VaR, Стресс-тесты и Факторный анализ
+        </p>
       </div>
       <div class="header-actions">
         <!-- Selected Bank -->
         <div class="glass-pill control-pill">
-           <span class="lbl-mini">Банк:</span>
-           <span class="text-white font-bold">{{ selectedBank.name }}</span>
+          <span class="lbl-mini">Банк:</span>
+          <span class="text-white font-bold">{{ selectedBank.name }}</span>
         </div>
         
         <!-- Scrubbable Confidence Level -->
         <div class="glass-pill control-pill">
-           <span class="lbl-mini">Доверие:</span>
-           <div class="scrub-wrapper">
-               <input 
-                  type="number" 
-                  v-model.number="confidenceLevel" 
-                  class="scrub-input text-accent" 
-                  step="0.1" min="90" max="99.9"
-               />
-               <span class="text-accent">%</span>
-           </div>
+          <span class="lbl-mini">Доверие:</span>
+          <div class="scrub-wrapper">
+            <input 
+              v-model.number="confidenceLevel" 
+              type="number" 
+              class="scrub-input text-accent" 
+              step="0.1"
+              min="90"
+              max="99.9"
+            >
+            <span class="text-accent">%</span>
+          </div>
         </div>
 
         <div class="glass-pill control-pill">
-            <span class="lbl-mini">Горизонт:</span>
-            <select v-model="selectedTimeframe" class="glass-select-clean">
-              <option value="1d">1 день</option>
-              <option value="10d">10 дней</option>
-              <option value="1m">1 месяц</option>
-            </select>
+          <span class="lbl-mini">Горизонт:</span>
+          <select
+            v-model="selectedTimeframe"
+            class="glass-select-clean"
+          >
+            <option value="1d">
+              1 день
+            </option>
+            <option value="10d">
+              10 дней
+            </option>
+            <option value="1m">
+              1 месяц
+            </option>
+          </select>
         </div>
         
         <!-- Refresh Button -->
-        <button class="btn-glass primary" @click="refreshMetrics" :disabled="isLoading">
-          <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24" v-if="!isLoading">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+        <button
+          class="btn-glass primary"
+          :disabled="isLoading"
+          @click="refreshMetrics"
+        >
+          <svg
+            v-if="!isLoading"
+            width="14"
+            height="14"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+            />
           </svg>
-          <span v-else class="spinner-mini"></span>
+          <span
+            v-else
+            class="spinner-mini"
+          />
           <span v-if="!isLoading">Обновить</span>
         </button>
       </div>
@@ -51,78 +84,115 @@
     <!-- Quick Risk Summary (KPIs) -->
     <div class="kpi-cards-grid">
       <div class="glass-card kpi-card">
-        <div class="kpi-label">VaR {{ confidenceLevel }}% (Value at Risk)</div>
-        <div class="kpi-value text-red">{{ formatCurrency(adjustedVaR) }}</div>
+        <div class="kpi-label">
+          VaR {{ confidenceLevel }}% (Value at Risk)
+        </div>
+        <div class="kpi-value text-red">
+          {{ formatCurrency(adjustedVaR) }}
+        </div>
         <div class="kpi-sub">
-           <span class="text-muted">Риск/Капитал:</span> <span class="text-white font-bold">{{ (Math.abs(adjustedVaR)/riskMetricsStore.totalEquity*100).toFixed(2) }}%</span>
+          <span class="text-muted">Риск/Капитал:</span> <span class="text-white font-bold">{{ (Math.abs(adjustedVaR)/riskMetricsStore.totalEquity*100).toFixed(2) }}%</span>
         </div>
       </div>
       <div class="glass-card kpi-card">
-        <div class="kpi-label">Expected Shortfall (CVaR)</div>
-        <div class="kpi-value text-orange">{{ formatCurrency(confidenceLevel >= 99 ? riskMetricsStore.cvar99 : riskMetricsStore.cvar95) }}</div>
+        <div class="kpi-label">
+          Expected Shortfall (CVaR)
+        </div>
+        <div class="kpi-value text-orange">
+          {{ formatCurrency(confidenceLevel >= 99 ? riskMetricsStore.cvar99 : riskMetricsStore.cvar95) }}
+        </div>
         <div class="kpi-sub">
-           <span class="text-muted">Средний убыток в хвосте</span>
+          <span class="text-muted">Средний убыток в хвосте</span>
         </div>
       </div>
       <div class="glass-card kpi-card">
-        <div class="kpi-label">Бэта портфеля (β)</div>
-        <div class="kpi-value text-gradient-blue">{{ riskMetricsStore.portfolioBeta.toFixed(2) }}</div>
+        <div class="kpi-label">
+          Бэта портфеля (β)
+        </div>
+        <div class="kpi-value text-gradient-blue">
+          {{ riskMetricsStore.portfolioBeta.toFixed(2) }}
+        </div>
         <div class="kpi-sub">
-           <span class="text-muted">vs IMOEX</span>
+          <span class="text-muted">vs IMOEX</span>
         </div>
       </div>
       <div class="glass-card kpi-card">
-        <div class="kpi-label">Коэффициент Шарпа</div>
-        <div class="kpi-value text-gradient-green">{{ riskMetricsStore.sharpeRatio.toFixed(2) }}</div>
+        <div class="kpi-label">
+          Коэффициент Шарпа
+        </div>
+        <div class="kpi-value text-gradient-green">
+          {{ riskMetricsStore.sharpeRatio.toFixed(2) }}
+        </div>
         <div class="kpi-sub">
-           <span class="text-muted">Sortino:</span> <span class="text-white">{{ riskMetricsStore.calculateSortinoRatio(riskMetricsStore.expectedReturn, riskMetricsStore.volatility).toFixed(2) }}</span>
+          <span class="text-muted">Sortino:</span> <span class="text-white">{{ riskMetricsStore.calculateSortinoRatio(riskMetricsStore.expectedReturn, riskMetricsStore.volatility).toFixed(2) }}</span>
         </div>
       </div>
     </div>
 
     <!-- Main Grid -->
     <div class="dashboard-grid">
-      
       <!-- Left Column -->
       <div class="col-left">
-        
         <!-- Detailed Risk Breakdown -->
         <div class="glass-card panel">
           <div class="panel-header">
             <h3>Декомпозиция рисков</h3>
-            <div class="badge-glass">Marginal VaR</div>
+            <div class="badge-glass">
+              Marginal VaR
+            </div>
           </div>
           <div class="risk-table-wrapper">
-             <table class="glass-table risk-decomposition-table">
-                <thead>
-                   <tr>
-                      <th class="text-left">Актив</th>
-                      <th class="text-right">Вес</th>
-                      <th class="text-right">Вклад в риск</th>
-                      <th class="text-right">% Риска</th>
-                   </tr>
-                </thead>
-                <tbody>
-                   <tr v-for="asset in riskContribution" :key="asset.symbol">
-                      <td class="text-left">
-                         <div class="asset-row">
-                            <span class="dot" :style="{background: asset.color}"></span>
-                            <span class="sym">{{ asset.symbol }}</span>
-                         </div>
-                      </td>
-                      <td class="text-right mono">{{ asset.weight }}%</td>
-                      <td class="text-right mono text-red">₽{{ (asset.contribution / 1000).toFixed(1) }}k</td>
-                      <td class="text-right">
-                         <div class="bar-cell">
-                            <div class="progress-bar">
-                               <div class="progress-fill" :style="{width: asset.percentRisk + '%'}"></div>
-                            </div>
-                            <span class="mono bar-val">{{ asset.percentRisk }}%</span>
-                         </div>
-                      </td>
-                   </tr>
-                </tbody>
-             </table>
+            <table class="glass-table risk-decomposition-table">
+              <thead>
+                <tr>
+                  <th class="text-left">
+                    Актив
+                  </th>
+                  <th class="text-right">
+                    Вес
+                  </th>
+                  <th class="text-right">
+                    Вклад в риск
+                  </th>
+                  <th class="text-right">
+                    % Риска
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr
+                  v-for="asset in riskContribution"
+                  :key="asset.symbol"
+                >
+                  <td class="text-left">
+                    <div class="asset-row">
+                      <span
+                        class="dot"
+                        :style="{background: asset.color}"
+                      />
+                      <span class="sym">{{ asset.symbol }}</span>
+                    </div>
+                  </td>
+                  <td class="text-right mono">
+                    {{ asset.weight }}%
+                  </td>
+                  <td class="text-right mono text-red">
+                    ₽{{ (asset.contribution / 1000).toFixed(1) }}k
+                  </td>
+                  <td class="text-right">
+                    <div class="bar-cell">
+                      <div class="progress-bar">
+                        <div
+                          class="progress-fill"
+                          :style="{width: asset.percentRisk + '%'}"
+                        />
+                      </div>
+                      <span class="mono bar-val">{{ asset.percentRisk }}%</span>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
           </div>
         </div>
 
@@ -130,23 +200,37 @@
         <div class="glass-card panel">
           <div class="panel-header">
             <h3>Стресс-тестирование</h3>
-            <button @click="runStressTest" class="btn-xs-glass" :disabled="isStressTesting">
+            <button
+              class="btn-xs-glass"
+              :disabled="isStressTesting"
+              @click="runStressTest"
+            >
               {{ isStressTesting ? 'Выполняется...' : 'Запустить' }}
             </button>
           </div>
           <div class="stress-list">
-            <div v-for="scenario in stressScenarios" :key="scenario.id" class="stress-item">
+            <div
+              v-for="scenario in stressScenarios"
+              :key="scenario.id"
+              class="stress-item"
+            >
               <div class="stress-info">
                 <span class="stress-name">{{ scenario.name }}</span>
                 <span class="stress-desc">{{ scenario.description }}</span>
               </div>
               <div class="stress-result">
-                 <span class="stress-val" :class="scenario.impact > 0 ? 'text-green' : 'text-red'">
-                   {{ scenario.impact > 0 ? '+' : '' }}{{ formatCurrency(scenario.impact) }}
-                 </span>
-                 <span class="stress-pct" :class="scenario.impactPct > 0 ? 'text-green' : 'text-red'">
-                   {{ scenario.impactPct > 0 ? '+' : '' }}{{ (scenario.impactPct * 100).toFixed(2) }}%
-                 </span>
+                <span
+                  class="stress-val"
+                  :class="scenario.impact > 0 ? 'text-green' : 'text-red'"
+                >
+                  {{ scenario.impact > 0 ? '+' : '' }}{{ formatCurrency(scenario.impact) }}
+                </span>
+                <span
+                  class="stress-pct"
+                  :class="scenario.impactPct > 0 ? 'text-green' : 'text-red'"
+                >
+                  {{ scenario.impactPct > 0 ? '+' : '' }}{{ (scenario.impactPct * 100).toFixed(2) }}%
+                </span>
               </div>
             </div>
           </div>
@@ -157,46 +241,72 @@
           <div class="panel-header">
             <h3>Матрица корреляций</h3>
             <div class="legend">
-               <span class="dot-legend bg-blue"></span> Поз
-               <span class="dot-legend bg-red"></span> Нег
+              <span class="dot-legend bg-blue" /> Поз
+              <span class="dot-legend bg-red" /> Нег
             </div>
           </div>
           <div class="correlation-matrix-wrapper">
             <div class="correlation-matrix-grid">
-               <!-- Headers -->
-               <div class="matrix-cell empty"></div>
-               <div v-for="label in correlationLabels.slice(0, 10)" :key="label" class="matrix-cell header" :title="label">{{ label.length > 6 ? label.substring(0, 6) + '...' : label }}</div>
+              <!-- Headers -->
+              <div class="matrix-cell empty" />
+              <div
+                v-for="label in correlationLabels.slice(0, 10)"
+                :key="label"
+                class="matrix-cell header"
+                :title="label"
+              >
+                {{ label.length > 6 ? label.substring(0, 6) + '...' : label }}
+              </div>
                
-               <!-- Rows -->
-               <template v-for="(row, i) in correlationData.slice(0, 10)" :key="'row-'+i">
-                  <div class="matrix-cell header" :title="correlationLabels[i]">{{ correlationLabels[i] && correlationLabels[i].length > 6 ? correlationLabels[i].substring(0, 6) + '...' : (correlationLabels[i] || '') }}</div>
-                  <div v-for="(cell, j) in row.slice(0, 10)" :key="i+'-'+j" class="matrix-cell value" :style="getHeatmapStyle(cell)" :title="`${correlationLabels[i]} vs ${correlationLabels[j]}: ${cell.toFixed(3)}`">
-                    {{ cell.toFixed(2) }}
-                  </div>
-               </template>
+              <!-- Rows -->
+              <template
+                v-for="(row, i) in correlationData.slice(0, 10)"
+                :key="'row-'+i"
+              >
+                <div
+                  class="matrix-cell header"
+                  :title="correlationLabels[i]"
+                >
+                  {{ correlationLabels[i] && correlationLabels[i].length > 6 ? correlationLabels[i].substring(0, 6) + '...' : (correlationLabels[i] || '') }}
+                </div>
+                <div
+                  v-for="(cell, j) in row.slice(0, 10)"
+                  :key="i+'-'+j"
+                  class="matrix-cell value"
+                  :style="getHeatmapStyle(cell)"
+                  :title="`${correlationLabels[i]} vs ${correlationLabels[j]}: ${cell.toFixed(3)}`"
+                >
+                  {{ cell.toFixed(2) }}
+                </div>
+              </template>
             </div>
           </div>
         </div>
-
       </div>
 
       <!-- Right Column -->
       <div class="col-right">
-        
         <!-- Factor Exposure -->
         <div class="glass-card panel">
           <div class="panel-header">
             <h3>Факторный Анализ (Beta)</h3>
           </div>
           <div class="factor-list">
-            <div class="list-row" v-for="factor in factors" :key="factor.name">
-               <div class="lbl-group">
-                  <span class="lbl">{{ factor.name }}</span>
-                  <span class="sub-lbl">{{ factor.index }}</span>
-               </div>
-               <div class="val-group">
-                 <span class="val" :class="getBetaClass(factor.beta)">{{ factor.beta > 0 ? '+' : ''}}{{ factor.beta.toFixed(2) }}</span>
-               </div>
+            <div
+              v-for="factor in factors"
+              :key="factor.name"
+              class="list-row"
+            >
+              <div class="lbl-group">
+                <span class="lbl">{{ factor.name }}</span>
+                <span class="sub-lbl">{{ factor.index }}</span>
+              </div>
+              <div class="val-group">
+                <span
+                  class="val"
+                  :class="getBetaClass(factor.beta)"
+                >{{ factor.beta > 0 ? '+' : '' }}{{ factor.beta.toFixed(2) }}</span>
+              </div>
             </div>
           </div>
         </div>
@@ -207,22 +317,22 @@
             <h3>Анализ Просадок</h3>
           </div>
           <div class="metrics-kv-list">
-             <div class="kv-row">
-                <span class="k">Текущая просадка</span>
-                <span class="v text-red">-3.45%</span>
-             </div>
-             <div class="kv-row">
-                <span class="k">Макс. просадка</span>
-                <span class="v text-red font-bold">{{ (riskMetricsStore.maxDrawdown * 100).toFixed(2) }}%</span>
-             </div>
-             <div class="kv-row">
-                <span class="k">Дней в просадке</span>
-                <span class="v">14 дней</span>
-             </div>
-             <div class="kv-row">
-                <span class="k">Фактор восстановления</span>
-                <span class="v text-green">3.2x</span>
-             </div>
+            <div class="kv-row">
+              <span class="k">Текущая просадка</span>
+              <span class="v text-red">-3.45%</span>
+            </div>
+            <div class="kv-row">
+              <span class="k">Макс. просадка</span>
+              <span class="v text-red font-bold">{{ (riskMetricsStore.maxDrawdown * 100).toFixed(2) }}%</span>
+            </div>
+            <div class="kv-row">
+              <span class="k">Дней в просадке</span>
+              <span class="v">14 дней</span>
+            </div>
+            <div class="kv-row">
+              <span class="k">Фактор восстановления</span>
+              <span class="v text-green">3.2x</span>
+            </div>
           </div>
         </div>
 
@@ -232,20 +342,18 @@
             <h3>Ликвидность</h3>
           </div>
           <div class="metrics-kv-list">
-             <div class="kv-row">
-                <span class="k">Дней до ликвидации (95%)</span>
-                <span class="v">1.2 дня</span>
-             </div>
-             <div class="kv-row">
-                <span class="k">Стоимость спреда Bid-Ask</span>
-                <span class="v text-orange">0.08%</span>
-             </div>
+            <div class="kv-row">
+              <span class="k">Дней до ликвидации (95%)</span>
+              <span class="v">1.2 дня</span>
+            </div>
+            <div class="kv-row">
+              <span class="k">Стоимость спреда Bid-Ask</span>
+              <span class="v text-orange">0.08%</span>
+            </div>
           </div>
         </div>
-
       </div>
     </div>
-
   </div>
 </template>
 

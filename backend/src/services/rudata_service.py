@@ -6,22 +6,22 @@
 """
 
 import asyncio
-import hashlib
 import secrets
 import time
-from typing import Optional, Iterable, Union, Dict, Any, List
+from collections.abc import Iterable
 from datetime import datetime
+from typing import Any
+
 import aiohttp
 import pandas as pd
 
 from src.utils.http_client import get_session
 
-
 # ─── Server-side credential session cache with TTL ──────────────────────────
 _SESSION_TTL_SECONDS = 3600  # 1 hour
 
 _MAX_CREDENTIAL_CACHE = 100
-_credential_cache: Dict[str, Dict[str, Any]] = {}
+_credential_cache: dict[str, dict[str, Any]] = {}
 
 
 def cache_credentials(login: str, password: str, user_id: int = 0) -> str:
@@ -45,7 +45,7 @@ def cache_credentials(login: str, password: str, user_id: int = 0) -> str:
     return session_id
 
 
-def get_cached_credentials(session_id: str) -> Optional[Dict[str, str]]:
+def get_cached_credentials(session_id: str) -> dict[str, str] | None:
     """
     Retrieve cached credentials by session_id.
 
@@ -106,10 +106,10 @@ class RuDataService:
         self._max_array = max_array
         self._max_requests = 5 if multi else 1
         self._request_wait = 1.0 if multi else 0.2
-        self._token: Optional[str] = None
-        self._token_expires: Optional[datetime] = None
+        self._token: str | None = None
+        self._token_expires: datetime | None = None
 
-    async def _get_token(self, session: aiohttp.ClientSession) -> Optional[str]:
+    async def _get_token(self, session: aiohttp.ClientSession) -> str | None:
         """Получить токен авторизации."""
         url = f"{self.API_URL}Account/Login"
         body = {
@@ -134,7 +134,7 @@ class RuDataService:
         body: dict,
         token: str,
         method: str = 'POST'
-    ) -> Union[dict, list, str]:
+    ) -> dict | list | str:
         """Выполнить запрос к API."""
         url = f"{self.API_URL}{path}"
         headers = {
@@ -150,7 +150,7 @@ class RuDataService:
         except Exception as e:
             return str(e)
 
-    async def test_connection(self) -> Dict[str, Any]:
+    async def test_connection(self) -> dict[str, Any]:
         """Проверить подключение к RuData API."""
         session = await get_session()
         token = await self._get_token(session)
@@ -173,11 +173,11 @@ class RuDataService:
         path_method: str,
         body_json: dict,
         post: bool = True,
-        search_array: Optional[Iterable] = None,
+        search_array: Iterable | None = None,
         search_param: str = 'filter',
-        search_field: Optional[str] = None,
+        search_field: str | None = None,
         keep_duplicates: bool = False
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Извлечь данные из RuData API.
 
@@ -209,7 +209,7 @@ class RuDataService:
                 'error': 'Ошибка авторизации'
             }
 
-        results: List[dict] = []
+        results: list[dict] = []
 
         try:
             if search_array is None:
@@ -277,7 +277,7 @@ class RuDataService:
         path: str,
         body: dict,
         post: bool
-    ) -> List[dict]:
+    ) -> list[dict]:
         """Простая выгрузка без массива поиска."""
         results = []
         body = body.copy()
@@ -344,8 +344,8 @@ class RuDataService:
         post: bool,
         search_array: Iterable,
         search_param: str,
-        search_field: Optional[str]
-    ) -> List[dict]:
+        search_field: str | None
+    ) -> list[dict]:
         """Выгрузка с массивом поиска."""
         results = []
         search_list = list(search_array)
@@ -377,14 +377,14 @@ class RuDataService:
 
     # Удобные методы для типовых запросов
 
-    async def get_bond_info(self, isin: str) -> Dict[str, Any]:
+    async def get_bond_info(self, isin: str) -> dict[str, Any]:
         """Получить информацию о облигации по ISIN."""
         return await self.extract_data(
             'Info/FintoolReferenceData',
             {'id': isin}
         )
 
-    async def get_bond_cashflows(self, isin: str) -> Dict[str, Any]:
+    async def get_bond_cashflows(self, isin: str) -> dict[str, Any]:
         """Получить денежные потоки облигации."""
         return await self.extract_data(
             'Bond/Coupons',
@@ -394,9 +394,9 @@ class RuDataService:
     async def calculate_bond(
         self,
         isin: str,
-        calc_date: Optional[str] = None,
-        price: Optional[float] = None
-    ) -> Dict[str, Any]:
+        calc_date: str | None = None,
+        price: float | None = None
+    ) -> dict[str, Any]:
         """Рассчитать параметры облигации."""
         body = {'id': isin}
         if calc_date:
@@ -412,10 +412,10 @@ class RuDataService:
     async def search_bonds(
         self,
         filter_str: str,
-        fields: Optional[List[str]] = None
-    ) -> Dict[str, Any]:
+        fields: list[str] | None = None
+    ) -> dict[str, Any]:
         """Поиск облигаций по фильтру."""
-        body: Dict[str, Any] = {'filter': filter_str}
+        body: dict[str, Any] = {'filter': filter_str}
         if fields:
             body['fields'] = fields
 
@@ -424,7 +424,7 @@ class RuDataService:
             body
         )
 
-    async def get_zcyc(self, date: Optional[str] = None) -> Dict[str, Any]:
+    async def get_zcyc(self, date: str | None = None) -> dict[str, Any]:
         """Получить кривую бескупонной доходности."""
         body = {}
         if date:
@@ -437,7 +437,7 @@ class RuDataService:
 
 
 # Глобальный экземпляр сервиса (будет инициализирован при первом использовании)
-_rudata_instance: Optional[RuDataService] = None
+_rudata_instance: RuDataService | None = None
 
 
 def get_rudata_service(login: str, password: str) -> RuDataService:
@@ -445,7 +445,7 @@ def get_rudata_service(login: str, password: str) -> RuDataService:
     return RuDataService(login=login, password=password)
 
 
-async def test_rudata_connection(login: str, password: str) -> Dict[str, Any]:
+async def test_rudata_connection(login: str, password: str) -> dict[str, Any]:
     """Проверить подключение к RuData."""
     service = RuDataService(login=login, password=password)
     return await service.test_connection()
@@ -457,7 +457,7 @@ async def fetch_rudata(
     path_method: str,
     body_json: dict,
     **kwargs
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Выполнить запрос к RuData API."""
     service = get_rudata_service(login, password)
     return await service.extract_data(path_method, body_json, **kwargs)

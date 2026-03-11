@@ -1,9 +1,10 @@
 """
 Pydantic schemas for request/response models.
 """
-from pydantic import BaseModel
-from typing import Optional, List, Dict, Any
 from datetime import datetime
+from typing import Any
+
+from pydantic import BaseModel
 
 
 class ComputeRequest(BaseModel):
@@ -13,9 +14,9 @@ class ComputeRequest(BaseModel):
 
 class ComputeResponse(BaseModel):
     """Базовая схема для ответов вычислений."""
-    result: Dict[str, Any]
+    result: dict[str, Any]
     status: str = "success"
-    timestamp: Optional[datetime] = None
+    timestamp: datetime | None = None
 
 
 class HealthResponse(BaseModel):
@@ -37,7 +38,7 @@ class Position(BaseModel):
 
 class PortfolioMetricsRequest(BaseModel):
     """Схема запроса для расчета метрик портфеля."""
-    positions: List[Position]
+    positions: list[Position]
     risk_free_rate: float = 0.042
     market_return: float = 0.10
     market_volatility: float = 0.15
@@ -64,4 +65,4 @@ class PortfolioMetricsResponse(BaseModel):
     risk_free_rate: float
     num_positions: int
     status: str = "success"
-    timestamp: Optional[str] = ""
+    timestamp: str | None = ""

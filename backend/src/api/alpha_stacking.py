@@ -2,11 +2,11 @@
 API endpoints для Orthogonal Alpha Stacking.
 """
 import logging
+from datetime import datetime
+from typing import Any
 
 from fastapi import APIRouter, HTTPException
-from typing import Dict, Any, List, Optional
 from pydantic import BaseModel, Field
-from datetime import datetime
 
 from src.services.alpha_stacking_service import compute_alpha_stacking
 
@@ -16,17 +16,17 @@ router = APIRouter()
 
 
 class AlphaStackingRequest(BaseModel):
-    panel_signals: List[List[List[float]]] = Field(
+    panel_signals: list[list[list[float]]] = Field(
         ...,
         description="Матрица T × N_assets × N_signals — значения сигналов (z-scores, ранки)"
     )
-    panel_fwd_returns: List[List[float]] = Field(
+    panel_fwd_returns: list[list[float]] = Field(
         ...,
         description="Матрица T × N_assets — форвардные доходности (горизонт 1 период)"
     )
-    signal_names: Optional[List[str]] = Field(None, description="Названия N_signals сигналов")
+    signal_names: list[str] | None = Field(None, description="Названия N_signals сигналов")
     ortho_method: str = Field("sequential", description="'sequential' (Gram-Schmidt) или 'pairwise'")
-    ic_horizons: Optional[List[int]] = Field(None, description="Горизонты для IC decay [1,5,10,21]")
+    ic_horizons: list[int] | None = Field(None, description="Горизонты для IC decay [1,5,10,21]")
     shrinkage: float = Field(0.3, ge=0.0, le=1.0, description="Shrinkage к равным весам (0=pure IR², 1=equal)")
 
     model_config = {
@@ -49,7 +49,7 @@ class AlphaStackingRequest(BaseModel):
 
 
 class AlphaStackingResponse(BaseModel):
-    result: Dict[str, Any]
+    result: dict[str, Any]
     timestamp: datetime = Field(default_factory=datetime.now)
 
 
@@ -77,10 +77,10 @@ async def analyze(request: AlphaStackingRequest):
         return AlphaStackingResponse(result=result)
     except ValueError as e:
         logger.error("Alpha stacking validation error: %s", e, exc_info=True)
-        raise HTTPException(status_code=400, detail="Invalid input parameters")
+        raise HTTPException(status_code=400, detail="Invalid input parameters") from e
     except Exception as e:
         logger.error("Alpha stacking computation failed: %s", e, exc_info=True)
-        raise HTTPException(status_code=500, detail="Internal server error")
+        raise HTTPException(status_code=500, detail="Internal server error") from e
 
 
 @router.get("/health")

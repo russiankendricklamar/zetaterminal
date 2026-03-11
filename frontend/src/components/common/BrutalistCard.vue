@@ -7,14 +7,22 @@
       { 'brutalist-card--hoverable': hoverable }
     ]"
   >
-    <div v-if="title || $slots.header" class="card-header">
+    <div
+      v-if="title || $slots.header"
+      class="card-header"
+    >
       <slot name="header">
-        <h3 class="card-title font-oswald">{{ title }}</h3>
-        <span v-if="badge" class="card-badge font-mono">{{ badge }}</span>
+        <h3 class="card-title font-oswald">
+          {{ title }}
+        </h3>
+        <span
+          v-if="badge"
+          class="card-badge font-mono"
+        >{{ badge }}</span>
       </slot>
     </div>
     <div class="card-body">
-      <slot></slot>
+      <slot />
     </div>
   </div>
 </template>

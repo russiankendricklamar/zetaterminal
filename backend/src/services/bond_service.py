@@ -2,15 +2,14 @@
 Сервис для оценки облигаций (DCF).
 Использует bond_pricing.py для расчетов.
 """
-from typing import Dict, List, Optional
-from datetime import datetime
-import pandas as pd
 import logging
+
+import pandas as pd
 
 logger = logging.getLogger(__name__)
 
 
-def get_market_yield_from_moex(secid: str, valuation_date: str) -> Optional[float]:
+def get_market_yield_from_moex(secid: str, valuation_date: str) -> float | None:
     """
     Получает рыночную доходность облигации из MOEX ISS API на указанную дату.
     
@@ -22,19 +21,20 @@ def get_market_yield_from_moex(secid: str, valuation_date: str) -> Optional[floa
         Рыночная доходность в процентах или None, если не найдена
     """
     try:
-        import requests
+        from datetime import timedelta
+
         import pandas as pd
-        from datetime import datetime, timedelta
-        
+        import requests
+
         BASE_ISS = "https://iss.moex.com/iss"
-        
+
         # Преобразуем дату
         val_date = pd.to_datetime(valuation_date)
-        
+
         # Ищем данные за дату оценки и несколько дней до/после (на случай выходных)
         date_from = (val_date - timedelta(days=5)).strftime("%Y-%m-%d")
         date_to = (val_date + timedelta(days=5)).strftime("%Y-%m-%d")
-        
+
         # Получаем исторические данные по облигации
         url = (
             f"{BASE_ISS}/history/engines/stock/markets/bonds/securities/{secid}.json"
@@ -42,49 +42,49 @@ def get_market_yield_from_moex(secid: str, valuation_date: str) -> Optional[floa
             "&iss.meta=off"
             "&history.columns=TRADEDATE,CLOSE,YIELD"
         )
-        
+
         response = requests.get(url, timeout=10)
         response.raise_for_status()
         data = response.json()
-        
+
         if "history" not in data or not data["history"]["data"]:
             return None
-        
+
         # Преобразуем в DataFrame
         history_df = pd.DataFrame(
             data["history"]["data"],
             columns=data["history"]["columns"]
         )
-        
+
         if history_df.empty:
             return None
-        
+
         # Преобразуем даты
         history_df["TRADEDATE"] = pd.to_datetime(history_df["TRADEDATE"])
-        
+
         # Ищем данные за дату оценки или ближайшую дату до неё
         history_df = history_df[history_df["TRADEDATE"] <= val_date]
-        
+
         if history_df.empty:
             return None
-        
+
         # Берем последнюю доступную дату
         latest_row = history_df.iloc[-1]
-        
+
         # Проверяем наличие колонки YIELD
         if "YIELD" in latest_row and pd.notna(latest_row["YIELD"]):
             yield_value = float(latest_row["YIELD"])
             # MOEX возвращает доходность в процентах
             return yield_value
-        
+
         # Если YIELD нет, пытаемся рассчитать из цены
         if "CLOSE" in latest_row and pd.notna(latest_row["CLOSE"]):
             # Здесь можно добавить расчет YTM из цены, но это сложнее
             # Пока возвращаем None
             return None
-        
+
         return None
-        
+
     except Exception as e:
         logger.error(f"Error fetching market yield from MOEX for {secid} on {valuation_date}: {e}")
         return None
@@ -92,10 +92,10 @@ def get_market_yield_from_moex(secid: str, valuation_date: str) -> Optional[floa
 
 def determine_market_activity(
     secid: str,
-    market_yield: Optional[float] = None,
-    trading_volume: Optional[float] = None,
-    bid_ask_spread: Optional[float] = None,
-    days_since_last_trade: Optional[int] = None
+    market_yield: float | None = None,
+    trading_volume: float | None = None,
+    bid_ask_spread: float | None = None,
+    days_since_last_trade: int | None = None
 ) -> str:
     """
     Определяет активность рынка для облигации.
@@ -114,10 +114,10 @@ def determine_market_activity(
     """
     # TODO: Реализовать критерии определения активности рынка
     # Пока возвращаем 'unknown' как заглушку
-    
+
     if market_yield is None:
         return 'unknown'
-    
+
     # Временная логика (будет заменена на реальные критерии)
     # Пример: если есть рыночная доходность, считаем активность средней
     if market_yield > 0:
@@ -127,7 +127,7 @@ def determine_market_activity(
         # - Спред bid/ask
         # - Ликвидность
         return 'medium'
-    
+
     return 'unknown'
 
 # Импортируем bond_pricing из той же папки services
@@ -144,9 +144,9 @@ def calculate_bond_valuation(
     valuation_date: str,
     discount_yield1: float,
     discount_yield2: float,
-    day_count: Optional[int] = None,
-    day_count_convention: Optional[str] = None
-) -> Dict:
+    day_count: int | None = None,
+    day_count_convention: str | None = None
+) -> dict:
     """
     Рассчитывает оценку облигации для двух сценариев доходности.
     
@@ -163,7 +163,7 @@ def calculate_bond_valuation(
     """
     if BondPricer is None:
         raise ValueError("Модуль bond_pricing не найден. Убедитесь, что файл bond_pricing.py находится в папке src/services.")
-    
+
     # Определяем базис расчета
     if day_count_convention:
         # Парсим строку в DayCountConvention
@@ -174,36 +174,32 @@ def calculate_bond_valuation(
             convention = DayCountConvention.ACTUAL_365F
     elif day_count:
         # Обратная совместимость: преобразуем старый параметр
-        if day_count == 360:
-            convention = DayCountConvention.ACTUAL_360
-        else:
-            convention = DayCountConvention.ACTUAL_365F
+        convention = DayCountConvention.ACTUAL_360 if day_count == 360 else DayCountConvention.ACTUAL_365F
     else:
         convention = DayCountConvention.ACTUAL_365F  # По умолчанию
-    
+
     # Для fetch_bond_data используем day_count для определения частоты выплат (обратная совместимость)
     day_count_for_fetch = 365 if day_count is None else day_count
-    
+
     # Конвертируем дату
     valuation_date_ts = pd.to_datetime(valuation_date)
-    
+
     # Загружаем данные облигации
     from_date = "2000-01-01"  # Начальная дата для загрузки данных
     bond_data = BondPricer.fetch_bond_data(secid, from_date=from_date, day_count=day_count_for_fetch)
-    
+
     # Определяем период купона в месяцах для ISMA базиса
     coupon_period_months = None
-    if convention == DayCountConvention.ACTUAL_ACTUAL_ISMA:
-        if len(bond_data["coupon_dates_full"]) >= 2:
-            period_days = (bond_data["coupon_dates_full"][1] - bond_data["coupon_dates_full"][0]).days
-            # Примерная оценка периода в месяцах
-            coupon_period_months = round(period_days / 30.44)  # Среднее количество дней в месяце
-    
+    if convention == DayCountConvention.ACTUAL_ACTUAL_ISMA and len(bond_data["coupon_dates_full"]) >= 2:
+        period_days = (bond_data["coupon_dates_full"][1] - bond_data["coupon_dates_full"][0]).days
+        # Примерная оценка периода в месяцах
+        coupon_period_months = round(period_days / 30.44)  # Среднее количество дней в месяце
+
     # Конвертируем доходности из процентов в доли (для формулы)
     # В bond_pricing используется формула с годовыми процентами, поэтому передаем как есть
     yield1_decimal = discount_yield1 / 100.0
     yield2_decimal = discount_yield2 / 100.0
-    
+
     # Рассчитываем метрики для обоих сценариев
     metrics1 = BondPricer.calculate_metrics(
         bond_data=bond_data,
@@ -212,7 +208,7 @@ def calculate_bond_valuation(
         day_count_convention=convention,
         coupon_period_months=coupon_period_months
     )
-    
+
     metrics2 = BondPricer.calculate_metrics(
         bond_data=bond_data,
         valuation_date=valuation_date_ts,
@@ -220,7 +216,7 @@ def calculate_bond_valuation(
         day_count_convention=convention,
         coupon_period_months=coupon_period_months
     )
-    
+
     # Формируем результат
     return {
         "secid": secid,

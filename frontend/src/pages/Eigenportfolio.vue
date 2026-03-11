@@ -1,21 +1,37 @@
 <!-- src/pages/Eigenportfolio.vue -->
 <template>
   <div class="ep-page">
-
     <!-- Header -->
     <div class="page-header">
       <div class="header-left">
-        <h1 class="page-title">Eigenportfolios — PCA декомпозиция</h1>
-        <p class="page-subtitle">Σ = QΛQᵀ | Marchenko-Pastur сигнал/шум | Ledoit-Wolf shrinkage</p>
+        <h1 class="page-title">
+          Eigenportfolios — PCA декомпозиция
+        </h1>
+        <p class="page-subtitle">
+          Σ = QΛQᵀ | Marchenko-Pastur сигнал/шум | Ledoit-Wolf shrinkage
+        </p>
       </div>
       <div class="header-right">
         <label class="toggle-label">
-          <input type="checkbox" v-model="useShrinkage" />
+          <input
+            v-model="useShrinkage"
+            type="checkbox"
+          >
           Ledoit-Wolf shrinkage
         </label>
-        <input v-model.number="nComponents" type="number" min="1" placeholder="K компонент (авто)"
-          class="param-input" style="width:160px" />
-        <button @click="decompose" class="btn-primary" :disabled="loading">
+        <input
+          v-model.number="nComponents"
+          type="number"
+          min="1"
+          placeholder="K компонент (авто)"
+          class="param-input"
+          style="width:160px"
+        >
+        <button
+          class="btn-primary"
+          :disabled="loading"
+          @click="decompose"
+        >
           <span v-if="!loading">Разложить</span>
           <span v-else>↺ Считаю...</span>
         </button>
@@ -29,10 +45,17 @@
           <h3>Матрица доходностей (T × N)</h3>
           <span class="hint">Строки — периоды, столбцы — активы. Разделители: пробел/tab/;. Первая строка — имена.</span>
         </div>
-        <textarea v-model="returnsRaw" class="data-textarea" rows="9"
-          placeholder="AAPL  MSFT  GOOG  AMZN&#10;0.01  0.02  0.015  0.008&#10;-0.01 0.00  0.005  -0.002&#10;..." />
+        <textarea
+          v-model="returnsRaw"
+          class="data-textarea"
+          rows="9"
+          placeholder="AAPL  MSFT  GOOG  AMZN&#10;0.01  0.02  0.015  0.008&#10;-0.01 0.00  0.005  -0.002&#10;..."
+        />
         <div class="has-header-row">
-          <label><input type="checkbox" v-model="hasHeader" /> Первая строка — имена активов</label>
+          <label><input
+            v-model="hasHeader"
+            type="checkbox"
+          > Первая строка — имена активов</label>
         </div>
       </div>
       <div class="panel">
@@ -40,51 +63,107 @@
           <h3>Веса портфеля — необязательно</h3>
           <span class="hint">N весов через пробел/запятую для декомпозиции риска по PC</span>
         </div>
-        <textarea v-model="weightsRaw" class="data-textarea" rows="4"
-          placeholder="0.25 0.25 0.25 0.25" />
+        <textarea
+          v-model="weightsRaw"
+          class="data-textarea"
+          rows="4"
+          placeholder="0.25 0.25 0.25 0.25"
+        />
         <div class="formula-box">
-          <div class="formula">Σ = QΛQᵀ &nbsp;|&nbsp; λ₊ = σ²(1+√q)²</div>
-          <div class="formula small">q = N/T &nbsp;|&nbsp; Σ_LW = (1−α)S + α·μI</div>
-          <div class="formula small">Reconstruction: Σ_K = Σ_{k≤K} λₖ qₖqₖᵀ</div>
+          <div class="formula">
+            Σ = QΛQᵀ &nbsp;|&nbsp; λ₊ = σ²(1+√q)²
+          </div>
+          <div class="formula small">
+            q = N/T &nbsp;|&nbsp; Σ_LW = (1−α)S + α·μI
+          </div>
+          <div class="formula small">
+            Reconstruction: Σ_K = Σ_{k≤K} λₖ qₖqₖᵀ
+          </div>
         </div>
       </div>
     </div>
 
-    <div v-if="error" class="error-banner">{{ error }}</div>
+    <div
+      v-if="error"
+      class="error-banner"
+    >
+      {{ error }}
+    </div>
 
     <template v-if="result">
-
       <!-- KPI -->
       <div class="kpi-grid">
         <div class="kpi-card">
-          <div class="kpi-label">Активов N</div>
-          <div class="kpi-value">{{ result.n_assets }}</div>
-          <div class="kpi-sub">{{ result.n_periods }} периодов</div>
+          <div class="kpi-label">
+            Активов N
+          </div>
+          <div class="kpi-value">
+            {{ result.n_assets }}
+          </div>
+          <div class="kpi-sub">
+            {{ result.n_periods }} периодов
+          </div>
         </div>
         <div class="kpi-card accent-card">
-          <div class="kpi-label">Сигнальных PC</div>
-          <div class="kpi-value">{{ result.rmt.n_signal }}</div>
-          <div class="kpi-sub">из {{ result.n_components_total }} (RMT)</div>
+          <div class="kpi-label">
+            Сигнальных PC
+          </div>
+          <div class="kpi-value">
+            {{ result.rmt.n_signal }}
+          </div>
+          <div class="kpi-sub">
+            из {{ result.n_components_total }} (RMT)
+          </div>
         </div>
         <div class="kpi-card">
-          <div class="kpi-label">PC для 80% var</div>
-          <div class="kpi-value">{{ result.thresholds.pc_80pct ?? '—' }}</div>
-          <div class="kpi-sub">90%: {{ result.thresholds.pc_90pct ?? '—' }}</div>
+          <div class="kpi-label">
+            PC для 80% var
+          </div>
+          <div class="kpi-value">
+            {{ result.thresholds.pc_80pct ?? '—' }}
+          </div>
+          <div class="kpi-sub">
+            90%: {{ result.thresholds.pc_90pct ?? '—' }}
+          </div>
         </div>
         <div class="kpi-card">
-          <div class="kpi-label">PC1 объясняет</div>
-          <div class="kpi-value">{{ pct(result.explained_variance[0]) }}</div>
-          <div class="kpi-sub">PC2: {{ pct(result.explained_variance[1]) }}</div>
+          <div class="kpi-label">
+            PC1 объясняет
+          </div>
+          <div class="kpi-value">
+            {{ pct(result.explained_variance[0]) }}
+          </div>
+          <div class="kpi-sub">
+            PC2: {{ pct(result.explained_variance[1]) }}
+          </div>
         </div>
-        <div class="kpi-card" :class="result.reconstruction_error < 0.1 ? 'kpi-green' : 'kpi-yellow'">
-          <div class="kpi-label">Recon. error</div>
-          <div class="kpi-value">{{ pct(result.reconstruction_error) }}</div>
-          <div class="kpi-sub">K={{ result.n_components_used }}</div>
+        <div
+          class="kpi-card"
+          :class="result.reconstruction_error < 0.1 ? 'kpi-green' : 'kpi-yellow'"
+        >
+          <div class="kpi-label">
+            Recon. error
+          </div>
+          <div class="kpi-value">
+            {{ pct(result.reconstruction_error) }}
+          </div>
+          <div class="kpi-sub">
+            K={{ result.n_components_used }}
+          </div>
         </div>
-        <div class="kpi-card" v-if="result.shrinkage.applied">
-          <div class="kpi-label">Shrinkage α</div>
-          <div class="kpi-value mono">{{ fmt3(result.shrinkage.alpha) }}</div>
-          <div class="kpi-sub">Ledoit-Wolf</div>
+        <div
+          v-if="result.shrinkage.applied"
+          class="kpi-card"
+        >
+          <div class="kpi-label">
+            Shrinkage α
+          </div>
+          <div class="kpi-value mono">
+            {{ fmt3(result.shrinkage.alpha) }}
+          </div>
+          <div class="kpi-sub">
+            Ledoit-Wolf
+          </div>
         </div>
       </div>
 
@@ -94,14 +173,20 @@
           <div class="panel-header">
             <h3>Scree plot — объяснённая дисперсия</h3>
           </div>
-          <div ref="screeEl" class="chart-md" />
+          <div
+            ref="screeEl"
+            class="chart-md"
+          />
         </div>
         <div class="panel">
           <div class="panel-header">
             <h3>Marchenko-Pastur: сигнал vs шум</h3>
             <span class="hint">λ₊={{ fmt3(result.rmt.lambda_plus) }} — граница шума</span>
           </div>
-          <div ref="rmtEl" class="chart-md" />
+          <div
+            ref="rmtEl"
+            class="chart-md"
+          />
         </div>
       </div>
 
@@ -112,25 +197,42 @@
             <h3>Тепловая карта нагрузок (активы × PC)</h3>
             <span class="hint">Вес каждого актива в каждом eigenportfolio</span>
           </div>
-          <div ref="heatmapEl" class="chart-heatmap" />
+          <div
+            ref="heatmapEl"
+            class="chart-heatmap"
+          />
         </div>
 
         <div class="panel">
           <!-- Eigenvalue table -->
-          <div class="panel-header"><h3>Собственные значения</h3></div>
+          <div class="panel-header">
+            <h3>Собственные значения</h3>
+          </div>
           <table class="ev-table">
             <thead>
               <tr><th>PC</th><th>λ</th><th>Var%</th><th>Cum%</th><th>RMT</th></tr>
             </thead>
             <tbody>
-              <tr v-for="(lam, k) in result.eigenvalues.slice(0, 15)" :key="k"
-                  :class="lam > result.rmt.lambda_plus ? 'signal-row' : 'noise-row'">
+              <tr
+                v-for="(lam, k) in result.eigenvalues.slice(0, 15)"
+                :key="k"
+                :class="lam > result.rmt.lambda_plus ? 'signal-row' : 'noise-row'"
+              >
                 <td>PC{{ k + 1 }}</td>
-                <td class="mono">{{ fmt4(lam) }}</td>
-                <td class="mono">{{ pct(result.explained_variance[k]) }}</td>
-                <td class="mono">{{ pct(result.cumulative_variance[k]) }}</td>
+                <td class="mono">
+                  {{ fmt4(lam) }}
+                </td>
+                <td class="mono">
+                  {{ pct(result.explained_variance[k]) }}
+                </td>
+                <td class="mono">
+                  {{ pct(result.cumulative_variance[k]) }}
+                </td>
                 <td>
-                  <span class="rmt-tag" :class="lam > result.rmt.lambda_plus ? 'signal' : 'noise'">
+                  <span
+                    class="rmt-tag"
+                    :class="lam > result.rmt.lambda_plus ? 'signal' : 'noise'"
+                  >
                     {{ lam > result.rmt.lambda_plus ? 'signal' : 'noise' }}
                   </span>
                 </td>
@@ -140,15 +242,20 @@
 
           <!-- Portfolio risk decomposition -->
           <template v-if="result.portfolio_risk">
-            <div class="panel-header" style="margin-top:16px">
+            <div
+              class="panel-header"
+              style="margin-top:16px"
+            >
               <h3>Декомпозиция риска портфеля</h3>
               <span class="hint">vol = {{ pct(result.portfolio_risk.portfolio_vol) }}</span>
             </div>
-            <div ref="riskEl" class="chart-sm" />
+            <div
+              ref="riskEl"
+              class="chart-sm"
+            />
           </template>
         </div>
       </div>
-
     </template>
   </div>
 </template>

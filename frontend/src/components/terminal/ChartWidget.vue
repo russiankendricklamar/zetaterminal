@@ -4,18 +4,26 @@
     <div class="absolute top-0 left-0 right-0 z-10 px-4 py-3 flex justify-between items-start bg-gradient-to-b from-black/40 to-transparent">
       <div class="flex flex-col gap-1">
         <div class="flex items-baseline gap-3">
-          <h2 class="text-lg font-bold text-white tracking-tight font-mono">{{ symbol }}</h2>
-          <span class="text-xl font-bold font-mono" :class="priceChange >= 0 ? 'text-emerald-400' : 'text-rose-400'">
+          <h2 class="text-lg font-bold text-white tracking-tight font-mono">
+            {{ symbol }}
+          </h2>
+          <span
+            class="text-xl font-bold font-mono"
+            :class="priceChange >= 0 ? 'text-emerald-400' : 'text-rose-400'"
+          >
             {{ currentPrice.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}
           </span>
-          <span class="text-xs font-mono px-2 py-0.5 rounded" :class="priceChange >= 0 ? 'text-emerald-400 bg-emerald-500/10' : 'text-rose-400 bg-rose-500/10'">
+          <span
+            class="text-xs font-mono px-2 py-0.5 rounded"
+            :class="priceChange >= 0 ? 'text-emerald-400 bg-emerald-500/10' : 'text-rose-400 bg-rose-500/10'"
+          >
             {{ priceChange >= 0 ? '+' : '' }}{{ priceChange.toFixed(2) }}%
           </span>
         </div>
         <div class="flex gap-2 text-[10px] font-medium">
           <span class="bg-white/5 px-2 py-0.5 rounded text-white/60 border border-white/5">{{ assetName }}</span>
           <span class="bg-white/5 px-2 py-0.5 rounded text-white/60 border border-white/5">
-            <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block mr-1 animate-pulse"></span>
+            <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block mr-1 animate-pulse" />
             Онлайн
           </span>
         </div>
@@ -32,10 +40,13 @@
         </div>
         <button 
           v-if="onToggleExpand"
-          @click="onToggleExpand"
           class="p-1.5 text-gray-400 hover:text-white transition-colors hover:bg-white/10 rounded-lg"
+          @click="onToggleExpand"
         >
-          <component :is="isExpanded ? 'MinimizeIcon' : 'MaximizeIcon'" class="w-4 h-4" />
+          <component
+            :is="isExpanded ? 'MinimizeIcon' : 'MaximizeIcon'"
+            class="w-4 h-4"
+          />
         </button>
       </div>
     </div>

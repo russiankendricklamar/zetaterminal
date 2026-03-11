@@ -11,7 +11,11 @@
     @remove="$emit('remove')"
     @resize="handleResize"
   >
-    <OrderBook :bids="bids" :asks="asks" :currentPrice="currentPrice" />
+    <OrderBook
+      :bids="bids"
+      :asks="asks"
+      :current-price="currentPrice"
+    />
   </BaseWidget>
 </template>
 

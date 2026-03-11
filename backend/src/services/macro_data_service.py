@@ -5,14 +5,14 @@ Proxies macroeconomic and regulatory data from five providers.
 """
 
 import os
-import xml.etree.ElementTree as ET
-from typing import Optional, Dict, Any, List
-from src.utils.http_client import get_session
-
 import re as _re
+import xml.etree.ElementTree as ET
+from typing import Any
 from xml.sax.saxutils import escape as _xml_escape
+
 from src.services.cache_service import cache_get, cache_set, make_cache_key
 from src.services.secrets_service import get_key_sync
+from src.utils.http_client import get_session
 
 _DATE_RE = _re.compile(r"^\d{4}-\d{2}-\d{2}$")
 
@@ -39,16 +39,16 @@ async def fred_series_observations(
     series_id: str,
     limit: int = 100,
     sort_order: str = "desc",
-    observation_start: Optional[str] = None,
-    observation_end: Optional[str] = None,
-) -> Dict[str, Any]:
+    observation_start: str | None = None,
+    observation_end: str | None = None,
+) -> dict[str, Any]:
     """Get observations for a FRED series (GDP, CPI, UNRATE, etc.)."""
     key = make_cache_key("fred", "obs", series_id, limit, sort_order, observation_start)
     cached = cache_get(key)
     if cached is not None:
         return cached
 
-    params: Dict[str, Any] = {
+    params: dict[str, Any] = {
         "series_id": series_id,
         "api_key": _fred_key(),
         "file_type": "json",
@@ -83,7 +83,7 @@ async def fred_series_observations(
     return result
 
 
-async def fred_search(query: str, limit: int = 20) -> Dict[str, Any]:
+async def fred_search(query: str, limit: int = 20) -> dict[str, Any]:
     """Search FRED series by keyword."""
     key = make_cache_key("fred", "search", query, limit)
     cached = cache_get(key)
@@ -120,7 +120,7 @@ async def fred_search(query: str, limit: int = 20) -> Dict[str, Any]:
 
 # ─── Frankfurter (ECB exchange rates) ────────────────────────────────────────
 
-async def ecb_latest_rates(base: str = "EUR") -> Dict[str, Any]:
+async def ecb_latest_rates(base: str = "EUR") -> dict[str, Any]:
     """Get latest ECB exchange rates."""
     key = make_cache_key("ecb", "latest", base)
     cached = cache_get(key)
@@ -145,9 +145,9 @@ async def ecb_latest_rates(base: str = "EUR") -> Dict[str, Any]:
 async def ecb_historical_rates(
     base: str = "EUR",
     start_date: str = "2024-01-01",
-    end_date: Optional[str] = None,
-    symbols: Optional[str] = None,
-) -> Dict[str, Any]:
+    end_date: str | None = None,
+    symbols: str | None = None,
+) -> dict[str, Any]:
     """Get historical ECB exchange rates."""
     key = make_cache_key("ecb", "hist", base, start_date, end_date, symbols)
     cached = cache_get(key)
@@ -158,7 +158,7 @@ async def ecb_historical_rates(
     if end_date:
         url += f"..{end_date}"
 
-    params: Dict[str, Any] = {"base": base}
+    params: dict[str, Any] = {"base": base}
     if symbols:
         params["symbols"] = symbols
 
@@ -180,7 +180,7 @@ async def ecb_historical_rates(
 
 # ─── Bank of Russia ───────────────────────────────────────────────────────────
 
-async def cbr_daily_rates() -> Dict[str, Any]:
+async def cbr_daily_rates() -> dict[str, Any]:
     """Get CBR daily FX rates (parses XML)."""
     key = make_cache_key("cbr", "daily_rates")
     cached = cache_get(key)
@@ -218,7 +218,7 @@ async def cbr_daily_rates() -> Dict[str, Any]:
     return result
 
 
-async def cbr_key_rate() -> Dict[str, Any]:
+async def cbr_key_rate() -> dict[str, Any]:
     """Get current CBR key rate via SOAP endpoint."""
     key = make_cache_key("cbr", "key_rate")
     cached = cache_get(key)
@@ -277,7 +277,7 @@ async def cbr_key_rate() -> Dict[str, Any]:
 async def cbr_ruonia(
     from_date: str = "2024-01-01",
     to_date: str = "2026-12-31",
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Get RUONIA rates from CBR SOAP API."""
     if not _DATE_RE.match(from_date) or not _DATE_RE.match(to_date):
         raise ValueError("Invalid date format (expected YYYY-MM-DD)")
@@ -303,7 +303,7 @@ async def cbr_ruonia(
         resp.raise_for_status()
         text = await resp.text()
 
-    rates: List[Dict[str, Any]] = []
+    rates: list[dict[str, Any]] = []
     try:
         root = ET.fromstring(text)
         for el in root.iter():
@@ -333,7 +333,7 @@ async def cbr_ruonia(
 async def cbr_precious_metals(
     from_date: str = "2024-01-01",
     to_date: str = "2026-12-31",
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Get precious metals prices from CBR SOAP API."""
     if not _DATE_RE.match(from_date) or not _DATE_RE.match(to_date):
         raise ValueError("Invalid date format (expected YYYY-MM-DD)")
@@ -359,12 +359,12 @@ async def cbr_precious_metals(
         resp.raise_for_status()
         text = await resp.text()
 
-    metals: List[Dict[str, Any]] = []
+    metals: list[dict[str, Any]] = []
     try:
         root = ET.fromstring(text)
         for el in root.iter():
             if el.tag.endswith("DrgMet"):
-                entry: Dict[str, Any] = {}
+                entry: dict[str, Any] = {}
                 for child in el:
                     tag = child.tag.split("}")[-1] if "}" in child.tag else child.tag
                     val = (child.text or "").strip()
@@ -381,7 +381,7 @@ async def cbr_precious_metals(
 
     # Group by code: 1=Gold, 2=Silver, 3=Platinum, 4=Palladium
     metal_names = {1: "Золото", 2: "Серебро", 3: "Платина", 4: "Палладий"}
-    grouped: Dict[str, List[Dict[str, Any]]] = {}
+    grouped: dict[str, list[dict[str, Any]]] = {}
     for m in metals:
         name = metal_names.get(m.get("code", 0), f"Metal_{m.get('code')}")
         grouped.setdefault(name, []).append({"date": m["date"], "price": m.get("price", 0)})
@@ -394,7 +394,7 @@ async def cbr_precious_metals(
 async def cbr_deposit_rates(
     from_date: str = "2024-01-01",
     to_date: str = "2026-12-31",
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Get average deposit rates from CBR SOAP API (DepoDynamicXML)."""
     if not _DATE_RE.match(from_date) or not _DATE_RE.match(to_date):
         raise ValueError("Invalid date format (expected YYYY-MM-DD)")
@@ -420,12 +420,12 @@ async def cbr_deposit_rates(
         resp.raise_for_status()
         text = await resp.text()
 
-    rates: List[Dict[str, Any]] = []
+    rates: list[dict[str, Any]] = []
     try:
         root = ET.fromstring(text)
         for el in root.iter():
             if el.tag.endswith("Depo"):
-                entry: Dict[str, Any] = {}
+                entry: dict[str, Any] = {}
                 for child in el:
                     tag = child.tag.split("}")[-1] if "}" in child.tag else child.tag
                     val = (child.text or "").strip()
@@ -446,7 +446,7 @@ async def cbr_deposit_rates(
 async def cbr_repo_rates(
     from_date: str = "2024-01-01",
     to_date: str = "2026-12-31",
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Get repo debt data from CBR SOAP API (RepoDebtXML)."""
     if not _DATE_RE.match(from_date) or not _DATE_RE.match(to_date):
         raise ValueError("Invalid date format (expected YYYY-MM-DD)")
@@ -472,12 +472,12 @@ async def cbr_repo_rates(
         resp.raise_for_status()
         text = await resp.text()
 
-    entries: List[Dict[str, Any]] = []
+    entries: list[dict[str, Any]] = []
     try:
         root = ET.fromstring(text)
         for el in root.iter():
             if el.tag.endswith("Repo"):
-                entry: Dict[str, Any] = {}
+                entry: dict[str, Any] = {}
                 for child in el:
                     tag = child.tag.split("}")[-1] if "}" in child.tag else child.tag
                     val = (child.text or "").strip()
@@ -499,7 +499,7 @@ async def cbr_repo_rates(
 
 # ─── SEC EDGAR ────────────────────────────────────────────────────────────────
 
-async def sec_company_filings(cik: str) -> Dict[str, Any]:
+async def sec_company_filings(cik: str) -> dict[str, Any]:
     """Get SEC company filings by CIK number."""
     cik_padded = cik.zfill(10)
     key = make_cache_key("sec", "filings", cik_padded)
@@ -543,7 +543,7 @@ async def sec_company_filings(cik: str) -> Dict[str, Any]:
     return result
 
 
-async def sec_company_facts(cik: str) -> Dict[str, Any]:
+async def sec_company_facts(cik: str) -> dict[str, Any]:
     """Get SEC XBRL company facts."""
     cik_padded = cik.zfill(10)
     key = make_cache_key("sec", "facts", cik_padded)
@@ -573,14 +573,14 @@ async def sec_full_text_search(
     date_range: str = "",
     forms: str = "",
     limit: int = 20,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Full-text search of SEC EDGAR filings via EFTS."""
     key = make_cache_key("sec", "search", query, date_range, forms, limit)
     cached = cache_get(key)
     if cached is not None:
         return cached
 
-    params: Dict[str, Any] = {
+    params: dict[str, Any] = {
         "q": query,
         "dateRange": date_range or "custom",
         "startdt": "2020-01-01",
@@ -617,8 +617,8 @@ async def sec_full_text_search(
 # ─── OpenFIGI ─────────────────────────────────────────────────────────────────
 
 async def openfigi_map(
-    jobs: List[Dict[str, str]]
-) -> List[Dict[str, Any]]:
+    jobs: list[dict[str, str]]
+) -> list[dict[str, Any]]:
     """Map identifiers via OpenFIGI (e.g. ISIN → FIGI).
 
     Each job: {"idType": "ID_ISIN", "idValue": "US0378331005"}
@@ -628,7 +628,7 @@ async def openfigi_map(
     if cached is not None:
         return cached
 
-    headers: Dict[str, str] = {"Content-Type": "application/json"}
+    headers: dict[str, str] = {"Content-Type": "application/json"}
     figi_key = _openfigi_key()
     if figi_key:
         headers["X-OPENFIGI-APIKEY"] = figi_key

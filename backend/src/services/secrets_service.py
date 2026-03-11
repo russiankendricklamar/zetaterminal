@@ -6,13 +6,12 @@ Falls back to env vars if the DB key is not set.
 """
 import logging
 import os
-from typing import Optional
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.database.sa_models import ApiKey
-from src.utils.crypto import encrypt_value, decrypt_value
+from src.utils.crypto import decrypt_value, encrypt_value
 
 logger = logging.getLogger(__name__)
 

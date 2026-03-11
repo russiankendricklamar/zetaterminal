@@ -2,8 +2,12 @@
   <div class="page-container custom-scrollbar">
     <div class="section-header justify-center text-center">
       <div>
-        <h1 class="section-title font-anton">GROW YOUR ASSETS</h1>
-        <p class="section-subtitle font-mono">SIMPLE. SECURE. HIGH YIELDS.</p>
+        <h1 class="section-title font-anton">
+          GROW YOUR ASSETS
+        </h1>
+        <p class="section-subtitle font-mono">
+          SIMPLE. SECURE. HIGH YIELDS.
+        </p>
       </div>
     </div>
 
@@ -20,8 +24,12 @@
           <span class="px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-300 text-[10px] font-bold uppercase tracking-wide border border-emerald-500/20">{{ p.type }}</span>
         </div>
         <div class="mb-6">
-          <div class="text-4xl font-bold text-white mb-2 group-hover:text-emerald-400 transition-colors tracking-tight">{{ p.apy }}</div>
-          <div class="text-xs text-gray-500 uppercase font-bold tracking-wider">APY</div>
+          <div class="text-4xl font-bold text-white mb-2 group-hover:text-emerald-400 transition-colors tracking-tight">
+            {{ p.apy }}
+          </div>
+          <div class="text-xs text-gray-500 uppercase font-bold tracking-wider">
+            APY
+          </div>
         </div>
         <div class="flex justify-between items-center text-xs text-gray-400 border-t border-white/5 pt-4">
           <span>Duration: <span class="text-white font-medium">{{ p.duration }}</span></span>
@@ -36,11 +44,17 @@
           <TrendingUpIcon class="w-6 h-6 text-white" />
         </div>
         <div>
-          <h3 class="font-bold text-white text-lg">Auto-Invest</h3>
-          <p class="text-sm text-gray-400">Accumulate crypto on autopilot with dollar-cost averaging.</p>
+          <h3 class="font-bold text-white text-lg">
+            Auto-Invest
+          </h3>
+          <p class="text-sm text-gray-400">
+            Accumulate crypto on autopilot with dollar-cost averaging.
+          </p>
         </div>
       </div>
-      <button class="px-8 py-3 bg-white text-black font-bold rounded-xl hover:scale-105 transition-transform shadow-lg shadow-white/10">Start Now</button>
+      <button class="px-8 py-3 bg-white text-black font-bold rounded-xl hover:scale-105 transition-transform shadow-lg shadow-white/10">
+        Start Now
+      </button>
     </div>
   </div>
 </template>

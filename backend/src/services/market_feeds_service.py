@@ -4,11 +4,11 @@ Market Feeds Service — Alpha Vantage, Twelve Data, Polygon.io
 Proxies real-time and historical market data from three providers.
 """
 
-from typing import Optional, Dict, Any, List
-from src.utils.http_client import get_session
+from typing import Any
 
 from src.services.cache_service import cache_get, cache_set, make_cache_key
 from src.services.secrets_service import get_key_sync
+from src.utils.http_client import get_session
 
 ALPHA_VANTAGE_BASE = "https://www.alphavantage.co/query"
 TWELVE_DATA_BASE = "https://api.twelvedata.com"
@@ -22,7 +22,7 @@ def _pg_key() -> str: return get_key_sync("POLYGON_API_KEY")
 
 # ─── Alpha Vantage ────────────────────────────────────────────────────────────
 
-async def alpha_vantage_quote(symbol: str) -> Dict[str, Any]:
+async def alpha_vantage_quote(symbol: str) -> dict[str, Any]:
     """Get real-time quote for a symbol."""
     key = make_cache_key("av", "quote", symbol)
     cached = cache_get(key)
@@ -61,7 +61,7 @@ async def alpha_vantage_time_series(
     symbol: str,
     interval: str = "daily",
     outputsize: str = "compact"
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Get historical time series data."""
     key = make_cache_key("av", "ts", symbol, interval, outputsize)
     cached = cache_get(key)
@@ -109,7 +109,7 @@ async def alpha_vantage_time_series(
     return result
 
 
-async def alpha_vantage_forex(from_currency: str, to_currency: str) -> Dict[str, Any]:
+async def alpha_vantage_forex(from_currency: str, to_currency: str) -> dict[str, Any]:
     """Get real-time FX exchange rate."""
     key = make_cache_key("av", "fx", from_currency, to_currency)
     cached = cache_get(key)
@@ -145,7 +145,7 @@ async def alpha_vantage_technicals(
     interval: str = "daily",
     time_period: int = 20,
     series_type: str = "close"
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Get technical indicators (SMA, EMA, RSI, MACD, etc.)."""
     key = make_cache_key("av", "tech", symbol, indicator, interval, time_period)
     cached = cache_get(key)
@@ -194,7 +194,7 @@ async def alpha_vantage_technicals(
 
 # ─── Twelve Data ──────────────────────────────────────────────────────────────
 
-async def twelve_data_quote(symbol: str) -> Dict[str, Any]:
+async def twelve_data_quote(symbol: str) -> dict[str, Any]:
     """Get real-time quote from Twelve Data."""
     key = make_cache_key("td", "quote", symbol)
     cached = cache_get(key)
@@ -230,7 +230,7 @@ async def twelve_data_time_series(
     symbol: str,
     interval: str = "1day",
     outputsize: int = 30
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Get historical time series from Twelve Data."""
     key = make_cache_key("td", "ts", symbol, interval, outputsize)
     cached = cache_get(key)
@@ -265,7 +265,7 @@ async def twelve_data_time_series(
     return result
 
 
-async def twelve_data_forex_pairs() -> List[Dict[str, str]]:
+async def twelve_data_forex_pairs() -> list[dict[str, str]]:
     """Get available forex pairs."""
     key = make_cache_key("td", "forex_pairs")
     cached = cache_get(key)
@@ -285,7 +285,7 @@ async def twelve_data_forex_pairs() -> List[Dict[str, str]]:
 
 # ─── Polygon.io ───────────────────────────────────────────────────────────────
 
-async def polygon_ticker_details(ticker: str) -> Dict[str, Any]:
+async def polygon_ticker_details(ticker: str) -> dict[str, Any]:
     """Get ticker details from Polygon."""
     key = make_cache_key("poly", "ticker", ticker)
     cached = cache_get(key)
@@ -313,7 +313,7 @@ async def polygon_aggregates(
     to_date: str,
     timespan: str = "day",
     multiplier: int = 1
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Get aggregated bars from Polygon."""
     key = make_cache_key("poly", "aggs", ticker, from_date, to_date, timespan)
     cached = cache_get(key)
@@ -353,11 +353,11 @@ async def polygon_aggregates(
 
 async def polygon_options_chain(
     ticker: str,
-    expiration_date: Optional[str] = None,
-    strike_price: Optional[float] = None,
-    contract_type: Optional[str] = None,
+    expiration_date: str | None = None,
+    strike_price: float | None = None,
+    contract_type: str | None = None,
     limit: int = 50
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Get options chain from Polygon."""
     key = make_cache_key("poly", "options", ticker, expiration_date, strike_price, contract_type)
     cached = cache_get(key)
@@ -365,7 +365,7 @@ async def polygon_options_chain(
         return cached
 
     headers = {"Authorization": f"Bearer {_pg_key()}"}
-    params: Dict[str, Any] = {
+    params: dict[str, Any] = {
         "underlying_ticker": ticker,
         "limit": limit,
     }
@@ -395,9 +395,9 @@ async def polygon_options_chain(
 
 
 async def polygon_news(
-    ticker: Optional[str] = None,
+    ticker: str | None = None,
     limit: int = 20
-) -> List[Dict[str, Any]]:
+) -> list[dict[str, Any]]:
     """Get ticker news from Polygon."""
     key = make_cache_key("poly", "news", ticker or "all", limit)
     cached = cache_get(key)
@@ -405,7 +405,7 @@ async def polygon_news(
         return cached
 
     headers = {"Authorization": f"Bearer {_pg_key()}"}
-    params: Dict[str, Any] = {"limit": limit}
+    params: dict[str, Any] = {"limit": limit}
     if ticker:
         params["ticker"] = ticker
 

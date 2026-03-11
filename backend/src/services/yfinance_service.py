@@ -2,16 +2,17 @@
 Сервис для получения рыночных данных через yfinance.
 Поддерживает акции, валюты, индексы, криптовалюты, облигации и товары.
 """
-import yfinance as yf
-import pandas as pd
-from typing import Dict, List, Optional, Any
-from datetime import datetime, timedelta
 import logging
+from datetime import datetime
+from typing import Any
+
+import pandas as pd
+import yfinance as yf
 
 logger = logging.getLogger(__name__)
 
 
-def get_stock_info(ticker: str) -> Dict[str, Any]:
+def get_stock_info(ticker: str) -> dict[str, Any]:
     """
     Получает информацию об акции.
     
@@ -24,14 +25,14 @@ def get_stock_info(ticker: str) -> Dict[str, Any]:
     try:
         stock = yf.Ticker(ticker)
         info = stock.info
-        
+
         # Получаем исторические данные
         hist = stock.history(period="1d", interval="1m")
         current_price = hist['Close'].iloc[-1] if not hist.empty else info.get('currentPrice', 0)
         prev_close = info.get('previousClose', current_price)
         change = current_price - prev_close
         change_percent = (change / prev_close * 100) if prev_close > 0 else 0
-        
+
         return {
             "ticker": ticker,
             "name": info.get('longName', ticker),
@@ -61,11 +62,11 @@ def get_stock_info(ticker: str) -> Dict[str, Any]:
             "revenueGrowth": info.get('revenueGrowth')
         }
     except Exception as e:
-        logger.error(f"Error fetching stock info for {ticker}: {str(e)}")
-        raise ValueError(f"Не удалось получить данные для {ticker}: {str(e)}")
+        logger.error(f"Error fetching stock info for {ticker}: {e!s}")
+        raise ValueError(f"Не удалось получить данные для {ticker}: {e!s}") from e
 
 
-def get_stock_history(ticker: str, period: str = "1mo", interval: str = "1d") -> List[Dict]:
+def get_stock_history(ticker: str, period: str = "1mo", interval: str = "1d") -> list[dict]:
     """
     Получает исторические данные об акции.
     
@@ -80,10 +81,10 @@ def get_stock_history(ticker: str, period: str = "1mo", interval: str = "1d") ->
     try:
         stock = yf.Ticker(ticker)
         hist = stock.history(period=period, interval=interval)
-        
+
         if hist.empty:
             return []
-        
+
         hist_reset = hist.reset_index()
         result = []
         for row in hist_reset.itertuples(index=False):
@@ -97,14 +98,14 @@ def get_stock_history(ticker: str, period: str = "1mo", interval: str = "1d") ->
                 "volume": int(row.Volume),
                 "adjClose": float(row.Close)
             })
-        
+
         return result
     except Exception as e:
-        logger.error(f"Error fetching history for {ticker}: {str(e)}")
-        raise ValueError(f"Не удалось получить историю для {ticker}: {str(e)}")
+        logger.error(f"Error fetching history for {ticker}: {e!s}")
+        raise ValueError(f"Не удалось получить историю для {ticker}: {e!s}") from e
 
 
-def get_multiple_stocks(tickers: List[str]) -> List[Dict[str, Any]]:
+def get_multiple_stocks(tickers: list[str]) -> list[dict[str, Any]]:
     """
     Получает информацию о нескольких акциях одновременно.
     
@@ -117,16 +118,16 @@ def get_multiple_stocks(tickers: List[str]) -> List[Dict[str, Any]]:
     try:
         # Используем yf.download для массовой загрузки
         data = yf.download(tickers, period="1d", group_by='ticker', progress=False)
-        
+
         if data.empty:
             return []
-        
+
         result = []
         for ticker in tickers:
             try:
                 stock = yf.Ticker(ticker)
                 info = stock.info
-                
+
                 # Получаем последнюю цену из загруженных данных
                 if ticker in data.columns.levels[0] if isinstance(data.columns, pd.MultiIndex) else False:
                     ticker_data = data[ticker] if isinstance(data.columns, pd.MultiIndex) else data
@@ -134,11 +135,11 @@ def get_multiple_stocks(tickers: List[str]) -> List[Dict[str, Any]]:
                 else:
                     hist = stock.history(period="1d")
                     current_price = float(hist['Close'].iloc[-1]) if not hist.empty else 0
-                
+
                 prev_close = info.get('previousClose', current_price)
                 change = current_price - prev_close
                 change_percent = (change / prev_close * 100) if prev_close > 0 else 0
-                
+
                 result.append({
                     "ticker": ticker,
                     "name": info.get('longName', ticker),
@@ -153,16 +154,16 @@ def get_multiple_stocks(tickers: List[str]) -> List[Dict[str, Any]]:
                     "currency": info.get('currency', 'USD')
                 })
             except Exception as e:
-                logger.warning(f"Error processing {ticker}: {str(e)}")
+                logger.warning(f"Error processing {ticker}: {e!s}")
                 continue
-        
+
         return result
     except Exception as e:
-        logger.error(f"Error fetching multiple stocks: {str(e)}")
-        raise ValueError(f"Не удалось получить данные: {str(e)}")
+        logger.error(f"Error fetching multiple stocks: {e!s}")
+        raise ValueError(f"Не удалось получить данные: {e!s}") from e
 
 
-def get_currency_rate(base: str, quote: str = "USD") -> Dict[str, Any]:
+def get_currency_rate(base: str, quote: str = "USD") -> dict[str, Any]:
     """
     Получает курс валютной пары.
     
@@ -183,19 +184,19 @@ def get_currency_rate(base: str, quote: str = "USD") -> Dict[str, Any]:
                 "change": 0.0,
                 "changePercent": 0.0
             }
-        
+
         ticker_str = f"{base}{quote}=X"
         currency = yf.Ticker(ticker_str)
         hist = currency.history(period="2d")
-        
+
         if hist.empty:
             raise ValueError(f"Не удалось получить данные для {ticker_str}")
-        
+
         current_rate = float(hist['Close'].iloc[-1])
         prev_rate = float(hist['Close'].iloc[-2]) if len(hist) > 1 else current_rate
         change = current_rate - prev_rate
         change_percent = (change / prev_rate * 100) if prev_rate > 0 else 0
-        
+
         return {
             "base": base,
             "quote": quote,
@@ -206,11 +207,11 @@ def get_currency_rate(base: str, quote: str = "USD") -> Dict[str, Any]:
             "timestamp": datetime.now().isoformat()
         }
     except Exception as e:
-        logger.error(f"Error fetching currency rate {base}/{quote}: {str(e)}")
-        raise ValueError(f"Не удалось получить курс {base}/{quote}: {str(e)}")
+        logger.error(f"Error fetching currency rate {base}/{quote}: {e!s}")
+        raise ValueError(f"Не удалось получить курс {base}/{quote}: {e!s}") from e
 
 
-def get_crypto_info(symbol: str) -> Dict[str, Any]:
+def get_crypto_info(symbol: str) -> dict[str, Any]:
     """
     Получает информацию о криптовалюте.
     
@@ -224,15 +225,15 @@ def get_crypto_info(symbol: str) -> Dict[str, Any]:
         crypto = yf.Ticker(symbol)
         info = crypto.info
         hist = crypto.history(period="1d")
-        
+
         if hist.empty:
             raise ValueError(f"Не удалось получить данные для {symbol}")
-        
+
         current_price = float(hist['Close'].iloc[-1])
         prev_close = float(hist['Close'].iloc[-2]) if len(hist) > 1 else current_price
         change = current_price - prev_close
         change_percent = (change / prev_close * 100) if prev_close > 0 else 0
-        
+
         return {
             "symbol": symbol,
             "name": info.get('longName', symbol),
@@ -248,11 +249,11 @@ def get_crypto_info(symbol: str) -> Dict[str, Any]:
             "24hLow": float(hist['Low'].iloc[-1])
         }
     except Exception as e:
-        logger.error(f"Error fetching crypto info for {symbol}: {str(e)}")
-        raise ValueError(f"Не удалось получить данные для {symbol}: {str(e)}")
+        logger.error(f"Error fetching crypto info for {symbol}: {e!s}")
+        raise ValueError(f"Не удалось получить данные для {symbol}: {e!s}") from e
 
 
-def get_index_info(symbol: str) -> Dict[str, Any]:
+def get_index_info(symbol: str) -> dict[str, Any]:
     """
     Получает информацию об индексе.
     
@@ -266,15 +267,15 @@ def get_index_info(symbol: str) -> Dict[str, Any]:
         index = yf.Ticker(symbol)
         info = index.info
         hist = index.history(period="1d")
-        
+
         if hist.empty:
             raise ValueError(f"Не удалось получить данные для {symbol}")
-        
+
         current_price = float(hist['Close'].iloc[-1])
         prev_close = float(hist['Close'].iloc[-2]) if len(hist) > 1 else current_price
         change = current_price - prev_close
         change_percent = (change / prev_close * 100) if prev_close > 0 else 0
-        
+
         return {
             "symbol": symbol,
             "name": info.get('longName', symbol),
@@ -285,11 +286,11 @@ def get_index_info(symbol: str) -> Dict[str, Any]:
             "volume": int(hist['Volume'].iloc[-1]) if 'Volume' in hist.columns else 0
         }
     except Exception as e:
-        logger.error(f"Error fetching index info for {symbol}: {str(e)}")
-        raise ValueError(f"Не удалось получить данные для {symbol}: {str(e)}")
+        logger.error(f"Error fetching index info for {symbol}: {e!s}")
+        raise ValueError(f"Не удалось получить данные для {symbol}: {e!s}") from e
 
 
-def search_ticker(query: str, exchange: Optional[str] = None) -> List[Dict[str, Any]]:
+def search_ticker(query: str, exchange: str | None = None) -> list[dict[str, Any]]:
     """
     Поиск тикеров по запросу.
     
@@ -306,11 +307,11 @@ def search_ticker(query: str, exchange: Optional[str] = None) -> List[Dict[str, 
         # Для простоты возвращаем пустой список, но можно интегрировать с другими сервисами
         return []
     except Exception as e:
-        logger.error(f"Error searching ticker: {str(e)}")
+        logger.error(f"Error searching ticker: {e!s}")
         return []
 
 
-def get_popular_tickers() -> List[str]:
+def get_popular_tickers() -> list[str]:
     """
     Возвращает список популярных тикеров из различных индексов и бирж.
     Включает S&P 500, NASDAQ 100, Dow Jones, и другие популярные акции.
@@ -336,14 +337,14 @@ def get_popular_tickers() -> List[str]:
         'HMC', 'NSANY', 'SSNLF', 'HXSCL', 'LGEAF', 'RELIANCE.BSE', 'TCS.BSE', 'INFY', 'SHOP', 'RY',
         'CNI', 'BHP', 'RIO', 'CMWAY'
     ]
-    
+
     # NASDAQ 100 дополнительные
     nasdaq_tickers = [
         'AMD', 'INTC', 'QCOM', 'AVGO', 'TXN', 'AMAT', 'LRCX', 'KLAC', 'MCHP', 'SWKS',
         'QRVO', 'NXPI', 'ON', 'WOLF', 'ALGM', 'DIOD', 'POWI', 'SLAB', 'SITM', 'CRUS',
         'OLED', 'OLED', 'OLED', 'OLED', 'OLED', 'OLED', 'OLED', 'OLED', 'OLED', 'OLED'
     ]
-    
+
     # Дополнительные популярные акции
     additional_tickers = [
         'XOM', 'COP', 'SLB', 'HAL', 'MPC', 'VLO', 'PSX', 'OXY', 'DVN', 'FANG',
@@ -356,7 +357,7 @@ def get_popular_tickers() -> List[str]:
         'FCX', 'NEM', 'SCCO', 'AA', 'CENX', 'KALU', 'CSTM', 'ZEUS', 'ATI', 'X',
         'STLD', 'NUE', 'CMC', 'RS', 'CLF', 'MT', 'TX', 'GGB', 'SID', 'VALE'
     ]
-    
+
     # Российские акции (MOEX)
     russian_tickers = [
         'SBER.ME', 'GAZP.ME', 'LKOH.ME', 'GMKN.ME', 'YNDX.ME', 'ROSN.ME', 'NVTK.ME',
@@ -365,31 +366,31 @@ def get_popular_tickers() -> List[str]:
         'PHOR.ME', 'HYDR.ME', 'IRAO.ME', 'FEES.ME', 'SNGSP.ME', 'AFLT.ME', 'PIKK.ME',
         'LSRG.ME', 'UPRO.ME', 'NLMK.ME'
     ]
-    
+
     # Европейские акции
     european_tickers = [
         'ASML', 'UL', 'DEO', 'GSK', 'VOD', 'SAP', 'SIEGY', 'MBGYY', 'BMWYY', 'VWAGY',
         'ALIZY', 'TTE', 'LVMUY', 'LRLCY', 'SNY', 'EADSY', 'NSRGY', 'NVS', 'RHHBY', 'UBS',
         'ING', 'UNLY', 'BP', 'SHEL', 'AZN'
     ]
-    
+
     # Азиатские акции
     asian_tickers = [
         'TM', 'SONY', 'SFTBY', 'NTDOY', 'HMC', 'NSANY', 'SSNLF', 'HXSCL', 'LGEAF',
         'BABA', 'TCEHY', 'JD', 'BIDU', 'PNGAY', 'IDCBY', 'CICHY', 'BYDDY', 'NIO',
         'XPEV', 'LI', 'TSM', 'RELIANCE.BSE', 'TCS.BSE', 'INFY'
     ]
-    
+
     # Объединяем все списки и убираем дубликаты
     all_tickers = list(set(
-        sp500_tickers + nasdaq_tickers + additional_tickers + 
+        sp500_tickers + nasdaq_tickers + additional_tickers +
         russian_tickers + european_tickers + asian_tickers
     ))
-    
+
     return sorted(all_tickers)
 
 
-def get_popular_cryptos() -> List[str]:
+def get_popular_cryptos() -> list[str]:
     """
     Возвращает список популярных криптовалют.
     Формат тикеров для yfinance: SYMBOL-USD (например, BTC-USD, ETH-USD)
@@ -430,8 +431,8 @@ def get_popular_cryptos() -> List[str]:
         'FTT-USD', 'LEO-USD', 'GT-USD', 'BNX-USD', 'MX-USD', 'DYDX-USD', 'GMX-USD',
         'GNS-USD', 'PERP-USD', 'VELA-USD', 'ILV-USD', 'ATLAS-USD', 'POLIS-USD'
     ]
-    
+
     # Убираем дубликаты и сортируем
     unique_cryptos = list(set(top_cryptos))
-    
+
     return sorted(unique_cryptos)

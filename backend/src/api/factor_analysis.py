@@ -2,11 +2,11 @@
 API endpoints для Time-Series vs Cross-Sectional факторного анализа.
 """
 import logging
+from datetime import datetime
+from typing import Any
 
 from fastapi import APIRouter, HTTPException
-from typing import Dict, Any, List, Optional
 from pydantic import BaseModel, Field
-from datetime import datetime
 
 from src.services.factor_analysis_service import run_factor_analysis
 
@@ -16,14 +16,14 @@ router = APIRouter()
 
 
 class FactorAnalysisRequest(BaseModel):
-    returns: List[List[float]] = Field(
+    returns: list[list[float]] = Field(
         ..., description="Матрица доходностей T × N (строки=периоды, столбцы=активы)"
     )
-    factors: List[List[float]] = Field(
+    factors: list[list[float]] = Field(
         ..., description="Матрица факторов T × K"
     )
-    asset_names: Optional[List[str]] = Field(None, description="Названия N активов")
-    factor_names: Optional[List[str]] = Field(None, description="Названия K факторов")
+    asset_names: list[str] | None = Field(None, description="Названия N активов")
+    factor_names: list[str] | None = Field(None, description="Названия K факторов")
 
     model_config = {
         "json_schema_extra": {
@@ -38,7 +38,7 @@ class FactorAnalysisRequest(BaseModel):
 
 
 class FactorAnalysisResponse(BaseModel):
-    result: Dict[str, Any]
+    result: dict[str, Any]
     timestamp: datetime = Field(default_factory=datetime.now)
 
 
@@ -67,10 +67,10 @@ async def analyze_factors(request: FactorAnalysisRequest):
         return FactorAnalysisResponse(result=result)
     except ValueError as e:
         logger.error("Factor analysis validation error: %s", e, exc_info=True)
-        raise HTTPException(status_code=400, detail="Invalid input parameters")
+        raise HTTPException(status_code=400, detail="Invalid input parameters") from e
     except Exception as e:
         logger.error("Factor analysis failed: %s", e, exc_info=True)
-        raise HTTPException(status_code=500, detail="Internal server error")
+        raise HTTPException(status_code=500, detail="Internal server error") from e
 
 
 @router.get("/health")

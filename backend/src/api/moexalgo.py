@@ -7,15 +7,14 @@ Prefix: /api/moexalgo
 import logging
 
 from fastapi import APIRouter, HTTPException, Query
-from typing import Optional
 
 from src.services.moexalgo_service import (
-    moex_securities,
     moex_candles,
-    moex_orderbook,
-    moex_trades,
-    moex_index,
     moex_futures_oi,
+    moex_index,
+    moex_orderbook,
+    moex_securities,
+    moex_trades,
 )
 
 logger = logging.getLogger(__name__)
@@ -35,7 +34,7 @@ async def securities(
         return await moex_securities(board, market, engine, limit)
     except Exception as e:
         logger.error("MOEX operation failed: %s", e, exc_info=True)
-        raise HTTPException(status_code=500, detail="Internal server error")
+        raise HTTPException(status_code=500, detail="Internal server error") from e
 
 
 @router.get("/candles/{ticker}")
@@ -45,8 +44,8 @@ async def candles(
     market: str = Query("shares"),
     engine: str = Query("stock"),
     interval: int = Query(24, description="Candle interval: 1,10,60,24(day),7(week),31(month)"),
-    from_date: Optional[str] = Query(None, alias="from"),
-    till_date: Optional[str] = Query(None, alias="till"),
+    from_date: str | None = Query(None, alias="from"),
+    till_date: str | None = Query(None, alias="till"),
     limit: int = Query(100),
 ):
     """Get OHLCV candles for a ticker."""
@@ -54,7 +53,7 @@ async def candles(
         return await moex_candles(ticker, board, market, engine, interval, from_date, till_date, limit)
     except Exception as e:
         logger.error("MOEX operation failed: %s", e, exc_info=True)
-        raise HTTPException(status_code=500, detail="Internal server error")
+        raise HTTPException(status_code=500, detail="Internal server error") from e
 
 
 @router.get("/orderbook/{ticker}")
@@ -69,7 +68,7 @@ async def orderbook(
         return await moex_orderbook(ticker, board, market, engine)
     except Exception as e:
         logger.error("MOEX operation failed: %s", e, exc_info=True)
-        raise HTTPException(status_code=500, detail="Internal server error")
+        raise HTTPException(status_code=500, detail="Internal server error") from e
 
 
 @router.get("/trades/{ticker}")
@@ -85,22 +84,22 @@ async def trades(
         return await moex_trades(ticker, board, market, engine, limit)
     except Exception as e:
         logger.error("MOEX operation failed: %s", e, exc_info=True)
-        raise HTTPException(status_code=500, detail="Internal server error")
+        raise HTTPException(status_code=500, detail="Internal server error") from e
 
 
 @router.get("/index/{index_id}")
 async def index_analytics(
     index_id: str,
     limit: int = Query(100),
-    from_date: Optional[str] = Query(None, alias="from"),
-    till_date: Optional[str] = Query(None, alias="till"),
+    from_date: str | None = Query(None, alias="from"),
+    till_date: str | None = Query(None, alias="till"),
 ):
     """Get MOEX index analytics (IMOEX, RTSI, etc.)."""
     try:
         return await moex_index(index_id, limit, from_date, till_date)
     except Exception as e:
         logger.error("MOEX operation failed: %s", e, exc_info=True)
-        raise HTTPException(status_code=500, detail="Internal server error")
+        raise HTTPException(status_code=500, detail="Internal server error") from e
 
 
 @router.get("/futures/oi/{ticker}")
@@ -110,7 +109,7 @@ async def futures_oi(ticker: str):
         return await moex_futures_oi(ticker)
     except Exception as e:
         logger.error("MOEX operation failed: %s", e, exc_info=True)
-        raise HTTPException(status_code=500, detail="Internal server error")
+        raise HTTPException(status_code=500, detail="Internal server error") from e
 
 
 @router.get("/health")

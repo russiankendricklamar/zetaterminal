@@ -9,7 +9,14 @@
         @click="activeMethod = method.key"
       >
         <div :class="['method-icon', method.key]">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <svg
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+          >
             <path :d="method.icon" />
           </svg>
         </div>
@@ -21,7 +28,10 @@
     </div>
 
     <!-- Active Method Component -->
-    <component :is="activeComponent" @toast="showToast" />
+    <component
+      :is="activeComponent"
+      @toast="showToast"
+    />
 
     <!-- Toast -->
     <transition name="slide-up">

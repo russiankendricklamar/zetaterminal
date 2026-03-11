@@ -8,11 +8,10 @@ Pipeline:
 4. Bet sizing: position = primary_side × meta_probability
 5. Evaluation: precision/recall/F1 + финансовые метрики (SR, hit-rate, avg bet)
 """
-import numpy as np
-import scipy.stats
-import scipy.optimize
-from typing import Dict, List, Optional, Tuple
 
+import numpy as np
+import scipy.optimize
+import scipy.stats
 
 # ── Утилиты ──────────────────────────────────────────────────────────────────
 
@@ -50,7 +49,7 @@ def _add_intercept(X: np.ndarray) -> np.ndarray:
     return np.column_stack([np.ones(len(X)), X])
 
 
-def _standardize(X_train: np.ndarray, X_test: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
+def _standardize(X_train: np.ndarray, X_test: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
     mu = X_train.mean(axis=0)
     sd = X_train.std(axis=0) + 1e-15
     return (X_train - mu) / sd, (X_test - mu) / sd
@@ -101,7 +100,7 @@ def _triple_barrier(
     tmax: int,    # max holding (bars)
     daily_vol: float,
     side: int,    # primary side: +1 (long) or -1 (short)
-) -> Tuple[int, float]:
+) -> tuple[int, float]:
     """
     Возвращает (label, return) где label ∈ {+1, -1, 0}.
     - +1: profit-take barrier hit first → profit
@@ -149,7 +148,7 @@ def _primary_side(feats: np.ndarray) -> int:
 # ── Шаг 4: Полный пайплайн ───────────────────────────────────────────────────
 
 def compute_meta_labeling(
-    prices: List[float],
+    prices: list[float],
     pt_multiplier: float = 1.5,
     sl_multiplier: float = 1.0,
     max_holding: int = 5,
@@ -157,7 +156,7 @@ def compute_meta_labeling(
     train_ratio: float = 0.7,
     regularization: float = 0.01,
     meta_threshold: float = 0.5,
-) -> Dict:
+) -> dict:
     """
     Полный Meta-Labeling анализ.
 
@@ -224,8 +223,8 @@ def compute_meta_labeling(
         t_idx = np.array([r[0] for r in recs])
         return X, y, sides, labels, rets, t_idx
 
-    X_tr, y_tr, sides_tr, labels_tr, rets_tr, t_tr = make_Xy(train)
-    X_te, y_te, sides_te, labels_te, rets_te, t_te = make_Xy(test)
+    X_tr, y_tr, sides_tr, _labels_tr, rets_tr, _t_tr = make_Xy(train)
+    X_te, y_te, sides_te, labels_te, rets_te, _t_te = make_Xy(test)
 
     # Стандартизация
     X_tr_s, X_te_s = _standardize(X_tr, X_te)
@@ -249,7 +248,7 @@ def compute_meta_labeling(
     prob_te = _sigmoid(_add_intercept(X_meta_te) @ w_meta)
 
     # 5. Evaluation metrics
-    def _metrics(y_true: np.ndarray, prob: np.ndarray, threshold: float, rets: np.ndarray) -> Dict:
+    def _metrics(y_true: np.ndarray, prob: np.ndarray, threshold: float, rets: np.ndarray) -> dict:
         pred = (prob >= threshold).astype(float)
         tp = float(np.sum((pred == 1) & (y_true == 1)))
         fp = float(np.sum((pred == 1) & (y_true == 0)))
@@ -283,7 +282,7 @@ def compute_meta_labeling(
             "raw_sr": raw_sr,
             "avg_bet_size": avg_bet,
             "n_bets": bet_count,
-            "n_total": int(len(y_true)),
+            "n_total": len(y_true),
         }
 
     train_metrics = _metrics(y_tr, prob_tr, meta_threshold, rets_tr)
@@ -329,13 +328,13 @@ def compute_meta_labeling(
 
     # 10. Label distribution
     unique, counts = np.unique(labels_te, return_counts=True)
-    label_dist = {int(u): int(c) for u, c in zip(unique, counts)}
+    label_dist = {int(u): int(c) for u, c in zip(unique, counts, strict=False)}
 
     return {
         # Config
         "n_samples": int(n),
         "n_train": n_train,
-        "n_test": int(len(test)),
+        "n_test": len(test),
         "pt_multiplier": pt_multiplier,
         "sl_multiplier": sl_multiplier,
         "max_holding": max_holding,

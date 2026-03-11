@@ -12,14 +12,13 @@ CS регрессия (Fama-MacBeth шаг 2):
   - Shanken correction для стандартных ошибок λ
   - Декомпозиция R²: систематический vs идиосинкратический риск
 """
+
 import numpy as np
 import scipy.stats
-from typing import Dict, List, Optional, Tuple
-
 
 # ── Time-Series регрессия ─────────────────────────────────────────────────────
 
-def _ts_regression_single(r_i: np.ndarray, F: np.ndarray) -> Dict:
+def _ts_regression_single(r_i: np.ndarray, F: np.ndarray) -> dict:
     """
     OLS для одного актива: R_{i,t} = αᵢ + β'Fₜ + εᵢ,t
     Returns: alpha, betas, t-stats, p-values, R², residuals
@@ -58,9 +57,9 @@ def _ts_regression_single(r_i: np.ndarray, F: np.ndarray) -> Dict:
 def run_ts_regression(
     returns: np.ndarray,  # T × N
     factors: np.ndarray,  # T × K
-    asset_names: List[str],
-    factor_names: List[str],
-) -> Dict:
+    asset_names: list[str],
+    factor_names: list[str],
+) -> dict:
     """
     Шаг 1 Fama-MacBeth: time-series регрессия для каждого актива.
     Возвращает матрицу нагрузок β (N × K) и GRS тест.
@@ -147,9 +146,9 @@ def run_ts_regression(
 def run_cs_regression(
     returns: np.ndarray,   # T × N
     betas: np.ndarray,     # N × K (из TS шага)
-    factor_names: List[str],
-    asset_names: List[str],
-) -> Dict:
+    factor_names: list[str],
+    asset_names: list[str],
+) -> dict:
     """
     Шаг 2 Fama-MacBeth: для каждого t регрессируем Rₜ на β → λₜ.
     Итоговые λ = mean(λₜ), SE по Fama-MacBeth с Shanken correction.
@@ -176,7 +175,7 @@ def run_cs_regression(
     se_fm = lam_std / np.sqrt(T)
 
     # Shanken correction (1992): умножает SE² на (1 + SR_F²)
-    mu_F = betas.mean(axis=0)                # аппроксимация μ_F через β
+    betas.mean(axis=0)                # аппроксимация μ_F через β
     Sigma_F = np.cov(betas.T) if K > 1 else np.array([[np.var(betas[:, 0], ddof=1)]])
     try:
         inv_SF = np.linalg.inv(Sigma_F)
@@ -220,11 +219,11 @@ def run_cs_regression(
 # ── Главная функция ───────────────────────────────────────────────────────────
 
 def run_factor_analysis(
-    returns: List[List[float]],
-    factors: List[List[float]],
-    asset_names: Optional[List[str]] = None,
-    factor_names: Optional[List[str]] = None,
-) -> Dict:
+    returns: list[list[float]],
+    factors: list[list[float]],
+    asset_names: list[str] | None = None,
+    factor_names: list[str] | None = None,
+) -> dict:
     """
     Полный Fama-MacBeth двухшаговый факторный анализ.
 
