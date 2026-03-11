@@ -15,162 +15,45 @@
 import { getApiHeaders } from '@/utils/apiHeaders'
 import { getApiBaseUrl } from '@/utils/apiBase'
 
+import type {
+  SecuritySpec,
+  BondTradeHistory,
+  CurrentMarketData,
+  RuDataCreds,
+  RuDataBondCalcResult,
+  RatingEntry,
+  CouponPayment,
+  AmortizationPayment,
+  MarginHistoryPoint,
+  YieldHistoryPoint,
+  PriceHistoryPoint,
+  IndexYields,
+  CorporateEvent,
+  AnalogousBond,
+  VanillaBondReport,
+  FloaterBondReport,
+} from './bondReportTypes'
+
+import {
+  calcYTMFromPrice,
+  calcDuration,
+  calcConvexity,
+  calcDV01,
+  calcDiscountMargin,
+  calcCurrentYield,
+  detectOfferType,
+  formatDateRu,
+} from './bondReportCalc'
+
+// Re-export all types so existing consumers don't break
+export * from './bondReportTypes'
+
 const API_BASE = getApiBaseUrl()
 const MOEX_ISS = 'https://iss.moex.com/iss'
 
 /** Escape single quotes in filter values to prevent filter injection. */
 function escFilter(val: string): string {
   return val.replace(/'/g, "''")
-}
-
-// ─── Типы ──────────────────────────────────────────────────────────────────────
-
-export interface RatingEntry {
-  agency: string
-  rating: string
-  outlook?: string | null
-  date?: string | null
-}
-
-export interface MarketActivityData {
-  trading_days: number       // DEAL_ACC.CNN (кол-во торговых дней)
-  trades: number             // DEAL_ACC.SUM (кол-во сделок)
-  turnover_to_outstanding: number  // VAL_ACC.SUM / SumMarketVal
-  traded_last_30d: boolean
-  total_volume?: number      // VAL_ACC.SUM
-  is_active: boolean         // AND(trades>=10, trading_days>=5, turnover>=0.001)
-}
-
-export interface PricingData {
-  clean_price_pct: number    // Рыночная котировка, % от номинала
-  dirty_price?: number
-  ytm: number                // YTM или YTP (десятичная дробь, например 0.1993)
-  ytm_pct: number            // YTM/YTP в процентах (например 19.93)
-  g_spread_bps: number       // G-spread в б.п. = (ytm_pct - gcurve_pct) * 100
-  g_curve_yield: number      // G-curve в десятичной дроби
-  g_curve_pct: number        // G-curve в процентах
-  yield_type: 'YTM' | 'YTP' // Тип доходности
-}
-
-export interface RiskIndicators {
-  duration: number           // Дюрация в годах (из EfirEndOfDay / 365)
-  mod_duration: number       // Мод. дюрация (из EfirYields duration_n)
-  convexity: number          // Выпуклость (из EfirYields convexity)
-  dv01: number               // DV01 = ABS(1e6 * (-modDur*0.0001 + 0.5*conv*0.0001^2))
-  pvbp?: number
-}
-
-export interface OfferInfo {
-  type: 'Call' | 'Put' | 'Нет'  // Тип оферты
-  date: string | null            // Дата оферты
-}
-
-export interface IssueInfo {
-  issue_date: string | null        // BegDistDate
-  maturity_date: string | null     // EndMtyDate
-  coupon_rate: number | null       // cpn_rate (текущий купон, доля)
-  coupon_per_year: number | null   // CouponPerYear
-  coupon_formula?: string | null
-  next_coupon?: number | null
-  nominal?: number | null          // current_fv (текущий номинал)
-  offer?: OfferInfo
-}
-
-export interface CorporateEvent {
-  date: string | null
-  description: string
-}
-
-export interface AnalogousBond {
-  isin?: string
-  name: string
-  duration: number
-  yield: number
-  has_offer?: boolean
-}
-
-export interface IndexYields {
-  gov_less_1y?: number
-  gov_1_3y?: number
-  gov_3_5y?: number
-  gov_5plus?: number
-  corp_aaa?: number
-  corp_aa?: number
-  corp_a?: number
-  corp_bbb?: number
-}
-
-export interface PriceHistoryPoint {
-  date: string
-  price: number
-}
-
-export interface YieldHistoryPoint {
-  date: string
-  ytm: number       // % (например 19.93)
-  gcurve: number     // % (например 19.15)
-  gspread: number    // бп (например 78)
-}
-
-export interface MarginHistoryPoint {
-  date: string
-  dm: number    // Discount Margin, bps
-  qm: number    // Quoted Margin, bps
-  price?: number
-}
-
-export interface CouponPayment {
-  date: string
-  value: number          // Сумма купона в руб.
-  valueprc: number       // Ставка купона, %
-  value_rub: number      // Купон в рублях на одну облигацию
-}
-
-export interface AmortizationPayment {
-  date: string
-  value: number         // Сумма амортизации в руб.
-  valueprc: number      // % от номинала
-}
-
-export interface VanillaBondReport {
-  isin: string
-  issuer: string
-  risk_country: string | null
-  sector: string | null
-  industry: string | null
-  outstanding_amount: number | null
-  listing_level: number | null
-  currency: string
-  nkd: number | null                  // НКД (Накопленный купонный доход)
-  current_yield: number | null        // Текущая доходность CY = (coupon_rate / clean_price) * 100
-  issue_info: IssueInfo
-  ratings: {
-    issue: RatingEntry[]
-    issuer: RatingEntry[]
-    guarantor: RatingEntry[]
-  }
-  market_activity: MarketActivityData
-  pricing: PricingData
-  risk_indicators: RiskIndicators
-  indices: IndexYields
-  corporate_events: CorporateEvent[]
-  price_history: PriceHistoryPoint[]
-  yield_history: YieldHistoryPoint[]
-  analogous_bonds: AnalogousBond[]
-  coupon_schedule: CouponPayment[]
-  amortization_schedule: AmortizationPayment[]
-}
-
-export interface FloaterBondReport extends VanillaBondReport {
-  issues_count: number | null
-  analysis_period: string | null
-  coupon_formula: string | null
-  base_rate_name: string | null        // Название базовой ставки (КС, RUONIA и т.д.)
-  base_rate_value: number | null       // Текущее значение базовой ставки, %
-  margin_history: MarginHistoryPoint[]
-  dm_bps: number | null
-  qm_bps: number | null
-  analogous_bonds_note?: string
 }
 
 // ─── MOEX ISS helpers ──────────────────────────────────────────────────────────
@@ -207,26 +90,6 @@ function parseISSTable(response: unknown, tableName: string): Record<string, any
 }
 
 // ─── Спецификация бумаги ───────────────────────────────────────────────────────
-
-interface SecuritySpec {
-  isin: string
-  secid: string
-  shortname: string
-  name: string
-  issuer: string
-  facevalue: number
-  faceunit: string
-  issuedate: string
-  matdate: string
-  couponpercent: number
-  couponfrequency: number
-  couponvalue: number
-  type: string
-  typename: string
-  group: string
-  listlevel: number
-  initialfacevalue: number
-}
 
 async function getSecuritySpec(isinOrSecid: string): Promise<SecuritySpec> {
   const resp = await moexRequest(`/securities/${isinOrSecid}`)
@@ -268,17 +131,6 @@ async function getSecuritySpec(isinOrSecid: string): Promise<SecuritySpec> {
 
 // ─── История торгов облигации (MOEX ISS) ────────────────────────────────────
 
-interface BondTradeHistory {
-  date: string
-  close: number
-  yield_close: number | null
-  volume: number
-  num_trades: number
-  value: number
-  waprice: number | null
-  duration: number | null
-}
-
 async function getBondHistory(
   secid: string,
   startDate: string,
@@ -318,19 +170,6 @@ async function getBondHistory(
 
 // ─── Текущие рыночные данные (MOEX ISS) ────────────────────────────────────
 
-interface CurrentMarketData {
-  last: number | null
-  bid: number | null
-  offer: number | null
-  spread: number | null
-  yield: number | null
-  duration: number | null
-  accruedint: number | null
-  waprice: number | null
-  closeprice: number | null
-  marketprice: number | null
-}
-
 async function getCurrentMarketData(secid: string): Promise<CurrentMarketData> {
   const resp = await moexRequest(`/engines/stock/markets/bonds/securities/${secid}`)
   const mktData = parseISSTable(resp, 'marketdata')
@@ -356,11 +195,6 @@ async function getCurrentMarketData(secid: string): Promise<CurrentMarketData> {
 }
 
 // ─── RuData helpers ────────────────────────────────────────────────────────────
-
-interface RuDataCreds {
-  login: string
-  password: string
-}
 
 function getRuDataCreds(): RuDataCreds | null {
   // Credentials are now managed server-side only
@@ -411,20 +245,6 @@ async function getRuDataFintoolRef(isin: string, creds?: RuDataCreds): Promise<u
 }
 
 // ─── RuData: Bond/Calculate (аналог CbondsCalcYTM + EfirYields + EfirEndOfDay) ─
-
-interface RuDataBondCalcResult {
-  ytm: number | null            // YTM (десятичная дробь)
-  ytp: number | null            // YTP (десятичная дробь)
-  duration_days: number | null  // Дюрация в днях
-  duration_years: number | null // Дюрация в годах
-  mod_duration: number | null   // Модифицированная дюрация
-  convexity: number | null      // Выпуклость
-  offer_date: string | null     // Дата оферты
-  coupon_rate: number | null    // Текущая ставка купона
-  facevalue: number | null      // Текущий номинал
-  accrued_interest: number | null
-  dm_bps: number | null         // Дисконтная маржа (для флоатеров)
-}
 
 async function getRuDataBondCalc(isin: string, calcDate?: string, price?: number, creds?: RuDataCreds): Promise<RuDataBondCalcResult | null> {
   const c = creds || getRuDataCreds()
@@ -655,27 +475,6 @@ async function getMoexRatings(isin: string): Promise<{ issue: RatingEntry[]; iss
   }
 }
 
-// ─── Оферта: определение типа ──────────────────────────────────────────────────
-// Формула из шаблона: B23=IF(AND(B25<>"",B24=""),"Call",IF(AND(B25<>"",B24<>""),"Put","Нет"))
-// B24 = offer_date (пут оферта, из BondDateParams)
-// B25 = offer_date (пут+колл, из ReferenceParams)
-
-function detectOfferType(
-  offerDatePut: string | null | undefined,
-  offerDatePutCall: string | null | undefined
-): OfferInfo {
-  const hasPut = !!offerDatePut && offerDatePut.trim() !== ''
-  const hasPutCall = !!offerDatePutCall && offerDatePutCall.trim() !== ''
-
-  if (hasPutCall && !hasPut) {
-    return { type: 'Call', date: offerDatePutCall! }
-  }
-  if (hasPutCall && hasPut) {
-    return { type: 'Put', date: offerDatePut! }
-  }
-  return { type: 'Нет', date: null }
-}
-
 // ─── G-curve (ZCYC) ────────────────────────────────────────────────────────────
 // Аналог: _xll.GCurve(date, duration_days, "y") / 100
 // GCurve возвращает % (например 19.15), делим на 100 → десятичная дробь
@@ -742,7 +541,7 @@ async function computeMarketActivity(
   valuationDate: string,
   outstandingAmount: number,
   history: BondTradeHistory[]
-): Promise<MarketActivityData> {
+): Promise<import('./bondReportTypes').MarketActivityData> {
   const valDate = new Date(valuationDate)
   const fromDate = new Date(valDate.getTime() - 30 * 24 * 3600 * 1000)
   const fromStr = fromDate.toISOString().split('T')[0]
@@ -787,142 +586,6 @@ async function computeMarketActivity(
     total_volume: totalVolume,
     is_active: isActive,
   }
-}
-
-// ─── DV01 (из шаблона) ─────────────────────────────────────────────────────────
-// B61 = ABS(1000000*((-B59*0.0001)+(0.5*B60*0.0001*0.0001)))
-// B59 = mod_duration, B60 = convexity
-
-function calcDV01(modDuration: number, convexity: number): number {
-  return Math.abs(1_000_000 * ((-modDuration * 0.0001) + (0.5 * convexity * 0.0001 * 0.0001)))
-}
-
-// ─── Fallback: локальные вычисления YTM, дюрации, выпуклости ────────────────
-
-function calcYTMFromPrice(
-  cleanPricePct: number,
-  faceValue: number,
-  couponRate: number,
-  couponPerYear: number,
-  yearsToMaturity: number
-): number {
-  if (yearsToMaturity <= 0 || couponPerYear <= 0) return 0
-  const C = (couponRate * faceValue) / couponPerYear
-  const n = Math.round(couponPerYear * yearsToMaturity)
-  const price = (cleanPricePct / 100) * faceValue
-
-  let y = couponRate || 0.1
-  for (let iter = 0; iter < 200; iter++) {
-    let pv = 0
-    let dpv = 0
-    for (let t = 1; t <= n; t++) {
-      const cf = t === n ? C + faceValue : C
-      const df = Math.pow(1 + y / couponPerYear, -t)
-      pv += cf * df
-      dpv -= (t / couponPerYear) * cf * df / (1 + y / couponPerYear)
-    }
-    const err = pv - price
-    if (Math.abs(err) < 0.0001) break
-    if (Math.abs(dpv) < 1e-12) break
-    y -= err / dpv
-    if (y < -0.5) y = 0.001
-    if (y > 2) y = 1.999
-  }
-  return y
-}
-
-function calcDuration(
-  ytm: number,
-  faceValue: number,
-  couponRate: number,
-  couponPerYear: number,
-  yearsToMaturity: number
-): number {
-  if (yearsToMaturity <= 0 || couponPerYear <= 0) return 0
-  const C = (couponRate * faceValue) / couponPerYear
-  const n = Math.round(couponPerYear * yearsToMaturity)
-  let weightedSum = 0
-  let totalPV = 0
-
-  for (let t = 1; t <= n; t++) {
-    const cf = t === n ? C + faceValue : C
-    const dt = t / couponPerYear
-    const df = Math.pow(1 + ytm / couponPerYear, -t)
-    const pv = cf * df
-    weightedSum += dt * pv
-    totalPV += pv
-  }
-  return totalPV > 0 ? weightedSum / totalPV : 0
-}
-
-function calcConvexity(
-  ytm: number,
-  faceValue: number,
-  couponRate: number,
-  couponPerYear: number,
-  yearsToMaturity: number
-): number {
-  if (yearsToMaturity <= 0 || couponPerYear <= 0) return 0
-  const C = (couponRate * faceValue) / couponPerYear
-  const n = Math.round(couponPerYear * yearsToMaturity)
-  let convexSum = 0
-  let totalPV = 0
-  const r = ytm / couponPerYear
-
-  for (let t = 1; t <= n; t++) {
-    const cf = t === n ? C + faceValue : C
-    const df = Math.pow(1 + r, -(t + 2))
-    convexSum += cf * t * (t + 1) * df
-    totalPV += cf * Math.pow(1 + r, -t)
-  }
-  if (totalPV <= 0) return 0
-  return convexSum / (totalPV * couponPerYear * couponPerYear)
-}
-
-// ─── Discount Margin (DM) — Newton's method для флоатеров ────────────────────
-// Уравнение: Pd = Σ[(Ci + Ni) / (1 + Indexi/(100*n) + DM/n)^(yfi*n)]
-// DM в базисных пунктах (bps)
-
-function calcDiscountMargin(
-  dirtyPrice: number,
-  faceValue: number,
-  couponPayments: Array<{ yearFraction: number; amount: number; refRate: number }>,
-  paymentsPerYear: number,
-  maxIter = 100,
-  tol = 1e-8
-): number {
-  if (!couponPayments.length || dirtyPrice <= 0 || paymentsPerYear <= 0) return 0
-  const n = paymentsPerYear
-
-  let dmBps = 0
-
-  for (let iter = 0; iter < maxIter; iter++) {
-    let pCalc = 0
-    let pDeriv = 0
-    const dmDecimal = dmBps / 10000
-
-    for (const cf of couponPayments) {
-      const indexRate = cf.refRate / 100
-      const discountRate = indexRate / n + dmDecimal / n
-      const exponent = cf.yearFraction * n
-      const discFactor = Math.pow(1 + discountRate, exponent)
-
-      if (discFactor <= 0) continue
-      pCalc += cf.amount / discFactor
-      pDeriv += -cf.amount * exponent * (1 / n) / Math.pow(1 + discountRate, exponent + 1)
-    }
-
-    const err = pCalc - dirtyPrice
-    if (Math.abs(err) < tol) break
-    if (Math.abs(pDeriv) < 1e-12) break
-
-    dmBps -= err / pDeriv
-
-    if (dmBps < -5000) dmBps = -4999
-    if (dmBps > 50000) dmBps = 49999
-  }
-
-  return dmBps
 }
 
 // ─── Board auto-detection для облигаций ────────────────────────────────────────
@@ -982,20 +645,6 @@ async function getCouponSchedule(isin: string): Promise<{
   } catch {
     return { coupons: [], amortizations: [], offers: [] }
   }
-}
-
-// ─── Текущая доходность (Current Yield) ─────────────────────────────────────
-// CY = (annual_coupon / clean_price_rub) * 100
-
-function calcCurrentYield(
-  couponRate: number,
-  faceValue: number,
-  cleanPricePct: number
-): number {
-  if (cleanPricePct <= 0) return 0
-  const annualCoupon = couponRate * faceValue
-  const cleanPriceRub = (cleanPricePct / 100) * faceValue
-  return (annualCoupon / cleanPriceRub) * 100
 }
 
 // ─── Индексы (MOEX ISS) ────────────────────────────────────────────────────────
@@ -1830,13 +1479,6 @@ export async function fetchAnalogBondData(
 }
 
 // ─── Утилиты ───────────────────────────────────────────────────────────────────
-
-function formatDateRu(d: Date): string {
-  const day = String(d.getDate()).padStart(2, '0')
-  const month = String(d.getMonth() + 1).padStart(2, '0')
-  const year = d.getFullYear()
-  return `${day}.${month}.${year}`
-}
 
 export function formatDateDisplay(dateStr?: string | null): string {
   if (!dateStr) return '—'
