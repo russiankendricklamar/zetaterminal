@@ -1,6 +1,7 @@
 """
 API endpoints для CCMV оптимизации портфеля.
 """
+import asyncio
 from datetime import datetime
 from typing import Any
 
@@ -66,12 +67,12 @@ async def optimize_ccmv_portfolio(http_request: Request, request: CCMVRequest):
     if request.method not in ['delta', 'alpha']:
         raise ValueError(f"Метод должен быть 'delta' или 'alpha', получено: {request.method}")
 
-    result = optimize_ccmv(
+    result = await asyncio.to_thread(lambda: optimize_ccmv(
         R=R, mu=mu, Sigma=Sigma,
         Delta=request.Delta, bar_w=request.bar_w, gamma=request.gamma,
         method=request.method, asset_names=request.asset_names,
         risk_free_rate=request.risk_free_rate
-    )
+    ))
 
     return CCMVResponse(
         optimal_weights=result['optimal_weights'], clusters=result['clusters'],

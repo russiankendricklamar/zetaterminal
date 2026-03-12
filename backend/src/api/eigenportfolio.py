@@ -1,6 +1,7 @@
 """
 API endpoints для анализа Eigenportfolios (PCA).
 """
+import asyncio
 from datetime import datetime
 from typing import Any
 
@@ -65,13 +66,13 @@ async def decompose(http_request: Request, request: EigenportfolioRequest):
                 detail=f"portfolio_weights длина {len(request.portfolio_weights)} != N активов {n_assets}"
             )
 
-    result = compute_eigenportfolios(
+    result = await asyncio.to_thread(lambda: compute_eigenportfolios(
         returns=request.returns,
         asset_names=request.asset_names,
         use_shrinkage=request.use_shrinkage,
         n_components=request.n_components,
         portfolio_weights=request.portfolio_weights,
-    )
+    ))
     return EigenportfolioResponse(result=result)
 
 

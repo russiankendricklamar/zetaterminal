@@ -1,6 +1,7 @@
 """
 API endpoints для статистического анализа коэффициента Шарпа.
 """
+import asyncio
 from datetime import datetime
 from typing import Any
 
@@ -54,12 +55,12 @@ async def analyze_sharpe(http_request: Request, request: SharpeStatsRequest):
     - Probabilistic Sharpe Ratio (PSR) и Deflated Sharpe Ratio (DSR)
     - Данные для PSR-кривой и распределения SR под H₀
     """
-    result = compute_sharpe_stats(
+    result = await asyncio.to_thread(lambda: compute_sharpe_stats(
         returns=request.returns,
         risk_free_rate=request.risk_free_rate,
         periods_per_year=request.periods_per_year,
         benchmark_sr=request.benchmark_sr,
         n_trials=request.n_trials,
-    )
+    ))
     return SharpeStatsResponse(result=result)
     return {"status": "healthy", "service": "sharpe-stats"}

@@ -1,6 +1,7 @@
 """
 API endpoints для PBO (Probability of Backtest Overfitting) и DSR.
 """
+import asyncio
 from datetime import datetime
 from typing import Any
 
@@ -55,12 +56,12 @@ async def analyze_pbo(http_request: Request, request: PBORequest):
     - Логит-гистограмма OOS ранга
     - Статистика по каждой стратегии (SR, PSR)
     """
-    result = compute_pbo(
+    result = await asyncio.to_thread(lambda: compute_pbo(
         strategy_returns=request.strategy_returns,
         n_splits=request.n_splits,
         annualize=request.annualize,
         sr_benchmark=request.sr_benchmark,
-    )
+    ))
     return PBOResponse(result=result)
 
 

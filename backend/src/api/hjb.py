@@ -1,6 +1,7 @@
 """
 API endpoints для HJB оптимизации портфеля.
 """
+import asyncio
 from datetime import datetime
 from typing import Any
 
@@ -72,10 +73,10 @@ async def optimize_hjb_portfolio(http_request: Request, request: HJBRequest):
             raise ValueError("Ковариационная матрица должна быть квадратной")
 
     mc_params = request.monte_carlo.model_dump() if request.monte_carlo else None
-    result = optimize_hjb(
+    result = await asyncio.to_thread(lambda: optimize_hjb(
         mu=mu, cov_matrix=cov_matrix, risk_free_rate=request.risk_free_rate,
         gamma=request.gamma, asset_names=request.asset_names, monte_carlo_params=mc_params
-    )
+    ))
 
     return HJBResponse(portfolio_stats=result['portfolio_stats'], monte_carlo=result.get('monte_carlo'))
 

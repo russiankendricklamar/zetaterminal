@@ -1,6 +1,7 @@
 """
 API endpoints для оценки валютных форвардов.
 """
+import asyncio
 from typing import Any
 
 from fastapi import APIRouter, Request
@@ -62,7 +63,7 @@ async def valuate_forward(http_request: Request, request: ForwardValuationReques
     """
     Выполняет оценку форварда различных типов.
     """
-    return calculate_forward_valuation(
+    return await asyncio.to_thread(lambda: calculate_forward_valuation(
         forward_type=request.forwardType,
         spot_price=request.spotPrice,
         time_to_maturity=request.timeToMaturity,
@@ -96,7 +97,7 @@ async def valuate_forward(http_request: Request, request: ForwardValuationReques
         settlement_currency=request.settlementCurrency,
         internal_rate=request.internalRate,
         external_rate=request.externalRate
-    )
+    ))
 
 
 @router.get("/health")

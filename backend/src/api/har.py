@@ -1,6 +1,7 @@
 """
 API endpoints для HAR модели прогнозирования волатильности.
 """
+import asyncio
 from datetime import datetime
 from typing import Any
 
@@ -60,12 +61,12 @@ async def fit_har(http_request: Request, request: HARRequest):
         if h < 1 or h > 252:
             raise HTTPException(status_code=400, detail="Горизонт прогноза должен быть от 1 до 252 дней")
 
-    result = fit_har_model(
+    result = await asyncio.to_thread(lambda: fit_har_model(
         rv=request.rv,
         bv=request.bv,
         log_transform=request.log_transform,
         forecast_horizons=request.forecast_horizons,
         train_ratio=request.train_ratio,
-    )
+    ))
     return HARResponse(result=result)
     return {"status": "healthy", "service": "har"}

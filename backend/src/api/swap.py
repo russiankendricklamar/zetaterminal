@@ -1,6 +1,7 @@
 """
 API endpoints для оценки свопов (IRS, CDS, Basis Swaps, FX Swaps).
 """
+import asyncio
 from typing import Any
 
 from fastapi import APIRouter, Request
@@ -34,7 +35,7 @@ async def valuate_swap(http_request: Request, request: SwapValuationRequest):
     """
     Выполняет оценку свопа.
     """
-    return calculate_swap_valuation(
+    return await asyncio.to_thread(lambda: calculate_swap_valuation(
         notional=request.notional,
         tenor=request.tenor,
         fixed_rate=request.fixedRate,
@@ -44,7 +45,7 @@ async def valuate_swap(http_request: Request, request: SwapValuationRequest):
         discount_rate=request.discountRate,
         volatility=request.volatility,
         swap_type=request.swapType
-    )
+    ))
 
 
 class FxSwapLeg(FinancialBaseModel):
@@ -73,7 +74,7 @@ class FxSwapValuationRequest(FinancialBaseModel):
 @service_endpoint("FX swap valuation")
 async def valuate_fx_swap(http_request: Request, request: FxSwapValuationRequest):
     """Выполняет оценку FX-свопа."""
-    return calculate_fx_swap_valuation(
+    return await asyncio.to_thread(lambda: calculate_fx_swap_valuation(
         buy_currency_near=request.nearLeg.buyCurrency,
         sell_currency_near=request.nearLeg.sellCurrency,
         nominal_buy_near=request.nearLeg.nominalBuy,
@@ -90,7 +91,7 @@ async def valuate_fx_swap(http_request: Request, request: FxSwapValuationRequest
         spot_max=request.spotMax,
         rate_internal=request.rateInternal,
         rate_external=request.rateExternal,
-    )
+    ))
 
 
 @router.get("/health")

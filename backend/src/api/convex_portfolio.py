@@ -1,6 +1,7 @@
 """
 API endpoints для Convex Portfolio Construction.
 """
+import asyncio
 from datetime import datetime
 from typing import Any
 
@@ -80,7 +81,7 @@ async def optimize(http_request: Request, request: ConvexPortfolioRequest):
         if invalid:
             raise HTTPException(status_code=400, detail=f"Неизвестные задачи: {invalid}")
 
-    return ConvexPortfolioResponse(result=compute_convex_portfolio(
+    result = await asyncio.to_thread(lambda: compute_convex_portfolio(
         returns=request.returns,
         asset_names=request.asset_names,
         objectives=request.objectives,
@@ -96,6 +97,7 @@ async def optimize(http_request: Request, request: ConvexPortfolioRequest):
         annualize=request.annualize,
         n_frontier=request.n_frontier,
     ))
+    return ConvexPortfolioResponse(result=result)
 
 
 @router.get("/health")

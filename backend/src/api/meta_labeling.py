@@ -1,6 +1,7 @@
 """
 API endpoints для Meta-Labeling (Signal Quality Control).
 """
+import asyncio
 from datetime import datetime
 from typing import Any
 
@@ -61,7 +62,7 @@ async def analyze(http_request: Request, request: MetaLabelingRequest):
     - Precision-recall curve (threshold sweep)
     - Feature importances мета-модели
     """
-    result = compute_meta_labeling(
+    result = await asyncio.to_thread(lambda: compute_meta_labeling(
         prices=request.prices,
         pt_multiplier=request.pt_multiplier,
         sl_multiplier=request.sl_multiplier,
@@ -70,6 +71,6 @@ async def analyze(http_request: Request, request: MetaLabelingRequest):
         train_ratio=request.train_ratio,
         regularization=request.regularization,
         meta_threshold=request.meta_threshold,
-    )
+    ))
     return MetaLabelingResponse(result=result)
     return {"status": "healthy", "service": "meta_labeling"}

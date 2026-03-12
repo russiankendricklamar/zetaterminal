@@ -1,6 +1,7 @@
 """
 API endpoints для Time-Series vs Cross-Sectional факторного анализа.
 """
+import asyncio
 from datetime import datetime
 from typing import Any
 
@@ -59,12 +60,12 @@ async def analyze_factors(http_request: Request, request: FactorAnalysisRequest)
     - Ценовые ошибки per asset
     - R² (TS и CS)
     """
-    result = run_factor_analysis(
+    result = await asyncio.to_thread(lambda: run_factor_analysis(
         returns=request.returns,
         factors=request.factors,
         asset_names=request.asset_names,
         factor_names=request.factor_names,
-    )
+    ))
     return FactorAnalysisResponse(result=result)
 
 

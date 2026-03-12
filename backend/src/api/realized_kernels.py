@@ -1,6 +1,7 @@
 """
 API endpoints для оценщиков реализованной волатильности.
 """
+import asyncio
 from datetime import datetime
 from typing import Any
 
@@ -57,13 +58,13 @@ async def estimate_realized_kernels(http_request: Request, request: RealizedKern
     if request.kernel not in ("parzen", "tukey-hanning", "bartlett"):
         raise HTTPException(status_code=400, detail="kernel должен быть 'parzen', 'tukey-hanning' или 'bartlett'")
 
-    result = compute_realized_kernels(
+    result = await asyncio.to_thread(lambda: compute_realized_kernels(
         prices=request.prices,
         kernel=request.kernel,
         bandwidth=request.bandwidth,
         tsrv_scales=request.tsrv_scales,
         annualize=request.annualize,
         periods_per_day=request.periods_per_day,
-    )
+    ))
     return RealizedKernelsResponse(result=result)
     return {"status": "healthy", "service": "realized-kernels"}

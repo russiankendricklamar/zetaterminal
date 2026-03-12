@@ -1,6 +1,7 @@
 """
 API endpoints для Orthogonal Alpha Stacking.
 """
+import asyncio
 from datetime import datetime
 from typing import Any
 
@@ -67,14 +68,14 @@ async def analyze(http_request: Request, request: AlphaStackingRequest):
     - IC decay по горизонтам
     - IC стэкингового сигнала во времени
     """
-    result = compute_alpha_stacking(
+    result = await asyncio.to_thread(lambda: compute_alpha_stacking(
         panel_signals=request.panel_signals,
         panel_fwd_returns=request.panel_fwd_returns,
         signal_names=request.signal_names,
         ortho_method=request.ortho_method,
         ic_horizons=request.ic_horizons or [1, 5, 10, 21],
         shrinkage=request.shrinkage,
-    )
+    ))
     return AlphaStackingResponse(result=result)
 
 

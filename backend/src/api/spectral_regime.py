@@ -7,6 +7,7 @@ Endpoints:
 - POST /fetch-data - Загрузка данных актива и расчёт доходностей
 """
 
+import asyncio
 from datetime import datetime, timedelta
 from typing import Any
 
@@ -242,14 +243,14 @@ async def analyze_spectral_regimes(http_request: Request, request: SpectralAnaly
         )
 
     # Запуск анализа
-    result = run_spectral_regime_analysis(
+    result = await asyncio.to_thread(lambda: run_spectral_regime_analysis(
         returns=returns,
         n_poles=request.n_poles,
         window_size=request.window_size,
         max_lag=request.max_lag,
         auto_optimize=request.auto_optimize or (request.n_poles is None or request.window_size is None),
         criterion=request.criterion
-    )
+    ))
 
     return SpectralAnalysisResponse(
         success=True,

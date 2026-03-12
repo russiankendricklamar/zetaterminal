@@ -1,6 +1,7 @@
 """
 API endpoints для Black-Litterman оптимизации портфеля.
 """
+import asyncio
 from datetime import datetime
 
 import numpy as np
@@ -60,11 +61,11 @@ async def optimize_bl_portfolio(http_request: Request, request: BlackLittermanRe
         Q[k] = view.expected_return
         confidence[k] = view.confidence
 
-    result = optimize_black_litterman(
+    result = await asyncio.to_thread(lambda: optimize_black_litterman(
         cov_matrix=Sigma, market_weights=w_mkt, views_P=P, views_Q=Q,
         tau=request.tau, delta=request.delta, risk_free_rate=request.risk_free_rate,
         confidence=confidence, asset_names=request.asset_names, max_weight=request.max_weight,
-    )
+    ))
     result["timestamp"] = datetime.now().isoformat()
     return result
 

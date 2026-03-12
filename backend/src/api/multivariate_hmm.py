@@ -10,6 +10,7 @@ Endpoints:
 - GET /multivariate-hmm/export - Экспорт результатов в DataFrame
 """
 
+import asyncio
 import logging
 from typing import Any
 
@@ -246,25 +247,27 @@ async def fit_model(http_request: Request, request: FitRequest = Body(...), user
 
     # Автоматическое определение количества режимов или использование заданного
     if request.auto_optimize and request.n_regimes is None:
-        optimal_n_regimes, _best_criterion_value = model.find_optimal_n_regimes(
-            y=y,
-            asset_names=asset_names,
-            min_regimes=2,
-            max_regimes=5,
-            criterion=request.criterion,
-            max_iterations=request.max_iterations,
-            tol=request.tol
+        optimal_n_regimes, _best_criterion_value = await asyncio.to_thread(
+            lambda: model.find_optimal_n_regimes(
+                y=y,
+                asset_names=asset_names,
+                min_regimes=2,
+                max_regimes=5,
+                criterion=request.criterion,
+                max_iterations=request.max_iterations,
+                tol=request.tol
+            )
         )
         n_regimes_used = optimal_n_regimes
     else:
         n_regimes_used = request.n_regimes or 2
         model.n_regimes = n_regimes_used
-        model.fit(
+        await asyncio.to_thread(lambda: model.fit(
             y=y,
             asset_names=asset_names,
             max_iterations=request.max_iterations,
             tol=request.tol
-        )
+        ))
 
     # Сохраняем модель (с LRU-eviction, scoped по user)
     model_key = _get_model_key(asset_names, n_regimes_used, user.sub)
@@ -300,15 +303,18 @@ async def predict_states(request: PredictRequest = Body(...), user: TokenPayload
 
     if request.data is not None:
         y = np.array(request.data, dtype=np.float64)
-        states = model.predict_states(y=y)
-        # Вычисляем вероятности для новых данных
-        alpha, beta = model.forward_backward((y - model.y_mean) / model.y_std)
-        gamma, _ = model.forward_backward_posterior(
-            (y - model.y_mean) / model.y_std, alpha, beta
-        )
-        probabilities = gamma.tolist()
+
+        def _predict_with_data():
+            s = model.predict_states(y=y)
+            alpha, beta = model.forward_backward((y - model.y_mean) / model.y_std)
+            gamma, _ = model.forward_backward_posterior(
+                (y - model.y_mean) / model.y_std, alpha, beta
+            )
+            return s, gamma.tolist()
+
+        states, probabilities = await asyncio.to_thread(_predict_with_data)
     else:
-        states = model.predict_states()
+        states = await asyncio.to_thread(model.predict_states)
         probabilities = model.gamma.tolist()
 
     return PredictResponse(
@@ -364,7 +370,7 @@ async def simulate_trajectories(request: SimulateRequest = Body(...), user: Toke
         Симулированные траектории
     """
     model = _get_user_model(user.sub)
-    trajectories = model.simulate(n_steps=request.n_steps)
+    trajectories = await asyncio.to_thread(model.simulate, request.n_steps)
 
     return SimulateResponse(
         trajectories=trajectories.tolist(),
