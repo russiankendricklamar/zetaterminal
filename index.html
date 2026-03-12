@@ -5,9 +5,9 @@
     <title>Zeta Terminal</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     
-    <!-- Content Security Policy -->
+    <!-- Content Security Policy (production-safe: no unsafe-eval, no localhost) -->
     <meta http-equiv="Content-Security-Policy"
-      content="default-src 'self'; frame-ancestors 'self'; script-src 'self' 'unsafe-eval' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; connect-src 'self' https://zeta-terminal-backend.onrender.com https://iss.moex.com https://dh2.efir-net.ru http://localhost:* http://127.0.0.1:*; img-src 'self' data: blob: https:; worker-src 'self' blob:;">
+      content="default-src 'self'; frame-ancestors 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; connect-src 'self' https://zeta-terminal-backend.onrender.com https://iss.moex.com https://dh2.efir-net.ru; img-src 'self' data: blob: https:; worker-src 'self' blob:;">
     
     <!-- Favicon -->
     <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
