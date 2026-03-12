@@ -11,11 +11,25 @@ const API_BASE_URL = getApiBaseUrl();
 export interface StressScenario {
   name: string;
   key: string;
-  type: 'return_shock' | 'volatility_shock' | 'correlation_shock';
+  type: 'return_shock' | 'volatility_shock' | 'correlation_shock' | 'historical';
   return_multiplier?: number;
   volatility_multiplier?: number;
   correlation_multiplier?: number;
+  scenario_key?: string;
   seed?: number;
+}
+
+export interface HistoricalScenario {
+  key: string;
+  name: string;
+  description: string;
+  period_start: string;
+  period_end: string;
+  duration_days: number;
+  severity: string;
+  shocks: Record<string, number>;
+  asset_class_impacts: Record<string, number>;
+  correlation_regime: string;
 }
 
 export interface StressTestRequest {
@@ -118,6 +132,28 @@ export const runStressTests = async (request: StressTestRequest): Promise<Stress
     return await response.json();
   } catch (error) {
     console.error('Stress Test Failed:', error);
+    throw error;
+  }
+};
+
+/**
+ * Fetches available historical crisis scenarios from the backend
+ */
+export const fetchHistoricalScenarios = async (): Promise<HistoricalScenario[]> => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/stress/historical-scenarios`, {
+      headers: getApiHeaders(),
+    });
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ detail: 'Unknown error' }));
+      throw new Error(error.detail || `HTTP error! status: ${response.status}`);
+    }
+
+    const data = await response.json();
+    return data.scenarios;
+  } catch (error) {
+    console.error('Fetch Historical Scenarios Failed:', error);
     throw error;
   }
 };

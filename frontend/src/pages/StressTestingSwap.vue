@@ -330,14 +330,17 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
 import { useSwapRegistryStore } from '@/stores/swapRegistry'
+import { runSwapStressTests, fetchSwapStressScenarios } from '@/services/swapStressService'
+import type { SwapPosition, SwapStressResult } from '@/services/swapStressService'
 
 const swapRegistryStore = useSwapRegistryStore()
 
 const isRunning = ref(false)
 const shockMultiplier = ref(1.0)
 const activeShockType = ref('curve')
+const backendError = ref<string | null>(null)
 
 // Shock Types
 const shockTypes = ref([
@@ -627,20 +630,86 @@ const getSeverityIcon = (severity: string) => {
   return icons[severity] || ''
 }
 
+const buildPositionsFromRegistry = (): SwapPosition[] => {
+  if (swapRegistryStore.totalSwaps === 0) {
+    // Default position when registry is empty
+    return [{
+      notional: 100_000_000,
+      tenor: 5,
+      fixed_rate: 8.5,
+      floating_rate: 7.0,
+      spread: 50,
+      coupons_per_year: 2,
+      discount_rate: 7.5,
+      volatility: 20,
+      swap_type: 'irs',
+    }]
+  }
+  return swapRegistryStore.registrySwaps.map(swap => ({
+    notional: swap.notional,
+    tenor: swap.tenor,
+    fixed_rate: swap.fixedRate,
+    floating_rate: swap.floatingRate,
+    spread: swap.spread,
+    coupons_per_year: swap.couponsPerYear,
+    discount_rate: swap.discountRate,
+    volatility: swap.volatility ?? 20,
+    swap_type: swap.swapType,
+  }))
+}
+
+const applyBackendResults = (results: SwapStressResult[]) => {
+  // Merge backend results into scenarios, preserving hardcoded as fallback shape
+  scenarios.value = results.map((r, idx) => ({
+    id: r.id ?? idx + 1,
+    name: r.name,
+    description: r.description,
+    shockType: r.shockType,
+    pnlImpact: r.pnlImpact,
+    dv01Change: r.dv01Change,
+    spreadDv01: r.spreadDv01,
+    delta: r.delta,
+    gamma: r.gamma,
+    vega: r.vega,
+    theta: r.theta,
+    duration: r.duration,
+    probability: r.probability,
+    severity: r.severity,
+    marketShocks: r.marketShocks,
+    keyRateDurations: r.keyRateDurations,
+    positionImpact: r.positionImpact,
+  }))
+  if (scenarios.value.length > 0) {
+    selectedScenario.value = scenarios.value[0]
+  }
+}
+
 const runStressTests = async () => {
   if (isRunning.value) return
   isRunning.value = true
-  
+  backendError.value = null
+
   try {
-    for (let i = 0; i <= 100; i += 20) {
-      await new Promise(r => setTimeout(r, 250))
-    }
+    const positions = buildPositionsFromRegistry()
+    const results = await runSwapStressTests(positions, shockMultiplier.value)
+    applyBackendResults(results)
   } catch (e) {
-    console.error(e)
+    // Keep hardcoded data as fallback
+    backendError.value = e instanceof Error ? e.message : 'Stress test failed'
+    console.error('Swap stress test error:', e)
   } finally {
     isRunning.value = false
   }
 }
+
+onMounted(async () => {
+  try {
+    await fetchSwapStressScenarios()
+    // Scenarios loaded successfully - predefined are already in hardcoded fallback
+  } catch {
+    // Silently use hardcoded scenarios
+  }
+})
 </script>
 
 <style scoped>

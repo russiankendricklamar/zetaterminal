@@ -7,6 +7,7 @@ from fastapi import APIRouter, Request
 from pydantic import Field
 
 from src.middleware.rate_limit import limiter
+from src.services.historical_scenarios import get_all_scenarios
 from src.services.stress_service import run_stress_test
 from src.utils.error_handler import service_endpoint
 from src.utils.financial_validation import (
@@ -24,10 +25,11 @@ class StressScenario(FinancialBaseModel):
     """Описание стресс-сценария."""
     name: str = Field(..., max_length=200, description="Название сценария")
     key: str = Field(..., max_length=100, description="Уникальный ключ сценария")
-    type: str = Field('return_shock', description="Тип сценария: 'return_shock', 'volatility_shock', 'correlation_shock'")
+    type: str = Field('return_shock', description="Тип сценария: 'return_shock', 'volatility_shock', 'correlation_shock', 'historical'")
     return_multiplier: float | None = Field(None, ge=-100, le=100, description="Множитель доходности (для return_shock)")
     volatility_multiplier: float | None = Field(None, ge=0, le=100, description="Множитель волатильности (для volatility_shock)")
     correlation_multiplier: float | None = Field(None, ge=-10, le=10, description="Множитель корреляций (для correlation_shock)")
+    scenario_key: str | None = Field(None, max_length=100, description="Ключ исторического сценария (для type='historical')")
     seed: int | None = Field(None, description="Seed для воспроизводимости")
 
 
@@ -42,6 +44,14 @@ class StressTestRequest(FinancialBaseModel):
     asset_names: list[str] | None = Field(None, max_length=MAX_ASSETS, description="Названия активов")
     n_paths: int = Field(1000, ge=1, le=MAX_MONTE_CARLO_PATHS, description="Количество Монте-Карло траекторий")
     seed: int | None = Field(None, description="Seed для воспроизводимости")
+
+
+@router.get("/historical-scenarios")
+@limiter.limit("30/minute")
+@service_endpoint("List historical scenarios")
+async def list_historical_scenarios(http_request: Request):
+    """Return all available historical crisis scenarios."""
+    return {"scenarios": get_all_scenarios()}
 
 
 @router.post("/test", response_model=dict[str, Any])

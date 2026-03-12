@@ -113,3 +113,129 @@ export const checkBacktestHealth = async (): Promise<{ status: string; service: 
     throw error;
   }
 };
+
+
+// ── Historical Backtest ─────────────────────────────────────────────────────
+
+export interface HistoricalBacktestRequest {
+  historical_prices: number[][];
+  asset_names?: string[];
+  rebalance_frequency?: 'daily' | 'weekly' | 'monthly' | 'quarterly';
+  strategy_type?: 'equal_weight' | 'min_variance' | 'risk_parity' | 'max_sharpe' | 'custom';
+  initial_weights?: number[];
+  lookback_window?: number;
+  transaction_cost_bps?: number;
+  risk_free_rate?: number;
+  initial_capital?: number;
+}
+
+export interface HistoricalBacktestResponse {
+  equity_curve: number[];
+  benchmark_curve: number[];
+  dates: string[];
+  metrics: BacktestMetrics & {
+    calmar_ratio: number;
+    sortino_ratio: number;
+    information_ratio: number;
+  };
+  weights_history: number[][];
+  asset_names: string[];
+  n_rebalances: number;
+  total_transaction_cost: number;
+  transaction_cost_pct: number;
+  strategy_type: string;
+  rebalance_frequency: string;
+}
+
+export const runHistoricalBacktest = async (
+  request: HistoricalBacktestRequest,
+): Promise<HistoricalBacktestResponse> => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/backtest/historical`, {
+      method: 'POST',
+      headers: getApiHeaders(),
+      body: JSON.stringify(request),
+    });
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ detail: 'Unknown error' }));
+      throw new Error(error.detail || `HTTP error! status: ${response.status}`);
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error('Historical Backtest Failed:', error);
+    throw error;
+  }
+};
+
+
+// ── Walk-Forward Optimization ───────────────────────────────────────────────
+
+export interface WalkForwardRequest {
+  historical_prices: number[][];
+  asset_names?: string[];
+  in_sample_window?: number;
+  out_of_sample_window?: number;
+  optimization_method?: 'min_variance' | 'risk_parity' | 'max_sharpe';
+  step_size?: number;
+  transaction_cost_bps?: number;
+  risk_free_rate?: number;
+  initial_capital?: number;
+}
+
+export interface WalkForwardWindowMetric {
+  window: number;
+  is_start: number;
+  is_end: number;
+  oos_start: number;
+  oos_end: number;
+  is_sharpe: number;
+  oos_sharpe: number;
+  oos_return: number;
+  oos_vol: number;
+  weights: number[];
+}
+
+export interface WalkForwardResponse {
+  oos_equity_curve: number[];
+  dates: string[];
+  metrics: BacktestMetrics & {
+    calmar_ratio: number;
+    sortino_ratio: number;
+  };
+  per_window_metrics: WalkForwardWindowMetric[];
+  aggregated_stats: {
+    n_windows: number;
+    avg_is_sharpe: number;
+    avg_oos_sharpe: number;
+    degradation_ratio: number;
+    total_oos_return: number;
+  };
+  asset_names: string[];
+  optimization_method: string;
+  in_sample_window: number;
+  out_of_sample_window: number;
+}
+
+export const runWalkForwardOptimization = async (
+  request: WalkForwardRequest,
+): Promise<WalkForwardResponse> => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/backtest/walk-forward`, {
+      method: 'POST',
+      headers: getApiHeaders(),
+      body: JSON.stringify(request),
+    });
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ detail: 'Unknown error' }));
+      throw new Error(error.detail || `HTTP error! status: ${response.status}`);
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error('Walk-Forward Optimization Failed:', error);
+    throw error;
+  }
+};

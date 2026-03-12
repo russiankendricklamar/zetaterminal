@@ -7,18 +7,25 @@
           Результаты бэктеста
         </h1>
         <p class="section-subtitle">
-          Историческая симуляция стратегии (Long/Short)
+          {{ modeSubtitle }}
         </p>
       </div>
-      
+
       <div class="header-right">
-        <!-- Selected Bank -->
-        <div class="glass-pill control-pill">
-          <span class="lbl-mini">Банк:</span>
-          <span class="text-white font-bold">{{ selectedBank.name }}</span>
+        <!-- Mode Selector -->
+        <div class="glass-segmented-control">
+          <button
+            v-for="m in modes"
+            :key="m.key"
+            class="seg-btn"
+            :class="{ active: activeMode === m.key }"
+            @click="activeMode = m.key"
+          >
+            {{ m.label }}
+          </button>
         </div>
-        
-        <!-- Glass Segmented Control -->
+
+        <!-- Period Selector -->
         <div class="glass-segmented-control">
           <button
             v-for="period in periods"
@@ -33,17 +40,160 @@
       </div>
     </div>
 
-    <!-- KPI Cards (4-column) -->
+    <!-- Controls Panel (Historical / Walk-Forward) -->
+    <div
+      v-if="activeMode !== 'montecarlo'"
+      class="controls-panel"
+    >
+      <div class="controls-row">
+        <!-- Strategy (Historical only) -->
+        <div
+          v-if="activeMode === 'historical'"
+          class="control-group"
+        >
+          <label class="control-label font-oswald">СТРАТЕГИЯ</label>
+          <select
+            v-model="strategyType"
+            class="control-select"
+          >
+            <option value="equal_weight">
+              Equal Weight
+            </option>
+            <option value="min_variance">
+              Min Variance
+            </option>
+            <option value="risk_parity">
+              Risk Parity
+            </option>
+            <option value="max_sharpe">
+              Max Sharpe
+            </option>
+          </select>
+        </div>
+
+        <!-- Optimization Method (Walk-Forward only) -->
+        <div
+          v-if="activeMode === 'walkforward'"
+          class="control-group"
+        >
+          <label class="control-label font-oswald">МЕТОД ОПТИМИЗАЦИИ</label>
+          <select
+            v-model="wfOptMethod"
+            class="control-select"
+          >
+            <option value="max_sharpe">
+              Max Sharpe
+            </option>
+            <option value="min_variance">
+              Min Variance
+            </option>
+            <option value="risk_parity">
+              Risk Parity
+            </option>
+          </select>
+        </div>
+
+        <!-- Rebalance Frequency (Historical only) -->
+        <div
+          v-if="activeMode === 'historical'"
+          class="control-group"
+        >
+          <label class="control-label font-oswald">РЕБАЛАНСИРОВКА</label>
+          <select
+            v-model="rebalanceFreq"
+            class="control-select"
+          >
+            <option value="daily">
+              Ежедневно
+            </option>
+            <option value="weekly">
+              Еженедельно
+            </option>
+            <option value="monthly">
+              Ежемесячно
+            </option>
+            <option value="quarterly">
+              Ежеквартально
+            </option>
+          </select>
+        </div>
+
+        <!-- IS/OOS Windows (Walk-Forward only) -->
+        <div
+          v-if="activeMode === 'walkforward'"
+          class="control-group"
+        >
+          <label class="control-label font-oswald">IS ОКНО (ДНИ)</label>
+          <input
+            v-model.number="wfIsWindow"
+            type="number"
+            class="control-input font-mono"
+            min="30"
+            max="1260"
+          >
+        </div>
+        <div
+          v-if="activeMode === 'walkforward'"
+          class="control-group"
+        >
+          <label class="control-label font-oswald">OOS ОКНО (ДНИ)</label>
+          <input
+            v-model.number="wfOosWindow"
+            type="number"
+            class="control-input font-mono"
+            min="5"
+            max="252"
+          >
+        </div>
+
+        <!-- Transaction Cost Slider -->
+        <div class="control-group">
+          <label class="control-label font-oswald">ТРАНЗАКЦИОННЫЕ ИЗДЕРЖКИ</label>
+          <div class="slider-row">
+            <input
+              v-model.number="txCostBps"
+              type="range"
+              min="0"
+              max="50"
+              step="1"
+              class="control-slider"
+            >
+            <span class="slider-value font-mono">{{ txCostBps }} bps</span>
+          </div>
+        </div>
+
+        <!-- Run Button -->
+        <div class="control-group control-group-btn">
+          <button
+            class="btn-run font-oswald"
+            :disabled="isRunning"
+            @click="runActiveBacktest"
+          >
+            {{ isRunning ? 'РАСЧЕТ...' : 'ЗАПУСТИТЬ →' }}
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Error Message -->
+    <div
+      v-if="errorMessage"
+      class="error-banner"
+    >
+      {{ errorMessage }}
+    </div>
+
+    <!-- KPI Cards (6-column for extended metrics) -->
     <div class="kpi-cards-grid">
       <div class="glass-card kpi-card">
         <div class="kpi-label">
           Общая доходность
         </div>
         <div class="kpi-value text-gradient-green">
-          {{ backtestResults?.metrics ? (backtestResults.metrics.total_return * 100).toFixed(1) + '%' : '+24.5%' }}
+          {{ currentMetrics ? (currentMetrics.total_return * 100).toFixed(1) + '%' : '+24.5%' }}
         </div>
         <div class="kpi-change text-green">
-          <span class="icon-up">↑</span> vs SPY: +6.2%
+          <span class="icon-up">↑</span> vs Benchmark
         </div>
       </div>
 
@@ -52,10 +202,10 @@
           CAGR (Годовая)
         </div>
         <div class="kpi-value text-white">
-          {{ backtestResults?.metrics ? (backtestResults.metrics.cagr * 100).toFixed(1) + '%' : '18.2%' }}
+          {{ currentMetrics ? (currentMetrics.cagr * 100).toFixed(1) + '%' : '18.2%' }}
         </div>
         <div class="kpi-change text-muted">
-          Безрисковая ставка: 5.0%
+          Безрисковая ставка: {{ (riskFreeRate * 100).toFixed(1) }}%
         </div>
       </div>
 
@@ -64,10 +214,10 @@
           Коэф. Шарпа
         </div>
         <div class="kpi-value text-gradient-blue">
-          {{ backtestResults?.metrics ? backtestResults.metrics.sharpe_ratio.toFixed(2) : '1.58' }}
+          {{ currentMetrics ? currentMetrics.sharpe_ratio.toFixed(2) : '1.58' }}
         </div>
         <div class="kpi-change text-blue">
-          Топ 15%
+          Риск/Доходность
         </div>
       </div>
 
@@ -76,10 +226,34 @@
           Макс. Просадка
         </div>
         <div class="kpi-value text-red">
-          {{ backtestResults?.metrics ? (backtestResults.metrics.max_drawdown * 100).toFixed(1) + '%' : '-14.2%' }}
+          {{ currentMetrics ? (currentMetrics.max_drawdown * 100).toFixed(1) + '%' : '-14.2%' }}
         </div>
         <div class="kpi-change text-red">
-          Высокий риск
+          Пиковый убыток
+        </div>
+      </div>
+
+      <div class="glass-card kpi-card">
+        <div class="kpi-label">
+          Calmar Ratio
+        </div>
+        <div class="kpi-value text-white font-mono">
+          {{ extendedCalmar }}
+        </div>
+        <div class="kpi-change text-muted">
+          CAGR / |MaxDD|
+        </div>
+      </div>
+
+      <div class="glass-card kpi-card">
+        <div class="kpi-label">
+          Sortino Ratio
+        </div>
+        <div class="kpi-value text-white font-mono">
+          {{ extendedSortino }}
+        </div>
+        <div class="kpi-change text-muted">
+          Downside risk
         </div>
       </div>
     </div>
@@ -184,6 +358,50 @@
             stroke-width="2"
           />
         </svg>
+      </div>
+    </div>
+
+    <!-- Walk-Forward Window Comparison (WF mode only) -->
+    <div
+      v-if="activeMode === 'walkforward' && walkForwardResults"
+      class="glass-card panel-full wf-panel"
+    >
+      <div class="panel-header">
+        <h3>IS vs OOS Sharpe по окнам</h3>
+        <div class="wf-stats font-mono">
+          <span>Окон: {{ walkForwardResults.aggregated_stats.n_windows }}</span>
+          <span class="text-muted">|</span>
+          <span>IS Sharpe: {{ walkForwardResults.aggregated_stats.avg_is_sharpe.toFixed(2) }}</span>
+          <span class="text-muted">|</span>
+          <span>OOS Sharpe: {{ walkForwardResults.aggregated_stats.avg_oos_sharpe.toFixed(2) }}</span>
+          <span class="text-muted">|</span>
+          <span :class="walkForwardResults.aggregated_stats.degradation_ratio >= 0.7 ? 'text-green' : 'text-red'">
+            Деградация: {{ (walkForwardResults.aggregated_stats.degradation_ratio * 100).toFixed(0) }}%
+          </span>
+        </div>
+      </div>
+      <div class="wf-bars">
+        <div
+          v-for="wm in walkForwardResults.per_window_metrics"
+          :key="wm.window"
+          class="wf-bar-group"
+        >
+          <div class="wf-bar-label font-mono">
+            W{{ wm.window }}
+          </div>
+          <div class="wf-bar-pair">
+            <div
+              class="wf-bar wf-bar-is"
+              :style="{ height: Math.max(2, Math.abs(wm.is_sharpe) * 30) + 'px' }"
+              :title="'IS: ' + wm.is_sharpe.toFixed(2)"
+            />
+            <div
+              class="wf-bar wf-bar-oos"
+              :style="{ height: Math.max(2, Math.abs(wm.oos_sharpe) * 30) + 'px' }"
+              :title="'OOS: ' + wm.oos_sharpe.toFixed(2)"
+            />
+          </div>
+        </div>
       </div>
     </div>
 
@@ -317,18 +535,81 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
-import { runPortfolioBacktest, type BacktestResponse } from '@/services/backtestService'
+import {
+  runPortfolioBacktest,
+  runHistoricalBacktest,
+  runWalkForwardOptimization,
+  type BacktestResponse,
+  type HistoricalBacktestResponse,
+  type WalkForwardResponse,
+} from '@/services/backtestService'
 import { usePortfolioStore } from '@/stores/portfolio'
 
 const portfolioStore = usePortfolioStore()
 
-const selectedBank = computed(() => portfolioStore.selectedBank)
+// ── Mode management ──
+type BacktestMode = 'montecarlo' | 'historical' | 'walkforward'
+const modes = [
+  { key: 'montecarlo' as BacktestMode, label: 'Monte Carlo' },
+  { key: 'historical' as BacktestMode, label: 'Historical' },
+  { key: 'walkforward' as BacktestMode, label: 'Walk-Forward' },
+]
+const activeMode = ref<BacktestMode>('montecarlo')
+
+const modeSubtitle = computed(() => {
+  const subtitles: Record<BacktestMode, string> = {
+    montecarlo: 'MC симуляция через HJB-стратегию',
+    historical: 'Реплей стратегии на исторических ценах',
+    walkforward: 'IS/OOS rolling оптимизация',
+  }
+  return subtitles[activeMode.value]
+})
+
+// ── Controls ──
+const strategyType = ref<'equal_weight' | 'min_variance' | 'risk_parity' | 'max_sharpe'>('equal_weight')
+const rebalanceFreq = ref<'daily' | 'weekly' | 'monthly' | 'quarterly'>('monthly')
+const txCostBps = ref(10)
+const riskFreeRate = ref(0.1394)
+const wfOptMethod = ref<'max_sharpe' | 'min_variance' | 'risk_parity'>('max_sharpe')
+const wfIsWindow = ref(252)
+const wfOosWindow = ref(63)
 
 const periods = ref(['1M', '3M', '6M', 'YTD', '1Y', 'All'])
 const selectedPeriod = ref('YTD')
 const isRunning = ref(false)
-const backtestResults = ref<BacktestResponse | null>(null)
+const errorMessage = ref('')
 
+// ── Results per mode ──
+const backtestResults = ref<BacktestResponse | null>(null)
+const historicalResults = ref<HistoricalBacktestResponse | null>(null)
+const walkForwardResults = ref<WalkForwardResponse | null>(null)
+
+// ── Unified metrics accessor ──
+const currentMetrics = computed(() => {
+  if (activeMode.value === 'historical' && historicalResults.value) {
+    return historicalResults.value.metrics
+  }
+  if (activeMode.value === 'walkforward' && walkForwardResults.value) {
+    return walkForwardResults.value.metrics
+  }
+  return backtestResults.value?.metrics ?? null
+})
+
+const extendedCalmar = computed(() => {
+  const m = currentMetrics.value
+  if (!m) return '0.00'
+  const calmar = (m as Record<string, unknown>).calmar_ratio
+  return typeof calmar === 'number' ? calmar.toFixed(2) : '0.00'
+})
+
+const extendedSortino = computed(() => {
+  const m = currentMetrics.value
+  if (!m) return '0.00'
+  const sortino = (m as Record<string, unknown>).sortino_ratio
+  return typeof sortino === 'number' ? sortino.toFixed(2) : '0.00'
+})
+
+// ── Monthly returns & heatmap data ──
 const years = ref(['2024', '2025'])
 const months = ref(['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'])
 
@@ -366,19 +647,16 @@ const getReturnClass = (returnValue: string | number) => {
   return 'bg-red-strong'
 }
 
-// Computed для месячной доходности
 const computedMonthlyReturns = computed(() => {
-  if (!backtestResults.value?.metrics?.monthly_returns) {
+  const m = currentMetrics.value
+  if (!m?.monthly_returns) {
     return monthlyReturns.value
   }
-  
-  const apiReturns = backtestResults.value.metrics.monthly_returns
+
+  const apiReturns = m.monthly_returns
   const result: MonthlyData[] = []
-  
-  // Преобразуем данные из API в формат для отображения
-  const monthNames = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC']
   const apiYears = Object.keys(apiReturns).sort()
-  
+
   for (let monthIdx = 0; monthIdx < 12; monthIdx++) {
     const monthData: MonthlyData = {}
     for (const year of apiYears) {
@@ -391,84 +669,179 @@ const computedMonthlyReturns = computed(() => {
     }
     result.push(monthData)
   }
-  
+
   return result
 })
 
 const computedYears = computed(() => {
-  if (!backtestResults.value?.metrics?.monthly_returns) {
+  const m = currentMetrics.value
+  if (!m?.monthly_returns) {
     return years.value
   }
-  return Object.keys(backtestResults.value.metrics.monthly_returns).sort()
+  return Object.keys(m.monthly_returns).sort()
 })
 
-// Функция для запуска бэктеста
-const runBacktest = async () => {
+// ── Generate mock historical prices ──
+const generateMockPrices = (nAssets: number, nDays: number): number[][] => {
+  const prices: number[][] = []
+  const startPrices = Array.from({ length: nAssets }, () => 80 + Math.random() * 40)
+  prices.push([...startPrices])
+  for (let t = 1; t < nDays; t++) {
+    const row = prices[t - 1].map(p => {
+      const drift = 0.0003
+      const vol = 0.015 + Math.random() * 0.01
+      const shock = drift + vol * (Math.random() - 0.5) * 2
+      return p * (1 + shock)
+    })
+    prices.push(row)
+  }
+  return prices
+}
+
+// ── Run backtest for active mode ──
+const runActiveBacktest = async () => {
   if (isRunning.value) return
   isRunning.value = true
-  
+  errorMessage.value = ''
+
   try {
-    // Генерируем mock данные для mu и cov_matrix
-    const nAssets = portfolioStore.positions.length || 23
-    const assetNames = portfolioStore.positions.map(p => p.symbol)
-    
-    // Mock ожидаемые доходности (5-15% годовых)
-    const mu = Array.from({ length: nAssets }, () => 0.05 + Math.random() * 0.10)
-    
-    // Mock ковариационная матрица
-    const correlationMatrix = portfolioStore.correlationMatrix
-    const volatilities = Array.from({ length: nAssets }, () => 0.15 + Math.random() * 0.15)
-    
-    const covMatrix: number[][] = []
-    for (let i = 0; i < nAssets; i++) {
-      const row: number[] = []
-      for (let j = 0; j < nAssets; j++) {
-        let correlation = 0.3
-        if (correlationMatrix.length > i && correlationMatrix[i]?.values?.[j] !== undefined) {
-          correlation = correlationMatrix[i].values[j]
-        } else if (i === j) {
-          correlation = 1.0
-        }
-        row.push(correlation * volatilities[i] * volatilities[j])
-      }
-      covMatrix.push(row)
+    if (activeMode.value === 'montecarlo') {
+      await runMCBacktest()
+    } else if (activeMode.value === 'historical') {
+      await runHistBacktest()
+    } else {
+      await runWFBacktest()
     }
-    
-    const response = await runPortfolioBacktest({
-      mu,
-      cov_matrix: covMatrix,
-      initial_capital: 1000000,
-      risk_free_rate: 0.1394, // 13.94% безрисковая ставка
-      gamma: 3.0,
-      horizon_years: 1.0,
-      n_steps: 252,
-      asset_names: assetNames,
-      n_paths: 1000,
-      seed: 42
-    })
-    
-    backtestResults.value = response
   } catch (e) {
-    console.error('Ошибка бэктестинга:', e)
+    const msg = e instanceof Error ? e.message : String(e)
+    errorMessage.value = msg
+    console.error('Backtest error:', e)
   } finally {
     isRunning.value = false
   }
 }
 
+// ── MC backtest (existing) ──
+const runMCBacktest = async () => {
+  const nAssets = portfolioStore.positions.length || 5
+  const assetNames = portfolioStore.positions.length > 0
+    ? portfolioStore.positions.map(p => p.symbol)
+    : Array.from({ length: nAssets }, (_, i) => `Asset_${i + 1}`)
+
+  const mu = Array.from({ length: nAssets }, () => 0.05 + Math.random() * 0.10)
+  const correlationMatrix = portfolioStore.correlationMatrix
+  const volatilities = Array.from({ length: nAssets }, () => 0.15 + Math.random() * 0.15)
+
+  const covMatrix: number[][] = []
+  for (let i = 0; i < nAssets; i++) {
+    const row: number[] = []
+    for (let j = 0; j < nAssets; j++) {
+      let correlation = 0.3
+      if (correlationMatrix.length > i && correlationMatrix[i]?.values?.[j] !== undefined) {
+        correlation = correlationMatrix[i].values[j]
+      } else if (i === j) {
+        correlation = 1.0
+      }
+      row.push(correlation * volatilities[i] * volatilities[j])
+    }
+    covMatrix.push(row)
+  }
+
+  const response = await runPortfolioBacktest({
+    mu,
+    cov_matrix: covMatrix,
+    initial_capital: 1000000,
+    risk_free_rate: riskFreeRate.value,
+    gamma: 3.0,
+    horizon_years: 1.0,
+    n_steps: 252,
+    asset_names: assetNames,
+    n_paths: 1000,
+    seed: 42
+  })
+
+  backtestResults.value = response
+}
+
+// ── Historical backtest ──
+const runHistBacktest = async () => {
+  const nAssets = Math.min(portfolioStore.positions.length || 5, 10)
+  const assetNames = portfolioStore.positions.length > 0
+    ? portfolioStore.positions.slice(0, nAssets).map(p => p.symbol)
+    : Array.from({ length: nAssets }, (_, i) => `Asset_${i + 1}`)
+
+  const prices = generateMockPrices(nAssets, 504) // ~2 years
+
+  const response = await runHistoricalBacktest({
+    historical_prices: prices,
+    asset_names: assetNames,
+    rebalance_frequency: rebalanceFreq.value,
+    strategy_type: strategyType.value,
+    lookback_window: 60,
+    transaction_cost_bps: txCostBps.value,
+    risk_free_rate: riskFreeRate.value,
+    initial_capital: 1000000,
+  })
+
+  historicalResults.value = response
+}
+
+// ── Walk-forward backtest ──
+const runWFBacktest = async () => {
+  const nAssets = Math.min(portfolioStore.positions.length || 5, 10)
+  const assetNames = portfolioStore.positions.length > 0
+    ? portfolioStore.positions.slice(0, nAssets).map(p => p.symbol)
+    : Array.from({ length: nAssets }, (_, i) => `Asset_${i + 1}`)
+
+  const totalDays = wfIsWindow.value + wfOosWindow.value * 4 + 10
+  const prices = generateMockPrices(nAssets, totalDays)
+
+  const response = await runWalkForwardOptimization({
+    historical_prices: prices,
+    asset_names: assetNames,
+    in_sample_window: wfIsWindow.value,
+    out_of_sample_window: wfOosWindow.value,
+    optimization_method: wfOptMethod.value,
+    transaction_cost_bps: txCostBps.value,
+    risk_free_rate: riskFreeRate.value,
+    initial_capital: 1000000,
+  })
+
+  walkForwardResults.value = response
+}
+
+// ── Unified equity/benchmark curve accessors ──
+const activeEquityCurve = computed<number[]>(() => {
+  if (activeMode.value === 'historical' && historicalResults.value) {
+    return historicalResults.value.equity_curve
+  }
+  if (activeMode.value === 'walkforward' && walkForwardResults.value) {
+    return walkForwardResults.value.oos_equity_curve
+  }
+  return backtestResults.value?.equity_curve ?? []
+})
+
+const activeBenchmarkCurve = computed<number[]>(() => {
+  if (activeMode.value === 'historical' && historicalResults.value) {
+    return historicalResults.value.benchmark_curve
+  }
+  return backtestResults.value?.benchmark_curve ?? []
+})
+
 // Функции для генерации путей SVG
 const generateStrategyPath = () => {
-  if (!backtestResults.value?.equity_curve || backtestResults.value.equity_curve.length === 0) {
+  const curve = activeEquityCurve.value
+  if (!curve || curve.length === 0) {
     return "M0,220 Q150,200 300,150 T600,100 T1000,40"
   }
-  
-  const curve = backtestResults.value.equity_curve
+
   const minValue = Math.min(...curve)
   const maxValue = Math.max(...curve)
   const range = maxValue - minValue || 1
   const height = 250
   const width = 1000
   const steps = curve.length
-  
+
   let path = ""
   for (let i = 0; i < steps; i++) {
     const x = (i / (steps - 1)) * width
@@ -479,34 +852,36 @@ const generateStrategyPath = () => {
       path += ` L${x},${y}`
     }
   }
-  
+
   return path
 }
 
 const generateBenchmarkPath = () => {
-  if (!backtestResults.value?.benchmark_curve || backtestResults.value.benchmark_curve.length === 0) {
+  const benchCurve = activeBenchmarkCurve.value
+  const eqCurve = activeEquityCurve.value
+  if (!benchCurve || benchCurve.length === 0) {
     return "M0,220 Q150,210 300,190 T600,160 T1000,120"
   }
-  
-  const curve = backtestResults.value.benchmark_curve
-  const minValue = Math.min(...backtestResults.value.equity_curve || [0], ...curve)
-  const maxValue = Math.max(...backtestResults.value.equity_curve || [0], ...curve)
+
+  const allVals = [...(eqCurve || []), ...benchCurve]
+  const minValue = Math.min(...allVals)
+  const maxValue = Math.max(...allVals)
   const range = maxValue - minValue || 1
   const height = 250
   const width = 1000
-  const steps = curve.length
-  
+  const steps = benchCurve.length
+
   let path = ""
   for (let i = 0; i < steps; i++) {
     const x = (i / (steps - 1)) * width
-    const y = height - ((curve[i] - minValue) / range) * (height - 50) - 25
+    const y = height - ((benchCurve[i] - minValue) / range) * (height - 50) - 25
     if (i === 0) {
       path += `M${x},${y}`
     } else {
       path += ` L${x},${y}`
     }
   }
-  
+
   return path
 }
 
@@ -530,36 +905,35 @@ const generateStrategyAreaPath = () => {
 }
 
 const maxDrawdownMarker = computed(() => {
-  if (!backtestResults.value?.metrics?.drawdowns || backtestResults.value.metrics.drawdowns.length === 0) {
+  const m = currentMetrics.value
+  if (!m?.drawdowns || m.drawdowns.length === 0) {
     return null
   }
-  
-  const largestDD = backtestResults.value.metrics.drawdowns[0]
-  const curve = backtestResults.value.equity_curve
+
+  const curve = activeEquityCurve.value
   if (!curve || curve.length === 0) return null
-  
-  // Находим индекс максимальной просадки (упрощенно)
+
   const minValue = Math.min(...curve)
   const minIndex = curve.indexOf(minValue)
-  
+
   if (minIndex === -1) return null
-  
+
   const minVal = Math.min(...curve)
   const maxVal = Math.max(...curve)
   const range = maxVal - minVal || 1
   const height = 250
   const width = 1000
   const steps = curve.length
-  
+
   const x = (minIndex / (steps - 1)) * width
   const y = height - ((minVal - minVal) / range) * (height - 50) - 25
-  
+
   return { x, y }
 })
 
-// Запускаем бэктест при монтировании компонента
+// Запускаем MC бэктест при монтировании компонента
 onMounted(() => {
-  runBacktest()
+  runActiveBacktest()
 })
 </script>
 
@@ -630,7 +1004,7 @@ onMounted(() => {
 /* ============================================
    KPI GRID
    ============================================ */
-.kpi-cards-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+.kpi-cards-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 16px; }
 .kpi-card { padding: 20px; display: flex; flex-direction: column; justify-content: space-between; min-height: 110px; }
 .kpi-label { font-size: 11px; text-transform: uppercase; color: rgba(255,255,255,0.5); font-weight: 700; letter-spacing: 0.05em; margin-bottom: 8px; }
 .kpi-value { font-size: 28px; font-weight: 700; font-family: "SF Mono", monospace; line-height: 1.1; letter-spacing: -0.02em; color: #fff; }
@@ -709,6 +1083,170 @@ onMounted(() => {
 .dd-bar-bg { width: 60px; height: 3px; background: rgba(255,255,255,0.1); border-radius: 2px; overflow: hidden; }
 .dd-bar-fill { height: 100%; background: #f87171; }
 
+/* ============================================
+   CONTROLS PANEL
+   ============================================ */
+.controls-panel {
+  background: var(--bg-secondary, #0A0A0A);
+  border: 1px solid var(--border-medium, #262626);
+  border-radius: 4px;
+  padding: 16px 20px;
+}
+
+.controls-row {
+  display: flex;
+  align-items: flex-end;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.control-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 120px;
+}
+
+.control-group-btn {
+  margin-left: auto;
+}
+
+.control-label {
+  font-size: 10px;
+  text-transform: uppercase;
+  color: var(--text-tertiary, #737373);
+  font-weight: 600;
+  letter-spacing: 0.05em;
+}
+
+.control-select,
+.control-input {
+  background: var(--bg-tertiary, #111111);
+  border: 1px solid var(--border-medium, #262626);
+  border-radius: 3px;
+  color: var(--text-primary, #f5f5f5);
+  padding: 6px 10px;
+  font-size: 12px;
+  outline: none;
+}
+
+.control-select:focus,
+.control-input:focus {
+  border-color: var(--border-light, #333333);
+}
+
+.control-input {
+  width: 80px;
+}
+
+.slider-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.control-slider {
+  width: 100px;
+  accent-color: var(--accent-red, #DC2626);
+}
+
+.slider-value {
+  font-size: 11px;
+  color: var(--text-secondary, #a3a3a3);
+  min-width: 48px;
+}
+
+.btn-run {
+  background: var(--accent-red, #DC2626);
+  color: #fff;
+  border: none;
+  border-radius: 3px;
+  padding: 8px 20px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  cursor: pointer;
+  letter-spacing: 0.05em;
+  transition: background 0.15s;
+}
+
+.btn-run:hover:not(:disabled) {
+  background: var(--accent-red-hover, #ef4444);
+}
+
+.btn-run:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ============================================
+   ERROR BANNER
+   ============================================ */
+.error-banner {
+  background: rgba(220, 38, 38, 0.1);
+  border: 1px solid var(--accent-red, #DC2626);
+  border-radius: 3px;
+  padding: 10px 16px;
+  color: #fca5a5;
+  font-size: 12px;
+}
+
+/* ============================================
+   WALK-FORWARD PANEL
+   ============================================ */
+.wf-panel {
+  padding: 20px;
+}
+
+.wf-stats {
+  display: flex;
+  gap: 12px;
+  font-size: 12px;
+  color: var(--text-secondary, #a3a3a3);
+}
+
+.wf-bars {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  height: 120px;
+  padding-top: 12px;
+}
+
+.wf-bar-group {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  flex: 1;
+}
+
+.wf-bar-label {
+  font-size: 9px;
+  color: var(--text-muted, #525252);
+}
+
+.wf-bar-pair {
+  display: flex;
+  gap: 2px;
+  align-items: flex-end;
+  height: 90px;
+}
+
+.wf-bar {
+  width: 12px;
+  border-radius: 2px 2px 0 0;
+  min-height: 2px;
+}
+
+.wf-bar-is {
+  background: #3b82f6;
+}
+
+.wf-bar-oos {
+  background: #22c55e;
+}
+
 /* UTILS */
 .text-gradient-green { background: linear-gradient(135deg, #4ade80, #22c55e); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
 .text-gradient-blue { background: linear-gradient(135deg, #60a5fa, #3b82f6); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
@@ -721,6 +1259,10 @@ onMounted(() => {
 
 @media (max-width: 1200px) {
   .dashboard-grid { grid-template-columns: 1fr; }
+  .kpi-cards-grid { grid-template-columns: repeat(3, 1fr); }
+}
+
+@media (max-width: 900px) {
   .kpi-cards-grid { grid-template-columns: repeat(2, 1fr); }
 }
 

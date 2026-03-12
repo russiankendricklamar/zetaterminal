@@ -528,177 +528,90 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 import Chart from 'chart.js/auto'
+import {
+  runBrinsonAttribution,
+  runFactorAttribution,
+  type BrinsonResult,
+  type FactorResult,
+} from '@/services/attributionService'
 
 const selectedPeriod = ref('day')
 const selectedMethod = ref('greeks')
+const isLoading = ref(false)
+const apiError = ref('')
+
+// Brinson attribution state (from backend)
+const brinsonResult = ref<BrinsonResult | null>(null)
+// Factor attribution state (from backend)
+const factorResult = ref<FactorResult | null>(null)
+
+// -- Mock Data (fallback when API unavailable) --------------------------------
+
+const MOCK_PNL_COMPONENTS = {
+  market: 125400,
+  gamma: 28500,
+  theta: -12300,
+  vega: 18200,
+  other: -5200,
+}
+
+const MOCK_GREEKS_PNL = {
+  delta: { rates: 85000, curve: 32000, twist: 8400 },
+  gamma: { price: 22000, vol: 5500, cross: 1000 },
+  vega: 18200,
+  rho: 8500,
+  other: -5200,
+}
+
+const MOCK_ATTRIBUTION_DETAILS = [
+  { id: 1, component: '\u0394 - Rate Moves (parallel shift)', amount: 85000, percentage: 32.5, description: 'Sensitivity to parallel shift in yield curve', category: 'Directional', type: 'delta' },
+  { id: 2, component: '\u0394 - Curve Shift', amount: 32000, percentage: 12.2, description: 'Steepening/Flattening contribution', category: 'Directional', type: 'delta' },
+  { id: 3, component: '\u0394 - Curve Twist', amount: 8400, percentage: 3.2, description: 'Butterfly and higher order effects', category: 'Directional', type: 'delta' },
+  { id: 4, component: '\u0393 - Price Gamma', amount: 22000, percentage: 8.4, description: 'Rebalancing/convexity gains from rate moves', category: 'Convexity', type: 'gamma' },
+  { id: 5, component: '\u0393 - Vol Gamma', amount: 5500, percentage: 2.1, description: 'Vol-related second order effects', category: 'Convexity', type: 'gamma' },
+  { id: 6, component: '\u0398 - Theta Decay', amount: -12300, percentage: -4.7, description: 'Time value decay (daily)', category: 'Time Value', type: 'theta' },
+  { id: 7, component: 'V - Vega', amount: 18200, percentage: 6.9, description: 'Volatility level changes', category: 'Vol', type: 'vega' },
+  { id: 8, component: '\u03C1 - Rho', amount: 8500, percentage: 3.2, description: 'Credit spread and rate correlation moves', category: 'Spread', type: 'rho' },
+  { id: 9, component: 'Other/FX', amount: -5200, percentage: -2.0, description: 'FX moves, dividends, other factors', category: 'Other', type: 'other' },
+]
+
+const MOCK_RISK_FACTORS = [
+  { id: 1, name: 'Yield Curve (2Y-10Y)', move: 15, exposure: 4.25, impliedPnL: 63750, actualPnL: 68200, explained: 96.3 },
+  { id: 2, name: 'Volatility (Swaption)', move: 2.5, exposure: 7200, impliedPnL: 18000, actualPnL: 16800, explained: 93.3 },
+  { id: 3, name: 'Credit Spread (IG)', move: -8, exposure: -2150, impliedPnL: -17200, actualPnL: -15600, explained: 90.7 },
+  { id: 4, name: 'EUR/USD FX', move: 0.5, exposure: 12000, impliedPnL: 6000, actualPnL: 5800, explained: 96.7 },
+  { id: 5, name: 'Equity Index', move: 1.2, exposure: 800, impliedPnL: 960, actualPnL: 850, explained: 88.5 },
+]
+
+const MOCK_TOP_POSITIONS = [
+  { name: 'Long IRS 5Y', asset: 'RUB RUONIA', pnl: 85400 },
+  { name: 'Short Bonds', asset: '\u041E\u0424\u0417', pnl: 42300 },
+  { name: 'Long Swaptions', asset: 'Payer Swaption 2Yx5Y', pnl: 28500 },
+  { name: 'CDS Protection', asset: 'IG Index', pnl: 18200 },
+  { name: 'Basis Swap', asset: '3M vs 6M', pnl: 12000 },
+]
+
+// -- Reactive State -----------------------------------------------------------
 
 // Main P&L Components
-const pnlComponents = ref({
-  market: 125400,     // Market moves
-  gamma: 28500,       // Convexity
-  theta: -12300,      // Time decay
-  vega: 18200,        // Vol moves
-  other: -5200        // Residual
-})
+const pnlComponents = ref({ ...MOCK_PNL_COMPONENTS })
 
 const totalPnL = computed(() => {
   return Object.values(pnlComponents.value).reduce((a, b) => a + b, 0)
 })
 
 const percentageChange = computed(() => {
-  return (totalPnL.value / 1000000) * 100 // Assuming 1M base
+  return (totalPnL.value / 1000000) * 100
 })
 
 // Greeks P&L Breakdown
-const greeksPnL = ref({
-  delta: {
-    rates: 85000,
-    curve: 32000,
-    twist: 8400
-  },
-  gamma: {
-    price: 22000,
-    vol: 5500,
-    cross: 1000
-  },
-  vega: 18200,
-  rho: 8500,
-  other: -5200
-})
+const greeksPnL = ref({ ...MOCK_GREEKS_PNL })
 
 // Attribution Details
-const attributionDetails = ref([
-  {
-    id: 1,
-    component: 'Δ - Rate Moves (parallel shift)',
-    amount: 85000,
-    percentage: 32.5,
-    description: 'Sensitivity to parallel shift in yield curve',
-    category: 'Directional',
-    type: 'delta'
-  },
-  {
-    id: 2,
-    component: 'Δ - Curve Shift',
-    amount: 32000,
-    percentage: 12.2,
-    description: 'Steepening/Flattening contribution',
-    category: 'Directional',
-    type: 'delta'
-  },
-  {
-    id: 3,
-    component: 'Δ - Curve Twist',
-    amount: 8400,
-    percentage: 3.2,
-    description: 'Butterfly and higher order effects',
-    category: 'Directional',
-    type: 'delta'
-  },
-  {
-    id: 4,
-    component: 'Γ - Price Gamma',
-    amount: 22000,
-    percentage: 8.4,
-    description: 'Rebalancing/convexity gains from rate moves',
-    category: 'Convexity',
-    type: 'gamma'
-  },
-  {
-    id: 5,
-    component: 'Γ - Vol Gamma',
-    amount: 5500,
-    percentage: 2.1,
-    description: 'Vol-related second order effects',
-    category: 'Convexity',
-    type: 'gamma'
-  },
-  {
-    id: 6,
-    component: 'Θ - Theta Decay',
-    amount: -12300,
-    percentage: -4.7,
-    description: 'Time value decay (daily)',
-    category: 'Time Value',
-    type: 'theta'
-  },
-  {
-    id: 7,
-    component: 'V - Vega',
-    amount: 18200,
-    percentage: 6.9,
-    description: 'Volatility level changes',
-    category: 'Vol',
-    type: 'vega'
-  },
-  {
-    id: 8,
-    component: 'ρ - Rho',
-    amount: 8500,
-    percentage: 3.2,
-    description: 'Credit spread and rate correlation moves',
-    category: 'Spread',
-    type: 'rho'
-  },
-  {
-    id: 9,
-    component: 'Other/FX',
-    amount: -5200,
-    percentage: -2.0,
-    description: 'FX moves, dividends, other factors',
-    category: 'Other',
-    type: 'other'
-  }
-])
+const attributionDetails = ref([...MOCK_ATTRIBUTION_DETAILS])
 
 // Risk Factor Attribution
-const riskFactorAttribution = ref([
-  {
-    id: 1,
-    name: 'Yield Curve (2Y-10Y)',
-    move: 15,
-    exposure: 4.25,
-    impliedPnL: 63750,
-    actualPnL: 68200,
-    explained: 96.3
-  },
-  {
-    id: 2,
-    name: 'Volatility (Swaption)',
-    move: 2.5,
-    exposure: 7200,
-    impliedPnL: 18000,
-    actualPnL: 16800,
-    explained: 93.3
-  },
-  {
-    id: 3,
-    name: 'Credit Spread (IG)',
-    move: -8,
-    exposure: -2150,
-    impliedPnL: -17200,
-    actualPnL: -15600,
-    explained: 90.7
-  },
-  {
-    id: 4,
-    name: 'EUR/USD FX',
-    move: 0.5,
-    exposure: 12000,
-    impliedPnL: 6000,
-    actualPnL: 5800,
-    explained: 96.7
-  },
-  {
-    id: 5,
-    name: 'Equity Index',
-    move: 1.2,
-    exposure: 800,
-    impliedPnL: 960,
-    actualPnL: 850,
-    explained: 88.5
-  }
-])
+const riskFactorAttribution = ref([...MOCK_RISK_FACTORS])
 
 const unexplainedPnL = computed(() => {
   const explained = riskFactorAttribution.value.reduce((sum, f) => sum + f.actualPnL, 0)
@@ -706,33 +619,111 @@ const unexplainedPnL = computed(() => {
 })
 
 // Top Positions
-const topPositions = ref([
-  {
-    name: 'Long IRS 5Y',
-    asset: 'RUB RUONIA',
-    pnl: 85400
-  },
-  {
-    name: 'Short Bonds',
-    asset: 'ОФЗ',
-    pnl: 42300
-  },
-  {
-    name: 'Long Swaptions',
-    asset: 'Payer Swaption 2Yx5Y',
-    pnl: 28500
-  },
-  {
-    name: 'CDS Protection',
-    asset: 'IG Index',
-    pnl: 18200
-  },
-  {
-    name: 'Basis Swap',
-    asset: '3M vs 6M',
-    pnl: 12000
+const topPositions = ref([...MOCK_TOP_POSITIONS])
+
+// -- API Integration ----------------------------------------------------------
+
+async function fetchBrinsonAttribution(): Promise<void> {
+  try {
+    const result = await runBrinsonAttribution({
+      portfolio_weights: [0.40, 0.35, 0.25],
+      benchmark_weights: [0.30, 0.40, 0.30],
+      portfolio_returns: [0.12, 0.08, -0.02],
+      benchmark_returns: [0.10, 0.06, 0.01],
+      sector_names: ['Equities', 'Bonds', 'Commodities'],
+    })
+    brinsonResult.value = result
+
+    // Map Brinson sectors to risk factor attribution table
+    riskFactorAttribution.value = result.sectors.map((sector, idx) => ({
+      id: idx + 1,
+      name: sector.name,
+      move: sector.benchmark_return * 100,
+      exposure: sector.portfolio_weight * 1000,
+      impliedPnL: sector.allocation_effect * 1_000_000,
+      actualPnL: sector.total_effect * 1_000_000,
+      explained: sector.total_effect !== 0
+        ? Math.min(Math.abs(sector.allocation_effect / sector.total_effect) * 100, 100)
+        : 0,
+    }))
+  } catch (err) {
+    console.error('Brinson attribution failed, using mock data:', err)
   }
-])
+}
+
+async function fetchFactorAttribution(): Promise<void> {
+  try {
+    // Generate sample data for factor attribution
+    const nObs = 60
+    const portfolioReturns: number[] = []
+    const marketFactor: number[] = []
+    const sizeFactor: number[] = []
+    const valueFactor: number[] = []
+
+    for (let i = 0; i < nObs; i++) {
+      const mkt = (Math.random() - 0.48) * 0.04
+      const smb = (Math.random() - 0.5) * 0.02
+      const hml = (Math.random() - 0.5) * 0.015
+      marketFactor.push(mkt)
+      sizeFactor.push(smb)
+      valueFactor.push(hml)
+      portfolioReturns.push(0.0003 + 1.1 * mkt + 0.3 * smb - 0.2 * hml + (Math.random() - 0.5) * 0.005)
+    }
+
+    const result = await runFactorAttribution({
+      portfolio_returns: portfolioReturns,
+      factor_returns: marketFactor.map((m, i) => [m, sizeFactor[i], valueFactor[i]]),
+      factor_names: ['Market', 'Size (SMB)', 'Value (HML)'],
+      portfolio_value: 1_000_000,
+    })
+    factorResult.value = result
+
+    // Update P&L components from factor results
+    const totalFactorPnl = result.total_pnl
+    if (totalFactorPnl !== 0) {
+      const factorPnls = result.factors.map(f => f.pnl_contribution)
+      pnlComponents.value = {
+        market: factorPnls[0] || 0,
+        gamma: factorPnls[1] || 0,
+        theta: result.alpha_pnl,
+        vega: factorPnls[2] || 0,
+        other: result.residual_pnl,
+      }
+    }
+
+    // Update attribution details from factor results
+    const totalAbs = Math.abs(result.total_pnl) || 1
+    attributionDetails.value = result.factors.map((f, idx) => ({
+      id: idx + 1,
+      component: `${f.name} (\u03B2=${f.beta.toFixed(3)})`,
+      amount: f.pnl_contribution,
+      percentage: (f.pnl_contribution / totalAbs) * 100,
+      description: `Factor beta: ${f.beta.toFixed(4)}, R\u00B2 contribution`,
+      category: 'Factor',
+      type: idx === 0 ? 'delta' : idx === 1 ? 'gamma' : 'vega',
+    }))
+    attributionDetails.value.push({
+      id: result.factors.length + 1,
+      component: `Alpha (\u03B1=${result.alpha.toFixed(6)})`,
+      amount: result.alpha_pnl,
+      percentage: (result.alpha_pnl / totalAbs) * 100,
+      description: `Annualized alpha: ${(result.alpha_annualized * 100).toFixed(2)}%`,
+      category: 'Alpha',
+      type: 'rho',
+    })
+    attributionDetails.value.push({
+      id: result.factors.length + 2,
+      component: 'Residual (unexplained)',
+      amount: result.residual_pnl,
+      percentage: (result.residual_pnl / totalAbs) * 100,
+      description: `R\u00B2: ${(result.r_squared * 100).toFixed(1)}%`,
+      category: 'Residual',
+      type: 'other',
+    })
+  } catch (err) {
+    console.error('Factor attribution failed, using mock data:', err)
+  }
+}
 
 // Chart References
 const compositionChartRef = ref<HTMLCanvasElement | null>(null)
@@ -760,8 +751,21 @@ const formatCompactCurrency = (val: number) => {
   return '$' + (val / 1000).toFixed(0) + 'K'
 }
 
-const updateAttribution = () => {
-  initCharts()
+const updateAttribution = async () => {
+  isLoading.value = true
+  apiError.value = ''
+  try {
+    if (selectedMethod.value === 'riskfactors') {
+      await fetchBrinsonAttribution()
+    } else {
+      await fetchFactorAttribution()
+    }
+  } catch (err) {
+    apiError.value = err instanceof Error ? err.message : 'Attribution failed'
+  } finally {
+    isLoading.value = false
+    initCharts()
+  }
 }
 
 const exportData = () => {
@@ -903,10 +907,10 @@ const initCharts = () => {
   }
 }
 
-const btn_secondary = () => {}
-
-onMounted(() => {
+onMounted(async () => {
   initCharts()
+  // Try to load from backend on mount; fallback to mock is handled inside
+  await updateAttribution()
 })
 
 onBeforeUnmount(() => {

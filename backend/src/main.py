@@ -21,11 +21,13 @@ from src.api import (
     admin,
     adversarial_stress,
     alpha_stacking,
+    attribution,
     auth,
     backtest,
     black_litterman,
     bond,
     calendar_utils,
+    cbonds,
     ccmv,
     compute,
     convex_portfolio,
@@ -52,13 +54,13 @@ from src.api import (
     realized_kernels,
     repo,
     risk,
-    cbonds,
     rudata,
     security_tools,
     sharpe_stats,
     spectral_regime,
     stress,
     swap,
+    swap_stress,
     zcyc,
 )
 from src.api import secrets as secrets_api
@@ -273,6 +275,7 @@ app.include_router(auth.router, prefix="/api/auth", tags=["Auth"])
 app.include_router(portfolio.router, prefix="/api/portfolio", tags=["Portfolio"], dependencies=_auth)
 app.include_router(bond.router, prefix="/api/bond", tags=["Bond"], dependencies=_auth)
 app.include_router(swap.router, prefix="/api/swap", tags=["Swap"], dependencies=_auth)
+app.include_router(swap_stress.router, prefix="/api/swap-stress", tags=["Swap Stress"], dependencies=_auth)
 app.include_router(forward.router, prefix="/api/forward", tags=["Forward"], dependencies=_auth)
 app.include_router(compute.router, prefix="/api/compute", tags=["Compute"], dependencies=_auth)
 app.include_router(garch.router, prefix="/api/garch", tags=["GARCH"], dependencies=_auth)
@@ -304,6 +307,7 @@ app.include_router(meta_labeling.router, prefix="/api/meta-labeling", tags=["Met
 app.include_router(convex_portfolio.router, prefix="/api/convex-portfolio", tags=["Convex Portfolio"], dependencies=_auth)
 app.include_router(black_litterman.router, prefix="/api/black-litterman", tags=["Black-Litterman"], dependencies=_auth)
 app.include_router(adversarial_stress.router, prefix="/api/adversarial-stress", tags=["Adversarial Stress"], dependencies=_auth)
+app.include_router(attribution.router, prefix="/api/attribution", tags=["Attribution"], dependencies=_auth)
 app.include_router(moexalgo.router, prefix="/api/moexalgo", tags=["MOEX ISS"], dependencies=_auth)
 app.include_router(dadata.router, prefix="/api/dadata", tags=["DaData"], dependencies=_auth)
 app.include_router(etf.router, prefix="/api/etf", tags=["ETF"], dependencies=_auth)

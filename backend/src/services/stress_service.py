@@ -6,6 +6,7 @@ import warnings
 
 import numpy as np
 
+from src.services.historical_scenarios import get_scenario, map_historical_to_stress_params
 from src.services.hjb_service import HJBStrategy, simulate_monte_carlo
 
 warnings.filterwarnings('ignore', category=DeprecationWarning)
@@ -254,12 +255,35 @@ def run_stress_test(
         scenario_type = scenario.get('type', 'return_shock')
 
         # Применяем шок в зависимости от типа сценария
-        if scenario_type == 'return_shock':
+        if scenario_type == 'historical':
+            # Historical crisis scenario
+            scenario_key = scenario.get('scenario_key', '')
+            historical = get_scenario(scenario_key)
+            shocked_mu, shocked_cov = map_historical_to_stress_params(
+                scenario_key=scenario_key,
+                n_assets=simulator.n_assets,
+                base_mu=simulator.mu_base.tolist(),
+                base_cov=simulator.cov_matrix_base.tolist(),
+            )
+            mu_shock = np.array(shocked_mu)
+            cov_shocked = np.array(shocked_cov)
+            try:
+                sigma_shock = np.linalg.cholesky(cov_shocked)
+            except np.linalg.LinAlgError:
+                sigma_shock = np.linalg.cholesky(
+                    cov_shocked + np.eye(simulator.n_assets) * 1e-6
+                )
+            # Override horizon to match crisis duration
+            duration_days = historical['duration_days']
+            t_grid_override = np.linspace(0, duration_days / 252, min(duration_days, 252))
+        elif scenario_type == 'return_shock':
             # Шок доходности
+            t_grid_override = None
             mu_shock = simulator.mu_base * scenario.get('return_multiplier', 1.0)
             sigma_shock = simulator.sigma_base
         elif scenario_type == 'volatility_shock':
             # Шок волатильности
+            t_grid_override = None
             mu_shock = simulator.mu_base
             vol_multiplier = scenario.get('volatility_multiplier', 1.0)
             cov_shock = simulator.cov_matrix_base * vol_multiplier
@@ -271,6 +295,7 @@ def run_stress_test(
                 )
         elif scenario_type == 'correlation_shock':
             # Шок корреляций
+            t_grid_override = None
             mu_shock = simulator.mu_base
             corr_multiplier = scenario.get('correlation_multiplier', 1.5)
             # Увеличиваем корреляции
@@ -290,15 +315,18 @@ def run_stress_test(
                 sigma_shock = simulator.sigma_base
         else:
             # По умолчанию - базовый сценарий
+            t_grid_override = None
             mu_shock = simulator.mu_base
             sigma_shock = simulator.sigma_base
 
         # Симулируем сценарий
+        t_grid_arg = t_grid_override if scenario_type == 'historical' else None
         scenario_result = simulator.simulate_scenario(
             scenario_name=scenario_name,
             mu=mu_shock,
             sigma=sigma_shock,
             n_paths=n_paths,
+            t_grid=t_grid_arg,
             seed=seed if seed is not None else scenario.get('seed', None)
         )
 

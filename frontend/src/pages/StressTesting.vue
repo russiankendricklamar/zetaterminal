@@ -175,6 +175,106 @@
       </div>
     </div>
 
+    <!-- Historical Crises Section -->
+    <div class="glass-card panel" style="margin-top: 1.5rem;">
+      <div class="panel-header" style="display: flex; align-items: center; justify-content: space-between;">
+        <h3>HISTORICAL CRISES</h3>
+        <button
+          class="btn-glass"
+          :disabled="historicalLoading"
+          @click="loadHistoricalScenarios"
+        >
+          <span v-if="!historicalLoading">Load from API</span>
+          <span v-else><span class="spinner-mini" /> Loading...</span>
+        </button>
+      </div>
+
+      <div v-if="historicalError" class="text-red text-xs" style="padding: 0.5rem 1rem;">
+        {{ historicalError }}
+      </div>
+
+      <div class="scenarios-grid" style="padding: 1rem;">
+        <div
+          v-for="hs in historicalScenarios"
+          :key="hs.key"
+          class="glass-card scenario-card"
+          :class="{ active: selectedHistorical?.key === hs.key }"
+          @click="selectHistorical(hs)"
+        >
+          <div class="sc-header">
+            <span class="sc-name">{{ hs.name }}</span>
+            <div class="sc-header-actions">
+              <span
+                class="badge"
+                :class="hs.severity"
+              >{{ hs.severity }}</span>
+            </div>
+          </div>
+          <p class="sc-desc" style="font-size: 0.7rem; line-height: 1.3;">
+            {{ hs.description }}
+          </p>
+          <div class="sc-footer" style="flex-wrap: wrap; gap: 0.25rem;">
+            <span class="font-mono text-xs text-muted">{{ hs.period_start }} / {{ hs.duration_days }}d</span>
+            <span
+              v-for="(val, shockKey) in getTopShocks(hs.shocks)"
+              :key="shockKey"
+              class="font-mono text-xs"
+              :class="val < 0 ? 'text-red' : (val > 0 ? 'text-green' : 'text-muted')"
+            >
+              {{ formatShockLabel(String(shockKey)) }}: {{ formatShockValue(String(shockKey), val) }}
+            </span>
+          </div>
+          <div style="margin-top: 0.5rem;">
+            <button
+              class="btn-glass primary"
+              style="width: 100%; font-size: 0.7rem; padding: 0.35rem;"
+              @click.stop="addHistoricalToStress(hs)"
+            >
+              Add to Stress Test
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Selected Historical Detail -->
+      <div v-if="selectedHistorical" class="glass-card" style="margin: 0 1rem 1rem; padding: 1rem;">
+        <div class="panel-header">
+          <h3>{{ selectedHistorical.name }} <span class="text-muted font-mono text-xs">{{ selectedHistorical.period_start }} — {{ selectedHistorical.period_end }}</span></h3>
+        </div>
+        <div class="impact-bars-list" style="margin-top: 0.75rem;">
+          <div
+            v-for="(impact, assetClass) in selectedHistorical.asset_class_impacts"
+            :key="assetClass"
+            class="bar-row"
+          >
+            <span class="bar-label">{{ formatShockLabel(String(assetClass)) }}</span>
+            <div class="bar-track">
+              <div
+                class="bar-fill"
+                :class="impact < 0 ? 'bg-red' : 'bg-green'"
+                :style="{ width: Math.min(100, Math.abs(impact) * 1.2) + '%' }"
+              />
+            </div>
+            <span
+              class="bar-val"
+              :class="impact < 0 ? 'text-red' : 'text-green'"
+            >
+              {{ impact > 0 ? '+' : '' }}{{ impact.toFixed(1) }}%
+            </span>
+          </div>
+        </div>
+        <div class="stats-grid-row" style="margin-top: 0.75rem;">
+          <div v-for="(val, shockKey) in selectedHistorical.shocks" :key="shockKey" class="stat-box">
+            <span class="lbl-sm">{{ formatShockLabel(String(shockKey)) }}</span>
+            <span
+              class="val-sm"
+              :class="val < 0 ? 'text-red' : 'text-green'"
+            >{{ formatShockValue(String(shockKey), val) }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- Selected Scenario Detail (Split View) -->
     <transition
       name="fade"
@@ -735,7 +835,7 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue'
-import { runStressTests, type StressScenario, type StressTestResponse } from '@/services/stressService'
+import { runStressTests, fetchHistoricalScenarios, type StressScenario, type StressTestResponse, type HistoricalScenario } from '@/services/stressService'
 import { forecastGarch } from '@/services/garchService'
 import { usePortfolioStore } from '@/stores/portfolio'
 
@@ -1094,6 +1194,96 @@ const deleteScenario = (id: number) => {
 // Load custom scenarios on mount
 loadCustomScenarios()
 
+// --- Historical Scenarios ---
+const historicalScenarios = ref<HistoricalScenario[]>([])
+const historicalLoading = ref(false)
+const historicalError = ref('')
+const selectedHistorical = ref<HistoricalScenario | null>(null)
+
+const loadHistoricalScenarios = async () => {
+  historicalLoading.value = true
+  historicalError.value = ''
+  try {
+    historicalScenarios.value = await fetchHistoricalScenarios()
+  } catch (err) {
+    historicalError.value = err instanceof Error ? err.message : 'Failed to load scenarios'
+  } finally {
+    historicalLoading.value = false
+  }
+}
+
+const selectHistorical = (hs: HistoricalScenario) => {
+  selectedHistorical.value = selectedHistorical.value?.key === hs.key ? null : hs
+}
+
+const getTopShocks = (shocks: Record<string, number>): Record<string, number> => {
+  const entries = Object.entries(shocks)
+  const sorted = [...entries].sort((a, b) => Math.abs(b[1]) - Math.abs(a[1]))
+  return Object.fromEntries(sorted.slice(0, 3))
+}
+
+const formatShockLabel = (key: string): string => {
+  const labels: Record<string, string> = {
+    moex_return: 'MOEX',
+    rts_return: 'RTS',
+    usdrub_change: 'USD/RUB',
+    brent_return: 'Brent',
+    gas_return: 'Gas',
+    ofz_10y_bp: 'OFZ 10Y',
+    credit_spread_bp: 'Credit',
+    volatility_pp: 'Vol',
+    key_rate_pp: 'Key Rate',
+    equities: 'Equities',
+    bonds: 'Bonds',
+    commodities: 'Commodities',
+    fx: 'FX',
+    real_estate: 'Real Estate',
+    options: 'Options',
+  }
+  return labels[key] || key.replace(/_/g, ' ')
+}
+
+const formatShockValue = (key: string, val: number): string => {
+  if (key.endsWith('_bp')) return `${val > 0 ? '+' : ''}${val.toFixed(0)}bp`
+  if (key.endsWith('_pp')) return `${val > 0 ? '+' : ''}${val.toFixed(1)}pp`
+  return `${val > 0 ? '+' : ''}${(val * 100).toFixed(0)}%`
+}
+
+const addHistoricalToStress = (hs: HistoricalScenario) => {
+  // Check if already added
+  const existingKey = `hist_${hs.key}`
+  if (scenarios.value.some(s => s.key === existingKey)) {
+    return
+  }
+
+  const newScenario = {
+    id: nextScenarioId.value++,
+    name: hs.name,
+    description: hs.description,
+    pnlImpact: 0,
+    varChange: 0,
+    duration: `${hs.duration_days} days`,
+    probability: hs.severity === 'critical' ? 0.01 : hs.severity === 'high' ? 0.05 : 0.15,
+    severity: hs.severity,
+    marketChanges: Object.fromEntries(
+      Object.entries(hs.shocks).map(([k, v]) => [formatShockLabel(k), formatShockValue(k, v)])
+    ),
+    assetImpact: { ...hs.asset_class_impacts },
+    key: existingKey,
+    type: 'historical' as const,
+    scenario_key: hs.key,
+    return_multiplier: undefined,
+    volatility_multiplier: undefined,
+    correlation_multiplier: undefined,
+    custom: true,
+  }
+  scenarios.value = [...scenarios.value, newScenario]
+  saveCustomScenarios()
+}
+
+// Eagerly load historical scenarios
+loadHistoricalScenarios()
+
 const selectedScenario = ref(scenarios.value[0])
 const selectScenario = (scenario: Record<string, unknown>) => selectedScenario.value = scenario
 
@@ -1201,6 +1391,7 @@ const runAllStressTests = async () => {
       return_multiplier: s.return_multiplier,
       volatility_multiplier: s.volatility_multiplier,
       correlation_multiplier: s.correlation_multiplier,
+      scenario_key: s.scenario_key,
       seed: 42
     }))
     
