@@ -991,6 +991,112 @@
           LOADING...
         </div>
       </div>
+
+      <!-- ─── TESTS ──────────────────────────────────────────────────── -->
+      <div
+        v-if="activeTab === 'tests'"
+        class="panel-section"
+      >
+        <div class="section-toolbar">
+          <span class="font-mono section-count">{{ testSuites.length }} suites</span>
+          <select
+            v-model="selectedSuite"
+            class="font-mono test-select"
+          >
+            <option :value="null">
+              ALL SUITES
+            </option>
+            <option
+              v-for="s in testSuites"
+              :key="s.name"
+              :value="s.name"
+            >
+              {{ s.name }}
+            </option>
+          </select>
+          <button
+            class="btn btn-accent btn-sm"
+            :disabled="testRunning"
+            @click="runTestSuite(selectedSuite)"
+          >
+            {{ testRunning ? 'RUNNING...' : 'RUN TESTS' }}
+          </button>
+          <button
+            class="btn btn-outline btn-sm"
+            @click="loadTestSuites"
+          >
+            REFRESH
+          </button>
+        </div>
+
+        <div
+          v-if="testResults"
+          class="test-results"
+        >
+          <div class="sys-grid">
+            <div class="sys-card">
+              <div class="font-mono sys-label">
+                STATUS
+              </div>
+              <div
+                class="font-mono sys-value"
+                :style="{ color: testResults.status === 'pass' ? '#22c55e' : '#DC2626' }"
+              >
+                {{ testResults.status.toUpperCase() }}
+              </div>
+            </div>
+            <div class="sys-card">
+              <div class="font-mono sys-label">
+                PASSED
+              </div>
+              <div
+                class="font-mono sys-value"
+                style="color: #22c55e"
+              >
+                {{ testResults.passed }}
+              </div>
+            </div>
+            <div class="sys-card">
+              <div class="font-mono sys-label">
+                FAILED
+              </div>
+              <div
+                class="font-mono sys-value"
+                :style="{ color: testResults.failed > 0 ? '#DC2626' : 'var(--text-secondary)' }"
+              >
+                {{ testResults.failed }}
+              </div>
+            </div>
+            <div class="sys-card">
+              <div class="font-mono sys-label">
+                ERRORS
+              </div>
+              <div
+                class="font-mono sys-value"
+                :style="{ color: testResults.errors > 0 ? '#f59e0b' : 'var(--text-secondary)' }"
+              >
+                {{ testResults.errors }}
+              </div>
+            </div>
+          </div>
+          <div class="font-mono test-summary">
+            {{ testResults.summary }}
+          </div>
+          <pre class="font-mono test-output custom-scrollbar">{{ testResults.output }}</pre>
+        </div>
+        <div
+          v-else-if="testRunning"
+          class="empty-state font-mono"
+        >
+          RUNNING TESTS...
+        </div>
+        <div
+          v-else
+          class="empty-state font-mono"
+        >
+          SELECT SUITE AND RUN →
+        </div>
+      </div>
     </div>
   </div>
 </template>
@@ -1012,6 +1118,8 @@ import {
   fetchIpBans,
   createIpBan,
   deleteIpBan,
+  fetchTestSuites,
+  runTests,
   type AdminUser,
   type ServiceHealth,
   type RequestRecord,
@@ -1033,6 +1141,7 @@ const tabs = [
   { id: 'requests', label: 'REQUESTS' },
   { id: 'errors', label: 'ERRORS' },
   { id: 'system', label: 'SYSTEM' },
+  { id: 'tests', label: 'TESTS' },
 ]
 
 const activeTab = ref('users')
@@ -1043,6 +1152,15 @@ const requests = ref<RequestRecord[]>([])
 const activeRequests = ref<ActiveRequest[]>([])
 const errors = ref<ErrorRecord[]>([])
 const systemInfo = ref<SystemInfo | null>(null)
+
+// Tests
+const testSuites = ref<{ name: string; file: string }[]>([])
+const testResults = ref<{
+  status: string; passed: number; failed: number; errors: number;
+  summary: string; output: string; suite: string
+} | null>(null)
+const testRunning = ref(false)
+const selectedSuite = ref<string | null>(null)
 const expandedErrors = reactive(new Set<string>())
 const ipBans = ref<IpBanRecord[]>([])
 const newBanIp = ref('')
@@ -1107,6 +1225,22 @@ async function loadIpBans() {
 
 async function checkApiHealth() {
   try { apiHealthStatus.value = await checkAllApiHealth() } catch { /* silent */ }
+}
+
+async function loadTestSuites() {
+  try {
+    const data = await fetchTestSuites()
+    testSuites.value = data.suites
+  } catch { /* silent */ }
+}
+
+async function runTestSuite(suite?: string | null) {
+  testRunning.value = true
+  testResults.value = null
+  try {
+    testResults.value = await runTests(suite)
+  } catch { /* silent */ }
+  testRunning.value = false
 }
 
 // ── Actions ─────────────────────────────────────────────────────────────────
@@ -1200,6 +1334,7 @@ onMounted(() => {
   loadSystem()
   loadIpBans()
   checkApiHealth()
+  loadTestSuites()
 
   healthTimer = setInterval(loadHealth, 30_000)
   requestsTimer = setInterval(loadRequests, 10_000)
@@ -1931,5 +2066,44 @@ onUnmounted(() => {
   .ip-ban-add {
     flex-direction: column;
   }
+}
+
+/* ── Tests ──────────────────────────────────────────────────────────────── */
+.test-select {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-medium);
+  color: var(--text-primary);
+  padding: 6px 10px;
+  border-radius: 4px;
+  font-size: 12px;
+}
+
+.test-results {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.test-summary {
+  color: var(--text-secondary);
+  font-size: 13px;
+  padding: 8px 12px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-dark);
+  border-radius: 4px;
+}
+
+.test-output {
+  background: var(--bg-primary);
+  border: 1px solid var(--border-dark);
+  border-radius: 4px;
+  padding: 12px;
+  font-size: 11px;
+  line-height: 1.5;
+  color: var(--text-secondary);
+  max-height: 400px;
+  overflow-y: auto;
+  white-space: pre-wrap;
+  word-break: break-all;
 }
 </style>

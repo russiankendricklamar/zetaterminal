@@ -162,3 +162,12 @@ export const deleteIpBan = (ip: string): Promise<{ ip_address: string; unbanned:
 
 export const fetchUserIpInfo = (userId: number): Promise<{ user_id: number; username: string; last_ip: string | null }> =>
   apiFetch(`/users/${userId}/ip-info`)
+
+export const fetchTestSuites = (): Promise<{ suites: { name: string; file: string }[] }> =>
+  apiFetch('/tests/suites')
+
+export const runTests = (suite?: string | null): Promise<{
+  status: string; passed: number; failed: number; errors: number;
+  summary: string; output: string; stderr: string; suite: string
+}> =>
+  apiFetch(`/tests/run${suite ? `?suite=${encodeURIComponent(suite)}` : ''}`, { method: 'POST' })

@@ -407,3 +407,72 @@ async def system_info():
         "db_pool": pool_status,
         "memory_mb": memory_mb,
     }
+
+
+# ── Tests ────────────────────────────────────────────────────────────────────
+
+
+@router.post("/tests/run", dependencies=_admin_dep)
+async def run_tests(suite: str | None = Query(None, description="Test file name, e.g. test_risk_service")):
+    """Run pytest suite and return results. If suite is None, runs all tests."""
+    import subprocess
+
+    cmd = [sys.executable, "-m", "pytest", "--tb=short", "-q", "--no-header"]
+    if suite:
+        cmd.append(f"tests/{suite}.py")
+    else:
+        cmd.append("tests/")
+
+    try:
+        result = await asyncio.to_thread(
+            subprocess.run,
+            cmd,
+            capture_output=True,
+            text=True,
+            timeout=120,
+            cwd="backend" if not sys.argv[0].endswith("main.py") else ".",
+        )
+        lines = result.stdout.strip().split("\n")
+        summary_line = lines[-1] if lines else ""
+
+        passed = failed = errors = 0
+        for part in summary_line.split(","):
+            part = part.strip()
+            if "passed" in part:
+                passed = int(part.split()[0])
+            elif "failed" in part:
+                failed = int(part.split()[0])
+            elif "error" in part:
+                errors = int(part.split()[0])
+
+        return {
+            "status": "pass" if result.returncode == 0 else "fail",
+            "exit_code": result.returncode,
+            "passed": passed,
+            "failed": failed,
+            "errors": errors,
+            "summary": summary_line,
+            "output": result.stdout[-3000:] if len(result.stdout) > 3000 else result.stdout,
+            "stderr": result.stderr[-1000:] if result.stderr else "",
+            "suite": suite or "all",
+        }
+    except subprocess.TimeoutExpired:
+        return {"status": "timeout", "passed": 0, "failed": 0, "errors": 0, "summary": "Test run timed out after 120s", "output": "", "stderr": "", "suite": suite or "all"}
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=str(exc)) from exc
+
+
+@router.get("/tests/suites", dependencies=_admin_dep)
+async def list_test_suites():
+    """List available test suites."""
+    import pathlib
+
+    tests_dir = pathlib.Path("tests")
+    if not tests_dir.exists():
+        tests_dir = pathlib.Path("backend/tests")
+
+    suites = []
+    if tests_dir.exists():
+        for f in sorted(tests_dir.glob("test_*.py")):
+            suites.append({"name": f.stem, "file": f.name})
+    return {"suites": suites}

@@ -4,22 +4,25 @@
 
 Open-source аналог **BlackRock Aladdin** для российского рынка. Количественный анализ, управление портфелем, оценка рисков — без enterprise-ценника.
 
-### Маппинг модулей: Aladdin → Zeta Terminal
+### Реализованные модули Aladdin
 
-| Aladdin Module | Zeta Terminal | Статус |
-|---------------|---------------|--------|
-| **Risk** — VaR, stress, factors | `/portfolio` VaR/CVaR (3 метода), `/stress` (MC + adversarial DRO + EVT), GARCH, HMM, component VaR | Готово |
-| **Portfolio** — optimization, attribution | `/optimization` (Markowitz, Max Sharpe, CVaR, Risk Parity, Kelly, BL, CCMV, HJB), `/analytics/eigenportfolio` PCA/RMT | Готово |
-| **Fixed Income** — OAS, duration, curves | `/bond-valuation`, `/zcyc-viewer`, Cbonds API | Готово |
-| **Derivatives** — options, swaps, forwards | `/pricing/options` BSM/Heston/VG/CGMY, swaps, forwards | Готово |
-| **Volatility** — surfaces, calibration | `/analytics/volatility` SABR/SVI 3D | Готово |
-| **Regimes** — detection, spectral | `/terminal` Prony/ACF, `/regimes` HMM 3D | Готово |
-| **Backtesting** | `/backtest` MC + historical replay + walk-forward | Готово |
-| **Trading & Execution** | — | P2 |
-| **Compliance** | — | P2 |
-| **Data Platform** | MOEX ISS, ZCYC, RuData, Cbonds, FRED, ECB, ЦБ РФ, SEC EDGAR, OpenFIGI, CoinGecko, Polygon/AV/12Data | Готово |
-| **Reporting** | PDF (html2pdf.js), Excel (xlsx) | Частично (P1) |
-| **AI Copilot** | Claude Issues auto-responder | Минимально (P1) |
+- **Risk** — VaR/CVaR (parametric, historical, Monte Carlo), stress testing (MC + adversarial DRO + EVT + 5 historical crises), GARCH, HMM, component VaR
+- **Portfolio** — Markowitz, Max Sharpe, CVaR, Risk Parity, Kelly, Black-Litterman, CCMV, HJB + Brinson-Fachler/factor attribution + PCA/RMT eigenportfolio
+- **Fixed Income** — bond valuation, ZCYC curves, Cbonds API, day count conventions
+- **Derivatives** — BSM/Heston/VG/CGMY options, swaps (valuation + stress), forwards (curves + Greeks)
+- **Volatility** — SABR/SVI 3D surfaces, calibration
+- **Regimes** — HMM 3D, Prony/ACF spectral detection
+- **Backtesting** — Monte Carlo, historical replay, walk-forward optimization, transaction costs
+- **Data Platform** — 12 источников: MOEX ISS, ZCYC, RuData, Cbonds, FRED, ECB, ЦБ РФ, SEC EDGAR, OpenFIGI, CoinGecko, Polygon/AV/12Data, Yahoo Finance
+
+### Roadmap (TODO)
+
+| Приоритет | Модуль | Описание |
+|-----------|--------|----------|
+| P1 | **Reporting** | PDF/Excel генерация отчётов (html2pdf.js + xlsx) |
+| P1 | **AI Copilot** | Claude Issues auto-responder, расширение |
+| P2 | **Trading & Execution** | Order routing, execution algorithms |
+| P2 | **Compliance** | Regulatory checks, limits monitoring |
 
 ---
 
