@@ -3,6 +3,7 @@
 Поддерживает акции, валюты, индексы, криптовалюты, облигации и товары.
 """
 import logging
+import re
 from datetime import datetime
 from typing import Any
 
@@ -10,6 +11,16 @@ import pandas as pd
 import yfinance as yf
 
 logger = logging.getLogger(__name__)
+
+_TICKER_RE = re.compile(r"^[A-Za-z0-9.\-\^=]{1,30}$")
+
+
+def _validate_ticker(ticker: str) -> str:
+    """Validate ticker string to prevent injection into yfinance URLs."""
+    ticker = ticker.strip()
+    if not _TICKER_RE.match(ticker):
+        raise ValueError(f"Invalid ticker format: {ticker!r}")
+    return ticker
 
 
 def get_stock_info(ticker: str) -> dict[str, Any]:
@@ -23,6 +34,7 @@ def get_stock_info(ticker: str) -> dict[str, Any]:
         Словарь с информацией об акции
     """
     try:
+        ticker = _validate_ticker(ticker)
         stock = yf.Ticker(ticker)
         info = stock.info
 
@@ -79,6 +91,7 @@ def get_stock_history(ticker: str, period: str = "1mo", interval: str = "1d") ->
         Список словарей с историческими данными
     """
     try:
+        ticker = _validate_ticker(ticker)
         stock = yf.Ticker(ticker)
         hist = stock.history(period=period, interval=interval)
 
@@ -125,6 +138,7 @@ def get_multiple_stocks(tickers: list[str]) -> list[dict[str, Any]]:
         result = []
         for ticker in tickers:
             try:
+                ticker = _validate_ticker(ticker)
                 stock = yf.Ticker(ticker)
                 info = stock.info
 
@@ -185,6 +199,8 @@ def get_currency_rate(base: str, quote: str = "USD") -> dict[str, Any]:
                 "changePercent": 0.0
             }
 
+        base = _validate_ticker(base)
+        quote = _validate_ticker(quote)
         ticker_str = f"{base}{quote}=X"
         currency = yf.Ticker(ticker_str)
         hist = currency.history(period="2d")
@@ -222,6 +238,7 @@ def get_crypto_info(symbol: str) -> dict[str, Any]:
         Словарь с информацией о криптовалюте
     """
     try:
+        symbol = _validate_ticker(symbol)
         crypto = yf.Ticker(symbol)
         info = crypto.info
         hist = crypto.history(period="1d")
@@ -264,6 +281,7 @@ def get_index_info(symbol: str) -> dict[str, Any]:
         Словарь с информацией об индексе
     """
     try:
+        symbol = _validate_ticker(symbol)
         index = yf.Ticker(symbol)
         info = index.info
         hist = index.history(period="1d")
