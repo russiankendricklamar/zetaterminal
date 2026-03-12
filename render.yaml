@@ -3,8 +3,8 @@ services:
     name: zeta-terminal-backend
     runtime: python
     rootDir: backend
-    buildCommand: pip install --prefer-binary -r requirements.txt
-    startCommand: python -m uvicorn src.main:app --host 0.0.0.0 --port $PORT
+    buildCommand: pip install --no-cache-dir --prefer-binary --only-binary :all: -r requirements.txt || pip install --no-cache-dir --prefer-binary -r requirements.txt
+    startCommand: python3 -m uvicorn src.main:app --host 0.0.0.0 --port $PORT
     plan: free
     region: singapore
     branch: main
