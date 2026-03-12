@@ -6,7 +6,7 @@ Prefix: /api/news-ai
 
 
 from fastapi import APIRouter, HTTPException, Query, Request
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from src.middleware.rate_limit import limiter
 from src.services.news_ai_service import (
