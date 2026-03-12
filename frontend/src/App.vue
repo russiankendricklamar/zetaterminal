@@ -3,6 +3,9 @@
   <!-- Глобальная Command Palette (вызывается Cmd+K) - скрыта на странице терминала -->
   <CommandPalette v-if="!isTerminalPage" />
 
+  <!-- Auto-updater banner (Tauri desktop only) -->
+  <AppUpdater />
+
   <!-- Основной роутер -->
   <router-view />
 </template>
@@ -12,6 +15,7 @@ import { onMounted, computed } from 'vue'
 import { useRoute } from 'vue-router'
 import { useThemeStore } from '@/stores'
 import CommandPalette from '@/components/common/CommandPalette.vue'
+import AppUpdater from '@/components/common/AppUpdater.vue'
 import { restoreSession } from '@/utils/sessionManager'
 
 const route = useRoute()

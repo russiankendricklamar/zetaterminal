@@ -6,12 +6,15 @@
   "permissions": [
     "core:default",
     "shell:allow-open",
+    "updater:default",
+    "process:allow-restart",
     {
       "identifier": "http:default",
       "allow": [
         { "url": "https://zeta-terminal-backend.onrender.com/**" },
         { "url": "https://iss.moex.com/**" },
-        { "url": "https://dh2.efir-net.ru/**" }
+        { "url": "https://dh2.efir-net.ru/**" },
+        { "url": "https://github.com/russiankendricklamar/zetaterminal/**" }
       ]
     }
   ]
