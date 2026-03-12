@@ -312,7 +312,7 @@ async def curve_to_discount_endpoint(
     from src.services.zcyc_service import curve_to_discount
 
     df_curve = pd.DataFrame(data)
-    df_discount = curve_to_discount(df_curve, col_term=col_term, col_yield=col_yield)
+    df_discount = await asyncio.to_thread(curve_to_discount, df_curve, col_term, col_yield)
 
     return {
         "success": True,

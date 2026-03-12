@@ -26,6 +26,7 @@ _bearer_scheme = HTTPBearer(auto_error=False)
 # Avoids a DB query on every single request while still catching blocked
 # users within _STATUS_CACHE_TTL seconds.
 _STATUS_CACHE_TTL = 15  # seconds (short TTL to catch blocked users quickly)
+_STATUS_CACHE_MAX = 1000  # max cached users to prevent unbounded growth
 _user_status_cache: dict[int, tuple[str, float]] = {}  # user_id -> (status, cached_at)
 _status_cache_lock = asyncio.Lock()
 
@@ -56,6 +57,10 @@ async def _is_user_active(user_id: int) -> bool:
                 )
                 row = result.scalar_one_or_none()
                 user_status = row if row else "deleted"
+                # Evict oldest entries if cache exceeds max size
+                if len(_user_status_cache) >= _STATUS_CACHE_MAX:
+                    oldest_key = min(_user_status_cache, key=lambda k: _user_status_cache[k][1])
+                    del _user_status_cache[oldest_key]
                 _user_status_cache[user_id] = (user_status, now)
                 return user_status == "active"
         except Exception:

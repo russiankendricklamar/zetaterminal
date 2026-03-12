@@ -12,16 +12,23 @@ Usage:
         data = await resp.json()
 """
 
+import asyncio
 
 import aiohttp
 
 _session: aiohttp.ClientSession | None = None
+_session_lock = asyncio.Lock()
 
 
 async def get_session() -> aiohttp.ClientSession:
     """Return the shared aiohttp session, creating it if needed."""
     global _session
-    if _session is None or _session.closed:
+    if _session is not None and not _session.closed:
+        return _session
+    async with _session_lock:
+        # Re-check after acquiring lock
+        if _session is not None and not _session.closed:
+            return _session
         connector = aiohttp.TCPConnector(
             limit=100,
             limit_per_host=10,
