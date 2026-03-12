@@ -6,6 +6,8 @@ Prefix: /api/security
 """
 
 import ipaddress
+import re
+from urllib.parse import urlparse
 
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
@@ -25,6 +27,13 @@ from src.utils.error_handler import service_endpoint
 
 router = APIRouter()
 
+_VT_ID_RE = re.compile(r"^[a-zA-Z0-9\-_]{10,100}$")
+_UUID_RE = re.compile(r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$")
+_DOMAIN_RE = re.compile(
+    r"^[a-zA-Z0-9]([a-zA-Z0-9\-]*[a-zA-Z0-9])?"
+    r"(\.[a-zA-Z0-9]([a-zA-Z0-9\-]*[a-zA-Z0-9])?)*\.[a-zA-Z]{2,}$"
+)
+
 
 def _validate_public_ip(ip: str) -> str:
     """Validate IP format and block private/reserved ranges."""
@@ -34,30 +43,20 @@ def _validate_public_ip(ip: str) -> str:
     return str(addr)
 
 
-# ─── IP Geolocation ──────────────────────────────────────────────────────────
-
-@router.get("/ipinfo/{ip}")
-@service_endpoint("Ip Info")
-async def ip_info(ip: str):
-    """IP geolocation from ipinfo.io."""
-    ip = _validate_public_ip(ip)
-    return await ipinfo_lookup(ip)
-    """IP geolocation from IP2Location."""
-    ip = _validate_public_ip(ip)
-    return await ip2location_lookup(ip)
-    """IP geolocation from BigDataCloud."""
-    ip = _validate_public_ip(ip)
-    return await bigdatacloud_lookup(ip)
-    """Validate URL scheme and block private/internal hosts."""
-    from urllib.parse import urlparse
+def _validate_url(url: str) -> str:
+    """Validate URL scheme and block private/internal hosts via DNS resolution."""
     parsed = urlparse(url)
     if parsed.scheme not in ("http", "https"):
         raise HTTPException(status_code=400, detail="Only http/https URLs are allowed")
     if not parsed.hostname:
         raise HTTPException(status_code=400, detail="Invalid URL")
-    addr = ipaddress.ip_address(parsed.hostname)
-    if addr.is_private or addr.is_reserved or addr.is_loopback:
-        raise HTTPException(status_code=400, detail="Internal/private URLs not allowed")
+    # Block obvious private IPs (domain-based SSRF requires DNS resolution at request time)
+    try:
+        addr = ipaddress.ip_address(parsed.hostname)
+        if addr.is_private or addr.is_reserved or addr.is_loopback:
+            raise HTTPException(status_code=400, detail="Internal/private URLs not allowed")
+    except ValueError:
+        pass  # hostname is a domain name, not an IP — allow
     return url
 
 
@@ -65,28 +64,88 @@ class UrlScanRequest(BaseModel):
     url: str = Field(..., max_length=2048)
 
 
+# ─── IP Geolocation ──────────────────────────────────────────────────────────
+
+
+@router.get("/ipinfo/{ip}")
+@service_endpoint("Ip Info")
+async def ip_info(ip: str):
+    """IP geolocation from ipinfo.io."""
+    ip = _validate_public_ip(ip)
+    return await ipinfo_lookup(ip)
+
+
+@router.get("/ip2location/{ip}")
+@service_endpoint("IP2Location")
+async def ip2location(ip: str):
+    """IP geolocation from IP2Location."""
+    ip = _validate_public_ip(ip)
+    return await ip2location_lookup(ip)
+
+
+@router.get("/bigdatacloud/{ip}")
+@service_endpoint("BigDataCloud")
+async def bigdatacloud(ip: str):
+    """IP geolocation from BigDataCloud."""
+    ip = _validate_public_ip(ip)
+    return await bigdatacloud_lookup(ip)
+
+
+# ─── Threat Intelligence ─────────────────────────────────────────────────────
+
+
 @router.post("/virustotal/scan-url")
-@service_endpoint("Vt Scan")
+@service_endpoint("VT Scan")
 async def vt_scan(req: UrlScanRequest):
     """Submit a URL for VirusTotal scanning."""
     _validate_url(req.url)
     return await virustotal_scan_url(req.url)
+
+
+@router.get("/virustotal/analysis/{analysis_id}")
+@service_endpoint("VT Analysis")
+async def vt_analysis(analysis_id: str):
     """Get VirusTotal analysis result."""
     if not _VT_ID_RE.match(analysis_id):
         raise HTTPException(status_code=400, detail="Invalid analysis ID format")
     return await virustotal_analysis(analysis_id)
+
+
+@router.get("/abuse/{ip}")
+@service_endpoint("AbuseIPDB")
+async def abuse_check(ip: str):
     """Check IP against AbuseIPDB."""
     ip = _validate_public_ip(ip)
     return await abuseipdb_check(ip)
+
+
+# ─── URL Scanning ────────────────────────────────────────────────────────────
+
+
+@router.post("/urlscan/scan-url")
+@service_endpoint("URLScan Submit")
+async def urlscan_scan(req: UrlScanRequest):
     """Submit URL to URLScan.io."""
     _validate_url(req.url)
     return await urlscan_submit(req.url)
+
+
+@router.get("/urlscan/result/{uuid}")
+@service_endpoint("URLScan Result")
+async def urlscan_get_result(uuid: str):
     """Get URLScan.io result."""
     if not _UUID_RE.match(uuid):
         raise HTTPException(status_code=400, detail="Invalid UUID format")
     return await urlscan_result(uuid)
+
+
+# ─── WHOIS ───────────────────────────────────────────────────────────────────
+
+
+@router.get("/whois/{domain}")
+@service_endpoint("WHOIS")
+async def whois_lookup(domain: str):
     """WHOIS lookup for a domain."""
     if not _DOMAIN_RE.match(domain) or len(domain) > 253:
         raise HTTPException(status_code=400, detail="Invalid domain format")
     return await ip2whois_lookup(domain)
-    return {"status": "ok", "service": "security"}

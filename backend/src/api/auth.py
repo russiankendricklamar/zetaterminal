@@ -460,8 +460,11 @@ async def get_profile(
     payload: TokenPayload = Depends(require_auth),
     session: AsyncSession = Depends(get_session),
 ):
-    # IDOR protection: users can only view their own profile (admins can view any)
-    if payload.username != username.lower() and payload.role != "admin":
+    # IDOR protection: live DB role check (JWT role may be stale after demotion)
+    caller = await session.execute(select(User).where(User.id == payload.sub))
+    caller_user = caller.scalar_one_or_none()
+    caller_role = caller_user.role if caller_user else "user"
+    if payload.username != username.lower() and caller_role != "admin":
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Access denied",
@@ -497,8 +500,11 @@ async def update_profile(
     payload: TokenPayload = Depends(require_auth),
     session: AsyncSession = Depends(get_session),
 ):
-    # IDOR protection: users can only edit their own profile (admins can edit any)
-    if payload.username != username.lower() and payload.role != "admin":
+    # IDOR protection: live DB role check (JWT role may be stale after demotion)
+    caller = await session.execute(select(User).where(User.id == payload.sub))
+    caller_user = caller.scalar_one_or_none()
+    caller_role = caller_user.role if caller_user else "user"
+    if payload.username != username.lower() and caller_role != "admin":
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Access denied",

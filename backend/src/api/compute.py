@@ -1,6 +1,7 @@
 """
 API endpoints для вычислительных задач.
 """
+import asyncio
 from datetime import datetime
 
 from fastapi import APIRouter, Body, Request
@@ -26,8 +27,9 @@ class GARCHRequest(FinancialBaseModel):
 
 
 @router.post("/statistics", response_model=ComputeResponse)
+@limiter.limit("10/minute")
 @service_endpoint("Statistics computation")
-async def calculate_statistics(data: list[float] = Body(..., max_length=100000)):
+async def calculate_statistics(http_request: Request, data: list[float] = Body(..., max_length=MAX_DATA_POINTS)):
     """
     Вычисляет статистику для массива данных.
 
@@ -37,7 +39,7 @@ async def calculate_statistics(data: list[float] = Body(..., max_length=100000))
     Returns:
         Статистические показатели
     """
-    result = compute_service.calculate_statistics(data)
+    result = await asyncio.to_thread(compute_service.calculate_statistics, data)
     return ComputeResponse(
         result=result,
         status="success",

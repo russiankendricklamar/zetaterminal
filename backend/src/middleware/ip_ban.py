@@ -57,7 +57,7 @@ async def load_banned_ips() -> None:
             _banned_ips = ips  # atomic reference swap (no empty-set window)
             logger.info("Loaded %d banned IPs", len(_banned_ips))
     except Exception as e:
-        logger.warning("Could not load banned IPs: %s", e)
+        logger.error("Could not load banned IPs — ban list may be incomplete: %s", e)
 
 
 def add_banned_ip(ip: str) -> None:
