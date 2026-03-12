@@ -4,9 +4,10 @@ API endpoints для Time-Series vs Cross-Sectional факторного ана�
 from datetime import datetime
 from typing import Any
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Request
 from pydantic import BaseModel, Field
 
+from src.middleware.rate_limit import limiter
 from src.services.factor_analysis_service import run_factor_analysis
 from src.utils.error_handler import service_endpoint
 from src.utils.financial_validation import FinancialBaseModel
@@ -42,8 +43,9 @@ class FactorAnalysisResponse(BaseModel):
 
 
 @router.post("/analyze", response_model=FactorAnalysisResponse)
+@limiter.limit("10/minute")
 @service_endpoint("Factor analysis")
-async def analyze_factors(request: FactorAnalysisRequest):
+async def analyze_factors(http_request: Request, request: FactorAnalysisRequest):
     """
     Двухшаговый Fama-MacBeth факторный анализ.
 

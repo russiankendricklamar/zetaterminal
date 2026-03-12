@@ -4,9 +4,10 @@ API endpoints для Orthogonal Alpha Stacking.
 from datetime import datetime
 from typing import Any
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Request
 from pydantic import BaseModel, Field
 
+from src.middleware.rate_limit import limiter
 from src.services.alpha_stacking_service import compute_alpha_stacking
 from src.utils.error_handler import service_endpoint
 from src.utils.financial_validation import FinancialBaseModel
@@ -53,8 +54,9 @@ class AlphaStackingResponse(BaseModel):
 
 
 @router.post("/analyze", response_model=AlphaStackingResponse)
+@limiter.limit("10/minute")
 @service_endpoint("Alpha stacking")
-async def analyze(request: AlphaStackingRequest):
+async def analyze(http_request: Request, request: AlphaStackingRequest):
     """
     Orthogonal Alpha Stacking.
 

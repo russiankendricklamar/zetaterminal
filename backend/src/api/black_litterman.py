@@ -4,9 +4,10 @@ API endpoints для Black-Litterman оптимизации портфеля.
 from datetime import datetime
 
 import numpy as np
-from fastapi import APIRouter
+from fastapi import APIRouter, Request
 from pydantic import Field
 
+from src.middleware.rate_limit import limiter
 from src.services.black_litterman_service import optimize_black_litterman
 from src.utils.error_handler import service_endpoint
 from src.utils.financial_validation import FinancialBaseModel
@@ -35,8 +36,9 @@ class BlackLittermanRequest(FinancialBaseModel):
 
 
 @router.post("/optimize")
+@limiter.limit("5/minute")
 @service_endpoint("Black-Litterman optimization")
-async def optimize_bl_portfolio(request: BlackLittermanRequest):
+async def optimize_bl_portfolio(http_request: Request, request: BlackLittermanRequest):
     """Выполняет Black-Litterman оптимизацию портфеля."""
     N = len(request.market_weights)
     Sigma = np.array(request.cov_matrix)

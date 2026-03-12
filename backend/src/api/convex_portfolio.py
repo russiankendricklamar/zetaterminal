@@ -4,9 +4,10 @@ API endpoints для Convex Portfolio Construction.
 from datetime import datetime
 from typing import Any
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel, Field
 
+from src.middleware.rate_limit import limiter
 from src.services.convex_portfolio_service import compute_convex_portfolio
 from src.utils.error_handler import service_endpoint
 from src.utils.financial_validation import FinancialBaseModel
@@ -57,8 +58,9 @@ class ConvexPortfolioResponse(BaseModel):
 
 
 @router.post("/optimize", response_model=ConvexPortfolioResponse)
+@limiter.limit("5/minute")
 @service_endpoint("Convex portfolio optimization")
-async def optimize(request: ConvexPortfolioRequest):
+async def optimize(http_request: Request, request: ConvexPortfolioRequest):
     """
     Convex Portfolio Optimization.
 

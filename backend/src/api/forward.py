@@ -3,9 +3,10 @@ API endpoints для оценки валютных форвардов.
 """
 from typing import Any
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Request
 from pydantic import Field
 
+from src.middleware.rate_limit import limiter
 from src.services.forward_service import calculate_forward_valuation
 from src.utils.error_handler import service_endpoint
 from src.utils.financial_validation import MAX_NOTIONAL, MAX_TENOR_YEARS, FinancialBaseModel
@@ -55,8 +56,9 @@ class ForwardValuationRequest(FinancialBaseModel):
 
 
 @router.post("/valuate", response_model=dict[str, Any])
+@limiter.limit("10/minute")
 @service_endpoint("Forward valuation")
-async def valuate_forward(request: ForwardValuationRequest):
+async def valuate_forward(http_request: Request, request: ForwardValuationRequest):
     """
     Выполняет оценку форварда различных типов.
     """

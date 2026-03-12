@@ -4,9 +4,10 @@ API endpoints для PBO (Probability of Backtest Overfitting) и DSR.
 from datetime import datetime
 from typing import Any
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Request
 from pydantic import BaseModel, Field
 
+from src.middleware.rate_limit import limiter
 from src.services.pbo_service import compute_pbo
 from src.utils.error_handler import service_endpoint
 from src.utils.financial_validation import FinancialBaseModel
@@ -40,8 +41,9 @@ class PBOResponse(BaseModel):
 
 
 @router.post("/analyze", response_model=PBOResponse)
+@limiter.limit("10/minute")
 @service_endpoint("PBO analysis")
-async def analyze_pbo(request: PBORequest):
+async def analyze_pbo(http_request: Request, request: PBORequest):
     """
     Полный анализ переобучения бэктеста.
 

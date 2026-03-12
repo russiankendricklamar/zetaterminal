@@ -56,7 +56,7 @@ class HJBResponse(BaseModel):
 
 
 @router.post("/optimize", response_model=HJBResponse)
-@limiter.limit("10/minute")
+@limiter.limit("5/minute")
 @service_endpoint("HJB optimization")
 async def optimize_hjb_portfolio(http_request: Request, request: HJBRequest):
     """Выполняет HJB оптимизацию портфеля."""

@@ -3,9 +3,10 @@ API endpoints для оценки свопов (IRS, CDS, Basis Swaps, FX Swaps)
 """
 from typing import Any
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Request
 from pydantic import Field
 
+from src.middleware.rate_limit import limiter
 from src.services.swap_service import calculate_fx_swap_valuation, calculate_swap_valuation
 from src.utils.error_handler import service_endpoint
 from src.utils.financial_validation import MAX_NOTIONAL, MAX_RATE_PCT, MAX_TENOR_YEARS, FinancialBaseModel
@@ -27,8 +28,9 @@ class SwapValuationRequest(FinancialBaseModel):
 
 
 @router.post("/valuate", response_model=dict[str, Any])
+@limiter.limit("10/minute")
 @service_endpoint("Swap valuation")
-async def valuate_swap(request: SwapValuationRequest):
+async def valuate_swap(http_request: Request, request: SwapValuationRequest):
     """
     Выполняет оценку свопа.
     """
@@ -67,8 +69,9 @@ class FxSwapValuationRequest(FinancialBaseModel):
 
 
 @router.post("/valuate-fx", response_model=dict[str, Any])
+@limiter.limit("10/minute")
 @service_endpoint("FX swap valuation")
-async def valuate_fx_swap(request: FxSwapValuationRequest):
+async def valuate_fx_swap(http_request: Request, request: FxSwapValuationRequest):
     """Выполняет оценку FX-свопа."""
     return calculate_fx_swap_valuation(
         buy_currency_near=request.nearLeg.buyCurrency,

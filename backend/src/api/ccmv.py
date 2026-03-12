@@ -49,7 +49,7 @@ class CCMVResponse(BaseModel):
 
 
 @router.post("/optimize", response_model=CCMVResponse)
-@limiter.limit("10/minute")
+@limiter.limit("5/minute")
 @service_endpoint("CCMV optimization")
 async def optimize_ccmv_portfolio(http_request: Request, request: CCMVRequest):
     """Выполняет CCMV оптимизацию портфеля."""

@@ -4,9 +4,10 @@ API endpoints для Meta-Labeling (Signal Quality Control).
 from datetime import datetime
 from typing import Any
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Request
 from pydantic import BaseModel, Field
 
+from src.middleware.rate_limit import limiter
 from src.services.meta_labeling_service import compute_meta_labeling
 from src.utils.error_handler import service_endpoint
 from src.utils.financial_validation import FinancialBaseModel
@@ -45,8 +46,9 @@ class MetaLabelingResponse(BaseModel):
 
 
 @router.post("/analyze", response_model=MetaLabelingResponse)
+@limiter.limit("10/minute")
 @service_endpoint("Analyze")
-async def analyze(request: MetaLabelingRequest):
+async def analyze(http_request: Request, request: MetaLabelingRequest):
     """
     Meta-Labeling анализ.
 
