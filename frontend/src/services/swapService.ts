@@ -56,23 +56,18 @@ export interface SwapValuationResponse {
 export const valuateSwap = async (
   request: SwapValuationRequest
 ): Promise<SwapValuationResponse> => {
-  try {
-    const response = await fetch(`${API_BASE_URL}/api/swap/valuate`, {
-      method: 'POST',
-      headers: getApiHeaders(),
-      body: JSON.stringify(request),
-    });
+  const response = await fetch(`${API_BASE_URL}/api/swap/valuate`, {
+    method: 'POST',
+    headers: getApiHeaders(),
+    body: JSON.stringify(request),
+  });
 
-    if (!response.ok) {
-      const error = await response.json().catch(() => ({ detail: 'Unknown error' }));
-      throw new Error(error.detail || `HTTP error! status: ${response.status}`);
-    }
-
-    return await response.json();
-  } catch (error) {
-    console.error('Swap Valuation Failed:', error);
-    throw error;
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ detail: 'Unknown error' }));
+    throw new Error(error.detail || `HTTP error! status: ${response.status}`);
   }
+
+  return await response.json();
 };
 
 // ============================================
@@ -131,23 +126,18 @@ export interface FxSwapValuationResponse {
 export const valuateFxSwap = async (
   request: FxSwapValuationRequest
 ): Promise<FxSwapValuationResponse> => {
-  try {
-    const response = await fetch(`${API_BASE_URL}/api/swap/valuate-fx`, {
-      method: 'POST',
-      headers: getApiHeaders(),
-      body: JSON.stringify(request),
-    });
+  const response = await fetch(`${API_BASE_URL}/api/swap/valuate-fx`, {
+    method: 'POST',
+    headers: getApiHeaders(),
+    body: JSON.stringify(request),
+  });
 
-    if (!response.ok) {
-      const error = await response.json().catch(() => ({ detail: 'Unknown error' }));
-      throw new Error(error.detail || `HTTP error! status: ${response.status}`);
-    }
-
-    return await response.json();
-  } catch (error) {
-    console.error('FX Swap Valuation Failed:', error);
-    throw error;
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ detail: 'Unknown error' }));
+    throw new Error(error.detail || `HTTP error! status: ${response.status}`);
   }
+
+  return await response.json();
 };
 
 export { saveRegistryToParquet } from '@/utils/registryService';

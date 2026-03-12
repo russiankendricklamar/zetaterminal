@@ -26,10 +26,7 @@ export const analyzeMarketData = async (candles: Candle[]): Promise<AIAnalysisRe
     }
 
     return await response.json() as AIAnalysisResult
-  } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : String(error)
-    console.error('AI Analysis Failed:', message)
-
+  } catch {
     const lastPrice = candles[candles.length - 1]?.close || 0
     const prevPrice = candles[candles.length - 2]?.close || lastPrice
     const trend = lastPrice > prevPrice ? 'BULLISH' : lastPrice < prevPrice ? 'BEARISH' : 'NEUTRAL'

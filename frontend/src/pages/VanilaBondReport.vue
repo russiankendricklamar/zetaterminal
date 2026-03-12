@@ -887,7 +887,6 @@ const fetchReport = async (targetIsin: string) => {
     setTimeout(() => initCharts(), 100)
   } catch (e: unknown) {
     error.value = e instanceof Error ? e.message : 'Ошибка загрузки данных'
-    console.error('Bond report error:', e)
   } finally {
     loading.value = false
   }
@@ -1456,7 +1455,6 @@ const exportToExcel = () => {
     const fileName = `Bond_Report_${dataToExport.isin}_${valuationDate.value}.xlsx`
     XLSX.writeFile(wb, fileName)
   } catch (err: unknown) {
-    console.error('Export error:', err)
     alert(`Ошибка при экспорте: ${err instanceof Error ? err.message : String(err)}`)
   }
 }

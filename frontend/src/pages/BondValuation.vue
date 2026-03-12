@@ -1104,7 +1104,6 @@ const fetchMarketYield = async () => {
       error.value = 'Доходность не найдена для данной даты'
     }
   } catch (e: unknown) {
-    console.error('Ошибка загрузки доходности:', e)
     error.value = e instanceof Error ? e.message : 'Ошибка загрузки доходности из MOEX API'
   } finally {
     loadingMarketYield.value = false
@@ -1160,7 +1159,6 @@ const calculateBond = async () => {
     
     results.value = response
   } catch (e: unknown) {
-    console.error('Ошибка оценки облигации:', e)
     error.value = e instanceof Error ? e.message : 'Ошибка соединения с API или получения данных облигации'
   } finally {
     loading.value = false
@@ -1220,7 +1218,6 @@ const handleFileUpload = async (event: Event) => {
     bondResults.value = []
     error.value = ''
   } catch (err: unknown) {
-    console.error('Excel parsing error:', err)
     error.value = `Ошибка при загрузке файла: ${err instanceof Error ? err.message : String(err)}`
   }
 }
@@ -1281,7 +1278,7 @@ const calculateAllBonds = async () => {
                 }
               }
             } catch (yieldErr) {
-              console.warn(`Could not fetch market yield for ${bond.secid}:`, yieldErr)
+              // Silently continue with fallback yield
             }
           } else {
             discountYield1 = bond.marketYield
@@ -1299,11 +1296,9 @@ const calculateAllBonds = async () => {
         bondResults.value.push(result)
       } catch (err: unknown) {
         bondResults.value.push(null)
-        console.error(`Error calculating bond ${i + 1}:`, err)
       }
     }
   } catch (err: unknown) {
-    console.error('Error calculating bonds:', err)
     error.value = `Ошибка при расчете облигаций: ${err instanceof Error ? err.message : String(err)}`
   } finally {
     calculatingAll.value = false
@@ -1379,7 +1374,6 @@ const saveRegistryToParquetHandler = async () => {
       }, 5000)
     }
   } catch (err: unknown) {
-    console.error('Error saving registry to parquet:', err)
     error.value = `Ошибка при сохранении реестра: ${err instanceof Error ? err.message : String(err)}`
   } finally {
     savingParquet.value = false

@@ -87,7 +87,6 @@ export interface IndexInfo {
  * Получает информацию об акции
  */
 export const getStockInfo = async (ticker: string): Promise<StockInfo> => {
-  try {
     const response = await fetch(`${API_BASE_URL}/api/market/stock/${ticker}`, {
       method: 'GET',
       headers: getApiHeaders(),
@@ -99,10 +98,6 @@ export const getStockInfo = async (ticker: string): Promise<StockInfo> => {
     }
 
     return await response.json();
-  } catch (error) {
-    console.error('Failed to fetch stock info:', error);
-    throw error;
-  }
 };
 
 /**
@@ -113,7 +108,6 @@ export const getStockHistory = async (
   period: string = '1mo',
   interval: string = '1d'
 ): Promise<StockHistoryPoint[]> => {
-  try {
     const response = await fetch(`${API_BASE_URL}/api/market/stock/history`, {
       method: 'POST',
       headers: getApiHeaders(),
@@ -126,17 +120,12 @@ export const getStockHistory = async (
     }
 
     return await response.json();
-  } catch (error) {
-    console.error('Failed to fetch stock history:', error);
-    throw error;
-  }
 };
 
 /**
  * Получает информацию о нескольких акциях одновременно
  */
 export const getMultipleStocks = async (tickers: string[]): Promise<StockInfo[]> => {
-  try {
     const response = await fetch(`${API_BASE_URL}/api/market/stocks/multiple`, {
       method: 'POST',
       headers: getApiHeaders(),
@@ -149,17 +138,12 @@ export const getMultipleStocks = async (tickers: string[]): Promise<StockInfo[]>
     }
 
     return await response.json();
-  } catch (error) {
-    console.error('Failed to fetch multiple stocks:', error);
-    throw error;
-  }
 };
 
 /**
  * Получает курс валютной пары
  */
 export const getCurrencyRate = async (base: string, quote: string = 'USD'): Promise<CurrencyRate> => {
-  try {
     const response = await fetch(`${API_BASE_URL}/api/market/currency/${base}/${quote}`, {
       method: 'GET',
       headers: getApiHeaders(),
@@ -171,17 +155,12 @@ export const getCurrencyRate = async (base: string, quote: string = 'USD'): Prom
     }
 
     return await response.json();
-  } catch (error) {
-    console.error('Failed to fetch currency rate:', error);
-    throw error;
-  }
 };
 
 /**
  * Получает информацию о криптовалюте
  */
 export const getCryptoInfo = async (symbol: string): Promise<CryptoInfo> => {
-  try {
     const response = await fetch(`${API_BASE_URL}/api/market/crypto/${symbol}`, {
       method: 'GET',
       headers: getApiHeaders(),
@@ -193,17 +172,12 @@ export const getCryptoInfo = async (symbol: string): Promise<CryptoInfo> => {
     }
 
     return await response.json();
-  } catch (error) {
-    console.error('Failed to fetch crypto info:', error);
-    throw error;
-  }
 };
 
 /**
  * Получает информацию об индексе
  */
 export const getIndexInfo = async (symbol: string): Promise<IndexInfo> => {
-  try {
     const response = await fetch(`${API_BASE_URL}/api/market/index/${symbol}`, {
       method: 'GET',
       headers: getApiHeaders(),
@@ -215,17 +189,12 @@ export const getIndexInfo = async (symbol: string): Promise<IndexInfo> => {
     }
 
     return await response.json();
-  } catch (error) {
-    console.error('Failed to fetch index info:', error);
-    throw error;
-  }
 };
 
 /**
  * Получает список популярных тикеров из различных индексов и бирж
  */
 export const getPopularTickers = async (): Promise<string[]> => {
-  try {
     const response = await fetch(`${API_BASE_URL}/api/market/tickers/popular`, {
       method: 'GET',
       headers: getApiHeaders(),
@@ -237,17 +206,12 @@ export const getPopularTickers = async (): Promise<string[]> => {
     }
 
     return await response.json();
-  } catch (error) {
-    console.error('Failed to fetch popular tickers:', error);
-    throw error;
-  }
 };
 
 /**
  * Получает список популярных криптовалют
  */
 export const getPopularCryptos = async (): Promise<string[]> => {
-  try {
     const response = await fetch(`${API_BASE_URL}/api/market/crypto/popular`, {
       method: 'GET',
       headers: getApiHeaders(),
@@ -259,8 +223,4 @@ export const getPopularCryptos = async (): Promise<string[]> => {
     }
 
     return await response.json();
-  } catch (error) {
-    console.error('Failed to fetch popular cryptos:', error);
-    throw error;
-  }
 };

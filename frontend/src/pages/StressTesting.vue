@@ -992,7 +992,6 @@ const loadCustomScenarios = () => {
       nextScenarioId.value = maxId + 1
     }
   } catch (e) {
-    console.error('Failed to load custom scenarios:', e)
   }
 }
 
@@ -1002,7 +1001,6 @@ const saveCustomScenarios = () => {
     const custom = scenarios.value.filter(s => s.custom)
     localStorage.setItem('custom_stress_scenarios', JSON.stringify(custom))
   } catch (e) {
-    console.error('Failed to save custom scenarios:', e)
   }
 }
 
@@ -1422,7 +1420,6 @@ const runAllStressTests = async () => {
     
     showToast('Стресс-тестирование завершено', 'success')
   } catch (e) {
-    console.error('Ошибка стресс-тестирования:', e)
     showToast('Ошибка при выполнении стресс-тестирования', 'error')
   } finally {
     isRunning.value = false

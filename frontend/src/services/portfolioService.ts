@@ -55,21 +55,16 @@ export interface PortfolioMetricsResponse {
 export const calculatePortfolioMetrics = async (
   request: PortfolioMetricsRequest
 ): Promise<PortfolioMetricsResponse> => {
-  try {
-    const response = await fetch(`${API_BASE_URL}/api/portfolio/metrics`, {
-      method: 'POST',
-      headers: getApiHeaders(),
-      body: JSON.stringify(request),
-    });
+  const response = await fetch(`${API_BASE_URL}/api/portfolio/metrics`, {
+    method: 'POST',
+    headers: getApiHeaders(),
+    body: JSON.stringify(request),
+  });
 
-    if (!response.ok) {
-      const error = await response.json().catch(() => ({ detail: 'Unknown error' }));
-      throw new Error(error.detail || `HTTP error! status: ${response.status}`);
-    }
-
-    return await response.json();
-  } catch (error) {
-    console.error('Portfolio Metrics Calculation Failed:', error);
-    throw error;
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ detail: 'Unknown error' }));
+    throw new Error(error.detail || `HTTP error! status: ${response.status}`);
   }
+
+  return await response.json();
 };

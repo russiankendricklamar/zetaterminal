@@ -6,6 +6,7 @@
 """
 
 import asyncio
+import contextlib
 import logging
 import secrets
 import time
@@ -251,10 +252,8 @@ class RuDataService:
             df = pd.DataFrame(results)
 
             if not keep_duplicates:
-                try:
+                with contextlib.suppress(TypeError):
                     df = df.drop_duplicates()
-                except TypeError:
-                    pass  # Некоторые типы не поддерживают drop_duplicates
 
             df = df.replace([r'\r', r'\n'], [' ', ' '], regex=True)
 

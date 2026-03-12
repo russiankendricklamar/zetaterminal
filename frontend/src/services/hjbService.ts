@@ -62,37 +62,27 @@ export interface HJBResponse {
  * Выполняет HJB оптимизацию портфеля
  */
 export const optimizeHJBPortfolio = async (request: HJBRequest): Promise<HJBResponse> => {
-  try {
-    const response = await fetch(`${API_BASE_URL}/api/hjb/optimize`, {
-      method: 'POST',
-      headers: getApiHeaders(),
-      body: JSON.stringify(request),
-    });
+  const response = await fetch(`${API_BASE_URL}/api/hjb/optimize`, {
+    method: 'POST',
+    headers: getApiHeaders(),
+    body: JSON.stringify(request),
+  });
 
-    if (!response.ok) {
-      const error = await response.json().catch(() => ({ detail: 'Unknown error' }));
-      throw new Error(error.detail || `HTTP error! status: ${response.status}`);
-    }
-
-    return await response.json();
-  } catch (error) {
-    console.error('HJB Optimization Failed:', error);
-    throw error;
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ detail: 'Unknown error' }));
+    throw new Error(error.detail || `HTTP error! status: ${response.status}`);
   }
+
+  return await response.json();
 };
 
 /**
  * Проверка здоровья HJB сервиса
  */
 export const checkHJBHealth = async (): Promise<{ status: string; service: string }> => {
-  try {
-    const response = await fetch(`${API_BASE_URL}/api/hjb/health`, { headers: getApiHeaders() });
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-    return await response.json();
-  } catch (error) {
-    console.error('HJB Health Check Failed:', error);
-    throw error;
+  const response = await fetch(`${API_BASE_URL}/api/hjb/health`, { headers: getApiHeaders() });
+  if (!response.ok) {
+    throw new Error(`HTTP error! status: ${response.status}`);
   }
+  return await response.json();
 };

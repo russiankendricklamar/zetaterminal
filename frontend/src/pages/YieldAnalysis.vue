@@ -339,7 +339,6 @@ const assetPaths = ref<{ [key: string]: number[] }>({})
 
 const generateData = () => {
     if (selectedAssets.value.length === 0) {
-      console.warn('No assets selected')
       return
     }
     

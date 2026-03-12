@@ -461,7 +461,6 @@ onMounted(async () => {
         
         isLoading.value = false
     } catch (e) {
-        console.error('Ошибка загрузки данных режимов:', e)
         isLoading.value = false
     }
 })

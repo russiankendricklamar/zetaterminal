@@ -79,39 +79,29 @@ export interface BacktestResponse {
  * Выполняет бэктест портфеля
  */
 export const runPortfolioBacktest = async (request: BacktestRequest): Promise<BacktestResponse> => {
-  try {
-    const response = await fetch(`${API_BASE_URL}/api/backtest/run`, {
-      method: 'POST',
-      headers: getApiHeaders(),
-      body: JSON.stringify(request),
-    });
+  const response = await fetch(`${API_BASE_URL}/api/backtest/run`, {
+    method: 'POST',
+    headers: getApiHeaders(),
+    body: JSON.stringify(request),
+  });
 
-    if (!response.ok) {
-      const error = await response.json().catch(() => ({ detail: 'Unknown error' }));
-      throw new Error(error.detail || `HTTP error! status: ${response.status}`);
-    }
-
-    return await response.json();
-  } catch (error) {
-    console.error('Backtest Failed:', error);
-    throw error;
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ detail: 'Unknown error' }));
+    throw new Error(error.detail || `HTTP error! status: ${response.status}`);
   }
+
+  return await response.json();
 };
 
 /**
  * Проверка здоровья бэктестинга сервиса
  */
 export const checkBacktestHealth = async (): Promise<{ status: string; service: string }> => {
-  try {
-    const response = await fetch(`${API_BASE_URL}/api/backtest/health`, { headers: getApiHeaders() });
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-    return await response.json();
-  } catch (error) {
-    console.error('Backtest Health Check Failed:', error);
-    throw error;
+  const response = await fetch(`${API_BASE_URL}/api/backtest/health`, { headers: getApiHeaders() });
+  if (!response.ok) {
+    throw new Error(`HTTP error! status: ${response.status}`);
   }
+  return await response.json();
 };
 
 
@@ -150,23 +140,18 @@ export interface HistoricalBacktestResponse {
 export const runHistoricalBacktest = async (
   request: HistoricalBacktestRequest,
 ): Promise<HistoricalBacktestResponse> => {
-  try {
-    const response = await fetch(`${API_BASE_URL}/api/backtest/historical`, {
-      method: 'POST',
-      headers: getApiHeaders(),
-      body: JSON.stringify(request),
-    });
+  const response = await fetch(`${API_BASE_URL}/api/backtest/historical`, {
+    method: 'POST',
+    headers: getApiHeaders(),
+    body: JSON.stringify(request),
+  });
 
-    if (!response.ok) {
-      const error = await response.json().catch(() => ({ detail: 'Unknown error' }));
-      throw new Error(error.detail || `HTTP error! status: ${response.status}`);
-    }
-
-    return await response.json();
-  } catch (error) {
-    console.error('Historical Backtest Failed:', error);
-    throw error;
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ detail: 'Unknown error' }));
+    throw new Error(error.detail || `HTTP error! status: ${response.status}`);
   }
+
+  return await response.json();
 };
 
 
@@ -221,21 +206,16 @@ export interface WalkForwardResponse {
 export const runWalkForwardOptimization = async (
   request: WalkForwardRequest,
 ): Promise<WalkForwardResponse> => {
-  try {
-    const response = await fetch(`${API_BASE_URL}/api/backtest/walk-forward`, {
-      method: 'POST',
-      headers: getApiHeaders(),
-      body: JSON.stringify(request),
-    });
+  const response = await fetch(`${API_BASE_URL}/api/backtest/walk-forward`, {
+    method: 'POST',
+    headers: getApiHeaders(),
+    body: JSON.stringify(request),
+  });
 
-    if (!response.ok) {
-      const error = await response.json().catch(() => ({ detail: 'Unknown error' }));
-      throw new Error(error.detail || `HTTP error! status: ${response.status}`);
-    }
-
-    return await response.json();
-  } catch (error) {
-    console.error('Walk-Forward Optimization Failed:', error);
-    throw error;
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ detail: 'Unknown error' }));
+    throw new Error(error.detail || `HTTP error! status: ${response.status}`);
   }
+
+  return await response.json();
 };

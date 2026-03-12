@@ -715,7 +715,6 @@ const runActiveBacktest = async () => {
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e)
     errorMessage.value = msg
-    console.error('Backtest error:', e)
   } finally {
     isRunning.value = false
   }

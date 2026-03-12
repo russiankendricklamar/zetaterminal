@@ -647,7 +647,6 @@ async function fetchBrinsonAttribution(): Promise<void> {
         : 0,
     }))
   } catch (err) {
-    console.error('Brinson attribution failed, using mock data:', err)
   }
 }
 
@@ -721,7 +720,6 @@ async function fetchFactorAttribution(): Promise<void> {
       type: 'other',
     })
   } catch (err) {
-    console.error('Factor attribution failed, using mock data:', err)
   }
 }
 

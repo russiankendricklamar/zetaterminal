@@ -67,10 +67,10 @@ export const useSwapRegistryStore = defineStore('swapRegistry', () => {
   function addSwap(swap: SwapRegistryItem) {
     const newSwap = {
       ...swap,
-      id: swap.id || `swap_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+      id: swap.id || `swap_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`
     }
-    registrySwaps.value.push(newSwap)
-    swapResults.value.push(null)
+    registrySwaps.value = [...registrySwaps.value, newSwap]
+    swapResults.value = [...swapResults.value, null]
     return newSwap.id
   }
 
@@ -86,8 +86,8 @@ export const useSwapRegistryStore = defineStore('swapRegistry', () => {
   function removeSwap(id: string) {
     const index = registrySwaps.value.findIndex(s => s.id === id)
     if (index !== -1) {
-      registrySwaps.value.splice(index, 1)
-      swapResults.value.splice(index, 1)
+      registrySwaps.value = registrySwaps.value.filter((_, i) => i !== index)
+      swapResults.value = swapResults.value.filter((_, i) => i !== index)
     }
   }
 
@@ -95,7 +95,7 @@ export const useSwapRegistryStore = defineStore('swapRegistry', () => {
   function loadRegistry(swaps: SwapRegistryItem[]) {
     registrySwaps.value = swaps.map((swap, idx) => ({
       ...swap,
-      id: swap.id || `swap_${Date.now()}_${idx}_${Math.random().toString(36).substr(2, 9)}`
+      id: swap.id || `swap_${Date.now()}_${idx}_${Math.random().toString(36).substring(2, 11)}`
     }))
     swapResults.value = new Array(swaps.length).fill(null)
   }

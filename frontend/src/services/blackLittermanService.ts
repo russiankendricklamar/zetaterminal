@@ -66,34 +66,24 @@ export interface BlackLittermanResponse {
 export const optimizeBlackLitterman = async (
   request: BlackLittermanRequest
 ): Promise<BlackLittermanResponse> => {
-  try {
-    const response = await fetch(`${API_BASE_URL}/api/black-litterman/optimize`, {
-      method: 'POST',
-      headers: getApiHeaders(),
-      body: JSON.stringify(request),
-    })
+  const response = await fetch(`${API_BASE_URL}/api/black-litterman/optimize`, {
+    method: 'POST',
+    headers: getApiHeaders(),
+    body: JSON.stringify(request),
+  })
 
-    if (!response.ok) {
-      const error = await response.json().catch(() => ({ detail: 'Unknown error' }))
-      throw new Error(error.detail || `HTTP error! status: ${response.status}`)
-    }
-
-    return await response.json()
-  } catch (error) {
-    console.error('Black-Litterman Optimization Failed:', error)
-    throw error
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ detail: 'Unknown error' }))
+    throw new Error(error.detail || `HTTP error! status: ${response.status}`)
   }
+
+  return await response.json()
 }
 
 export const checkBLHealth = async (): Promise<{ status: string; service: string }> => {
-  try {
-    const response = await fetch(`${API_BASE_URL}/api/black-litterman/health`, { headers: getApiHeaders() })
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`)
-    }
-    return await response.json()
-  } catch (error) {
-    console.error('Black-Litterman Health Check Failed:', error)
-    throw error
+  const response = await fetch(`${API_BASE_URL}/api/black-litterman/health`, { headers: getApiHeaders() })
+  if (!response.ok) {
+    throw new Error(`HTTP error! status: ${response.status}`)
   }
+  return await response.json()
 }

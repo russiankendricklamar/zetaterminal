@@ -1161,7 +1161,6 @@ watch(selectedCategory, () => {
       assetCategories.value = response.data
     }
   } catch (e) {
-    console.error('Failed to load assets:', e)
   }
 })()
 
@@ -1433,7 +1432,6 @@ const runAnalysis = async () => {
     }
     
   } catch (e: unknown) {
-    console.error('Analysis error:', e)
     errorMessage.value = e instanceof Error ? e.message : 'Неизвестная ошибка'
   } finally {
     isLoading.value = false

@@ -1694,7 +1694,6 @@ const handleFileUpload = async (event: Event) => {
     registryContracts.value = contracts
     selectedContractIndex.value = null
   } catch (err: unknown) {
-    console.error('Excel parsing error:', err)
     alert(`Ошибка при загрузке файла: ${err instanceof Error ? err.message : String(err)}`)
   }
 }
@@ -1769,7 +1768,6 @@ const saveRegistryToParquetHandler = async () => {
       }, 5000)
     }
   } catch (err: unknown) {
-    console.error('Error saving registry to parquet:', err)
     error.value = `Ошибка при сохранении реестра: ${err instanceof Error ? err.message : String(err)}`
   } finally {
     savingParquet.value = false

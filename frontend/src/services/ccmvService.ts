@@ -47,37 +47,27 @@ export interface CCMVResponse {
  * Выполняет CCMV оптимизацию портфеля
  */
 export const optimizeCCMVPortfolio = async (request: CCMVRequest): Promise<CCMVResponse> => {
-  try {
-    const response = await fetch(`${API_BASE_URL}/api/ccmv/optimize`, {
-      method: 'POST',
-      headers: getApiHeaders(),
-      body: JSON.stringify(request),
-    });
+  const response = await fetch(`${API_BASE_URL}/api/ccmv/optimize`, {
+    method: 'POST',
+    headers: getApiHeaders(),
+    body: JSON.stringify(request),
+  });
 
-    if (!response.ok) {
-      const error = await response.json().catch(() => ({ detail: 'Unknown error' }));
-      throw new Error(error.detail || `HTTP error! status: ${response.status}`);
-    }
-
-    return await response.json();
-  } catch (error) {
-    console.error('CCMV Optimization Failed:', error);
-    throw error;
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ detail: 'Unknown error' }));
+    throw new Error(error.detail || `HTTP error! status: ${response.status}`);
   }
+
+  return await response.json();
 };
 
 /**
  * Проверка здоровья CCMV сервиса
  */
 export const checkCCMVHealth = async (): Promise<{ status: string; service: string }> => {
-  try {
-    const response = await fetch(`${API_BASE_URL}/api/ccmv/health`, { headers: getApiHeaders() });
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-    return await response.json();
-  } catch (error) {
-    console.error('CCMV Health Check Failed:', error);
-    throw error;
+  const response = await fetch(`${API_BASE_URL}/api/ccmv/health`, { headers: getApiHeaders() });
+  if (!response.ok) {
+    throw new Error(`HTTP error! status: ${response.status}`);
   }
+  return await response.json();
 };

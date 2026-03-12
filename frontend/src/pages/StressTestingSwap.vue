@@ -696,7 +696,6 @@ const runStressTests = async () => {
   } catch (e) {
     // Keep hardcoded data as fallback
     backendError.value = e instanceof Error ? e.message : 'Stress test failed'
-    console.error('Swap stress test error:', e)
   } finally {
     isRunning.value = false
   }

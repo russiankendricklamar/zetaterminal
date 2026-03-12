@@ -1223,7 +1223,6 @@ const calculateValuation = async () => {
     }
   } catch (err: unknown) {
     error.value = err instanceof Error ? err.message : 'Ошибка при расчете свопа'
-    console.error('Swap valuation error:', err)
   } finally {
     calculating.value = false
   }
@@ -1344,7 +1343,6 @@ const handleFileUpload = async (event: Event) => {
     swapRegistryStore.loadRegistry(swaps)
     selectedSwapIndex.value = null
   } catch (err: unknown) {
-    console.error('Excel parsing error:', err)
     error.value = `Ошибка при загрузке файла: ${err instanceof Error ? err.message : String(err)}`
   }
 }
@@ -1402,14 +1400,12 @@ const calculateAllSwaps = async () => {
       } catch (err: unknown) {
         results.push(null)
         swapRegistryStore.setSwapResult(i, null)
-        console.error(`Error calculating swap ${i + 1}:`, err)
       }
     }
 
     // Сохраняем все результаты в store
     swapRegistryStore.setAllResults(results)
   } catch (err: unknown) {
-    console.error('Error calculating swaps:', err)
     error.value = `Ошибка при расчете свопов: ${err instanceof Error ? err.message : String(err)}`
   } finally {
     calculatingAll.value = false
@@ -1540,7 +1536,6 @@ const exportRegistryToExcel = () => {
     XLSX.writeFile(wb, fileName)
     alert(`Реестр успешно экспортирован: ${fileName}\n${hasCalculatedSwaps ? 'Включая все расчеты и денежные потоки.' : 'Только входные параметры (свопы не рассчитаны).'}`)
   } catch (err: unknown) {
-    console.error('Ошибка при экспорте:', err)
     alert(`Ошибка при экспорте файла: ${err instanceof Error ? err.message : String(err)}`)
   }
 }
@@ -1561,7 +1556,6 @@ const saveRegistryToParquetHandler = async () => {
       }, 5000)
     }
   } catch (err: unknown) {
-    console.error('Error saving registry to parquet:', err)
     error.value = `Ошибка при сохранении реестра: ${err instanceof Error ? err.message : String(err)}`
   } finally {
     savingParquet.value = false

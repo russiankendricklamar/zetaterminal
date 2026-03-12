@@ -523,7 +523,6 @@ const runHMM = async () => {
         }, 500)
 
     } catch (e: unknown) {
-        console.error('Ошибка обучения HMM:', e)
         taskStore.failTask(taskId)
         alert(`Ошибка: ${e instanceof Error ? e.message : 'Неизвестная ошибка'}`)
     } finally {

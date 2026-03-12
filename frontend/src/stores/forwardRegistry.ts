@@ -107,10 +107,10 @@ export const useForwardRegistryStore = defineStore('forwardRegistry', () => {
   function addForward(forward: ForwardRegistryItem) {
     const newForward = {
       ...forward,
-      id: forward.id || `forward_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+      id: forward.id || `forward_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`
     }
-    registryForwards.value.push(newForward)
-    forwardResults.value.push(null)
+    registryForwards.value = [...registryForwards.value, newForward]
+    forwardResults.value = [...forwardResults.value, null]
     return newForward.id
   }
 
@@ -126,8 +126,8 @@ export const useForwardRegistryStore = defineStore('forwardRegistry', () => {
   function removeForward(id: string) {
     const index = registryForwards.value.findIndex(f => f.id === id)
     if (index !== -1) {
-      registryForwards.value.splice(index, 1)
-      forwardResults.value.splice(index, 1)
+      registryForwards.value = registryForwards.value.filter((_, i) => i !== index)
+      forwardResults.value = forwardResults.value.filter((_, i) => i !== index)
     }
   }
 
@@ -135,7 +135,7 @@ export const useForwardRegistryStore = defineStore('forwardRegistry', () => {
   function loadRegistry(forwards: ForwardRegistryItem[]) {
     registryForwards.value = forwards.map((forward, idx) => ({
       ...forward,
-      id: forward.id || `forward_${Date.now()}_${idx}_${Math.random().toString(36).substr(2, 9)}`
+      id: forward.id || `forward_${Date.now()}_${idx}_${Math.random().toString(36).substring(2, 11)}`
     }))
     forwardResults.value = new Array(forwards.length).fill(null)
   }

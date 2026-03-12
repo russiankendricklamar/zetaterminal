@@ -117,59 +117,44 @@ export interface StressTestResponse {
  * Выполняет стресс-тестирование портфеля
  */
 export const runStressTests = async (request: StressTestRequest): Promise<StressTestResponse> => {
-  try {
-    const response = await fetch(`${API_BASE_URL}/api/stress/test`, {
-      method: 'POST',
-      headers: getApiHeaders(),
-      body: JSON.stringify(request),
-    });
+  const response = await fetch(`${API_BASE_URL}/api/stress/test`, {
+    method: 'POST',
+    headers: getApiHeaders(),
+    body: JSON.stringify(request),
+  });
 
-    if (!response.ok) {
-      const error = await response.json().catch(() => ({ detail: 'Unknown error' }));
-      throw new Error(error.detail || `HTTP error! status: ${response.status}`);
-    }
-
-    return await response.json();
-  } catch (error) {
-    console.error('Stress Test Failed:', error);
-    throw error;
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ detail: 'Unknown error' }));
+    throw new Error(error.detail || `HTTP error! status: ${response.status}`);
   }
+
+  return await response.json();
 };
 
 /**
  * Fetches available historical crisis scenarios from the backend
  */
 export const fetchHistoricalScenarios = async (): Promise<HistoricalScenario[]> => {
-  try {
-    const response = await fetch(`${API_BASE_URL}/api/stress/historical-scenarios`, {
-      headers: getApiHeaders(),
-    });
+  const response = await fetch(`${API_BASE_URL}/api/stress/historical-scenarios`, {
+    headers: getApiHeaders(),
+  });
 
-    if (!response.ok) {
-      const error = await response.json().catch(() => ({ detail: 'Unknown error' }));
-      throw new Error(error.detail || `HTTP error! status: ${response.status}`);
-    }
-
-    const data = await response.json();
-    return data.scenarios;
-  } catch (error) {
-    console.error('Fetch Historical Scenarios Failed:', error);
-    throw error;
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ detail: 'Unknown error' }));
+    throw new Error(error.detail || `HTTP error! status: ${response.status}`);
   }
+
+  const data = await response.json();
+  return data.scenarios;
 };
 
 /**
  * Проверка здоровья стресс-тестирования сервиса
  */
 export const checkStressHealth = async (): Promise<{ status: string; service: string }> => {
-  try {
-    const response = await fetch(`${API_BASE_URL}/api/stress/health`, { headers: getApiHeaders() });
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-    return await response.json();
-  } catch (error) {
-    console.error('Stress Health Check Failed:', error);
-    throw error;
+  const response = await fetch(`${API_BASE_URL}/api/stress/health`, { headers: getApiHeaders() });
+  if (!response.ok) {
+    throw new Error(`HTTP error! status: ${response.status}`);
   }
+  return await response.json();
 };

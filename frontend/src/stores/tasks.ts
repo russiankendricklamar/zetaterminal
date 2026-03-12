@@ -16,36 +16,36 @@ export const useTaskStore = defineStore('tasks', () => {
   // Добавить новую задачу
   const addTask = (title: string, type: Task['type'] = 'calculation') => {
     const id = Date.now().toString()
-    tasks.value.push({
+    tasks.value = [...tasks.value, {
       id,
       title,
       progress: 0,
       status: 'running',
       type
-    })
+    }]
     return id
   }
 
   // Обновить прогресс
   const updateProgress = (id: string, progress: number) => {
-    const task = tasks.value.find(t => t.id === id)
-    if (task) {
-      task.progress = progress
-      if (progress >= 100) {
-        task.status = 'completed'
-        // Удаляем выполненную задачу через 3 секунды, чтобы юзер успел порадоваться
-        setTimeout(() => removeTask(id), 3000)
-      }
+    const isCompleted = progress >= 100
+    tasks.value = tasks.value.map(t =>
+      t.id === id
+        ? { ...t, progress, status: isCompleted ? 'completed' as const : t.status }
+        : t
+    )
+    if (isCompleted) {
+      // Удаляем выполненную задачу через 3 секунды, чтобы юзер успел порадоваться
+      setTimeout(() => removeTask(id), 3000)
     }
   }
 
   // Завершить с ошибкой
   const failTask = (id: string) => {
-    const task = tasks.value.find(t => t.id === id)
-    if (task) {
-      task.status = 'error'
-      setTimeout(() => removeTask(id), 5000)
-    }
+    tasks.value = tasks.value.map(t =>
+      t.id === id ? { ...t, status: 'error' as const } : t
+    )
+    setTimeout(() => removeTask(id), 5000)
   }
 
   const removeTask = (id: string) => {

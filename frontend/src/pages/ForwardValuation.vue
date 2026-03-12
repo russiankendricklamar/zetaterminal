@@ -1547,7 +1547,6 @@ const calculateValuation = async () => {
     updateValuation()
   } catch (err: unknown) {
     error.value = err instanceof Error ? err.message : 'Ошибка при расчете форварда'
-    console.error('Forward valuation error:', err)
   } finally {
     calculating.value = false
   }
@@ -1825,7 +1824,6 @@ const handleFileUpload = async (event: Event) => {
     error.value = ''
   } catch (err: unknown) {
     error.value = `Ошибка при загрузке файла: ${err instanceof Error ? err.message : String(err)}`
-    console.error('Excel parsing error:', err)
   }
 }
 
@@ -1932,7 +1930,6 @@ const calculateAllContracts = async () => {
         }
         results.push(errorResult)
         forwardRegistryStore.setForwardResult(i, errorResult)
-        console.error(`Error calculating contract ${i + 1}:`, err)
       }
     }
     
@@ -2151,7 +2148,6 @@ const exportRegistryToExcel = () => {
     XLSX.writeFile(wb, fileName)
     alert(`Реестр успешно экспортирован: ${fileName}\n${hasCalculatedContracts ? 'Включая все расчеты, сценарии и расписание купонов.' : 'Только входные параметры (контракты не рассчитаны).'}`)
   } catch (err: unknown) {
-    console.error('Ошибка при экспорте:', err)
     alert(`Ошибка при экспорте файла: ${err instanceof Error ? err.message : String(err)}`)
   }
 }
@@ -2172,7 +2168,6 @@ const saveRegistryToParquetHandler = async () => {
       }, 5000)
     }
   } catch (err: unknown) {
-    console.error('Error saving registry to parquet:', err)
     error.value = `Ошибка при сохранении реестра: ${err instanceof Error ? err.message : String(err)}`
   } finally {
     savingParquet.value = false

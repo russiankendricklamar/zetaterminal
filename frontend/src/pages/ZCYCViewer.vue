@@ -436,7 +436,6 @@ const filteredPeriods = computed((): ZCYCPoint[] => {
 // ============= METHODS =============
 const loadZCYC = async () => {
   if (!params.value.date) {
-    console.warn('Дата не выбрана')
     return
   }
   
@@ -450,17 +449,11 @@ const loadZCYC = async () => {
       results.value = data
       renderChart(results.value)
     } else {
-      console.error('Ошибка загрузки КБД:', data.error)
       // Показываем ошибку пользователю
       alert(`Ошибка загрузки кривой: ${data.error || 'Неизвестная ошибка'}`)
     }
   } catch (error: unknown) {
-    console.error('Ошибка загрузки кривой бескупонных доходностей:', error)
     const errorMessage = error instanceof Error ? error.message : 'Неизвестная ошибка'
-    console.error('Детали ошибки:', {
-      message: errorMessage,
-      date: params.value.date
-    })
     alert(`Ошибка загрузки кривой: ${errorMessage}\n\nПроверьте:\n1. Запущен ли бэкенд сервер\n2. Правильность URL API в настройках`)
   } finally {
     loading.value = false
