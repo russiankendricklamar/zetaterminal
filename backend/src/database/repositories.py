@@ -5,6 +5,7 @@ from datetime import UTC, datetime
 from typing import Any
 
 from sqlalchemy import select
+from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from .models import (
@@ -157,25 +158,14 @@ class MarketDataRepository:
 
     async def create_or_update(self, record: MarketDataDailySchema) -> dict[str, Any]:
         data = record.model_dump(exclude={"id", "created_at"}, exclude_none=True)
-        # Simple upsert: try to find existing, then update or create
-        stmt = (
-            select(MarketDataDaily)
-            .where(MarketDataDaily.ticker == data["ticker"])
-            .where(MarketDataDaily.data_type == data["data_type"])
-            .where(MarketDataDaily.date == data["date"])
-        )
+        # Atomic upsert via INSERT ... ON CONFLICT DO UPDATE
+        stmt = pg_insert(MarketDataDaily).values(**data)
+        stmt = stmt.on_conflict_do_update(
+            constraint="uq_market_data_ticker_type_date",
+            set_={k: stmt.excluded[k] for k in data if k not in ("ticker", "data_type", "date")},
+        ).returning(MarketDataDaily)
         result = await self.session.execute(stmt)
-        existing = result.scalar_one_or_none()
-
-        if existing:
-            for key, value in data.items():
-                setattr(existing, key, value)
-            await self.session.commit()
-            await self.session.refresh(existing)
-            return _row_to_dict(existing)
-
-        row = MarketDataDaily(**data)
-        self.session.add(row)
+        row = result.scalar_one()
         await self.session.commit()
         await self.session.refresh(row)
         return _row_to_dict(row)

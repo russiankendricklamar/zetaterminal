@@ -11,6 +11,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, status
 from passlib.context import CryptContext
 from pydantic import BaseModel, EmailStr, field_validator
 from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.database.client import get_session
@@ -163,7 +164,14 @@ async def register(request: Request, body: RegisterRequest, session: AsyncSessio
             invite_code=invite_code,
         )
         session.add(user)
-        await session.commit()
+        try:
+            await session.commit()
+        except IntegrityError:
+            await session.rollback()
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="Username or email already in use",
+            ) from None
 
         return RegisterResponse(
             username=user.username,
@@ -182,7 +190,7 @@ async def register(request: Request, body: RegisterRequest, session: AsyncSessio
 @limiter.limit("10/minute")
 async def activate(request: Request, body: ActivateRequest, session: AsyncSession = Depends(get_session)):
     result = await session.execute(
-        select(User).where(User.invite_code == body.code.strip().upper())
+        select(User).where(User.invite_code == body.code.strip().upper()).with_for_update()
     )
     user = result.scalar_one_or_none()
     if not user:
@@ -511,7 +519,7 @@ async def update_profile(
         )
 
     result = await session.execute(
-        select(User).where(User.username == username.lower())
+        select(User).where(User.username == username.lower()).with_for_update()
     )
     user = result.scalar_one_or_none()
     if not user:
@@ -533,7 +541,11 @@ async def update_profile(
     if body.preferences is not None:
         user.preferences = body.preferences
 
-    await session.commit()
+    try:
+        await session.commit()
+    except IntegrityError:
+        await session.rollback()
+        raise HTTPException(status_code=409, detail="Email already in use") from None
     await session.refresh(user)
 
     return ProfileResponse(

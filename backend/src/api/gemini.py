@@ -8,10 +8,9 @@ from pydantic import BaseModel, Field
 
 from src.middleware.rate_limit import limiter
 from src.services.secrets_service import get_key_sync
+from src.utils.error_handler import service_endpoint
 
 logger = logging.getLogger(__name__)
-
-from src.utils.error_handler import service_endpoint
 
 router = APIRouter()
 
@@ -90,5 +89,3 @@ async def analyze_market(http_request: Request, request: GenerateRequest):
 
     import json
     return json.loads(text)
-
-    return {"status": "healthy", "configured": bool(_gemini_key())}

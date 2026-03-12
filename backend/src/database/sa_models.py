@@ -5,7 +5,7 @@ Works with both Neon (PostgreSQL) and SQLite (desktop).
 """
 from datetime import UTC, datetime
 
-from sqlalchemy import JSON, Boolean, Column, DateTime, Float, Integer, String, Text, UniqueConstraint
+from sqlalchemy import JSON, Boolean, Column, DateTime, Float, ForeignKey, Integer, String, Text, UniqueConstraint
 from sqlalchemy.orm import DeclarativeBase
 
 
@@ -93,7 +93,7 @@ class User(Base):
     id = Column(Integer, primary_key=True, autoincrement=True)
     username = Column(String, unique=True, nullable=False, index=True)
     domain_handle = Column(String, unique=True, nullable=False)
-    email = Column(String, unique=True, nullable=False)
+    email = Column(String, unique=True, nullable=False, index=True)
     display_name = Column(String, nullable=True)
     phone = Column(String, nullable=True)
     bio = Column(Text, nullable=True)
@@ -140,8 +140,8 @@ class RefreshToken(Base):
     __tablename__ = "refresh_tokens"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    user_id = Column(Integer, nullable=False, index=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
     token_hash = Column(String, unique=True, nullable=False)
-    expires_at = Column(DateTime(timezone=True), nullable=False)
+    expires_at = Column(DateTime(timezone=True), nullable=False, index=True)
     revoked = Column(Boolean, default=False, nullable=False)
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(UTC))

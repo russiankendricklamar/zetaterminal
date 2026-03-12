@@ -127,7 +127,7 @@ async def update_user_status(
 ):
     if user_id == admin.id:
         raise HTTPException(status_code=400, detail="Cannot modify your own status")
-    result = await session.execute(select(User).where(User.id == user_id))
+    result = await session.execute(select(User).where(User.id == user_id).with_for_update())
     user = result.scalar_one_or_none()
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
@@ -150,7 +150,7 @@ async def update_user_role(
 ):
     if user_id == admin.id:
         raise HTTPException(status_code=400, detail="Cannot modify your own role")
-    result = await session.execute(select(User).where(User.id == user_id))
+    result = await session.execute(select(User).where(User.id == user_id).with_for_update())
     user = result.scalar_one_or_none()
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
@@ -165,7 +165,7 @@ async def update_user_role(
 async def kick_user(user_id: int, admin: User = Depends(require_admin), session: AsyncSession = Depends(get_session)):
     """Invalidate user session by revoking all refresh tokens (forces re-login)."""
     from sqlalchemy import update
-    result = await session.execute(select(User).where(User.id == user_id))
+    result = await session.execute(select(User).where(User.id == user_id).with_for_update())
     user = result.scalar_one_or_none()
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
@@ -185,7 +185,7 @@ async def kick_user(user_id: int, admin: User = Depends(require_admin), session:
 async def ban_user(user_id: int, admin: User = Depends(require_admin), session: AsyncSession = Depends(get_session)):
     """Block user account and revoke all refresh tokens."""
     from sqlalchemy import update
-    result = await session.execute(select(User).where(User.id == user_id))
+    result = await session.execute(select(User).where(User.id == user_id).with_for_update())
     user = result.scalar_one_or_none()
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
@@ -246,6 +246,11 @@ async def create_ip_ban(
 
 @router.delete("/ip-ban/{ip}", dependencies=_admin_dep)
 async def delete_ip_ban(ip: str, session: AsyncSession = Depends(get_session)):
+    try:
+        ipaddress.ip_address(ip.strip())
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid IP address format") from None
+    ip = ip.strip()
     result = await session.execute(select(IpBan).where(IpBan.ip_address == ip))
     ban = result.scalar_one_or_none()
     if not ban:
@@ -399,7 +404,11 @@ async def system_info():
     }
 
     rusage = resource.getrusage(resource.RUSAGE_SELF)
-    memory_mb = round(rusage.ru_maxrss / (1024 * 1024), 1) if sys.platform == "linux" else round(rusage.ru_maxrss / (1024 * 1024), 1)
+    # ru_maxrss is in KB on Linux, bytes on macOS
+    if sys.platform == "linux":
+        memory_mb = round(rusage.ru_maxrss / 1024, 1)
+    else:
+        memory_mb = round(rusage.ru_maxrss / (1024 * 1024), 1)
 
     return {
         "python_version": sys.version,
