@@ -210,11 +210,18 @@ async def _cleanup_expired_tokens() -> None:
 
 
 # Создаем FastAPI приложение
+_is_production = any(
+    os.getenv(m) for m in ("RENDER", "ORACLE_CLOUD", "OCI_REGION", "PRODUCTION")
+)
+
 app = FastAPI(
     title="Zeta Terminal API",
     description="Backend API для Zeta Terminal",
     version="1.0.0",
     lifespan=lifespan,
+    docs_url=None if _is_production else "/docs",
+    redoc_url=None if _is_production else "/redoc",
+    openapi_url=None if _is_production else "/openapi.json",
 )
 
 app.state.limiter = limiter

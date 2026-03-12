@@ -299,7 +299,7 @@ async def refresh(request: Request, body: RefreshRequest, session: AsyncSession 
     result = await session.execute(
         select(RefreshToken).where(
             RefreshToken.token_hash == token_hash,
-            not RefreshToken.revoked,
+            RefreshToken.revoked.is_(False),
             RefreshToken.expires_at > datetime.now(UTC),
         ).with_for_update()
     )
@@ -310,7 +310,7 @@ async def refresh(request: Request, body: RefreshRequest, session: AsyncSession 
         from sqlalchemy import update
         await session.execute(
             update(RefreshToken)
-            .where(RefreshToken.user_id == payload.sub, not RefreshToken.revoked)
+            .where(RefreshToken.user_id == payload.sub, RefreshToken.revoked.is_(False))
             .values(revoked=True)
         )
         await session.commit()

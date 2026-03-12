@@ -2,7 +2,8 @@
 Symmetric encryption for API keys stored in the database.
 
 Uses Fernet (AES-128-CBC with HMAC-SHA256) from the cryptography library.
-The encryption key is derived from the existing JWT_SECRET env var.
+Prefers a dedicated FERNET_KEY env var; falls back to deriving from JWT_SECRET
+for backward compatibility with existing encrypted data.
 """
 import base64
 import hashlib
@@ -15,7 +16,7 @@ _fernet = None
 
 
 def _get_fernet():
-    """Lazy-init Fernet cipher from JWT_SECRET."""
+    """Lazy-init Fernet cipher from FERNET_KEY (preferred) or JWT_SECRET (fallback)."""
     global _fernet
     if _fernet is not None:
         return _fernet
@@ -26,12 +27,26 @@ def _get_fernet():
         logger.warning("cryptography not installed — API key encryption disabled")
         return None
 
+    # Prefer dedicated encryption key, fall back to JWT_SECRET for backward compat
+    fernet_key_env = os.getenv("FERNET_KEY", "")
+    if fernet_key_env:
+        try:
+            _fernet = Fernet(fernet_key_env.encode())
+            logger.info("Fernet cipher initialized from FERNET_KEY")
+            return _fernet
+        except Exception:
+            logger.error("Invalid FERNET_KEY format — must be a valid Fernet key")
+            return None
+
     secret = os.getenv("JWT_SECRET", "")
     if not secret:
-        logger.warning("JWT_SECRET not set — API key encryption disabled")
+        logger.warning("Neither FERNET_KEY nor JWT_SECRET set — encryption disabled")
         return None
 
-    # Derive a 32-byte key from JWT_SECRET via SHA-256, then base64-encode for Fernet
+    logger.warning(
+        "Using JWT_SECRET-derived Fernet key (deprecated). "
+        "Set FERNET_KEY for independent key rotation."
+    )
     key_bytes = hashlib.sha256(secret.encode()).digest()
     fernet_key = base64.urlsafe_b64encode(key_bytes)
     _fernet = Fernet(fernet_key)

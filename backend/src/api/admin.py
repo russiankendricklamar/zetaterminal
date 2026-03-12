@@ -173,7 +173,7 @@ async def kick_user(user_id: int, admin: User = Depends(require_admin), session:
     # Revoke all active refresh tokens for this user
     await session.execute(
         update(RefreshToken)
-        .where(RefreshToken.user_id == user_id, not RefreshToken.revoked)
+        .where(RefreshToken.user_id == user_id, RefreshToken.revoked.is_(False))
         .values(revoked=True)
     )
     await session.commit()
@@ -194,7 +194,7 @@ async def ban_user(user_id: int, admin: User = Depends(require_admin), session: 
     # Revoke all active refresh tokens
     await session.execute(
         update(RefreshToken)
-        .where(RefreshToken.user_id == user_id, not RefreshToken.revoked)
+        .where(RefreshToken.user_id == user_id, RefreshToken.revoked.is_(False))
         .values(revoked=True)
     )
     await session.commit()
@@ -415,7 +415,11 @@ async def system_info():
 @router.post("/tests/run", dependencies=_admin_dep)
 async def run_tests(suite: str | None = Query(None, description="Test file name, e.g. test_risk_service")):
     """Run pytest suite and return results. If suite is None, runs all tests."""
+    import re
     import subprocess
+
+    if suite and not re.match(r"^[a-zA-Z0-9_]+$", suite):
+        raise HTTPException(status_code=400, detail="Invalid suite name")
 
     cmd = [sys.executable, "-m", "pytest", "--tb=short", "-q", "--no-header"]
     if suite:
@@ -459,7 +463,8 @@ async def run_tests(suite: str | None = Query(None, description="Test file name,
     except subprocess.TimeoutExpired:
         return {"status": "timeout", "passed": 0, "failed": 0, "errors": 0, "summary": "Test run timed out after 120s", "output": "", "stderr": "", "suite": suite or "all"}
     except Exception as exc:
-        raise HTTPException(status_code=500, detail=str(exc)) from exc
+        logger.error("Test runner failed: %s", exc, exc_info=True)
+        raise HTTPException(status_code=500, detail="Test runner failed") from exc
 
 
 @router.get("/tests/suites", dependencies=_admin_dep)
