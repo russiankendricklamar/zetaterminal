@@ -1,1 +1,0 @@
-import{a as t,g as a}from"./index-CBs_uqs7.js";const r=async(r,s)=>{const e=await fetch(`${t()}/api/database/export/registry/parquet`,{method:"POST",headers:a(),body:JSON.stringify({registry_type:r,data:s})});if(!e.ok){const t=await e.json().catch(()=>({detail:"Unknown error"}));throw new Error(t.detail||`HTTP error! status: ${e.status}`)}return await e.json()};export{r as s};
