@@ -1,0 +1,1076 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Zeta Terminal — Page Design Playground</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Anton&family=Oswald:wght@400;500;600&family=Space+Mono:wght@400;700&display=swap');
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: 'Oswald', system-ui, sans-serif;
+  background: #0a0a0a;
+  color: #f5f5f5;
+  height: 100vh;
+  overflow: hidden;
+}
+
+.playground {
+  display: grid;
+  grid-template-columns: 340px 1fr;
+  grid-template-rows: 1fr auto;
+  height: 100vh;
+}
+
+/* ═══ CONTROLS ═══ */
+.controls {
+  grid-row: 1 / 3;
+  background: #050505;
+  border-right: 1px solid #1a1a1a;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: #DC2626 #050505;
+}
+.controls::-webkit-scrollbar { width: 6px; }
+.controls::-webkit-scrollbar-track { background: #050505; }
+.controls::-webkit-scrollbar-thumb { background: #DC2626; }
+
+.controls-header {
+  padding: 16px 20px;
+  border-bottom: 1px solid #1a1a1a;
+  position: sticky; top: 0; background: #050505; z-index: 10;
+}
+.controls-header h1 { font-family:'Anton',sans-serif; font-size:18px; text-transform:uppercase; color:#f5f5f5; }
+.controls-header .sub { font-family:'Space Mono',monospace; font-size:10px; color:#525252; text-transform:uppercase; letter-spacing:0.1em; margin-top:4px; }
+
+/* Page selector */
+.page-selector { padding: 12px 20px; border-bottom: 1px solid #1a1a1a; }
+.page-selector select {
+  width: 100%; height: 36px; background: #0a0a0a; border: 1px solid #262626;
+  color: #f5f5f5; font-family:'Oswald',sans-serif; font-size: 13px;
+  text-transform: uppercase; letter-spacing: 0.04em; padding: 0 10px; cursor: pointer;
+}
+.page-selector select:focus { outline: none; border-color: #DC2626; }
+
+.control-group { border-bottom: 1px solid #1a1a1a; }
+.control-group-header {
+  padding: 12px 20px; font-family:'Oswald',sans-serif; font-size:11px;
+  text-transform:uppercase; letter-spacing:0.12em; color:#DC2626;
+  cursor:pointer; display:flex; justify-content:space-between; align-items:center; user-select:none;
+}
+.control-group-header:hover { background: #0a0a0a; }
+.control-group-header .arrow { font-family:'Space Mono',monospace; font-size:10px; color:#525252; }
+.control-group-body { padding: 0 20px 14px; display:flex; flex-direction:column; gap:12px; }
+.control-group-body.collapsed { display: none; }
+
+.control-row { display:flex; flex-direction:column; gap:5px; }
+.control-label {
+  font-family:'Space Mono',monospace; font-size:10px; text-transform:uppercase;
+  letter-spacing:0.08em; color:#737373; display:flex; justify-content:space-between;
+}
+.control-label .val { color:#a3a3a3; }
+
+input[type="range"] { -webkit-appearance:none; width:100%; height:4px; background:#1a1a1a; outline:none; }
+input[type="range"]::-webkit-slider-thumb { -webkit-appearance:none; width:12px; height:12px; background:#DC2626; border:none; cursor:pointer; }
+input[type="range"]::-moz-range-thumb { width:12px; height:12px; background:#DC2626; border:none; cursor:pointer; border-radius:0; }
+input[type="color"] { -webkit-appearance:none; width:100%; height:24px; border:1px solid #262626; background:none; cursor:pointer; padding:0; }
+input[type="color"]::-webkit-color-swatch-wrapper { padding:2px; }
+input[type="color"]::-webkit-color-swatch { border:none; }
+
+.toggle-row { display:flex; justify-content:space-between; align-items:center; }
+.toggle-row label { font-family:'Space Mono',monospace; font-size:10px; text-transform:uppercase; letter-spacing:0.08em; color:#737373; }
+.toggle { width:34px; height:16px; background:#1a1a1a; border:1px solid #262626; cursor:pointer; position:relative; transition:all 0.2s; }
+.toggle.on { background:#DC2626; border-color:#DC2626; }
+.toggle::after { content:''; position:absolute; top:2px; left:2px; width:10px; height:10px; background:#f5f5f5; transition:left 0.2s; }
+.toggle.on::after { left:20px; }
+
+/* ═══ PREVIEW ═══ */
+.preview-area { background:#111; overflow-y:auto; scrollbar-width:thin; scrollbar-color:#DC2626 #050505; }
+.preview-area::-webkit-scrollbar { width:6px; }
+.preview-area::-webkit-scrollbar-track { background:#050505; }
+.preview-area::-webkit-scrollbar-thumb { background:#DC2626; }
+
+/* ═══ PROMPT ═══ */
+.prompt-area {
+  background:#050505; border-top:1px solid #1a1a1a; padding:14px 20px;
+  display:flex; align-items:flex-start; gap:12px; max-height:180px; overflow-y:auto;
+}
+.prompt-text { flex:1; font-family:'Space Mono',monospace; font-size:11px; line-height:1.6; color:#a3a3a3; white-space:pre-wrap; }
+.copy-btn {
+  font-family:'Oswald',sans-serif; font-size:11px; text-transform:uppercase; letter-spacing:0.05em;
+  padding:7px 14px; background:#DC2626; border:none; color:#fff; cursor:pointer; white-space:nowrap; flex-shrink:0; transition:background 0.2s;
+}
+.copy-btn:hover { background:#ef4444; }
+.copy-btn.copied { background:#22c55e; }
+
+/* ═══ PAGE-SPECIFIC INDICATOR ═══ */
+.page-indicator {
+  padding: 8px 20px; background: #0a0a0a; border-bottom: 1px solid #1a1a1a;
+  font-family: 'Space Mono', monospace; font-size: 10px; color: #525252;
+  text-transform: uppercase; letter-spacing: 0.08em;
+}
+.page-indicator span { color: #DC2626; }
+</style>
+</head>
+<body>
+<div class="playground">
+  <div class="controls">
+    <div class="controls-header">
+      <h1>Zeta Terminal</h1>
+      <div class="sub">Page Design Playground</div>
+    </div>
+
+    <div class="page-selector">
+      <select id="pageSelect" onchange="onPageChange(this.value)">
+        <optgroup label="Main">
+          <option value="portfolio">Portfolio</option>
+          <option value="terminal">Terminal</option>
+        </optgroup>
+        <optgroup label="Derivatives">
+          <option value="optionPricing">Option Pricing</option>
+          <option value="volatility">Volatility Surface</option>
+        </optgroup>
+        <optgroup label="Risk">
+          <option value="stressTesting">Stress Testing</option>
+          <option value="backtesting">Backtesting</option>
+        </optgroup>
+        <optgroup label="Fixed Income">
+          <option value="bondValuation">Bond Valuation</option>
+        </optgroup>
+        <optgroup label="Analytics">
+          <option value="regimeAnalysis">Regime Analysis</option>
+        </optgroup>
+      </select>
+    </div>
+
+    <div id="controlsContainer"></div>
+  </div>
+
+  <div class="preview-area">
+    <div class="page-indicator" id="pageIndicator">Page: <span>Portfolio</span></div>
+    <div id="preview"></div>
+  </div>
+
+  <div class="prompt-area">
+    <div class="prompt-text" id="promptOutput">Select a page and adjust controls...</div>
+    <button class="copy-btn" onclick="copyPrompt()">Copy</button>
+  </div>
+</div>
+
+<script>
+/* ══════════════════════════════════════════════
+   STATE
+   ══════════════════════════════════════════════ */
+var currentPage = 'portfolio';
+
+// Global design tokens (current main.css values)
+var globalDefaults = {
+  bg: '#050505', cardBg: '#0a0a0a', bgTertiary: '#111111',
+  accent: '#DC2626', accentHover: '#ef4444',
+  border: '#1a1a1a', borderHover: '#262626',
+  textPrimary: '#f5f5f5', textSecondary: '#a3a3a3', textTertiary: '#737373', textMuted: '#525252',
+  radiusSm: 8, radiusMd: 9, radiusLg: 11
+};
+
+// Page-specific defaults
+var pageConfigs = {
+  portfolio: {
+    label: 'Portfolio',
+    file: 'src/pages/Portfolio.vue',
+    rootClass: '.portfolio-page',
+    defaults: {
+      pagePadding: 16, maxWidth: 1800, sectionGap: 27,
+      gridTemplate: '1fr 340px', gridGap: 24,
+      heroTitleSize: 32, cardPadding: 17, btnHeight: 37,
+      showHero: true, showSidebar: true
+    }
+  },
+  terminal: {
+    label: 'Terminal',
+    file: 'src/pages/Terminal.vue',
+    rootClass: '.terminal-root',
+    defaults: {
+      tabBarHeight: 36, tabFontSize: 11, headerHeight: 56,
+      headerPadding: 20, logoSize: 18, navFontSize: 13,
+      showTabs: true, showAiBtn: true
+    }
+  },
+  optionPricing: {
+    label: 'Option Pricing',
+    file: 'src/pages/OptionPricing.vue',
+    rootClass: '.page-container',
+    defaults: {
+      pagePadding: 16, maxWidth: 1800, sectionGap: 27,
+      sidebarWidth: 320, gridGap: 24,
+      cardPadding: 17, btnHeight: 37, inputHeight: 37,
+      formLabelSize: 11, formCols: 2
+    }
+  },
+  stressTesting: {
+    label: 'Stress Testing',
+    file: 'src/pages/StressTesting.vue',
+    rootClass: '.page-container',
+    defaults: {
+      pagePadding: 16, maxWidth: 1800, sectionGap: 27,
+      scenarioCols: 3, scenarioGap: 20,
+      cardPadding: 17, badgeSize: 10, showSeverityBadges: true
+    }
+  },
+  bondValuation: {
+    label: 'Bond Valuation',
+    file: 'src/pages/BondValuation.vue',
+    rootClass: '.page-container',
+    defaults: {
+      pagePadding: 16, maxWidth: 1800, sectionGap: 27,
+      sidebarWidth: 380, gridGap: 24,
+      cardPadding: 17, btnHeight: 37, tableFontSize: 12
+    }
+  },
+  backtesting: {
+    label: 'Backtesting',
+    file: 'src/pages/Backtesting.vue',
+    rootClass: '.page-container',
+    defaults: {
+      pagePadding: 16, maxWidth: 1800, sectionGap: 27,
+      kpiCols: 6, kpiGap: 16, gridTemplate: '3fr 2fr',
+      cardPadding: 17, btnHeight: 37, segBtnPadding: 10
+    }
+  },
+  volatility: {
+    label: 'Volatility Surface',
+    file: 'src/pages/VolatilitySurface.vue',
+    rootClass: '.volatility-surface-page',
+    defaults: {
+      pagePadding: 24, headerGap: 16, canvasHeight: 500,
+      controlGap: 12, btnHeight: 37, showDatePicker: true
+    }
+  },
+  regimeAnalysis: {
+    label: 'Regime Analysis',
+    file: 'src/pages/RegimeAnalysis.vue',
+    rootClass: '.page-container',
+    defaults: {
+      pagePadding: 16, maxWidth: 1800, sectionGap: 27,
+      sidebarWidth: 320, gridGap: 24,
+      matrixCellSize: 40, cardPadding: 17, activeView: '2d'
+    }
+  }
+};
+
+var state = {};
+
+function initState(page) {
+  state = JSON.parse(JSON.stringify(pageConfigs[page].defaults));
+}
+
+/* ══════════════════════════════════════════════
+   CONTROLS BUILDER
+   ══════════════════════════════════════════════ */
+function buildControls(page) {
+  var container = document.getElementById('controlsContainer');
+  while (container.firstChild) container.removeChild(container.firstChild);
+  var cfg = pageConfigs[page];
+
+  if (page === 'portfolio') {
+    addGroup(container, 'Layout', [
+      slider('pagePadding', 'Page Padding', 8, 48, 'px'),
+      slider('maxWidth', 'Max Width', 800, 1800, 'px', 50),
+      slider('sectionGap', 'Section Gap', 8, 48, 'px'),
+      slider('gridGap', 'Grid Gap', 8, 40, 'px'),
+    ]);
+    addGroup(container, 'Grid', [
+      selectCtrl('gridTemplate', 'Dashboard Grid', {'1fr 340px':'Sidebar 340px','1fr 380px':'Sidebar 380px','1fr 300px':'Sidebar 300px','1fr':'No Sidebar','1fr 1fr':'Equal Split'}),
+    ]);
+    addGroup(container, 'Cards & Buttons', [
+      slider('heroTitleSize', 'Hero Title', 20, 48, 'px'),
+      slider('cardPadding', 'Card Padding', 8, 40, 'px'),
+      slider('btnHeight', 'Button Height', 28, 52, 'px'),
+    ]);
+    addGroup(container, 'Features', [
+      toggle('showHero', 'Hero Section'),
+      toggle('showSidebar', 'Right Sidebar'),
+    ]);
+  }
+  else if (page === 'terminal') {
+    addGroup(container, 'Tab Bar', [
+      slider('tabBarHeight', 'Tab Bar Height', 24, 48, 'px'),
+      slider('tabFontSize', 'Tab Font Size', 9, 15, 'px'),
+    ]);
+    addGroup(container, 'Header', [
+      slider('headerHeight', 'Header Height', 40, 72, 'px'),
+      slider('headerPadding', 'Header Padding', 8, 32, 'px'),
+      slider('logoSize', 'Logo Size', 14, 28, 'px'),
+      slider('navFontSize', 'Nav Font Size', 10, 18, 'px'),
+    ]);
+    addGroup(container, 'Features', [
+      toggle('showTabs', 'Tab Bar'),
+      toggle('showAiBtn', 'AI Button'),
+    ]);
+  }
+  else if (page === 'optionPricing') {
+    addGroup(container, 'Layout', [
+      slider('pagePadding', 'Page Padding', 8, 48, 'px'),
+      slider('maxWidth', 'Max Width', 800, 1800, 'px', 50),
+      slider('sectionGap', 'Section Gap', 8, 48, 'px'),
+      slider('sidebarWidth', 'Sidebar Width', 240, 440, 'px'),
+      slider('gridGap', 'Grid Gap', 8, 40, 'px'),
+    ]);
+    addGroup(container, 'Form', [
+      slider('cardPadding', 'Card Padding', 8, 40, 'px'),
+      slider('btnHeight', 'Button/Input Height', 28, 52, 'px'),
+      slider('formLabelSize', 'Label Font Size', 9, 14, 'px'),
+      slider('formCols', 'Form Columns', 1, 3, ''),
+    ]);
+  }
+  else if (page === 'stressTesting') {
+    addGroup(container, 'Layout', [
+      slider('pagePadding', 'Page Padding', 8, 48, 'px'),
+      slider('maxWidth', 'Max Width', 800, 1800, 'px', 50),
+      slider('sectionGap', 'Section Gap', 8, 48, 'px'),
+    ]);
+    addGroup(container, 'Scenarios Grid', [
+      slider('scenarioCols', 'Columns', 1, 5, ''),
+      slider('scenarioGap', 'Gap', 8, 40, 'px'),
+      slider('cardPadding', 'Card Padding', 8, 40, 'px'),
+    ]);
+    addGroup(container, 'Features', [
+      toggle('showSeverityBadges', 'Severity Badges'),
+    ]);
+  }
+  else if (page === 'bondValuation') {
+    addGroup(container, 'Layout', [
+      slider('pagePadding', 'Page Padding', 8, 48, 'px'),
+      slider('maxWidth', 'Max Width', 800, 1800, 'px', 50),
+      slider('sectionGap', 'Section Gap', 8, 48, 'px'),
+      slider('sidebarWidth', 'Controls Width', 280, 480, 'px'),
+    ]);
+    addGroup(container, 'Table & Cards', [
+      slider('cardPadding', 'Card Padding', 8, 40, 'px'),
+      slider('btnHeight', 'Button Height', 28, 52, 'px'),
+      slider('tableFontSize', 'Table Font', 10, 16, 'px'),
+    ]);
+  }
+  else if (page === 'backtesting') {
+    addGroup(container, 'Layout', [
+      slider('pagePadding', 'Page Padding', 8, 48, 'px'),
+      slider('maxWidth', 'Max Width', 800, 1800, 'px', 50),
+      slider('sectionGap', 'Section Gap', 8, 48, 'px'),
+      selectCtrl('gridTemplate', 'Dashboard Grid', {'3fr 2fr':'3:2 Split','1fr 1fr':'Equal','2fr 1fr':'2:1 Split','1fr':'Single Column'}),
+    ]);
+    addGroup(container, 'KPI Cards', [
+      slider('kpiCols', 'KPI Columns', 2, 8, ''),
+      slider('kpiGap', 'KPI Gap', 8, 32, 'px'),
+      slider('cardPadding', 'Card Padding', 8, 40, 'px'),
+    ]);
+    addGroup(container, 'Controls', [
+      slider('btnHeight', 'Button Height', 28, 52, 'px'),
+      slider('segBtnPadding', 'Segment Padding', 4, 20, 'px'),
+    ]);
+  }
+  else if (page === 'volatility') {
+    addGroup(container, 'Layout', [
+      slider('pagePadding', 'Page Padding', 8, 48, 'px'),
+      slider('headerGap', 'Header Gap', 8, 32, 'px'),
+      slider('canvasHeight', 'Canvas Height', 300, 800, 'px'),
+      slider('controlGap', 'Control Gap', 4, 24, 'px'),
+    ]);
+    addGroup(container, 'Controls', [
+      slider('btnHeight', 'Button Height', 28, 52, 'px'),
+      toggle('showDatePicker', 'Date Picker'),
+    ]);
+  }
+  else if (page === 'regimeAnalysis') {
+    addGroup(container, 'Layout', [
+      slider('pagePadding', 'Page Padding', 8, 48, 'px'),
+      slider('maxWidth', 'Max Width', 800, 1800, 'px', 50),
+      slider('sectionGap', 'Section Gap', 8, 48, 'px'),
+      slider('sidebarWidth', 'Sidebar Width', 240, 440, 'px'),
+    ]);
+    addGroup(container, 'Matrix & Cards', [
+      slider('matrixCellSize', 'Matrix Cell', 24, 64, 'px'),
+      slider('cardPadding', 'Card Padding', 8, 40, 'px'),
+      slider('gridGap', 'Grid Gap', 8, 40, 'px'),
+    ]);
+    addGroup(container, 'View', [
+      selectCtrl('activeView', 'Active View', {'2d':'2D Dashboard','3d':'3D Visualization'}),
+    ]);
+  }
+
+  // Global colors group (always present)
+  addGroup(container, 'Global Colors', [
+    colorCtrl('accent', 'Accent'),
+    colorCtrl('accentHover', 'Accent Hover'),
+    colorCtrl('bg', 'Background'),
+    colorCtrl('cardBg', 'Card BG'),
+    colorCtrl('border', 'Border'),
+    colorCtrl('textPrimary', 'Text Primary'),
+    colorCtrl('textSecondary', 'Text Secondary'),
+  ], true);
+}
+
+function addGroup(container, title, controls, startCollapsed) {
+  var group = document.createElement('div');
+  group.className = 'control-group';
+
+  var header = document.createElement('div');
+  header.className = 'control-group-header';
+  header.textContent = title;
+  var arrow = document.createElement('span');
+  arrow.className = 'arrow';
+  arrow.textContent = startCollapsed ? '>' : 'v';
+  header.appendChild(arrow);
+  header.addEventListener('click', function() {
+    var body = header.nextElementSibling;
+    body.classList.toggle('collapsed');
+    arrow.textContent = body.classList.contains('collapsed') ? '>' : 'v';
+  });
+
+  var body = document.createElement('div');
+  body.className = 'control-group-body' + (startCollapsed ? ' collapsed' : '');
+
+  controls.forEach(function(ctrl) { body.appendChild(ctrl); });
+  group.appendChild(header);
+  group.appendChild(body);
+  container.appendChild(group);
+}
+
+function slider(key, label, min, max, unit, step) {
+  var row = document.createElement('div');
+  row.className = 'control-row';
+  var lbl = document.createElement('div');
+  lbl.className = 'control-label';
+  lbl.textContent = label + ' ';
+  var valSpan = document.createElement('span');
+  valSpan.className = 'val';
+  valSpan.id = 'v-' + key;
+  valSpan.textContent = (state[key] || 0) + unit;
+  lbl.appendChild(valSpan);
+
+  var input = document.createElement('input');
+  input.type = 'range';
+  input.min = min; input.max = max;
+  if (step) input.step = step;
+  input.value = state[key] || 0;
+  input.addEventListener('input', function() {
+    state[key] = +this.value;
+    valSpan.textContent = this.value + unit;
+    updateAll();
+  });
+
+  row.appendChild(lbl);
+  row.appendChild(input);
+  return row;
+}
+
+function selectCtrl(key, label, options) {
+  var row = document.createElement('div');
+  row.className = 'control-row';
+  var lbl = document.createElement('div');
+  lbl.className = 'control-label';
+  lbl.textContent = label;
+
+  var sel = document.createElement('select');
+  sel.style.cssText = "width:100%;height:30px;background:#0a0a0a;border:1px solid #262626;color:#f5f5f5;font-family:'Space Mono',monospace;font-size:11px;padding:0 8px;cursor:pointer;";
+  Object.keys(options).forEach(function(val) {
+    var opt = document.createElement('option');
+    opt.value = val; opt.textContent = options[val];
+    if (val === String(state[key])) opt.selected = true;
+    sel.appendChild(opt);
+  });
+  sel.addEventListener('change', function() {
+    state[key] = this.value;
+    updateAll();
+  });
+
+  row.appendChild(lbl);
+  row.appendChild(sel);
+  return row;
+}
+
+function colorCtrl(key, label) {
+  var row = document.createElement('div');
+  row.className = 'control-row';
+  var lbl = document.createElement('div');
+  lbl.className = 'control-label';
+  lbl.textContent = label + ' ';
+  var valSpan = document.createElement('span');
+  valSpan.className = 'val';
+  valSpan.id = 'vc-' + key;
+  valSpan.textContent = globalDefaults[key];
+  lbl.appendChild(valSpan);
+
+  var input = document.createElement('input');
+  input.type = 'color';
+  input.value = globalDefaults[key];
+  input.addEventListener('input', function() {
+    globalDefaults[key] = this.value;
+    valSpan.textContent = this.value;
+    updateAll();
+  });
+
+  row.appendChild(lbl);
+  row.appendChild(input);
+  return row;
+}
+
+function toggle(key, label) {
+  var row = document.createElement('div');
+  row.className = 'toggle-row';
+  var lbl = document.createElement('label');
+  lbl.textContent = label;
+  var tog = document.createElement('div');
+  tog.className = 'toggle' + (state[key] ? ' on' : '');
+  tog.addEventListener('click', function() {
+    state[key] = !state[key];
+    tog.classList.toggle('on');
+    updateAll();
+  });
+  row.appendChild(lbl);
+  row.appendChild(tog);
+  return row;
+}
+
+/* ══════════════════════════════════════════════
+   PAGE CHANGE
+   ══════════════════════════════════════════════ */
+function onPageChange(page) {
+  currentPage = page;
+  initState(page);
+  buildControls(page);
+  var indicator = document.getElementById('pageIndicator');
+  indicator.textContent = '';
+  indicator.appendChild(document.createTextNode('Page: '));
+  var sp = document.createElement('span');
+  sp.textContent = pageConfigs[page].file;
+  indicator.appendChild(sp);
+  updateAll();
+}
+
+/* ══════════════════════════════════════════════
+   RENDER HELPERS
+   ══════════════════════════════════════════════ */
+function el(tag, css, text) {
+  var e = document.createElement(tag);
+  if (css) e.style.cssText = css;
+  if (text) e.textContent = text;
+  return e;
+}
+
+function sectionHeader(title, subtitle, rightEl) {
+  var h = el('div', 'display:flex;justify-content:space-between;align-items:flex-end;border-bottom:1px solid '+g('border')+';padding-bottom:14px;');
+  var left = el('div');
+  left.appendChild(el('div', "font-family:'Anton',sans-serif;font-size:"+state.heroTitleSize+"px;color:"+g('textPrimary')+";text-transform:uppercase;letter-spacing:-0.02em;line-height:0.9;", title));
+  if (subtitle) left.appendChild(el('div', "font-family:'Space Mono',monospace;font-size:12px;color:"+g('textTertiary')+";text-transform:uppercase;letter-spacing:0.1em;margin-top:6px;", subtitle));
+  h.appendChild(left);
+  if (rightEl) h.appendChild(rightEl);
+  return h;
+}
+
+function card(title, value, meta, vColor) {
+  var c = el('div', 'background:'+g('cardBg')+';border:1px solid '+g('border')+';padding:'+(state.cardPadding||17)+'px;border-radius:'+globalDefaults.radiusMd+'px;transition:border-color 0.2s;cursor:default;');
+  c.addEventListener('mouseenter', function(){ c.style.borderColor = g('borderHover'); });
+  c.addEventListener('mouseleave', function(){ c.style.borderColor = g('border'); });
+  c.appendChild(el('div', "font-family:'Oswald',sans-serif;font-size:13px;text-transform:uppercase;letter-spacing:0.05em;color:"+g('textSecondary')+";margin-bottom:6px;", title));
+  c.appendChild(el('div', "font-family:'Space Mono',monospace;font-size:22px;color:"+(vColor||g('textPrimary'))+";", value));
+  if (meta) c.appendChild(el('div', "font-family:'Space Mono',monospace;font-size:10px;color:"+g('textTertiary')+";margin-top:4px;text-transform:uppercase;letter-spacing:0.06em;", meta));
+  return c;
+}
+
+function btn(text, primary) {
+  var b = el('button', "height:"+(state.btnHeight||37)+"px;padding:0 18px;border-radius:"+globalDefaults.radiusSm+"px;font-family:'Oswald',sans-serif;font-size:13px;font-weight:500;text-transform:uppercase;letter-spacing:0.05em;cursor:pointer;display:inline-flex;align-items:center;gap:6px;transition:all 0.2s;border:1px solid transparent;", text);
+  if (primary) { b.style.background = g('accent'); b.style.color = '#fff'; b.style.borderColor = g('accent'); }
+  else { b.style.background = 'transparent'; b.style.borderColor = g('borderHover'); b.style.color = g('textPrimary'); }
+  return b;
+}
+
+function inputField(placeholder) {
+  var inp = el('input', "width:100%;box-sizing:border-box;height:"+(state.btnHeight||state.inputHeight||37)+"px;padding:0 12px;border-radius:"+globalDefaults.radiusSm+"px;border:1px solid "+g('border')+";background:"+g('bg')+";color:"+g('textPrimary')+";font-family:'Space Mono',monospace;font-size:12px;");
+  inp.placeholder = placeholder || '';
+  return inp;
+}
+
+function chartPlaceholder(label) {
+  var ch = el('div', 'background:'+g('bg')+';border:1px solid '+g('border')+';border-radius:'+globalDefaults.radiusMd+'px;height:'+(state.canvasHeight||180)+'px;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden;');
+  var wave = el('div', "position:absolute;bottom:0;left:0;right:0;height:60%;background:linear-gradient(to right,transparent,rgba(220,38,38,0.08) 25%,rgba(220,38,38,0.12) 50%,rgba(220,38,38,0.06) 75%,transparent);clip-path:polygon(0 80%,5% 55%,10% 65%,15% 35%,20% 50%,25% 25%,30% 40%,35% 20%,40% 30%,45% 15%,50% 35%,55% 20%,60% 40%,65% 30%,70% 45%,75% 25%,80% 50%,85% 35%,90% 55%,95% 40%,100% 60%,100% 100%,0% 100%);");
+  ch.appendChild(wave);
+  ch.appendChild(el('span', "font-family:'Space Mono',monospace;font-size:10px;color:"+g('textMuted')+";text-transform:uppercase;letter-spacing:0.1em;z-index:1;", label));
+  return ch;
+}
+
+function badge(text, color) {
+  return el('span', "font-family:'Space Mono',monospace;font-size:10px;text-transform:uppercase;letter-spacing:0.1em;padding:3px 8px;border:1px solid "+color+";color:"+color+";", text);
+}
+
+function table(headers, rows) {
+  var t = el('table', "width:100%;border-collapse:collapse;font-family:'Space Mono',monospace;font-size:"+(state.tableFontSize||12)+"px;");
+  var thead = document.createElement('thead');
+  var tr = document.createElement('tr');
+  headers.forEach(function(h){ tr.appendChild(el('th', "background:"+g('bg')+";padding:10px 14px;text-align:left;font-weight:500;text-transform:uppercase;letter-spacing:0.1em;color:"+g('textTertiary')+";border-bottom:1px solid "+g('border')+";", h)); });
+  thead.appendChild(tr); t.appendChild(thead);
+  var tbody = document.createElement('tbody');
+  rows.forEach(function(row){
+    var r = document.createElement('tr');
+    r.addEventListener('mouseenter', function(){ r.style.background = g('bgTertiary'); });
+    r.addEventListener('mouseleave', function(){ r.style.background = 'none'; });
+    row.forEach(function(cell){
+      var td = el('td', 'padding:10px 14px;border-bottom:1px solid '+g('border')+';color:'+g('textPrimary')+';');
+      if (typeof cell === 'object') { td.textContent = cell.t; td.style.color = cell.c; } else td.textContent = cell;
+      r.appendChild(td);
+    });
+    tbody.appendChild(r);
+  });
+  t.appendChild(tbody); return t;
+}
+
+function g(key) { return globalDefaults[key]; }
+
+/* ══════════════════════════════════════════════
+   PAGE RENDERERS
+   ══════════════════════════════════════════════ */
+function renderPortfolio(page) {
+  if (state.showHero) {
+    var hero = el('div', 'margin-bottom:'+(state.sectionGap||27)+'px;');
+    hero.appendChild(el('h1', "font-family:'Anton',sans-serif;font-size:"+(state.heroTitleSize||32)+"px;color:"+g('textPrimary')+";text-transform:uppercase;line-height:1;", 'Portfolio Management'));
+    hero.appendChild(el('div', "font-family:'Space Mono',monospace;font-size:12px;color:"+g('textTertiary')+";margin-top:8px;text-transform:uppercase;letter-spacing:0.1em;", 'Bank: Sberbank #1481'));
+    page.appendChild(hero);
+  }
+
+  var grid = el('div', 'display:grid;grid-template-columns:'+state.gridTemplate+';gap:'+state.gridGap+'px;');
+
+  // Left column
+  var left = el('div', 'display:flex;flex-direction:column;gap:'+state.gridGap+'px;');
+  var kpiGrid = el('div', 'display:grid;grid-template-columns:repeat(3,1fr);gap:'+state.gridGap+'px;');
+  kpiGrid.appendChild(card('NAV', '$1.25M', '+12.4%', '#22c55e'));
+  kpiGrid.appendChild(card('VaR 95%', '-$34.5K', '2.77%', g('accent')));
+  kpiGrid.appendChild(card('Sharpe', '1.84', '252d rolling'));
+  left.appendChild(kpiGrid);
+  var ch = chartPlaceholder('Portfolio Performance');
+  ch.style.height = '200px';
+  left.appendChild(ch);
+  left.appendChild(table(['Ticker','Weight','PnL','VaR'],[
+    ['SBER','18.4%',{t:'+5.2%',c:'#22c55e'},'-2.1%'],
+    ['GAZP','12.1%',{t:'-3.8%',c:g('accent')},'-4.5%'],
+    ['LKOH','15.7%',{t:'+8.1%',c:'#22c55e'},'-2.8%'],
+  ]));
+  grid.appendChild(left);
+
+  // Right sidebar
+  if (state.showSidebar && state.gridTemplate !== '1fr') {
+    var right = el('div', 'display:flex;flex-direction:column;gap:'+state.gridGap+'px;');
+    right.appendChild(card('Positions', '14', 'Active'));
+    right.appendChild(card('Beta', '0.73', 'vs IMOEX'));
+    right.appendChild(card('Drawdown', '-8.2%', '2024-03 to 2024-05', g('accent')));
+    var heatmap = chartPlaceholder('Correlation Heatmap');
+    heatmap.style.height = '160px';
+    right.appendChild(heatmap);
+    grid.appendChild(right);
+  }
+
+  page.appendChild(grid);
+}
+
+function renderTerminal(page) {
+  page.style.padding = '0';
+  page.style.gap = '0';
+  page.style.maxWidth = 'none';
+  page.style.background = g('bg');
+
+  // Tab bar
+  if (state.showTabs) {
+    var tabs = el('div', 'display:flex;background:#000;border-bottom:1px solid '+g('border')+';height:'+state.tabBarHeight+'px;align-items:center;padding:0 8px;');
+    ['Portfolio','Options','Stress Test'].forEach(function(name, i){
+      var tab = el('div', "padding:0 14px;height:100%;display:flex;align-items:center;font-family:'Space Mono',monospace;font-size:"+state.tabFontSize+"px;text-transform:uppercase;letter-spacing:0.06em;cursor:pointer;border-bottom:2px solid transparent;color:"+g('textMuted')+";transition:all 0.2s;", name);
+      if (i === 0) { tab.style.color = g('textPrimary'); tab.style.borderBottomColor = g('accent'); }
+      tab.addEventListener('mouseenter', function(){ if(i!==0) tab.style.color = g('textSecondary'); });
+      tab.addEventListener('mouseleave', function(){ if(i!==0) tab.style.color = g('textMuted'); });
+      tabs.appendChild(tab);
+    });
+    var newTab = el('div', "padding:0 10px;height:100%;display:flex;align-items:center;font-family:'Space Mono',monospace;font-size:14px;color:"+g('textMuted')+";cursor:pointer;", '+');
+    tabs.appendChild(newTab);
+    page.appendChild(tabs);
+  }
+
+  // Header
+  var header = el('div', 'display:flex;align-items:center;justify-content:space-between;height:'+state.headerHeight+'px;padding:0 '+state.headerPadding+'px;border-bottom:1px solid '+g('border')+';');
+  var hLeft = el('div', 'display:flex;align-items:center;gap:16px;');
+  hLeft.appendChild(el('span', "font-family:'Space Mono',monospace;font-size:"+state.logoSize+"px;color:"+g('accent')+";font-weight:bold;", '\u03B6'));
+  hLeft.appendChild(el('span', "font-family:'Oswald',sans-serif;font-size:"+state.navFontSize+"px;text-transform:uppercase;letter-spacing:0.04em;color:"+g('textPrimary')+";cursor:pointer;", 'Analytics \u25BE'));
+  header.appendChild(hLeft);
+
+  var hRight = el('div', 'display:flex;align-items:center;gap:12px;');
+  var search = el('div', "display:flex;align-items:center;gap:6px;padding:6px 12px;border:1px solid "+g('border')+";border-radius:"+globalDefaults.radiusSm+"px;cursor:pointer;");
+  search.appendChild(el('span', "font-family:'Space Mono',monospace;font-size:11px;color:"+g('textMuted')+";", 'Search...'));
+  search.appendChild(el('span', "font-family:'Space Mono',monospace;font-size:9px;color:"+g('textMuted')+";padding:2px 6px;border:1px solid "+g('border')+";border-radius:3px;", '\u2318K'));
+  hRight.appendChild(search);
+  if (state.showAiBtn) {
+    var ai = el('div', "padding:6px 12px;border:1px solid "+g('accent')+";border-radius:"+globalDefaults.radiusSm+"px;font-family:'Oswald',sans-serif;font-size:11px;text-transform:uppercase;color:"+g('accent')+";cursor:pointer;", 'AI');
+    hRight.appendChild(ai);
+  }
+  var avatar = el('div', 'width:28px;height:28px;border-radius:50%;background:'+g('borderHover')+';');
+  hRight.appendChild(avatar);
+  header.appendChild(hRight);
+  page.appendChild(header);
+
+  // Content area placeholder
+  var content = el('div', 'padding:24px;display:flex;flex-direction:column;gap:20px;');
+  content.appendChild(el('div', "font-family:'Space Mono',monospace;font-size:11px;color:"+g('textMuted')+";text-transform:uppercase;letter-spacing:0.1em;", 'Active workspace content'));
+  var ch = chartPlaceholder('Terminal Dashboard');
+  ch.style.height = '300px';
+  content.appendChild(ch);
+  page.appendChild(content);
+}
+
+function renderOptionPricing(page) {
+  var btns = el('div', 'display:flex;gap:8px;');
+  btns.appendChild(btn('Upload', false));
+  btns.appendChild(btn('Calculate \u2192', true));
+  page.appendChild(sectionHeader('Option Pricing', 'BSM / Heston / VG', btns));
+
+  var grid = el('div', 'display:grid;grid-template-columns:'+state.sidebarWidth+'px 1fr;gap:'+state.gridGap+'px;');
+  // Controls panel
+  var controls = el('div', 'background:'+g('cardBg')+';border:1px solid '+g('border')+';padding:'+state.cardPadding+'px;border-radius:'+globalDefaults.radiusMd+'px;display:flex;flex-direction:column;gap:14px;');
+  controls.appendChild(el('div', "font-family:'Oswald',sans-serif;font-size:12px;text-transform:uppercase;letter-spacing:0.06em;color:"+g('textSecondary')+";", 'Parameters'));
+  var formGrid = el('div', 'display:grid;grid-template-columns:repeat('+state.formCols+',1fr);gap:12px;');
+  [['Spot (S)','285.50'],['Strike (K)','290.00'],['Vol (\u03C3)','0.35'],['Time (T)','0.25'],['Rate (r)','0.16'],['Div (q)','0.05']].forEach(function(f){
+    var grp = el('div', 'display:flex;flex-direction:column;gap:4px;');
+    grp.appendChild(el('label', "font-family:'Space Mono',monospace;font-size:"+state.formLabelSize+"px;text-transform:uppercase;letter-spacing:0.06em;color:"+g('textTertiary')+";", f[0]));
+    var inp = inputField(f[1]); inp.value = f[1]; grp.appendChild(inp);
+    formGrid.appendChild(grp);
+  });
+  controls.appendChild(formGrid);
+  controls.appendChild(btn('Calculate \u2192', true));
+  grid.appendChild(controls);
+
+  // Results
+  var results = el('div', 'display:flex;flex-direction:column;gap:'+state.gridGap+'px;');
+  var kpi = el('div', 'display:grid;grid-template-columns:repeat(3,1fr);gap:'+state.gridGap+'px;');
+  kpi.appendChild(card('Call', '\u20BD18.42', '\u0394=0.452', '#22c55e'));
+  kpi.appendChild(card('Put', '\u20BD21.87', '\u0394=-0.548', g('accent')));
+  kpi.appendChild(card('Gamma', '0.0142', 'Per 1% move'));
+  results.appendChild(kpi);
+  var ch = chartPlaceholder('Payoff Diagram');
+  ch.style.height = '200px';
+  results.appendChild(ch);
+  grid.appendChild(results);
+  page.appendChild(grid);
+}
+
+function renderStressTesting(page) {
+  var right = el('div', 'display:flex;align-items:center;gap:12px;');
+  right.appendChild(el('span', "font-family:'Space Mono',monospace;font-size:11px;color:"+g('textTertiary')+";", 'Shock: 1.5x'));
+  right.appendChild(btn('Run \u25B6', true));
+  page.appendChild(sectionHeader('Stress Testing', 'MC + Adversarial DRO + EVT', right));
+
+  var grid = el('div', 'display:grid;grid-template-columns:repeat('+state.scenarioCols+',1fr);gap:'+state.scenarioGap+'px;');
+  var scenarios = [
+    ['2008 GFC', '-32.4%', 'CRITICAL'],
+    ['COVID-19', '-18.7%', 'HIGH'],
+    ['RU Sanctions', '-45.2%', 'CRITICAL'],
+    ['Rate Hike +300bp', '-8.1%', 'MEDIUM'],
+    ['FX Shock RUB -30%', '-22.5%', 'HIGH'],
+    ['Custom MC', '-15.3%', 'MEDIUM']
+  ];
+  scenarios.forEach(function(sc){
+    var c = el('div', 'background:'+g('cardBg')+';border:1px solid '+g('border')+';padding:'+state.cardPadding+'px;border-radius:'+globalDefaults.radiusMd+'px;transition:border-color 0.2s;');
+    c.addEventListener('mouseenter', function(){ c.style.borderColor = g('borderHover'); });
+    c.addEventListener('mouseleave', function(){ c.style.borderColor = g('border'); });
+    var header = el('div', 'display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;');
+    header.appendChild(el('span', "font-family:'Oswald',sans-serif;font-size:13px;text-transform:uppercase;letter-spacing:0.04em;color:"+g('textPrimary')+";", sc[0]));
+    if (state.showSeverityBadges) {
+      var bColor = sc[2] === 'CRITICAL' ? g('accent') : sc[2] === 'HIGH' ? '#f59e0b' : '#22c55e';
+      header.appendChild(badge(sc[2], bColor));
+    }
+    c.appendChild(header);
+    c.appendChild(el('div', "font-family:'Space Mono',monospace;font-size:22px;color:"+g('accent')+";", sc[1]));
+    c.appendChild(el('div', "font-family:'Space Mono',monospace;font-size:10px;color:"+g('textTertiary')+";margin-top:4px;", 'Portfolio Impact'));
+    grid.appendChild(c);
+  });
+  page.appendChild(grid);
+}
+
+function renderBondValuation(page) {
+  var btns = el('div','display:flex;gap:8px;');
+  btns.appendChild(btn('Upload XLSX', false));
+  btns.appendChild(btn('Calculate \u2192', true));
+  page.appendChild(sectionHeader('Bond Valuation', 'ZCYC + Discount Factors', btns));
+
+  var grid = el('div', 'display:grid;grid-template-columns:'+state.sidebarWidth+'px 1fr;gap:'+(state.gridGap||24)+'px;');
+
+  // Left panel
+  var controls = el('div', 'background:'+g('cardBg')+';border:1px solid '+g('border')+';padding:'+state.cardPadding+'px;border-radius:'+globalDefaults.radiusMd+'px;display:flex;flex-direction:column;gap:14px;');
+  controls.appendChild(el('div', "font-family:'Oswald',sans-serif;font-size:12px;text-transform:uppercase;letter-spacing:0.06em;color:"+g('textSecondary')+";", 'Bond Parameters'));
+  [['ISIN','RU000A106540'],['Nominal','\u20BD1,000'],['Coupon Rate','12.5%'],['Maturity','2026-06-15']].forEach(function(f){
+    var grp = el('div','display:flex;flex-direction:column;gap:4px;');
+    grp.appendChild(el('label', "font-family:'Space Mono',monospace;font-size:11px;text-transform:uppercase;letter-spacing:0.06em;color:"+g('textTertiary')+";", f[0]));
+    var inp = inputField(f[1]); inp.value = f[1]; grp.appendChild(inp);
+    controls.appendChild(grp);
+  });
+  controls.appendChild(btn('Valuate \u2192', true));
+  grid.appendChild(controls);
+
+  // Right
+  var right = el('div','display:flex;flex-direction:column;gap:'+(state.gridGap||24)+'px;');
+  var kpi = el('div','display:grid;grid-template-columns:repeat(3,1fr);gap:'+(state.gridGap||24)+'px;');
+  kpi.appendChild(card('Clean Price', '\u20BD98.45', 'vs par'));
+  kpi.appendChild(card('YTM', '14.2%', 'Current', '#22c55e'));
+  kpi.appendChild(card('Duration', '2.14', 'Modified'));
+  right.appendChild(kpi);
+  right.appendChild(table(['ISIN','Issuer','Coupon','YTM','Duration'],[
+    ['RU000A106540','Sberbank','12.5%',{t:'13.2%',c:'#22c55e'},'2.14'],
+    ['RU000A107210','Gazprom','14.0%',{t:'15.1%',c:'#22c55e'},'3.87'],
+    ['RU000A105800','VTB','13.8%',{t:'14.5%',c:'#22c55e'},'2.68'],
+  ]));
+  grid.appendChild(right);
+  page.appendChild(grid);
+}
+
+function renderBacktesting(page) {
+  // Segmented controls
+  var segRow = el('div','display:flex;gap:8px;margin-bottom:'+state.sectionGap+'px;');
+  ['Monte Carlo','Historical','Walk-Forward'].forEach(function(name, i){
+    var sb = el('button', "padding:"+state.segBtnPadding+"px 16px;font-family:'Oswald',sans-serif;font-size:12px;text-transform:uppercase;letter-spacing:0.04em;border:1px solid "+g('border')+";cursor:pointer;border-radius:"+globalDefaults.radiusSm+"px;transition:all 0.2s;background:"+(i===0?g('accent'):'transparent')+";color:"+(i===0?'#fff':g('textSecondary'))+";border-color:"+(i===0?g('accent'):g('border'))+";", name);
+    segRow.appendChild(sb);
+  });
+  page.appendChild(segRow);
+
+  page.appendChild(sectionHeader('Backtesting', 'Walk-Forward Optimization'));
+
+  // KPI row
+  var kpi = el('div','display:grid;grid-template-columns:repeat('+state.kpiCols+',1fr);gap:'+state.kpiGap+'px;');
+  [['Return','+24.3%','#22c55e'],['Sharpe','1.84'],['Max DD','-8.2%',g('accent')],['Win Rate','67%','#22c55e'],['Trades','142'],['Calmar','2.96']].forEach(function(k){
+    kpi.appendChild(card(k[0], k[1], null, k[2]));
+  });
+  page.appendChild(kpi);
+
+  // Dashboard grid
+  var grid = el('div','display:grid;grid-template-columns:'+state.gridTemplate+';gap:'+(state.gridGap||24)+'px;');
+  var ch1 = chartPlaceholder('Equity Curve');
+  ch1.style.height = '220px';
+  grid.appendChild(ch1);
+  var ch2 = chartPlaceholder('Drawdown Series');
+  ch2.style.height = '220px';
+  grid.appendChild(ch2);
+  page.appendChild(grid);
+}
+
+function renderVolatility(page) {
+  page.style.padding = state.pagePadding + 'px';
+  page.style.maxWidth = 'none';
+
+  var header = el('div','display:flex;justify-content:space-between;align-items:center;margin-bottom:'+state.headerGap+'px;');
+  var left = el('div');
+  left.appendChild(el('div', "font-family:'Anton',sans-serif;font-size:28px;color:"+g('textPrimary')+";text-transform:uppercase;", 'Volatility Surface'));
+  left.appendChild(el('div', "font-family:'Space Mono',monospace;font-size:11px;color:"+g('textTertiary')+";margin-top:4px;text-transform:uppercase;letter-spacing:0.1em;", 'SABR / SVI 3D Calibration'));
+  header.appendChild(left);
+
+  var controls = el('div','display:flex;align-items:center;gap:'+state.controlGap+'px;');
+  if (state.showDatePicker) {
+    var dateGrp = el('div','display:flex;flex-direction:column;gap:3px;');
+    dateGrp.appendChild(el('label', "font-family:'Space Mono',monospace;font-size:9px;text-transform:uppercase;color:"+g('textTertiary')+";", 'Date'));
+    var dInp = inputField('2026-03-13'); dInp.value = '2026-03-13'; dInp.style.width = '140px';
+    dateGrp.appendChild(dInp);
+    controls.appendChild(dateGrp);
+  }
+  controls.appendChild(btn('SABR', true));
+  controls.appendChild(btn('SVI', false));
+  controls.appendChild(btn('Animate', false));
+  header.appendChild(controls);
+  page.appendChild(header);
+
+  // 3D canvas placeholder
+  var canvas = el('div','background:#000;border:1px solid '+g('border')+';border-radius:'+globalDefaults.radiusMd+'px;height:'+state.canvasHeight+'px;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden;');
+  // Grid lines
+  for (var i = 0; i < 8; i++) {
+    var line = el('div','position:absolute;left:0;right:0;height:1px;background:rgba(220,38,38,0.08);top:'+(12+i*12)+'%;');
+    canvas.appendChild(line);
+    var vline = el('div','position:absolute;top:0;bottom:0;width:1px;background:rgba(220,38,38,0.08);left:'+(12+i*12)+'%;');
+    canvas.appendChild(vline);
+  }
+  canvas.appendChild(el('span', "font-family:'Space Mono',monospace;font-size:12px;color:"+g('textMuted')+";z-index:1;text-transform:uppercase;letter-spacing:0.1em;", 'Three.js 3D Surface'));
+  page.appendChild(canvas);
+}
+
+function renderRegimeAnalysis(page) {
+  var right = el('div','display:flex;gap:8px;');
+  var t2d = btn('2D', state.activeView==='2d');
+  var t3d = btn('3D', state.activeView==='3d');
+  right.appendChild(t2d); right.appendChild(t3d);
+  page.appendChild(sectionHeader('Regime Analysis', 'HMM + Spectral Detection', right));
+
+  if (state.activeView === '2d') {
+    var grid = el('div','display:grid;grid-template-columns:'+state.sidebarWidth+'px 1fr;gap:'+(state.gridGap||24)+'px;');
+
+    // Left panel
+    var left = el('div','display:flex;flex-direction:column;gap:14px;');
+    var ctrlCard = el('div','background:'+g('cardBg')+';border:1px solid '+g('border')+';padding:'+state.cardPadding+'px;border-radius:'+globalDefaults.radiusMd+'px;');
+    ctrlCard.appendChild(el('div', "font-family:'Oswald',sans-serif;font-size:12px;text-transform:uppercase;letter-spacing:0.06em;color:"+g('textSecondary')+";margin-bottom:12px;", 'Controls'));
+    [['Ticker','SBER'],['States','3'],['Window','252']].forEach(function(f){
+      var grp = el('div','display:flex;flex-direction:column;gap:4px;margin-bottom:8px;');
+      grp.appendChild(el('label', "font-family:'Space Mono',monospace;font-size:10px;text-transform:uppercase;color:"+g('textTertiary')+";", f[0]));
+      var inp = inputField(f[1]); inp.value = f[1]; grp.appendChild(inp);
+      ctrlCard.appendChild(grp);
+    });
+    ctrlCard.appendChild(btn('Detect \u2192', true));
+    left.appendChild(ctrlCard);
+
+    // Transition matrix
+    var matCard = el('div','background:'+g('cardBg')+';border:1px solid '+g('border')+';padding:'+state.cardPadding+'px;border-radius:'+globalDefaults.radiusMd+'px;');
+    matCard.appendChild(el('div', "font-family:'Oswald',sans-serif;font-size:12px;text-transform:uppercase;letter-spacing:0.06em;color:"+g('textSecondary')+";margin-bottom:10px;", 'Transition Matrix'));
+    var matGrid = el('div','display:grid;grid-template-columns:repeat(3,1fr);gap:4px;');
+    [[0.85,0.10,0.05],[0.08,0.82,0.10],[0.03,0.12,0.85]].forEach(function(row){
+      row.forEach(function(v){
+        var cell = el('div','width:'+state.matrixCellSize+'px;height:'+state.matrixCellSize+'px;display:flex;align-items:center;justify-content:center;font-family:"Space Mono",monospace;font-size:10px;border:1px solid '+g('border')+';color:'+g('textPrimary')+';background:rgba(220,38,38,'+(v*0.3)+');', v.toFixed(2));
+        matGrid.appendChild(cell);
+      });
+    });
+    matCard.appendChild(matGrid);
+    left.appendChild(matCard);
+    grid.appendChild(left);
+
+    // Right - charts
+    var rght = el('div','display:flex;flex-direction:column;gap:'+(state.gridGap||24)+'px;');
+    var kpi = el('div','display:grid;grid-template-columns:repeat(3,1fr);gap:'+(state.gridGap||24)+'px;');
+    kpi.appendChild(card('Current', 'Bull', 'State 1', '#22c55e'));
+    kpi.appendChild(card('Duration', '42 days', 'Current regime'));
+    kpi.appendChild(card('Confidence', '94.2%', 'HMM posterior'));
+    rght.appendChild(kpi);
+    var ch = chartPlaceholder('Regime Timeline');
+    ch.style.height = '180px';
+    rght.appendChild(ch);
+    var ch2 = chartPlaceholder('Returns by Regime');
+    ch2.style.height = '160px';
+    rght.appendChild(ch2);
+    grid.appendChild(rght);
+    page.appendChild(grid);
+  } else {
+    var ch3d = el('div','background:#000;border:1px solid '+g('border')+';border-radius:'+globalDefaults.radiusMd+'px;height:400px;display:flex;align-items:center;justify-content:center;');
+    ch3d.appendChild(el('span', "font-family:'Space Mono',monospace;font-size:12px;color:"+g('textMuted')+";text-transform:uppercase;letter-spacing:0.1em;", 'Three.js 3D HMM Visualization'));
+    page.appendChild(ch3d);
+  }
+}
+
+/* ══════════════════════════════════════════════
+   RENDER PREVIEW
+   ══════════════════════════════════════════════ */
+function renderPreview() {
+  var preview = document.getElementById('preview');
+  while (preview.firstChild) preview.removeChild(preview.firstChild);
+
+  var wrapper = el('div', 'background:'+g('bg')+';min-height:100%;position:relative;');
+  var page = el('div', 'padding:'+(state.pagePadding||16)+'px;max-width:'+(state.maxWidth||1800)+'px;margin:0 auto;display:flex;flex-direction:column;gap:'+(state.sectionGap||27)+'px;min-height:100%;');
+
+  var renderers = {
+    portfolio: renderPortfolio,
+    terminal: renderTerminal,
+    optionPricing: renderOptionPricing,
+    stressTesting: renderStressTesting,
+    bondValuation: renderBondValuation,
+    backtesting: renderBacktesting,
+    volatility: renderVolatility,
+    regimeAnalysis: renderRegimeAnalysis
+  };
+
+  if (renderers[currentPage]) renderers[currentPage](page);
+  wrapper.appendChild(page);
+  preview.appendChild(wrapper);
+}
+
+/* ══════════════════════════════════════════════
+   PROMPT GENERATOR
+   ══════════════════════════════════════════════ */
+function updatePrompt() {
+  var cfg = pageConfigs[currentPage];
+  var defs = cfg.defaults;
+  var parts = [];
+  var cssRules = [];
+  var scopedRules = [];
+
+  // Compare state to defaults
+  Object.keys(defs).forEach(function(key) {
+    if (state[key] !== defs[key] && typeof state[key] !== 'boolean') {
+      var unit = typeof defs[key] === 'number' ? 'px' : '';
+      if (key === 'gridTemplate') unit = '';
+      if (key === 'formCols' || key === 'scenarioCols' || key === 'kpiCols' || key === 'activeView') unit = '';
+
+      parts.push(key.replace(/([A-Z])/g, ' $1').toLowerCase() + ': ' + state[key] + unit);
+
+      // Generate scoped CSS
+      if (key === 'pagePadding') scopedRules.push(cfg.rootClass + ' { padding: '+state[key]+'px; }');
+      else if (key === 'maxWidth') scopedRules.push(cfg.rootClass + ' { max-width: '+state[key]+'px; }');
+      else if (key === 'sectionGap') scopedRules.push(cfg.rootClass + ' { gap: '+state[key]+'px; }');
+      else if (key === 'gridTemplate') scopedRules.push('.dashboard-grid { grid-template-columns: '+state[key]+'; }');
+      else if (key === 'sidebarWidth') scopedRules.push('.dashboard-grid { grid-template-columns: '+state[key]+'px 1fr; }');
+      else if (key === 'gridGap') scopedRules.push('.dashboard-grid { gap: '+state[key]+'px; }');
+      else if (key === 'cardPadding') scopedRules.push('.glass-card, .brutalist-card { padding: '+state[key]+'px; }');
+      else if (key === 'btnHeight') scopedRules.push('.btn-glass, .btn { height: '+state[key]+'px; }');
+      else if (key === 'heroTitleSize') scopedRules.push('h1 { font-size: '+state[key]+'px; }');
+      else if (key === 'scenarioCols') scopedRules.push('.scenarios-grid { grid-template-columns: repeat('+state[key]+', 1fr); }');
+      else if (key === 'scenarioGap') scopedRules.push('.scenarios-grid { gap: '+state[key]+'px; }');
+      else if (key === 'kpiCols') scopedRules.push('.kpi-cards-grid { grid-template-columns: repeat('+state[key]+', 1fr); }');
+      else if (key === 'kpiGap') scopedRules.push('.kpi-cards-grid { gap: '+state[key]+'px; }');
+      else if (key === 'tabBarHeight') scopedRules.push('.tabs-bar { height: '+state[key]+'px; }');
+      else if (key === 'tabFontSize') scopedRules.push('.tab-label { font-size: '+state[key]+'px; }');
+      else if (key === 'headerHeight') scopedRules.push('.terminal-header { height: '+state[key]+'px; }');
+      else if (key === 'canvasHeight') scopedRules.push('.canvas-container { height: '+state[key]+'px; }');
+      else if (key === 'matrixCellSize') scopedRules.push('.matrix-cell { width: '+state[key]+'px; height: '+state[key]+'px; }');
+      else if (key === 'formLabelSize') scopedRules.push('.control-label { font-size: '+state[key]+'px; }');
+      else if (key === 'formCols') scopedRules.push('.controls-form { grid-template-columns: repeat('+state[key]+', 1fr); }');
+      else if (key === 'tableFontSize') scopedRules.push('.glass-table { font-size: '+state[key]+'px; }');
+      else if (key === 'segBtnPadding') scopedRules.push('.seg-btn { padding: '+state[key]+'px 16px; }');
+    }
+  });
+
+  // Boolean toggles
+  Object.keys(defs).forEach(function(key) {
+    if (typeof defs[key] === 'boolean' && state[key] !== defs[key]) {
+      parts.push(key.replace(/([A-Z])/g, ' $1').toLowerCase() + ': ' + (state[key] ? 'enabled' : 'disabled'));
+    }
+  });
+
+  // Global color changes
+  var colorMap = { bg:'--bg-primary', cardBg:'--bg-secondary', bgTertiary:'--bg-tertiary', accent:'--accent-red', accentHover:'--accent-red-hover', border:'--border-dark', borderHover:'--border-medium', textPrimary:'--text-primary', textSecondary:'--text-secondary', textTertiary:'--text-tertiary', textMuted:'--text-muted' };
+  var colorChanges = [];
+  var origColors = { bg:'#050505', cardBg:'#0a0a0a', bgTertiary:'#111111', accent:'#DC2626', accentHover:'#ef4444', border:'#1a1a1a', borderHover:'#262626', textPrimary:'#f5f5f5', textSecondary:'#a3a3a3', textTertiary:'#737373', textMuted:'#525252' };
+  Object.keys(colorMap).forEach(function(key) {
+    if (globalDefaults[key] !== origColors[key]) {
+      colorChanges.push(colorMap[key] + ': ' + globalDefaults[key]);
+    }
+  });
+  if (colorChanges.length) cssRules.push(':root { ' + colorChanges.join('; ') + '; }');
+
+  var prompt = document.getElementById('promptOutput');
+  if (parts.length === 0 && cssRules.length === 0 && scopedRules.length === 0) {
+    prompt.textContent = 'Default settings for ' + cfg.label + '. Adjust controls to generate CSS.';
+    return;
+  }
+
+  var output = 'Update ' + cfg.file + ' (scoped styles):\n\n';
+  if (parts.length) output += 'Changes: ' + parts.join(', ') + '.\n\n';
+  if (cssRules.length) output += 'Global CSS (main.css):\n' + cssRules.join('\n') + '\n\n';
+  if (scopedRules.length) output += 'Scoped CSS (<style scoped> in ' + cfg.file + '):\n' + scopedRules.join('\n');
+
+  prompt.textContent = output;
+}
+
+function updateAll() {
+  renderPreview();
+  updatePrompt();
+}
+
+function copyPrompt() {
+  var text = document.getElementById('promptOutput').textContent;
+  navigator.clipboard.writeText(text);
+  var b = document.querySelector('.copy-btn');
+  b.textContent = 'Copied!'; b.classList.add('copied');
+  setTimeout(function(){ b.textContent = 'Copy'; b.classList.remove('copied'); }, 1500);
+}
+
+// Init
+initState('portfolio');
+buildControls('portfolio');
+updateAll();
+</script>
+</body>
+</html>
