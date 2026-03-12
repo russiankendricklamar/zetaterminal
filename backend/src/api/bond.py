@@ -28,16 +28,16 @@ class BondValuationRequest(FinancialBaseModel):
 @router.post("/valuate", response_model=dict[str, Any])
 @limiter.limit("10/minute")
 @service_endpoint("Bond valuation")
-async def valuate_bond(http_request: Request, request: BondValuationRequest):
+async def valuate_bond(request: Request, body: BondValuationRequest):
     """Выполняет оценку облигации для двух сценариев доходности."""
     return await asyncio.to_thread(
         calculate_bond_valuation,
-        secid=request.secid,
-        valuation_date=request.valuationDate,
-        discount_yield1=request.discountYield1,
-        discount_yield2=request.discountYield2,
-        day_count=request.dayCount,
-        day_count_convention=request.dayCountConvention,
+        secid=body.secid,
+        valuation_date=body.valuationDate,
+        discount_yield1=body.discountYield1,
+        discount_yield2=body.discountYield2,
+        day_count=body.dayCount,
+        day_count_convention=body.dayCountConvention,
     )
 
 

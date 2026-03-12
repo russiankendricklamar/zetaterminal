@@ -46,7 +46,7 @@ class FactorAnalysisResponse(BaseModel):
 @router.post("/analyze", response_model=FactorAnalysisResponse)
 @limiter.limit("10/minute")
 @service_endpoint("Factor analysis")
-async def analyze_factors(http_request: Request, request: FactorAnalysisRequest):
+async def analyze_factors(request: Request, body: FactorAnalysisRequest):
     """
     Двухшаговый Fama-MacBeth факторный анализ.
 
@@ -61,10 +61,10 @@ async def analyze_factors(http_request: Request, request: FactorAnalysisRequest)
     - R² (TS и CS)
     """
     result = await asyncio.to_thread(lambda: run_factor_analysis(
-        returns=request.returns,
-        factors=request.factors,
-        asset_names=request.asset_names,
-        factor_names=request.factor_names,
+        returns=body.returns,
+        factors=body.factors,
+        asset_names=body.asset_names,
+        factor_names=body.factor_names,
     ))
     return FactorAnalysisResponse(result=result)
 

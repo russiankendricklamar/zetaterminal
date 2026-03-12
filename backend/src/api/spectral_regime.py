@@ -200,7 +200,7 @@ async def fetch_asset_data(request: AssetDataRequest):
 @router.post("/analyze", response_model=SpectralAnalysisResponse)
 @limiter.limit("10/minute")
 @service_endpoint("Analyze Spectral Regimes")
-async def analyze_spectral_regimes(http_request: Request, request: SpectralAnalysisRequest):
+async def analyze_spectral_regimes(request: Request, body: SpectralAnalysisRequest):
     """
     Запустить комплексный анализ скрытых рыночных режимов.
     
@@ -220,7 +220,7 @@ async def analyze_spectral_regimes(http_request: Request, request: SpectralAnaly
     """
     from src.services.spectral_regime_service import run_spectral_regime_analysis
 
-    returns = request.returns
+    returns = body.returns
 
     if len(returns) < 50:
         raise HTTPException(
@@ -245,11 +245,11 @@ async def analyze_spectral_regimes(http_request: Request, request: SpectralAnaly
     # Запуск анализа
     result = await asyncio.to_thread(lambda: run_spectral_regime_analysis(
         returns=returns,
-        n_poles=request.n_poles,
-        window_size=request.window_size,
-        max_lag=request.max_lag,
-        auto_optimize=request.auto_optimize or (request.n_poles is None or request.window_size is None),
-        criterion=request.criterion
+        n_poles=body.n_poles,
+        window_size=body.window_size,
+        max_lag=body.max_lag,
+        auto_optimize=body.auto_optimize or (body.n_poles is None or body.window_size is None),
+        criterion=body.criterion
     ))
 
     return SpectralAnalysisResponse(

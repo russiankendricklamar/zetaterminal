@@ -44,7 +44,7 @@ class MultipleStocksRequest(BaseModel):
 @router.get("/stock/{ticker}", response_model=dict[str, Any])
 @limiter.limit("30/minute")
 @service_endpoint("Get Stock")
-async def get_stock(http_request: Request, ticker: str):
+async def get_stock(request: Request, ticker: str):
     """Получает информацию об акции."""
     return await asyncio.to_thread(get_stock_info, ticker)
 
@@ -52,25 +52,25 @@ async def get_stock(http_request: Request, ticker: str):
 @router.post("/stock/history", response_model=list[dict[str, Any]])
 @limiter.limit("20/minute")
 @service_endpoint("Stock History")
-async def get_stock_history_endpoint(http_request: Request, request: StockHistoryRequest):
+async def get_stock_history_endpoint(request: Request, body: StockHistoryRequest):
     """Получает исторические данные об акции."""
     return await asyncio.to_thread(
-        get_stock_history, request.ticker, request.period, request.interval
+        get_stock_history, body.ticker, body.period, body.interval
     )
 
 
 @router.post("/stocks/multiple", response_model=list[dict[str, Any]])
 @limiter.limit("10/minute")
 @service_endpoint("Multiple Stocks")
-async def get_multiple_stocks_endpoint(http_request: Request, request: MultipleStocksRequest):
+async def get_multiple_stocks_endpoint(request: Request, body: MultipleStocksRequest):
     """Получает информацию о нескольких акциях одновременно."""
-    return await asyncio.to_thread(get_multiple_stocks, request.tickers)
+    return await asyncio.to_thread(get_multiple_stocks, body.tickers)
 
 
 @router.get("/currency/{base}/{quote}", response_model=dict[str, Any])
 @limiter.limit("30/minute")
 @service_endpoint("Currency Rate")
-async def get_currency(http_request: Request, base: str, quote: str = "USD"):
+async def get_currency(request: Request, base: str, quote: str = "USD"):
     """Получает курс валютной пары."""
     return await asyncio.to_thread(get_currency_rate, base, quote)
 
@@ -78,7 +78,7 @@ async def get_currency(http_request: Request, base: str, quote: str = "USD"):
 @router.get("/crypto/{symbol}", response_model=dict[str, Any])
 @limiter.limit("30/minute")
 @service_endpoint("Crypto Info")
-async def get_crypto(http_request: Request, symbol: str):
+async def get_crypto(request: Request, symbol: str):
     """Получает информацию о криптовалюте."""
     return await asyncio.to_thread(get_crypto_info, symbol)
 
@@ -86,7 +86,7 @@ async def get_crypto(http_request: Request, symbol: str):
 @router.get("/index/{symbol:path}", response_model=dict[str, Any])
 @limiter.limit("30/minute")
 @service_endpoint("Index Info")
-async def get_index(http_request: Request, symbol: str):
+async def get_index(request: Request, symbol: str):
     """Получает информацию об индексе (например, ^GSPC для S&P 500)."""
     return await asyncio.to_thread(get_index_info, symbol)
 
@@ -94,7 +94,7 @@ async def get_index(http_request: Request, symbol: str):
 @router.get("/tickers/popular", response_model=list[str])
 @limiter.limit("30/minute")
 @service_endpoint("Popular Tickers")
-async def popular_tickers(http_request: Request):
+async def popular_tickers(request: Request):
     """Получает список популярных тикеров."""
     return get_popular_tickers()
 
@@ -102,7 +102,7 @@ async def popular_tickers(http_request: Request):
 @router.get("/crypto/popular", response_model=list[str])
 @limiter.limit("30/minute")
 @service_endpoint("Popular Cryptos")
-async def popular_cryptos(http_request: Request):
+async def popular_cryptos(request: Request):
     """Получает список популярных криптовалют."""
     return get_popular_cryptos()
 

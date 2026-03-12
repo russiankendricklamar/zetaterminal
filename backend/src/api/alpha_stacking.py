@@ -57,7 +57,7 @@ class AlphaStackingResponse(BaseModel):
 @router.post("/analyze", response_model=AlphaStackingResponse)
 @limiter.limit("10/minute")
 @service_endpoint("Alpha stacking")
-async def analyze(http_request: Request, request: AlphaStackingRequest):
+async def analyze(request: Request, body: AlphaStackingRequest):
     """
     Orthogonal Alpha Stacking.
 
@@ -69,12 +69,12 @@ async def analyze(http_request: Request, request: AlphaStackingRequest):
     - IC стэкингового сигнала во времени
     """
     result = await asyncio.to_thread(lambda: compute_alpha_stacking(
-        panel_signals=request.panel_signals,
-        panel_fwd_returns=request.panel_fwd_returns,
-        signal_names=request.signal_names,
-        ortho_method=request.ortho_method,
-        ic_horizons=request.ic_horizons or [1, 5, 10, 21],
-        shrinkage=request.shrinkage,
+        panel_signals=body.panel_signals,
+        panel_fwd_returns=body.panel_fwd_returns,
+        signal_names=body.signal_names,
+        ortho_method=body.ortho_method,
+        ic_horizons=body.ic_horizons or [1, 5, 10, 21],
+        shrinkage=body.shrinkage,
     ))
     return AlphaStackingResponse(result=result)
 

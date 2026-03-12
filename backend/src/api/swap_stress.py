@@ -46,20 +46,20 @@ class SwapStressTestRequest(FinancialBaseModel):
 @router.post("/test", response_model=list[dict[str, Any]])
 @limiter.limit("5/minute")
 @service_endpoint("Swap stress test")
-async def run_swap_stress_tests(http_request: Request, request: SwapStressTestRequest) -> list[dict[str, Any]]:
+async def run_swap_stress_tests(request: Request, body: SwapStressTestRequest) -> list[dict[str, Any]]:
     """
     Run stress tests on a swap portfolio.
 
     Applies curve shifts, spread bumps, and volatility shocks,
     then computes P&L impact, Greeks, and key rate durations.
     """
-    positions_dicts = [pos.model_dump() for pos in request.positions]
+    positions_dicts = [pos.model_dump() for pos in body.positions]
 
     result = await asyncio.to_thread(
         stress_test_swap_portfolio,
         positions=positions_dicts,
-        scenarios=request.scenarios,
-        multiplier=request.multiplier,
+        scenarios=body.scenarios,
+        multiplier=body.multiplier,
     )
     return result
 
@@ -67,6 +67,6 @@ async def run_swap_stress_tests(http_request: Request, request: SwapStressTestRe
 @router.get("/scenarios", response_model=list[dict[str, Any]])
 @limiter.limit("30/minute")
 @service_endpoint("Swap stress scenarios")
-async def get_swap_stress_scenarios(http_request: Request) -> list[dict[str, Any]]:
+async def get_swap_stress_scenarios(request: Request) -> list[dict[str, Any]]:
     """Return the list of predefined swap stress scenarios."""
     return get_predefined_scenarios()

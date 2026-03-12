@@ -39,21 +39,21 @@ class BlackLittermanRequest(FinancialBaseModel):
 @router.post("/optimize")
 @limiter.limit("5/minute")
 @service_endpoint("Black-Litterman optimization")
-async def optimize_bl_portfolio(http_request: Request, request: BlackLittermanRequest):
+async def optimize_bl_portfolio(request: Request, body: BlackLittermanRequest):
     """Выполняет Black-Litterman оптимизацию портфеля."""
-    N = len(request.market_weights)
-    Sigma = np.array(request.cov_matrix)
-    w_mkt = np.array(request.market_weights)
+    N = len(body.market_weights)
+    Sigma = np.array(body.cov_matrix)
+    w_mkt = np.array(body.market_weights)
 
     if Sigma.shape != (N, N):
         raise ValueError(f"Размерность ковариационной матрицы {Sigma.shape} не соответствует количеству активов {N}")
 
-    K = len(request.views)
+    K = len(body.views)
     P = np.zeros((K, N))
     Q = np.zeros(K)
     confidence = np.zeros(K)
 
-    for k, view in enumerate(request.views):
+    for k, view in enumerate(body.views):
         for asset_idx, weight in zip(view.assets, view.weights, strict=False):
             if asset_idx < 0 or asset_idx >= N:
                 raise ValueError(f"Индекс актива {asset_idx} вне диапазона [0, {N-1}]")
@@ -63,8 +63,8 @@ async def optimize_bl_portfolio(http_request: Request, request: BlackLittermanRe
 
     result = await asyncio.to_thread(lambda: optimize_black_litterman(
         cov_matrix=Sigma, market_weights=w_mkt, views_P=P, views_Q=Q,
-        tau=request.tau, delta=request.delta, risk_free_rate=request.risk_free_rate,
-        confidence=confidence, asset_names=request.asset_names, max_weight=request.max_weight,
+        tau=body.tau, delta=body.delta, risk_free_rate=body.risk_free_rate,
+        confidence=confidence, asset_names=body.asset_names, max_weight=body.max_weight,
     ))
     result["timestamp"] = datetime.now().isoformat()
     return result

@@ -59,44 +59,44 @@ class ForwardValuationRequest(FinancialBaseModel):
 @router.post("/valuate", response_model=dict[str, Any])
 @limiter.limit("10/minute")
 @service_endpoint("Forward valuation")
-async def valuate_forward(http_request: Request, request: ForwardValuationRequest):
+async def valuate_forward(request: Request, body: ForwardValuationRequest):
     """
     Выполняет оценку форварда различных типов.
     """
     return await asyncio.to_thread(lambda: calculate_forward_valuation(
-        forward_type=request.forwardType,
-        spot_price=request.spotPrice,
-        time_to_maturity=request.timeToMaturity,
-        market_forward_price=request.marketForwardPrice,
-        contract_size=request.contractSize,
+        forward_type=body.forwardType,
+        spot_price=body.spotPrice,
+        time_to_maturity=body.timeToMaturity,
+        market_forward_price=body.marketForwardPrice,
+        contract_size=body.contractSize,
         # Cost-of-Carry параметры
-        dividend_yield=request.dividendYield,
-        carrying_cost=request.carryingCost,
-        convenience_yield=request.convenienceYield,
-        risk_free_rate=request.riskFreeRate,
-        repo_rate=request.repoRate,
+        dividend_yield=body.dividendYield,
+        carrying_cost=body.carryingCost,
+        convenience_yield=body.convenienceYield,
+        risk_free_rate=body.riskFreeRate,
+        repo_rate=body.repoRate,
         # Bond параметры
-        accrued_interest=request.accruedInterest,
-        coupon_rate=request.couponRate,
-        coupon_frequency=request.couponFrequency,
-        face_value=request.faceValue,
-        last_coupon_date=request.lastCouponDate,
-        maturity_date=request.maturityDate,
-        day_count_convention=request.dayCountConvention or "ACT/365",
-        yield_curve_tenors=request.yieldCurveTenors,
-        yield_curve_rates=request.yieldCurveRates,
-        auto_calculate_ai=request.autoCalculateAI if request.autoCalculateAI is not None else True,
+        accrued_interest=body.accruedInterest,
+        coupon_rate=body.couponRate,
+        coupon_frequency=body.couponFrequency,
+        face_value=body.faceValue,
+        last_coupon_date=body.lastCouponDate,
+        maturity_date=body.maturityDate,
+        day_count_convention=body.dayCountConvention or "ACT/365",
+        yield_curve_tenors=body.yieldCurveTenors,
+        yield_curve_rates=body.yieldCurveRates,
+        auto_calculate_ai=body.autoCalculateAI if body.autoCalculateAI is not None else True,
         # FX параметры
-        buy_currency=request.buyCurrency,
-        sell_currency=request.sellCurrency,
-        buy_amount=request.buyAmount,
-        sell_amount=request.sellAmount,
-        deal_date=request.dealDate,
-        valuation_date=request.valuationDate,
-        expiration_date=request.expirationDate,
-        settlement_currency=request.settlementCurrency,
-        internal_rate=request.internalRate,
-        external_rate=request.externalRate
+        buy_currency=body.buyCurrency,
+        sell_currency=body.sellCurrency,
+        buy_amount=body.buyAmount,
+        sell_amount=body.sellAmount,
+        deal_date=body.dealDate,
+        valuation_date=body.valuationDate,
+        expiration_date=body.expirationDate,
+        settlement_currency=body.settlementCurrency,
+        internal_rate=body.internalRate,
+        external_rate=body.externalRate
     ))
 
 

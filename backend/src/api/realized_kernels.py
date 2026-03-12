@@ -44,7 +44,7 @@ class RealizedKernelsResponse(BaseModel):
 @router.post("/estimate", response_model=RealizedKernelsResponse)
 @limiter.limit("10/minute")
 @service_endpoint("Estimate Realized Kernels")
-async def estimate_realized_kernels(http_request: Request, request: RealizedKernelsRequest):
+async def estimate_realized_kernels(request: Request, body: RealizedKernelsRequest):
     """
     Вычисляет оценщики реализованной волатильности с поправкой на микроструктурный шум.
 
@@ -55,16 +55,16 @@ async def estimate_realized_kernels(http_request: Request, request: RealizedKern
     - Сигнатурный график RV(Δ)
     - Оценку дисперсии шума ω²
     """
-    if request.kernel not in ("parzen", "tukey-hanning", "bartlett"):
+    if body.kernel not in ("parzen", "tukey-hanning", "bartlett"):
         raise HTTPException(status_code=400, detail="kernel должен быть 'parzen', 'tukey-hanning' или 'bartlett'")
 
     result = await asyncio.to_thread(lambda: compute_realized_kernels(
-        prices=request.prices,
-        kernel=request.kernel,
-        bandwidth=request.bandwidth,
-        tsrv_scales=request.tsrv_scales,
-        annualize=request.annualize,
-        periods_per_day=request.periods_per_day,
+        prices=body.prices,
+        kernel=body.kernel,
+        bandwidth=body.bandwidth,
+        tsrv_scales=body.tsrv_scales,
+        annualize=body.annualize,
+        periods_per_day=body.periods_per_day,
     ))
     return RealizedKernelsResponse(result=result)
     return {"status": "healthy", "service": "realized-kernels"}

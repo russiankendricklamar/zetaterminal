@@ -43,7 +43,7 @@ class HARResponse(BaseModel):
 @router.post("/fit", response_model=HARResponse)
 @limiter.limit("10/minute")
 @service_endpoint("Fit Har")
-async def fit_har(http_request: Request, request: HARRequest):
+async def fit_har(request: Request, body: HARRequest):
     """
     Оценивает HAR-RV и (опционально) HAR-RV-CJ модели прогнозирования волатильности.
 
@@ -54,19 +54,18 @@ async def fit_har(http_request: Request, request: HARRequest):
     - Прогнозы на h = 1, 5, 22 дня
     - Данные для графика: фактическая vs подогнанная волатильность
     """
-    if request.bv is not None and len(request.bv) != len(request.rv):
+    if body.bv is not None and len(body.bv) != len(body.rv):
         raise HTTPException(status_code=400, detail="rv и bv должны быть одинаковой длины")
 
-    for h in request.forecast_horizons:
+    for h in body.forecast_horizons:
         if h < 1 or h > 252:
             raise HTTPException(status_code=400, detail="Горизонт прогноза должен быть от 1 до 252 дней")
 
     result = await asyncio.to_thread(lambda: fit_har_model(
-        rv=request.rv,
-        bv=request.bv,
-        log_transform=request.log_transform,
-        forecast_horizons=request.forecast_horizons,
-        train_ratio=request.train_ratio,
+        rv=body.rv,
+        bv=body.bv,
+        log_transform=body.log_transform,
+        forecast_horizons=body.forecast_horizons,
+        train_ratio=body.train_ratio,
     ))
     return HARResponse(result=result)
-    return {"status": "healthy", "service": "har"}

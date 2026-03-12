@@ -70,33 +70,33 @@ class RiskReportRequest(FinancialBaseModel):
 @router.post("/var", response_model=dict[str, Any])
 @limiter.limit("10/minute")
 @service_endpoint("VaR calculation")
-async def calculate_var(http_request: Request, request: VaRRequest):
+async def calculate_var(request: Request, body: VaRRequest):
     """Calculate VaR/CVaR using a single method."""
     return await RiskService.calculate_var(
-        method=request.method,
-        returns=request.returns,
-        confidence=request.confidence,
-        horizon=request.horizon,
-        portfolio_value=request.portfolio_value,
-        n_simulations=request.n_simulations,
-        use_garch=request.use_garch,
-        garch_model=request.garch_model,
+        method=body.method,
+        returns=body.returns,
+        confidence=body.confidence,
+        horizon=body.horizon,
+        portfolio_value=body.portfolio_value,
+        n_simulations=body.n_simulations,
+        use_garch=body.use_garch,
+        garch_model=body.garch_model,
     )
 
 
 @router.post("/report", response_model=dict[str, Any])
 @limiter.limit("5/minute")
 @service_endpoint("Risk report")
-async def risk_report(http_request: Request, request: RiskReportRequest):
+async def risk_report(request: Request, body: RiskReportRequest):
     """Generate full risk report with all 3 VaR methods + optional component VaR."""
     return await RiskService.full_risk_report(
-        returns=request.returns,
-        confidence=request.confidence,
-        horizon=request.horizon,
-        portfolio_value=request.portfolio_value,
-        n_simulations=request.n_simulations,
-        use_garch=request.use_garch,
-        garch_model=request.garch_model,
-        returns_matrix=request.returns_matrix,
-        weights=request.weights,
+        returns=body.returns,
+        confidence=body.confidence,
+        horizon=body.horizon,
+        portfolio_value=body.portfolio_value,
+        n_simulations=body.n_simulations,
+        use_garch=body.use_garch,
+        garch_model=body.garch_model,
+        returns_matrix=body.returns_matrix,
+        weights=body.weights,
     )

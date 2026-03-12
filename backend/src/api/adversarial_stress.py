@@ -32,7 +32,7 @@ class AdversarialStressRequest(FinancialBaseModel):
 @router.post("/generate", response_model=dict[str, Any])
 @limiter.limit("10/minute")
 @service_endpoint("Generate Adversarial Stress")
-async def generate_adversarial_stress(http_request: Request, request: AdversarialStressRequest):
+async def generate_adversarial_stress(request: Request, body: AdversarialStressRequest):
     """
     Генерирует adversarial worst-case сценарии для портфеля.
 
@@ -42,31 +42,28 @@ async def generate_adversarial_stress(http_request: Request, request: Adversaria
     - Monte-Carlo с adversarial параметрами
     - EVT (GPD) для хвоста потерь
     """
-    n = len(request.mu)
+    n = len(body.mu)
 
-    if len(request.weights) != n:
+    if len(body.weights) != n:
         raise ValueError(
-            f"Длина weights ({len(request.weights)}) ≠ длине mu ({n})"
+            f"Длина weights ({len(body.weights)}) ≠ длине mu ({n})"
         )
-    if len(request.cov_matrix) != n or any(len(row) != n for row in request.cov_matrix):
+    if len(body.cov_matrix) != n or any(len(row) != n for row in body.cov_matrix):
         raise ValueError(
             f"Ковариационная матрица должна быть {n}×{n}"
         )
 
     result = run_adversarial_stress(
-        cov_matrix=request.cov_matrix,
-        mu=request.mu,
-        weights=request.weights,
-        kappa=request.kappa,
-        epsilon=request.epsilon,
-        n_paths=request.n_paths,
-        risk_free_rate=request.risk_free_rate,
-        initial_capital=request.initial_capital,
-        gamma=request.gamma,
-        asset_names=request.asset_names,
-        seed=request.seed,
+        cov_matrix=body.cov_matrix,
+        mu=body.mu,
+        weights=body.weights,
+        kappa=body.kappa,
+        epsilon=body.epsilon,
+        n_paths=body.n_paths,
+        risk_free_rate=body.risk_free_rate,
+        initial_capital=body.initial_capital,
+        gamma=body.gamma,
+        asset_names=body.asset_names,
+        seed=body.seed,
     )
     return result
-
-    """Health check."""
-    return {"status": "healthy", "service": "adversarial-stress"}

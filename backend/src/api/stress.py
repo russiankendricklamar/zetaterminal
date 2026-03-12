@@ -49,7 +49,7 @@ class StressTestRequest(FinancialBaseModel):
 @router.get("/historical-scenarios")
 @limiter.limit("30/minute")
 @service_endpoint("List historical scenarios")
-async def list_historical_scenarios(http_request: Request):
+async def list_historical_scenarios(request: Request):
     """Return all available historical crisis scenarios."""
     return {"scenarios": get_all_scenarios()}
 
@@ -57,21 +57,21 @@ async def list_historical_scenarios(http_request: Request):
 @router.post("/test", response_model=dict[str, Any])
 @limiter.limit("10/minute")
 @service_endpoint("Stress test")
-async def run_stress_tests(http_request: Request, request: StressTestRequest):
+async def run_stress_tests(request: Request, body: StressTestRequest):
     """
     Выполняет стресс-тестирование портфеля для списка сценариев.
     """
     # Конвертируем сценарии в словари
-    scenarios_dict = [scenario.dict() for scenario in request.scenarios]
+    scenarios_dict = [scenario.dict() for scenario in body.scenarios]
 
     return run_stress_test(
-        mu=request.mu,
-        cov_matrix=request.cov_matrix,
-        initial_capital=request.initial_capital,
-        risk_free_rate=request.risk_free_rate,
-        gamma=request.gamma,
+        mu=body.mu,
+        cov_matrix=body.cov_matrix,
+        initial_capital=body.initial_capital,
+        risk_free_rate=body.risk_free_rate,
+        gamma=body.gamma,
         scenarios=scenarios_dict,
-        asset_names=request.asset_names,
-        n_paths=request.n_paths,
-        seed=request.seed
+        asset_names=body.asset_names,
+        n_paths=body.n_paths,
+        seed=body.seed
     )

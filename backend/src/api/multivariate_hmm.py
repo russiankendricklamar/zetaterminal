@@ -121,7 +121,7 @@ def _get_user_model(user_id: int) -> Any:
 @router.post("/fit", response_model=FitResponse)
 @limiter.limit("10/minute")
 @service_endpoint("Fit Model")
-async def fit_model(http_request: Request, request: FitRequest = Body(...), user: TokenPayload = Depends(require_auth)):
+async def fit_model(request: Request, body: FitRequest = Body(...), user: TokenPayload = Depends(require_auth)):
     """
     Обучение многомерной HMM модели на данных.
     
@@ -147,15 +147,15 @@ async def fit_model(http_request: Request, request: FitRequest = Body(...), user
     from src.services.multivariate_hmm_service import MultivariateHMMRegimeAnalyzer
 
     # Если данные не предоставлены, загружаем портфель банка
-    if request.data is None:
-        if not request.bank_reg_number:
+    if body.data is None:
+        if not body.bank_reg_number:
             raise HTTPException(
                 status_code=400,
                 detail="Необходимо указать bank_reg_number или предоставить data"
             )
 
         # Получаем портфель банка (используем ту же логику, что и в frontend)
-        portfolio_key = int(request.bank_reg_number) % 5
+        portfolio_key = int(body.bank_reg_number) % 5
         portfolio_templates = {
             0: ['SBER.ME', 'GAZP.ME', 'LKOH.ME', 'GMKN.ME', 'YNDX.ME', 'ROSN.ME', 'NVTK.ME', 'TATN.ME', 'ALRS.ME', 'MGNT.ME'],
             1: ['SBER.ME', 'NLMK.ME', 'RTKM.ME', 'AFKS.ME', 'FIVE.ME', 'PHOR.ME', 'HYDR.ME', 'IRAO.ME', 'FEES.ME', 'SNGS.ME'],
@@ -165,11 +165,11 @@ async def fit_model(http_request: Request, request: FitRequest = Body(...), user
         }
 
         tickers = portfolio_templates.get(portfolio_key, portfolio_templates[0])
-        asset_names = request.asset_names or tickers
+        asset_names = body.asset_names or tickers
 
         # Загружаем исторические данные для всех активов
         end_date = datetime.now()
-        start_date = end_date - timedelta(days=request.period_days)
+        start_date = end_date - timedelta(days=body.period_days)
 
         all_data = []
         valid_tickers = []
@@ -212,7 +212,7 @@ async def fit_model(http_request: Request, request: FitRequest = Body(...), user
 
     else:
         # Используем предоставленные данные
-        y = np.array(request.data, dtype=np.float64)
+        y = np.array(body.data, dtype=np.float64)
 
         if y.ndim != 2:
             raise HTTPException(
@@ -229,7 +229,7 @@ async def fit_model(http_request: Request, request: FitRequest = Body(...), user
             )
 
         # Определяем названия активов
-        asset_names = request.asset_names or [f"Asset_{i+1}" for i in range(K)]
+        asset_names = body.asset_names or [f"Asset_{i+1}" for i in range(K)]
 
         if len(asset_names) != K:
             raise HTTPException(
@@ -241,32 +241,32 @@ async def fit_model(http_request: Request, request: FitRequest = Body(...), user
 
     # Создаем модель
     model = MultivariateHMMRegimeAnalyzer(
-        n_regimes=request.n_regimes or 2,  # Временное значение, будет переопределено при auto_optimize
-        random_state=request.random_state
+        n_regimes=body.n_regimes or 2,  # Временное значение, будет переопределено при auto_optimize
+        random_state=body.random_state
     )
 
     # Автоматическое определение количества режимов или использование заданного
-    if request.auto_optimize and request.n_regimes is None:
+    if body.auto_optimize and body.n_regimes is None:
         optimal_n_regimes, _best_criterion_value = await asyncio.to_thread(
             lambda: model.find_optimal_n_regimes(
                 y=y,
                 asset_names=asset_names,
                 min_regimes=2,
                 max_regimes=5,
-                criterion=request.criterion,
-                max_iterations=request.max_iterations,
-                tol=request.tol
+                criterion=body.criterion,
+                max_iterations=body.max_iterations,
+                tol=body.tol
             )
         )
         n_regimes_used = optimal_n_regimes
     else:
-        n_regimes_used = request.n_regimes or 2
+        n_regimes_used = body.n_regimes or 2
         model.n_regimes = n_regimes_used
         await asyncio.to_thread(lambda: model.fit(
             y=y,
             asset_names=asset_names,
-            max_iterations=request.max_iterations,
-            tol=request.tol
+            max_iterations=body.max_iterations,
+            tol=body.tol
         ))
 
     # Сохраняем модель (с LRU-eviction, scoped по user)
@@ -301,8 +301,8 @@ async def predict_states(request: PredictRequest = Body(...), user: TokenPayload
 
     model = _get_user_model(user.sub)
 
-    if request.data is not None:
-        y = np.array(request.data, dtype=np.float64)
+    if body.data is not None:
+        y = np.array(body.data, dtype=np.float64)
 
         def _predict_with_data():
             s = model.predict_states(y=y)
@@ -370,11 +370,11 @@ async def simulate_trajectories(request: SimulateRequest = Body(...), user: Toke
         Симулированные траектории
     """
     model = _get_user_model(user.sub)
-    trajectories = await asyncio.to_thread(model.simulate, request.n_steps)
+    trajectories = await asyncio.to_thread(model.simulate, body.n_steps)
 
     return SimulateResponse(
         trajectories=trajectories.tolist(),
-        n_steps=request.n_steps,
+        n_steps=body.n_steps,
         n_assets=model.n_assets
     )
 

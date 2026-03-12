@@ -44,7 +44,7 @@ class PBOResponse(BaseModel):
 @router.post("/analyze", response_model=PBOResponse)
 @limiter.limit("10/minute")
 @service_endpoint("PBO analysis")
-async def analyze_pbo(http_request: Request, request: PBORequest):
+async def analyze_pbo(request: Request, body: PBORequest):
     """
     Полный анализ переобучения бэктеста.
 
@@ -57,10 +57,10 @@ async def analyze_pbo(http_request: Request, request: PBORequest):
     - Статистика по каждой стратегии (SR, PSR)
     """
     result = await asyncio.to_thread(lambda: compute_pbo(
-        strategy_returns=request.strategy_returns,
-        n_splits=request.n_splits,
-        annualize=request.annualize,
-        sr_benchmark=request.sr_benchmark,
+        strategy_returns=body.strategy_returns,
+        n_splits=body.n_splits,
+        annualize=body.annualize,
+        sr_benchmark=body.sr_benchmark,
     ))
     return PBOResponse(result=result)
 

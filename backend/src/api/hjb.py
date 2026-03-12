@@ -59,10 +59,10 @@ class HJBResponse(BaseModel):
 @router.post("/optimize", response_model=HJBResponse)
 @limiter.limit("5/minute")
 @service_endpoint("HJB optimization")
-async def optimize_hjb_portfolio(http_request: Request, request: HJBRequest):
+async def optimize_hjb_portfolio(request: Request, body: HJBRequest):
     """Выполняет HJB оптимизацию портфеля."""
-    mu = request.mu
-    cov_matrix = request.cov_matrix
+    mu = body.mu
+    cov_matrix = body.cov_matrix
 
     if len(mu) == 0:
         raise ValueError("Вектор доходностей не может быть пустым")
@@ -72,10 +72,10 @@ async def optimize_hjb_portfolio(http_request: Request, request: HJBRequest):
         if len(row) != len(mu):
             raise ValueError("Ковариационная матрица должна быть квадратной")
 
-    mc_params = request.monte_carlo.model_dump() if request.monte_carlo else None
+    mc_params = body.monte_carlo.model_dump() if body.monte_carlo else None
     result = await asyncio.to_thread(lambda: optimize_hjb(
-        mu=mu, cov_matrix=cov_matrix, risk_free_rate=request.risk_free_rate,
-        gamma=request.gamma, asset_names=request.asset_names, monte_carlo_params=mc_params
+        mu=mu, cov_matrix=cov_matrix, risk_free_rate=body.risk_free_rate,
+        gamma=body.gamma, asset_names=body.asset_names, monte_carlo_params=mc_params
     ))
 
     return HJBResponse(portfolio_stats=result['portfolio_stats'], monte_carlo=result.get('monte_carlo'))

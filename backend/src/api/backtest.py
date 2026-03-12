@@ -72,57 +72,57 @@ class WalkForwardRequest(FinancialBaseModel):
 @router.post("/run", response_model=dict[str, Any])
 @limiter.limit("10/minute")
 @service_endpoint("Backtest")
-async def run_portfolio_backtest(http_request: Request, request: BacktestRequest):
+async def run_portfolio_backtest(request: Request, body: BacktestRequest):
     """
     Выполняет бэктест портфеля (Монте-Карло).
     """
     return run_backtest(
-        mu=request.mu,
-        cov_matrix=request.cov_matrix,
-        initial_capital=request.initial_capital,
-        risk_free_rate=request.risk_free_rate,
-        gamma=request.gamma,
-        horizon_years=request.horizon_years,
-        n_steps=request.n_steps,
-        asset_names=request.asset_names,
-        n_paths=request.n_paths,
-        seed=request.seed
+        mu=body.mu,
+        cov_matrix=body.cov_matrix,
+        initial_capital=body.initial_capital,
+        risk_free_rate=body.risk_free_rate,
+        gamma=body.gamma,
+        horizon_years=body.horizon_years,
+        n_steps=body.n_steps,
+        asset_names=body.asset_names,
+        n_paths=body.n_paths,
+        seed=body.seed
     )
 
 
 @router.post("/historical", response_model=dict[str, Any])
 @limiter.limit("5/minute")
 @service_endpoint("Historical Backtest")
-async def run_historical_backtest_endpoint(http_request: Request, request: HistoricalBacktestRequest):
+async def run_historical_backtest_endpoint(request: Request, body: HistoricalBacktestRequest):
     """Выполняет исторический бэктест на реальных ценах."""
     return await asyncio.to_thread(
         run_historical_backtest,
-        historical_prices=request.historical_prices,
-        asset_names=request.asset_names,
-        rebalance_frequency=request.rebalance_frequency,
-        strategy_type=request.strategy_type,
-        initial_weights=request.initial_weights,
-        lookback_window=request.lookback_window,
-        transaction_cost_bps=request.transaction_cost_bps,
-        risk_free_rate=request.risk_free_rate,
-        initial_capital=request.initial_capital,
+        historical_prices=body.historical_prices,
+        asset_names=body.asset_names,
+        rebalance_frequency=body.rebalance_frequency,
+        strategy_type=body.strategy_type,
+        initial_weights=body.initial_weights,
+        lookback_window=body.lookback_window,
+        transaction_cost_bps=body.transaction_cost_bps,
+        risk_free_rate=body.risk_free_rate,
+        initial_capital=body.initial_capital,
     )
 
 
 @router.post("/walk-forward", response_model=dict[str, Any])
 @limiter.limit("3/minute")
 @service_endpoint("Walk-Forward Optimization")
-async def run_walk_forward_endpoint(http_request: Request, request: WalkForwardRequest):
+async def run_walk_forward_endpoint(request: Request, body: WalkForwardRequest):
     """Выполняет walk-forward оптимизацию."""
     return await asyncio.to_thread(
         walk_forward_optimization,
-        historical_prices=request.historical_prices,
-        asset_names=request.asset_names,
-        in_sample_window=request.in_sample_window,
-        out_of_sample_window=request.out_of_sample_window,
-        optimization_method=request.optimization_method,
-        step_size=request.step_size,
-        transaction_cost_bps=request.transaction_cost_bps,
-        risk_free_rate=request.risk_free_rate,
-        initial_capital=request.initial_capital,
+        historical_prices=body.historical_prices,
+        asset_names=body.asset_names,
+        in_sample_window=body.in_sample_window,
+        out_of_sample_window=body.out_of_sample_window,
+        optimization_method=body.optimization_method,
+        step_size=body.step_size,
+        transaction_cost_bps=body.transaction_cost_bps,
+        risk_free_rate=body.risk_free_rate,
+        initial_capital=body.initial_capital,
     )

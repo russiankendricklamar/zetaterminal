@@ -49,7 +49,7 @@ class MetaLabelingResponse(BaseModel):
 @router.post("/analyze", response_model=MetaLabelingResponse)
 @limiter.limit("10/minute")
 @service_endpoint("Analyze")
-async def analyze(http_request: Request, request: MetaLabelingRequest):
+async def analyze(request: Request, body: MetaLabelingRequest):
     """
     Meta-Labeling анализ.
 
@@ -63,14 +63,14 @@ async def analyze(http_request: Request, request: MetaLabelingRequest):
     - Feature importances мета-модели
     """
     result = await asyncio.to_thread(lambda: compute_meta_labeling(
-        prices=request.prices,
-        pt_multiplier=request.pt_multiplier,
-        sl_multiplier=request.sl_multiplier,
-        max_holding=request.max_holding,
-        vol_window=request.vol_window,
-        train_ratio=request.train_ratio,
-        regularization=request.regularization,
-        meta_threshold=request.meta_threshold,
+        prices=body.prices,
+        pt_multiplier=body.pt_multiplier,
+        sl_multiplier=body.sl_multiplier,
+        max_holding=body.max_holding,
+        vol_window=body.vol_window,
+        train_ratio=body.train_ratio,
+        regularization=body.regularization,
+        meta_threshold=body.meta_threshold,
     ))
     return MetaLabelingResponse(result=result)
     return {"status": "healthy", "service": "meta_labeling"}

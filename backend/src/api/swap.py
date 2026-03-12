@@ -31,20 +31,20 @@ class SwapValuationRequest(FinancialBaseModel):
 @router.post("/valuate", response_model=dict[str, Any])
 @limiter.limit("10/minute")
 @service_endpoint("Swap valuation")
-async def valuate_swap(http_request: Request, request: SwapValuationRequest):
+async def valuate_swap(request: Request, body: SwapValuationRequest):
     """
     Выполняет оценку свопа.
     """
     return await asyncio.to_thread(lambda: calculate_swap_valuation(
-        notional=request.notional,
-        tenor=request.tenor,
-        fixed_rate=request.fixedRate,
-        floating_rate=request.floatingRate,
-        spread=request.spread,
-        coupons_per_year=request.couponsPerYear,
-        discount_rate=request.discountRate,
-        volatility=request.volatility,
-        swap_type=request.swapType
+        notional=body.notional,
+        tenor=body.tenor,
+        fixed_rate=body.fixedRate,
+        floating_rate=body.floatingRate,
+        spread=body.spread,
+        coupons_per_year=body.couponsPerYear,
+        discount_rate=body.discountRate,
+        volatility=body.volatility,
+        swap_type=body.swapType
     ))
 
 
@@ -72,25 +72,25 @@ class FxSwapValuationRequest(FinancialBaseModel):
 @router.post("/valuate-fx", response_model=dict[str, Any])
 @limiter.limit("10/minute")
 @service_endpoint("FX swap valuation")
-async def valuate_fx_swap(http_request: Request, request: FxSwapValuationRequest):
+async def valuate_fx_swap(request: Request, body: FxSwapValuationRequest):
     """Выполняет оценку FX-свопа."""
     return await asyncio.to_thread(lambda: calculate_fx_swap_valuation(
-        buy_currency_near=request.nearLeg.buyCurrency,
-        sell_currency_near=request.nearLeg.sellCurrency,
-        nominal_buy_near=request.nearLeg.nominalBuy,
-        nominal_sell_near=request.nearLeg.nominalSell,
-        date_near=request.nearLeg.date,
-        buy_currency_far=request.farLeg.buyCurrency,
-        sell_currency_far=request.farLeg.sellCurrency,
-        nominal_buy_far=request.farLeg.nominalBuy,
-        nominal_sell_far=request.farLeg.nominalSell,
-        date_far=request.farLeg.date,
-        valuation_date=request.valuationDate,
-        settlement_currency=request.settlementCurrency,
-        spot_min=request.spotMin,
-        spot_max=request.spotMax,
-        rate_internal=request.rateInternal,
-        rate_external=request.rateExternal,
+        buy_currency_near=body.nearLeg.buyCurrency,
+        sell_currency_near=body.nearLeg.sellCurrency,
+        nominal_buy_near=body.nearLeg.nominalBuy,
+        nominal_sell_near=body.nearLeg.nominalSell,
+        date_near=body.nearLeg.date,
+        buy_currency_far=body.farLeg.buyCurrency,
+        sell_currency_far=body.farLeg.sellCurrency,
+        nominal_buy_far=body.farLeg.nominalBuy,
+        nominal_sell_far=body.farLeg.nominalSell,
+        date_far=body.farLeg.date,
+        valuation_date=body.valuationDate,
+        settlement_currency=body.settlementCurrency,
+        spot_min=body.spotMin,
+        spot_max=body.spotMax,
+        rate_internal=body.rateInternal,
+        rate_external=body.rateExternal,
     ))
 
 

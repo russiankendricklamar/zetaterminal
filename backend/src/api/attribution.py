@@ -103,7 +103,7 @@ class AttributionResponse(BaseModel):
 @router.post("/brinson", response_model=AttributionResponse)
 @service_endpoint("Brinson-Fachler attribution")
 @limiter.limit("20/minute")
-async def run_brinson(request: BrinsonRequest, http_request: Request) -> AttributionResponse:
+async def run_brinson(request: Request, body: BrinsonRequest) -> AttributionResponse:
     """
     Brinson-Fachler performance attribution.
 
@@ -116,11 +116,11 @@ async def run_brinson(request: BrinsonRequest, http_request: Request) -> Attribu
     """
     result = await asyncio.to_thread(
         brinson_fachler_attribution,
-        portfolio_weights=request.portfolio_weights,
-        benchmark_weights=request.benchmark_weights,
-        portfolio_returns=request.portfolio_returns,
-        benchmark_returns=request.benchmark_returns,
-        sector_names=request.sector_names,
+        portfolio_weights=body.portfolio_weights,
+        benchmark_weights=body.benchmark_weights,
+        portfolio_returns=body.portfolio_returns,
+        benchmark_returns=body.benchmark_returns,
+        sector_names=body.sector_names,
     )
     return AttributionResponse(result=result)
 
@@ -128,7 +128,7 @@ async def run_brinson(request: BrinsonRequest, http_request: Request) -> Attribu
 @router.post("/factor", response_model=AttributionResponse)
 @service_endpoint("Factor attribution")
 @limiter.limit("20/minute")
-async def run_factor(request: FactorAttributionRequest, http_request: Request) -> AttributionResponse:
+async def run_factor(request: Request, body: FactorAttributionRequest) -> AttributionResponse:
     """
     Factor-based P&L attribution via OLS regression.
 
@@ -138,10 +138,10 @@ async def run_factor(request: FactorAttributionRequest, http_request: Request) -
     """
     result = await asyncio.to_thread(
         factor_attribution,
-        portfolio_returns=request.portfolio_returns,
-        factor_returns=request.factor_returns,
-        factor_names=request.factor_names,
-        portfolio_value=request.portfolio_value,
+        portfolio_returns=body.portfolio_returns,
+        factor_returns=body.factor_returns,
+        factor_names=body.factor_names,
+        portfolio_value=body.portfolio_value,
     )
     return AttributionResponse(result=result)
 

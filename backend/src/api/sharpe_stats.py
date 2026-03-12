@@ -44,7 +44,7 @@ class SharpeStatsResponse(BaseModel):
 @router.post("/analyze", response_model=SharpeStatsResponse)
 @limiter.limit("10/minute")
 @service_endpoint("Analyze Sharpe")
-async def analyze_sharpe(http_request: Request, request: SharpeStatsRequest):
+async def analyze_sharpe(request: Request, body: SharpeStatsRequest):
     """
     Полный статистический анализ коэффициента Шарпа.
 
@@ -56,11 +56,11 @@ async def analyze_sharpe(http_request: Request, request: SharpeStatsRequest):
     - Данные для PSR-кривой и распределения SR под H₀
     """
     result = await asyncio.to_thread(lambda: compute_sharpe_stats(
-        returns=request.returns,
-        risk_free_rate=request.risk_free_rate,
-        periods_per_year=request.periods_per_year,
-        benchmark_sr=request.benchmark_sr,
-        n_trials=request.n_trials,
+        returns=body.returns,
+        risk_free_rate=body.risk_free_rate,
+        periods_per_year=body.periods_per_year,
+        benchmark_sr=body.benchmark_sr,
+        n_trials=body.n_trials,
     ))
     return SharpeStatsResponse(result=result)
     return {"status": "healthy", "service": "sharpe-stats"}

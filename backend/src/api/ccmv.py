@@ -52,11 +52,11 @@ class CCMVResponse(BaseModel):
 @router.post("/optimize", response_model=CCMVResponse)
 @limiter.limit("5/minute")
 @service_endpoint("CCMV optimization")
-async def optimize_ccmv_portfolio(http_request: Request, request: CCMVRequest):
+async def optimize_ccmv_portfolio(request: Request, body: CCMVRequest):
     """Выполняет CCMV оптимизацию портфеля."""
-    R = np.array(request.R)
-    mu = np.array(request.mu)
-    Sigma = np.array(request.cov_matrix)
+    R = np.array(body.R)
+    mu = np.array(body.mu)
+    Sigma = np.array(body.cov_matrix)
 
     if len(mu) == 0:
         raise ValueError("Вектор доходностей не может быть пустым")
@@ -64,14 +64,14 @@ async def optimize_ccmv_portfolio(http_request: Request, request: CCMVRequest):
         raise ValueError(f"Размерность матрицы доходностей R {R.shape} не соответствует количеству активов {len(mu)}")
     if Sigma.shape != (len(mu), len(mu)):
         raise ValueError(f"Размерность ковариационной матрицы {Sigma.shape} не соответствует количеству активов {len(mu)}")
-    if request.method not in ['delta', 'alpha']:
-        raise ValueError(f"Метод должен быть 'delta' или 'alpha', получено: {request.method}")
+    if body.method not in ['delta', 'alpha']:
+        raise ValueError(f"Метод должен быть 'delta' или 'alpha', получено: {body.method}")
 
     result = await asyncio.to_thread(lambda: optimize_ccmv(
         R=R, mu=mu, Sigma=Sigma,
-        Delta=request.Delta, bar_w=request.bar_w, gamma=request.gamma,
-        method=request.method, asset_names=request.asset_names,
-        risk_free_rate=request.risk_free_rate
+        Delta=body.Delta, bar_w=body.bar_w, gamma=body.gamma,
+        method=body.method, asset_names=body.asset_names,
+        risk_free_rate=body.risk_free_rate
     ))
 
     return CCMVResponse(

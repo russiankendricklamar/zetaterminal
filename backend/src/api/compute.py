@@ -29,7 +29,7 @@ class GARCHRequest(FinancialBaseModel):
 @router.post("/statistics", response_model=ComputeResponse)
 @limiter.limit("10/minute")
 @service_endpoint("Statistics computation")
-async def calculate_statistics(http_request: Request, data: list[float] = Body(..., max_length=MAX_DATA_POINTS)):
+async def calculate_statistics(request: Request, data: list[float] = Body(..., max_length=MAX_DATA_POINTS)):
     """
     Вычисляет статистику для массива данных.
 
@@ -50,22 +50,22 @@ async def calculate_statistics(http_request: Request, data: list[float] = Body(.
 @router.post("/garch")
 @limiter.limit("10/minute")
 @service_endpoint("GARCH computation")
-async def calculate_garch(http_request: Request, request: GARCHRequest):
+async def calculate_garch(request: Request, body: GARCHRequest):
     """
     Вычисляет GARCH(1,1) модель волатильности.
 
     Args:
-        request: Параметры GARCH модели
+        body: Параметры GARCH модели
 
     Returns:
         Результаты GARCH моделирования
     """
     result = compute_service.calculate_garch(
-        returns=request.returns,
-        omega=request.omega,
-        alpha=request.alpha,
-        beta=request.beta,
-        initial_variance=request.initial_variance
+        returns=body.returns,
+        omega=body.omega,
+        alpha=body.alpha,
+        beta=body.beta,
+        initial_variance=body.initial_variance
     )
     return {
         "result": result,

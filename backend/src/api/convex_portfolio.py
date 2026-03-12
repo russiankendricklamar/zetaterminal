@@ -61,7 +61,7 @@ class ConvexPortfolioResponse(BaseModel):
 @router.post("/optimize", response_model=ConvexPortfolioResponse)
 @limiter.limit("5/minute")
 @service_endpoint("Convex portfolio optimization")
-async def optimize(http_request: Request, request: ConvexPortfolioRequest):
+async def optimize(request: Request, body: ConvexPortfolioRequest):
     """
     Convex Portfolio Optimization.
 
@@ -76,26 +76,26 @@ async def optimize(http_request: Request, request: ConvexPortfolioRequest):
     Плюс always: equal_weight baseline и эффективная граница.
     """
     # Validate objectives
-    if request.objectives:
-        invalid = set(request.objectives) - VALID_OBJECTIVES
+    if body.objectives:
+        invalid = set(body.objectives) - VALID_OBJECTIVES
         if invalid:
             raise HTTPException(status_code=400, detail=f"Неизвестные задачи: {invalid}")
 
     result = await asyncio.to_thread(lambda: compute_convex_portfolio(
-        returns=request.returns,
-        asset_names=request.asset_names,
-        objectives=request.objectives,
-        long_only=request.long_only,
-        lb=request.lb,
-        ub=request.ub,
-        max_weight=request.max_weight,
-        target_return=request.target_return,
-        leverage=request.leverage,
-        cvar_alpha=request.cvar_alpha,
-        risk_free=request.risk_free,
-        kelly_fraction=request.kelly_fraction,
-        annualize=request.annualize,
-        n_frontier=request.n_frontier,
+        returns=body.returns,
+        asset_names=body.asset_names,
+        objectives=body.objectives,
+        long_only=body.long_only,
+        lb=body.lb,
+        ub=body.ub,
+        max_weight=body.max_weight,
+        target_return=body.target_return,
+        leverage=body.leverage,
+        cvar_alpha=body.cvar_alpha,
+        risk_free=body.risk_free,
+        kelly_fraction=body.kelly_fraction,
+        annualize=body.annualize,
+        n_frontier=body.n_frontier,
     ))
     return ConvexPortfolioResponse(result=result)
 

@@ -53,47 +53,47 @@ class DiagnosticsRequest(FinancialBaseModel):
 @router.post("/fit", response_model=dict[str, Any])
 @limiter.limit("10/minute")
 @service_endpoint("GARCH fit")
-async def fit_garch(http_request: Request, request: GarchFitRequest):
+async def fit_garch(request: Request, body: GarchFitRequest):
     """Fit a univariate GARCH model to a return series."""
     return await GarchService.fit(
-        returns=request.returns,
-        model=request.model,
-        params=request.params,
-        initial_variance=request.initial_variance,
+        returns=body.returns,
+        model=body.model,
+        params=body.params,
+        initial_variance=body.initial_variance,
     )
 
 
 @router.post("/forecast", response_model=dict[str, Any])
 @limiter.limit("10/minute")
 @service_endpoint("GARCH forecast")
-async def forecast_garch(http_request: Request, request: GarchForecastRequest):
+async def forecast_garch(request: Request, body: GarchForecastRequest):
     """Fit model and produce h-step ahead volatility forecasts."""
     return await GarchService.forecast(
-        returns=request.returns,
-        model=request.model,
-        params=request.params,
-        n_steps=request.n_steps,
-        confidence_levels=request.confidence_levels,
+        returns=body.returns,
+        model=body.model,
+        params=body.params,
+        n_steps=body.n_steps,
+        confidence_levels=body.confidence_levels,
     )
 
 
 @router.post("/dcc", response_model=dict[str, Any])
 @limiter.limit("5/minute")
 @service_endpoint("DCC-GARCH")
-async def fit_dcc(http_request: Request, request: DCCRequest):
+async def fit_dcc(request: Request, body: DCCRequest):
     """Fit DCC-GARCH model on multivariate returns."""
     return await GarchService.fit_dcc(
-        returns_matrix=request.returns_matrix,
-        univariate_model=request.univariate_model,
-        univariate_params=request.univariate_params,
-        dcc_params=request.dcc_params,
-        n_steps=request.n_steps,
+        returns_matrix=body.returns_matrix,
+        univariate_model=body.univariate_model,
+        univariate_params=body.univariate_params,
+        dcc_params=body.dcc_params,
+        n_steps=body.n_steps,
     )
 
 
 @router.post("/diagnostics", response_model=dict[str, Any])
 @limiter.limit("5/minute")
 @service_endpoint("GARCH diagnostics")
-async def garch_diagnostics(http_request: Request, request: DiagnosticsRequest):
+async def garch_diagnostics(request: Request, body: DiagnosticsRequest):
     """Compare all 4 models and run residual diagnostic tests."""
-    return await GarchService.diagnostics(returns=request.returns)
+    return await GarchService.diagnostics(returns=body.returns)

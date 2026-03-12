@@ -44,7 +44,7 @@ class EigenportfolioResponse(BaseModel):
 @router.post("/decompose", response_model=EigenportfolioResponse)
 @limiter.limit("10/minute")
 @service_endpoint("Eigenportfolio decomposition")
-async def decompose(http_request: Request, request: EigenportfolioRequest):
+async def decompose(request: Request, body: EigenportfolioRequest):
     """
     PCA декомпозиция ковариационной матрицы.
 
@@ -57,21 +57,21 @@ async def decompose(http_request: Request, request: EigenportfolioRequest):
     - Декомпозицию риска портфеля по PC
     - Ошибку реконструкции Σ с K компонентами
     """
-    if request.portfolio_weights is not None:
-        ret_matrix = request.returns
+    if body.portfolio_weights is not None:
+        ret_matrix = body.returns
         n_assets = len(ret_matrix[0]) if ret_matrix else 0
-        if len(request.portfolio_weights) != n_assets:
+        if len(body.portfolio_weights) != n_assets:
             raise HTTPException(
                 status_code=400,
-                detail=f"portfolio_weights длина {len(request.portfolio_weights)} != N активов {n_assets}"
+                detail=f"portfolio_weights длина {len(body.portfolio_weights)} != N активов {n_assets}"
             )
 
     result = await asyncio.to_thread(lambda: compute_eigenportfolios(
-        returns=request.returns,
-        asset_names=request.asset_names,
-        use_shrinkage=request.use_shrinkage,
-        n_components=request.n_components,
-        portfolio_weights=request.portfolio_weights,
+        returns=body.returns,
+        asset_names=body.asset_names,
+        use_shrinkage=body.use_shrinkage,
+        n_components=body.n_components,
+        portfolio_weights=body.portfolio_weights,
     ))
     return EigenportfolioResponse(result=result)
 
