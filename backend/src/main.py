@@ -20,6 +20,7 @@ from datetime import UTC
 from src.api import (
     admin,
     adversarial_stress,
+    alpaca,
     alpha_stacking,
     attribution,
     auth,
@@ -37,7 +38,10 @@ from src.api import (
     eigenportfolio,
     etf,
     factor_analysis,
+    fcsapi,
+    finnhub,
     forward,
+    freecrypto,
     garch,
     gemini,
     har,
@@ -45,10 +49,13 @@ from src.api import (
     macro_data,
     market_data,
     market_feeds,
+    marketstack,
+    massive,
     meta_labeling,
     moexalgo,
     multivariate_hmm,
     news_ai,
+    iexcloud,
     pbo,
     portfolio,
     realized_kernels,
@@ -58,6 +65,7 @@ from src.api import (
     security_tools,
     sharpe_stats,
     spectral_regime,
+    stooq,
     stress,
     swap,
     swap_stress,
@@ -320,6 +328,14 @@ app.include_router(dadata.router, prefix="/api/dadata", tags=["DaData"], depende
 app.include_router(etf.router, prefix="/api/etf", tags=["ETF"], dependencies=_auth)
 app.include_router(gemini.router, prefix="/api/gemini", tags=["Gemini AI"], dependencies=_auth)
 app.include_router(secrets_api.router, prefix="/api/secrets", tags=["Secrets"], dependencies=[Depends(require_api_key), Depends(require_admin)])
+app.include_router(stooq.router, prefix="/api/stooq", tags=["Stooq"], dependencies=_auth)
+app.include_router(finnhub.router, prefix="/api/finnhub", tags=["Finnhub"], dependencies=_auth)
+app.include_router(iexcloud.router, prefix="/api/iex-cloud", tags=["IEX Cloud"], dependencies=_auth)
+app.include_router(marketstack.router, prefix="/api/marketstack", tags=["Marketstack"], dependencies=_auth)
+app.include_router(fcsapi.router, prefix="/api/fcs", tags=["FCS API"], dependencies=_auth)
+app.include_router(freecrypto.router, prefix="/api/freecrypto", tags=["FreeCryptoAPI"], dependencies=_auth)
+app.include_router(alpaca.router, prefix="/api/alpaca", tags=["Alpaca"], dependencies=_auth)
+app.include_router(massive.router, prefix="/api/massive", tags=["Massive"], dependencies=_auth)
 app.include_router(repo.router, prefix="/api/repo", tags=["REPO"], dependencies=_auth)
 app.include_router(risk.router, prefix="/api/risk", tags=["Risk Engine"], dependencies=_auth)
 app.include_router(admin.router, prefix="/api/admin", tags=["Admin"], dependencies=[Depends(require_api_key), Depends(require_admin)])
