@@ -12,9 +12,10 @@ from datetime import datetime
 from typing import Any
 
 import pandas as pd
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, HTTPException, Query, Request
 from pydantic import BaseModel, Field
 
+from src.middleware.rate_limit import limiter
 from src.utils.error_handler import service_endpoint
 from src.utils.financial_validation import FinancialBaseModel
 
@@ -76,8 +77,10 @@ class InterpolateResponse(BaseModel):
 
 
 @router.get("/", response_model=ZCYCResponse)
+@limiter.limit("30/minute")
 @service_endpoint("Get Zcyc")
 async def get_zcyc(
+    request: Request,
     date: str | None = Query(None, description="Дата в формате YYYY-MM-DD. Если не указана, используется последняя доступная")
 ):
     """
@@ -115,8 +118,10 @@ async def get_zcyc(
     return ZCYCResponse(**result)
 
 @router.post("/interpolate", response_model=InterpolateResponse)
+@limiter.limit("10/minute")
 @service_endpoint("Interpolate Zcyc Rate")
 async def interpolate_zcyc_rate(
+    request: Request,
     term: float = Query(..., ge=0.0, description="Срок в годах"),
     method: str = Query("linear", description="Метод интерполяции: linear или nelson_siegel"),
     date: str | None = Query(None, description="Дата кривой в формате YYYY-MM-DD")
@@ -182,8 +187,9 @@ async def interpolate_zcyc_rate(
     )
 
 @router.get("/dates")
+@limiter.limit("30/minute")
 @service_endpoint("Get Available Dates")
-async def get_available_dates():
+async def get_available_dates(request: Request):
     """
     Получить список доступных дат для кривой бескупонных доходностей.
     
@@ -200,8 +206,10 @@ async def get_available_dates():
     }
 
 @router.get("/maxdates")
+@limiter.limit("30/minute")
 @service_endpoint("Get Maxdates Endpoint")
 async def get_maxdates_endpoint(
+    request: Request,
     engine: str = Query("stock", description="Движок биржи (stock, currency, etc.)")
 ):
     """
@@ -220,8 +228,10 @@ async def get_maxdates_endpoint(
     }
 
 @router.get("/yearyields")
+@limiter.limit("30/minute")
 @service_endpoint("Get Yearyields Endpoint")
 async def get_yearyields_endpoint(
+    request: Request,
     date: str | None = Query(None, description="Дата в формате YYYY-MM-DD"),
     engine: str = Query("stock", description="Движок биржи (stock, currency, etc.)")
 ):
@@ -252,8 +262,10 @@ async def get_yearyields_endpoint(
     }
 
 @router.get("/yearyields/dates")
+@limiter.limit("30/minute")
 @service_endpoint("Get Yearyields Dates Endpoint")
 async def get_yearyields_dates_endpoint(
+    request: Request,
     date: str | None = Query(None, description="Дата в формате YYYY-MM-DD"),
     engine: str = Query("stock", description="Движок биржи (stock, currency, etc.)")
 ):
@@ -273,8 +285,10 @@ async def get_yearyields_dates_endpoint(
     }
 
 @router.get("/latest")
+@limiter.limit("30/minute")
 @service_endpoint("Get Latest Curve Endpoint")
 async def get_latest_curve_endpoint(
+    request: Request,
     engine: str = Query("stock", description="Движок биржи (stock, currency, etc.)")
 ):
     """
@@ -294,8 +308,10 @@ async def get_latest_curve_endpoint(
     }
 
 @router.post("/discount")
+@limiter.limit("10/minute")
 @service_endpoint("Curve To Discount Endpoint")
 async def curve_to_discount_endpoint(
+    request: Request,
     data: list[dict[str, Any]],
     col_term: str = Query("period", description="Название колонки со сроком"),
     col_yield: str = Query("value", description="Название колонки с доходностью")

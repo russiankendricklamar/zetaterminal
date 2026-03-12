@@ -4,9 +4,10 @@ API endpoints для оценки облигаций (DCF).
 import asyncio
 from typing import Any
 
-from fastapi import APIRouter, Query
+from fastapi import APIRouter, Query, Request
 from pydantic import Field
 
+from src.middleware.rate_limit import limiter
 from src.services.bond_service import calculate_bond_valuation, get_market_yield_from_moex
 from src.utils.error_handler import service_endpoint
 from src.utils.financial_validation import MAX_RATE_PCT, FinancialBaseModel
@@ -25,8 +26,9 @@ class BondValuationRequest(FinancialBaseModel):
 
 
 @router.post("/valuate", response_model=dict[str, Any])
+@limiter.limit("10/minute")
 @service_endpoint("Bond valuation")
-async def valuate_bond(request: BondValuationRequest):
+async def valuate_bond(http_request: Request, request: BondValuationRequest):
     """Выполняет оценку облигации для двух сценариев доходности."""
     return await asyncio.to_thread(
         calculate_bond_valuation,
@@ -40,8 +42,9 @@ async def valuate_bond(request: BondValuationRequest):
 
 
 @router.get("/market-yield", response_model=dict[str, Any])
+@limiter.limit("30/minute")
 @service_endpoint("Market yield lookup")
-async def get_market_yield(
+async def get_market_yield(request: Request,
     secid: str = Query(..., description="ISIN облигации"),
     date: str = Query(..., description="Дата оценки (YYYY-MM-DD)")
 ):

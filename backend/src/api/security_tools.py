@@ -9,9 +9,10 @@ import ipaddress
 import re
 from urllib.parse import urlparse
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel, Field
 
+from src.middleware.rate_limit import limiter
 from src.services.security_tools_service import (
     abuseipdb_check,
     bigdatacloud_lookup,
@@ -68,24 +69,27 @@ class UrlScanRequest(BaseModel):
 
 
 @router.get("/ipinfo/{ip}")
+@limiter.limit("10/minute")
 @service_endpoint("Ip Info")
-async def ip_info(ip: str):
+async def ip_info(request: Request, ip: str):
     """IP geolocation from ipinfo.io."""
     ip = _validate_public_ip(ip)
     return await ipinfo_lookup(ip)
 
 
 @router.get("/ip2location/{ip}")
+@limiter.limit("10/minute")
 @service_endpoint("IP2Location")
-async def ip2location(ip: str):
+async def ip2location(request: Request, ip: str):
     """IP geolocation from IP2Location."""
     ip = _validate_public_ip(ip)
     return await ip2location_lookup(ip)
 
 
 @router.get("/bigdatacloud/{ip}")
+@limiter.limit("10/minute")
 @service_endpoint("BigDataCloud")
-async def bigdatacloud(ip: str):
+async def bigdatacloud(request: Request, ip: str):
     """IP geolocation from BigDataCloud."""
     ip = _validate_public_ip(ip)
     return await bigdatacloud_lookup(ip)
@@ -95,16 +99,18 @@ async def bigdatacloud(ip: str):
 
 
 @router.post("/virustotal/scan-url")
+@limiter.limit("10/minute")
 @service_endpoint("VT Scan")
-async def vt_scan(req: UrlScanRequest):
+async def vt_scan(request: Request, req: UrlScanRequest):
     """Submit a URL for VirusTotal scanning."""
     _validate_url(req.url)
     return await virustotal_scan_url(req.url)
 
 
 @router.get("/virustotal/analysis/{analysis_id}")
+@limiter.limit("10/minute")
 @service_endpoint("VT Analysis")
-async def vt_analysis(analysis_id: str):
+async def vt_analysis(request: Request, analysis_id: str):
     """Get VirusTotal analysis result."""
     if not _VT_ID_RE.match(analysis_id):
         raise HTTPException(status_code=400, detail="Invalid analysis ID format")
@@ -112,8 +118,9 @@ async def vt_analysis(analysis_id: str):
 
 
 @router.get("/abuse/{ip}")
+@limiter.limit("10/minute")
 @service_endpoint("AbuseIPDB")
-async def abuse_check(ip: str):
+async def abuse_check(request: Request, ip: str):
     """Check IP against AbuseIPDB."""
     ip = _validate_public_ip(ip)
     return await abuseipdb_check(ip)
@@ -123,16 +130,18 @@ async def abuse_check(ip: str):
 
 
 @router.post("/urlscan/scan-url")
+@limiter.limit("10/minute")
 @service_endpoint("URLScan Submit")
-async def urlscan_scan(req: UrlScanRequest):
+async def urlscan_scan(request: Request, req: UrlScanRequest):
     """Submit URL to URLScan.io."""
     _validate_url(req.url)
     return await urlscan_submit(req.url)
 
 
 @router.get("/urlscan/result/{uuid}")
+@limiter.limit("10/minute")
 @service_endpoint("URLScan Result")
-async def urlscan_get_result(uuid: str):
+async def urlscan_get_result(request: Request, uuid: str):
     """Get URLScan.io result."""
     if not _UUID_RE.match(uuid):
         raise HTTPException(status_code=400, detail="Invalid UUID format")
@@ -143,8 +152,9 @@ async def urlscan_get_result(uuid: str):
 
 
 @router.get("/whois/{domain}")
+@limiter.limit("10/minute")
 @service_endpoint("WHOIS")
-async def whois_lookup(domain: str):
+async def whois_lookup(request: Request, domain: str):
     """WHOIS lookup for a domain."""
     if not _DOMAIN_RE.match(domain) or len(domain) > 253:
         raise HTTPException(status_code=400, detail="Invalid domain format")

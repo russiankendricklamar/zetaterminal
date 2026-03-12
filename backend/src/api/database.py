@@ -1,12 +1,13 @@
 """
 API endpoints for database operations.
 """
+import asyncio
 import logging
 import os
 import re
 from datetime import datetime
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from pydantic import BaseModel, field_validator
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -26,6 +27,7 @@ from src.database.repositories import (
     PortfolioRepository,
 )
 from src.middleware.auth import require_auth
+from src.middleware.rate_limit import limiter
 from src.utils.jwt_utils import TokenPayload
 
 logger = logging.getLogger(__name__)
@@ -45,7 +47,9 @@ def _sanitize_filename(name: str) -> str:
 
 # Bond Valuation endpoints
 @router.post("/bond-valuations", response_model=dict)
+@limiter.limit("20/minute")
 async def create_bond_valuation(
+    request: Request,
     record: BondValuationRecord,
     user: TokenPayload = Depends(require_auth),
     session: AsyncSession = Depends(get_session),
@@ -56,7 +60,9 @@ async def create_bond_valuation(
 
 
 @router.get("/bond-valuations/{record_id}", response_model=dict)
+@limiter.limit("30/minute")
 async def get_bond_valuation(
+    request: Request,
     record_id: int,
     user: TokenPayload = Depends(require_auth),
     session: AsyncSession = Depends(get_session),
@@ -71,7 +77,9 @@ async def get_bond_valuation(
 
 
 @router.get("/bond-valuations", response_model=dict)
+@limiter.limit("30/minute")
 async def get_bond_valuations(
+    request: Request,
     secid: str | None = None,
     start_date: str | None = None,
     end_date: str | None = None,
@@ -96,7 +104,9 @@ async def get_bond_valuations(
 
 
 @router.put("/bond-valuations/{record_id}", response_model=dict)
+@limiter.limit("20/minute")
 async def update_bond_valuation(
+    request: Request,
     record_id: int,
     record: BondValuationRecord,
     user: TokenPayload = Depends(require_auth),
@@ -113,7 +123,9 @@ async def update_bond_valuation(
 
 
 @router.delete("/bond-valuations/{record_id}", response_model=dict)
+@limiter.limit("20/minute")
 async def delete_bond_valuation(
+    request: Request,
     record_id: int,
     user: TokenPayload = Depends(require_auth),
     session: AsyncSession = Depends(get_session),
@@ -130,7 +142,9 @@ async def delete_bond_valuation(
 
 # Portfolio endpoints
 @router.post("/portfolios", response_model=dict)
+@limiter.limit("20/minute")
 async def create_portfolio(
+    request: Request,
     record: PortfolioRecord,
     user: TokenPayload = Depends(require_auth),
     session: AsyncSession = Depends(get_session),
@@ -141,7 +155,9 @@ async def create_portfolio(
 
 
 @router.get("/portfolios", response_model=dict)
+@limiter.limit("30/minute")
 async def get_portfolios(
+    request: Request,
     limit: int = Query(100, ge=1, le=1000),
     user: TokenPayload = Depends(require_auth),
     session: AsyncSession = Depends(get_session),
@@ -153,7 +169,9 @@ async def get_portfolios(
 
 
 @router.get("/portfolios/{portfolio_id}", response_model=dict)
+@limiter.limit("30/minute")
 async def get_portfolio(
+    request: Request,
     portfolio_id: int,
     user: TokenPayload = Depends(require_auth),
     session: AsyncSession = Depends(get_session),
@@ -169,7 +187,9 @@ async def get_portfolio(
 
 # Calculation History endpoints
 @router.post("/calculation-history", response_model=dict)
+@limiter.limit("20/minute")
 async def create_calculation_history(
+    request: Request,
     record: CalculationHistory,
     user: TokenPayload = Depends(require_auth),
     session: AsyncSession = Depends(get_session),
@@ -180,7 +200,9 @@ async def create_calculation_history(
 
 
 @router.get("/calculation-history", response_model=dict)
+@limiter.limit("30/minute")
 async def get_calculation_history(
+    request: Request,
     calculation_type: str | None = None,
     limit: int = Query(50, ge=1, le=1000),
     user: TokenPayload = Depends(require_auth),
@@ -194,7 +216,9 @@ async def get_calculation_history(
 
 # Market Data endpoints
 @router.get("/market-data", response_model=dict)
+@limiter.limit("30/minute")
 async def get_market_data(
+    request: Request,
     ticker: str | None = None,
     data_type: str | None = None,
     start_date: str | None = None,
@@ -212,7 +236,9 @@ async def get_market_data(
 
 
 @router.post("/market-data/daily", response_model=dict)
+@limiter.limit("20/minute")
 async def create_market_data(
+    request: Request,
     record: MarketDataDaily,
     user: TokenPayload = Depends(require_auth),
     session: AsyncSession = Depends(get_session),
@@ -224,7 +250,9 @@ async def create_market_data(
 
 # File endpoints
 @router.get("/files", response_model=dict)
+@limiter.limit("30/minute")
 async def get_files(
+    request: Request,
     file_type: str | None = None,
     limit: int = Query(100, ge=1, le=1000),
     user: TokenPayload = Depends(require_auth),
@@ -240,7 +268,9 @@ async def get_files(
 
 
 @router.get("/files/{file_id}", response_model=dict)
+@limiter.limit("30/minute")
 async def get_file(
+    request: Request,
     file_id: int,
     user: TokenPayload = Depends(require_auth),
     session: AsyncSession = Depends(get_session),
@@ -267,33 +297,35 @@ class RegistryParquetRequest(BaseModel):
 
 
 @router.post("/export/registry/parquet", response_model=dict)
+@limiter.limit("5/minute")
 async def export_registry_parquet(
-    request: RegistryParquetRequest,
+    request: Request,
+    req: RegistryParquetRequest,
     user: TokenPayload = Depends(require_auth),
     session: AsyncSession = Depends(get_session),
 ):
     """Export registry data to Parquet format and save locally."""
     import pandas as pd
 
-    data = request.data
+    data = req.data
     if not data:
         raise HTTPException(status_code=400, detail="Registry data is empty")
 
     df = pd.DataFrame(data)
 
-    file_name = request.file_name
+    file_name = req.file_name
     if not file_name:
         date_str = datetime.now().strftime("%Y%m%d")
-        file_name = f"registry_{request.registry_type}_{date_str}.parquet"
+        file_name = f"registry_{req.registry_type}_{date_str}.parquet"
 
     file_name = _sanitize_filename(file_name)
 
     export_dir = os.path.join(os.getcwd(), "exports", "registers")
-    os.makedirs(export_dir, exist_ok=True)
+    await asyncio.to_thread(os.makedirs, export_dir, exist_ok=True)
     file_path = os.path.join(export_dir, file_name)
 
-    df.to_parquet(file_path, engine="pyarrow", compression="snappy", index=False)
-    file_size = os.path.getsize(file_path)
+    await asyncio.to_thread(df.to_parquet, file_path, engine="pyarrow", compression="snappy", index=False)
+    file_size = await asyncio.to_thread(os.path.getsize, file_path)
 
     repo = FileRepository(session)
     file_record = FileRecord(
@@ -302,9 +334,9 @@ async def export_registry_parquet(
         file_type="register",
         file_size=file_size,
         mime_type="application/octet-stream",
-        description=f"Registry export: {request.registry_type} ({len(data)} records)",
+        description=f"Registry export: {req.registry_type} ({len(data)} records)",
         metadata={
-            "registry_type": request.registry_type,
+            "registry_type": req.registry_type,
             "records_count": len(data),
             "format": "parquet",
             "compression": "snappy",
@@ -323,7 +355,9 @@ async def export_registry_parquet(
 
 
 @router.post("/export/market-data/parquet", response_model=dict)
+@limiter.limit("5/minute")
 async def export_market_data_parquet(
+    request: Request,
     ticker: str | None = None,
     data_type: str | None = None,
     start_date: str | None = None,
@@ -352,11 +386,11 @@ async def export_market_data_parquet(
     file_name = _sanitize_filename(file_name)
 
     export_dir = os.path.join(os.getcwd(), "exports", "market_data")
-    os.makedirs(export_dir, exist_ok=True)
+    await asyncio.to_thread(os.makedirs, export_dir, exist_ok=True)
     file_path = os.path.join(export_dir, file_name)
 
-    df.to_parquet(file_path, engine="pyarrow", compression="snappy", index=False)
-    file_size = os.path.getsize(file_path)
+    await asyncio.to_thread(df.to_parquet, file_path, engine="pyarrow", compression="snappy", index=False)
+    file_size = await asyncio.to_thread(os.path.getsize, file_path)
 
     return {
         "success": True,

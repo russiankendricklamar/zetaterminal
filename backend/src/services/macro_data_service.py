@@ -4,15 +4,19 @@ Macro Data Service — FRED, Frankfurter (ECB), Bank of Russia, SEC EDGAR, OpenF
 Proxies macroeconomic and regulatory data from five providers.
 """
 
+import logging
 import os
 import re as _re
-import defusedxml.ElementTree as ET
 from typing import Any
 from xml.sax.saxutils import escape as _xml_escape
+
+import defusedxml.ElementTree as ET
 
 from src.services.cache_service import cache_get, cache_set, make_cache_key
 from src.services.secrets_service import get_key_sync
 from src.utils.http_client import get_session
+
+logger = logging.getLogger(__name__)
 
 _DATE_RE = _re.compile(r"^\d{4}-\d{2}-\d{2}$")
 
@@ -258,8 +262,8 @@ async def cbr_key_rate() -> dict[str, Any]:
                         rate = float((child.text or "0").strip())
                 if dt:
                     history.append({"date": dt, "rate": rate})
-    except ET.ParseError:
-        pass
+    except ET.ParseError as e:
+        logger.warning("Failed to parse CBR XML response: %s", e)
 
     current_rate = history[-1]["rate"] if history else 0.0
 
@@ -321,8 +325,8 @@ async def cbr_ruonia(
                         vol = float((child.text or "0").strip())
                 if dt:
                     rates.append({"date": dt, "rate": rate, "volume": vol})
-    except ET.ParseError:
-        pass
+    except ET.ParseError as e:
+        logger.warning("Failed to parse CBR XML response: %s", e)
 
     current_rate = rates[-1]["rate"] if rates else 0.0
     result = {"current_rate": current_rate, "history": rates, "provider": "cbr"}
@@ -376,8 +380,8 @@ async def cbr_precious_metals(
                         entry["price"] = float(val) if val else 0.0
                 if entry.get("date"):
                     metals.append(entry)
-    except ET.ParseError:
-        pass
+    except ET.ParseError as e:
+        logger.warning("Failed to parse CBR XML response: %s", e)
 
     # Group by code: 1=Gold, 2=Silver, 3=Platinum, 4=Palladium
     metal_names = {1: "Золото", 2: "Серебро", 3: "Платина", 4: "Палладий"}
@@ -435,8 +439,8 @@ async def cbr_deposit_rates(
                         entry["overnight"] = float(val) if val else None
                 if entry.get("date"):
                     rates.append(entry)
-    except ET.ParseError:
-        pass
+    except ET.ParseError as e:
+        logger.warning("Failed to parse CBR XML response: %s", e)
 
     result = {"rates": rates, "provider": "cbr"}
     cache_set(key, result, ttl_seconds=3600)
@@ -489,8 +493,8 @@ async def cbr_repo_rates(
                         entry["debt_fix"] = float(val) if val else 0.0
                 if entry.get("date"):
                     entries.append(entry)
-    except ET.ParseError:
-        pass
+    except ET.ParseError as e:
+        logger.warning("Failed to parse CBR XML response: %s", e)
 
     result = {"entries": entries, "provider": "cbr"}
     cache_set(key, result, ttl_seconds=3600)

@@ -6,6 +6,7 @@
 """
 
 import asyncio
+import logging
 import secrets
 import time
 from collections.abc import Iterable
@@ -16,6 +17,8 @@ import aiohttp
 import pandas as pd
 
 from src.utils.http_client import get_session
+
+logger = logging.getLogger(__name__)
 
 # ─── Server-side credential session cache with TTL ──────────────────────────
 _SESSION_TTL_SECONDS = 3600  # 1 hour
@@ -123,8 +126,10 @@ class RuDataService:
                     data = await response.json()
                     return data.get('token')
                 else:
+                    logger.warning("RuData login failed: %s %s", response.status, response.reason)
                     return None
         except Exception:
+            logger.exception("RuData login request failed")
             return None
 
     async def _do_request(
@@ -146,9 +151,11 @@ class RuDataService:
             async with session.request(method, url, json=body, headers=headers) as response:
                 if response.ok:
                     return await response.json()
+                logger.warning("RuData API %s %s: %s %s", method, path, response.status, response.reason)
                 return f"{response.status} {response.reason}"
-        except Exception as e:
-            return str(e)
+        except Exception:
+            logger.exception("RuData API request failed: %s %s", method, path)
+            raise
 
     async def test_connection(self) -> dict[str, Any]:
         """Проверить подключение к RuData API."""

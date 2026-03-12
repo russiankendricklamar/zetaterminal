@@ -66,7 +66,7 @@ async def _is_user_active(user_id: int) -> bool:
         except Exception:
             # Fail-closed: deny access when DB is unreachable.
             # A stolen token should not grant access if we cannot verify the account.
-            logger.warning("Could not verify user status for user_id=%s — denying access", user_id)
+            logger.warning("Could not verify user status for user_id=%s — denying access", user_id, exc_info=True)
             return False
 
 

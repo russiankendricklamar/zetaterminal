@@ -70,13 +70,25 @@
           </div>
 
           <div class="form-group">
-            <label class="lbl">Доходность (%)</label>
+            <label class="lbl">Доходность аналога (%)</label>
             <input
-              v-model.number="params.discountYield"
+              v-model.number="params.discountYield1"
               type="number"
               step="0.01"
               class="glass-input"
               placeholder="14.0"
+              @change="onBondChange"
+            >
+          </div>
+
+          <div class="form-group">
+            <label class="lbl">Доходность индекса (%)</label>
+            <input
+              v-model.number="params.discountYield2"
+              type="number"
+              step="0.01"
+              class="glass-input"
+              placeholder="13.5"
               @change="onBondChange"
             >
           </div>
@@ -534,10 +546,18 @@
                   </tr>
                   <tr>
                     <td class="label">
-                      Дисконтная ставка (YTM)
+                      Доходность аналога
                     </td>
                     <td class="value mono">
-                      {{ formatNumber(params.discountYield, 3) }}%
+                      {{ formatNumber(params.discountYield1, 3) }}%
+                    </td>
+                  </tr>
+                  <tr>
+                    <td class="label">
+                      Доходность индекса
+                    </td>
+                    <td class="value mono">
+                      {{ formatNumber(params.discountYield2, 3) }}%
                     </td>
                   </tr>
                   <tr>
@@ -629,7 +649,8 @@ import { getApiBaseUrl } from '@/utils/apiBase'
 interface BondParams {
   secid: string
   valuationDate: string
-  discountYield: number
+  discountYield1: number
+  discountYield2: number
   dayCount: number
 }
 
@@ -712,7 +733,8 @@ const mockResults: BondResults = {
 const params = ref<BondParams>({
   secid: 'RU000A10AU99',
   valuationDate: new Date().toISOString().split('T')[0],
-  discountYield: 14.0,
+  discountYield1: 14.0,
+  discountYield2: 13.5,
   dayCount: 365
 })
 
@@ -745,9 +767,10 @@ const calculateBond = async () => {
       headers: getApiHeaders(),
       body: JSON.stringify({
         secid: params.value.secid,
-        valuation_date: params.value.valuationDate,
-        discount_yield: params.value.discountYield / 100,
-        day_count: params.value.dayCount
+        valuationDate: params.value.valuationDate,
+        discountYield1: params.value.discountYield1,
+        discountYield2: params.value.discountYield2,
+        dayCount: params.value.dayCount
       })
     })
 

@@ -4,6 +4,7 @@ Facade for all GARCH operations.
 Provides async-safe methods that wrap CPU-bound MLE fitting in asyncio.to_thread().
 """
 import asyncio
+import logging
 from typing import Any
 
 import numpy as np
@@ -12,6 +13,8 @@ from src.services.garch.forecasting import forecast_dcc, forecast_volatility
 from src.services.garch.model_selection import arch_lm_test, compare_models, ljung_box_test
 from src.services.garch.multivariate import dcc_garch
 from src.services.garch.univariate import egarch, ewma, garch_11, gjr_garch
+
+logger = logging.getLogger(__name__)
 
 MODEL_MAP = {
     "garch_11": garch_11,
@@ -102,14 +105,14 @@ class GarchService:
             try:
                 result = await asyncio.to_thread(fn, arr, None)
                 results.append(result)
-            except (ValueError, RuntimeError):
-                pass
+            except (ValueError, RuntimeError) as e:
+                logger.warning("GARCH model %s failed to fit: %s", _name, e)
 
         try:
             ewma_result = await asyncio.to_thread(ewma, arr)
             results.append(ewma_result)
-        except (ValueError, RuntimeError):
-            pass
+        except (ValueError, RuntimeError) as e:
+            logger.warning("EWMA model failed to fit: %s", e)
 
         if not results:
             raise RuntimeError("All models failed to fit")

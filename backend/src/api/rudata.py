@@ -13,9 +13,10 @@ Endpoints:
 
 from typing import Any
 
-from fastapi import APIRouter, Query
+from fastapi import APIRouter, Query, Request
 from pydantic import BaseModel, Field
 
+from src.middleware.rate_limit import limiter
 from src.utils.error_handler import service_endpoint
 
 router = APIRouter()
@@ -89,8 +90,9 @@ class SessionRequest(BaseModel):
 
 
 @router.post("/session/create", response_model=SessionResponse)
+@limiter.limit("20/minute")
 @service_endpoint("Create Session")
-async def create_session(credentials: RuDataCredentials):
+async def create_session(request: Request, credentials: RuDataCredentials):
     """
     Проверить подключение к RuData API и кешировать credentials на сервере.
 
@@ -119,18 +121,20 @@ async def create_session(credentials: RuDataCredentials):
     )
 
 @router.post("/session/clear")
+@limiter.limit("20/minute")
 @service_endpoint("Clear Session")
-async def clear_session(request: SessionRequest):
+async def clear_session(request: Request, session_req: SessionRequest):
     """Удалить кешированные credentials по session_id."""
     from src.services.rudata_service import clear_cached_credentials
 
-    removed = clear_cached_credentials(request.session_id)
+    removed = clear_cached_credentials(session_req.session_id)
     return {"success": True, "removed": removed}
 
 
 @router.post("/test-connection", response_model=ConnectionTestResponse)
+@limiter.limit("20/minute")
 @service_endpoint("Test Connection")
-async def test_connection(credentials: RuDataCredentials):
+async def test_connection(request: Request, credentials: RuDataCredentials):
     """
     Проверить подключение к RuData API.
 
@@ -146,8 +150,9 @@ async def test_connection(credentials: RuDataCredentials):
     return ConnectionTestResponse(**result)
 
 @router.post("/query", response_model=RuDataResponse)
+@limiter.limit("20/minute")
 @service_endpoint("Execute Query")
-async def execute_query(query: RuDataQuery):
+async def execute_query(request: Request, query: RuDataQuery):
     """
     Выполнить произвольный запрос к RuData API.
 
@@ -169,8 +174,9 @@ async def execute_query(query: RuDataQuery):
     return RuDataResponse(**result)
 
 @router.post("/bond/info", response_model=RuDataResponse)
+@limiter.limit("20/minute")
 @service_endpoint("Get Bond Info")
-async def get_bond_info(credentials: RuDataCredentials, isin: str = Query(..., description="ISIN облигации")):
+async def get_bond_info(request: Request, credentials: RuDataCredentials, isin: str = Query(..., description="ISIN облигации")):
     """
     Получить информацию об облигации по ISIN.
     """
@@ -182,8 +188,9 @@ async def get_bond_info(credentials: RuDataCredentials, isin: str = Query(..., d
     return RuDataResponse(**result)
 
 @router.post("/bond/cashflows", response_model=RuDataResponse)
+@limiter.limit("20/minute")
 @service_endpoint("Get Bond Cashflows")
-async def get_bond_cashflows(credentials: RuDataCredentials, isin: str = Query(..., description="ISIN облигации")):
+async def get_bond_cashflows(request: Request, credentials: RuDataCredentials, isin: str = Query(..., description="ISIN облигации")):
     """
     Получить денежные потоки (купоны, амортизация) облигации.
     """
@@ -195,25 +202,27 @@ async def get_bond_cashflows(credentials: RuDataCredentials, isin: str = Query(.
     return RuDataResponse(**result)
 
 @router.post("/bond/calculate", response_model=RuDataResponse)
+@limiter.limit("20/minute")
 @service_endpoint("Calculate Bond")
-async def calculate_bond(request: BondCalculateRequest):
+async def calculate_bond(request: Request, calc_req: BondCalculateRequest):
     """
     Рассчитать параметры облигации (доходность, дюрация, и т.д.).
     """
     from src.services.rudata_service import get_rudata_service
 
-    service = get_rudata_service(request.login, request.password)
+    service = get_rudata_service(calc_req.login, calc_req.password)
     result = await service.calculate_bond(
-        isin=request.isin,
-        calc_date=request.calc_date,
-        price=request.price
+        isin=calc_req.isin,
+        calc_date=calc_req.calc_date,
+        price=calc_req.price
     )
 
     return RuDataResponse(**result)
 
 @router.post("/bonds/search", response_model=RuDataResponse)
+@limiter.limit("20/minute")
 @service_endpoint("Search Bonds")
-async def search_bonds(request: BondSearchRequest):
+async def search_bonds(request: Request, search_req: BondSearchRequest):
     """
     Поиск облигаций по фильтру.
 
@@ -224,17 +233,19 @@ async def search_bonds(request: BondSearchRequest):
     """
     from src.services.rudata_service import get_rudata_service
 
-    service = get_rudata_service(request.login, request.password)
+    service = get_rudata_service(search_req.login, search_req.password)
     result = await service.search_bonds(
-        filter_str=request.filter,
-        fields=request.fields
+        filter_str=search_req.filter,
+        fields=search_req.fields
     )
 
     return RuDataResponse(**result)
 
 @router.post("/zcyc", response_model=RuDataResponse)
+@limiter.limit("20/minute")
 @service_endpoint("Get Zcyc")
 async def get_zcyc(
+    request: Request,
     credentials: RuDataCredentials,
     date: str | None = Query(None, description="Дата в формате YYYY-MM-DD")
 ):
@@ -249,8 +260,10 @@ async def get_zcyc(
     return RuDataResponse(**result)
 
 @router.post("/fintool/reference", response_model=RuDataResponse)
+@limiter.limit("20/minute")
 @service_endpoint("Get Fintool Reference")
 async def get_fintool_reference(
+    request: Request,
     credentials: RuDataCredentials,
     id: str = Query(..., description="ID финансового инструмента (ISIN, FintoolID)"),
     fields: list[str] | None = Query(None, description="Список полей для выборки")
@@ -274,8 +287,10 @@ async def get_fintool_reference(
     return RuDataResponse(**result)
 
 @router.post("/indicator/list", response_model=RuDataResponse)
+@limiter.limit("20/minute")
 @service_endpoint("Get Indicator List")
 async def get_indicator_list(
+    request: Request,
     credentials: RuDataCredentials,
     filter: str | None = Query(None, description="Строка фильтрации")
 ):

@@ -18,9 +18,10 @@ Endpoints:
 
 from typing import Any
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Request
 from pydantic import BaseModel, Field
 
+from src.middleware.rate_limit import limiter
 from src.utils.error_handler import service_endpoint
 
 router = APIRouter()
@@ -124,8 +125,9 @@ class SessionResponse(BaseModel):
 # ─── Endpoints ──────────────────────────────────────────────────────────────
 
 @router.post("/test-connection", response_model=ConnectionTestResponse)
+@limiter.limit("20/minute")
 @service_endpoint("Test Connection")
-async def test_connection(credentials: CbondsCredentials):
+async def test_connection(request: Request, credentials: CbondsCredentials):
     """Проверить подключение к Cbonds API."""
     from src.services.cbonds_service import test_cbonds_connection
 
@@ -134,8 +136,9 @@ async def test_connection(credentials: CbondsCredentials):
 
 
 @router.post("/session/create", response_model=SessionResponse)
+@limiter.limit("20/minute")
 @service_endpoint("Create Session")
-async def create_session(credentials: CbondsCredentials):
+async def create_session(request: Request, credentials: CbondsCredentials):
     """Проверить подключение и кешировать credentials на сервере."""
     from src.services.cbonds_service import cache_credentials, test_cbonds_connection
 
@@ -158,18 +161,20 @@ async def create_session(credentials: CbondsCredentials):
 
 
 @router.post("/session/clear")
+@limiter.limit("20/minute")
 @service_endpoint("Clear Session")
-async def clear_session(request: SessionRequest):
+async def clear_session(request: Request, session_req: SessionRequest):
     """Удалить кешированные credentials."""
     from src.services.cbonds_service import clear_cached_credentials
 
-    removed = clear_cached_credentials(request.session_id)
+    removed = clear_cached_credentials(session_req.session_id)
     return {"success": True, "removed": removed}
 
 
 @router.post("/query", response_model=CbondsResponse)
+@limiter.limit("20/minute")
 @service_endpoint("Execute Query")
-async def execute_query(query: CbondsQuery):
+async def execute_query(request: Request, query: CbondsQuery):
     """
     Произвольный запрос к Cbonds API.
 
@@ -203,13 +208,14 @@ async def execute_query(query: CbondsQuery):
 
 
 @router.post("/emission", response_model=CbondsResponse)
+@limiter.limit("20/minute")
 @service_endpoint("Get Emission")
-async def get_emission(request: CbondsEmissionRequest):
+async def get_emission(request: Request, emission_req: CbondsEmissionRequest):
     """Получить справочные данные эмиссии по ISIN."""
     from src.services.cbonds_service import get_cbonds_service
 
-    service = get_cbonds_service(request.login, request.password)
-    result = await service.get_emission_by_isin(request.isin, request.fields)
+    service = get_cbonds_service(emission_req.login, emission_req.password)
+    result = await service.get_emission_by_isin(emission_req.isin, emission_req.fields)
 
     return CbondsResponse(
         success=result.get("success", False),
@@ -221,8 +227,9 @@ async def get_emission(request: CbondsEmissionRequest):
 
 
 @router.post("/emissions/search", response_model=CbondsResponse)
+@limiter.limit("20/minute")
 @service_endpoint("Search Emissions")
-async def search_emissions(request: CbondsEmissionsSearchRequest):
+async def search_emissions(request: Request, search_req: CbondsEmissionsSearchRequest):
     """
     Поиск эмиссий с произвольными фильтрами.
 
@@ -233,12 +240,12 @@ async def search_emissions(request: CbondsEmissionsSearchRequest):
     """
     from src.services.cbonds_service import get_cbonds_service
 
-    service = get_cbonds_service(request.login, request.password)
+    service = get_cbonds_service(search_req.login, search_req.password)
     result = await service.search_emissions(
-        filters=request.filters,
-        fields=request.fields,
-        sorting=request.sorting,
-        limit=request.limit,
+        filters=search_req.filters,
+        fields=search_req.fields,
+        sorting=search_req.sorting,
+        limit=search_req.limit,
     )
 
     return CbondsResponse(
@@ -251,16 +258,17 @@ async def search_emissions(request: CbondsEmissionsSearchRequest):
 
 
 @router.post("/quotes", response_model=CbondsResponse)
+@limiter.limit("20/minute")
 @service_endpoint("Get Quotes")
-async def get_quotes(request: CbondsQuotesRequest):
+async def get_quotes(request: Request, quotes_req: CbondsQuotesRequest):
     """Получить котировки от участников рынка."""
     from src.services.cbonds_service import get_cbonds_service
 
-    service = get_cbonds_service(request.login, request.password)
+    service = get_cbonds_service(quotes_req.login, quotes_req.password)
     result = await service.get_quotes(
-        isin=request.isin,
-        date_from=request.date_from,
-        date_to=request.date_to,
+        isin=quotes_req.isin,
+        date_from=quotes_req.date_from,
+        date_to=quotes_req.date_to,
     )
 
     return CbondsResponse(
@@ -273,16 +281,17 @@ async def get_quotes(request: CbondsQuotesRequest):
 
 
 @router.post("/nsd-quotes", response_model=CbondsResponse)
+@limiter.limit("20/minute")
 @service_endpoint("Get NSD Quotes")
-async def get_nsd_quotes(request: CbondsQuotesRequest):
+async def get_nsd_quotes(request: Request, nsd_req: CbondsQuotesRequest):
     """Получить справедливую цену НРД (NSD Price Center)."""
     from src.services.cbonds_service import get_cbonds_service
 
-    service = get_cbonds_service(request.login, request.password)
+    service = get_cbonds_service(nsd_req.login, nsd_req.password)
     result = await service.get_nsd_quotes(
-        isin=request.isin,
-        date_from=request.date_from,
-        date_to=request.date_to,
+        isin=nsd_req.isin,
+        date_from=nsd_req.date_from,
+        date_to=nsd_req.date_to,
     )
 
     return CbondsResponse(
@@ -295,16 +304,17 @@ async def get_nsd_quotes(request: CbondsQuotesRequest):
 
 
 @router.post("/index", response_model=CbondsResponse)
+@limiter.limit("20/minute")
 @service_endpoint("Get Index Value")
-async def get_index_value(request: CbondsIndexRequest):
+async def get_index_value(request: Request, index_req: CbondsIndexRequest):
     """Получить значения индекса (IFX-Cbonds, Cbonds-CBI и др.)."""
     from src.services.cbonds_service import get_cbonds_service
 
-    service = get_cbonds_service(request.login, request.password)
+    service = get_cbonds_service(index_req.login, index_req.password)
     result = await service.get_index_value(
-        index_id=request.index_id,
-        date_from=request.date_from,
-        date_to=request.date_to,
+        index_id=index_req.index_id,
+        date_from=index_req.date_from,
+        date_to=index_req.date_to,
     )
 
     return CbondsResponse(
@@ -317,15 +327,16 @@ async def get_index_value(request: CbondsIndexRequest):
 
 
 @router.post("/ratings", response_model=CbondsResponse)
+@limiter.limit("20/minute")
 @service_endpoint("Get Ratings")
-async def get_ratings(request: CbondsRatingsRequest):
+async def get_ratings(request: Request, ratings_req: CbondsRatingsRequest):
     """Получить кредитные рейтинги эмитента или эмиссии."""
     from src.services.cbonds_service import get_cbonds_service
 
-    service = get_cbonds_service(request.login, request.password)
+    service = get_cbonds_service(ratings_req.login, ratings_req.password)
     result = await service.get_emitent_ratings(
-        emitent_id=request.emitent_id,
-        isin=request.isin,
+        emitent_id=ratings_req.emitent_id,
+        isin=ratings_req.isin,
     )
 
     return CbondsResponse(
