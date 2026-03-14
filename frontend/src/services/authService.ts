@@ -2,6 +2,7 @@ import { getApiHeaders, setTokens, clearTokens, getRefreshToken } from '@/utils/
 import { getApiBaseUrl } from '@/utils/apiBase'
 import { appFetch } from '@/utils/tauriFetch'
 import { startAutoRefresh, stopAutoRefresh } from '@/utils/sessionManager'
+import { persistSet, persistRemove } from '@/utils/persistentStorage'
 
 export interface RegisterRequest {
   username: string
@@ -147,12 +148,13 @@ export async function login(data: LoginRequest): Promise<LoginResponse> {
   }
   const result: LoginResponse = await res.json()
   setTokens(result.access_token, result.refresh_token)
-  localStorage.setItem(AUTH_USER_KEY, JSON.stringify({
+  const userJson = JSON.stringify({
     user_id: result.user_id,
     username: result.username,
     domain_handle: result.domain_handle,
     role: result.role,
-  }))
+  })
+  persistSet('zeta_auth_user', userJson)
   startAutoRefresh()
   return result
 }
@@ -198,7 +200,7 @@ export async function logout(): Promise<void> {
   }
   stopAutoRefresh()
   clearTokens()
-  localStorage.removeItem(AUTH_USER_KEY)
+  persistRemove('zeta_auth_user')
 }
 
 export function isAdmin(): boolean {

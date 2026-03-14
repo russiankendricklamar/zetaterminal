@@ -17,6 +17,7 @@ import { useThemeStore } from '@/stores'
 import CommandPalette from '@/components/common/CommandPalette.vue'
 import AppUpdater from '@/components/common/AppUpdater.vue'
 import { restoreSession } from '@/utils/sessionManager'
+import { initPersistentStorage } from '@/utils/persistentStorage'
 
 const route = useRoute()
 const themeStore = useThemeStore()
@@ -24,8 +25,10 @@ const themeStore = useThemeStore()
 // Скрываем глобальную Command Palette на странице терминала (там своя)
 const isTerminalPage = computed(() => route.path === '/terminal')
 
-onMounted(() => {
+onMounted(async () => {
   themeStore.initTheme()
+  // Load tokens from Tauri Store into localStorage before session restore
+  await initPersistentStorage()
   // Restore session using refresh token (also warms up Render backend)
   restoreSession()
 })

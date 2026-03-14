@@ -1,3 +1,5 @@
+import { persistSet, persistRemove, persistClearAll } from '@/utils/persistentStorage'
+
 const ACCESS_TOKEN_KEY = 'zeta_access_token'
 const REFRESH_TOKEN_KEY = 'zeta_refresh_token'
 
@@ -13,8 +15,8 @@ export function getApiHeaders(): Record<string, string> {
 }
 
 export function setTokens(accessToken: string, refreshToken: string): void {
-  localStorage.setItem(ACCESS_TOKEN_KEY, accessToken)
-  localStorage.setItem(REFRESH_TOKEN_KEY, refreshToken)
+  persistSet('zeta_access_token', accessToken)
+  persistSet('zeta_refresh_token', refreshToken)
 }
 
 export function getRefreshToken(): string {
@@ -22,8 +24,7 @@ export function getRefreshToken(): string {
 }
 
 export function clearTokens(): void {
-  localStorage.removeItem(ACCESS_TOKEN_KEY)
-  localStorage.removeItem(REFRESH_TOKEN_KEY)
+  persistClearAll()
 }
 
 // Backward-compatible wrappers
@@ -33,12 +34,12 @@ export function getApiKey(): string {
 
 export function setApiKey(key: string): void {
   if (key) {
-    localStorage.setItem(ACCESS_TOKEN_KEY, key)
+    persistSet('zeta_access_token', key)
   } else {
-    localStorage.removeItem(ACCESS_TOKEN_KEY)
+    persistRemove('zeta_access_token')
   }
 }
 
 export function setAccessToken(token: string): void {
-  localStorage.setItem(ACCESS_TOKEN_KEY, token)
+  persistSet('zeta_access_token', token)
 }
