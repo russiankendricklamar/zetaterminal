@@ -1,0 +1,1 @@
+import{g as t,a as o}from"./index-BoKMI557.js";const a=o();const n=o=>async function(o,n){const r=await fetch(`${a}/api/risk${o}`,{method:"POST",headers:t(),body:JSON.stringify(n)});if(!r.ok){const t=await r.json().catch(()=>({detail:"Unknown error"}));throw new Error(t.detail||`HTTP ${r.status}`)}return r.json()}("/var",o);export{n as c};
